@@ -1,42 +1,41 @@
 <?php
 
 // use library for dealing with OpenID connect
-$env = parse_ini_file('.env');
-$composerpath = $env["COMPOSER_PATH"];
-
-require($composerpath . '/vendor/autoload.php');
+require __DIR__ . '/vendor/autoload.php';
 
 use Jumbojett\OpenIDConnectClient;
 
+if (file_exists(".env")){
+    $env = parse_ini_file('.env');
+}
+
 // Create OpenID connect client
-$env = parse_ini_file('.env');
 
 $oidc = new OpenIDConnectClient(
-    $env["OIC_IDP"],
-    $env["OIC_CLIENT_ID"],
-    $env["OIC_CLIENT_SECRET"]
+    isset($env) ? $env["OIDC_IDP"] : getenv("OIDC_IDP"),
+    isset($env) ? $env["OIDC_CLIENT_ID"] : getenv("OIDC_CLIENT_ID"),
+    isset($env) ? $env["OIDC_CLIENT_SECRET"] : getenv("OIDC_CLIENT_SECRET")
 );
 
 # Demo is dealing with HTTP rather than HTTPS
-$testuser = $env["TESTUSER"];
+$testuser = isset($env) ? $env["TESTUSER"] : getenv("TESTUSER");
 if ($testuser) {
     $oidc->setHttpUpgradeInsecureRequests(false);
 }
 
+$oidc->addScope('profile','email');
 $oidc->authenticate();
-
-$_SESSION['oidcClient'] = $oidc;
 
 // Set session variable username
 $firstname = $oidc->requestUserInfo('given_name');
 $surname = $oidc->requestUserInfo('family_name');
 $initials = substr($firstname, 0, 1) . substr($surname, 0, 1);
+#
+$_SESSION['initials'] = $initials;
 
-$_SESSION['username'] = $initials;
-
+$_SESSION['username'] = $oidc->requestUserInfo('email');
 
 header("Location: interface.php");
 exit();
 
 ?>
-
