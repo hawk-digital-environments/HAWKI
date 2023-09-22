@@ -54,12 +54,14 @@ To get started you need to add a configuration file to the project first. Copy t
 | LDAP_SEARCH_DN   | string  | "ou=...,dc=..."                        | Distinguished name that is used for authenticating users.                                                                                          |
 | OIDC_IDP          | string  | "https://...."                         | URL of the Identity provider supporting OpenID Connect.                                                                                            |
 | OIDC_CLIENT_ID    | string  | "..."                                  | Client Id for this application in Identity provider.                                                                                               |
-| OIDC_CLIENT_SECRET | string  | "..."                                 | Secret key for OpenID Connect.                                                                                                                     |
+| OIDC_CLIENT_SECRET | string  | "..."                                 | Secret key for OpenID Connect. 
+| OIDC_LOGOUT_URI | string  | "https://...."                                 | URL to logout  from Identity provider                                                                                                                  |
 | COMPOSER_PATH    | string  | "..."                                  | Path to PHP Composer libariries (only needed for OpenID Connect).                                                                                                                     |
 | OPENAI_API_KEY   | string  | sk-...                                 | Open AI Api key                                                                                                                                    |
 | IMPRINT_LOCATION | string  | https://your-university/imprint        | A link to your imprint. Alternatively you can replace the file index.php under /impressum with your own html/ php of your imprint.                 |
 | PRIVACY_LOCATION | string  | https://your-university/privacy-policy | A link to your privacy policy. Alternatively you can replace the file index.php under /datenschutz with your own html/ php of your privacy policy. |
 | TESTUSER         | boolean | `false`                                | Can be set to `true` for testing purposes. You can then sign in using username `tester` and password `superlangespasswort123`                      |
+| FAVICON_URI  | string  | "https://...."                                 | Link to favicon 
 
 ## Web Server Configuration
 
