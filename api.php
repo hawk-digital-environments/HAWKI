@@ -1,8 +1,10 @@
 <?php
 session_start();
 
-$env = parse_ini_file('.env');
-$apiKey = $env["OPENAI_API_KEY"];
+if (file_exists(".env")){
+	$env = parse_ini_file('.env');
+}
+$apiKey = isset($env) ? $env['OPENAI_API_KEY'] : getenv('OPENAI_API_KEY');;
 
 if (!isset($_SESSION['username'])) {
 	http_response_code(401);
