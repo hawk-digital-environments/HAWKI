@@ -499,3 +499,32 @@ details > summary::-webkit-details-marker {
   font-size: 0.9rem;
 }
 
+label{
+  cursor: pointer;
+}
+
+input[type="radio"] + p{
+  padding: 0.35rem 0.75rem;
+  
+  cursor: pointer;
+  width: max-content;
+  margin: 0;
+  transition: all 0.2s ease;
+}
+
+input[type="radio"]:checked + p{
+  background: rgb(35,48,176);
+  color: #fff;
+}
+
+input[type="radio"]{
+  display: none;
+}
+
+.radiogroup{
+  display: flex;
+  width: max-content;
+  margin-top: 0.5rem;
+  user-select: none;
+  background: #f6f6f6;
+}

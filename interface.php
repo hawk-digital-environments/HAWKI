@@ -33,6 +33,22 @@ if (!isset($_SESSION['username'])) {
 	<div class="menu">
 		<details>
 			<summary>
+				<h3>Modell ⓘ</h3>
+			</summary>
+			Wähle eines der KI Modelle.
+		</details>
+		<div class="radiogroup">
+		<label>
+			<input type="radio" name="model" onchange="localStorage.setItem('model', 'gpt-3.5-turbo')" checked="checked"/>
+			<p>GPT 3.5 Turbo</p>
+		</label>
+		<label>
+			<input type="radio" name="model" onchange="localStorage.setItem('model', 'gpt-4')"/>
+			<p>GPT 4</p>
+		</label>
+		</div>
+		<details>
+			<summary>
 				<h3>Konversation ⓘ</h3>
 			</summary>
 			Ein Chatbereich wie bei ChatGPT, für einen schnellen Einstieg in jede beliebige Aufgabe.
@@ -330,7 +346,7 @@ if (!isset($_SESSION['username'])) {
 		document.querySelector('.limitations')?.remove();
 		
 		const requestObject = {};
-		requestObject.model = 'gpt-3.5-turbo-0301';
+		requestObject.model = localStorage.getItem("model") || 'gpt-3.5-turbo';
 		requestObject.stream = true;
 		requestObject.messages = [];
 		const messageElements = messagesElement.querySelectorAll(".message");
