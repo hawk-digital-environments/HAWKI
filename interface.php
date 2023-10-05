@@ -425,7 +425,7 @@ if (!isset($_SESSION['username'])) {
               .replace(/"/g, '&quot;')
               .replace(/'/g, '&#039;');
 }
-	}
+	
 
 	
 	function addMessage(message){
