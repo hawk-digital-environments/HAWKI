@@ -76,6 +76,8 @@ First and foremost your webserver needs PHP support.
 
 Also, make sure that you disable `output_buffering` in your webserver configuration otherwise you might run into issues when receiving the repsonse stream from Open AI.
 
+If you are setting up a new server, make sure that you install the cURL library. https://www.php.net/manual/de/book.curl.php
+
 **_IMPORTANT:_** _Keep the `.env` configuration file secret. Make sure your webserver does not allow directory listing and it blocks access to this configuration file. Double check that it can not be queried with a simple GET request via http://your-hawki-domain/.env_
 
 ## Branding
