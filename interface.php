@@ -20,7 +20,7 @@ if (!isset($_SESSION['username'])) {
 <div class="wrapper">
   <div class="sidebar">
 	<div class="logo" onclick="load(this, 'chat.htm')">
-	 <img src="/img/hawki.svg" alt="HAWK Logo" width="150px">
+	 <img src="/img/logo.svg" alt="HAWK Logo" width="150px">
 	</div>
 	<div class="menu">
 		<details>
