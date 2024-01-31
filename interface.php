@@ -355,6 +355,18 @@ if (!isset($_SESSION['username'])) {
 	}
 	
 	async function processStream(stream) {
+		
+		// if fetching is aborted before it's complete the stream will be empty.
+		// stream should be checked to avoid throwing error.
+		if (!stream) {
+			console.log('Udefined stream. Early Abortion!');
+			isReceivingData = false;
+			const icon = document.querySelector('#input-send-icon');
+			icon.setAttribute('d', startIcon)
+
+			return;
+    	}
+
 		const reader = stream.getReader();
 		
 		const messagesElement = document.querySelector(".messages");
@@ -367,34 +379,72 @@ if (!isset($_SESSION['username'])) {
 		
 		const messageText = messageElement.querySelector(".message-text");
 	
-		while (true) {
-			const { done, value } = await reader.read();
-	
-			if (done) {
-				console.log('Stream closed.');
-				document.querySelector(".message:last-child").querySelector(".message-text").innerHTML = linkify(document.querySelector(".message:last-child").querySelector(".message-text").innerHTML);
-				break;
-			}
-	
-			const decodedData = new TextDecoder().decode(value);
-			console.log(decodedData);
-			let chunks = decodedData.split("data: ");
-			chunks.forEach((chunk, index) => {
-				if(chunk.indexOf('finish_reason":"stop"') > 0) return false;
-				if(chunk.indexOf('DONE') > 0) return false;
-				if(chunk.indexOf('role') > 0) return false;
-				if(chunk.length == 0) return false;
-				if(chunk != "") console.log(JSON.parse(chunk)["choices"][0]["delta"])
-				console.log(JSON.parse(chunk)["choices"][0]["delta"]);
-				document.querySelector(".message:last-child").querySelector(".message-text").innerHTML +=  escapeHTML(JSON.parse(chunk)["choices"][0]["delta"].content);
-			})
+		// Throws error if the read operation on the response body stream is aborted while the reader.read() operation is still active.
+		// Try Catch block will handle the error.
+		try {
+			while (true) {
+				const { done, value } = await reader.read();
+		
+				if (done) {
+					console.log('Stream closed.');
+					document.querySelector(".message:last-child").querySelector(".message-text").innerHTML = linkify(document.querySelector(".message:last-child").querySelector(".message-text").innerHTML);
+					
+					isReceivingData = false;
+					const icon = document.querySelector('#input-send-icon');
+					icon.setAttribute('d', startIcon)
+					
+					ShowCopyButton();
 
-			// Check if the content has code block
-			document.querySelector(".message:last-child").querySelector(".message-text").innerHTML = document.querySelector(".message:last-child").querySelector(".message-text").innerHTML.replace(/```([\s\S]+?)```/g, '<pre><code>$1</code></pre>').replace(/\*\*.*?\*\*/g, '');;
-			hljs.highlightAll();
-			scrollToLast();
+					break;
+				}
+		
+				const decodedData = new TextDecoder().decode(value);
+				let chunks = decodedData.split("data: ");
+				chunks.forEach((chunk, index) => {
+
+					if(!isJSON(chunk)){
+						return;
+					}
+					if(chunk.indexOf('finish_reason":"stop"') > 0) return false;
+					if(chunk.indexOf('DONE') > 0) return false;
+					if(chunk.indexOf('role') > 0) return false;
+					if(chunk.length == 0) return false;
+					document.querySelector(".message:last-child").querySelector(".message-text").innerHTML +=  escapeHTML(JSON.parse(chunk)["choices"][0]["delta"].content);
+				})
+				let messageTextElement = document.querySelector(".message:last-child").querySelector(".message-text");
+
+				// Check if the content has code block
+				let innerHTML = document.querySelector(".message:last-child").querySelector(".message-text").innerHTML
+				// innerHTML = innerHTML.replace(/```([\s\S]+?)```/g, '<pre><code>$1</code></pre>').replace(/\*\*.*?\*\*/g, '');
+				innerHTML = innerHTML.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+				messageTextElement.innerHTML = innerHTML;
+
+				hljs.highlightAll();
+				scrollToLast();
+			}
+		} catch (error) {
+			// Check if the error is due to aborting the request
+			if (error.name == 'AbortError') {
+				console.log('Fetch aborted while reading response body stream.');
+			} else {
+				console.error('Error:', error);
+			}
+			isReceivingData = false;
+			const icon = document.querySelector('#input-send-icon');
+			icon.setAttribute('d', startIcon);
+			ShowCopyButton();
 		}
 	}
+
+
+	function isJSON(str) {
+		try {
+			JSON.parse(str);
+			return true;
+		} catch (e) {
+			return false;
+		}
+	}	
 
 	function escapeHTML(str) {
     return str.replace(/&/g, '&amp;')
