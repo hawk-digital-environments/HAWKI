@@ -23,8 +23,37 @@ We welcome constructive feedback to further develop this project based on your n
 ![HAWKI Login](/img/hawki-screenshot-login.png)
 _HAWKI Login Screen_
 
-![HAWKI Dashboard](/img/hawki-screenshot-dashboard.png)
+![HAWKI Dashboard](/img/hawki-screenshot-dashboard.jpg)
 _HAWKI Dashboard_
+
+## ChangeLog 23.01.2024
+
+Quality of Life Features:
+
+- Message Inputfield scroll panel added
+It is now possible to scroll in the text input field. Previously, long text entries were too inconvenient.
+- Autoscroll function adjusted. Scroll up stops the auto scroll.
+When a response is generated, the user can still scroll up and read the text that has already been generated.
+- Stop Generating function added. During the generation process “send” button switches to “stop generation” button.
+Now users no longer have to wait until the end of the generation, but can end the process manually.
+- Copy Button added. The function copies the whole message as plain text.
+Users can use the Copy button to copy the text without formatting. This simplifies the further processing of the generated answers.
+
+
+Bugfix
+- Parsing error from json "Chunks" corrected (merged code from Uni Kassel / thx to Niklas Wode).
+Previously, the response was sometimes not generated completely or contained errors.
+
+Other
+
+- Removed testing files
+Redundant files from the development phase
+
+- Removed docker container 
+We cannot offer long-term support for a docker integration and find the setup process simple enough and have therefore removed the docker container.
+
+- Changed standard model to GPT-4-Turbo
+At times we had a model switcher built in, but this has now become unnecessary. We have removed the model switcher and set gpt 4 turbo as the standard model.
 
 ## Getting started
 
