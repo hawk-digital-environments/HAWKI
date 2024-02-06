@@ -1,0 +1,24 @@
+# Prevent Access to svg
+<Files "*.svg">
+  Order allow,deny
+  Allow from all
+</Files>
+
+# Prevent Access to log files
+<Files "*.log">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Prevent Access to dot files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# DISABLE CACHING 
+<IfModule mod_headers.c> 	
+Header set Cache-Control "no-cache, no-store, must-revalidate" 	
+Header set Pragma "no-cache" 	
+Header set Expires 0 
+</IfModule>
