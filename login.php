@@ -30,12 +30,15 @@
 				echo "Invalid input.";
 				header("Location: login.php");
 			}
-			
-			if($username == "Tester" && $password == "123456"){
-					$_SESSION['username'] = "TE";
-					$_SESSION['employeetype'] = "Tester";
-					return true;
-			}
+
+			// *** ACTIVATE FOR TEST ACCESS ***
+			// Please use a unique test username and password before uploading on the server.
+			// 
+			// if($username == "Tester" && $password == "123456"){
+			// 		$_SESSION['username'] = "TE";
+			// 		$_SESSION['employeetype'] = "Tester";
+			// 		return true;
+			// }
 		
 			$ldapConn = ldap_connect($ldap_host, $ldap_port);
 			if (!$ldapConn) {
