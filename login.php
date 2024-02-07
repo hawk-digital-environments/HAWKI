@@ -166,7 +166,7 @@
 							<h1 class="headerLine"><span class="accentText">GPT</span> FÜR DIE HOCHSCHULE</h1>
 							<p>
 								HAWKI ist ein didaktisches Interface für Hochschulen, das auf der API von OpenAI basiert. Für die Nutzerinnen und Nutzer ist es nicht notwendig, einen Account anzulegen, die Hochschul-ID reicht für den Login aus - es werden keine nutzerbezogenen Daten gespeichert.<br>
-								Das Angebot wurde im Interaction Design Lab der HAWK (Hyperlink zu Interaction Design Lab Seite)  entwickelt, um allen Hochschulangehörigen die Möglichkeit zu geben, Künstliche Intelligenz in ihre Arbeitsprozesse zu integrieren und einen Begegnungsraum zu haben, damit sich eventuell neue Arbeitsweisen ergeben und eine hochschulinterne Diskussion über den Einsatz von K.I. entstehen kann. Derzeit ist die Oberfläche in drei Bereiche unterteilt:<br>
+								Das Angebot wurde im Interaction Design Lab der <a href="https://www.hawk.de/de/hochschule/fakultaeten-und-standorte/fakultaet-gestaltung/werkstaetten/interaction-design-lab" target="_blank"><b>HAWK</b></a>  entwickelt, um allen Hochschulangehörigen die Möglichkeit zu geben, Künstliche Intelligenz in ihre Arbeitsprozesse zu integrieren und einen Begegnungsraum zu haben, damit sich eventuell neue Arbeitsweisen ergeben und eine hochschulinterne Diskussion über den Einsatz von K.I. entstehen kann. Derzeit ist die Oberfläche in drei Bereiche unterteilt:<br>
 							</p>
 
 							<h3>Konversation</h3>

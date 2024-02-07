@@ -55,6 +55,8 @@ We cannot offer long-term support for a docker integration and find the setup pr
 - Changed standard model to GPT-4-Turbo
 At times we had a model switcher built in, but this has now become unnecessary. We have removed the model switcher and set gpt 4 turbo as the standard model.
 
+- Previously, the generated text that was in double asterisks was deleted, now we make it available as bold text, as intended.
+
 ## Getting started
 
 ## Prequisites
