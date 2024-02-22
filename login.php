@@ -10,7 +10,7 @@
 		header("Location: interface.php");
 		exit;
 	}
-	
+
 	if (isset($_POST["account"]) && isset($_POST["password"])) {
 		function auth(
 		$username,
@@ -23,67 +23,75 @@
 				$ldap_port = $env['LDAP_PORT'];
 				$ldap_binddn = $env['LDAP_BASE_DN'];
 				$ldap_bindpw = $env['LDAP_BIND_PW'];
-				$ldap_base = $env['LDAP_SEARCH_DN'];	
+				$ldap_base = $env['LDAP_SEARCH_DN'];
 			}
 
 			if (!$username || !$password) {
 				echo "Invalid input.";
 				header("Location: login.php");
+				exit;
 			}
 
 			// *** ACTIVATE FOR TEST ACCESS ***
 			// Please use a unique test username and password before uploading on the server.
-			// 
+			//
 			// if($username == "Tester" && $password == "123456"){
 			// 		$_SESSION['username'] = "TE";
 			// 		$_SESSION['employeetype'] = "Tester";
 			// 		return true;
 			// }
-		
+
 			$ldapConn = ldap_connect($ldap_host, $ldap_port);
 			if (!$ldapConn) {
 				echo "Unable to connect to LDAP server.";
 				header("Location: login.php");
+				exit;
 			}
-		
+
 			if (!ldap_set_option($ldapConn, LDAP_OPT_PROTOCOL_VERSION, 3)) {
 				echo "Unable to set LDAP protocol version.";
 				header("Location: login.php");
+				exit;
 			}
-		
+
 			if (!ldap_bind($ldapConn, $ldap_binddn, $ldap_bindpw)) {
 				echo "Unable to bind to LDAP server with provided DN and password.";
 				header("Location: login.php");
+				exit;
 			}
-		
+
 			$filter = "(|(sAMAccountName=$username)(mail=$username))";
-		
+
 			$sr = ldap_search($ldapConn, $ldap_base, $filter);
 			if (!$sr) {
 				echo "LDAP search failed.";
 				header("Location: login.php");
+				exit;
 			}
-		
+
 			$entryId = ldap_first_entry($ldapConn, $sr);
 			if (!$entryId) {
 				echo "Unable to get the first entry from the search results.";
 				header("Location: login.php");
+				exit;
 			}
-		
+
 			$userDn = ldap_get_dn($ldapConn, $entryId);
 			if (!$userDn) {
 				echo "Unable to get DN from the entry.";
 				header("Location: login.php");
+				exit;
 			}
-		
-			$passValid = ldap_bind($ldapConn, $userDn, $password); 
+
+			$passValid = ldap_bind($ldapConn, $userDn, $password);
 			if (!$passValid) {
 				echo "Unable to bind with provided user DN and password.";
 				header("Location: login.php");
+				exit;
 			}
-		
+
 			$info = ldap_get_entries($ldapConn, $sr);
-		
+
 			ldap_close($ldapConn);
 
 		$name = $info[0]["displayname"][0];
@@ -157,7 +165,7 @@
 							die;
 						}
 					?>
-				</div>	
+				</div>
 			</aside>
 			<main>
 				<div class="infoPanel">

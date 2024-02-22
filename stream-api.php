@@ -29,6 +29,11 @@ $apiKey = isset($env) ? $env['OPENAI_API_KEY'] : getenv('OPENAI_API_KEY');
 
 // Read the request payload from the client
 $requestPayload = file_get_contents('php://input');
+if (true == $env['FORCE_MODEL']) {
+	$r = json_decode($requestPayload, true);
+	$r['model'] = $env['GPT_MODEL'];
+	$requestPayload  = json_encode($r);
+}
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $apiUrl);
