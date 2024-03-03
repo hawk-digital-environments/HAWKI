@@ -65,7 +65,7 @@ At times we had a model switcher built in, but this has now become unnecessary. 
 
 HAWKI uses LDAP under the hood in order to authenticate users. Make sure you have LDAP setup first and that it is accessible from your HAWKI instance. Provide your LDAP config according to chapter [Configuration](#configuration). You can find more information on how to use LDAP on the official website https://ldap.com
 
-_**Testing without LDAP:**_ You can try out HAWKI without an LDAP server. To do so, set `TESTUSER` to `true` in the configuration file (see [Configuration](#configuration)) and sign in with username `tester` and `superlangespasswort123`
+_**Testing without LDAP:**_ You can try out HAWKI without an LDAP server. To do so, set `TESTUSER` and `TESTPASSWORD` in the configuration file (see [Configuration](#configuration)).
 
 ### OpenID Connect
 
@@ -96,7 +96,8 @@ To get started you need to add a configuration file to the project first. Copy t
 | OPENAI_API_KEY   | string  | sk-...                                 | Open AI Api key                                                                                                                                    |
 | IMPRINT_LOCATION | string  | https://your-university/imprint        | A link to your imprint. Alternatively you can replace the file index.php under /impressum with your own html/ php of your imprint.                 |
 | PRIVACY_LOCATION | string  | https://your-university/privacy-policy | A link to your privacy policy. Alternatively you can replace the file index.php under /datenschutz with your own html/ php of your privacy policy. |
-| TESTUSER         | boolean | `false`                                | Can be set to `true` for testing purposes. You can then sign in using username `tester` and password `superlangespasswort123`                      |
+| TESTUSER         | string  | `tester`                                | Can be set for testing purposes. Requires `Authentication=LDAP`. You can then sign in using the given username and password.                      |
+| TESTPASSWORD     | string  | `superlangespasswort123`                | Can be set for testing purposes. Requires `Authentication=LDAP`. You can then sign in using the given username and password.                      |
 | FAVICON_URI  | string  | "https://...."                                 | Link to favicon 
 
 ## Web Server Configuration
