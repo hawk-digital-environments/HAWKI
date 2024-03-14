@@ -76,7 +76,9 @@ to be installed with composer.
 
 ### Open AI Access
 
-To generate answers HAWKI uses the Open AI api. Follow the instructions on https://platform.openai.com/docs/introduction to generate an API key and paste it in the configuration file like instructed in chapter [Configuration](#configuration).
+To generate answers HAWKI uses the _Open AI API_. Follow the instructions on https://platform.openai.com/docs/introduction to generate an API key and paste it in the configuration file like instructed in chapter [Configuration](#configuration).
+
+The API also works with _Microsoft Azure AI_. Follow the instructions on https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal to create a resource, deploy a GPT-4 model and generate the API URL and API key. For Microsoft Azure AI, this URL should look like _https://<AZURE_OPENAI_ENDPOINT>/openai/deployments/<DEPLOYMENT_NAME>/chat/completions?api-version=2023-05-15_ with AZURE_OPENAI_ENDPOINT and DEPLOYMENT_NAME being replaced by your values. Paste the API URL and API key in the configuration file like instructed in chapter [Configuration](#configuration).
 
 ## Configuration
 
@@ -93,7 +95,8 @@ To get started you need to add a configuration file to the project first. Copy t
 | OIDC_CLIENT_ID    | string  | "..."                                  | Client Id for this application in Identity provider.                                                                                               |
 | OIDC_CLIENT_SECRET | string  | "..."                                 | Secret key for OpenID Connect. 
 | OIDC_LOGOUT_URI | string  | "https://...."                                 | URL to logout from Identity provider                                                                                                                  |
-| OPENAI_API_KEY   | string  | sk-...                                 | Open AI Api key                                                                                                                                    |
+| OPENAI_API_KEY   | string  | sk-...                                 | Open AI API key                                                                                                                                    |
+| OPENAI_API_URL   | string  | https://api.openai.com/v1/chat/completions | Open AI API URL. Also works with Microsoft Azure AI.                                                         |
 | IMPRINT_LOCATION | string  | https://your-university/imprint        | A link to your imprint. Alternatively you can replace the file index.php under /impressum with your own html/ php of your imprint.                 |
 | PRIVACY_LOCATION | string  | https://your-university/privacy-policy | A link to your privacy policy. Alternatively you can replace the file index.php under /datenschutz with your own html/ php of your privacy policy. |
 | TESTUSER         | boolean | `false`                                | Can be set to `true` for testing purposes. You can then sign in using username `tester` and password `superlangespasswort123`                      |

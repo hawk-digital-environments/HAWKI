@@ -24,7 +24,7 @@ if (file_exists(".env")){
 }
 
 // Replace with your API URL and API key
-$apiUrl = 'https://api.openai.com/v1/chat/completions';
+$apiUrl = isset($env) ? $env['OPENAI_API_URL'] : getenv('OPENAI_API_URL');
 $apiKey = isset($env) ? $env['OPENAI_API_KEY'] : getenv('OPENAI_API_KEY');
 
 // Read the request payload from the client
