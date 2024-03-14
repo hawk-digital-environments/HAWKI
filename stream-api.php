@@ -42,7 +42,8 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, $requestPayload);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
-	'Authorization: Bearer ' . $apiKey,
+	'Authorization: Bearer ' . $apiKey,  # necessary for OpenAI
+	'api-key: ' . $apiKey,               # necessary for Microsoft Azure AI
 	'Content-Type: application/json'
 ]);
 curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) {
