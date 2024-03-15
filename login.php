@@ -32,14 +32,13 @@
 				exit;
 			}
 
-			// *** ACTIVATE FOR TEST ACCESS ***
-			// Please use a unique test username and password before uploading on the server.
-			//
-			// if($username == "Tester" && $password == "123456"){
-			// 		$_SESSION['username'] = "TE";
-			// 		$_SESSION['employeetype'] = "Tester";
-			// 		return true;
-			// }
+			// *** ACTIVATES TEST ACCESS ***
+			// Please set a unique test username and password in .env
+			if(isset($env['TESTUSER']) && isset($env['TESTPASSWORD']) && $username == $env['TESTUSER'] && $password == $env['TESTPASSWORD']) {
+				$_SESSION['username'] = $env['TESTUSER'];
+				$_SESSION['employeetype'] = "Tester";
+				return true;
+			}
 
 			$ldapConn = ldap_connect($ldap_host, $ldap_port);
 			if (!$ldapConn) {
