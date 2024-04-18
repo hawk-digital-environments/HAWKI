@@ -80,7 +80,7 @@
 							// Open ID Connect
 							$login_available = true;
 							echo
-							"<form action='oidc_login.php' class='column' method='post'>
+							"<form action='/oidc_login' class='column' method='post'>
 								<button>" . $translation['Login'] . "</button>
 							</form>";
 						}

@@ -11,6 +11,10 @@
     define('LOGIN_PAGE_PATH', PAGES_PATH . '/login.php');
     define('INTERFACE_PAGE_PATH', PAGES_PATH . '/interface.php');
     define('LOGOUT_PAGE_PATH', PAGES_PATH . '/logout.php');
+
+    define('OIDC_LOGIN_PAGE_PATH', PAGES_PATH . '/oidc_login.php');
+    define('OIDC_LOGOUT_PAGE_PATH', PAGES_PATH . '/oidc_logout.php');
+
     define('VIEWS_PATH', PRIVATE_PATH . '/' . 'views/' );
     define('LAGNUAGE_CONTROLLER_PATH', LIBRARY_PATH . 'language_controller.php');
     define('LANGUAGE_PATH', RESOURCES_PATH . 'language/');

@@ -1,9 +1,7 @@
 <?php
-define('BOOTSTRAP_PATH',  '../bootstrap.php');
-require_once BOOTSTRAP_PATH;
 
 // use library for dealing with OpenID connect
-require __DIR__ . '/vendor/autoload.php';
+require PRIVATE_PATH . '/vendor/autoload.php';
 
 use Jumbojett\OpenIDConnectClient;
 
