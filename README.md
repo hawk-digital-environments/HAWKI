@@ -116,6 +116,19 @@ To swap out the HAWK logo for your own, replace the logo.svg file inside the `im
 
 Of course, you can modify stylesheets and html files and adjust them to your liking.
 
+## Third-Party Libraries
+
+This project utilizes the following third-party libraries:
+
+[KaTeX](https://github.com/KaTeX/KaTeX) - A fast, easy-to-use JavaScript library for TeX math rendering.
+  - License: MIT. See [here](https://github.com/KaTeX/KaTeX/blob/master/LICENSE) for details.
+
+[Highlight JS](https://github.com/highlightjs/highlight.js) - Syntax highlighting for the Web.
+  - License: MIT. See [here](https://github.com/highlightjs/highlight.js/blob/main/LICENSE) for details.
+
+[jQuery](https://github.com/jquery/jquery) - A fast, small, and feature-rich JavaScript library.
+  - License: MIT. See [here](https://github.com/jquery/jquery/blob/main/LICENSE.txt) for details.
+
 ## Contact & License
 
 This project is licensed under the terms of the MIT license. If you have any questions, feel free to get in touch via [Email](mailto:vincent.timm2@hawk.de)
