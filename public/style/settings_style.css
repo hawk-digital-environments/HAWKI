@@ -1,0 +1,331 @@
+.settings-btn{
+  height: fit-content;
+  width: fit-content;
+
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+
+}
+.settings-btn svg{
+  fill: var(--link-color);
+  display: flex;
+  justify-self: center;
+  width: 100%;
+  height: 100%;
+  max-width: 1.2rem;
+}
+.settings-modal{
+  z-index: 99;
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  color: var(--text-color);
+
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+   user-select: none;
+}
+
+.settings-wrapper{
+  overflow: hidden;
+  padding-bottom: 2rem;
+  position: relative;
+  display: block;
+  height: 100%;
+}
+.settings-panel{
+  margin: auto;
+  min-width: 27em;
+  max-width: 90vw;
+  width: 35em;
+  min-height: 40vh;
+  height: 28em;
+  background-color: var(--secondary-panel-color);
+  border-radius: 1.5rem;
+  box-shadow: 1px 1px 5px rgba(0.1, 0.1, 0.1, 0.2);
+  position: relative;
+  transition: 500ms;
+  transition-property: width, height;
+  overflow: hidden;
+}
+.settings-panel::-webkit-scrollbar{
+  width: 0;
+}
+.settings-panel.aboutActive, .settings-panel.guidelineActive{
+  width: 50em;
+  height: 40em;
+}
+.settings-panel.aboutActive .settings-content{
+  transform: translate(-100vw,0);
+  transition: transform 300ms;
+}
+
+.settings-panel.aboutActive .about-content{
+  transform: translate(0,0);
+  transition: transform 300ms;
+}
+.settings-panel.guidelineActive .settings-content{
+  transform: translate(-200vw,0);
+  transition: transform 300ms;
+}
+.settings-panel.guidelineActive .guideline-content{
+  transform: translate(0,0);
+  transition: transform 300ms;
+}
+
+.settings-panel .betaMessage {
+  padding: 0.25rem 0.5rem;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  width: max-content;
+  font-size: 0.9rem;
+  color: var(--text-color) !important;
+}
+
+.settings-closeButton{
+  position: absolute;
+  right: 2rem;
+  top: 2rem;
+  width: 24px;
+  height: 24px;
+  z-index: 99;
+  cursor: pointer;
+}
+
+.settings-content{
+  margin: 2rem 2rem 3rem 3rem;
+  display: grid;
+  row-gap: 1rem;
+  transition-delay: transform 300ms;
+  transition: transform 300ms;
+  transform: translate(0,0);
+
+}
+.settings-section{
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  align-items: center;
+}
+
+#swtichContent-btn{
+  margin: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+#swtichContent-btn svg{
+  margin-left: 0;
+  transition: 100ms;
+  width: 30px;
+  height: 30px;
+}
+#swtichContent-btn:hover svg{
+  margin-left: 0.3rem;
+}
+
+.about-content{
+  position: absolute;
+  top: 0;
+  transform: translate(100vw,0);
+  transition: transform 300ms;
+  margin: 2rem;
+  padding: 0 2rem;
+  overflow-y: scroll;
+  scrollbar-width: 0px;
+  box-sizing: border-box;
+  max-height: 90%;  
+} 
+.about-content::-webkit-scrollbar{
+  width: 0;
+  color: var(--text-color) !important;
+}
+.about-content h2{
+  text-align: center;
+  margin-bottom: 2rem;
+  text-wrap: nowrap;
+}
+
+.contributor-title{
+  line-height: 2rem;
+}
+.contributor-title:hover{
+  color: var(--accent-color);
+}
+
+.guideline-content{
+  position: absolute;
+  top: 0;
+  transform: translate(200vw,0);
+  transition: transform 300ms;
+  margin: 2rem;
+  padding: 0 2rem;
+  overflow-y: scroll;
+  scrollbar-width: 0px;
+  box-sizing: border-box;
+  max-height: 90%;  
+  max-width: 90%;
+  text-wrap: wrap;
+} 
+.guideline-content::-webkit-scrollbar{
+  width: 0;
+}
+
+
+.content-header{
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+}
+.content-header h1{
+    text-align: center;
+    margin-bottom: 2rem;
+    text-wrap: wrap;
+    margin-right: 3rem;
+}
+
+.content-text-container{
+  position: relative;
+  display: block;
+  scrollbar-width: 0;
+
+}
+
+.content-text-container::-webkit-scrollbar{
+  width: 0;
+}
+
+.back-btn{
+  position: relative;
+  top: 1.5rem;
+  cursor: pointer;
+}
+
+.language-selection {
+  width: 100%;
+  height: fit-content;
+  position: relative;
+  display: flex;
+  column-gap: 1rem;
+  margin: 1rem 2.5rem;
+}
+.language-btn{
+  cursor: pointer;
+}
+
+.darkMode-switch-panel{
+  margin: 1rem 2.5rem;
+}
+
+.darkMode-switch {
+  display: flex;
+  height: 2em;
+  width: 4em;
+
+  background-color: var(--background-color);
+  border: 1px solid rgba(10,10,10, .3);
+  box-shadow: inset 1px 1px 5px rgba(0.1, 0.1, 0.1, 0.2);
+
+  border-radius: 1.5em;
+  align-items: center;
+  cursor: pointer;
+
+}
+.darkMode-switch.active #theme-toggle {
+  transform: translate(2em, 0);
+  border: 1px solid rgba(151, 151, 151, 0.1);
+}
+.toggle-area{
+  margin: .1em;
+  width: 100%;
+}
+#theme-toggle{
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1.5em;
+  height: 1.7em;
+  width: 1.7em;
+
+  border: 1px solid rgba(10,10,10, .5);
+  background-color: var(--secondary-color);
+  box-shadow: 1px 1px 5px rgba(0.1, 0.1, 0.1, 0.7);
+
+  transform: translate(0, 0);
+  transition: transform var(--color-transition-duration) cubic-bezier(.5,0,0,.5);
+}
+#darkMode-switch-icon{
+  opacity: 0.5;
+  height: 1em;
+  width: 1em;
+}
+.button-path-fill-color{
+  fill: var(--invertPanel-color);
+}
+.button-path-stroke-color{
+  stroke: var(--invertPanel-color);;
+}
+.language-btn {
+  width: fit-content;
+  margin-right: 1rem;
+  display: inline;
+}
+
+@media only screen 
+  and (min-device-width: 320px) 
+  and (max-device-width: 480px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+
+    ul{
+      padding-left: 1rem;
+    }
+    .settings-panel{
+      width: 95vw;
+      height: 90%;
+      min-width: 70vw;
+      max-width: 100vw;
+    }
+    .settings-panel.aboutActive, .settings-panel.guidelineActive{
+      width: 95vw;
+      height: 90%;
+    }
+    .about-content, .guideline-content{
+      padding: 0 1rem;
+      margin: 2rem 1rem;
+    }
+    .about-content h1, .guideline-content h1{
+      font-size: 1.8rem;
+      margin-top: 2rem;
+    }
+    .settings-section{
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    .language-selection{
+      margin-left: 0;
+      margin-right: 1rem;
+      justify-content: space-between;
+    }
+    .darkMode-switch-panel{
+      margin-left: 0;
+      margin-right: 0;
+    }
+    .back-btn{
+      position: relative;
+    }
+}

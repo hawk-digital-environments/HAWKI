@@ -1,0 +1,21 @@
+CHANGE LOG:
+
+16.04.2024 Changelog – HAWKI V1. 
+
+    - Multi language package added.
+    - Dark mode theme added.
+    - Syntax Highlighting update.
+    - KaTeX implimentation for math formulas.
+    - Azure AI integration
+    - BUGFIX: Test user enabled w/ cridentials from .env file.
+    - Shibboleth connection 
+    - System prompts panel added.
+    - Security updates for escaped HTML, sanitized inputs, csrf token. 
+
+23.01.2024
+
+    - Message Inputfield scroll panel added.
+    - Autoscroll function adjusted. Scroll up stops the auto scroll.
+    - Stop Generating function added. During the generation process send button switches to stop generation button.
+    - Copy Button added. The function copies the whole message as plain text.
+    - BUGFIX: Parsing error from json "Chunks" corrected (merged code from Niklas Wode).

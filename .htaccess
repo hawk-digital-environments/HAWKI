@@ -1,24 +1,25 @@
-# Prevent Access to svg
-<Files "*.svg">
-  Order allow,deny
-  Allow from all
-</Files>
+# DISABLE DIRECTORY LISTINGS
+Options -Indexes
 
-# Prevent Access to log files
-<Files "*.log">
-    Order Allow,Deny
-    Deny from all
-</Files>
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
 
-# Prevent Access to dot files
-<FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
-</FilesMatch>
+    # Remove .php extension from URLs
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^ %{REQUEST_URI}.php [L]
 
-# DISABLE CACHING 
+    # Remove trailing dot from URLs
+    RewriteRule ^(.*)\.$ /$1 [R=301,L]
+
+    # Redirect all requests to index.php except existing files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+</IfModule>
+
 <IfModule mod_headers.c> 	
-Header set Cache-Control "no-cache, no-store, must-revalidate" 	
-Header set Pragma "no-cache" 	
-Header set Expires 0 
+    Header set Cache-Control "no-cache, no-store, must-revalidate" 	
+    Header set Pragma "no-cache" 	
+    Header set Expires 0 
 </IfModule>
