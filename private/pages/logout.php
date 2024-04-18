@@ -13,6 +13,11 @@
     // Finally, destroy the session.
     session_destroy();
     // Redirect to the login page
-    header('Location: login');
+    if ((isset($env) ? $env["Authentication"] : getenv("Authentication")) == "OIDC") {
+        // Open ID Connect
+        header('Location: oidc_logout');
+    } else {
+        header('Location: login');
+    }
     exit;
 ?>
