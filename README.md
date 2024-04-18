@@ -15,33 +15,33 @@ Learning Space: The learning spaces are designed to help you understand the diff
 We welcome constructive feedback to further develop this project based on your needs and insights.
 
 <!-- ![HAWKI Login](/img/hawki-screenshot-login.png) -->
-![HAWKI Login](/img/readmePic1.jpeg)
+![HAWKI Login](/public/img/readmePic1.jpeg)
 _HAWKI Login Screen_
 
 <!-- ![HAWKI Dashboard](/img/hawki-screenshot-dashboard.jpg) -->
-![HAWKI Dashboard](/img/readmePic3.jpg)
+![HAWKI Dashboard](/public/img/readmePic3.jpeg)
 _HAWKI Dashboard_
 
-![HAWKI Dashboard](/img/readmePic2.jpg)
+![HAWKI Dashboard](/public/img/readmePic2.jpeg)
 _HAWKI Settings Panel_
 
 
 ## Changelog – HAWKI V1. 
 
-###Functionality 
+### Functionality 
 
 Shibboleth connection as an additional authentication option. (Thanks to Marvin Mundry from the University of Hamburg)
 
 Multi-language with translated texts for English, Italian, French and Spanish.
 Display of mathematical formulas, LaTex and improvement of syntax highlighting.
 
-###Quality of Life 
+### Quality of Life 
 
 Dark Mode for our night owls.
 
 System prompts can now be viewed transparently.
 
-###Security updates
+### Security updates
 
 We have made HAWKI more secure in some areas and updated the code structure.
 
@@ -108,7 +108,7 @@ Also, make sure that you disable `output_buffering` in your webserver configurat
 
 If you are setting up a new server, make sure that you install the cURL library. https://www.php.net/manual/de/book.curl.php
 
-**_IMPORTANT:_** _Keep the `.env` configuration file secret. Make sure your webserver does not allow directory listing and it blocks access to this configuration file. Double check that it can not be queried with a simple GET request via http://your-hawki-domain/.env_
+**_IMPORTANT:_** _Keep the `.env` configuration file secret. Make sure your webserver does not allow directory listing and it blocks access to this configuration file. By default the `.env` file is located in the private folder with restricted access on apache. Double check that it can not be queried with a simple GET request via http://your-hawki-domain/private/.env_
 
 ## Branding
 
