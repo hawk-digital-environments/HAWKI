@@ -1,0 +1,149 @@
+#sib-form {
+    display: flex !important;
+    flex-wrap: wrap;
+}
+
+.sib-form {
+    padding: 0 !important;
+    font-family: "Fira Sans", sans-serif !important;
+    display: flex !important;
+    flex-direction: column !important;
+    /* Ensure children stack vertically */
+}
+
+#sib-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background-color: transparent !important;
+}
+
+#sib-container input:-ms-input-placeholder {
+    text-align: left !important;
+    font-family: "Fira Sans", sans-serif !important;
+}
+
+#sib-container input::placeholder {
+    text-align: left !important;
+    font-family: "Fira Sans", sans-serif !important;
+}
+
+#sib-container textarea::placeholder {
+    text-align: left !important;
+    font-family: "Fira Sans", sans-serif !important;
+}
+
+.newsletterPanel {
+    height: fit-content;
+    bottom: 0;
+    border-top: 1px solid #c0ccd9;
+    margin-top: 2rem;
+    font-family: "Fira Sans", sans-serif !important;
+}
+
+.newsletterPanel p {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.newsletterPanel h3 {
+    margin: 0;
+}
+
+.newsletterPanel .footer {
+    font-size: 0.6rem;
+    /* margin-top: .3rem; */
+    letter-spacing: -0.2px;
+}
+
+.newsletter_submitPanel {
+    display: grid !important;
+    /* grid-template-columns: auto 1fr;
+column-gap: 1rem; */
+    width: 100%;
+}
+
+.newsletter_submitPanel button {
+    justify-self: flex-end;
+}
+
+.errorsPanel {
+    flex-grow: 1;
+    margin-top: 1rem;
+}
+
+.brevoDatenschutz {
+    display: block;
+    grid-template-columns: 18% 1fr;
+    grid-gap: 1rem;
+    margin-top: 0.5rem;
+    align-items: center;
+}
+
+.brevoDatenschutz p {
+    font-size: 0.7rem;
+    margin: 0;
+}
+
+.brevoDatenschutz svg {
+    max-width: 4.5rem;
+}
+
+.sib-form-message-panel {
+    margin: 0 !important;
+    border: none !important;
+    height: min-content !important;
+    background-color: transparent !important;
+}
+
+.sib-form-message-panel--active {
+    display: flex !important;
+    background-color: none !important;
+}
+
+.sib-form-message-panel__text {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#error-message p {
+    margin: 0 !important;
+}
+
+#error-message.sib-form-message-panel.sib-form-message-panel--active {
+    color: red !important;
+}
+
+.sib-form-block__button-with-loader {
+    line-height: normal !important;
+}
+
+.sib-form-block__button {
+    padding: 0.75rem 2rem 0.75rem 2rem !important;
+}
+
+.form__entry .cancelation {
+    font-weight: 500 !important;
+}
+
+.form__entry .entry__label {
+    margin-bottom: 0 !important;
+    margin-top: 0.5rem !important;
+}
+label {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+@media only screen 
+  and (min-device-width: 320px) 
+  and (max-device-width: 480px)
+  and (-webkit-min-device-pixel-ratio: 2)
+  and (orientation: portrait) {
+    .newsletterPanel{
+      display: none !important;
+    }
+}

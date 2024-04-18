@@ -1,18 +1,38 @@
-# Security Policy
+# Sicherheitsrichtlinie
 
-We take the security of our projects very seriously. This means we aim to disclose and patch any arising issues as soon as possible. Moderate to major security issues will be fixed and included in a new release. Smaller issues will be given a hotfix.
+## Melden von Sicherheitslücken
 
-## Reporting a Vulnerability
+Wir nehmen die Sicherheit unseres Projekts ernst. Wenn Sie eine Sicherheitslücke in unserem Projekt entdeckt haben, bitten wir Sie, uns dies sicher über E-Mail zu berichten. Bitte senden Sie keine Sicherheitsprobleme über öffentliche GitHub-Issues.
 
-In order to report a (possible) vulnerability, please create a report here with the GitHub Security Advisory Tool and include a description as detailed as possible as well as the steps to reproduce the issue. 
-Alternatively you can contact us via E-Mail under vincent.timm2(at)hawk.de - please include the same information that you would fill in here on GitHub.
+**E-Mail:** arian.sadafi1@hawk.de
 
-We will try to reply to your request within two weeks. You should expect a close collaboration as we work to resolve the security vulnerability you have reported. 
-Please avoid revealing information about vulnerabilities in public without prior disclosure if that could put users at risk.
+**Verschlüsselte Kommunikation:**
+- Bitte senden Sie Ihre Meldung verschlüsselt, wenn möglich. Unten finden Sie meinen öffentlichen PGP-Schlüssel.
 
-## Prefered Language
-We prefer all communications to be in English or German.
+-----BEGIN PGP PUBLIC KEY BLOCK-----
 
-## Attribution
-We will include a "thank you section" in the project description for those who disclosed vulnurabilities in accordance to this policy.
-After vulnurabilities are fixed a public disclosure is possible.
+mDMEZiDaSBYJKwYBBAHaRw8BAQdA0Pay7iQXr1eKz4ndzp9BUSCBb0F1ZMOpCpj+
+qacOYdq0JEFyaWFuIFNhZGFmaSA8YXJpYW4uc2FkYWZpMUBoYXdrLmRlPoiZBBMW
+CgBBFiEEWXmdELYk4obrfmZGH11shzhB3/MFAmYg2kgCGwMFCQWjmoAFCwkIBwIC
+IgIGFQoJCAsCBBYCAwECHgcCF4AACgkQH11shzhB3/MbUwD9EAUlUw+z2W0RAVzg
+eezchrJI9ujASKnttzUx5q3MyzYBAM1orN5fGQxscp5JmqzIDVmftrHSSU6B0EZP
+z8ZFOREEuDgEZiDaSBIKKwYBBAGXVQEFAQEHQBiGyFSbtRTDcmr4kB//16cEaPI7
+bs9uQ8mvIfAzo9cxAwEIB4h+BBgWCgAmFiEEWXmdELYk4obrfmZGH11shzhB3/MF
+AmYg2kgC...
+-----END PGP PUBLIC KEY BLOCK-----
+
+
+## Was passiert nach der Meldung?
+
+- Wir bestätigen den Erhalt Ihrer Meldung innerhalb von 24 Stunden.
+- Wir geben Ihnen eine Einschätzung der Schwere und des Einflusses der gemeldeten Sicherheitslücke.
+- Wir bemühen uns, Sicherheitsprobleme so schnell wie möglich zu beheben und eine neue Version bereitzustellen, die das Problem löst.
+- Wir informieren Sie über den Zeitplan der Korrekturen.
+
+## Öffentliche Anerkennung
+
+Wir erkennen alle Sicherheitsforscher an, die bei der Identifizierung und Meldung von Problemen gemäß dieser Richtlinie helfen. Wenn Sie es wünschen, fügen wir Ihren Namen oder Ihr Pseudonym in die Liste der Beitragenden ein, nachdem das Problem behoben wurde.
+
+## Weitere Informationen
+
+Für weitere Informationen über die Sicherheit dieses Projekts oder die Sicherheitspraktiken wenden Sie sich bitte an arian.sadafi1@hawk.de.

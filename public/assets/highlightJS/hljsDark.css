@@ -1,0 +1,69 @@
+pre code.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em
+}
+
+code.hljs {
+  padding: 3px 5px
+}
+
+.hljs {
+  background: #000;
+  color: #fff
+}
+
+.hljs-comment,
+.hljs-quote,
+.hljs-variable {
+  color: rgb(74, 158, 74)
+}
+
+.hljs-built_in,
+.hljs-keyword,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-tag {
+  color: #619ee9
+}
+
+.hljs-addition,
+.hljs-attribute,
+.hljs-literal,
+.hljs-section,
+.hljs-string,
+.hljs-template-tag,
+.hljs-template-variable,
+.hljs-title,
+.hljs-type {
+  color: #df2020
+}
+
+.hljs-deletion,
+.hljs-meta,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #81dbdb
+}
+
+.hljs-doctag {
+  color: grey
+}
+
+.hljs-attr {
+  color: rgb(255, 246, 118)
+}
+
+.hljs-bullet,
+.hljs-link,
+.hljs-symbol {
+  color: #00b0e8
+}
+
+.hljs-emphasis {
+  font-style: italic
+}
+
+.hljs-strong {
+  font-weight: 700
+}
