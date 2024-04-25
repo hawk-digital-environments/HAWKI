@@ -45,7 +45,9 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 ]);
 curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) {
 	echo $data;
-	ob_flush();
+	if (ob_get_level() > 0) {
+		ob_flush();
+	}
 	flush();
 	return strlen($data);
 });
