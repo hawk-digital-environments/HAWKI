@@ -1,5 +1,9 @@
 <?php
-define('BOOTSTRAP_PATH',  '../../bootstrap.php');
+
+if (!defined('BOOTSTRAP_PATH')) {
+	define('BOOTSTRAP_PATH',  '../../bootstrap.php');
+}
+
 require_once BOOTSTRAP_PATH;
 
 session_start();
