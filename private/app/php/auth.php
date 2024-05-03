@@ -48,6 +48,7 @@
                 $ldap_binddn = $env['LDAP_BASE_DN'];
                 $ldap_bindpw = $env['LDAP_BIND_PW'];
                 $ldap_base = $env['LDAP_SEARCH_DN'];	
+                $ldap_filter = $env['LDAP_FILTER'];
             }
 
             // Check if username or password is empty
@@ -87,7 +88,7 @@
             }
 
             // Search LDAP for user
-            $filter = "(|(sAMAccountName=$username)(mail=$username))";
+            $filter = str_replace("username", $username, $ldap_filter);
         
             $sr = ldap_search($ldapConn, $ldap_base, $filter);
             if (!$sr) {
