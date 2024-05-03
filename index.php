@@ -30,11 +30,6 @@ switch($request_path){
         include_once OIDC_LOGIN_PAGE_PATH;
         exit();
 
-    case('/oidc_logout'):
-        include_once OIDC_LOGOUT_PAGE_PATH;
-        exit();
-
-
     case('/impressum'):
         $imprintLocation = isset($env) ? $env["IMPRINT_LOCATION"] : getenv("IMPRINT_LOCATION");
         header("Location: $imprintLocation");

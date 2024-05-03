@@ -102,6 +102,7 @@
 							$login_available = true;
 							echo
 								'<form class="column" method = "post" >
+									<input type="hidden" name="csrf_token" value="' . $_SESSION['csrf_token'] . '">
 									<button type="submit" name="submit">' . $translation['Login'] . '</button >
 								</form>';
 						}
