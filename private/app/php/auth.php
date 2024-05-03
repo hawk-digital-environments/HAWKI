@@ -4,13 +4,13 @@
         if (!isset($_POST['csrf_token']) || !hash_equals($_POST['csrf_token'], $_SESSION['csrf_token'])) {
             die('Invalid CSRF token');
         }
-
+        //REGENERATE CSRF TOKEN FOR MORE SECURITY
+        generate_csrf_token();
+        
         if (array_key_exists('REMOTE_USER', $_SERVER) && !empty($_SERVER['REMOTE_USER'])) {
             // If user is already authenticated via shibboleth.
             $_SESSION['username'] = $_SERVER['REMOTE_USER'];
             
-            //REGENERATE CSRF TOKEN FOR MORE SECURITY
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
             //REGENERATE SESSION ID
             session_regenerate_id();
 
@@ -28,7 +28,6 @@
                 $scheme = isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : 'http';
                 $shibLogin = 'Location: /' . $loginPath . $scheme. '://' . $_SERVER['HTTP_HOST'] . '/' . $loginPage;
                 header($shibLogin);
-                // header('Location: /Shibboleth.sso/Login?target='.$_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['HTTP_HOST'].'/login.php');
                 exit;
             }
             else{

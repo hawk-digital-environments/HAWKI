@@ -1,5 +1,9 @@
 <?php
-define('BOOTSTRAP_PATH',  '../../bootstrap.php');
+
+if (!defined('BOOTSTRAP_PATH')) {
+	define('BOOTSTRAP_PATH',  '../../bootstrap.php');
+}
+
 require_once BOOTSTRAP_PATH;
 
 session_start();
@@ -45,7 +49,9 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, [
 ]);
 curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) {
 	echo $data;
-	ob_flush();
+	if (ob_get_level() > 0) {
+		ob_flush();
+	}
 	flush();
 	return strlen($data);
 });
