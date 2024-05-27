@@ -56,9 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Find the feedback entry by ID
     $foundFeedback = null;
-    foreach ($feedbackData as $feedback) {
+    foreach ($feedbackData as &$feedback) {
         if ($feedback['id'] === $data['id']) {
-            $foundFeedback = $feedback;
+            $foundFeedback = &$feedback;
             break;
         }
     }
