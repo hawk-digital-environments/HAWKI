@@ -50,30 +50,30 @@
 	<title>HAWKI</title>
 
 
-	<link rel="stylesheet" href="/public/style/style.css">
-	<link rel="stylesheet" href="/public/style/interface_style.css">
-	<link rel="stylesheet" href="/public/style/settings_style.css">
+	<link rel="stylesheet" href="public/style/style.css">
+	<link rel="stylesheet" href="public/style/interface_style.css">
+	<link rel="stylesheet" href="public/style/settings_style.css">
 
 	<!-- COMMON SCRIPTS -->
-	<script src="/public/js/scripts.js"></script>
-	<script src="/public/js/interface_functions.js"></script>
-	<script src="/public/js/syntax_modifier.js"></script>
+	<script src="public/js/scripts.js"></script>
+	<script src="public/js/interface_functions.js"></script>
+	<script src="public/js/syntax_modifier.js"></script>
 
 	<!-- HLJS -->
-	<link id="hljsTheme" type="text/css" rel="stylesheet" href="/public/assets/highlightJS/hljsLight.css">
-	<script src="/public/assets/highlightJS/highlight.min.js"></script>
-	<script src="/public/assets/highlightJS/go.min.js"></script>
+	<link id="hljsTheme" type="text/css" rel="stylesheet" href="public/assets/highlightJS/hljsLight.css">
+	<script src="public/assets/highlightJS/highlight.min.js"></script>
+	<script src="public/assets/highlightJS/go.min.js"></script>
 
 	<!-- KaTex detects and renders math formulas -->
-	<link rel="stylesheet" href="/public/assets/katex/katex.min.css">
-	<script defer src="/public/assets/katex/katex.min.js"></script>
-	<script defer src="/public/assets/katex/contrib/auto-render.min.js"></script>
+	<link rel="stylesheet" href="public/assets/katex/katex.min.css">
+	<script defer src="public/assets/katex/katex.min.js"></script>
+	<script defer src="public/assets/katex/contrib/auto-render.min.js"></script>
 
 	<!-- Jquery v3.7.1 -->
-	<script src="/public/assets/jquery/jquery.min.js"></script>
+	<script src="public/assets/jquery/jquery.min.js"></script>
 
-	<script src="/public/assets/lz-string.min.js"></script>
-	<script src="/public/assets/crypto-js.min.js"></script>
+	<script src="public/assets/lz-string.min.js"></script>
+	<script src="public/assets/crypto-js.min.js"></script>
 
 
 	<!-- TO PREVENT FOUC WHEN RELOADING THE PAGE IN DARK MODE
@@ -91,7 +91,7 @@
 		<div class="wrapper">
 			<div class="sidebar">
 				<div class="logo">
-					<img id="HAWK_logo" src="/public/img/logo.svg" alt="">
+					<img id="HAWK_logo" src="public/img/logo.svg" alt="">
 				</div>
 				<div class="menu">
 					<details>
@@ -189,8 +189,8 @@
 					<br>
 					<!-- CHANGE THIS PART TO ONCLICK EVENT TO LOAD THE PAGE IN MESSAGES PANEL.
 						DON'T FORGET TO ADD A PROPER PAGE IN VIEWS FOLDER. -->
-					<a href="/dataprotection"><?php echo $translation["DataSecurity"]; ?></a>
-					<a href="/impressum" target="_blank"><?php echo $translation["Impressum"]; ?></a>
+					<a href="dataprotection"><?php echo $translation["DataSecurity"]; ?></a>
+					<a href="impressum" target="_blank"><?php echo $translation["Impressum"]; ?></a>
 				</div>
 
 			</div>
@@ -406,7 +406,7 @@
 		activeModel = model;
 		switch(activeModel){
 			case('gpt-4o'):
-				streamAPI = "/api/stream-api";
+				streamAPI = "api/stream-api";
 				break;
 
 			case('meta-llama-3.1-8b-instruct'):
@@ -414,7 +414,7 @@
 			case('llama-3-sauerkrautlm-70b-instruct'):
 			case('mixtral-8x7b-instruct'):
 			case('qwen2-72b-instruct'):
-				streamAPI = '/api/GWDG-api';
+				streamAPI = 'api/GWDG-api';
 				break;
 		}
 	}
@@ -777,7 +777,7 @@
 		message.content = inputField.value.trim();
 
 		// const feedback_send = "../private/app/php/feedback_send.php";
-		const feedback_send = "/api/feedback_send"
+		const feedback_send = "api/feedback_send"
 		const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
 		fetch(feedback_send, {
@@ -808,7 +808,7 @@
 
 		const pureId = element.dataset.id.replace('.json', ''); // assuming all IDs end with '.json'
 		const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-		const submit_vote = "/api/submit_vote";
+		const submit_vote = "api/submit_vote";
 
 		fetch(submit_vote, {
 			method: 'POST',

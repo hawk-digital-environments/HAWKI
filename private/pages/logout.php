@@ -27,7 +27,7 @@
     }
     else{
         // Redirect to the login page
-        $redirect_uri ='/login';
+        $redirect_uri ='login';
     }
 
     header("Location: $redirect_uri");

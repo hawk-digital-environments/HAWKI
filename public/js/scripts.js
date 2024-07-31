@@ -103,23 +103,23 @@ function SwitchDarkMode(isSet){
 
     if(darkMode === 'enabled'){
         document.documentElement.className = 'darkMode';
-        icon.setAttribute('src', '/public/img/moon.svg');
-        if(hljsTheme != null) hljsTheme.setAttribute('href', "/public/style/hljsDark.css");
+        icon.setAttribute('src', 'public/img/moon.svg');
+        if(hljsTheme != null) hljsTheme.setAttribute('href', "public/style/hljsDark.css");
         
         if(loginBg != null){
             loginBg.style.opacity = "1";
-            loginBg.setAttribute('src', '/public/img/HAWKIBG-DM.m4v');
+            loginBg.setAttribute('src', 'public/img/HAWKIBG-DM.m4v');
         }
         tog.classList.add('active');
     }
     else{
         document.documentElement.className = 'lightMode';
-        icon.setAttribute('src', '/public/img/sun.svg');
-        if(hljsTheme != null) hljsTheme.setAttribute('href', "/public/style/hljsLight.css");
+        icon.setAttribute('src', 'public/img/sun.svg');
+        if(hljsTheme != null) hljsTheme.setAttribute('href', "public/style/hljsLight.css");
         
         if(loginBg != null){
             loginBg.style.opacity = ".5";
-            loginBg.setAttribute('src', '/public/img/HAWKIBG.m4v');
+            loginBg.setAttribute('src', 'public/img/HAWKIBG.m4v');
         }
         tog.classList.remove('active');
     }
