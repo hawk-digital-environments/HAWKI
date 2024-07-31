@@ -17,7 +17,6 @@
 	require_once LIBRARY_PATH . 'auth.php';
 	require_once LIBRARY_PATH . 'language_controller.php';
 
-
 	// Generate CSRF Token
 	if(!isset($_SESSION['csrf_token'])){
 		generate_csrf_token();

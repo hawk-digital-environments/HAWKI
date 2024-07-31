@@ -57,6 +57,11 @@ switch($request_path){
             include_once( LIBRARY_PATH . "stream-api.php");
         }
         exit;
+    case('/api/GWDG-api'):
+        if($_SERVER["REQUEST_METHOD"] == "POST"){
+            include_once( LIBRARY_PATH . "GWDG-stream-api.php");
+        }
+        exit;
 
     default:
         header("Location: /login");

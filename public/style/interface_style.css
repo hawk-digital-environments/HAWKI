@@ -505,6 +505,11 @@
   max-height: 60vh;
   direction: ltr;
 }
+.modal-buttons-bar{
+  display: flex;
+  justify-content: space-between;
+  margin: 1rem 0;
+}
 
 .main-header svg {
   max-width: 24px;
@@ -697,17 +702,59 @@ details svg{
   color: var(--text-color);
 }
 
-#system-prompt-btn{
+
+.input-controlbar{
   position: absolute;
-  left: 1rem;
-  top: -1.5rem;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  margin-bottom: .5rem;
+  min-height: 2rem;
+  background-color: transparent;
+}
+#model-selector{  
+  background-color: var(--secondary-color);
+  color: var(--text-color);
+  min-width: 10rem;
+  max-width: 13rem;
+  min-height: 2rem;
+  border: none;
+  border-radius: 6px;
+  padding: .5rem;
+  box-shadow: 0 0 2rem rgba(0, 0, 0, 0.1);
+}
+
+#delete-chat-confirm{
+  display: none;
+}
+#delete-chat-btn{
+  margin-right: 1rem;
   width: 1.1rem;
   fill: #999;
   cursor: pointer;
 }
+#delete-chat-btn:hover{
+  fill: red;
+}
+
+
+#system-prompt-btn{
+  margin-right: 1rem;
+  width: 1.1rem;
+  fill: #999;
+  cursor: pointer;
+}
+
+#system-prompt-btn:hover{
+  fill: var(--text-color);
+}
 #system-prompt-panel{
   position: absolute;
-  bottom: 100%;
+  bottom: 130%;
   left: 0;
   right: 0;
   margin-bottom: 1rem;
@@ -727,7 +774,7 @@ details svg{
 }
 #system-prompt-title{
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
   column-gap: .75rem;
   align-items: center;
   margin-top: 1rem;
@@ -748,6 +795,15 @@ details svg{
   padding: 0 1rem;
   margin-top: 0.5rem;
 }
+#system-prompt-editButton{
+  display: block;
+}
+#system-prompt-edit-control{
+  display: none;
+  grid-template-columns: 1rem 1rem;
+  column-gap: 1rem;
+}
+
 
 
 label {
@@ -889,6 +945,8 @@ pre{
       padding-top: 1rem;
       padding-bottom: 1rem;
     }
+
+
 
     .limitations{
       padding: 20vmin 1rem;

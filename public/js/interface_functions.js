@@ -21,6 +21,9 @@ function load(element, filename){
         if(filename == "feedback_loader.php"){
             voteHover();
         }
+        if(filename == "chat.php"){
+            loadMessagesFromLocalStorage();
+        }
     });
 
   
@@ -59,10 +62,8 @@ function scrollToLast(forceScroll){
 //#endregion
 
 
-document.querySelectorAll('details').forEach((D,_,A)=>{
-    D.ontoggle =_=>{ if(D.open) A.forEach(d =>{ if(d!=D) d.open=false })}
-})
 
+//#region SYSTEM PROMPT
 let spPanelOpen = false;
 document.addEventListener('click', function(event) {
     const isClickOnPanel = document.getElementById('system-prompt-panel').contains(event.target);
@@ -85,14 +86,17 @@ function ToggleSystemPrompt(activation){
             return
         }
         const systemPrompt = msg.querySelector('.message-content').querySelector('.message-text').innerText;
-        promptText.innerHTML = "&Prime;" + systemPrompt.trim() + "&rdquo;";
-    
+        promptText.innerHTML =  systemPrompt.trim();
+        
         promptPanel.style.display = 'block';
         requestAnimationFrame(() => {
             promptPanel.style.opacity = '1';
         });
     }
     else{
+        if(isEditing){
+            toggleSystemPromptEdit();
+        }
         promptPanel.style.opacity = '0';
         setTimeout(() => {
             promptPanel.style.display = 'none';
@@ -114,3 +118,59 @@ function toggleSystemPromptInfo(){
         info.style.display = 'none';
     }
 }
+
+let isEditing = false;
+
+function confirmSystemPromptEdit(){
+    const newPrompt = document.getElementById('system-prompt').innerText;
+    const msg = document.querySelector('.messages').querySelector('.message');
+    msg.querySelector('.message-content').querySelector('.message-text').innerText = newPrompt;
+    toggleSystemPromptEdit();
+}
+
+function abortSystemPromptEdit(){
+    const msg = document.querySelector('.messages').querySelector('.message');
+    const systemPrompt = msg.querySelector('.message-content').querySelector('.message-text').innerText;
+    document.getElementById('system-prompt').innerText = systemPrompt.trim();
+    toggleSystemPromptEdit();
+}
+
+function toggleSystemPromptEdit(){
+    const editButton = document.getElementById('system-prompt-editButton');
+    const confirmBar = document.getElementById('system-prompt-edit-control');
+    const systemPromptText = document.getElementById('system-prompt');
+
+    if(isEditing === false){
+        editButton.style.display = "none";
+        confirmBar.style.display = "grid";
+        systemPromptText.setAttribute("contenteditable", true);
+        systemPromptText.style.fontStyle = "italic";
+        systemPromptText.focus();
+        
+        var range,selection;
+        if(document.createRange)//Firefox, Chrome, Opera, Safari, IE 9+
+        {
+            range = document.createRange();
+            range.selectNodeContents(systemPromptText);
+            range.collapse(false);
+            selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+        else if(document.selection)//IE 8 and lower
+        { 
+            range = document.body.createTextRange();
+            range.moveToElementText(systemPromptText);
+            range.collapse(false);
+            range.select();
+        }
+    }else{
+        editButton.style.display = "block";
+        confirmBar.style.display = "none";
+        systemPromptText.setAttribute("contenteditable", false);
+        systemPromptText.style.fontStyle = "normal";
+    }
+    isEditing = !isEditing;
+}
+
+//#endregion
