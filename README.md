@@ -39,7 +39,10 @@ Display of mathematical formulas, LaTex and improvement of syntax highlighting.
 
 Dark Mode for our night owls.
 
-System prompts can now be viewed transparently.
+System prompts can now be viewed and edited.
+
+In the new version each room's chatlog is saved by default and should be deleted before starting a new chat.
+
 
 ### Security updates
 
@@ -72,11 +75,6 @@ The new version also supports the Shibboleth for user authentication. Define you
 
 To generate answers HAWKI uses the Open AI api. Follow the instructions on https://platform.openai.com/docs/introduction to generate an API key and paste it in the configuration file like instructed in chapter [Configuration](#configuration).
 
-### Chatlog Storage
-
-In the new version each room's chatlog is saved by default and should be deleted to start a new chat.
-For security reasons the chatlog is stored in the browser's localstorage and also encrypted with the username and server salt to 1. prevent access from outside of HAWKI, 2. prevent access when the same browser is shared between users.
-The stored logs will be deleted after one week by default.
 
 ## Configuration
 
