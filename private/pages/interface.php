@@ -287,7 +287,7 @@
 
 						<p >
 							<span>&Prime;</span>
-							<span contenteditable="true" id="system-prompt"></span>
+							<span contenteditable="true" id="system-prompt" oninput="calculateSystemPromptMaxHeight()"></span>
 							<span>&rdquo;</span>
 						</p>
 					</div>

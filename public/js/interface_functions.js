@@ -173,4 +173,19 @@ function toggleSystemPromptEdit(){
     isEditing = !isEditing;
 }
 
+
+function calculateSystemPromptMaxHeight(){
+    const inputWrapper = document.querySelector('.input-wrapper');
+    const inputHeight = inputWrapper.getBoundingClientRect().height;
+
+    const spPanel = document.getElementById('system-prompt-panel');
+
+    const windowHeight = window.innerHeight;
+    const remInPixels = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const margin = 8 * remInPixels;
+
+    const maxHeight = windowHeight - inputHeight - margin;
+    spPanel.style.maxHeight = `${maxHeight}px`;
+}
+
 //#endregion
