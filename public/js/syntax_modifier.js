@@ -9,47 +9,46 @@
 	let lastClosingIndex = -1;
 	let lastChunk = '';
 	let summedText = '';
-	function InitializeMessage(){
+
+	function InitializeMessage() {
 		isInCodeBlock = false;
 		lastClosingIndex = -1;
 		lastChunk = '';
 		summedText = '';
 	}
-	function FormatChunk(chunk){
+
+	function FormatChunk(chunk) {
 		chunk = escapeHTML(chunk);
 
 		let formattedText = '';
 		let prevText = '';
-		if(lastClosingIndex != -1){
-			prevText = summedText.substring(0 , lastClosingIndex);
+		if (lastClosingIndex != -1) {
+			prevText = summedText.substring(0, lastClosingIndex);
 			formattedText = summedText.substring(lastClosingIndex);
-		}
-		else{
+		} else {
 			formattedText = summedText;
 		}
 
-		if(isInCodeBlock){
-			//END OF CODE BLOCK
-			if(chunk == '``'){
+		if (isInCodeBlock) {
+			// END OF CODE BLOCK
+			if (chunk === '``') {
 				isInCodeBlock = false;
-			}
-			else{
+				formattedText += '</code></pre>';
+			} else {
 				formattedText = formattedText.replace('</code></pre>', '');
 				formattedText += (chunk + '</code></pre>');
 			}
-		}else{
+		} else {
 			// START OF CODE BLOCK
-			//Code Syntax Detected
-			if(chunk == '```'){
+			if (chunk === '```') {
 				isInCodeBlock = true;
 				formattedText += '<pre><code ignore_Format>';
-			}
-			else{
-				if(chunk.includes('`') && lastChunk == '``'){
+			} else {
+				if (chunk.includes('`') && lastChunk === '``') {
 					chunk = chunk.replace('`', '');
 					lastClosingIndex = summedText.length;
-				}  
-				//Plain Text
+				}
+				// Plain Text
 				formattedText += chunk;
 			}
 		}
@@ -58,37 +57,35 @@
 		return ReplaceMarkdownSyntax(summedText);
 	}
 
-
 	function ReplaceMarkdownSyntax(text) {
-		// Match Markdown code block syntax
 		const codeBlockRegex = /<pre><code\s+ignore_Format>([\s\S]+?)<\/code><\/pre>/g;
+		const codeBlocks = [];
 
 		// Replace Markdown code blocks with placeholders
-		const codeBlocks = [];
 		text = text.replace(codeBlockRegex, (match, content) => {
 			codeBlocks.push(content);
 			return `[[[[CODEBLOCK_${codeBlocks.length - 1}]]]]`;
 		});
-		
-		//replace bold and italic (*text* or ___text___)
+
+		// Replace bold and italic (*text* or ___text___)
 		text = text.replace(/\*\*\*(.*?)\*\*\*/g, '<b><i>$1</i></b>');
 		text = text.replace(/___(.*?)___/g, '<b><i>$1</i></b>');
 
-		//replace only bold (text or __text__)
+		// Replace only bold (**text** or __text__)
 		text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 		text = text.replace(/__(.*?)__/g, '<b>$1</b>');
 
-		//replace only italic (*text* or _text_)
+		// Replace only italic (*text* or _text_)
 		text = text.replace(/\*(.*?)\*/g, '<i>$1</i>');
 		text = text.replace(/_(.*?)_/g, '<i>$1</i>');
-		
-		// Replace Striketrough
-		text = text.replace(/~~(.*?)~~/g, "<del>$1</del>");
 
-		// // Links
+		// Replace Strikethrough
+		text = text.replace(/~~(.*?)~~/g, '<del>$1</del>');
+
+		// Links
 		text = text.replace(/\[([^\]]+)\]\(([^\)]+)\)/g, '<a href="$2">$1</a>');
 
-		//     // Headings
+		// Headings
 		text = text.replace(/(?<![^\s])(######\s?(.*))/g, '<h3>$2</h3>');
 		text = text.replace(/(?<![^\s])(#####\s?(.*))/g, '<h3>$2</h3>');
 		text = text.replace(/(?<![^\s])(####\s?(.*))/g, '<h3>$2</h3>');
@@ -96,35 +93,22 @@
 		text = text.replace(/(?<![^\s])(##\s?(.*))/g, '<h3>$2</h3>');
 		text = text.replace(/(?<![^\s])(#\s?(.*))/g, '<h3>$2</h3>');
 
-		//HANDLE MARKDOWN TABLES
-		// Match Markdown table syntax
+		// HANDLE MARKDOWN TABLES
 		const tableRegex = /(\|.*\|)\n(\|.*\|)(\n\|\s*:?-+:?\s*)*\n((\|.*\|)\n*)+/g;
-
-		// Replace Markdown table with HTML table
 		text = text.replace(tableRegex, (match) => {
-			// Check if inside code block
 			if (match.includes('[[[[CODEBLOCK_')) {
-				return match; // If inside code block, return as is
+				return match;
 			}
 
 			const rows = match.split('\n').filter(Boolean);
-
-			// Remove leading/trailing pipes and split rows into cells
 			const cells = rows.map(row => row.replace(/^\||\|$/g, '').split('|').map(cell => cell.trim()));
-
-
-			// Filter out rows containing only dashes
 			const filteredCells = cells.filter(row => !row.every(cell => /^-+$/.test(cell)));
-
-			// Determine header row
 			const headerRow = filteredCells.shift();
 
-			// Build HTML table
 			let html = '<table>\n<thead>\n<tr>\n';
 			html += headerRow.map(cell => `<th>${cell}</th>`).join('\n');
 			html += '\n</tr>\n</thead>\n<tbody>\n';
 
-			// Add rows
 			filteredCells.forEach(row => {
 				html += '<tr>\n';
 				row.forEach(cell => {
@@ -133,7 +117,6 @@
 				html += '</tr>\n';
 			});
 
-			// Close table tags
 			html += '</tbody>\n</table>\n';
 
 			return html;
@@ -146,7 +129,6 @@
 
 		return text;
 	}
-
 
 	function escapeHTML(text) {
 		return text.replace(/["&'<>]/g, function (match) {
@@ -161,21 +143,18 @@
 	}
 
 	function FormatMathFormulas() {
-		element = document.querySelector(".message:last-child").querySelector(".message-text");
-		
+		const element = document.querySelector(".message:last-child").querySelector(".message-text");
+
 		renderMathInElement(element, {
-		// customised options
-		// • auto-render specific keys, e.g.:
 			delimiters: [
-				{left: '$$', right: '$$', display: true},
-				{left: '$', right: '$', display: false},
-				{left: '\\(', right: '\\)', display: false},
-				{left: '\\[', right: '\\]', display: true}
+				{ left: '$$', right: '$$', display: true },
+				{ left: '$', right: '$', display: false },
+				{ left: '\\(', right: '\\)', display: false },
+				{ left: '\\[', right: '\\]', display: true }
 			],
-			displayMode : true,
+			displayMode: true,
 			ignoredClasses: ["ignore_Format"],
-			// • rendering keys, e.g.:
-			throwOnError : true
+			throwOnError: true
 		});
 	}
 
@@ -187,4 +166,12 @@
 			return false;
 		}
 	}
-	//#endregion
+
+	function FormatWholeMessage(message){
+		const codeBlockRegex = /```(.*?)```/gs;
+		const html = message.replace(codeBlockRegex, (match, p1) => {
+		  return `<pre><code ignore_Format>${p1}</code></pre>`;
+		});
+		return ReplaceMarkdownSyntax(html);
+	}
+//#endregion

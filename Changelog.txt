@@ -1,5 +1,10 @@
 CHANGE LOG:
 
+31.07.2024
+
+    - Open Source Models Connection (API and Endpoint adjustable from .env)
+    - Chatlog is saved on the localstorage
+
 16.04.2024 Changelog – HAWKI V1. 
 
     - Multi language package added.

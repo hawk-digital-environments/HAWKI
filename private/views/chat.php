@@ -50,3 +50,17 @@
 	   <div class="message-text"><?php echo $translation["System_Content"]; ?></div>
    </div>
 </div>
+
+<div class="modal" id="delete-chat-confirm">
+  <div class="modal-panel">
+    <div class="modal-content">
+      	<h3>
+        	<?php echo $translation["deleteChat"]; ?>
+		</h3>
+		<div class="modal-buttons-bar">
+			<button onclick="cancelDelete()"><?php echo $translation["cancel"]; ?></button>
+			<button onclick="deleteChatLog()"><?php echo $translation["delete"]; ?></button>
+		</div>
+    </div>
+  </div>
+</div>

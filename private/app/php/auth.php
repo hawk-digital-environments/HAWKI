@@ -14,7 +14,7 @@
             //REGENERATE SESSION ID
             session_regenerate_id();
 
-            header("Location: /interface");
+            header("Location: interface");
             exit;
         } else {
             // Redirect user to shibboleth login page.

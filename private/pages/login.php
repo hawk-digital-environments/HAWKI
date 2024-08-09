@@ -17,7 +17,6 @@
 	require_once LIBRARY_PATH . 'auth.php';
 	require_once LIBRARY_PATH . 'language_controller.php';
 
-
 	// Generate CSRF Token
 	if(!isset($_SESSION['csrf_token'])){
 		generate_csrf_token();
@@ -30,7 +29,7 @@
 
 	// Check if the user is already logged in
 	if (isset($_SESSION['username'])) {
-		header("Location: /interface");
+		header("Location: interface");
 		exit;
 	}
 
@@ -49,11 +48,11 @@
 		
 		<title>HAWKI</title>
 
-		<link rel="stylesheet" href="/public/style/style.css">
-		<link rel="stylesheet" href="/public/style/login_style.css">
-		<link rel="stylesheet" href="/public/style/settings_style.css">
+		<link rel="stylesheet" href="public/style/style.css">
+		<link rel="stylesheet" href="public/style/login_style.css">
+		<link rel="stylesheet" href="public/style/settings_style.css">
 		
-		<script src="/public/js/scripts.js"></script>
+		<script src="public/js/scripts.js"></script>
 		
 		<!-- TO PREVENT FOUC WHEN RELOADING THE PAGE IN DARK MODE
 			THE SETTINGS AND IT'S START FUNCTIONS SHOULD BE INCLUDED IN THE HEADER BEFORE THE PAGE IS LOADED -->
@@ -69,7 +68,7 @@
 			<div class= "sidebar">
 				
 				<div class="loginPanel">
-					<img id="HAWK_logo" src="/public/img/logo.svg" alt="">
+					<img id="HAWK_logo" src="public/img/logo.svg" alt="">
 					<h3><?php echo $translation["welcomeBackTitle"]; ?></h3>
 					<?php
 						if (file_exists(ENV_FILE_PATH)){
@@ -80,7 +79,7 @@
 							// Open ID Connect
 							$login_available = true;
 							echo
-							"<form action='/oidc_login' class='column' method='post'>
+							"<form action='oidc_login' class='column' method='post'>
 								<button>" . $translation['Login'] . "</button>
 							</form>";
 						}
@@ -123,8 +122,8 @@
 					</div>
 
 					<div class="impressumPanel">
-						<a href="/dataprotection" target="_blank"><?php echo $translation["dataProtection"]; ?></a>
-						<a href="/impressum" target="_blank"><?php echo $translation["imprint"]; ?></a>
+						<a href="dataprotection" target="_blank"><?php echo $translation["dataProtection"]; ?></a>
+						<a href="impressum" target="_blank"><?php echo $translation["imprint"]; ?></a>
 					</div>
 				</div>
 			</div>
@@ -140,7 +139,7 @@
 					</form>
 				</div>
 				<div class="backgroundImageContainer">
-					<video class="image_preview_container" src="/public/img/HAWKIBG.m4v" type="video/m4v" preload = "none" autoplay loop muted></video>
+					<video class="image_preview_container" src="public/img/HAWKIBG.m4v" type="video/m4v" preload = "none" autoplay loop muted></video>
 				</div>
 			</main>
 		</div>

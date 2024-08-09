@@ -35,7 +35,7 @@ $_SESSION['initials'] = $initials;
 
 $_SESSION['username'] = $oidc->requestUserInfo('email');
 
-header("Location: /interface");
+header("Location: interface");
 exit();
 
 ?>

@@ -39,7 +39,10 @@ Display of mathematical formulas, LaTex and improvement of syntax highlighting.
 
 Dark Mode for our night owls.
 
-System prompts can now be viewed transparently.
+System prompts can now be viewed and edited.
+
+In the new version each room's chatlog is saved by default and should be deleted before starting a new chat.
+
 
 ### Security updates
 
@@ -72,6 +75,7 @@ The new version also supports the Shibboleth for user authentication. Define you
 
 To generate answers HAWKI uses the Open AI api. Follow the instructions on https://platform.openai.com/docs/introduction to generate an API key and paste it in the configuration file like instructed in chapter [Configuration](#configuration).
 
+
 ## Configuration
 
 To get started you need to add a configuration file to the project first. Copy the file ".env.example" from the root directory and rename it to ".env". Replace the example values in it with your own configuration. A detailed description of all values is listed below.
@@ -91,14 +95,18 @@ To get started you need to add a configuration file to the project first. Copy t
 | OIDC_CLIENT_ID    | string  | "..."                                  | Client Id for this application in Identity provider.                                                                                               |
 | OIDC_CLIENT_SECRET | string  | "..."                                 | Secret key for OpenID Connect. 
 | OIDC_LOGOUT_URI | string  | "https://...."                                 | URL to logout from Identity provider                                                                                                                  |
-| OPENAI_API_URL   | string  | "https://api.openai.com/v1/chat/completions" | Open AI URL                                                                                                                                    |
+| MODEL_SELECTOR_ACTIVATION   | string  | "true" | Set to true to activate dropdown. Deactivated Dropdown will force Gpt-4-0 as default model.                                                                                                                                    |
+| OPENAI_API_URL   | string  | "https://api.openai.com/v1/chat/completions" | Open AI Endpoint URL                                                                                                                                    |
 | OPENAI_API_KEY   | string  | sk-...                                 | Open AI Api key                                                                                                                                    |
+| GWDG_API_URL   | string  | "https://api.openai.com/v1/chat/completions" | GWDG Endpoint URL                                                                                                                                    |
+| GWDG_API_KEY   | string  |                                 | GWDG Api key                                                                                                                                     |
 | IMPRINT_LOCATION | string  | https://your-university/imprint        | A link to your imprint. Alternatively you can replace the file index.php under /impressum with your own html/ php of your imprint.                 |
 | PRIVACY_LOCATION | string  | https://your-university/privacy-policy | A link to your privacy policy. Alternatively you can replace the file index.php under /datenschutz with your own html/ php of your privacy policy. |
 | TESTUSER         | string | "tester"                                | Set value for testing purposes. Leave TESTUSER and TESTPASSWORD empty or comment them out to disable test user.                    |
 | TESTPASSWORD         | string | "superlangespasswort123"  | Set value for testing purposes. Leave TESTUSER and TESTPASSWORD empty or comment them out to disable test user.                           |
 | FAVICON_URI  | string  | "https://...."                                 | Link to favicon |
 | DEFAULT_LANGUAGE  | string  | "de_DE"/ "en_US"/ "es_ES"/ "fr_FR"/ "it_IT"               | Default website language. Only applicable if the user has not previously changed the language or their browser language is not one of the supported languages. Current supported languages: 'de_DE', 'en_US', 'es_ES', 'fr_FR', 'it_IT'  |
+| CHATLOG_ENCRYPTION_SALT | string | ... | Set a strong salt specific to your application. This will be user to encrypt users' chatlogs in localstorage.|
 ## Web Server Configuration
 
 There are a few things to keep in mind when publishing your HAWKI instance on a webserver.
