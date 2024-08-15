@@ -2,13 +2,13 @@
 	// Secure session (optional, depends on the application's specific needs)
 	ini_set('session.cookie_httponly', 1);
 	ini_set('session.use_only_cookies', 1);
-	if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-		ini_set('session.cookie_secure', 1);
-	}
-	session_set_cookie_params([
-		'secure' => true,     // cookies are sent over secure connections only
-		'httponly' => true,   // cookies are accessible only through the HTTP protocol
-	]);
+	// if(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+	// 	ini_set('session.cookie_secure', 1);
+	// }
+	// session_set_cookie_params([
+	// 	'secure' => true,     // cookies are sent over secure connections only
+	// 	'httponly' => true,   // cookies are accessible only through the HTTP protocol
+	// ]);
 
 	session_start();
 
