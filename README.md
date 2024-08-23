@@ -89,6 +89,7 @@ To get started you need to add a configuration file to the project first. Copy t
 | LDAP_SEARCH_DN   | string  | "ou=...,dc=..."                        | Distinguished name that is used for authenticating users.                                                                                          |
 | LDAP_PORT  | string  | "..."                        | The LDAP port.                                                                                          |
 | LDAP_FILTER  | string  | "..."  | LDAP Filter. Choose the filter based on your LDAP configuration. See .env.example for more details.|
+| LDAP_DEFAULT_INITIALS  | string  | "ABC"  | User initials to use for every user. If not set, try to compute initials from LDAP displayname.|
 | SHIBBOLET_LOGIN_PATH    | string  | "..."                                  | Path to shibboleth login page.                                                                                               |
 | SHIBBOLET_LOGIN_PAGE    | string  | "..."                                  | Shibboleth login page.                                                                                               |
 | OIDC_IDP          | string  | "https://...."                         | URL of the Identity provider supporting OpenID Connect.                                                                                            |
