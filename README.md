@@ -101,7 +101,6 @@ To get started you need to add a configuration file to the project first. Copy t
 | OPENAI_API_KEY   | string  | sk-...                                 | Open AI Api key                                                                                                                                    |
 | GWDG_API_URL   | string  | "https://api.openai.com/v1/chat/completions" | GWDG Endpoint URL                                                                                                                                    |
 | GWDG_API_KEY   | string  |                                 | GWDG Api key                                                                                                                                     |
-| FEEDBACK_EMAIL | string  | noreply@example.com        | Replaces the builtin feedback form with a mailto: hyperlink.                 |
 | IMPRINT_LOCATION | string  | https://your-university/imprint        | A link to your imprint. Alternatively you can replace the file index.php under /impressum with your own html/ php of your imprint.                 |
 | PRIVACY_LOCATION | string  | https://your-university/privacy-policy | A link to your privacy policy. Alternatively you can replace the file index.php under /datenschutz with your own html/ php of your privacy policy. |
 | TESTUSER         | string | "tester"                                | Set value for testing purposes. Leave TESTUSER and TESTPASSWORD empty or comment them out to disable test user.                    |

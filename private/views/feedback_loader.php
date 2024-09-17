@@ -1,10 +1,5 @@
 <?php 
 
-if (isset($env['FEEDBACK_EMAIL']) && !empty($env['FEEDBACK_EMAIL'])) {
-    # Deactivate feedback form if feedback email is used
-    exit;
-}
-
 if (session_status() == PHP_SESSION_NONE) {
     
 }
