@@ -10,10 +10,13 @@
                 <h1><?php echo $translation["guideline_Title"]; ?></h1>
 
                 <?php echo $translation["usage_guideline"]; ?>
-                <br>
-                <button onclick="modalClick(this)" ><?php echo $translation["confirmButton"]; ?></button>
-
-                <br>
+                <p>
+                    <?php echo $translation["usage_guideline_confirm_request"]; ?>
+                    <div class="modal-buttons-bar">
+                        <button onclick="window.location.href='logout'"><?php echo $translation["disagree"]; ?></button>
+                        <button onclick="modalClick(this)" ><?php echo $translation["agree"]; ?></button>
+                    </div>
+                </p>
                 <br>
             </div>
         </div>

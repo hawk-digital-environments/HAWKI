@@ -121,10 +121,16 @@
             // Close LDAP connection
             ldap_close($ldapConn);
 
-            // Extract initials from user's display name
-            $name = $info[0]["displayname"][0];
-            $parts = explode(", ", $name);
-            $initials = substr($parts[1], 0, 1) . substr($parts[0], 0, 1);
+            // Get username
+            if (isset($env['LDAP_DEFAULT_INITIALS']) && !empty($env['LDAP_DEFAULT_INITIALS'])) {
+                // Use default initials
+                $initials = $env['LDAP_DEFAULT_INITIALS'];
+            } else {
+                // Extract initials from user's display name
+                $name = $info[0]["displayname"][0];
+                $parts = explode(", ", $name);
+                $initials = substr($parts[1], 0, 1) . substr($parts[0], 0, 1);
+            }
 
             // Set session variables
             $_SESSION['username'] = $initials;
