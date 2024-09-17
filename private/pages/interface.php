@@ -206,9 +206,9 @@
 				<div class="input">
 
 					<div class="input-controlbar">
-						<?php 
-							if(isset($env) ? $env["MODEL_SELECTOR_ACTIVATION"] : getenv("MODEL_SELECTOR_ACTIVATION") && $env["MODEL_SELECTOR_ACTIVATION"] === "true"){
-								echo					
+						<?php
+							if(isset($env) ? array_key_exists("MODEL_SELECTOR_ACTIVATION", $env) && $env["MODEL_SELECTOR_ACTIVATION"] === "true" : strtolower(getenv("MODEL_SELECTOR_ACTIVATION")) === "true"){
+								echo
 									'<select id="model-selector" onchange="OnDropdownModelSelection()">
 										<option value="gpt-4o">OpenAI GPT-4o</option>
 										<option value="meta-llama-3.1-8b-instruct">meta-llama-3.1-8b-instruct</option>
