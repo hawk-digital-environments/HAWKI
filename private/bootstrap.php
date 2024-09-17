@@ -2,7 +2,7 @@
     defined('PRIVATE_PATH') || define('PRIVATE_PATH', $_SERVER['DOCUMENT_ROOT']. '/private');
     defined('APPLICATION_PATH') || define('APPLICATION_PATH', PRIVATE_PATH . '/app');
     defined('BASE_URL') || define('BASE_URL', 'localhost:8000/');
-    
+
     define('ENV_FILE_PATH', PRIVATE_PATH . '/.env');
     define('LIBRARY_PATH', APPLICATION_PATH . '/'. 'php/');
     define('RESOURCES_PATH', PRIVATE_PATH . '/' . 'resources/');
@@ -18,3 +18,6 @@
     define('VIEWS_PATH', PRIVATE_PATH . '/' . 'views/' );
     define('LAGNUAGE_CONTROLLER_PATH', LIBRARY_PATH . 'language_controller.php');
     define('LANGUAGE_PATH', RESOURCES_PATH . 'language/');
+    define('CUSTOM_PATH', PRIVATE_PATH . '/' . 'custom/');
+    define('CUSTOM_LANGUAGE_PATH', CUSTOM_PATH . 'language/');
+
