@@ -90,8 +90,9 @@ To get started you need to add a configuration file to the project first. Copy t
 | LDAP_PORT  | string  | "..."                        | The LDAP port.                                                                                          |
 | LDAP_FILTER  | string  | "..."  | LDAP Filter. Choose the filter based on your LDAP configuration. See .env.example for more details.|
 | LDAP_DEFAULT_INITIALS  | string  | "ABC"  | User initials to use for every user. If not set, try to compute initials from LDAP displayname.|
-| SHIBBOLET_LOGIN_PATH    | string  | "..."                                  | Path to shibboleth login page.                                                                                               |
-| SHIBBOLET_LOGIN_PAGE    | string  | "..."                                  | Shibboleth login page.                                                                                               |
+| SHIBBOLETH_LOGIN_PATH    | string  | "..."                                  | Path to shibboleth login page.                                                                                               |
+| SHIBBOLETH_LOGIN_PAGE    | string  | "..."                                  | Shibboleth login page.                                                                                               |
+| SHIBBOLETH_LOGOUT_URL    | string  | "..."                                  | Shibboleth logout url.                                                                                               |
 | OIDC_IDP          | string  | "https://...."                         | URL of the Identity provider supporting OpenID Connect.                                                                                            |
 | OIDC_CLIENT_ID    | string  | "..."                                  | Client Id for this application in Identity provider.                                                                                               |
 | OIDC_CLIENT_SECRET | string  | "..."                                 | Secret key for OpenID Connect. 
@@ -99,7 +100,7 @@ To get started you need to add a configuration file to the project first. Copy t
 | MODEL_SELECTOR_ACTIVATION   | string  | "true" | Set to true to activate dropdown. Deactivated Dropdown will force Gpt-4-0 as default model.                                                                                                                                    |
 | OPENAI_API_URL   | string  | "https://api.openai.com/v1/chat/completions" | Open AI Endpoint URL                                                                                                                                    |
 | OPENAI_API_KEY   | string  | sk-...                                 | Open AI Api key                                                                                                                                    |
-| GWDG_API_URL   | string  | "https://api.openai.com/v1/chat/completions" | GWDG Endpoint URL                                                                                                                                    |
+| GWDG_API_URL   | string  | "https://chat-ai.academiccloud.de/v1/chat/completions" | GWDG Endpoint URL                                                                                                                                    |
 | GWDG_API_KEY   | string  |                                 | GWDG Api key                                                                                                                                     |
 | IMPRINT_LOCATION | string  | https://your-university/imprint        | A link to your imprint. Alternatively you can replace the file index.php under /impressum with your own html/ php of your imprint.                 |
 | PRIVACY_LOCATION | string  | https://your-university/privacy-policy | A link to your privacy policy. Alternatively you can replace the file index.php under /datenschutz with your own html/ php of your privacy policy. |
