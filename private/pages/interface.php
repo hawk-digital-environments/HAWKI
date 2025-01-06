@@ -583,17 +583,16 @@
 
 				let chunks = decodedData.split("data: ");
 				chunks.forEach((chunk, index) => {
-
+					
+					if(chunk.length == 0) return false;
 					if(!isJSON(chunk)){
 						return;
 					}
-					if(chunk.indexOf('finish_reason":"stop"') > 0) return false;
-					if(chunk.indexOf('DONE') > 0) return false;
-					if(chunk.indexOf('role') > 0) return false;
-					if(chunk.length == 0) return false;
+					const jsonChunk = JSON.parse(chunk);
+					if(jsonChunk["choices"][0]["finish_reason"] != null) return false;
 					
-					rawMsg += JSON.parse(chunk)["choices"][0]["delta"].content;
-					document.querySelector(".message:last-child").querySelector(".message-text").innerHTML =  FormatChunk(JSON.parse(chunk)["choices"][0]["delta"].content);
+					rawMsg += jsonChunk["choices"][0]["delta"].content;
+					document.querySelector(".message:last-child").querySelector(".message-text").innerHTML =  FormatChunk(jsonChunk["choices"][0]["delta"].content);
 
 				})
 
