@@ -11,16 +11,20 @@ With HAWKI2, our university's own data protection-compliant platform for generat
 ### What's new in HAWKI 2?
 
 
-- Group chats for peer-to-peer qualification University members can now exchange ideas in interactive chat rooms—similar to WhatsApp—and additionally integrate the generative AI at any time by addressing it as an additional participant in the group. This not only facilitates extended collaboration but also provides all participants the opportunity to use and understand the generative AI together.
+- Group chats for peer-to-peer qualification 
+University members can now exchange ideas in interactive chat rooms—similar to WhatsApp—and additionally integrate the generative AI at any time by addressing it as an additional participant in the group. This not only facilitates extended collaboration but also provides all participants the opportunity to use and understand the generative AI together.
 
 
-- Export function with intelligent summarization The new automated documentation of prompts creates transparency in AI-supported work processes—an important step for use in examinations and scientific work.
+- Export function with intelligent summarization 
+The new automated documentation of prompts creates transparency in AI-supported work processes—an important step for use in examinations and scientific work.
 
 
-- Modular architecture for rapid development HAWKI 2 is designed so that new features can be integrated even more quickly and flexibly. This allows educational institutions that use HAWKI to tailor the platform to their specific needs. We will be adding new features at short intervals!
+- Modular architecture for rapid development 
+HAWKI 2 is designed so that new features can be integrated even more quickly and flexibly. This allows educational institutions that use HAWKI to tailor the platform to their specific needs. We will be adding new features at short intervals!
 
 
-- Various model options By allowing the use of different language models, HAWKI opens up to intercultural perspectives and more diverse use cases in university teaching. The differently trained language models are suitable for engaging with the values, norms, cultures, and biases within their respective models.
+- Various model options 
+By allowing the use of different language models, HAWKI opens up to intercultural perspectives and more diverse use cases in university teaching. The differently trained language models are suitable for engaging with the values, norms, cultures, and biases within their respective models.
 
 
 ### Why HAWKI 2?
