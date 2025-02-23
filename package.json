@@ -1,0 +1,35 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "init": "npm install && composer install && node scripts/create-env-file.js && php artisan migrate && php artisan db:seed",
+        "reset-db": "php artisan migrate:fresh && php artisan db:seed",
+        "start": "conc -c auto -p \"[{time} {name}]\" npm:start:*",
+        "start:reverb": "php artisan Reverb:start",
+        "start:serve": "php artisan serve",
+        "start:queue-default": "php artisan queue:work",
+        "start:queue-mails": "php artisan queue:work --queue=mails",
+        "start:queue-message_broadcast": "php artisan queue:work --queue=message_broadcast",
+        "start:vite": "vite",
+        "build:vite": "vite build"
+    },
+    "devDependencies": {
+        "concurrently": "^9.1.0",
+        "laravel-echo": "^1.16.1",
+        "laravel-vite-plugin": "^1.0.5",
+        "pusher-js": "^8.4.0-rc2",
+        "shelljs": "^0.8.5",
+        "vite": "^5.4.0"
+    },
+    "dependencies": {
+        "cropperjs": "^1.6.2",
+        "docx": "^9.0.3",
+        "highlight.js": "^11.10.0",
+        "jquery": "^3.7.1",
+        "jspdf": "^2.5.2",
+        "katex": "^0.16.15",
+        "laravel-echo": "^1.16.1",
+        "markdown-it": "^14.1.0",
+        "pusher-js": "^8.4.0-rc2"
+    }
+}

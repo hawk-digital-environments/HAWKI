@@ -1,0 +1,26 @@
+{
+    "lightmode": [
+        {
+            "creator": "Vincent",
+            "file": "vincent-lightmode.mp4",
+            "link": "https://www.instagram.com/vincentvolitant/"
+        },
+        {
+            "creator": "ilithya",
+            "file": "ilithya-lightmode.mp4",
+            "link": "https://www.instagram.com/ilithya_rocks/"
+        }
+    ],
+    "darkmode": [
+        {
+            "creator": "Vincent",
+            "file": "vincent-darkmode.mp4",
+            "link": "https://www.instagram.com/vincentvolitant/"
+        },
+        {
+            "creator": "ilithya",
+            "file": "ilithya-darkmode.mp4",
+            "link": "https://www.instagram.com/ilithya_rocks/"
+        }
+    ]
+}

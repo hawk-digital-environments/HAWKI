@@ -1,0 +1,95 @@
+@import url('./gfont-firesans/firesans.css');
+@import url('custom-styles.css');
+* {
+    -ms-overflow-style: none;
+    font-family: "Fira Sans", sans-serif;
+    line-height: 1.5;
+    box-sizing: border-box;
+}
+
+@page {
+    margin-top: 1.5cm;
+    margin-bottom: 2.5cm;
+    margin-left: 1cm;
+    margin-right: 1cm;
+}
+
+h1{
+    margin-top: 4rem;
+    margin-bottom: 0;
+}
+h3{
+    margin-top: 2rem;
+}
+
+.wrapper{
+    margin-top: 4rem;
+    margin-bottom: 5rem;
+    margin-left: 3rem;
+    margin-right: 3rem;
+}
+
+.thread{
+    display: flex;
+    flex-direction: column;
+    row-gap: 3rem;
+}
+
+.date_span{
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    width: 100%;
+    font-size: var(--font-md);
+    font-weight: 400;
+}
+
+.branch .message{
+    page-break-inside:avoid;
+
+}
+.message-author{
+    font-style: italic;
+    font-size: var(--font-md);
+    font-weight: 600;
+
+}
+
+.branch{
+    padding-left: 3rem;
+    border-left: var(--border-stroke-thin);
+}
+
+
+pre {
+    background: var(--code-background);
+    border: var(--border-stroke-thin);
+    border-radius: var(--border-radius-tight);
+    overflow-x: hidden;
+    text-wrap: wrap;
+}
+  
+pre code.hljs {
+    display: block;
+    overflow-x: auto;
+    padding: 1em;
+}
+  
+code.hljs {
+    padding: 3px 5px;
+}
+  
+.hljs-code-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    text-transform: capitalize;
+    
+    padding-top: .25rem;
+    padding-bottom: .25rem;
+    padding-left: 1rem;
+    padding-right: 0;
+  
+    border-bottom: var(--border-stroke-thin);
+    font-size: var(--font-xs);
+}
