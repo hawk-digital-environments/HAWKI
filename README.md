@@ -28,7 +28,7 @@ HAWKI 2 is designed so that new features can be integrated even more quickly and
 
 - Various model options
   
-By allowing the use of different language models, HAWKI opens up to intercultural perspectives and more diverse use cases in university teaching. The differently trained language models are suitable for engaging with the values, norms, cultures, and biases within their respective models.
+By allowing the use of different language models, HAWKI opens up to intercultural perspectives and more diverse use cases in university teaching. The differently trained language models are suitable for engaging with the values, norms, cultures, and biases within their respective models. We provide a connection for the models of OpenAI, Google and various models hosted by the GWDG (for example DeepSeek or Meta Llama).
 
 
 ### Why HAWKI 2?
