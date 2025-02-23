@@ -5,6 +5,9 @@
 With HAWKI2, our university's own data protection-compliant platform for generative AI enters the next phase of development. The new version offers numerous improvements through even stronger integration into everyday university life, focusing on flexibility, transparency, and collaboration.
 
 
+![A laptop that shows the new version of HAWKI](https://github.com/user-attachments/assets/120488e9-5ce2-4a3f-be5b-aa57bf4a2438)
+
+
 ### What's new in HAWKI 2?
 
 
