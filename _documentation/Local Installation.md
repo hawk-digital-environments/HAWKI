@@ -1,11 +1,4 @@
----
-sidebar_position: 1
----
 
-This chapter of the documentation focuses on setting up and running HAWKI 2.0 on your local system.\
-
-
----
 ### Pre Requirements
 
 HAWKI 2.0 utilizes the Laravel 11 backend framework. To run HAWKI on your local machine, it is essential to ensure that all Laravel prerequisites are installed. Specifically, you need PHP, Composer, and Node.js (including npm) on your system. For comprehensive setup instructions, please refer to the [laravel documentation](https://laravel.com/docs/11.x).

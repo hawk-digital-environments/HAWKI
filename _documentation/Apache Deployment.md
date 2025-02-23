@@ -1,11 +1,3 @@
----
-sidebar_position: 1
----
-
-
-This chapter provides detailed instructions for deploying HAWKI on an apache web server.
-
----
 
 ### Server Preparation
 
