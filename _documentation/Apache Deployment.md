@@ -199,6 +199,14 @@ For encryption purposes, HAWKI utilises individual salts for each component. Tho
 |BACKUP_SALT  | base64:RandomHash== |
 
 
+**Add Data Protection and Imprint**
+
+Data protection and imprint notes are linked in the login page. To set your organization specific legal notes:
+
+1- In the .env file find `IMPRINT_LOCATION` and add the URL to your organization imprint page.
+
+2- Locate DataProtection Files in the `/resources/language` folder and add the data protection notes for each language **in HTML format**.
+
 
 **Adding API Keys**
 

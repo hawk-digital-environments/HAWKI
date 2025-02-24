@@ -82,8 +82,6 @@ class LdapService
                     $userInfo[$appAttr] = 'Unknown';
                 }
             }
-            
-            Log::debug($userInfo);
 
             // Example specific logic for display name
             if (isset($userInfo['displayname'])) {

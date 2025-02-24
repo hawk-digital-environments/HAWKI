@@ -140,5 +140,10 @@ class HomeController extends Controller
         }
     }
     
+
+    public function dataprotectionIndex(Request $request){
+        $translation = $this->languageController->getTranslation();
+        return view('layouts.dataprotection', compact('translation'));
+    }
 }
 

@@ -41,7 +41,7 @@
             </button>
             <div class="impressumPanel">
                 <a href="/dataprotection" target="_blank">{{ $translation["DataProtection"] }}</a>
-                <a href="https://www.hawk.de/de/hochschule/download-und-servicecenter/impressum" target="_blank">{{ $translation["Impressum"] }}</a>
+                <a href="{{ env("IMPRINT_LOCATION") }}" target="_blank">{{ $translation["Impressum"] }}</a>
             </div>
         </div>
 
