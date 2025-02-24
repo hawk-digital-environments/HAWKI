@@ -11,7 +11,9 @@
         "start:queue-mails": "php artisan queue:work --queue=mails",
         "start:queue-message_broadcast": "php artisan queue:work --queue=message_broadcast",
         "start:vite": "vite",
-        "build:vite": "vite build"
+        "build:vite": "vite build",
+        "dev": "vite",
+        "build": "vite build"
     },
     "devDependencies": {
         "concurrently": "^9.1.0",
