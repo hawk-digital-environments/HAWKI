@@ -80,7 +80,9 @@ class ModelConnectionService
             $onData($data);
             // Flush the output buffer to ensure the client receives the data immediately
 
-            ob_flush();
+            if (ob_get_length()) {
+                ob_flush();
+            }
             flush();
             
             return strlen($data);
