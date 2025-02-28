@@ -9,7 +9,7 @@
 
 
     "Cnf_deleteConv": "Möchtest du dieses Gespräch wirklich löschen?",
-    "CnfRoom": "Möchtest du diesen Raum wirklich löschen?",
+    "Cnf_deleteRoom": "Möchtest du diesen Raum wirklich löschen?",
     "Cnf_leaveRoom": "Möchtest du diesen Raum wirklich verlassen?",
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
     

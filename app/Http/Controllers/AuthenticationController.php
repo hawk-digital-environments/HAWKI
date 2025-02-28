@@ -105,6 +105,68 @@ class AuthenticationController extends Controller
         }
     }
 
+
+    public function shibbolethLogin(Request $request)
+    {
+        try {
+            $authenticatedUserInfo = $this->shibbolethService->authenticate($request);
+    
+            if (!$authenticatedUserInfo) {
+                return response()->json(['error' => 'Login Failed!'], 401);
+            }
+    
+            Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+    
+            $user = User::where('username', $authenticatedUserInfo['username'])->first();
+    
+            if ($user) {
+                Auth::login($user);
+                return redirect('/handshake');
+            }
+    
+            Session::put('registration_access', true);
+            Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
+    
+            return redirect('/register');
+    
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+
+
+
+    public function openIDLogin(Request $request)
+    {
+        try {
+            $authenticatedUserInfo = $this->oidcService->authenticate($request);
+    
+            if (!$authenticatedUserInfo) {
+                return response()->json(['error' => 'Login Failed!'], 401);
+            }
+    
+            Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+    
+            $user = User::where('username', $authenticatedUserInfo['username'])->first();
+    
+            if ($user) {
+                Auth::login($user);
+                return redirect('/handshake');
+            }
+    
+            Session::put('registration_access', true);
+            Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
+    
+            return redirect('/register');
+    
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+
+
     /// Initiate handshake process
     /// sends back the user keychain.
     /// keychain sync will be done on the frontend side (check encryption.js)
@@ -232,28 +294,6 @@ class AuthenticationController extends Controller
         }
     }
     
-
-
-
-
-
-    public function shibbolethLogin(Request $request)
-    {
-        return $this->shibbolethService->authenticate($request);
-    }
-
-
-    public function openIDLogin(Request $request){
-        try {
-            $this->oidcService->authenticate();
-            return redirect('/chat');
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-
-    }
-
-
     public function logout(Request $request)
     {
         // Unset all session variables
@@ -274,9 +314,9 @@ class AuthenticationController extends Controller
         // Determine the logout redirect URI based on the authentication method
         $authMethod = env('AUTHENTICATION_METHOD');
         if ($authMethod === 'Shibboleth') {
-            $redirectUri = env('SHIBBOLETH_LOGOUT_URL');
+            $redirectUri = config('shibboleth.logout_path');
         } elseif ($authMethod === 'OIDC') {
-            $redirectUri = env('OIDC_LOGOUT_URI');
+            $redirectUri = config('open_id_connect.oidc_logout_path');
         } else {
             $redirectUri = '/login';
         }

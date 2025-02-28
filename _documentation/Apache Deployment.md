@@ -404,7 +404,7 @@ By default laravel caches every configuration in the project. Don't forget to cl
 
 ```
 php artisan config:clear
-php aritsan cache:clear
+php artisan cache:clear
 php artisan route:clear
 php artisan view:clear
 ```

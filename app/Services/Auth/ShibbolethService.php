@@ -7,46 +7,51 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
+
 
 class ShibbolethService
 {
+    /**
+     * Authenticates the user via Shibboleth and returns user information if authenticated.
+     * If the user is not authenticated, redirects to the Shibboleth login page.
+     *
+     * @param Request $request The HTTP request instance.
+     * @return array|Illuminate\Http\RedirectResponse|Illuminate\Http\JsonResponse User information array if authenticated,
+     *                                                                             redirection to the login page if not authenticated,
+     *                                                                             or a JSON error response if required attributes are missing or the login path is not set.
+     */
     public function authenticate(Request $request)
     {
-        // Regenerate CSRF token
-        $request->session()->regenerateToken();
-
+        // Check if the user is authenticated
         if (!empty($_SERVER['REMOTE_USER'])) {
-            $username = $_SERVER['REMOTE_USER'];
-
-            // Retrieve other necessary attributes from Shibboleth
-            $email = $_SERVER['mail'] ?? "{$username}@domain.com";
-            $name = $_SERVER['displayName'] ?? $username;
-
-            // Find or create the user in the local database
-            $user = User::updateOrCreate(
-                ['username' => $username],
-                [
-                    'name' => $name, 
-                    'email' => $email, 
-                    'password' => Hash::make(str_random(16))
-                ]
-            );
-
-            // Log the user in using Laravel's Auth facade
-            Auth::login($user);
-
-            // Regenerate session ID to prevent session fixation attacks
-            Session::regenerate();
-
-            return redirect('/chat');
+            // Retrieve configuration variables
+            $nameVar = config('shibboleth.attribute_map.name');
+            $mailVar = config('shibboleth.attribute_map.email');
+            $employeetypeVar = config('shibboleth.attribute_map.employeetype');
+    
+            // Check if the required attributes are present in the $_SERVER array
+            if (isset($_SERVER[$nameVar], $_SERVER[$mailVar], $_SERVER[$employeetypeVar])) {
+                // Return user information
+                return $userInfo = [
+                    'username' => $_SERVER['REMOTE_USER'],
+                    'name' => $_SERVER[$nameVar],
+                    'email' => $_SERVER[$mailVar],
+                    'employeetype' => $_SERVER[$employeetypeVar]
+                ];
+            } else {
+                // Error handling if attributes are missing
+                return response()->json(['error' => 'Missing required attributes'], 400);
+            }
         } else {
-            // Redirect to Shibboleth login page
-            $loginPath = env('SHIBBOLETH_LOGIN_PATH');
-            $loginPage = env('SHIBBOLETH_LOGIN_PAGE');
-            $scheme = $_SERVER['REQUEST_SCHEME'] ?? 'https';
-            $shibLogin = "{$scheme}://{$_SERVER['HTTP_HOST']}/{$loginPath}{$loginPage}";
-
-            return redirect($shibLogin);
+            // Redirect to the Shibboleth login page
+            $loginPath = config('shibboleth.login_path');
+            if (!empty($loginPath)) {
+                return redirect($loginPath);
+            } else {
+                // Error handling if the login path is not set
+                return response()->json(['error' => 'Login path is not set'], 500);
+            }
         }
     }
 }

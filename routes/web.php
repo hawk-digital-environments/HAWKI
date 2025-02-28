@@ -28,8 +28,8 @@ Route::middleware('prevent_back')->group(function () {
 
     Route::get('/login', [LoginController::class, 'index']);
     Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
-    Route::post('/req/login-shibboleth', [AuthenticationController::class, 'ldapLogin']);
-    Route::post('/req/login-oidc', [AuthenticationController::class, 'ldapLogin']);
+    Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
+    Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
     
     
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
@@ -92,8 +92,8 @@ Route::middleware('prevent_back')->group(function () {
         Route::middleware('roomAdmin')->group(function () {
             Route::post('/req/room/addMember', [RoomController::class, 'addMember']);
             Route::post('/req/room/updateInfo/{slug}', [RoomController::class, 'updateInfo']);
-            Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'removeRoom']);;
-            Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'removeMember']);;
+            Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'removeRoom']);
+            Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'removeMember']);
         });
     
         

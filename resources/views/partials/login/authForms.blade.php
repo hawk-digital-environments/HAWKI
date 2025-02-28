@@ -1,5 +1,5 @@
 @if($authenticationMethod === 'OIDC')
-    <form action="/oidc_login" class="form-column" method="post" id="loginForm-OIDC" action="/req/login-oidc">
+    <form class="form-column" method="post" id="loginForm-OIDC" action="/req/login-oidc">
         @csrf
         <button id="loginButton" class="btn-lg align-end top-gap-1">{{ $translation['Login'] }}</button>
     </form>
