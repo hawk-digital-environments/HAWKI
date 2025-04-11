@@ -63,6 +63,9 @@ Route::middleware('prevent_back')->group(function () {
         // AI CONVERSATION ROUTES
         Route::get('/chat', [HomeController::class, 'show']);
         Route::get('/chat/{slug?}' , [HomeController::class, 'show']);
+
+        Route::get('/transcript', [HomeController::class, 'show']);
+        Route::get('/transcript/{slug?}' , [HomeController::class, 'show']);
     
         
         Route::get('/req/conv/{slug?}', [AiConvController::class, 'loadConv']);
