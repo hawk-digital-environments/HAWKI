@@ -41,8 +41,10 @@ class PlatformProvider extends OrchidServiceProvider
             
             Menu::make('Dashboard')
                 ->icon('bs.rocket-takeoff')
-                ->route('platform.dashboard')
                 ->list([
+                    Menu::make('Global')
+                        ->route('platform.dashboard.global')
+                        ->icon('bs.globe2'),
                     Menu::make('Users')
                         ->route('platform.dashboard.users')
                         ->icon('bs.people'),
@@ -51,13 +53,13 @@ class PlatformProvider extends OrchidServiceProvider
                         ->icon('bs.bar-chart'),
                     ]),
 
-            Menu::make('Settings')
-                ->icon('bs.gear')
+            Menu::make('System')
+                ->icon('bs.house-gear')
                 ->list([
-                    Menu::make('System')
+                    Menu::make('Settings')
                         ->route('platform.settings.system')
-                        ->icon('bs.house-gear'),
-                    Menu::make('Logs')
+                        ->icon('bs.gear'),
+                    Menu::make('Log')
                         ->route('platform.settings.log')
                         ->icon('bs.journal-code'),    
                     Menu::make('Storage')
@@ -77,39 +79,13 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('API Providers')
                         ->route('platform.modelsettings.providers')
                         ->icon('bs.plug'),
-                    Menu::make('Active Models')
+                    Menu::make('Model Settings')
                         ->route('platform.modelsettings.activemodels')
                         ->icon('bs.toggles'),
                     Menu::make('Utility Models')
                         ->route('platform.modelsettings.utilitymodels')
                         ->icon('bs.tools'),                  
-                    ]),          
-//            Menu::make('Sample Screen')
-//                ->icon('bs.collection')
-//                ->route('platform.example'),
-                //->badge(fn () => 6),
-
-           Menu::make('Form Elements')
-               ->icon('bs.card-list')
-               ->route('platform.example.fields')
-               ->active('*/examples/form/*'),
-
-//            Menu::make('Overview Layouts')
-//                ->icon('bs.window-sidebar')
-//                ->route('platform.example.layouts'),
-
-//           Menu::make('Grid System')
-//               ->icon('bs.columns-gap')
-//               ->route('platform.example.grid'),
-
-//            Menu::make('Charts')
-//                ->icon('bs.bar-chart')
-//                ->route('platform.example.charts'),
-
-//            Menu::make('Cards')
-//                ->icon('bs.card-text')
-//                ->route('platform.example.cards')
-//                ->divider(),
+                    ]),
 
             Menu::make(__('Users'))
                 ->icon('bs.people')

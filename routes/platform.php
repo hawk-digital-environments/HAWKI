@@ -13,6 +13,8 @@ use App\Orchid\Screens\Settings\StylingSettingsScreen;
 use App\Orchid\Screens\Settings\TextsSettingsScreen;
 
 use App\Orchid\Screens\ModelSettings\ProviderSettingsScreen;
+use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
+
 use App\Orchid\Screens\ModelSettings\ModelSettingsScreen;
 use App\Orchid\Screens\ModelSettings\UtilityModelsSettingsScreen;
 
@@ -52,21 +54,23 @@ Route::screen('/main', PlatformScreen::class)
     ->name('platform.main');
 
 // Dashboard
-Route::screen('/dashboard', Dashboard::class)->name('platform.dashboard');
+Route::screen('/dashboard/global', Dashboard::class)->name('platform.dashboard.global');
 Route::screen('/dashboard/users', UserDashboard::class)->name('platform.dashboard.users');
 Route::screen('/dashboard/requests', RequestsDashboard::class)->name('platform.dashboard.requests');
 
 // Settings        
 Route::screen('/settings/system', SystemSettingsScreen::class)->name('platform.settings.system');
 Route::screen('/settings/log', LogScreen::class)->name('platform.settings.log');
-
 Route::screen('/settings/storage', StorageSettingsScreen::class)->name('platform.settings.storage');
 Route::screen('/settings/styling', StylingSettingsScreen::class)->name('platform.settings.styling');
 Route::screen('/settings/texts', TextsSettingsScreen::class)->name('platform.settings.texts');
+
 // Models
 Route::screen('/modelsettings/providers', ProviderSettingsScreen::class)->name('platform.modelsettings.providers');
+Route::screen('/modelsettings/providers/create', ProviderCreateScreen::class)->name('platform.modelsettings.provider.create');
 Route::screen('/modelsettings/activemodels', ModelSettingsScreen::class)->name('platform.modelsettings.activemodels');
 Route::screen('/modelsettings/utilitymodels', UtilityModelsSettingsScreen::class)->name('platform.modelsettings.utilitymodels');
+
 
 // Platform > Profile
 Route::screen('profile', UserProfileScreen::class)
@@ -133,5 +137,3 @@ Route::screen('/examples/layouts', ExampleLayoutsScreen::class)->name('platform.
 Route::screen('/examples/grid', ExampleGridScreen::class)->name('platform.example.grid');
 Route::screen('/examples/charts', ExampleChartsScreen::class)->name('platform.example.charts');
 Route::screen('/examples/cards', ExampleCardsScreen::class)->name('platform.example.cards');
-
-// Route::screen('idea', Idea::class, 'platform.screens.idea');
