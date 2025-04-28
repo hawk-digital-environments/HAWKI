@@ -27,8 +27,8 @@ class LogScreen extends Screen
     public function query(): iterable
     {
         // Filterwerte aus Session lesen, Standard: false
-        $localInfo = session()->get('localInfo', false);
-        $localError = session()->get('localError', false);
+        $localInfo = session()->get('localInfo', true);
+        $localError = session()->get('localError', true);
 
         $log = file_exists(storage_path('logs/laravel.log'))
             ? file_get_contents(storage_path('logs/laravel.log'))
