@@ -4,7 +4,9 @@ namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\LanguageModel;
 use App\Models\ProviderSetting;
-use App\Services\AI\ModelUtilityService;
+//use App\Services\AI\ModelUtilityService;
+use App\Services\Settings\ModelSettingsService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Orchid\Screen\Actions\Button;
@@ -24,19 +26,19 @@ use Illuminate\Support\Facades\Log;
 class ModelSettingsScreen extends Screen
 {
     /**
-     * @var ModelUtilityService
+     * @var modelSettingsService
      */
-    private $modelUtilityService;
+    private $modelSettingsService;
 
     /**
      * Construct the controller.
      *
-     * @param ModelUtilityService $modelUtilityService
+     * @param ModelSettingsService $ModelSettingsService
      */
     public function __construct(
-        ModelUtilityService $modelUtilityService
+        ModelSettingsService $modelSettingsService
     ) {
-        $this->modelUtilityService = $modelUtilityService;
+        $this->modelSettingsService = $modelSettingsService;
     }
 
     /**
@@ -341,7 +343,7 @@ class ModelSettingsScreen extends Screen
             }
             
             // Get available models from provider API - Here comes the API response
-            $apiResponse = $this->modelUtilityService->getModelStatus($provider->provider_name);
+            $apiResponse = $this->modelSettingsService->getModelStatus($provider->provider_name);
             
             // Debug log for the complete API response
             Log::debug('Raw API Response: ' . json_encode($apiResponse));
