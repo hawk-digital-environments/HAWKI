@@ -22,6 +22,7 @@ class User extends OrchidUser
         'publicKey',
         'avatar_id',
         'bio',
+        'isRemoved'
         'permissions',
     ];
 
@@ -72,19 +73,13 @@ class User extends OrchidUser
     // Your existing relationships like members, rooms etc.
     public function members()
     {
-        return $this->hasMany(Member::class);
+        return $this->hasMany(Member::class)->where('isRemoved', false);
     }
 
     public function rooms()
     {
-        return $this->hasManyThrough(
-            Room::class,
-            Member::class,
-            'user_id',
-            'id',
-            'id',
-            'room_id'
-        );
+        return $this->belongsToMany(Room::class, 'members', 'user_id', 'room_id')
+                    ->wherePivot('isRemoved', false);
     }
 
     public function conversations()
@@ -96,4 +91,9 @@ class User extends OrchidUser
     {
         return $this->hasMany(Invitation::class, 'username', 'username');
     }
+
+    public function revokProfile(){
+        $this->update(['isRemoved'=> 1]);
+    }
+
 }

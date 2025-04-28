@@ -48,7 +48,9 @@ class OllamaProvider extends BaseAIModelProvider
         $content = $jsonContent['message']['content'] ?? '';
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'usage' => $this->extractUsage($jsonContent)
         ];
     }
@@ -83,7 +85,9 @@ class OllamaProvider extends BaseAIModelProvider
         }
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'isDone' => $isDone,
             'usage' => $usage
         ];

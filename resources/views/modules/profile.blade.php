@@ -31,7 +31,7 @@
                 <h4 class="label-header">{{ $translation["Bio"] }}</h4>
                 <textarea 
                     class="text-input fit-height"
-                    placeholder="Über mich..." 
+                    placeholder="{{  $translation["PH_AboutMe"] }}"
                     name="bio" 
                     id="bio-input" 
                     maxlength="300"
@@ -43,10 +43,13 @@
 
             <h3 class="label-header top-gap-3">{{ $translation["PersonalData"] }}</h3>
             <div class="">
-                @if(config('sanctum.allow_external_communication'))
+                @if(config('sanctum.allow_user_token') && config('sanctum.allow_external_communication'))
                     <button class="btn-md-txt" onclick="toggleAccessTokensPanel(true)">{{ $translation["AccessTokens"] }}</button>
+                @else
+                    <p class="gray-text zero-v-margin">{{ $translation["AccessTokens"] }}</p>
+                    <p class="sub-descript">{{ $translation["Api_Warning"] }}</p>
                 @endif
-
+                
                 <button class="btn-md-txt red-text top-gap-2" onclick="clearPersonalData()">{{ $translation["ClearLocalData"] }}</button>
             </div>
 
@@ -54,7 +57,7 @@
     </div>
 </div>
  
-    @if(config('sanctum.allow_external_communication'))
+    @if(config('sanctum.allow_user_token') && config('sanctum.allow_external_communication'))
         @include('partials.home.modals.access-tokens-modal')
     @endif
     @include('partials.home.modals.image-selection-modal')

@@ -256,7 +256,7 @@ class RoomController extends Controller
     }
 
 
-    private function removeRoomMember(Member $member, Room $room)
+    public function removeRoomMember(Member $member, Room $room)
     {
         // Remove the member from the room
         $room->removeMember($member->user_id);
@@ -298,11 +298,10 @@ class RoomController extends Controller
 
         $messages = $room->messages;
 
-
         $messagesData = array();
         foreach ($messages as $message){
             $member = Member::find($message->member_id);
-            $requestMember = $room->members()->where('user_id', Auth::id())->firstOrFail();
+            $requestMember = $room->membersAll()->where('user_id', Auth::id())->firstOrFail();
 
             $readStat = $message->isReadBy($requestMember);
 
@@ -318,6 +317,7 @@ class RoomController extends Controller
                 'author' => [
                     'username' => $member->user->username,
                     'name' => $member->user->name,
+                    'isRemoved' => $member->isRemoved,
                     'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
                 ],
                 'model' => $message->model,
@@ -362,6 +362,7 @@ class RoomController extends Controller
         $message = Message::create([
             'room_id' => $room->id,
             'member_id' => $member->id,
+            'user_id' => Auth::id(),
             'message_id' => $nextMessageId,
             'message_role' => $messageRole,
             'iv' => $validatedData['iv'],
@@ -386,6 +387,7 @@ class RoomController extends Controller
             'member_id' => $member->id,
             'message_role' => $messageRole,
             'message_id' => $message->message_id,
+            'member_left' => false,
 
             'author' => [
                 'username' => $member->user->username,

@@ -85,7 +85,7 @@ class AuthenticationController extends Controller
 
         $redirectUri;
         // If first time on HAWKI
-        if($user){
+        if($user && $user->isRemoved === 0){
             Auth::login($user);
 
             return response()->json([
@@ -119,7 +119,7 @@ class AuthenticationController extends Controller
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
-            if ($user) {
+            if($user && $user->isRemoved === 0){
                 Auth::login($user);
                 return redirect('/handshake');
             }
@@ -150,7 +150,7 @@ class AuthenticationController extends Controller
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
-            if ($user) {
+            if($user && $user->isRemoved === 0){
                 Auth::login($user);
                 return redirect('/handshake');
             }
@@ -201,7 +201,7 @@ class AuthenticationController extends Controller
 
         if (Auth::check()) {
             // The user is logged in, redirect to /chat
-            return redirect('/chat');
+            return redirect('/handshake');
         }
 
         $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
@@ -210,11 +210,6 @@ class AuthenticationController extends Controller
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
-
-
-        // Initialize settings panel
-        $settingsPanel = (new SettingsController())->initialize($translation);
-
 
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'register'){
@@ -264,12 +259,13 @@ class AuthenticationController extends Controller
                     'employeetype' => $employeetype,
                     'publicKey' => $validatedData['publicKey'],
                     'avatar_id' => $avatarId,
+                    'isRemoved' => false
                     'permissions' => $permissions,
                 ]
             );
     
             // Update or create the Private User Data
-            PrivateUserData::updateOrCreate(
+            PrivateUserData::create(
                 [
                     'user_id' => $user->id,
                     'KCIV' => $validatedData['KCIV'],

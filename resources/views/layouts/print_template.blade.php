@@ -12,16 +12,16 @@
 	<title>{{ env('APP_NAME') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/print_styles.css') }}">
-    <!-- <link rel="stylesheet" href="{{ asset('css_v2.0.0/hljs_custom.css') }}"> -->
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/print_styles.css') }}">
+    <!-- <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}"> -->
 
     @vite('resources/js/app.js')
 	
-	<script src="{{ asset('js_v2.0.0/message_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/stream_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/syntax_modifier.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/export.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/message_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/stream_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/syntax_modifier.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/export.js') }}"></script>
     
 
 </head>

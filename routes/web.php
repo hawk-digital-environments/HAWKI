@@ -54,10 +54,6 @@ Route::middleware('prevent_back')->group(function () {
     //CHECKS USERS AUTH
     Route::middleware(['auth', 'expiry_check'])->group(function () {
     
-
-        
-
- 
         Route::get('/handshake', [AuthenticationController::class, 'handshake']);
     
         // AI CONVERSATION ROUTES
@@ -103,9 +99,15 @@ Route::middleware('prevent_back')->group(function () {
         Route::get('/profile', [HomeController::class, 'show']);
         Route::post('/req/profile/update', [ProfileController::class, 'update']);
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
-        Route::post('/req/profile/create-token', [AccessTokenController::class, 'createToken']);
-        Route::get('/req/profile/fetch-tokens', [AccessTokenController::class, 'fetchTokenList']);
-        Route::post('/req/profile/revoke-token', [AccessTokenController::class, 'revokeToken']);
+        
+        // Token management routes with token_creation middleware
+        Route::middleware('token_creation')->group(function () {
+            Route::post('/req/profile/create-token', [AccessTokenController::class, 'createToken']);
+            Route::get('/req/profile/fetch-tokens', [AccessTokenController::class, 'fetchTokenList']);
+            Route::post('/req/profile/revoke-token', [AccessTokenController::class, 'revokeToken']);
+        });
+        
+        Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileRest']);
     
         // Invitation Handling
     

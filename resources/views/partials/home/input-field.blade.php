@@ -54,7 +54,7 @@
                         @include('partials.home.components.models-list')
                     </div>
                 
-                    <div class="burger-btn-arrow burger-btn" onclick="openBurgerMenu('model-selector-burger', this, false, true)">
+                    <div class="burger-btn-arrow burger-btn" onclick="openBurgerMenu('model-selector-burger', this, false, true, true)">
                         <div class="icon">
                             <x-icon name="chevron-up"/>
                         </div>
@@ -174,7 +174,7 @@
 
                 @elseif($activeModule === 'groupchat')
 
-                    placeholder="{{ $translation['Input_Placeholder_Room'] }}" 
+                    placeholder="{{ $translation['Input_Placeholder_Room'] ." ". config('app.aiHandle')}}"
                     oninput="resizeInputField(this); onGroupchatType()" 
                     onkeypress="onHandleKeydownRoom(event)"
                 

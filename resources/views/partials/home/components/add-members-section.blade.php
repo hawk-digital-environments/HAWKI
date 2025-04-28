@@ -12,7 +12,7 @@
                     list="searchResults" 
                     name="user-search-bar" 
                     id="user-search-bar" 
-                    placeholder="Name, Benutzername oder E-Mail eingeben" 
+                    placeholder="{{ $translation["PH_SearchBar"] }}" 
                     oninput="searchUser(this)"
                     autocomplete="off"
                     onkeypress="onHandleKeydownUserSearch(event, this)">

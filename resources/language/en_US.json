@@ -17,7 +17,7 @@
     "Cnf_tokenMsg2":"Once you close this window you will not be able to get this key again.",
     "Cnf_tokenMsgSuccess":"Token Created Successfully",
     "Cnf_tokenRevoke":"Are you sure you want to revoke token",
-    "Cnf_passkeyRemove":"By confirming this, your passkey and keychain data will be removed from this browser. Please remember that we currently don't provide any passkey recovery solutions. <br> <b>Please make sure that you have a secure backup of your passkey before proceeding.<b>",
+    "Cnf_passkeyRemove":"By confirming this, your Datakey and keychain data will be removed from this browser. Please remember that we currently don't provide any Datakey recovery solutions. <br> <b>Please make sure that you have a secure backup of your Datakey before proceeding.<b>",
 
     "Exp_Title":"SESSION TIMEOUT",
     "Exp_MSG":"Please login again!",
@@ -28,6 +28,8 @@
     "By":"by",
     "Chatlog":"Chatlog",
     "Rooms": "Rooms",
+
+    "RemovedMember": "unavailable",
 
     "Abort": "Cancel",
     "AboutHAWKI": "About HAWKI",
@@ -59,18 +61,25 @@
     "ExtAccToken": "External Access Tokens",
     "General": "General",
     "History": "History",
-    "HS-EnterBackupMsg": "Please enter your backup code.",
-    "HS-EnterPasskeyMsg": "Please enter your passkey.",
-    "HS-ForgottenPasskey": "Forgotten Passkey?",
-    "HS-PasskeyIs": "Your passkey is:",
+    "HS-EnterBackupMsg": "Please enter your Recovery Code.",
+    "HS-EnterPasskeyMsg": "Please enter your Datakey.",
+    "HS-ForgottenPasskey": "Forgotten Datakey?",
+    "HS-ForgottenBackup": "Lost Recovery Code?",
+    "HS-PasskeyIs": "Your Datakey is:",
+    "HS-ResetProfile": "Reset Profile",
+
+    "HS-LostBothT": "Did you lose both your Datakey and Recovery Code?",
+    "HS-LostBothB": "Unfortuately if you've lost both your Datakey and Recovery Code, we can't recover your profile data. To continue we need to reset your profile and give you a new access. This will remove all your previous data including all your chats and rooms. Do you want to continue?",
+
     "ImgUpload": "Upload Image",
     "ImgUploadDesc": "Select an image or drag it here.<br>Double-click to enter edit mode.",
     "Impressum": "Imprint",
     "Info": "Info",
     "Input_Placeholder_Chat": "You can enter your request here",
-    "Input_Placeholder_Room": "Write a group message or mention to use the AI.",
+    "Input_Placeholder_Room": "Write a group message or use the AI model by mentioning",
     "language": "Language",
     "LeaveRoom": "Leave Room",
+    "LeftRoom": "left room",
     "Login": "Sign in",
     "LoginFailedMSG": "Sign in failed",
     "MarkAllRead": "Mark All As Read",
@@ -90,11 +99,16 @@
     "Reg_SL2_H": "New: Group Chats! 💡",
     "Reg_SL2_T": "In the new group chats, naturally, all group members can see your messages - that's the whole point. But even here, your content remains protected and is not visible to anyone outside the group. Your privacy is important to us, so you can rest assured: your data belongs to you alone! 🙌",
     "Reg_SL4_B": "Will do!",
-    "Reg_SL4_H": "Create your Passkey! 🔒",
-    "Reg_SL4_T": "Before you start, there is an important step: you create your personal passkey during the first login. The passkey ensures that your chats are securely encrypted. Once you have created the passkey, you can download it to your device. You should save this file in a safe place, for example on a USB stick or in a protected folder. If something goes wrong we can use this data to recover your chats.",
-    "Reg_SL5_H": "Create your Passkey! 🔒",
-    "Reg_SL5_T": "Important: Without this passkey, you will not be able to access your saved chats later. If you lose the passkey, unfortunately, your previous chats cannot be recovered. Save your passkey securely - and then have fun with HAWKI 2! 🚀",
-    "Reg_SL6_H": "Secure your Passkey! 🔒",
+    "Reg_SL4_H": "Create your Datakey! 🔒",
+    "Reg_SL4_T": "<strong>Important:</strong> On your first login, you create your personal data key, a type of password. Your chats are encrypted with this data key before being stored on our server. In addition to the login, you will need your data key when you log in on a new device. Your device or browser remembers your data key, so you don't have to enter it every time. In the final step, you can also download the recovery code for your data key.",    
+    "Reg_SL5_H": "Create your Datakey! 🔒",
+    "Reg_SL5_T": "<strong>Please note:</strong> Your chat messages are securely encrypted. If you lose your data key, you will no longer be able to access your previous chats. Therefore, keep your data key safe and protect it from third-party access.",
+    "Reg_SL6_H": "Secure your Recovery Code! 🔒",
+    "Reg_SL6_T": "With this recovery code, you can restore your data key if you forget or lose it. Download your code onto your device and store it in a secure location, such as on a USB stick or in a protected environment.",
+    
+    "Reg_SL5_PH1": "Enter your Datakey",
+    "Reg_SL5_PH2": "Repeat the Datakey",
+    
     "RoomDesc": "Room Description",
     "RoomName": "Room Name",
     "Save": "Save",
@@ -108,5 +122,13 @@
     "theme": "Theme",
     "Think": "Think",
     "username": "Username",
-    "You": "You"
+    "You": "You",
+
+    "PH_AboutMe": "About Me...",
+    "PH_ChooseName": "Choose a name",
+    "PH_ChooseDescription": "Add Description",
+    "PH_SystemPrompt": "Enter your prefered system prompt",
+    "PH_SearchBar": "Enter Name, Username oder E-Mail Address" ,
+    "Api_Warning": "To be able to use the HAWKI language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you."
+
 }

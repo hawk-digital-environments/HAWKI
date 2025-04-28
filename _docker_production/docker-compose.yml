@@ -1,0 +1,112 @@
+services:
+    app:
+        container_name: ${PROJECT_NAME}-app
+        image: ${PROJECT_HAWKI_IMAGE}
+        restart: no
+        volumes:
+            - ./storage/:/var/www/html/storage
+            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+            - /var/www/html/public
+        healthcheck:
+            test: cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
+        env_file:
+            - .env
+        environment:
+            REVERB_HOST: $APP_URL
+        depends_on:
+            mysql:
+                condition: service_healthy
+    queue:
+        container_name: ${PROJECT_NAME}-queue
+        image: ${PROJECT_HAWKI_IMAGE}
+        restart: always
+        volumes:
+            - ./storage/:/var/www/html/storage
+            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+        env_file:
+            - .env
+        environment:
+            REVERB_HOST: reverb
+        command: [ 'php artisan queue:work --queue=default,mails,message_broadcast --tries=3 --timeout=90' ]
+        depends_on:
+            mysql:
+                condition: service_healthy
+    reverb:
+        container_name: ${PROJECT_NAME}-reverb
+        image: ${PROJECT_HAWKI_IMAGE}
+        restart: always
+        volumes:
+            - ./storage/:/var/www/html/storage
+            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+        env_file:
+            - .env
+        command: [ 'php artisan reverb:start' ]
+        depends_on:
+            mysql:
+                condition: service_healthy
+    redis:
+        container_name: ${PROJECT_NAME}-redis
+        image: redis:latest
+        restart: always
+        volumes:
+            - redis_data:/root/redis
+        environment:
+            REDIS_PASSWORD: $REDIS_PASSWORD
+            REDIS_PORT: $REDIS_PORT
+            REDIS_DATABASES: 16
+    mysql:
+        container_name: ${PROJECT_NAME}-mysql
+        image: mysql:8.0
+        command:
+            - --default-authentication-plugin=mysql_native_password
+            - --max_connections=2000
+        environment:
+            MYSQL_RANDOM_ROOT_PASSWORD: '1'
+            MYSQL_DATABASE: $DB_DATABASE
+            MYSQL_USER: $DB_USERNAME
+            MYSQL_PASSWORD: $DB_PASSWORD
+        ulimits:
+            nofile:
+                soft: 65536
+                hard: 65536
+        restart: no
+        volumes:
+            - mysql_data:/var/lib/mysql
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:${DB_PORT:-3306}:3306
+        healthcheck:
+            test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+            start_period: 2s
+            timeout: 20s
+            interval: 5s
+            retries: 10
+    nginx:
+        container_name: ${PROJECT_NAME}-nginx
+        image: nginx:1.27-alpine
+        volumes:
+            - ./certs:/etc/nginx/certs
+            - ./nginx.default.conf:/etc/nginx/nginx.conf:ro
+            - ./storage/app/public:/var/www/html/storage:ro
+        volumes_from:
+            - app # This will automatically mount /var/www/html/public, so we can serve the static assets
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
+        depends_on:
+            - app
+        healthcheck:
+            test: curl --fail http://localhost || exit 1
+            interval: 10s
+            timeout: 3s
+            retries: 3
+            start_period: 10s
+volumes:
+    php_socket: { }
+    mysql_data:
+        driver: local
+    redis_data:
+        driver: local

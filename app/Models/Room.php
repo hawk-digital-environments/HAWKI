@@ -38,11 +38,31 @@ class Room extends Model
     /**
      * The users that are members of the room.
      */
-    public function members()
+    public function membersAll()
     {
         return $this->hasMany(Member::class);
     }
+    public function members()
+    {
+        return $this->hasMany(Member::class)->where('isRemoved', false);
+    }
+    public function isMember($userId)
+    {
+        return $this->members()
+                    ->where('user_id', $userId)
+                    ->exists();
+    }
 
+    public function oldMembers()
+    {
+        return $this->hasMany(Member::class)->where('isRemoved', true);
+    }
+    public function isOldMember($userId)
+    {
+        return $this->oldMembers()
+                    ->where('user_id', $userId)
+                    ->exists();
+    }
     
     public function addMember($userId, $role)
     {
@@ -53,32 +73,44 @@ class Room extends Model
             }
         }
         else{
-            // Logic to add a member to the room
-            $this->members()->create([
-                'user_id' => $userId,
-                'role' => $role,
-            ]);
+            if($this->isOldMember($userId)){
+
+                // if an old membership exists for the user
+                // reactivate the old membership.
+                $member = $this->membersAll()->where('user_id', $userId)->first();
+                $member->recreateMembership();
+
+                if(!$member->hasRole($role)){
+                    $member->updateRole($role);
+                }
+
+            }
+            else{
+                // create new member for the room
+                $this->members()->create([
+                    'user_id' => $userId,
+                    'role' => $role,
+                ]);
+            }
+
         }
+
 
     }
 
     public function removeMember($userId)
     {
         if($this->isMember($userId)){
+            
             // Attempt to delete the member from the room based on user ID
             return $this->members()
                         ->where('user_id', $userId)
                         ->firstOrFail()
-                        ->delete();
+                        ->revokeMembership();
         }
     }
 
-    public function isMember($userId)
-    {
-        return $this->members()
-                    ->where('user_id', $userId)
-                    ->exists();
-    }
+
     
 
     public function hasRole($userId, $role)

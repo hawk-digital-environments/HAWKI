@@ -7,6 +7,8 @@ use App\Services\AI\Providers\OpenAIProvider;
 use App\Services\AI\Providers\GWDGProvider;
 use App\Services\AI\Providers\GoogleProvider;
 use App\Services\AI\Providers\OllamaProvider;
+use App\Services\AI\Providers\OpenWebUIProvider;
+
 
 class AIProviderFactory
 {
@@ -37,7 +39,11 @@ class AIProviderFactory
     public function getProviderForModel(string $modelId): AIModelProviderInterface
     {
         $providerId = $this->getProviderId($modelId);
-        
+        return $this->getProviderInterface($providerId);
+    }
+    
+    public function getProviderInterface(string $providerId): AIModelProviderInterface
+    {
         switch ($providerId) {
             case 'openai':
                 return new OpenAIProvider($this->config['providers']['openai']);
@@ -53,7 +59,7 @@ class AIProviderFactory
                 throw new \Exception("Unsupported provider: {$providerId}");
         }
     }
-    
+
     /**
      * Determine the provider ID based on the model ID
      * 

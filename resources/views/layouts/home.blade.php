@@ -14,30 +14,30 @@
 
 	<link rel="icon" href="{{ asset('favicon.ico') }}">
 	
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/home-style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/settings_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/hljs_custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/home-style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}">
 
     @vite('resources/js/app.js')
 	
-	<script src="{{ asset('js_v2.0.0/functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/home_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/stream_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/ai_chat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/chatlog_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/inputfield_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/message_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/groupchat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.0/syntax_modifier.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/image-selector.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/export.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/user_profile.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/home_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/stream_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/ai_chat_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/chatlog_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/inputfield_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/message_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/groupchat_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/syntax_modifier.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/image-selector.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/export.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/user_profile.js') }}"></script>
 
 	@if(config('sanctum.allow_external_communication'))
-		<script src="{{ asset('js_v2.0.0/sanctum_functions.js') }}"></script>
+		<script src="{{ asset('js_v2.0.1_f1/sanctum_functions.js') }}"></script>
     @endif
 
 
@@ -83,10 +83,14 @@
 
 	const modelsList = @json($models).models;
 	const defaultModel = @json($models).defaultModel;
-	const titleGenerationModel = @json($models).titleGenerationModel;
+	const systemModels = @json($models).systemModels;
 
+
+	const aiHandle = "{{ config('app.aiHandle') }}";
+
+	
 	window.addEventListener('DOMContentLoaded', async (event) => {
-		
+
 		setSessionCheckerTimer(0);
 		CheckModals()
 

@@ -29,6 +29,8 @@
     "Chatlog":"Verlauf",
     "Rooms": "Räume",
 
+    "RemovedMember": "nicht verfügbar",
+
     "Abort": "Abbrechen",
     "AboutHAWKI": "Über HAWKI",
     "AboutHAWKI_ArianInfo": " | Wissenschaftlicher Mitarbeiter | HAWKI",
@@ -59,18 +61,27 @@
     "ExtAccToken": "Externe Zugangstoken",
     "General": "Allgemein",
     "History": "Verlauf",
-    "HS-EnterBackupMsg": "Bitte gib deinen Backup Code ein.",
-    "HS-EnterPasskeyMsg": "Bitte gib deinen PassKey ein.",
-    "HS-ForgottenPasskey": "PassKey vergessen?",
-    "HS-PasskeyIs": "Dein Passkey ist:",
+    
+    "HS-EnterBackupMsg": "Bitte gib deinen Wiederherstellungscode ein.",
+    "HS-EnterPasskeyMsg": "Bitte gib deinen Datakey ein.",
+    "HS-ForgottenPasskey": "Datakey vergessen?",
+    "HS-ForgottenBackup": "Wiederherstellungscode verloren?",
+    "HS-PasskeyIs": "Dein Datakey ist:",
+    "HS-ResetProfile": "Profil zurücksetzen",
+    
+    "HS-LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
+    "HS-LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
+
+
     "ImgUpload": "Bild hochladen",
     "ImgUploadDesc": "Wähle ein Bild aus oder ziehe es hierher.<br>Doppelklicken, um in den Bearbeitungsmodus zu wechseln.",
     "Impressum": "Impressum",
     "Info": "Info",
     "Input_Placeholder_Chat": "Hier kannst Du deine Anfrage stellen",
-    "Input_Placeholder_Room": "Schreibe eine Gruppennachricht oder erwähne @hawki, um die KI zu nutzen.",
+    "Input_Placeholder_Room": "Schreibe eine Gruppennachricht oder nutze die KI mit ",
     "language": "Sprache",
     "LeaveRoom": "Raum Verlassen",
+    "LeftRoom": "hat den Raum verlassen",
     "Login": "Anmelden",
     "LoginFailedMSG": "Anmelden fehlgeschlagen",
     "MarkAllRead": "Alle als gelesen markieren",
@@ -90,11 +101,16 @@
     "Reg_SL2_H": "Neu: Gruppenchats! 💡",
     "Reg_SL2_T": "In den neuen Gruppenchats können natürlich alle Teilnehmenden der Gruppe deine Nachrichten sehen - das ist ja Sinn der Sache. Aber auch hier bleiben eure Inhalte geschützt und sind für niemanden außerhalb der Gruppe sichtbar. Deine Privatsphäre ist uns wichtig, deshalb kannst du dir sicher sein: Deine Daten gehören nur dir! 🙌",
     "Reg_SL4_B": "Wird gemacht!",
-    "Reg_SL4_H": "Erstelle deinen Passkey! 🔒",
-    "Reg_SL4_T": "Bevor du loslegst, gibt es einen wichtigen Schritt: Du erstellst beim ersten Login deinen persönlichen Passkey. Der Passkey sorgt dafür, dass deine Chats sicher verschlüsselt gespeichert werden. Sobald du den Passkey erstellt hast, kannst du ihn auf dein Endgerät herunterladen. Diese Datei solltest du an einem sicheren Ort abspeichern, zum Beispiel auf einem USB-Stick oder in einem geschützten Ordner. Mit dieser Datei können wir deine Chats jederzeit wiederherstellen, falls etwas schief gehen sollte.",
-    "Reg_SL5_H": "Erstelle deinen Passkey! 🔒",
-    "Reg_SL5_T": "Wichtig: Ohne diesen Passkey kannst du später nicht mehr auf deine gespeicherten Chats zugreifen. Falls du den Passkey verlierst, sind deine bisherigen Chats leider nicht wiederherstellbar. Sichere also deinen Passkey gut - und dann viel Spaß mit HAWKI 2! 🚀",
-    "Reg_SL6_H": "Sichere deinen Passkey! 🔒",
+    "Reg_SL4_H": "Erstelle deinen Datakey! 🔒",
+    "Reg_SL4_T": "<strong>Wichtig:</strong> Du erstellst beim ersten Login deinen persönlichen Datakey, eine Art Passwort. Mit diesem Datakey werden deine Chats verschlüsselt, bevor sie auf unserem Server gespeichert werden. Zusätzlich zum Login brauchst du deinen Datakey, wenn du dich auf einem neuen Gerät anmeldest. Dein Gerät bzw. Browser merkt sich deinen Datakey, sodass du ihn nicht jedes Mal erneut eingeben musst. Im letzten Schritt kannst du außerdem den Wiederherstellungscode deines Datakeys herunterladen. ",
+    "Reg_SL5_H": "Erstelle deinen Datakey! 🔒",
+    "Reg_SL5_T": "<strong>Bitte beachte:</strong> Deine Chatnachrichten werden sicher verschlüsselt. Wenn du deinen Datakey verlierst, kannst du nicht mehr auf deine bisherigen Chats zugreifen. Bewahre deinen Datakey deshalb gut auf und schütze ihn vor dem Zugriff Dritter.",
+    "Reg_SL6_H": "Sichere deinen Wiederherstellungscode! 🔒",
+    "Reg_SL6_T": "Mit diesem Wiederherstellungscode kannst du deinen Datakey wiederherstellen, falls du ihn vergessen oder verloren hast. Lade deinen Code auf dein Endgerät und speichere ihn an einem sicheren Ort, z.B. auf einem USB-Stick oder in einer geschützten Umgebung.",
+    
+    "Reg_SL5_PH1": "Erstelle hier einen Datakey",
+    "Reg_SL5_PH2": "Wiederhole hier einen Datakey",
+    
     "RoomDesc": "Raumbeschreibung",
     "RoomName": "Raumname",
     "Save": "Speichern",
@@ -108,5 +124,11 @@
     "theme": "Theme",
     "Think": "Denken",
     "username": "Benutzername",
-    "You": "Du"
+    "You": "Du",
+    "PH_AboutMe": "Über mich...",
+    "PH_ChooseName": "Wähle einen Namen",
+    "PH_ChooseDescription": "Beschreibung eingeben",
+    "PH_SystemPrompt": "Gebe deine bevorzugte Systemprompt ein",
+    "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
+    "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird."
 }

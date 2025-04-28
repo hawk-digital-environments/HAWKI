@@ -8,10 +8,9 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-
-        User::create([
+        User::firstOrCreate([
             'name' => 'AI',
             'username' => 'HAWKI',
             'email' => 'HAWKI@hawk.de',
@@ -19,6 +18,5 @@ class UserSeeder extends Seeder
             'publicKey' => '0',
             'avatar_id' => 'hawkiAvatar.jpg'
         ]);
-
     }
 }

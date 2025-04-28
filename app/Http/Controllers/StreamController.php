@@ -29,6 +29,7 @@ class StreamController extends Controller
 
     protected $usageAnalyzer;
     protected $aiConnectionService;
+    private $jsonBuffer = '';
 
     public function __construct(
         UsageAnalyzerService $usageAnalyzer,
@@ -51,7 +52,6 @@ class StreamController extends Controller
             // Validate request data
             $validatedData = $request->validate([
                 'payload.model' => 'required|string',
-                'payload.stream' => 'required|boolean',
                 'payload.messages' => 'required|array',
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
@@ -60,42 +60,34 @@ class StreamController extends Controller
         } catch (ValidationException $e) {
             // Return detailed validation error response
             return response()->json([
+                'success' => false,
                 'message' => 'Validation Error',
                 'errors' => $e->errors()
             ], 422);
         }
 
-        try {
-            // Format the payload for internal use
-            $formattedPayload = $this->payloadFormatter->formatPayload($validatedData['payload']);
-        } catch (\Exception $e) {
-            // Handle formatting errors, e.g., unsupported provider/model
-            return response()->json([
-                'message' => 'Payload Formatting Error',
-                'error' => $e->getMessage()
-            ], 400);
-        }
+        $payload = $validatedData['payload'];
+        $payload['stream'] = false;
 
-        //find the target model from config.
-        $models = $this->utilities->getModels()['models'];
-
-        // search and find defined model based on the requested id.
-        $targetID = $formattedPayload['model'];
-        $filteredModels = array_filter($models, function($model) use ($targetID) {
-            return $model['id'] === $targetID;
-        });
-        $model = current($filteredModels);
-
-        if($formattedPayload['stream'] && $model['streamable']){
-            $formattedPayload['stream_options'] = [
-                "include_usage"=> true,
-            ];
-            $this->createStream($formattedPayload);
+        // Handle standard response
+        $result = $this->aiConnectionService->processRequest(
+            $payload,
+            false
+        );
+        
+        // Record usage
+        if (isset($result['usage'])) {
+            $this->usageAnalyzer->submitUsageRecord(
+                $result['usage'], 
+                'api', 
+                $validatedData['payload']['model']
+            );
         }
-        else{
-            $data = $this->createRequest($formattedPayload);
-            return response()->json($data);
-        }
+        // Return response to client
+        return response()->json([
+            'success' => true,
+            'content' => $result['content'],
+        ]);
     }
     
 
@@ -125,7 +117,7 @@ class StreamController extends Controller
 
 
         if ($validatedData['broadcast']) {
-            $this->handleGroupChatRequestNew($validatedData);
+            $this->handleGroupChatRequest($validatedData);
         } else {
             $user = User::find(1); // HAWKI user 
             $avatar_url = $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null;
@@ -178,6 +170,14 @@ class StreamController extends Controller
 
         // Create a callback function to process streaming chunks
         $onData = function ($data) use ($user, $avatar_url, $payload) {
+
+          // Only use normaliseDataChunk if the content of $data does not begin with ‘data: ’.
+            if (strpos(trim($data), 'data: ') !== 0) {
+                $data = $this->normalizeDataChunk($data);
+                //Log::info('google chunk detected');
+            }
+
+        
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
             foreach ($chunks as $chunk) {
@@ -189,7 +189,8 @@ class StreamController extends Controller
                 
                 // Format the chunk
                 $formatted = $provider->formatStreamChunk($chunk);
-                
+                // Log::info('Formatted Chunk:' . json_encode($formatted));
+
                 // Record usage if available
                 if ($formatted['usage']) {
                     $this->usageAnalyzer->submitUsageRecord(
@@ -208,9 +209,8 @@ class StreamController extends Controller
                     ],
                     'model' => $payload['model'],
                     'isDone' => $formatted['isDone'],
-                    'content' => $formatted['content'],
+                    'content' => json_encode($formatted['content']),
                 ];
-                
                 echo json_encode($messageData) . "\n";
             }
         };
@@ -222,11 +222,57 @@ class StreamController extends Controller
             $onData
         );
     }
-    
+    /*
+     * Helper function to translate curl return object from google to openai format
+     */
+    private function normalizeDataChunk(string $data): string
+    {
+        $this->jsonBuffer .= $data;
+
+        if(trim($this->jsonBuffer) === "]") {
+            $this->jsonBuffer = "";
+            return "";
+        }
+
+        $output = "";
+        while($extracted = $this->extractJsonObject($this->jsonBuffer)) {
+            $jsonStr = $extracted['jsonStr'];
+            $this->jsonBuffer = $extracted['rest'];
+            $output .= "data: " . $jsonStr . "\n";
+        }
+        return $output;
+    }
+
+    // New helper function to extract only complete JSON objects from buffer
+    private function extractJsonObject(string $buffer): ?array
+    {
+        $openBraces = 0;
+        $startFound = false;
+        $startPos = 0;
+
+        for($i = 0; $i < strlen($buffer); $i++) {
+            $char = $buffer[$i];
+            if($char === '{') {
+                if(!$startFound) {
+                    $startFound = true;
+                    $startPos = $i;
+                }
+                $openBraces++;
+            } elseif($char === '}') {
+                $openBraces--;
+                if($openBraces === 0 && $startFound) {
+                    $jsonStr = substr($buffer, $startPos, $i - $startPos + 1);
+                    $rest = substr($buffer, $i + 1);
+                    return ['jsonStr' => $jsonStr, 'rest' => $rest];
+                }
+            }
+        }
+        return null;
+    }
     /**
      * Handle group chat requests with the new architecture
      */
-    private function handleGroupChatRequestNew(array $data)
+    private function handleGroupChatRequest(array $data)
     {
         $isUpdate = (bool) ($data['isUpdate'] ?? false);
         $room = Room::where('slug', $data['slug'])->firstOrFail();
@@ -261,7 +307,7 @@ class StreamController extends Controller
         // Encrypt content for storage
         $cryptoController = new EncryptionController();
         $encKey = base64_decode($data['key']);
-        $encryptiedData = $cryptoController->encryptWithSymKey($encKey, $result['content'], false);
+        $encryptiedData = $cryptoController->encryptWithSymKey($encKey, json_encode($result['content']), false);
         
         // Store message
         $roomController = new RoomController();

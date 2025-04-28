@@ -57,7 +57,7 @@ class OpenWebUIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Format the complete response from OpenAI
+     * Format the complete response from OpenWebUI
      *
      * @param mixed $response
      * @return array
@@ -72,7 +72,9 @@ class OpenWebUIProvider extends BaseAIModelProvider
         }
                
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'usage' => $this->extractUsage($jsonContent)
         ];
 
@@ -103,17 +105,54 @@ class OpenWebUIProvider extends BaseAIModelProvider
         }
         
         // Extract content if available
-        if (isset($jsonChunk['choices'][0]['delta']['content'])) {
-            $content = $jsonChunk['choices'][0]['delta']['content'];
+        //if (isset($jsonChunk['choices'][0]['delta']['content'])) {
+        //    $content = $jsonChunk['choices'][0]['delta']['content'];
+        //}
+        if ($this->containsKey($jsonChunk, 'content')){
+            $content = $this->getValueForKey($jsonChunk, 'content');
         }
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'isDone' => $isDone,
             'usage' => $usage
         ];
     }
     
+    protected function containsKey($obj, $targetKey)
+    {
+        if (!is_array($obj)) {
+            return false;
+        }
+        if (array_key_exists($targetKey, $obj)) {
+            return true;
+        }
+        foreach ($obj as $value) {
+            if ($this->containsKey($value, $targetKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected function getValueForKey($obj, $targetKey)
+    {
+        if (!is_array($obj)) {
+            return null;
+        }
+        if (array_key_exists($targetKey, $obj)) {
+            return $obj[$targetKey];
+        }
+        foreach ($obj as $value) {
+            $result = $this->getValueForKey($value, $targetKey);
+            if ($result !== null) {
+                return $result;
+            }
+        }
+        return null;
+    }
     /**
      * Extract usage information from OpenAI response
      *
@@ -122,14 +161,16 @@ class OpenWebUIProvider extends BaseAIModelProvider
      */
     protected function extractUsage(array $data): ?array
     {
-        if (empty($data['usageMetadata'])) {
+        if (empty($data['usage'])) {
             return null;
         }
-        
+        //Log::info($data['usage']);
         return [
-            'prompt_tokens' => $data['usage']['promptTokenCount'],
-            'completion_tokens' => $data['usage']['response_token/s'],
-        ];
+            'prompt_tokens' => $data['usage']['prompt_tokens'],
+            'completion_tokens' => $data['usage']['completion_tokens'],
+            'prompt_token/s' =>  $data['usage']['prompt_token/s'],
+            'response_token/s' =>  $data['usage']['response_token/s'],
+        ];    
     }
     
     /**

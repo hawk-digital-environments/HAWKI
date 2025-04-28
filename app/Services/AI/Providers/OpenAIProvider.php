@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class OpenAIProvider extends BaseAIModelProvider
 {
@@ -70,7 +71,9 @@ class OpenAIProvider extends BaseAIModelProvider
         $content = $jsonContent['choices'][0]['message']['content'] ?? '';
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'usage' => $this->extractUsage($jsonContent)
         ];
     }
@@ -97,6 +100,8 @@ class OpenAIProvider extends BaseAIModelProvider
         // Extract usage data if available
         if (!empty($jsonChunk['usage'])) {
             $usage = $this->extractUsage($jsonChunk);
+            Log::info('OpenAI', ['model' => $jsonChunk['model'], 'usage' => $usage]);
+
         }
         
         // Extract content if available
@@ -105,7 +110,9 @@ class OpenAIProvider extends BaseAIModelProvider
         }
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'isDone' => $isDone,
             'usage' => $usage
         ];
@@ -173,6 +180,10 @@ class OpenAIProvider extends BaseAIModelProvider
     {
         // Ensure stream is set to true
         $payload['stream'] = true;
+        // Enable usage reporting
+        $payload['stream_options'] = [
+            'include_usage' => true,
+        ];
         
         set_time_limit(120);
         
@@ -229,4 +240,53 @@ class OpenAIProvider extends BaseAIModelProvider
         
         return $messages;
     }
+
+
+    // /**
+    //  * Ping the API to check model status
+    //  *
+    //  * @param string $modelId
+    //  * @return string
+    //  * @throws \Exception
+    //  */
+    // public function getModelsStatus(): array
+    // {
+    //     $response = $this->pingProvider();
+    //     $stats = json_decode($response, true)['data'];
+    //     return $stats;
+    // }
+
+    // /**
+    // * Ping the API to check status of all models
+    // */
+    // public function getModelsList(): string
+    // {
+    //     $response = $this->pingProvider();
+    //     $stats = json_decode($response, true)['data'];
+    //     return $stats;
+    // }
+
+
+    // /**
+    //  * Get status of all models
+    //  *
+    //  * @return string
+    //  */
+    // protected function pingProvider(): string
+    // {        
+    //     $url = $this->config['ping_url'];
+    //     $apiKey = $this->config['api_key'];
+
+    //     try {
+    //         $response = Http::withToken($apiKey)
+    //             ->timeout(5) // Set a short timeout
+    //             ->get($url);
+
+    //         return $response;
+    //     } catch (\Exception $e) {
+    //         return null;
+    //     }
+
+    //     return $statuses;
+    // }
 }

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class Member extends Model
 {
@@ -16,7 +17,8 @@ class Member extends Model
         'room_id', 
         'user_id',
         'role',
-        'last_read'
+        'last_read',
+        'isRemoved'
     ];
 
     // public function room()
@@ -40,5 +42,13 @@ class Member extends Model
 
     public function updateLastRead(){
         $this->update(['last_read' => Carbon::now()]);
+    }
+
+    public function revokeMembership(){
+        $this->update(['isRemoved'=> 1]);
+    }
+
+    public function recreateMembership(){
+        $this->update(['isRemoved'=> 0]);
     }
 }

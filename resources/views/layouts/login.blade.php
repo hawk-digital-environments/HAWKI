@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -9,12 +9,12 @@
 
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/login_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/login_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/settings_style.css') }}">
 
-    <script src="{{ asset('js_v2.0.0/functions.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/settings_functions.js') }}"></script>
 
     {!! $settingsPanel !!}
 

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-use App\Services\AI\ModelUtilityService;
+use App\Services\AI\AIConnectionService;
 use App\Models\User;
 
 
@@ -23,10 +23,10 @@ class HomeController extends Controller
     protected $languageController;
 
     // Inject LanguageController instance
-    public function __construct(LanguageController $languageController, ModelUtilityService $utilities)
+    public function __construct(LanguageController $languageController, AIConnectionService $aiConnService)
     {
         $this->languageController = $languageController;
-        $this->utilities = $utilities;
+        $this->aiConnService = $aiConnService;
     }
 
     /// Redirects user to Home Layout
@@ -69,7 +69,7 @@ class HomeController extends Controller
         Session::put('last-route', 'home');
 
 
-        $models = $this->utilities->getModels();
+        $models = $this->aiConnService->getAvailableModels();
 
         // Pass translation, authenticationMethod, and authForms to the view
         return view('modules.' . $requestModule, 
@@ -111,7 +111,7 @@ class HomeController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
         
-        $models = $this->utilities->getModels();
+        $models = $this->aiConnService->getAvailableModels();
 
         $activeModule = $module;
         return view('layouts.print_template', 

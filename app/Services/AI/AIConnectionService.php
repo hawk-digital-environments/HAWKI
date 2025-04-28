@@ -62,16 +62,29 @@ class AIConnectionService
         
         foreach ($providers as $provider) {
             if ($provider['active']) {
-                foreach ($provider['models'] as $model) {
-                    $models[] = $model;
-                }
+
+                $providerInterface = $this->providerFactory->getProviderInterface($provider['id']);
+
+                if (method_exists($providerInterface, 'getModelsStatus') && 
+                    $provider['status_check'] &&
+                    !empty($provider['ping_url'])) {
+
+                        $stats = $providerInterface->getModelsStatus();
+                        foreach($stats as $stat){
+                            $models[] = $stat;
+                        }
+                } else {
+                    foreach ($provider['models'] as $model) {
+                        $models[] = $model;
+                    }
+                }  
             }
         }
-        
+
         return [
             'models' => $models,
             'defaultModel' => config('model_providers')['defaultModel'],
-            'titleGenerationModel' => config('model_providers')['titleGenerationModel']
+            'systemModels' => config('model_providers')['system_models']
         ];
     }
     
@@ -96,5 +109,10 @@ class AIConnectionService
     public function getProviderForModel(string $modelId)
     {
         return $this->providerFactory->getProviderForModel($modelId);
+    }
+
+
+    public function checkModelsStatus(){
+
     }
 }

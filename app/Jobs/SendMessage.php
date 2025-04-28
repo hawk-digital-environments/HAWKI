@@ -48,6 +48,7 @@ class SendMessage implements ShouldQueue
             'author' => [
                 'username' => $member->user->username,
                 'name' => $member->user->name,
+                'isRemoved' => $member->isRemoved,
                 'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
             ],
             'model' => $this->message->model,

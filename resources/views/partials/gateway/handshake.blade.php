@@ -34,7 +34,9 @@
             <div class="nav-buttons">
                 <button onclick="extractPasskey()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
+            
             <p class="red-text" id="backup-alert-message"></p>
+            <button onclick="switchSlide(4)" class="btn-md">{{ $translation["HS-ForgottenBackup"] }}</button>
 
         </div>
 
@@ -43,8 +45,18 @@
             <h3 id="passkey-field" class="demo-hash"></h3>
             <div class="nav-buttons">
                 <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
+
             </div>
         </div>
+
+        <div class="slide" data-index="4">
+            <h2>{{ $translation["HS-LostBothT"] }}</h2>
+            <h3>{{ $translation["HS-LostBothB"] }}</h3>
+            <div class="nav-buttons">
+                <button onclick="requestProfileReset()" class="btn-lg-fill align-end">{{ $translation["HS-ResetProfile"] }}</button>
+            </div>
+        </div>
+
 
     </div>
 </div>
@@ -60,13 +72,13 @@
     window.addEventListener('DOMContentLoaded', async function (){
 
         if(await getPassKey()){
+            console.log('keychain synced');
             await syncKeychain(serverKeychainCryptoData);
-            // console.log('keychain synced');
             window.location.href = '/chat';
         }
         else{
-            // console.log('opening passkey enter');
-            window.addEventListener('DOMContentLoaded', switchSlide(1));
+            console.log('opening passkey panel');
+            switchSlide(1)
             setTimeout(() => {
                 if(@json($activeOverlay)){
                     setOverlay(false, true)

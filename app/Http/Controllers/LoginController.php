@@ -25,7 +25,7 @@ class LoginController extends Controller
         Session::put('registration_access', false);
 
         if(Auth::check()){
-            return redirect('/chat');
+            return redirect('/handshake');
         }
 
 

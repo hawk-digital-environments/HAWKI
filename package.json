@@ -2,16 +2,6 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "init": "npm install && composer install && node scripts/create-env-file.js && php artisan migrate && php artisan db:seed",
-        "reset-db": "php artisan migrate:fresh && php artisan db:seed",
-        "start": "conc -c auto -p \"[{time} {name}]\" npm:start:*",
-        "start:reverb": "php artisan Reverb:start",
-        "start:serve": "php artisan serve",
-        "start:queue-default": "php artisan queue:work",
-        "start:queue-mails": "php artisan queue:work --queue=mails",
-        "start:queue-message_broadcast": "php artisan queue:work --queue=message_broadcast",
-        "start:vite": "vite",
-        "build:vite": "vite build",
         "dev": "vite",
         "build": "vite build"
     },
@@ -32,6 +22,10 @@
         "katex": "^0.16.15",
         "laravel-echo": "^1.16.1",
         "markdown-it": "^14.1.0",
+        "pako": "^2.1.0",
         "pusher-js": "^8.4.0-rc2"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "*"
     }
 }
