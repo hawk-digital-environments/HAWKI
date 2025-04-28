@@ -16,6 +16,9 @@ use App\Orchid\Screens\ModelSettings\ProviderSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
 
 use App\Orchid\Screens\ModelSettings\ModelSettingsScreen;
+use App\Orchid\Screens\ModelSettings\ModelInformationScreen;
+use App\Orchid\Screens\ModelSettings\ModelEditSettingsScreen;
+
 use App\Orchid\Screens\ModelSettings\UtilityModelsSettingsScreen;
 
 use App\Orchid\Screens\Examples\ExampleActionsScreen;
@@ -68,8 +71,16 @@ Route::screen('/settings/texts', TextsSettingsScreen::class)->name('platform.set
 // Models
 Route::screen('/modelsettings/providers', ProviderSettingsScreen::class)->name('platform.modelsettings.providers');
 Route::screen('/modelsettings/providers/create', ProviderCreateScreen::class)->name('platform.modelsettings.provider.create');
-Route::screen('/modelsettings/activemodels', ModelSettingsScreen::class)->name('platform.modelsettings.activemodels');
+
+Route::screen('/modelsettings/modelslist', ModelSettingsScreen::class)->name('platform.modelsettings.modelslist');
+Route::screen('/modelsettings/model/{model}/info', ModelInformationScreen::class)->name('platform.modelsettings.model.info');
+Route::screen('/modelsettings/model/{model}/settings', ModelEditSettingsScreen::class)->name('platform.modelsettings.model.settings');
+
+
 Route::screen('/modelsettings/utilitymodels', UtilityModelsSettingsScreen::class)->name('platform.modelsettings.utilitymodels');
+
+    
+
 
 
 // Platform > Profile

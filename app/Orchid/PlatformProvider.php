@@ -36,7 +36,7 @@ class PlatformProvider extends OrchidServiceProvider
         return [
             Menu::make('Get Started')
                 ->icon('bs.book')
-                ->title('Navigation')
+                ->title('Overview')
                 ->route(config('platform.index')),
             
             Menu::make('Dashboard')
@@ -54,6 +54,7 @@ class PlatformProvider extends OrchidServiceProvider
                     ]),
 
             Menu::make('System')
+                ->title('Configuration')
                 ->icon('bs.house-gear')
                 ->list([
                     Menu::make('Settings')
@@ -80,7 +81,7 @@ class PlatformProvider extends OrchidServiceProvider
                         ->route('platform.modelsettings.providers')
                         ->icon('bs.plug'),
                     Menu::make('Model Settings')
-                        ->route('platform.modelsettings.activemodels')
+                        ->route('platform.modelsettings.modelslist')
                         ->icon('bs.toggles'),
                     Menu::make('Utility Models')
                         ->route('platform.modelsettings.utilitymodels')
@@ -112,6 +113,7 @@ class PlatformProvider extends OrchidServiceProvider
                 ->badge(fn () => Dashboard::version(), Color::DARK),
         ];
     }
+
 
     /**
      * Register permissions for the application.
