@@ -250,6 +250,8 @@ class AuthenticationController extends Controller
             $name = $userInfo['name'] ?? null;
             $email = $userInfo['email'] ?? null;
             $employeetype = $userInfo['employeetype'] ?? null;
+            $permissions = $userInfo['permissions'] ?? null;
+
     
             $avatarId = $validatedData['avatar_id'] ?? '';
 
@@ -262,6 +264,7 @@ class AuthenticationController extends Controller
                     'employeetype' => $employeetype,
                     'publicKey' => $validatedData['publicKey'],
                     'avatar_id' => $avatarId,
+                    'permissions' => $permissions,
                 ]
             );
     

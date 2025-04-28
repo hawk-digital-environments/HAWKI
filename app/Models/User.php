@@ -22,6 +22,7 @@ class User extends OrchidUser
         'publicKey',
         'avatar_id',
         'bio',
+        'permissions',
     ];
 
     /**
