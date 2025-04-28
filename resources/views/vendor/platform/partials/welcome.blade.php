@@ -27,7 +27,7 @@
 
                 <span class="ms-3 text-body-emphasis">Explore the Documentation</span>
             </h3>
-            <p class="ms-md-5 ps-md-1">
+            <p class="ms-md-4 ps-md-2">
                 The new version offers numerous improvements through even stronger integration into everyday university life, focusing on flexibility, transparency, and collaboration. 
                 <br>Dive in and experience the power of limitless creativity with our comprehensive <a href="https://hawk-digital-environments.github.io/HAWKI2-Documentation/" target="_blank" class="text-u-l">documentation</a>.
             </p>
@@ -39,7 +39,7 @@
 
                 <span class="ms-3 text-body-emphasis">Github</span>
             </h3>
-            <p class="ms-md-5 ps-md-1">
+            <p class="ms-md-4 ps-md-2">
                 You're missing a feature and want to contribute to HAWKI? Our open source project welcomes contributions from everyone!
                 <a href="https://github.com/HAWK-Digital-Environments/HAWKI/issues" target="_blank" class="text-u-l">Check the Issues page regularly</a> to see if someone is already working on that feature and is interested in collaborating. 
                 Have fun coding and thank you for your contribution!
@@ -53,21 +53,24 @@
 
                 <span class="ms-3 text-body-emphasis">Dashboard</span>
             </h3>
-            <p class="ms-md-5 ps-md-1">
-                <ul>
-                    <li>
-                        Global
-                        <x-orchid-icon path="bs.hammer"/>
-                    </li>
-                    <li>
-                        Users
-                        <x-orchid-icon path="bs.cone-striped"/>
-                    </li>
-                    <li>
-                        Requests
-                        <x-orchid-icon path="bs.cone-striped"/>
-                    </li>
-                </ul>
+            <p class="ms-md-4 ps-md-2">
+                Gives you an overview of all metrics for HAWKI.
+                <div class="ps-md-3">
+                    <ul>
+                        <li>
+                            Global
+                            <x-orchid-icon path="bs.hammer"/>
+                        </li>
+                        <li>
+                            Users
+                            <x-orchid-icon path="bs.cone-striped"/>
+                        </li>
+                        <li>
+                            Requests
+                            <x-orchid-icon path="bs.cone-striped"/>
+                        </li>
+                    </ul>
+                </div>    
             </p>
         </div>
 
@@ -77,30 +80,32 @@
 
                 <span class="ms-3 text-body-emphasis">System</span>
             </h3>
-            <p class="ms-md-5 ps-md-1">
-                <ul>
-                    <li>
-                        Settings
-                        <x-orchid-icon path="bs.hammer"/>
-                    </li>
-                    <li>
-                        Log
-                        <x-orchid-icon path="bs.check"/>
-                    </li>
-                    <li>
-                        Storage
-                        <x-orchid-icon path="bs.hammer"/>
-                    </li>
-                    <li>
-                        Styling
-                        <x-orchid-icon path="bs.hammer"/>
-                    </li>
-                    <li>
-                        Texts
-                        <x-orchid-icon path="bs.hammer"/>
-                    </li>
-                </ul>
-            
+            <p class="ms-md-4 ps-md-2">
+                Customize the system to meet your organization’s specific needs.
+                <div class="ps-md-3">
+                    <ul>
+                        <li>
+                            Settings
+                            <x-orchid-icon path="bs.hammer"/><x-orchid-icon path="bs.file-code-fill"/>
+                        </li>
+                        <li>
+                            Log
+                            <x-orchid-icon path="bs.check"/>
+                        </li>
+                        <li>
+                            Storage
+                            <x-orchid-icon path="bs.hammer"/>
+                        </li>
+                        <li>
+                            Styling
+                            <x-orchid-icon path="bs.hammer"/>
+                        </li>
+                        <li>
+                            Texts
+                            <x-orchid-icon path="bs.hammer"/>
+                        </li>
+                    </ul>
+                </div>
             </p>
         </div>
 
@@ -110,19 +115,21 @@
 
                 <span class="ms-3 text-body-emphasis">Models</span>
             </h3>
-            <p class="ms-md-5 ps-md-1">
-                <ul>
-                    <li>
-                        API Providers <x-orchid-icon path="bs.cone-striped"/><x-orchid-icon path="bs.file-code-fill"/>
-                    </li>
-                    <li>
-                        Model Settings <x-orchid-icon path="bs.hammer"/>
-                    </li>
-                    <li>
-                        Utility Models <x-orchid-icon path="bs.cone-striped"/><x-orchid-icon path="bs.file-code-fill"/>
-                    </li>
-                </ul>
-
+            <p class="ms-md-4 ps-md-2">
+                Set up you LLM providers, retrieve and configure available models.
+                <div class="ps-md-3">
+                    <ul>
+                        <li>
+                            API Providers <x-orchid-icon path="bs.check"/><x-orchid-icon path="bs.file-code-fill"/>
+                        </li>
+                        <li>
+                            Model Settings <x-orchid-icon path="bs.check"/><x-orchid-icon path="bs.file-code-fill"/>
+                        </li>
+                        <li>
+                            Utility Models <x-orchid-icon path="bs.cone-striped"/><x-orchid-icon path="bs.file-code-fill"/>
+                        </li>
+                    </ul>
+                </div>
             </p>
         </div>
 
@@ -132,8 +139,10 @@
 
                 <span class="ms-3 text-body-emphasis">Role Management</span>
             </h3>
-            <div class="ms-md-5 ps-md-1">
-                <p>
+
+                <p class="ms-md-4 ps-md-2">
+                    Manage user roles and access rights.
+                    <div class="ps-md-3">
                     <ul>
                         <li>
                             Users <x-orchid-icon path="bs.hammer"/>
@@ -142,9 +151,9 @@
                             Roles <x-orchid-icon path="bs.hammer"/>
                         </li>
                     </ul>
+                </div>
                     
                 </p>
-            </div>
         </div>
 
     
