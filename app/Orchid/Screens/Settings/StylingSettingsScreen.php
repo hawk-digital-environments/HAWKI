@@ -3,6 +3,9 @@
 namespace App\Orchid\Screens\Settings;
 
 use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Layout;
+
+use Orchid\Screen\Fields\Code;
 
 class StylingSettingsScreen extends Screen
 {
@@ -43,6 +46,13 @@ class StylingSettingsScreen extends Screen
      */
     public function layout(): iterable
     {
-        return [];
+        return [
+            Layout::rows([
+                Code::make('css')
+                    ->language('css')
+                    ->title('CSS Editor')
+                    ->value('/* CSS hier laden oder ändern */'),
+            ]),
+        ];
     }
 }
