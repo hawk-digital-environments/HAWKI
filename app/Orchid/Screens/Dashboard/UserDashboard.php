@@ -59,14 +59,6 @@ class UserDashboard extends Screen
         $percentage = round((($totalUsers > 0) ? ($newUsersThisMonth / $totalUsers) * 100 : 0), 2);
         //Log::info("Prozentsatz neuer User: " . $percentage);
 
-    // Anzahl der User mit einem Request an einem bestimmten Tag 
-        $activeUsersCount = DB::table('usage_records')
-                              ->whereDate('created_at', $specificDay)
-                              ->distinct('user_id')
-                              ->count('user_id');
-        Log::info("Individuelle aktive User am {$specificDay}: " . $activeUsersCount);
-
-
     // Aktive User pro Tag für den ganzen Monat
 
         $dailyData = DB::table('usage_records')
@@ -100,18 +92,10 @@ class UserDashboard extends Screen
         $activeUsersDeltaDiff = ($activeUsersDelta > 0) ? round((($todayActive - $activeUsersDelta) / $activeUsersDelta) * 100, 2) : 0;
         //Log::info("Prozentsatzabweichung: " . $activeUsersDeltaDiff . "%");
 
-            // Platzhalter-Array mit fiktiven Nutzerzahlen
-            $fakeUsers = [];
-            for ($i = 0; $i < $daysInMonth; $i++) {
-                $fakeUsers[] = rand(600, 800); // fiktive Nutzerzahlen
-            }
-        
-        foreach ($dailyData as $data) {
-            $index = (int)$data->day - 1;
-            if ($index >= 0 && $index < $daysInMonth) {
-                $values[$index] = $data->activeUsers;
-            }
-        }
+        // Berechnung des Verhältnis von recurringUsers zu newUsers
+        $recurringUsers = $totalUsers - $newUsersThisMonth;
+        $recurringPercentage = ($newUsersThisMonth > 0) ? round(($recurringUsers / $newUsersThisMonth) * 100, 2) : 0;
+
         // Zusammenbauen der Daten für das Barchart
         $dailyActiveUsers = [
             [
@@ -156,41 +140,41 @@ class UserDashboard extends Screen
             $providerSummary[$providerKey] = $totalRequestsForProvider;
         }
         // Erstelle eine modelSummary, die die Anfragen auf die verschiedenen Modelle aufschlüsselt
-        $modelSummary = [];
-        foreach ($allModels as $model) {
-            if (isset($model['id'])) {
-                $count = DB::table('usage_records')
-                           ->where('model', $model['id'])
-                           ->count();
-                $modelSummary[$model['id']] = $count;
-            }
-        }
+        //$modelSummary = [];
+        //foreach ($allModels as $model) {
+        //    if (isset($model['id'])) {
+        //        $count = DB::table('usage_records')
+        //                   ->where('model', $model['id'])
+        //                   ->count();
+        //        $modelSummary[$model['id']] = $count;
+        //    }
+        //}
 
         
-        $specificModel = 'gpt-4o-mini';
-        $countForSpecificDay = DB::table('usage_records')
-                                ->where('model', $specificModel)
-                                ->whereDate('created_at', $specificDay)
-                                ->count();
-        Log::info("Aufrufe von Model {$specificModel} am {$specificDay}: " . $countForSpecificDay);
+        //$specificModel = 'gpt-4o-mini';
+        //$countForSpecificDay = DB::table('usage_records')
+        //                        ->where('model', $specificModel)
+        //                        ->whereDate('created_at', $specificDay)
+        //                        ->count();
+        //Log::info("Aufrufe von Model {$specificModel} am {$specificDay}: " . $countForSpecificDay);
 
     // Neue Abfrage: Anzahl der Aufrufe eines spezifischen Models im gesamten Monat
-        $specificYear = '2025';
-        $specificMonth = '03';
-        $countForSpecificMonth = DB::table('usage_records')
-                                   ->where('model', $specificModel)
-                                   ->whereYear('created_at', $specificYear)
-                                   ->whereMonth('created_at', $specificMonth)
-                                   ->count();
-        Log::info("Aufrufe von Model {$specificModel} im {$specificYear}-{$specificMonth}: " . $countForSpecificMonth);
-
-        Log::info('Total requests: ' . $totalRequests);
-        Log::info('Requests OpenAI: ' . $openAiRequests->count());
-        // Abfrage der Anzahl der Requests für den spezifischen Tag und Erstellen eines Arrays als Werte
-        $requestsCountForSpecificDay = DB::table('usage_records')
-                                        ->whereDate('created_at', $specificDay)
-                                        ->count();
-        $requestsPerDayArray = [$requestsCountForSpecificDay];
+    //    $specificYear = '2025';
+    //    $specificMonth = '03';
+    //    $countForSpecificMonth = DB::table('usage_records')
+    //                               ->where('model', $specificModel)
+    //                               ->whereYear('created_at', $specificYear)
+    //                               ->whereMonth('created_at', $specificMonth)
+    //                               ->count();
+    //    Log::info("Aufrufe von Model {$specificModel} im {$specificYear}-{$specificMonth}: " . $countForSpecificMonth);
+    //
+    //    Log::info('Total requests: ' . $totalRequests);
+    //    Log::info('Requests OpenAI: ' . $openAiRequests->count());
+    //    // Abfrage der Anzahl der Requests für den spezifischen Tag und Erstellen eines Arrays als Werte
+    //    $requestsCountForSpecificDay = DB::table('usage_records')
+    //                                    ->whereDate('created_at', $specificDay)
+    //                                    ->count();
+    //    $requestsPerDayArray = [$requestsCountForSpecificDay];
 
         // Neuer Code: Abfrage der Requests pro Stunde anhand der created_at-Spalte 
         // zur Ermittlung der distinct active Users pro Stunde
@@ -223,6 +207,13 @@ class UserDashboard extends Screen
                 'activeUsersDelta'  => number_format($activeUsersDelta),
                 'activeUsersToday'  => ['value' => number_format($activeUsersToday ? $activeUsersToday->activeUsers : 0), 'diff' => $activeUsersDeltaDiff],
             ],
+            'percentageChart' => [
+                [
+                    'labels' => ['Recurring Users', 'New Users'],
+                    'name'   => 'Recurring vs New Users',
+                    'values' => [$recurringUsers, $newUsersThisMonth]
+                ]
+            ],
         ];
     }
 
@@ -235,7 +226,13 @@ class UserDashboard extends Screen
     {
         return 'User Dashboard';
     }
-
+    /**
+     * Display header description.
+     */
+     public function description(): ?string
+    {
+        return 'Overview of user metrics for HAWKI';
+    }
     /**
      * The screen's action buttons.
      *
@@ -261,9 +258,9 @@ class UserDashboard extends Screen
                 ->title('Users per Hour')
                 ->description('Overview of active users per hour.');        
 
-        $requestsModelPieChart = PieChart::make('requestsPerModel')
-                ->title('Request per Model')
-                ->description('Overview of Request per Model.');        
+        $percentageChart = PercentageChart::make('percentageChart', 'Recurring vs New Users')
+            ->title('Recurring vs New Users')
+            ->description('Das Verhältnis von wiederkehrenden Nutzern zu neuen Nutzern (im ausgewählten Monat).');
 
         // Entferne den Layout::view() Aufruf für $dailyusersChart
         return [
@@ -287,12 +284,10 @@ class UserDashboard extends Screen
             Layout::columns([
                     $usersPerHourChart,
                 ]),
-    
 
-            Layout::split([
-                $requestsModelPieChart,
-                $requestsModelPieChart,
-            ])->ratio('50/50'),
+            Layout::columns([
+                $percentageChart,
+            ]),
         ];
     }
 }

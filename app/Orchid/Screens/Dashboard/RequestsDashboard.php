@@ -262,7 +262,13 @@ class RequestsDashboard extends Screen
     {
         return 'Requests Dashboard';
     }
-
+    /**
+     * Display header description.
+     */
+     public function description(): ?string
+    {
+        return 'Overview of request metrics for HAWKI';
+    }
     /**
      * The screen's action buttons.
      *

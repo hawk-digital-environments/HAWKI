@@ -40,7 +40,7 @@ class Dashboard extends Screen
         for ($hour = 0; $hour < 24; $hour++) {
             $hourLabels[] = sprintf('%02d:00', $hour);
         }
-        Log::info("BarChart Hour Labels: " . json_encode($hourLabels));
+        //Log::info("BarChart Hour Labels: " . json_encode($hourLabels));
 
     // User Statistics
         $totalUsers = DB::table('users')->count();
@@ -55,17 +55,7 @@ class Dashboard extends Screen
                            ->count();
 
         $percentage = round((($totalUsers > 0) ? ($newUsersThisMonth / $totalUsers) * 100 : 0), 2);
-        //Log::info("Prozentsatz neuer User: " . $percentage);
 
-//    // Anzahl der User mit einem Request an einem bestimmten Tag 
-//        $activeUsersCount = DB::table('usage_records')
-//                              ->whereDate('created_at', $specificDay)
-//                              ->distinct('user_id')
-//                              ->count('user_id');
-//        Log::info("Individuelle aktive User am {$specificDay}: " . $activeUsersCount);
-
-
-    // Aktive User pro Tag für den ganzen Monat
 
         $dailyData = DB::table('usage_records')
                       ->select(DB::raw('DAY(created_at) as day'), DB::raw('count(DISTINCT user_id) as activeUsers'))
@@ -181,7 +171,7 @@ class Dashboard extends Screen
                 'values' => array_values($providerSummary),
             ]
         ];
-        Log::info('Provider request summary: ' . json_encode($providerData));
+        //Log::info('Provider request summary: ' . json_encode($providerData));
 
         
         $specificModel = 'gpt-4o-mini';
@@ -189,7 +179,7 @@ class Dashboard extends Screen
                                 ->where('model', $specificModel)
                                 ->whereDate('created_at', $specificDay)
                                 ->count();
-        Log::info("Aufrufe von Model {$specificModel} am {$specificDay}: " . $countForSpecificDay);
+        //Log::info("Aufrufe von Model {$specificModel} am {$specificDay}: " . $countForSpecificDay);
 
     // Neue Abfrage: Anzahl der Aufrufe eines spezifischen Models im gesamten Monat
         $specificYear = '2025';
@@ -199,10 +189,10 @@ class Dashboard extends Screen
                                    ->whereYear('created_at', $specificYear)
                                    ->whereMonth('created_at', $specificMonth)
                                    ->count();
-        Log::info("Aufrufe von Model {$specificModel} im {$specificYear}-{$specificMonth}: " . $countForSpecificMonth);
+        //Log::info("Aufrufe von Model {$specificModel} im {$specificYear}-{$specificMonth}: " . $countForSpecificMonth);
 
-        Log::info('Total requests: ' . $totalRequests);
-        Log::info('Requests OpenAI: ' . $openAiRequests->count());
+        //Log::info('Total requests: ' . $totalRequests);
+        //Log::info('Requests OpenAI: ' . $openAiRequests->count());
         // Abfrage der Anzahl der Requests für den spezifischen Tag und Erstellen eines Arrays als Werte
         $requestsCountForSpecificDay = DB::table('usage_records')
                                         ->whereDate('created_at', $specificDay)
@@ -245,10 +235,10 @@ class Dashboard extends Screen
             'requestsPerModel' => $requestsPerModel,
 
             'metrics' => [
-                'totalUsers'=> number_format($totalUsers),
-                'newUsers'     => ['value' => number_format($newUsersThisMonth), 'diff' => $percentage],
-                'activeUsersDelta'  => number_format($activeUsersDelta),
-                'activeUsersToday'  => ['value' => number_format($activeUsersToday ? $activeUsersToday->activeUsers : 0), 'diff' => $activeUsersDeltaDiff],
+                'totalUsers'=> ['value' => number_format($totalUsers), 'icon'  => 'bs.people'],
+                'newUsers'     => ['value' => number_format($newUsersThisMonth), 'diff' => $percentage, 'icon'  => 'bs.graph-up'],
+                'activeUsersDelta'  => ['value' => number_format($activeUsersDelta), 'diff' => $percentage, 'icon'  => 'bs.chat'],
+                'activeUsersToday'  => ['value' => number_format($activeUsersToday ? $activeUsersToday->activeUsers : 0), 'diff' => $activeUsersDeltaDiff, 'icon'  => 'bs.currency-euro'],
             ],
         ];
     }
@@ -260,9 +250,15 @@ class Dashboard extends Screen
      */
     public function name(): ?string
     {
-        return 'Dashboard';
+        return 'Global Dashboard';
     }
-
+    /**
+     * Display header description.
+     */
+     public function description(): ?string
+    {
+        return 'Overview of global metrics for HAWKI';
+    }
     /**
      * The screen's action buttons.
      *
@@ -296,31 +292,46 @@ class Dashboard extends Screen
                 ->title('Request per Model')
                 ->description('Overview of Request per Model.');        
 
+        $percentageChart = PercentageChart::make('newUsersPercentage')
+                ->title('New Users Percentage')
+                ->description('Percentage of new users relative to total users');
         // Entferne den Layout::view() Aufruf für $dailyusersChart
         return [
+            
             Layout::metrics([
                 'Total Users'    => 'metrics.totalUsers',
-                'New Users this Month' => 'metrics.newUsers',
-                'Average Daily Active Users' => 'metrics.activeUsersDelta',
-                'Active Today' => 'metrics.activeUsersToday',
-                
-            ]),    
+                'Average Active Users per Month' => 'metrics.newUsers',
+                'Average Requests per User' => 'metrics.activeUsersDelta',
+                'Average Cost per User' => 'metrics.activeUsersToday',
+            ])->title('HAWKI Overview'),    
+
             
             Layout::columns([
-                    //Layout::component(UserData::class),
-                    $dailyusersChart,
-                ]),
+                $percentageChart,
+            ]),
+            Layout::tabs([
+                'OpenAI' => [   
+                    Layout::metrics([
+                        'Requests per Day'    => 'metrics.totalUsers',
+                        'Average Input' => 'metrics.newUsers',
+                        'Average Output' => 'metrics.activeUsersDelta',
+                        'Cost Estimate' => 'metrics.activeUsersToday',
 
-            Layout::columns([
-                    //Layout::component(UserData::class),
-                    $requestsPerHourChart,
-                ]),
-    
+                    ]), 
+                ],
+                'Google' => [   
+                    Layout::metrics([
+                        'Requests per Day'    => 'metrics.totalUsers',
+                        'Average Input' => 'metrics.newUsers',
+                        'Average Output' => 'metrics.activeUsersDelta',
+                        'Cost Estimate' => 'metrics.activeUsersToday',
 
-            Layout::split([
-                $requestsProviderPieChart,
-                $requestsModelPieChart,
-            ])->ratio('50/50'),
+                    ]), 
+
+ 
+
+                ],
+            ]),
         ];
     }
 }
