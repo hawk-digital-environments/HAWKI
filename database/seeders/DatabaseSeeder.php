@@ -12,6 +12,9 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Ensure you call the correct seeder class here
-        $this->call(UserSeeder::class);
+        $this->call([
+            UserSeeder::class,
+            AppSettingsSeeder::class,
+        ]);
     }
 }
