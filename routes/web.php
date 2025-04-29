@@ -42,6 +42,7 @@ Route::middleware('prevent_back')->group(function () {
     Route::middleware('registrationAccess')->group(function () {
     
         Route::get('/register', [AuthenticationController::class, 'register']);
+        Route::post('/req/profile/validatePasskey', [ProfileController::class, 'validatePasskey']);
         Route::post('/req/profile/backupPassKey', [ProfileController::class, 'backupPassKey']);
         Route::get('/req/crypto/getServerSalt', [EncryptionController::class, 'getServerSalt']);
         Route::post('/req/complete_registration', [AuthenticationController::class, 'completeRegistration']);

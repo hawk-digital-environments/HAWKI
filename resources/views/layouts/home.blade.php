@@ -64,7 +64,6 @@
 	@include('partials.home.modals.session-expiry-modal')
 	
 	@include('partials.overlay')
-	
 
 	@include('partials.home.templates')
 
@@ -89,7 +88,16 @@
 	const aiHandle = "{{ config('app.aiHandle') }}";
 
 	
+
+
+
 	window.addEventListener('DOMContentLoaded', async (event) => {
+
+		const passkey = await getPassKey()
+		if(!passkey){
+			console.log('passkey not found!');
+			window.location.href = '/handshake'; 
+		}
 
 		setSessionCheckerTimer(0);
 		CheckModals()

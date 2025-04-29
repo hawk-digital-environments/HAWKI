@@ -45,32 +45,52 @@ let backupHash = '';
 async function checkPasskey(){
 
     const msg = document.querySelector('#alert-message');
-    const enteredPasskey = String(document.getElementById('passkey-input').value);
+    const enteredPasskey = String(document.getElementById('passkey-input').dataset.realValue);
+
     // if passkey field is left empty.
     if(enteredPasskey === ''){
-        msg.innerText = "Bitte gebe ein Passkey ein."
+        msg.innerText = translation.HS_EnterPasskeyMsg
         return;
     }
 
-    const repeatField = document.getElementById('passkey-repeat');
+    const repeatWrapper = document.getElementById('passkey-repeat');
+
     //Show Repeat Passkey
-    if(repeatField.style.display === 'none'){
-        repeatField.style.display = 'block';
+    if(repeatWrapper.style.display === 'none'){
+        repeatWrapper.style.display = 'flex';
+        repeatWrapper.querySelector('input').focus();
         return;
     }
+    const repeatField = repeatWrapper.querySelector('.passkey-input')
+    const repeatedKey = String(repeatField.dataset.realValue);
 
-    const repeatedKey = String(repeatField.value);
+
     //if repeat passkey is empty
     if(repeatedKey === ''){
-        msg.innerText = "Bitte wiederhole das Passkey."
-        return;
-    }
-    //if the inputs are not the same.
-    if(enteredPasskey != repeatedKey){
-        msg.innerText = "Die Eingaben sind nicht gleich."
+        msg.innerText = translation.HS_RepeatPassKey
         return;
     }
 
+    //if the inputs are not the same.
+    if(enteredPasskey != repeatedKey){
+        msg.innerText = translation.HS_DifferentEntries
+        return;
+    }
+
+    let serverVerified = false;
+
+    try {
+        serverVerified = await validatePasskeyByServer(enteredPasskey);
+    } catch (error) {
+        console.error('Error verifying passkey with server:', error);
+        msg.innerText = "Error verifying passkey with server"
+        return;
+    }
+
+    if(!serverVerified){
+        msg.innerText = "PassKey could not be verified by the server"
+        return;
+    }
 
     // create backup hash
     backupHash = generatePasskeyBackupHash();
@@ -123,6 +143,50 @@ async function checkPasskey(){
     // show backup hash
     switchSlide(6);
 }
+
+
+async function validatePasskeyByServer(enteredKey){
+
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        // Send the registration data to the server
+        const response = await fetch('/req/profile/validatePasskey', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                "X-CSRF-TOKEN": csrfToken
+            },
+            body: JSON.stringify({passkey: enteredKey})
+        });
+
+        // Handle the server response
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Server Error:', errorData.error);
+            throw new Error(`Server Error: ${errorData.error}`);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+            return {
+                success: true,
+                message: data.message
+            };
+        }
+        else{
+            return {
+                success: false,
+                message: data.message
+            };
+        }
+
+    } catch (error) {
+        console.error('Error Creating Passkey Backup:', error);
+        throw error;
+    }
+
+}
+
 
 
 function downloadTextFile() {
@@ -239,7 +303,7 @@ async function verifyEnteredPassKey(provider){
 
     const slide = provider.closest(".slide");
     const inputField = slide.querySelector("#passkey-input");
-    const enteredKey = String(inputField.value.trim());
+    const enteredKey = String(inputField.dataset.realValue.trim());
     const errorMessage = slide.querySelector("#alert-message");
 
     if (!enteredKey) {
@@ -247,10 +311,11 @@ async function verifyEnteredPassKey(provider){
         return;
     }
 
-    if(await verifyPasskey(enteredKey)){
+    isVerified = await verifyPasskey(enteredKey);
+
+    if(isVerified){
         await setPassKey(enteredKey);
         await syncKeychain(serverKeychainCryptoData);
-        // console.log('keychain synced');
         window.location.href = '/chat'; 
     }
     else{
