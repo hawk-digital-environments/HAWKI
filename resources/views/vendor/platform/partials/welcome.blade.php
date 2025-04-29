@@ -116,7 +116,7 @@
                 <span class="ms-3 text-body-emphasis">Models</span>
             </h3>
             <p class="ms-md-4 ps-md-2">
-                Set up you LLM providers, retrieve and configure available models.
+                Set up you LLM providers, retrieve and configure available models and change default system prompts.
                 <div class="ps-md-3">
                     <ul>
                         <li>
@@ -126,7 +126,7 @@
                             Model Settings <x-orchid-icon path="bs.check"/><x-orchid-icon path="bs.file-code-fill"/>
                         </li>
                         <li>
-                            Utility Models <x-orchid-icon path="bs.cone-striped"/><x-orchid-icon path="bs.file-code-fill"/>
+                            Utility Models <x-orchid-icon path="bs.check"/><x-orchid-icon path="bs.file-code-fill"/>
                         </li>
                     </ul>
                 </div>
