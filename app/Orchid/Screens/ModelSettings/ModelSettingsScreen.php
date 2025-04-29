@@ -169,11 +169,11 @@ class ModelSettingsScreen extends Screen
                                     ->icon('bs.three-dots')
                                     ->list([
                                         Link::make('Information')
-                                            ->route('platform.modelsettings.model.info', $modelId)
+                                            ->route('platform.modelsettings.models.info', $modelId)
                                             ->icon('bs.info'),
                                             
                                         Link::make('Edit Settings')
-                                            ->route('platform.modelsettings.model.settings', $modelId)
+                                            ->route('platform.modelsettings.models.settings', $modelId)
                                             ->icon('bs.gear'),
                                             
                                         Button::make('Delete')
@@ -271,7 +271,7 @@ class ModelSettingsScreen extends Screen
         }
         
         Toast::success('Model settings saved successfully.');
-        return redirect()->route('platform.modelsettings.modelslist');
+        return redirect()->route('platform.modelsettings.models');
     }
     
     
@@ -287,7 +287,7 @@ class ModelSettingsScreen extends Screen
         
         if ($providers->isEmpty()) {
             Toast::warning('No active providers found. Please configure providers first.');
-            return redirect()->route('platform.modelsettings.modelslist');
+            return redirect()->route('platform.modelsettings.models');
         }
         
         $totalFound = 0;

@@ -57,9 +57,23 @@ Route::screen('/main', PlatformScreen::class)
     ->name('platform.main');
 
 // Dashboard
-Route::screen('/dashboard/global', Dashboard::class)->name('platform.dashboard.global');
-Route::screen('/dashboard/users', UserDashboard::class)->name('platform.dashboard.users');
-Route::screen('/dashboard/requests', RequestsDashboard::class)->name('platform.dashboard.requests');
+Route::screen('/dashboard/global', Dashboard::class)
+    ->name('platform.dashboard.global')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Global Dashboard'), route('platform.dashboard.global')));
+        
+Route::screen('/dashboard/users', UserDashboard::class)
+    ->name('platform.dashboard.users')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('User Dashboard'), route('platform.dashboard.users')));
+        
+Route::screen('/dashboard/requests', RequestsDashboard::class)
+    ->name('platform.dashboard.requests')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Requests Dashboard'), route('platform.dashboard.requests')));
 
 // Settings        
 Route::screen('/settings/system', SystemSettingsScreen::class)->name('platform.settings.system');
@@ -69,15 +83,41 @@ Route::screen('/settings/styling', StylingSettingsScreen::class)->name('platform
 Route::screen('/settings/texts', TextsSettingsScreen::class)->name('platform.settings.texts');
 
 // Models
-Route::screen('/modelsettings/providers', ProviderSettingsScreen::class)->name('platform.modelsettings.providers');
-Route::screen('/modelsettings/providers/create', ProviderCreateScreen::class)->name('platform.modelsettings.provider.create');
+Route::screen('/modelsettings/providers', ProviderSettingsScreen::class)
+    ->name('platform.modelsettings.providers')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Providers'), route('platform.modelsettings.providers')));
+        
+Route::screen('/modelsettings/providers/create', ProviderCreateScreen::class)
+    ->name('platform.modelsettings.provider.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.modelsettings.providers')
+        ->push(__('Create Provider'), route('platform.modelsettings.provider.create')));
 
-Route::screen('/modelsettings/modelslist', ModelSettingsScreen::class)->name('platform.modelsettings.modelslist');
-Route::screen('/modelsettings/model/{model}/info', ModelInformationScreen::class)->name('platform.modelsettings.model.info');
-Route::screen('/modelsettings/model/{model}/settings', ModelEditSettingsScreen::class)->name('platform.modelsettings.model.settings');
+Route::screen('/modelsettings/models', ModelSettingsScreen::class)
+    ->name('platform.modelsettings.models')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Models List'), route('platform.modelsettings.models')));
+        
+Route::screen('/modelsettings/models/{model}/info', ModelInformationScreen::class)
+    ->name('platform.modelsettings.models.info')
+    ->breadcrumbs(fn (Trail $trail, $model) => $trail
+        ->parent('platform.modelsettings.models')
+        ->push($model->name ?? __('Model Information'), route('platform.modelsettings.models.info', $model)));
+        
+Route::screen('/modelsettings/models/{model}/settings', ModelEditSettingsScreen::class)
+    ->name('platform.modelsettings.models.settings')
+    ->breadcrumbs(fn (Trail $trail, $model) => $trail
+        ->parent('platform.modelsettings.models', $model)
+        ->push(__('Edit Model Settings'), route('platform.modelsettings.models.settings', $model)));
 
-
-Route::screen('/modelsettings/utilitymodels', UtilityModelsSettingsScreen::class)->name('platform.modelsettings.utilitymodels');
+Route::screen('/modelsettings/utilitymodels', UtilityModelsSettingsScreen::class)
+    ->name('platform.modelsettings.utilitymodels')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Utility Models'), route('platform.modelsettings.utilitymodels')));
 
     
 

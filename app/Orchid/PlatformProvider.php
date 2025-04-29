@@ -81,7 +81,7 @@ class PlatformProvider extends OrchidServiceProvider
                         ->route('platform.modelsettings.providers')
                         ->icon('bs.plug'),
                     Menu::make('Model Settings')
-                        ->route('platform.modelsettings.modelslist')
+                        ->route('platform.modelsettings.models')
                         ->icon('bs.toggles'),
                     Menu::make('Utility Models')
                         ->route('platform.modelsettings.utilitymodels')

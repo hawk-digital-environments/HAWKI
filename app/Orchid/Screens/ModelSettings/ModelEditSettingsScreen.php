@@ -75,7 +75,7 @@ class ModelEditSettingsScreen extends Screen
 
             Link::make('Back to Models')
                 ->icon('arrow-left')
-                ->route('platform.modelsettings.modelslist'),
+                ->route('platform.modelsettings.models'),
 
             Button::make('Save')
                 ->icon('save')
@@ -138,7 +138,7 @@ class ModelEditSettingsScreen extends Screen
             return back()->withInput();
         }
         
-        return redirect()->route('platform.modelsettings.model.settings', $this->model);
+        return redirect()->route('platform.modelsettings.models.settings', $this->model);
     }
 
 }
