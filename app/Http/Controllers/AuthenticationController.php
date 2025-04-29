@@ -259,7 +259,7 @@ class AuthenticationController extends Controller
                     'employeetype' => $employeetype,
                     'publicKey' => $validatedData['publicKey'],
                     'avatar_id' => $avatarId,
-                    'isRemoved' => false
+                    'isRemoved' => false,
                     'permissions' => $permissions,
                 ]
             );
