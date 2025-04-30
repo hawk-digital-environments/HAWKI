@@ -70,60 +70,40 @@ class AIConnectionService
             ->where('provider_settings.is_active', true)
             ->orderBy('language_models.display_order')
             ->get();
-            
+        
+        //Log::info(json_encode($dbModels->toArray(), JSON_PRETTY_PRINT));
+        
         foreach ($dbModels as $model) {
             $modelData = [
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'provider' => $model->provider_name
+                'provider' => $model->provider_name,
+                'status' => 'ready' // 'ready', 'loading', 'unavailable' Default value, will be updated below
             ];
-            
-            // Extract status from the information field, if available
-            if (!empty($model->information)) {
-                try {
-                    // Check if information is already an array
-                    $information = is_array($model->information) ? 
-                                  $model->information : 
-                                  json_decode($model->information, true);
-                    
-                    if (is_array($information)) {
-                        // Set the default value for status
-                        $modelData['status'] = 'ready';
-                        
-                        // If dynamic status query is needed (recognizable by the status key)
-                        if (isset($information['status'])) {
-                            // Get the provider for this model
-                            $providerInterface = $this->providerFactory->getProviderInterface($model->provider_name);
-                            
-                            // If the provider has a getModelsStatus method, use it
-                            if (method_exists($providerInterface, 'getModelsStatus')) {
-                                $stats = $providerInterface->getModelsStatus();
-                                
-                                // Search for the current model in the status results
-                                foreach ($stats as $stat) {
-                                    if (isset($stat['id']) && $stat['id'] === $model->model_id) {
-                                        // Update the status if available
-                                        if (isset($stat['status'])) {
-                                            $modelData['status'] = $stat['status'];
-                                        }
-                                        break;
-                                    }
-                                }
-                            } else {
-                                // Use the status stored in the database as default
-                                $modelData['status'] = $information['status'];
-                            }
-                        }
+
+            // Note: this loads the model status from the database and only works for GWDG models
+            // The status property can only be updated via admin panel atm – so this needs to be reworked
+            // Calling the /models api on every page refresh by every user individually seems a bit overkill
+
+            try {
+                // Get provider for the model
+                $provider = $this->providerFactory->getProviderForModel($model->model_id);
+                //Log::info("Provider class: " . get_class($provider));
+                if ($provider) {
+                    // Retrieve details including status from the provider
+                    $modelDetails = $provider->getModelDetails($model->model_id);
+                    //Log::info($modelStatus);
+                    // Extract status from details property in DB if available
+                    if (isset($modelStatus['status'])) {
+                        $modelData['status'] = $modelStatus['status'];
                     }
-                } catch (\Exception $e) {
-                    \Log::warning("Error processing model status for model {$model->model_id}: {$e->getMessage()}");
-                    $modelData['status'] = 'ready'; // Default value on error
                 }
-            } else {
-                $modelData['status'] = 'ready'; // Default value if information is empty
+            } catch (\Exception $e) {
+                Log::warning("Error retrieving model status for {$model->model_id}: {$e->getMessage()}");
+                // In case of errors, the default status is maintained
             }
-            
+            //Log::info($modelData);
             $models[] = $modelData;
         }
 
@@ -166,8 +146,4 @@ class AIConnectionService
         return $this->providerFactory->getProviderForModel($modelId);
     }
 
-
-    public function checkModelsStatus(){
-
-    }
 }
