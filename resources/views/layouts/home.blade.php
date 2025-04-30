@@ -35,6 +35,7 @@
     <script src="{{ asset('js_v2.0.1_f1/image-selector.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/export.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/user_profile.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/status_functions.js') }}"></script>
 
 	@if(config('sanctum.allow_external_communication'))
 		<script src="{{ asset('js_v2.0.1_f1/sanctum_functions.js') }}"></script>

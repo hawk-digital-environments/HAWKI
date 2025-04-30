@@ -3,9 +3,6 @@
 <div class="main-panel-grid">
 	<div class="dy-sidebar expanded" id="chat-sidebar">
 		<div class="dy-sidebar-wrapper">
-			<!-- <div class="welcome-panel">
-				<h1>{{ Auth::user()->name }}</h1>
-			</div> -->
 			<div class="header">
 				<button class="btn-md-stroke" onclick="startNewChat()">
 					<div class="icon">
