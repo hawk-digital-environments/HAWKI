@@ -109,8 +109,11 @@ class UtilityModelsSettingsScreen extends Screen
     {
         return [
             // Intro view
-            Layout::view('orchid.utility-models.info'),
-
+        Layout::accordion([
+            'Show more Information' => [
+                Layout::view('orchid.utility-models.info')
+            ]
+        ])->open([]),
 
 
             // Default System Models
@@ -277,9 +280,12 @@ class UtilityModelsSettingsScreen extends Screen
      */
     private function getAllAvailableModels(): array
     {
-        // Get active and visible models from the Language_models table
+        // Get active and visible models from the Language_models table with active providers
         return LanguageModel::where('is_active', true)
-            ->where('is_visible', true)
+            //->where('is_visible', true)
+            ->whereHas('provider', function($query) {
+                $query->where('is_active', true);
+            })
             ->orderBy('display_order')
             ->pluck('label', 'model_id')
             ->toArray();

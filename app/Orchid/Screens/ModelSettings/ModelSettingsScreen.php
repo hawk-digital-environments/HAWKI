@@ -215,14 +215,20 @@ class ModelSettingsScreen extends Screen
         }
         
         $layouts = [];
-        
+        // Add the general information view at the end
+        $layouts[] = 
+        Layout::accordion([
+            'Show more Information' => [
+                Layout::view('orchid.model-settings.info')
+            ]
+        ])->open([]);
+
         // Add the tabbed view
         if (!empty($tabs)) {
             $layouts[] = Layout::tabs($tabs);
         }
         
-        // Add the general information view at the end
-        $layouts[] = Layout::view('orchid.model-settings.info');
+
         
         return $layouts;
     }

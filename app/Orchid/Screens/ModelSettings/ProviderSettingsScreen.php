@@ -99,6 +99,12 @@ class ProviderSettingsScreen extends Screen
         }
         
         return [
+            Layout::accordion([
+            'Show more Information' => [
+                Layout::view('orchid.provider-settings.provider-info')
+            ]
+            ])->open([]),
+
             Layout::tabs($tabs)
         ];
     }
