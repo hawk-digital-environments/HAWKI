@@ -153,11 +153,11 @@ class ModelSettingsService
      */
     private function fetchOpenAIModels(string $pingUrl, string $apiKey): array
     {
-        // Für Log-Einträge maskieren
+        // Mask for log entries
         Log::debug("Fetching OpenAI models from {$pingUrl} with key: " . substr($apiKey, 0, 5) . "...");
         
         try {
-            // Mit vollständigem API-Key senden
+            // Send with complete API key
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$apiKey}",
             ])->get($pingUrl);
@@ -169,7 +169,7 @@ class ModelSettingsService
                 throw new \Exception("Failed to fetch OpenAI models: HTTP {$statusCode}");
             }
             
-            // Gesamte API-Antwort zurückgeben, ohne zu filtern
+            // Return the complete API response without filtering
             $data = $response->json();
             Log::debug("OpenAI raw response structure: " . json_encode(array_keys($data)));
             
@@ -190,26 +190,26 @@ class ModelSettingsService
      */
     private function fetchOpenWebUiModels(string $pingUrl, string $apiKey): array
     {
-        // Für Log-Einträge maskieren
+        // Mask for log entries
         Log::debug("Fetching OpenWebUi models from {$pingUrl} with key: " . substr($apiKey, 0, 5) . "...");
         
         try {
             $headers = [];
             if ($apiKey) {
-                // Mit vollständigem API-Key senden
-                $headers['Authorization'] = "Bearer {$apiKey}";
+            // Send with complete API key
+            $headers['Authorization'] = "Bearer {$apiKey}";
             }
             
             $response = Http::withHeaders($headers)->get($pingUrl);
             
             if (!$response->successful()) {
-                $statusCode = $response->status();
-                $responseBody = $response->body();
-                Log::error("OpenWebUi API request failed: Status={$statusCode}, Body: " . substr($responseBody, 0, 200));
-                throw new \Exception("Failed to fetch OpenWebUi models: HTTP {$statusCode}");
+            $statusCode = $response->status();
+            $responseBody = $response->body();
+            Log::error("OpenWebUi API request failed: Status={$statusCode}, Body: " . substr($responseBody, 0, 200));
+            throw new \Exception("Failed to fetch OpenWebUi models: HTTP {$statusCode}");
             }
             
-            // Gesamte API-Antwort zurückgeben, ohne zu filtern
+            // Return the complete API response without filtering
             $data = $response->json();
             Log::debug("OpenWebUi raw response structure: " . json_encode(array_keys($data)));
             
@@ -230,7 +230,6 @@ class ModelSettingsService
  */
 private function fetchOllamaModels(string $pingUrl, string $apiKey): array
 {
-    // Für Log-Einträge maskieren
     Log::debug("Fetching Ollama models from {$pingUrl}");
     
     try {
@@ -248,17 +247,17 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
             throw new \Exception("Failed to fetch Ollama models: HTTP {$statusCode}");
         }
         
-        // Rohes API-Ergebnis abrufen
+        // Retrieve raw API result
         $rawData = $response->json();
         Log::debug("Ollama raw response: " . json_encode($rawData));
         
-        // Modelle strukturieren
+        // Structure models
         $result = [];
         if (isset($rawData['models']) && is_array($rawData['models'])) {
             foreach ($rawData['models'] as $model) {
-                $modelId = $model['name'] ?? $model['model'] ?? null;
-                if ($modelId) {
-                    // Formatiere die Modellinformationen in ein einheitliches Format
+            $modelId = $model['name'] ?? $model['model'] ?? null;
+            if ($modelId) {
+                // Format model information into a standardized format
                     $paramSize = isset($model['details']['parameter_size']) ? 
                         " (" . $model['details']['parameter_size'] . ")" : "";
                     $family = isset($model['details']['family']) ? $model['details']['family'] : "";
@@ -297,7 +296,7 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
      */
     private function fetchGWDGModels(string $pingUrl, string $apiKey): array
     {
-        // Für Log-Einträge maskieren
+        // Mask for log entries
         Log::debug("Fetching GWDG models from {$pingUrl} with key: " . substr($apiKey, 0, 5) . "...");
         
         try {
@@ -311,7 +310,7 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
                 throw new \Exception("Failed to fetch GWDG models: HTTP {$statusCode}");
             }
             
-            // Gesamte API-Antwort zurückgeben, ohne zu filtern
+            // Return the complete API response without filtering
             $data = $response->json();
             Log::debug("GWDG raw response received with " . count($data) . " items");
             
@@ -332,11 +331,11 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
      */
     private function fetchGoogleModels(string $pingUrl, string $apiKey): array
     {
-        // Für Log-Einträge maskieren
+        // Mask for log entries
         Log::debug("Fetching Google models from {$pingUrl} with key: " . substr($apiKey, 0, 5) . "...");
         
         try {
-            // Mit vollständigem API-Key senden
+            // Send with complete API key
             $response = Http::withHeaders([
                 'Authorization' => "Bearer {$apiKey}",
             ])->get($pingUrl);
@@ -348,7 +347,7 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
                 throw new \Exception("Failed to fetch Google models: HTTP {$statusCode}");
             }
             
-            // Gesamte API-Antwort zurückgeben, ohne zu filtern
+            // Return the complete API response without filtering
             $data = $response->json();
             Log::debug("Google raw response structure: " . json_encode(array_keys($data)));
             
@@ -369,7 +368,7 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
      */
     private function fetchGenericModels(string $pingUrl, string $apiKey): array
     {
-        // Für Log-Einträge maskieren
+        // Mask for log entries
         Log::debug("Fetching generic models from {$pingUrl}");
         
         try {
@@ -386,7 +385,7 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
                 throw new \Exception("Failed to fetch models: HTTP {$statusCode}");
             }
             
-            // Gesamte API-Antwort zurückgeben, ohne zu filtern
+            // Return the complete API response without filtering
             $data = $response->json();
             Log::debug("Generic raw response received with data structure: " . json_encode(array_keys($data)));
             
@@ -397,9 +396,9 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
         }
     }
     /**
-     * Löscht ein Sprachmodell aus der Datenbank
+     * Deletes a language model from the database
      *
-     * @param int $id Die ID des zu löschenden Modells
+     * @param int $id The ID of the model to delete
      * @return bool
      */
     public function deleteModel(int $id): bool
@@ -414,7 +413,7 @@ private function fetchOllamaModels(string $pingUrl, string $apiKey): array
             
             $modelName = $model->label;
             
-            // Löschen des Modells
+            // Delete the model
             $result = $model->delete();
             
             if ($result) {
