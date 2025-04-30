@@ -4,9 +4,22 @@ namespace App\Services\AI\Providers;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use App\Models\LanguageModel;
+use App\Models\ProviderSetting;
 
 class GWDGProvider extends OpenAIProvider
 {
+    /**
+     * Constructor for GWDGProvider
+     *
+     * @param array $config
+     */
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+        $this->providerId = 'gwdg'; // Explizites Setzen der providerId
+    }
+    
     /**
      * Format the raw payload for GWDG API
      *
@@ -108,7 +121,7 @@ class GWDGProvider extends OpenAIProvider
         
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -150,7 +163,7 @@ class GWDGProvider extends OpenAIProvider
         
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -181,7 +194,10 @@ class GWDGProvider extends OpenAIProvider
 
 
 
-        /**
+
+
+
+    /**
      * Ping the API to check model status
      *
      * @param string $modelId
@@ -190,8 +206,7 @@ class GWDGProvider extends OpenAIProvider
      */
     public function getModelsStatus(): array
     {
-        $response = $this->pingProvider();
-        $referenceList = json_decode($response, true)['data'];
+        $referenceList = $this->checkAllModelsStatus();
         $models = $this->config['models'];
     
         // Index the referenceList by IDs for O(1) access
@@ -208,7 +223,7 @@ class GWDGProvider extends OpenAIProvider
                 $model['status'] = 'unknown'; // or any default value if not found
             }
         }
-    
+        Log::info($models);
         return $models;
     }
 
@@ -238,11 +253,9 @@ class GWDGProvider extends OpenAIProvider
                 ->timeout(5) // Set a short timeout
                 ->get($url);
 
-            return $response;
+            return $response->body();
         } catch (\Exception $e) {
-            return null;
+            return '{"data":[]}'; // Return empty data structure as string
         }
-
-        return $statuses;
     }
 }

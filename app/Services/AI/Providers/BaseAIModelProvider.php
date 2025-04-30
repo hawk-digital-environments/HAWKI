@@ -3,25 +3,40 @@
 namespace App\Services\AI\Providers;
 
 use App\Services\AI\Interfaces\AIModelProviderInterface;
+use App\Models\LanguageModel;
+use App\Models\ProviderSetting;
 use Illuminate\Support\Facades\Log;
 
 abstract class BaseAIModelProvider implements AIModelProviderInterface
 {
     /**
-     * Provider configuration from config/model_providers.php
+     * Provider configuration
      * 
      * @var array
      */
     protected $config;
     
     /**
+     * Provider identifier
+     * 
+     * @var string
+     */
+    protected $providerId;
+    
+    /**
      * Create a new provider instance
      * 
-     * @param array $config Provider configuration
+     * @param array $config
      */
     public function __construct(array $config)
     {
         $this->config = $config;
+        
+        // Try to extract the provider name from the configuration
+        // This represents a fallback mechanism
+        if (!isset($this->providerId) && isset($config['provider_name'])) {
+            $this->providerId = $config['provider_name'];
+        }
     }
     
     /**
@@ -36,20 +51,142 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     }
     
     /**
-     * Get details for a specific model
+     * Get details for a specific model from the database
      * 
-     * @param string $modelId Model identifier
-     * @return array Model details
+     * @param string $modelId
+     * @return array
      */
     public function getModelDetails(string $modelId): array
     {
-        foreach ($this->config['models'] as $model) {
-            if ($model['id'] === $modelId) {
-                return $model;
+        try {
+            // Read model data from the database instead of from the configuration
+            $model = LanguageModel::select('language_models.*', 'provider_settings.provider_name')
+                ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
+                ->where('language_models.model_id', $modelId)
+                ->where('language_models.is_active', true)
+                ->first();
+            
+            if (!$model) {
+                Log::warning("Model not found in database: $modelId");
+                return [
+                    'id' => $modelId,
+                    'label' => $modelId, // Fallback: Use ID as label
+                    'streamable' => false,
+                    'provider' => $this->getProviderId()
+                ];
             }
+            
+            $details = [
+                'id' => $model->model_id,
+                'label' => $model->label,
+                'streamable' => $model->streamable,
+                'provider' => $model->provider_name
+            ];
+            
+            // Add additional model information if available
+            if (!empty($model->information)) {
+                $information = is_array($model->information) ? 
+                              $model->information : 
+                              json_decode($model->information, true);
+                
+                if (is_array($information)) {
+                    $details = array_merge($details, $information);
+                }
+            }
+            
+            // Add settings if available
+            if (!empty($model->settings)) {
+                $settings = is_array($model->settings) ? 
+                          $model->settings : 
+                          json_decode($model->settings, true);
+                
+                if (is_array($settings)) {
+                    $details['settings'] = $settings;
+                }
+            }
+            
+            return $details;
+        } catch (\Exception $e) {
+            Log::error("Error getting model details: " . $e->getMessage());
+            // Simple fallback response
+            return [
+                'id' => $modelId,
+                'label' => $modelId,
+                'streamable' => false,
+                'provider' => $this->getProviderId()
+            ];
         }
-        
-        throw new \Exception("Unknown model ID: {$modelId}");
+    }
+    
+    /**
+     * Get all available models for this provider from the database
+     * 
+     * @return array
+     */
+    public function getAvailableModels(): array
+    {
+        try {
+            $providerId = $this->getProviderId();
+            
+            // Get provider ID from the database
+            $provider = ProviderSetting::where('provider_name', $providerId)
+                ->where('is_active', true)
+                ->first();
+                
+            if (!$provider) {
+                Log::warning("Provider not found in database: $providerId");
+                return [];
+            }
+            
+            // Retrieve all active models for this provider
+            $models = LanguageModel::where('provider_id', $provider->id)
+                ->where('is_active', true)
+                ->orderBy('display_order')
+                ->get();
+                
+            $modelsList = [];
+            
+            foreach ($models as $model) {
+                $modelData = [
+                    'id' => $model->model_id,
+                    'label' => $model->label,
+                    'streamable' => $model->streamable,
+                    'provider' => $providerId
+                ];
+                
+                // Extract status from the information field if available
+                if (!empty($model->information)) {
+                    try {
+                        $information = is_array($model->information) ? 
+                                      $model->information : 
+                                      json_decode($model->information, true);
+                        
+                        if (is_array($information) && isset($information['status'])) {
+                            $modelData['status'] = $information['status'];
+                        }
+                    } catch (\Exception $e) {
+                        // Ignore and continue without status
+                    }
+                }
+                
+                $modelsList[] = $modelData;
+            }
+            
+            return $modelsList;
+        } catch (\Exception $e) {
+            Log::error("Error getting available models: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    /**
+     * Get the provider ID
+     * 
+     * @return string
+     */
+    public function getProviderId(): string
+    {
+        return $this->providerId ?? 'unknown_provider';
     }
     
     /**
@@ -140,7 +277,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
             }
             
             $streamCallback($data);
-            
+            Log::info($data);
             if (ob_get_length()) {
                 ob_flush();
             }
