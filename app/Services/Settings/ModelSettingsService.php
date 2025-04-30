@@ -108,7 +108,12 @@ class ModelSettingsService
                     Log::debug("Using openWebUi fetcher for {$provider->provider_name}");
                     $result = $this->fetchOpenWebUiModels($pingUrl, $apiKey);
                     break;
-
+                
+                case 'ollama':
+                    Log::debug("Using Ollama fetcher for {$provider->provider_name}");
+                    $result = $this->fetchOllamaModels($pingUrl, $apiKey);
+                    break;
+                
                 case 'gwdg':
                     Log::debug("Using GWDG fetcher for {$provider->provider_name}");
                     $result = $this->fetchGWDGModels($pingUrl, $apiKey);
@@ -214,7 +219,74 @@ class ModelSettingsService
             throw $e;
         }
     }
+
+   /**
+ * Fetch Ollama models.
+ *
+ * @param string $pingUrl
+ * @param string $apiKey
+ * @return array
+ * @throws \Exception
+ */
+private function fetchOllamaModels(string $pingUrl, string $apiKey): array
+{
+    // Für Log-Einträge maskieren
+    Log::debug("Fetching Ollama models from {$pingUrl}");
     
+    try {
+        $headers = [];
+        if ($apiKey) {
+            $headers['Authorization'] = "Bearer {$apiKey}";
+        }
+        
+        $response = Http::withHeaders($headers)->get($pingUrl);
+        
+        if (!$response->successful()) {
+            $statusCode = $response->status();
+            $responseBody = $response->body();
+            Log::error("Ollama API request failed: Status={$statusCode}, Body: " . substr($responseBody, 0, 200));
+            throw new \Exception("Failed to fetch Ollama models: HTTP {$statusCode}");
+        }
+        
+        // Rohes API-Ergebnis abrufen
+        $rawData = $response->json();
+        Log::debug("Ollama raw response: " . json_encode($rawData));
+        
+        // Modelle strukturieren
+        $result = [];
+        if (isset($rawData['models']) && is_array($rawData['models'])) {
+            foreach ($rawData['models'] as $model) {
+                $modelId = $model['name'] ?? $model['model'] ?? null;
+                if ($modelId) {
+                    // Formatiere die Modellinformationen in ein einheitliches Format
+                    $paramSize = isset($model['details']['parameter_size']) ? 
+                        " (" . $model['details']['parameter_size'] . ")" : "";
+                    $family = isset($model['details']['family']) ? $model['details']['family'] : "";
+                    
+                    $result[$modelId] = [
+                        'id' => $modelId,
+                        'name' => $modelId,
+                        'displayName' => ($family ? $family . ' ' : '') . $modelId . $paramSize,
+                        'description' => isset($model['details']) ? json_encode($model['details']) : '',
+                        'size' => $model['size'] ?? 0,
+                        'modified_at' => $model['modified_at'] ?? '',
+                        'family' => $family,
+                        'quantization' => $model['details']['quantization_level'] ?? '',
+                    ];
+                }
+            }
+        } else {
+            Log::warning("Unexpected Ollama API response format - 'models' array missing");
+        }
+        
+        Log::debug("Processed " . count($result) . " Ollama models");
+        return $result;
+    } catch (\Exception $e) {
+        Log::error("Exception in fetchOllamaModels: " . $e->getMessage());
+        throw $e;
+    }
+}
+
     /**
      * Fetch GWDG models.
      *
