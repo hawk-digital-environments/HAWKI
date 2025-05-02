@@ -14,6 +14,9 @@
                     @case('unavailable')
                         <span class="dot red-c"></span> 
                         @break
+                    @case('testing')
+                        <span class="dot ai-c"></span> 
+                        @break
                     @default
                         <span class="dot org-c"></span> 
                 @endswitch
