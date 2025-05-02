@@ -56,18 +56,15 @@
             <p class="ms-md-4 ps-md-2">
                 Gives you an overview of all metrics for HAWKI.
                 <div class="ps-md-3">
-                    <ul>
+                    <ul class="list-unstyled ps-md-3">
                         <li>
-                            Global
-                            <x-orchid-icon path="bs.hammer"/>
+                            <x-orchid-icon path="bs.hammer"/> Global
                         </li>
                         <li>
-                            Users
-                            <x-orchid-icon path="bs.cone-striped"/>
+                            <x-orchid-icon path="bs.cone-striped"/> Users
                         </li>
                         <li>
-                            Requests
-                            <x-orchid-icon path="bs.cone-striped"/>
+                            <x-orchid-icon path="bs.cone-striped"/> Requests
                         </li>
                     </ul>
                 </div>    
@@ -83,26 +80,21 @@
             <p class="ms-md-4 ps-md-2">
                 Customize the system to meet your organization’s specific needs.
                 <div class="ps-md-3">
-                    <ul>
+                    <ul class="list-unstyled ps-md-3">
                         <li>
-                            Settings
-                            <x-orchid-icon path="bs.hammer"/><x-orchid-icon path="bs.file-code-fill"/>
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.hammer"/> Settings
                         </li>
                         <li>
-                            Log
-                            <x-orchid-icon path="bs.check"/>
+                            <x-orchid-icon path="bs.check"/> Log
                         </li>
                         <li>
-                            Storage
-                            <x-orchid-icon path="bs.hammer"/>
+                            <x-orchid-icon path="bs.question"/> Storage
                         </li>
                         <li>
-                            Styling
-                            <x-orchid-icon path="bs.hammer"/>
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.hammer"/> Styling
                         </li>
                         <li>
-                            Texts
-                            <x-orchid-icon path="bs.hammer"/>
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.hammer"/> Texts
                         </li>
                     </ul>
                 </div>
@@ -118,16 +110,27 @@
             <p class="ms-md-4 ps-md-2">
                 Set up you LLM providers, retrieve and configure available models and change default system prompts.
                 <div class="ps-md-3">
-                    <ul>
+                    <ul class="list-unstyled ps-md-3">
+                        <li> <x-orchid-icon path="bs.hammer"/> restore GWDG Model Status</li>
+                        <li> <x-orchid-icon path="bs.hammer"/> investigate LLMs not streaming responses in UI</li>
+
+                    </ul>
+                    <ul class="list-unstyled ps-md-3">
+
                         <li>
-                            API Providers <x-orchid-icon path="bs.check"/><x-orchid-icon path="bs.file-code-fill"/>
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check-all"/> API Providers
+                        </li>
+
+                        <li>
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check-all"/> Model Settings 
                         </li>
                         <li>
-                            Model Settings <x-orchid-icon path="bs.check"/><x-orchid-icon path="bs.file-code-fill"/>
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check"/> Utility Models 
                         </li>
-                        <li>
-                            Utility Models <x-orchid-icon path="bs.check"/><x-orchid-icon path="bs.file-code-fill"/>
-                        </li>
+
+                        <ul class="list-unstyled">
+                            <li><x-orchid-icon path="bs.arrow-return-right"/><x-orchid-icon path="bs.hammer"/> Read Utility Model Prompts from Database</li>
+                        </ul>
                     </ul>
                 </div>
             </p>
@@ -143,12 +146,12 @@
                 <p class="ms-md-4 ps-md-2">
                     Manage user roles and access rights.
                     <div class="ps-md-3">
-                    <ul>
+                    <ul class="list-unstyled ps-md-3">
                         <li>
-                            Users <x-orchid-icon path="bs.hammer"/>
+                             <x-orchid-icon path="bs.question"/> Users
                         </li>
                         <li>
-                            Roles <x-orchid-icon path="bs.hammer"/>
+                             <x-orchid-icon path="bs.question"/> Roles
                         </li>
                     </ul>
                 </div>
@@ -156,7 +159,33 @@
                 </p>
         </div>
 
-    
+    <div class="col-12 mt-3">
+        <h3 class="text-muted fw-light lh-lg d-flex align-items-center">
+            <x-orchid-icon path="bs.info-circle"/>
+            <span class="ms-3 text-body-emphasis">Icon Legend</span>
+        </h3>
+        <p class="ms-md-4 ps-md-2">
+            <div class="ps-md-3">
+                <ul class="list-unstyled d-flex flex-wrap ps-md-3">
+                    <li class="me-4 mb-2">
+                        <x-orchid-icon path="bs.hammer"/> In development/under construction
+                    </li>
+                    <li class="me-4 mb-2">
+                        <x-orchid-icon path="bs.check"/> Completed/functioning feature
+                    </li>
+                    <li class="me-4 mb-2">
+                        <x-orchid-icon path="bs.file-code-fill"/> Code-related functionality
+                    </li>
+                    <li class="me-4 mb-2">
+                        <x-orchid-icon path="bs.cone-striped"/> Feature in progress/limited availability
+                    </li>
+                    <li class="me-4 mb-2">
+                        <x-orchid-icon path="bs.question"/> Status unknown/needs clarification
+                    </li>
+                </ul>
+            </div>
+        </p>
+    </div>
 
     </div>
 </div>
