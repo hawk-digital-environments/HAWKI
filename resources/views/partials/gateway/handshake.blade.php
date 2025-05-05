@@ -10,7 +10,7 @@
         <div class="slide" data-index="1">
             <h3>{{ $translation["HS-EnterPasskeyMsg"] }}</h3>
 
-            <input id="passkey-input" type="text">
+            <input id="passkey-input" type="password">
 
             <div class="nav-buttons">
                 <button onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
