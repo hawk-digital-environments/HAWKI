@@ -16,15 +16,15 @@
                 well-balanced model suitable for general-purpose use.
             </li>
             <li class="mb-2">
-                <strong>Title Generator:</strong> Used to automatically generate titles for chats and responses.
+                <strong>Title Generation Model:</strong> Used to automatically generate titles for chats and responses.
                 This model should be quick and efficient at summarizing content into concise titles.
             </li>
             <li class="mb-2">
-                <strong>Prompt Improver:</strong> Used to refine and enhance user prompts to get better results.
+                <strong>Prompt Improver Model:</strong> Used to refine and enhance user prompts to get better results.
                 This model should be good at understanding context and improving query formulation.
             </li>
             <li class="mb-2">
-                <strong>Summarizer:</strong> Used to create summaries of longer texts or conversations.
+                <strong>Summarizer Model:</strong> Used to create summaries of longer texts or conversations.
                 This model should excel at extracting key information and creating concise summaries.
             </li>
         </ul>

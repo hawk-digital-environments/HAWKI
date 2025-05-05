@@ -6,6 +6,7 @@ use App\Http\Controllers\AiConvController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\AppSystemPromptController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -16,17 +17,20 @@ use Illuminate\Support\Facades\Storage;
 
 use App\Services\AI\AIConnectionService;
 use App\Models\User;
+//use App\Http\Controllers\SettingsController;
 
 
 class HomeController extends Controller
 {
     protected $languageController;
+    protected $appSystemPromptController;
 
     // Inject LanguageController instance
-    public function __construct(LanguageController $languageController, AIConnectionService $aiConnService)
+    public function __construct(LanguageController $languageController, AIConnectionService $aiConnService, AppSystemPromptController $appSystemPromptController)
     {
         $this->languageController = $languageController;
         $this->aiConnService = $aiConnService;
+        $this->appSystemPromptController = $appSystemPromptController;
     }
 
     /// Redirects user to Home Layout
@@ -40,6 +44,13 @@ class HomeController extends Controller
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
+
+        // get System Prompts
+        $systemPrompts = $this->appSystemPromptController->getDefaultPrompts();
+
+        // toDo: get white label texts
+        // $whiteLabelTexts = $this->appTextController->getWhiteLabelTexts();
+
 
         // get the first part of the path if there's a slug.
         $requestModule = explode('/', $request->path())[0];
@@ -80,7 +91,8 @@ class HomeController extends Controller
                             'userData',
                             'activeModule',
                             'activeOverlay',
-                            'models'));
+                            'models',
+                            'systemPrompts'));
     }
 
     public function print($module, $slug){

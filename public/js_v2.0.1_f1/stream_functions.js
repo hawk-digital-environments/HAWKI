@@ -231,7 +231,7 @@ async function requestPromptImprovement(sender) {
                 {
                     role: "system",
                     content: {
-                        text: translation.Improvement_Prompt
+                        text: systemPrompts.prompt_improvement_prompt	
                     },
                 },
                 {
@@ -281,7 +281,7 @@ async function requestChatlogSummery(msgs = null) {
         {
             role: "system",
             content: {
-                text: translation.Summery_Prompt
+                text: systemPrompts.summary_prompt
             },
         },
         {

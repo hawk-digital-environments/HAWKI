@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('system_prompts', function (Blueprint $table) {
+        Schema::create('app_system_prompts', function (Blueprint $table) {
             $table->id();
-            $table->string('model_type'); // z.B. 'default_model', 'title_generator', etc.
-            $table->string('language', 5); // z.B. 'de', 'en'
+            $table->string('prompt_type'); // z.B. 'default_model', 'title_generation', etc.
+            $table->string('language', 10); // z.B. 'de_DE', 'en_US', erhöht von 5 auf 10 Zeichen
             $table->text('prompt_text');
             $table->timestamps();
             
             // Unique-Constraint für model_type und language
-            $table->unique(['model_type', 'language']);
+            $table->unique(['prompt_type', 'language']);
         });
     }
 
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('system_prompts');
+        Schema::dropIfExists('app_system_prompts');
     }
 };

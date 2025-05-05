@@ -80,11 +80,13 @@
 	
     const activeLocale = {!! json_encode(Session::get('language')) !!};
 	const translation = @json($translation);
+	const systemPrompts = @json($systemPrompts);
+	//ToDo: pass texts from localizationController
+	{{-- const whiteLabelTexts = @json($whiteLabelTexts); --}}
 
 	const modelsList = @json($models).models;
 	const defaultModel = @json($models).defaultModel;
 	const systemModels = @json($models).systemModels;
-
 
 	const aiHandle = "{{ config('app.aiHandle') }}";
 

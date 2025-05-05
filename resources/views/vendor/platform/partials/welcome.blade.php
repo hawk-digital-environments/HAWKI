@@ -125,12 +125,8 @@
                             <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check-all"/> Model Settings 
                         </li>
                         <li>
-                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check"/> Utility Models 
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check-all"/> Utility Models 
                         </li>
-
-                        <ul class="list-unstyled">
-                            <li><x-orchid-icon path="bs.arrow-return-right"/><x-orchid-icon path="bs.hammer"/> Read Utility Model Prompts from Database</li>
-                        </ul>
                     </ul>
                 </div>
             </p>

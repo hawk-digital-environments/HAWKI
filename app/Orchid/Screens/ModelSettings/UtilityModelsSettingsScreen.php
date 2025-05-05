@@ -3,11 +3,13 @@
 namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\LanguageModel;
-use App\Models\SystemPrompt;
+use App\Models\AppSystemPrompt;
 use App\Services\SettingsService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Artisan;
+
 
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\Select;
@@ -15,7 +17,6 @@ use Orchid\Screen\Screen;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\TextArea;
 use Orchid\Screen\Fields\Group;
-
 
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
@@ -39,106 +40,89 @@ class UtilityModelsSettingsScreen extends Screen
         return [
             'defaultModel' => $this->settings->get('default_language_model'),
             'system_models' => [
-                'title_generator' => $this->settings->get('system_model_title_generator'),
-                'prompt_improver' => $this->settings->get('system_model_prompt_improver'),
-                'summarizer' => $this->settings->get('system_model_summarizer'),
+                'title_generator'     => $this->settings->get('system_model_title_generator'),
+                'prompt_improver'     => $this->settings->get('system_model_prompt_improver'),
+                'summarizer'          => $this->settings->get('system_model_summarizer'),
             ],
             'available_models' => $this->getAllAvailableModels(),
-            'prompts' => [
-                'default_model' => [
-                    'de' => SystemPrompt::getPrompt('default_model', 'de') ?? 'Default German prompt',
-                    'en' => SystemPrompt::getPrompt('default_model', 'en') ?? 'Default English prompt',
+            'prompts'          => [
+                'default_system_prompt' => [
+                    'de_DE' => AppSystemPrompt::getPrompt('default_system_prompt', 'de_DE') ?? 'Default German prompt',
+                    'en_US' => AppSystemPrompt::getPrompt('default_system_prompt', 'en_US') ?? 'Default English prompt',
                 ],
-                'title_generator' => [
-                    'de' => SystemPrompt::getPrompt('title_generator', 'de') ?? 'Title Generator German prompt',
-                    'en' => SystemPrompt::getPrompt('title_generator', 'en') ?? 'Title Generator English prompt',
+                'title_generation_prompt' => [
+                    'de_DE' => AppSystemPrompt::getPrompt('title_generation_prompt', 'de_DE') ?? 'Title Generation German prompt',
+                    'en_US' => AppSystemPrompt::getPrompt('title_generation_prompt', 'en_US') ?? 'Title Generation English prompt',
                 ],
-                'prompt_improver' => [
-                    'de' => SystemPrompt::getPrompt('prompt_improver', 'de') ?? 'Prompt Improver German prompt',
-                    'en' => SystemPrompt::getPrompt('prompt_improver', 'en') ?? 'Prompt Improver English prompt',
+                'prompt_improvement_prompt' => [
+                    'de_DE' => AppSystemPrompt::getPrompt('prompt_improvement_prompt', 'de_DE') ?? 'Prompt Improver German prompt',
+                    'en_US' => AppSystemPrompt::getPrompt('prompt_improvement_prompt', 'en_US') ?? 'Prompt Improver English prompt',
                 ],
-                'summarizer' => [
-                    'de' => SystemPrompt::getPrompt('summarizer', 'de') ?? 'Summarizer German prompt',
-                    'en' => SystemPrompt::getPrompt('summarizer', 'en') ?? 'Summarizer English prompt',
+                'summary_prompt' => [
+                    'de_DE' => AppSystemPrompt::getPrompt('summary_prompt', 'de_DE') ?? 'Summarizer German prompt',
+                    'en_US' => AppSystemPrompt::getPrompt('summary_prompt', 'en_US') ?? 'Summarizer English prompt',
                 ],
             ],
         ];
     }
 
-    /**
-     * The name of the screen displayed in the header.
-     *
-     * @return string|null
-     */
     public function name(): ?string
     {
         return 'Utility Models Settings';
     }
-    /**
-     * Display header description.
-     */
-     public function description(): ?string
+
+    public function description(): ?string
     {
         return 'Configure the default language models used by the system.';
     }
-    /**
-     * The screen's action buttons.
-     *
-     * @return \Orchid\Screen\Action[]
-     */
+
     public function commandBar(): iterable
     {
         return [
-            Button::make('Import from Config')
-                ->icon('cloud-download')
-                ->method('importFromConfig')
-                ->confirm('Are you sure? This will migrate prompts from the JSON files to the database.'),
+            Button::make('Load Defaults')
+                ->icon('arrow-repeat')
+                ->method('runSystemPromptSeeder')
+                ->confirm('Are you sure? This will load the default system prompts from the seeder into the database.'),
+
 
             Button::make('Save')
                 ->icon('save')
-                ->method('saveSettings'),     
+                ->method('saveSettings'),
         ];
     }
 
-    /**
-     * The screen's layout elements.
-     *
-     * @return \Orchid\Screen\Layout[]|string[]
-     */
     public function layout(): iterable
     {
         return [
-            // Intro view
-        Layout::accordion([
-            'Show more Information' => [
-                Layout::view('orchid.utility-models.info')
-            ]
-        ])->open([]),
-
+            Layout::accordion([
+                'Show more Information' => [
+                    Layout::view('orchid.utility-models.info')
+                ]
+            ])->open([]),
 
             // Default System Models
             Layout::block([
-                Layout::rows([  
+                Layout::rows([
                     Select::make('defaultModel')
-                            ->title('Default Model')
-                            ->options($this->getAllAvailableModels())
-                            ->value($this->query()['defaultModel'])
-                            ->help('This model is used by default before the user chooses their desired model.')
-                            ->horizontal(),
+                        ->title('Default Model')
+                        ->options($this->getAllAvailableModels())
+                        ->value($this->query()['defaultModel'])
+                        ->help('This model is used by default before the user chooses their desired model.')
+                        ->horizontal(),
                 ]),
 
                 Layout::rows([
-                    TextArea::make('prompts.default_model.de')
+                    TextArea::make('prompts.default_system_prompt.de_DE')
                         ->title('Default System Prompt (de_DE)')
-                        ->value($this->query()['prompts']['default_model']['de'])
+                        ->value($this->query()['prompts']['default_system_prompt']['de_DE'])
                         ->required()
                         ->rows(8)
                         ->style('min-width: 110%;')
                         ->horizontal(),
 
-                    TextArea::make('prompts.default_model.en')
+                    TextArea::make('prompts.default_system_prompt.en_US')
                         ->title('Default System Prompt (en_US)')
-                        ->value($this->query()['prompts']['default_model']['en'])
+                        ->value($this->query()['prompts']['default_system_prompt']['en_US'])
                         ->required()
                         ->rows(8)
                         ->style('min-width: 110%;')
@@ -157,27 +141,24 @@ class UtilityModelsSettingsScreen extends Screen
             // Title Generator Prompts
             Layout::block([
                 Layout::rows([
-
                     Select::make('system_models.title_generator')
-                        ->title('Title Generator Model')
+                        ->title('Title Generation Model')
                         ->options($this->getAllAvailableModels())
                         ->value($this->query()['system_models']['title_generator'] ?? null)
                         ->help('Model used for generating titles automatically.')
                         ->horizontal(),
 
-                    TextArea::make('prompts.title_generator.de')
-                        ->title('Title Generator Prompt (de_DE)')
-                        ->value($this->query()['prompts']['title_generator']['de'])
-                        ->help('Prompt used for generating titles automatically.')
+                    TextArea::make('prompts.title_generation_prompt.de_DE')
+                        ->title('Title Generation Prompt (de_DE)')
+                        ->value($this->query()['prompts']['title_generation_prompt']['de_DE'])
                         ->horizontal()
                         ->required()
                         ->rows(4)
                         ->style('min-width: 110%;'),
 
-                    TextArea::make('prompts.title_generator.en')
-                        ->title('Title Generator Prompt (en_US)')
-                        ->value($this->query()['prompts']['title_generator']['en'])
-                        ->help('Prompt used for generating titles automatically.')
+                    TextArea::make('prompts.title_generation_prompt.en_US')
+                        ->title('Title Generation Prompt (en_US)')
+                        ->value($this->query()['prompts']['title_generation_prompt']['en_US'])
                         ->horizontal()
                         ->required()
                         ->rows(4)
@@ -185,10 +166,10 @@ class UtilityModelsSettingsScreen extends Screen
                 ]),
             ])
             ->vertical()
-            ->title('Title Generator Settings')
+            ->title('Title Generation Settings')
             ->description('Used to automatically generate titles for chats and responses.')
             ->commands(
-                Button::make('Save Title Generator Settings')
+                Button::make('Save Title Generation Settings')
                     ->icon('save')
                     ->method('saveSettings')
             ),
@@ -196,7 +177,6 @@ class UtilityModelsSettingsScreen extends Screen
             // Prompt Improver Prompts
             Layout::block([
                 Layout::rows([
-
                     Select::make('system_models.prompt_improver')
                         ->title('Prompt Improver Model')
                         ->options($this->getAllAvailableModels())
@@ -204,19 +184,17 @@ class UtilityModelsSettingsScreen extends Screen
                         ->help('Model used for improving and refining user prompts.')
                         ->horizontal(),
 
-                    TextArea::make('prompts.prompt_improver.de')
+                    TextArea::make('prompts.prompt_improvement_prompt.de_DE')
                         ->title('Prompt Improver Prompt (de_DE)')
-                        ->value($this->query()['prompts']['prompt_improver']['de'])
-                        ->help('Prompt used for improving and refining user prompts.')
+                        ->value($this->query()['prompts']['prompt_improvement_prompt']['de_DE'])
                         ->horizontal()
                         ->required()
                         ->rows(4)
                         ->style('min-width: 110%;'),
 
-                    TextArea::make('prompts.prompt_improver.en')
+                    TextArea::make('prompts.prompt_improvement_prompt.en_US')
                         ->title('Prompt Improver Prompt (en_US)')
-                        ->value($this->query()['prompts']['prompt_improver']['en'])
-                        ->help('Prompt used for improving and refining user prompts.')
+                        ->value($this->query()['prompts']['prompt_improvement_prompt']['en_US'])
                         ->horizontal()
                         ->required()
                         ->rows(4)
@@ -235,7 +213,6 @@ class UtilityModelsSettingsScreen extends Screen
             // Summarizer Prompts
             Layout::block([
                 Layout::rows([
-
                     Select::make('system_models.summarizer')
                         ->title('Summarizer Model')
                         ->options($this->getAllAvailableModels())
@@ -243,19 +220,17 @@ class UtilityModelsSettingsScreen extends Screen
                         ->help('Model used for summarizing content.')
                         ->horizontal(),
 
-                    TextArea::make('prompts.summarizer.de')
+                    TextArea::make('prompts.summary_prompt.de_DE')
                         ->title('Summarizer Prompt (de_DE)')
-                        ->value($this->query()['prompts']['summarizer']['de'])
-                        ->help('Prompt used for summarizing content.')
+                        ->value($this->query()['prompts']['summary_prompt']['de_DE'])
                         ->horizontal()
                         ->required()
                         ->rows(4)
                         ->style('min-width: 110%;'),
 
-                    TextArea::make('prompts.summarizer.en')
+                    TextArea::make('prompts.summary_prompt.en_US')
                         ->title('Summarizer Prompt (en_US)')
-                        ->value($this->query()['prompts']['summarizer']['en'])
-                        ->help('Prompt used for summarizing content.')
+                        ->value($this->query()['prompts']['summary_prompt']['en_US'])
                         ->horizontal()
                         ->required()
                         ->rows(4)
@@ -264,7 +239,7 @@ class UtilityModelsSettingsScreen extends Screen
             ])
             ->vertical()
             ->title('Summarizer Prompts')
-            ->description('Used to create summaries of longer texts or conversations.')
+            ->description('Used to create summaries of longer texts or conversations for exports.')
             ->commands(
                 Button::make('Save Summarizer Settings')
                     ->icon('save')
@@ -273,11 +248,6 @@ class UtilityModelsSettingsScreen extends Screen
         ];
     }
     
-    /**
-     * Get all available models from the database.
-     *
-     * @return array
-     */
     private function getAllAvailableModels(): array
     {
         // Get active and visible models from the Language_models table with active providers
@@ -291,12 +261,6 @@ class UtilityModelsSettingsScreen extends Screen
             ->toArray();
     }
     
-    /**
-     * Save utility models settings to the app_settings table.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function saveSettings(Request $request)
     {
         // Update default model
@@ -329,7 +293,7 @@ class UtilityModelsSettingsScreen extends Screen
         $prompts = $request->input('prompts', []);
         foreach ($prompts as $modelType => $languages) {
             foreach ($languages as $lang => $promptText) {
-                SystemPrompt::setPrompt($modelType, $lang, $promptText);
+                AppSystemPrompt::setPrompt($modelType, $lang, $promptText);
             }
         }
         
@@ -337,35 +301,29 @@ class UtilityModelsSettingsScreen extends Screen
         return redirect()->route('platform.modelsettings.utilitymodels');
     }
     
-    /**
-     * Import prompt settings from config files to database.
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function importFromConfig()
     {
         Log::info('=== Starting prompt import from config files ===');
         $importedCount = 0;
         
-        // Pfad zu den JSON-Dateien
+        // Path to JSON files
         $dePromptPath = resource_path('language/prompts_de_DE.json');
         $enPromptPath = resource_path('language/prompts_en_US.json');
         
         Log::info("Looking for German prompts file at: $dePromptPath");
         Log::info("Looking for English prompts file at: $enPromptPath");
         
-        // Mapping der JSON-Schlüssel zu unseren model_types definieren
-        // KORRIGIERT: Schlüssel sind jetzt die Namen aus der JSON-Datei, Werte sind die model_types
+        // Define mapping of JSON keys to our model_types
         $mappings = [
-            'Default_Prompt' => 'default_model',
-            'Name_Prompt' => 'title_generator',
-            'Improvement_Prompt' => 'prompt_improver',
-            'Summery_Prompt' => 'summarizer',
+            'Default_Prompt'     => 'default_system_prompt',
+            'Name_Prompt'        => 'title_generator_prompt',
+            'Improvement_Prompt' => 'prompt_improver_prompt',
+            'Summery_Prompt'     => 'summarizer_prompt',
         ];
         
         Log::info('Using the following key mappings:', $mappings);
         
-        // Deutsche Prompts importieren
+        // Import German prompts
         if (file_exists($dePromptPath)) {
             Log::info("German prompts file found. Attempting to read contents.");
             $dePrompts = json_decode(file_get_contents($dePromptPath), true);
@@ -378,11 +336,11 @@ class UtilityModelsSettingsScreen extends Screen
                         try {
                             Log::info("Processing German prompt for key '$jsonKey' -> model_type '$modelType'");
                             
-                            // Substring des Prompts für das Log (zu lang für vollständiges Logging)
+                            // Substring of the prompt for logging (too long for full logging)
                             $promptSubstring = substr($dePrompts[$jsonKey], 0, 50) . (strlen($dePrompts[$jsonKey]) > 50 ? '...' : '');
                             Log::info("German prompt content (truncated): $promptSubstring");
                             
-                            SystemPrompt::setPrompt($modelType, 'de', $dePrompts[$jsonKey]);
+                            AppSystemPrompt::setPrompt($modelType, 'de_DE', $dePrompts[$jsonKey]);
                             $importedCount++;
                             Log::info("Successfully imported German prompt for '$jsonKey'");
                         } catch (\Exception $e) {
@@ -400,7 +358,7 @@ class UtilityModelsSettingsScreen extends Screen
             Log::warning("German prompts file not found at: $dePromptPath");
         }
         
-        // Englische Prompts importieren
+        // Import English prompts
         if (file_exists($enPromptPath)) {
             Log::info("English prompts file found. Attempting to read contents.");
             $enPrompts = json_decode(file_get_contents($enPromptPath), true);
@@ -413,11 +371,8 @@ class UtilityModelsSettingsScreen extends Screen
                         try {
                             Log::info("Processing English prompt for key '$jsonKey' -> model_type '$modelType'");
                             
-                            // Substring des Prompts für das Log (zu lang für vollständiges Logging)
-                            $promptSubstring = substr($enPrompts[$jsonKey], 0, 50) . (strlen($enPrompts[$jsonKey]) > 50 ? '...' : '');
-                            Log::info("English prompt content (truncated): $promptSubstring");
-                            
-                            SystemPrompt::setPrompt($modelType, 'en', $enPrompts[$jsonKey]);
+                            // Use the correct language code 'en_US'
+                            AppSystemPrompt::setPrompt($modelType, 'en_US', $enPrompts[$jsonKey]);
                             $importedCount++;
                             Log::info("Successfully imported English prompt for '$jsonKey'");
                         } catch (\Exception $e) {
@@ -443,6 +398,25 @@ class UtilityModelsSettingsScreen extends Screen
             Toast::error("No prompts found in configuration files or they couldn't be imported.");
         }
         
+        return redirect()->route('platform.modelsettings.utilitymodels');
+    }
+
+    public function runSystemPromptSeeder()
+    {
+        try {
+            Log::info('=== Starte AppSystemPromptSeeder ===');
+
+            $output = Artisan::call('db:seed', [
+                '--class' => 'AppSystemPromptSeeder'
+            ]);
+
+            Log::info('Seeder-Ausgabe: ' . Artisan::output());
+            Toast::success('System Prompts wurden erfolgreich aus dem Seeder geladen.');
+        } catch (\Exception $e) {
+            Log::error('Fehler beim Ausführen des AppSystemPromptSeeders: ' . $e->getMessage());
+            Toast::error('Fehler beim Ausführen des Seeders: ' . $e->getMessage());
+        }
+
         return redirect()->route('platform.modelsettings.utilitymodels');
     }
 }
