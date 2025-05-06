@@ -2,8 +2,8 @@
 	<div class="modal-panel">
         <div class="modal-content-wrapper">
             <div class="modal-content">
-                <h1>{!! $translation["Guidelines"]; !!}</h1>
-                {!! $translation["_Guidelines_Content"]; !!}
+                <h1>{!! $localizedTexts["guidelines_title"]; !!}</h1>
+                {!! $localizedTexts["guidelines_content"]; !!}
                 <br>
                 
                 <div class="modal-buttons-bar">

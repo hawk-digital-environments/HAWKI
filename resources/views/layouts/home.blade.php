@@ -59,7 +59,7 @@
 	</div>
 
 	@include('partials.home.modals.confirm-modal')
-	{{-- @include('partials.home.modals.guidelines-modal') --}}
+	@include('partials.home.modals.guidelines-modal')
 	@include('partials.home.modals.add-member-modal')
 	@include('partials.home.modals.session-expiry-modal')
 	
