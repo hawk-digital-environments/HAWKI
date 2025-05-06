@@ -18,7 +18,7 @@
                     </h3>
                     <h3 id="swtichContent-btn" class="">
                         <div href="#" onclick="ToggleSettingsContent('guideline',true)">
-                            {{ str_replace(':system', $localizedTexts["app_name"], $translation["Guidelines"]) }}
+                            {{ $translation["Guidelines"] }}
                         </div>
                         <svg viewBox="0 0 25 25">
                             <g class="button-path-stroke-color" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -82,7 +82,7 @@
                             </g>
                         </svg>
                     </div>
-                    <h1>{{ $localizedTexts["guidelines_title"] }}</h1>
+                    <h1>{{ $translation["Guidelines"] }}</h1>
                 </div>
                 <div class="content-text-container">
                     {!! $localizedTexts["guidelines_content"] !!}
