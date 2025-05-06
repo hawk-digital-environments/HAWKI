@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Cookie; // Ensure this is imported
 use Illuminate\Support\Facades\Log;
+use App\Models\AppLocalizedText;
 
 class LanguageController extends Controller
 {
@@ -33,6 +34,9 @@ class LanguageController extends Controller
         Session::put('language', $language);
         // Load the language files
         $translation = $this->fetchTranslationFiles($language['id']);
+        
+        // Process placeholders in all translations
+        $translation = $this->processAllPlaceholders($translation, $language['id']);
 
         return $translation;
     }
@@ -122,5 +126,35 @@ class LanguageController extends Controller
         $mergedTranslations = array_merge($defaultTranslations, $translations);
     
         return $mergedTranslations;
+    }
+
+    /**
+     * Process placeholders in all translation items
+     *
+     * @param array $translations Array of translations
+     * @param string $language Current language code (e.g. 'de_DE')
+     * @return array
+     */
+    protected function processAllPlaceholders(array $translations, string $language): array
+    {
+        // Try to get app_name from AppLocalizedText model first
+        $appName = AppLocalizedText::getContent('app_name', $language);
+        
+        // If not found in database, check translations array
+        if (!$appName && isset($translations['app_name'])) {
+            $appName = $translations['app_name'];
+        }
+        
+        // Default fallback if no app_name found
+        $appName = $appName ?? 'HAWKI';
+        
+        // Replace :system placeholder in all string translations
+        foreach ($translations as $key => $value) {
+            if (is_string($value)) {
+                $translations[$key] = str_replace(':system', $appName, $value);
+            }
+        }
+        
+        return $translations;
     }
 }

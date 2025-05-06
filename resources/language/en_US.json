@@ -1,5 +1,5 @@
 {
-    "Guidelines": "Guidelines for Using HAWKI",
+    "Guidelines": "Guidelines for Using :system",
     
 
     "Chat":"Chat",
@@ -13,7 +13,7 @@
     "Cnf_leaveRoom":"Do you really want to leave this Room?",
     "Cnf_removeMember":"Do you really want to remove this member?",
     
-    "Cnf_tokenMsg1":"Please keep this token safe and use it carefully to keep you account safe. If HAWKI detects suspicious behaviour this token will be revoked.",
+    "Cnf_tokenMsg1":"Please keep this token safe and use it carefully to keep you account safe. If :system detects suspicious behaviour this token will be revoked.",
     "Cnf_tokenMsg2":"Once you close this window you will not be able to get this key again.",
     "Cnf_tokenMsgSuccess":"Token Created Successfully",
     "Cnf_tokenRevoke":"Are you sure you want to revoke token",
@@ -24,7 +24,7 @@
 
     "Summery": "Summery",
     "Auto_Generated":"generated automatically",
-    "Exported_At":"Exported from HAWKI on:",
+    "Exported_At":"Exported from :system on:",
     "By":"by",
     "Chatlog":"Chatlog",
     "Rooms": "Rooms",
@@ -32,12 +32,7 @@
     "RemovedMember": "unavailable",
 
     "Abort": "Cancel",
-    "AboutHAWKI": "About HAWKI",
-    "AboutHAWKI_ArianInfo": " | Research Associate | HAWKI",
-    "AboutHAWKI_Info": "The offering was developed in the Interaction Design Lab at HAWK to give all university members the opportunity to integrate artificial intelligence into work processes and to have a space for exchange, potentially resulting in new working methods and fostering an internal university discussion on the use of AI. This offering also aims to provide didactic support, to develop an understanding of the functioning of a language model, and therefore gives indications of well-operating prompts (text inputs) in different areas. We welcome constructive feedback to further develop this offering in line with your needs and insights.",
-    "AboutHAWKI_JonasInfo": " | Research Associate | Hands On",
-    "AboutHAWKI_StefanInfo": " | Digital Environments | Interaction Design ",
-    "AboutHAWKI_VincentInfo": " | Research Associate | Head of Interaction Design Lab",
+    "AboutHAWKI": "About :system",
     "AccessTokens": "Access Tokens",
     "Add": "Add",
     "Bio": "Bio",
@@ -86,7 +81,7 @@
     "MemberInvite": "Invite Members",
     "MemberRemove": "Remove Member",
     "Members": "Members",
-    "MistakeWarning": "HAWKI may make mistakes. Check important information.",
+    "MistakeWarning": ":system may make mistakes. Check important information.",
     "Models": "Models",
     "password": "Password",
     "PersonalData": "Personal Data",
@@ -129,6 +124,6 @@
     "PH_ChooseDescription": "Add Description",
     "PH_SystemPrompt": "Enter your prefered system prompt",
     "PH_SearchBar": "Enter Name, Username oder E-Mail Address" ,
-    "Api_Warning": "To be able to use the HAWKI language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you."
+    "Api_Warning": "To be able to use the :system language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you."
 
 }
