@@ -80,7 +80,13 @@ Route::screen('/settings/system', SystemSettingsScreen::class)->name('platform.s
 Route::screen('/settings/log', LogScreen::class)->name('platform.settings.log');
 Route::screen('/settings/storage', StorageSettingsScreen::class)->name('platform.settings.storage');
 Route::screen('/settings/styling', StylingSettingsScreen::class)->name('platform.settings.styling');
-Route::screen('/settings/texts', TextsSettingsScreen::class)->name('platform.settings.texts');
+Route::screen('/settings/texts', TextsSettingsScreen::class)
+    ->name('platform.settings.texts')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Textverwaltung');
+    });
 
 // Models
 Route::screen('/modelsettings/providers', ProviderSettingsScreen::class)

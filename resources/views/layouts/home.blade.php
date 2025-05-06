@@ -59,7 +59,7 @@
 	</div>
 
 	@include('partials.home.modals.confirm-modal')
-	@include('partials.home.modals.guidelines-modal')
+	{{-- @include('partials.home.modals.guidelines-modal') --}}
 	@include('partials.home.modals.add-member-modal')
 	@include('partials.home.modals.session-expiry-modal')
 	
@@ -82,7 +82,8 @@
 	const translation = @json($translation);
 	const systemPrompts = @json($systemPrompts);
 	//ToDo: pass texts from localizationController
-	{{-- const whiteLabelTexts = @json($whiteLabelTexts); --}}
+	const localizedTexts = @json($localizedTexts);
+	console.log(localizedTexts);
 
 	const modelsList = @json($models).models;
 	const defaultModel = @json($models).defaultModel;
