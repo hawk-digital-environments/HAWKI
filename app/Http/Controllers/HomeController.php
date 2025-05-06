@@ -7,6 +7,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\AppSystemPromptController;
+use App\Http\Controllers\LocalizationController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -24,13 +25,20 @@ class HomeController extends Controller
 {
     protected $languageController;
     protected $appSystemPromptController;
+    protected $localizationController;
 
-    // Inject LanguageController instance
-    public function __construct(LanguageController $languageController, AIConnectionService $aiConnService, AppSystemPromptController $appSystemPromptController)
+    // Inject controllers
+    public function __construct(
+        LanguageController $languageController, 
+        AIConnectionService $aiConnService, 
+        AppSystemPromptController $appSystemPromptController,
+        LocalizationController $localizationController
+    )
     {
         $this->languageController = $languageController;
         $this->aiConnService = $aiConnService;
         $this->appSystemPromptController = $appSystemPromptController;
+        $this->localizationController = $localizationController;
     }
 
     /// Redirects user to Home Layout
@@ -48,9 +56,8 @@ class HomeController extends Controller
         // get System Prompts
         $systemPrompts = $this->appSystemPromptController->getDefaultPrompts();
 
-        // toDo: get white label texts
-        // $whiteLabelTexts = $this->appTextController->getWhiteLabelTexts();
-
+        // Get localized texts
+        $localizedTexts = $this->localizationController->getAllLocalizedContent();
 
         // get the first part of the path if there's a slug.
         $requestModule = explode('/', $request->path())[0];
@@ -92,7 +99,8 @@ class HomeController extends Controller
                             'activeModule',
                             'activeOverlay',
                             'models',
-                            'systemPrompts'));
+                            'systemPrompts',
+                            'localizedTexts'));
     }
 
     public function print($module, $slug){
@@ -155,7 +163,8 @@ class HomeController extends Controller
 
     public function dataprotectionIndex(Request $request){
         $translation = $this->languageController->getTranslation();
-        return view('layouts.dataprotection', compact('translation'));
+        $dataProtectionContent = $this->localizationController->getLocalizedContent('data_protection');
+        return view('layouts.dataprotection', compact('translation', 'dataProtectionContent'));
     }
 }
 
