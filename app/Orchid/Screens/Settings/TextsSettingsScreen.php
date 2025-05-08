@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+
+use App\Http\Controllers\LocalizationController;
+use App\Http\Controllers\LanguageController;
+
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Fields\Input;
@@ -19,7 +24,6 @@ use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
-
 class TextsSettingsScreen extends Screen
 {
     /**
@@ -29,7 +33,7 @@ class TextsSettingsScreen extends Screen
      */
     public function query(Request $request): iterable
     {
-        // Lokalisierte Texte laden
+        // Load localized texts
         $contentKeys = AppLocalizedText::select('content_key')
             ->distinct()
             ->orderBy('content_key')
@@ -52,7 +56,7 @@ class TextsSettingsScreen extends Screen
             ];
         }
         
-        // System Texte laden
+        // Load system texts
         $contentKeys = AppSystemText::select('content_key')
             ->distinct()
             ->orderBy('content_key')
@@ -90,10 +94,12 @@ class TextsSettingsScreen extends Screen
     {
         return 'Text Localization Settings';
     }
+    
     public function description(): ?string
     {
         return 'Configure the default texts used by the system.';
     }
+    
     /**
      * The screen's action buttons.
      *
@@ -106,11 +112,16 @@ class TextsSettingsScreen extends Screen
                 ->icon('arrow-repeat')
                 ->method('loadDefaults')
                 ->confirm('Are you sure? This will execute the AppLocalizedTextSeeder and load the default texts.'),
+                
+            Button::make('Clear Cache')
+                ->icon('trash')
+                ->method('clearTextCache')
+                ->confirm('This will clear the text cache. The cache will be rebuilt on the next page load.'),
 
             Button::make('Save')
                 ->icon('save')
                 ->method('saveChanges'),
-            ];
+        ];
     }
 
     /**
@@ -141,7 +152,7 @@ class TextsSettingsScreen extends Screen
     {
         $layouts = [];
 
-        // Für jeden lokalisierten Text einen Block erstellen
+        // Create a block for each localized text
         $localizedTexts = $this->query(request())['localizedTexts'];
         foreach ($localizedTexts as $key => $texts) {
             $deText = $texts['de_DE'];
@@ -179,7 +190,7 @@ class TextsSettingsScreen extends Screen
             ]);
         }
         
-        // Akkordeon für neue Texte nach unten verschoben
+        // Accordion for new texts placed at the bottom
         $layouts[] = Layout::accordion([
             'New Localized Text' => [
                 Layout::rows([
@@ -219,7 +230,7 @@ class TextsSettingsScreen extends Screen
     {
         $layouts = [];
         
-        // Suche-Feld
+        // Search field
         $layouts[] = Layout::rows([
             Input::make('search_system_text')
                 ->title('Search')
@@ -228,14 +239,14 @@ class TextsSettingsScreen extends Screen
                 ->method('applySearch'),
         ]);
         
-        // System Texte in Blöcke darstellen
+        // Display system texts in blocks
         $systemTexts = $this->query(request())['systemTexts'];
         
-        // Sortierung alphabetisch nach key
+        // Sort alphabetically by key
         ksort($systemTexts);
         
         foreach ($systemTexts as $key => $texts) {
-            // Suchfilter anwenden, wenn vorhanden
+            // Apply search filter, if present
             $searchTerm = request('search_system_text');
             if (!empty($searchTerm) && 
                 strpos(strtolower($key), strtolower($searchTerm)) === false && 
@@ -313,23 +324,23 @@ class TextsSettingsScreen extends Screen
         $count = 0;
         
         if ($texts) {
-            // Sammle alle Einträge, die wirklich geändert wurden
+            // Collect only entries that have actually changed
             $changedEntries = [];
             
             foreach ($texts as $key => $languages) {
                 foreach ($languages as $language => $content) {
                     if (!empty($content)) {
-                        // Prüfe, ob der Inhalt tatsächlich geändert wurde
+                        // Check if the content has really changed
                         $existingText = AppLocalizedText::where('content_key', $key)
                             ->where('language', $language)
                             ->first();
                         
-                        // Normalisiere die Texte für einen zuverlässigen Vergleich
+                        // Normalize texts for a reliable comparison
                         $normalizedNewContent = $this->normalizeContent($content);
                         $normalizedExistingContent = $existingText ? $this->normalizeContent($existingText->content) : null;
                         
                         if (!$existingText || $normalizedExistingContent !== $normalizedNewContent) {
-                            // Speichere für das spätere Update
+                            // Store for later update
                             $changedEntries[] = [
                                 'key' => $key,
                                 'language' => $language,
@@ -341,7 +352,7 @@ class TextsSettingsScreen extends Screen
                 }
             }
             
-            // Führe nur für die wirklich geänderten Einträge Updates durch
+            // Perform updates only for entries that have changed
             foreach ($changedEntries as $entry) {
                 AppLocalizedText::updateOrCreate(
                     [
@@ -383,7 +394,7 @@ class TextsSettingsScreen extends Screen
         $count = 0;
         
         if ($texts) {
-            // Sammle alle Einträge, die wirklich geändert wurden
+            // Collect only entries that have actually changed
             $changedEntries = [];
             
             foreach ($texts as $key => $languages) {
@@ -393,12 +404,12 @@ class TextsSettingsScreen extends Screen
                             ->where('language', $language)
                             ->first();
                         
-                        // Normalisiere die Texte für einen zuverlässigen Vergleich
+                        // Normalize texts for a reliable comparison
                         $normalizedNewContent = $this->normalizeContent($content);
                         $normalizedExistingContent = $existingText ? $this->normalizeContent($existingText->content) : null;
                         
                         if (!$existingText || $normalizedExistingContent !== $normalizedNewContent) {
-                            // Speichere für das spätere Update
+                            // Store for later update
                             $changedEntries[] = [
                                 'key' => $key,
                                 'language' => $language,
@@ -410,7 +421,7 @@ class TextsSettingsScreen extends Screen
                 }
             }
             
-            // Führe nur für die wirklich geänderten Einträge Updates durch
+            // Perform updates only for entries that have changed
             foreach ($changedEntries as $entry) {
                 AppSystemText::updateOrCreate(
                     [
@@ -583,7 +594,7 @@ class TextsSettingsScreen extends Screen
         
         if (!$key) {
             Toast::error("No key provided");
-            return redirect()->route('platform.settings.texts');
+            return;
         }
         
         try {
@@ -637,7 +648,7 @@ class TextsSettingsScreen extends Screen
     }
 
     /**
-     * Run the AppLocalizedTextSeeder to populate the database with default values
+     * Run the AppLocalizedTextSeeder to populate the database with default values.
      */
     public function runLocalizedTextSeeder()
     {
@@ -652,12 +663,12 @@ class TextsSettingsScreen extends Screen
             Toast::error('Error importing: ' . $e->getMessage());
         }
         
-        // Änderung: Entferne den unnötigen 'language' Parameter
+        // Change: Remove the unnecessary "language" parameter
         return;
     }
 
     /**
-     * Run the AppSystemTextSeeder to populate the database with values from JSON files
+     * Run the AppSystemTextSeeder to populate the database with values from JSON files.
      */
     public function runSystemTextSeeder()
     {
@@ -680,28 +691,49 @@ class TextsSettingsScreen extends Screen
      */
     public function saveChanges(Request $request)
     {
-        // Speichern von Localized Texts (HTML-Inhalte)
+        // Save localized texts (HTML content)
         $this->saveLocalizedTexts($request);
         
-        // Speichern von System Texts (JSON-Inhalte)
+        // Save system texts (JSON content)
         $this->saveSystemTexts($request);
         
-        return redirect()->route('platform.settings.texts');
+        return;
     }
 
     /**
-     * Load all default texts from seeders (both localized and system texts)
+     * Load all default texts from seeders (both localized and system texts).
      */
     public function loadDefaults()
     {
-        // Localized Texts (HTML-Inhalte) aus dem Seeder laden
+        // Load localized texts (HTML content) from the seeder
         $this->runLocalizedTextSeeder();
         
-        // System Texts (JSON-Inhalte) aus dem Seeder laden
+        // Load system texts (JSON content) from the seeder
         $this->runSystemTextSeeder();
         
         Toast::success('All localized and system texts have been successfully imported from resource files.');
         
-        return redirect()->route('platform.settings.texts');
+        return;
+    }
+
+    /**
+     * Clear the text cache.
+     */
+    public function clearTextCache()
+    {
+        try {            
+            // Clear system texts cache in LanguageController
+            LanguageController::clearCaches();
+            
+            // Clear localized texts cache in LocalizationController
+            LocalizationController::clearCaches();
+            
+            Toast::success("Translation cache has been cleared successfully.");
+        } catch (\Exception $e) {
+            Log::error('Error clearing translation cache: ' . $e->getMessage());
+            Toast::error('Error clearing cache: ' . $e->getMessage());
+        }
+        
+        return;
     }
 }
