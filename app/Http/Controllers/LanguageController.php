@@ -4,9 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Cookie; // Ensure this is imported
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Log;
 use App\Models\AppLocalizedText;
+use App\Models\AppSystemText;
 
 class LanguageController extends Controller
 {
@@ -87,45 +88,13 @@ class LanguageController extends Controller
     }
 
     private function fetchTranslationFiles($prefix) {
-        $languagePath = resource_path('language/');
-        $files = scandir($languagePath);
-    
-        $translations = [];
-        $defaultTranslations = [];
-    
-        // Filter and load files with the specific prefix
-        foreach ($files as $file) {
-            // Check if the file has the correct prefix
-            if (strpos($file, $prefix) !== false) {
-                $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
-    
-                if ($fileExtension === 'json') {
-                    // Read JSON file as associative array
-                    $fileContent = file_get_contents($languagePath . $file);
-                    $translationArray = json_decode($fileContent, true);
-    
-                    if ($translationArray !== null) {
-                        // Check if it's a default language file
-                        if ($file === $prefix . '.json') {
-                            $defaultTranslations = array_merge($defaultTranslations, $translationArray);
-                        } else {
-                            $translations = array_merge($translations, $translationArray);
-                        }
-                    }
-                } elseif ($fileExtension === 'html') {
-                    // Read HTML file and create a key-value pair
-                    $htmlContent = file_get_contents($languagePath . $file);
-                    $baseFileName = basename($file, '_' . $prefix . '.html');
-                    $keyName = '_' . $baseFileName;
-                    $translations[$keyName] = $htmlContent;
-                }
-            }
-        }
-    
-        // Merge default translations with lower priority
-        $mergedTranslations = array_merge($defaultTranslations, $translations);
-    
-        return $mergedTranslations;
+        // Load system texts from the database
+        $translations = AppSystemText::where('language', $prefix)
+            ->get()
+            ->pluck('content', 'content_key')
+            ->toArray();
+        
+        return $translations;
     }
 
     /**

@@ -79,11 +79,12 @@
 	const activeModule = @json($activeModule);
 	
     const activeLocale = {!! json_encode(Session::get('language')) !!};
+	//Pass system texts from LanguageController
 	const translation = @json($translation);
+	//Pass prompts from AppSystemPromptController
 	const systemPrompts = @json($systemPrompts);
-	//ToDo: pass texts from localizationController
+	//Pass localized texts from LocalizationController
 	const localizedTexts = @json($localizedTexts);
-	console.log(localizedTexts);
 
 	const modelsList = @json($models).models;
 	const defaultModel = @json($models).defaultModel;
