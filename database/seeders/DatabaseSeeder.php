@@ -18,7 +18,8 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             AppSettingsSeeder::class,
             AppSystemPromptSeeder::class,
-            AppLocalizedTextSeeder::class
+            AppLocalizedTextSeeder::class,
+            AppSystemTextSeeder::class
         ]);
     }
 }
