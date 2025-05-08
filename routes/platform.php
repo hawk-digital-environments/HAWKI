@@ -76,16 +76,40 @@ Route::screen('/dashboard/requests', RequestsDashboard::class)
         ->push(__('Requests Dashboard'), route('platform.dashboard.requests')));
 
 // Settings        
-Route::screen('/settings/system', SystemSettingsScreen::class)->name('platform.settings.system');
-Route::screen('/settings/log', LogScreen::class)->name('platform.settings.log');
-Route::screen('/settings/storage', StorageSettingsScreen::class)->name('platform.settings.storage');
-Route::screen('/settings/styling', StylingSettingsScreen::class)->name('platform.settings.styling');
+Route::screen('/settings/system', SystemSettingsScreen::class)
+    ->name('platform.settings.system')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('System');
+    });
+Route::screen('/settings/log', LogScreen::class)
+    ->name('platform.settings.log')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Log');
+    });
+Route::screen('/settings/storage', StorageSettingsScreen::class)
+    ->name('platform.settings.storage')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Storage');
+    });
+Route::screen('/settings/styling', StylingSettingsScreen::class)
+    ->name('platform.settings.styling')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Styling');
+    });
 Route::screen('/settings/texts', TextsSettingsScreen::class)
     ->name('platform.settings.texts')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Textverwaltung');
+            ->push('Texts');
     });
 
 // Models
@@ -93,7 +117,7 @@ Route::screen('/modelsettings/providers', ProviderSettingsScreen::class)
     ->name('platform.modelsettings.providers')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push(__('Providers'), route('platform.modelsettings.providers')));
+        ->push(__('API Providers'), route('platform.modelsettings.providers')));
         
 Route::screen('/modelsettings/providers/create', ProviderCreateScreen::class)
     ->name('platform.modelsettings.provider.create')
@@ -105,7 +129,7 @@ Route::screen('/modelsettings/models', ModelSettingsScreen::class)
     ->name('platform.modelsettings.models')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push(__('Models List'), route('platform.modelsettings.models')));
+        ->push(__('Model Settings'), route('platform.modelsettings.models')));
         
 Route::screen('/modelsettings/models/{model}/info', ModelInformationScreen::class)
     ->name('platform.modelsettings.models.info')

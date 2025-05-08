@@ -17,9 +17,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             AppSettingsSeeder::class,
-            AppSystemPromptSeeder::class,
             AppLocalizedTextSeeder::class,
-            AppSystemTextSeeder::class
+            AppSystemTextSeeder::class,
+            AppCssSeeder::class,
+            //ToDo: add ProviderSettingsSeeder::class,
+            AppSystemPromptSeeder::class,
         ]);
     }
 }

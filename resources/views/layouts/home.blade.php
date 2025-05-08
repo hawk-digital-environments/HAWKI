@@ -17,6 +17,9 @@
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/home-style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/settings_style.css') }}">
+	{{-- Insert stylesheet from database --}}
+	<link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
+
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}">
 
     @vite('resources/js/app.js')

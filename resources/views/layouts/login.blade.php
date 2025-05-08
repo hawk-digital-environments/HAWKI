@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/login_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/settings_style.css') }}">
+    {{-- Insert stylesheet from database --}}
+    <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
+
 
     <script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/settings_functions.js') }}"></script>

@@ -138,3 +138,13 @@ Route::middleware('prevent_back')->group(function () {
 
 
 });
+
+/*
+|--------------------------------------------------------------------------
+| CSS Routes
+|--------------------------------------------------------------------------
+|
+| Routes for serving CSS files from the database
+|
+*/
+Route::get('/css/{name}', [App\Http\Controllers\AppCssController::class, 'getByName'])->name('css.get');
