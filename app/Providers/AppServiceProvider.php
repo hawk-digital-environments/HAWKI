@@ -50,6 +50,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
+        if(env('PHP_ERRORS') !== null){
+            error_reporting(eval('return '.env('PHP_ERRORS').' ;'));
+        }
     }
 }
