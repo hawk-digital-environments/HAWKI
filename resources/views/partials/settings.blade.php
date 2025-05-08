@@ -8,7 +8,7 @@
                     <h1>{{ $translation["Settings"] }}</h1>
                     <h3 id="swtichContent-btn" class="top-gap-3">
                         <div href="#" onclick="ToggleSettingsContent('aboutHAWKI',true)">
-                            {{ str_replace(':system', $localizedTexts["app_name"], $translation["AboutHAWKI"]) }}
+                            {{ $translation["AboutHAWKI"] }}
                         </div>
                         <svg viewBox="0 0 25 25">
                             <g class="button-path-stroke-color" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -65,7 +65,7 @@
                             </g>
                         </svg>
                     </div>
-                    <h1>{{ str_replace(':system', $localizedTexts["app_name"], $translation['AboutHAWKI']) }}</h1>
+                    <h1>{{ $translation['AboutHAWKI'] }}</h1>
                 </div>
 
                 <div class="content-text-container">
