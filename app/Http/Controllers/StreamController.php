@@ -122,10 +122,21 @@ class StreamController extends Controller
             $user = User::find(1); // HAWKI user 
             $avatar_url = $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null;
             
-            if ($validatedData['payload']['stream']) {
+            if ($validatedData['payload']['stream'] === true) {
                 // Handle streaming response
                 $this->handleStreamingRequest($validatedData['payload'], $user, $avatar_url);
             } else {
+                $response = [
+                    'type'=>'status',
+                    'status_info' => [
+                        'message'=>'StartStream'
+                    ]
+                ];
+                echo json_encode($response) . "\n";
+                ob_flush();
+                flush();
+
+
                 // Handle standard response
                 $result = $this->aiConnectionService->processRequest(
                     $validatedData['payload'],
@@ -140,18 +151,37 @@ class StreamController extends Controller
                         $validatedData['payload']['model']
                     );
                 }
-                
+
+                if(isset($result['status'])){
+                    $response = [
+                        'type'=>'status',
+                        'status_info' => [
+                            'message'=> $result['message']
+                        ]
+                    ];
+                    echo json_encode($response) . "\n";
+                    ob_flush();
+                    flush();
+                    return;
+                }
+
+
+
                 // Return response to client
-                return response()->json([
-                    'author' => [
-                        'username' => $user->username,
-                        'name' => $user->name,
-                        'avatar_url' => $avatar_url,
-                    ],
-                    'model' => $validatedData['payload']['model'],
-                    'isDone' => true,
-                    'content' => json_encode($result['content']),
-                ]);
+                echo json_encode(
+                [
+                    'type'=>'message',
+                    'messageData' => [
+                        'author' => [
+                            'username' => $user->username,
+                            'name' => $user->name,
+                            'avatar_url' => $avatar_url,
+                        ],
+                        'model' => $validatedData['payload']['model'],
+                        'isDone' => true,
+                        'content' => json_encode($result['content']),
+                    ]
+                ]). "\n";
             }
         }
     }
@@ -166,7 +196,7 @@ class StreamController extends Controller
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
-        
+
 
         // Create a callback function to process streaming chunks
         $onData = function ($data) use ($user, $avatar_url, $payload) {
@@ -200,21 +230,47 @@ class StreamController extends Controller
                     );
                 }
                 
+                if(isset($result['status'])){
+                    $response = [
+                        'type'=>'status',
+                        'status_info' => [
+                            'message'=> $result['message']
+                        ]
+                    ];
+                    echo json_encode($response) . "\n";
+                    ob_flush();
+                    flush();
+                    return;
+                }
+
                 // Send the formatted response to the client
-                $messageData = [
-                    'author' => [
-                        'username' => $user->username,
-                        'name' => $user->name,
-                        'avatar_url' => $avatar_url,
-                    ],
-                    'model' => $payload['model'],
-                    'isDone' => $formatted['isDone'],
-                    'content' => json_encode($formatted['content']),
+                $response = [
+                    'type'=>'message',
+                    'messageData' => [
+                        'author' => [
+                            'username' => $user->username,
+                            'name' => $user->name,
+                            'avatar_url' => $avatar_url,
+                        ],
+                        'model' => $payload['model'],
+                        'isDone' => $formatted['isDone'],
+                        'content' => json_encode($formatted['content']),
+                    ]
                 ];
-                echo json_encode($messageData) . "\n";
+                echo json_encode($response) . "\n";
             }
         };
         
+
+        $response = [
+            'type'=>'status',
+            'status_info' => [
+                'message'=>'StartStream'
+            ]
+        ];
+        echo json_encode($response) . "\n";
+
+
         // Process the streaming request
         $this->aiConnectionService->processRequest(
             $payload, 
@@ -278,15 +334,15 @@ class StreamController extends Controller
         $room = Room::where('slug', $data['slug'])->firstOrFail();
         
         // Broadcast initial generation status
-        $generationStatus = [
-            'type' => 'aiGenerationStatus',
-            'messageData' => [
+        $response = [
+            'type' => 'status',
+            'status_info' => [
                 'room_id' => $room->id,
                 'isGenerating' => true,
                 'model' => $data['payload']['model']
             ]
         ];
-        broadcast(new RoomMessageEvent($generationStatus));
+        broadcast(new RoomMessageEvent($response));
         
         // Process the request
         $result = $this->aiConnectionService->processRequest(
@@ -339,15 +395,15 @@ class StreamController extends Controller
         SendMessage::dispatch($message, $isUpdate)->onQueue('message_broadcast');
         
         // Update and broadcast final generation status
-        $generationStatus = [
-            'type' => 'aiGenerationStatus',
-            'messageData' => [
+        $response = [
+            'type' => 'status',
+            'status_info' => [
                 'room_id' => $room->id,
                 'isGenerating' => false,
                 'model' => $data['payload']['model']
             ]
         ];
-        broadcast(new RoomMessageEvent($generationStatus));
+        broadcast(new RoomMessageEvent($response));
     }
     
 }

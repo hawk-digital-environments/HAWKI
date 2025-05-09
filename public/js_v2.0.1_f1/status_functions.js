@@ -9,28 +9,24 @@ window.addEventListener('keydown', async (event) => {
 
 
 
-function createStatusElement(status, msgId){
-
-    let statElement = document.querySelector(`.gen-stat-element[data-index="${msgId}"]`);
-    let [msgWholeNum, msgDecimalNum] = msgId.split('.').map(Number);
-
-    if (msgDecimalNum === 0) {
-        threadIndex = 0;
-    } else {
-        threadIndex = msgWholeNum;
-    }
+function createStatusElement(status, threadIndex = 0){
+    let statElement = document.querySelector(`.gen-stat-element[data-index="${threadIndex}"]`);
     let activeThread = findThreadWithID(threadIndex);
-
 
     //create a new element for first status
     if(!statElement){
-        console.log('no Element');
         const statTemp = document.getElementById('gen-stat-template')
         const statClone = statTemp.content.cloneNode(true);
         statElement = statClone.querySelector(".gen-stat-element");
-        statElement.dataset.index = msgId;
-        activeThread.appendChild(statElement);
-        console.log(activeThread);
+        statElement.dataset.index = threadIndex;
+
+        if(threadIndex === 0){
+            activeThread.appendChild(statElement);
+        }
+        else{
+            const branchInput = activeThread.querySelector('.input-container');
+            activeThread.insertBefore(statElement, branchInput);
+        }
     }
 
     const textEl = statElement.querySelector('.stat-txt');
@@ -40,8 +36,8 @@ function createStatusElement(status, msgId){
     tripleDotAnime(statElement, status);
 }
 
-function removeStatusElement(msgId){
-    let statElement = document.querySelector(`.gen-stat-element[data-index="${msgId}"]`);
+function removeStatusElement(threadIndex = 0){
+    let statElement = document.querySelector(`.gen-stat-element[data-index="${threadIndex}"]`);
     if(statElement){
         statElement.remove();
     }
