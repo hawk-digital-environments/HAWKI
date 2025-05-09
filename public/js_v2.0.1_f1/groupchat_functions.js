@@ -154,12 +154,23 @@ const connectWebSocket = (roomSlug) => {
                 }
     
                 if(data.type === "status"){
-                    if (data.status_info.isGenerating) {
+                    let [msgWholeNum, msgDecimalNum] = data.messageData.messageId.split('.').map(Number);
+                    let threadIndex;
+                    if (msgDecimalNum === 0) {
+                        threadIndex = 0;
+                    } else {
+                        threadIndex = msgWholeNum;
+                    }
+
+
+                    if (data.messageData.isGenerating) {
                         // Display the typing indicator for the user
-                        addUserToTypingList(data.status_info.model);
+                        addUserToTypingList(data.messageData.model);
+                        createStatusElement('isGenerating', threadIndex);
                     } else {
                         // Hide the typing indicator for the user
-                        removeUserFromTypingList(data.status_info.model);
+                        removeUserFromTypingList(data.messageData.model);
+                        removeStatusElement(threadIndex);
                     }
                 }
 

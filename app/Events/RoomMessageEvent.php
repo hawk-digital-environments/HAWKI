@@ -10,6 +10,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class RoomMessageEvent implements ShouldBroadcast
 {
@@ -20,7 +21,7 @@ class RoomMessageEvent implements ShouldBroadcast
 
     public function __construct(array $data)
     {
-        $this->roomId = $data['info']['room_id']; // Extract room_id before compression
+        $this->roomId = $data['messageData']['room_id']; // Extract room_id before compression
         $this->data = base64_encode(gzencode(json_encode($data), 9)); // ✅ Use gzencode instead of gzcompress
     }
 

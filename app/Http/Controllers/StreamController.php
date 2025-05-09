@@ -332,13 +332,17 @@ class StreamController extends Controller
     {
         $isUpdate = (bool) ($data['isUpdate'] ?? false);
         $room = Room::where('slug', $data['slug'])->firstOrFail();
-        
+
+        $roomController = new RoomController();
+        $nextMessageId = $roomController->generateMessageID($room, $data['threadIndex']);
+
         // Broadcast initial generation status
         $response = [
             'type' => 'status',
-            'status_info' => [
+            'messageData' => [
                 'room_id' => $room->id,
                 'isGenerating' => true,
+                'messageId'=> $nextMessageId,
                 'model' => $data['payload']['model']
             ]
         ];
@@ -366,7 +370,6 @@ class StreamController extends Controller
         $encryptiedData = $cryptoController->encryptWithSymKey($encKey, json_encode($result['content']), false);
         
         // Store message
-        $roomController = new RoomController();
         $member = $room->members()->where('user_id', 1)->firstOrFail();
         
         if ($isUpdate) {
@@ -378,7 +381,6 @@ class StreamController extends Controller
                 'model' => $data['payload']['model'],
             ]);
         } else {
-            $nextMessageId = $roomController->generateMessageID($room, $data['threadIndex']);
             $message = Message::create([
                 'room_id' => $room->id,
                 'member_id' => $member->id,
@@ -397,9 +399,10 @@ class StreamController extends Controller
         // Update and broadcast final generation status
         $response = [
             'type' => 'status',
-            'status_info' => [
+            'messageData' => [
                 'room_id' => $room->id,
                 'isGenerating' => false,
+                'messageId'=> $nextMessageId,
                 'model' => $data['payload']['model']
             ]
         ];
