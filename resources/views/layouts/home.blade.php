@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html class="lightMode">
 <head>
@@ -12,7 +11,7 @@
     
 	<title>{{ env('APP_NAME') }}</title>
 
-	<link rel="icon" href="{{ asset('favicon.ico') }}">
+	<link rel="icon" href="{{ route('system.image', 'favicon') }}">
 	
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/home-style.css') }}">

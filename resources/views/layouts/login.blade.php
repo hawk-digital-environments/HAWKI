@@ -30,8 +30,9 @@
 <body>
 <div class="wrapper">
     <div class="sidebar">
-        <div class="logo"></div>
-
+        <div>
+            <div class="logo"></div>
+        </div>
         <div class="loginPanel">
 			{!! $authForms !!}
         </div>
