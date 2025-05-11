@@ -7,7 +7,9 @@
 
     <title>{{ env('APP_NAME') }}</title>
 
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ route('system.image', 'favicon') }}">
+    <link rel="apple-touch-icon" href="{{ route('system.image', 'favicon') }}">
+
 
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/login_style.css') }}">

@@ -15,17 +15,20 @@ class AppSystemImageSeeder extends Seeder
     public function run(): void
     {
         $defaultImages = [
-            'favicon' => 'favicon.ico',
+            'favicon' => 'img/favicon.png',
             'logo_svg' => 'img/logo.svg'
         ];
         
         $count = 0;
         
         foreach ($defaultImages as $name => $path) {
-            if (File::exists(public_path($path))) {
+            $fullPath = public_path($path);
+            Log::info("Checking for default image: {$path} at {$fullPath}");
+            
+            if (File::exists($fullPath)) {
                 // Get file information
                 $originalName = basename($path);
-                $mimeType = File::mimeType(public_path($path));
+                $mimeType = File::mimeType($fullPath);
                 
                 // Create or update the database entry
                 AppSystemImage::updateOrCreate(
@@ -39,9 +42,10 @@ class AppSystemImageSeeder extends Seeder
                 );
                 
                 $count++;
+                $this->command->info("Imported image: {$path}");
             } else {
-                Log::warning("Default image not found: {$path}");
-                $this->command->warn("Default image not found: {$path}");
+                Log::warning("Default image not found: {$fullPath}");
+                $this->command->warn("Default image not found: {$fullPath}");
             }
         }
         

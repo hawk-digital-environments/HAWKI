@@ -36,11 +36,10 @@ class StylingSettingsScreen extends Screen
         ],    
         'favicon' => [
             'title' => 'Favicon',
-            'description' => 'Browser tab icon (ICO format)',
-            'format' => 'image/*,.ico',
+            'description' => 'Browser tab icon (ICO or PNG format)',
+            'format' => 'image/png,image/x-icon',
             'path' => 'favicon.ico'
         ]
-
     ];
     
     /**
@@ -101,12 +100,12 @@ class StylingSettingsScreen extends Screen
             Button::make('Load Defaults')
                 ->icon('arrow-repeat')
                 ->method('loadDefaults')
-                ->confirm('Are you sure? This will execute the AppCssSeeder and load the default CSS styles.'),
+                ->confirm('This will reset all style settings (CSS and image). Are you sure?'),
 
             Button::make('Clear Cache')
                 ->icon('trash')
-                ->method('clearCssCache')
-                ->confirm('This will clear the CSS cache. The cache will be rebuilt on the next page load.'),
+                ->method('clearAllCaches')
+                ->confirm('This will clear all styling caches (CSS and image caches). The cache will be rebuilt on the next page load.'),
 
             Button::make('Save')
                 ->icon('save')
@@ -141,14 +140,6 @@ class StylingSettingsScreen extends Screen
     protected function buildSystemImagesLayout(): array
     {
         $layouts = [];
-        
-        $layouts[] = Layout::rows([
-            Button::make('Load Default Images')
-                ->icon('arrow-repeat')
-                ->method('loadDefaultImages')
-                ->class('btn btn-primary mb-3')
-                ->confirm('This will restore all system images to their default versions.')
-        ]);
         
         // Create an image upload block for each system image
         foreach ($this->systemImages as $name => $config) {
@@ -217,7 +208,7 @@ class StylingSettingsScreen extends Screen
                 $attachment = Attachment::find($attachmentId);
                 
                 if (!$attachment) {
-                    Toast::error("Image attachment not found in database");
+                    Toast::error("Image attachment not found in database or no new file was uploaded");
                     return redirect()->route('platform.settings.styling');
                 }
                 
@@ -487,7 +478,7 @@ class StylingSettingsScreen extends Screen
                         'action' => $existingCss ? 'update' : 'create'
                     ]);
                 } else {
-                    Toast::info("No changes detected in \"$name\" CSS");
+                    Toast::error("No changes detected in \"$name\" CSS");
                 }
             } catch (\Exception $e) {
                 Toast::error("Error saving CSS \"$name\": " . $e->getMessage());
@@ -578,55 +569,141 @@ class StylingSettingsScreen extends Screen
     }
 
     /**
-     * Save all CSS changes
+     * Save all changes (CSS and system images)
      *
      * @param Request $request
      */
     public function saveAllChanges(Request $request)
     {
+        $cssCount = 0;
+        $imageCount = 0;
+        
+        // Save all CSS entries
         foreach ($this->cssEntries as $name => $title) {
-            $this->saveCss($request, $name);
+            $result = $this->saveCss($request, $name);
+            if ($result !== false) {
+                $cssCount++;
+            }
         }
         
-        Toast::success('All styling settings have been saved. Cache has been cleared.');
+        // Save all system images that have pending changes
+        foreach ($this->systemImages as $name => $config) {
+            $attachmentId = $request->input('image_' . $name);
+            if ($attachmentId !== null) {
+                $this->saveReferenceToSystemImage($request, $name);
+                $imageCount++;
+            }
+        }
+        
+        $message = [];
+        if ($cssCount > 0) {
+            $message[] = 'CSS styles';
+        }
+        if ($imageCount > 0) {
+            $message[] = 'system images';
+        }
+        
+        if (!empty($message)) {
+            Toast::success('All ' . implode(' and ', $message) . ' have been saved. Cache has been cleared.');
+        } else {
+            Toast::info('No changes detected.');
+        }
+        
         return redirect()->route('platform.settings.styling');
     }
     
     /**
-     * Clear all CSS caches
+     * Clear all caches (CSS and system images)
+     */
+    public function clearAllCaches()
+    {
+        $cssSuccess = false;
+        $imageSuccess = false;
+        
+        try {
+            // Clear CSS caches
+            AppCssController::clearCaches();
+            $cssSuccess = true;
+        } catch (\Exception $e) {
+            Log::error('Error clearing CSS cache: ' . $e->getMessage());
+            Toast::error('Error clearing CSS cache: ' . $e->getMessage());
+        }
+        
+        try {
+            // Clear system image caches
+            AppSystemImageController::clearCaches();
+            $imageSuccess = true;
+        } catch (\Exception $e) {
+            Log::error('Error clearing system image cache: ' . $e->getMessage());
+            Toast::error('Error clearing system image cache: ' . $e->getMessage());
+        }
+        
+        if ($cssSuccess && $imageSuccess) {
+            Toast::success('All styling caches have been cleared successfully');
+        } else if ($cssSuccess) {
+            Toast::success('CSS cache has been cleared successfully');
+        } else if ($imageSuccess) {
+            Toast::success('System image cache has been cleared successfully');
+        }
+        
+        return redirect()->route('platform.settings.styling');
+    }
+
+    /**
+     * @deprecated Use clearAllCaches() instead
      */
     public function clearCssCache()
     {
-        try {
-            AppCssController::clearCaches();
-            Toast::success('CSS cache has been cleared successfully');
-        } catch (\Exception $e) {
-            Toast::error('Error clearing CSS cache: ' . $e->getMessage());
-            Log::error('Error clearing CSS cache: ' . $e->getMessage());
-        }
-        
-        return redirect()->route('platform.settings.styling');
+        return $this->clearAllCaches();
     }
     
     /**
-     * Load all default CSS styles from seeders.
+     * Load all default settings from seeders (CSS and system images).
      */
     public function loadDefaults()
     {
+        $cssSuccess = false;
+        $imageSuccess = false;
+        
         try {
-            // Run the AppCssSeeder to load defaults
+            // Run the AppCssSeeder to load default CSS styles
             \Artisan::call('db:seed', [
                 '--class' => 'AppCssSeeder'
             ]);
             
-            // Clear the cache
+            // Clear the CSS cache
             AppCssController::clearCaches();
             
-            Toast::success('Default CSS styles have been successfully imported.');
+            $cssSuccess = true;
             Log::info('Default CSS styles loaded via seeder');
         } catch (\Exception $e) {
             Log::error('Error running AppCssSeeder: ' . $e->getMessage());
-            Toast::error('Error importing default styles: ' . $e->getMessage());
+            Toast::error('Error importing CSS styles: ' . $e->getMessage());
+        }
+        
+        try {
+            // Run the AppSystemImageSeeder to load default images
+            \Artisan::call('db:seed', [
+                '--class' => 'AppSystemImageSeeder'
+            ]);
+            
+            // Clear the system image cache
+            AppSystemImageController::clearCaches();
+            
+            $imageSuccess = true;
+            Log::info('Default system images loaded via seeder');
+        } catch (\Exception $e) {
+            Log::error('Error running AppSystemImageSeeder: ' . $e->getMessage());
+            Toast::error('Error importing system images: ' . $e->getMessage());
+        }
+        
+        // Show appropriate success message based on what was successfully reset
+        if ($cssSuccess && $imageSuccess) {
+            Toast::success('All default styles and images have been successfully imported.');
+        } else if ($cssSuccess) {
+            Toast::success('Default CSS styles have been successfully imported.');
+        } else if ($imageSuccess) {
+            Toast::success('Default system images have been successfully imported.');
         }
         
         return redirect()->route('platform.settings.styling');
