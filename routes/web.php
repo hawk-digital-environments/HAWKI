@@ -173,3 +173,12 @@ Route::get('/system-image/{name}', function ($name) {
     
     return redirect(asset($fallback[$name] ?? 'img/logo.svg'));
 })->name('system.image');
+/*
+|--------------------------------------------------------------------------
+| Test ConfigValueController
+|--------------------------------------------------------------------------
+|
+| Helper route for testing config values from database
+|
+*/
+Route::get('/test-config-value', App\Http\Controllers\TestConfigValueController::class)->name('test-config-value');

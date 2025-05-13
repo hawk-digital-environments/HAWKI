@@ -5,9 +5,11 @@ namespace App\Orchid\Screens\Settings;
 use App\Models\AppSetting;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\CheckBox;
+use Orchid\Screen\Fields\Code;
 use Orchid\Screen\Fields\Group;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Label;
@@ -15,8 +17,12 @@ use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\Switcher;
 use Orchid\Screen\Fields\TextArea;
 use Orchid\Screen\Screen;
+use Orchid\Screen\TD;
+use Orchid\Screen\Layouts\Table;
+
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
+use Illuminate\Support\Facades\Http;
 
 class SystemSettingsScreen extends Screen
 {
@@ -44,10 +50,44 @@ class SystemSettingsScreen extends Screen
         $authSettings = AppSetting::where('group', 'authentication')->get();
         $apiSettings = AppSetting::where('group', 'api')->get();
 
+        // Fetch test configuration data
+        $configData = [];
+        $rawResponse = '';
+        try {
+            $response = Http::get(url('/test-config-value'));
+            $responseData = $response->json();
+            $rawResponse = json_encode($responseData, JSON_PRETTY_PRINT);
+            
+            // Extract config_values
+            $configValues = $responseData['config_values'] ?? [];
+            
+            // Prepare data for table display
+            foreach ($configValues as $key => $values) {
+                $configData[] = [
+                    'key'           => $key,
+                    'config_value'  => $values['config_value'] ?? 'N/A',
+                    'env_value'     => $values['env_value'] ?? 'N/A',
+                    'db_value'      => $values['db_value'] ?? 'N/A',
+                    'config_source' => $values['config_source'] ?? 'N/A',
+                ];
+            }
+        } catch (\Exception $e) {
+            $configData[] = [
+                'key'           => 'Error',
+                'config_value'  => 'Failed to retrieve configuration data: ' . $e->getMessage(),
+                'env_value'     => 'N/A',
+                'db_value'      => 'N/A',
+                'config_source' => 'N/A',
+            ];
+            $rawResponse = "Error fetching data: " . $e->getMessage();
+        }
+
         return [
             'basic' => $basicSettings,
             'authentication' => $authSettings,
             'api' => $apiSettings,
+            'config_data' => $configData,
+            'raw_response' => $rawResponse,
         ];
     }
 
@@ -60,7 +100,10 @@ class SystemSettingsScreen extends Screen
     {
         return 'System Settings';
     }
-
+    public function description(): ?string
+    {
+        return 'Customize the system settings.';
+    }
     /**
      * Button commands.
      *
@@ -82,44 +125,107 @@ class SystemSettingsScreen extends Screen
      */
     public function layout(): iterable
     {
+        // Build the layouts for each tab
+        $basicSettings = $this->buildBasicSettingsLayout();
+        $authSettings = $this->buildAuthSettingsLayout();
+        $apiSettings = $this->buildApiSettingsLayout();
+        $test = $this->buildTestSettingsLayout();
+        
         return [
-            Layout::block($this->getBasicSettingsLayout())
-                ->title('Basic Application Settings')
-                ->description('Configure general application settings')
-                ->commands(
-                    Button::make('Save Basic Settings')
-                        ->icon('save')
-                        ->method('saveSettings')
-                ),
-                
-            Layout::block($this->getAuthSettingsLayout())
-                ->title('Authentication Settings')
-                ->description('Configure authentication methods and options')
-                ->commands(
-                    Button::make('Save Authentication Settings')
-                        ->icon('save')
-                        ->method('saveSettings')
-                ),
-                
-            Layout::block($this->getApiSettingsLayout())
-                ->title('API Communication Settings')
-                ->description('Configure API access and external communication')
-                ->commands(
-                    Button::make('Save API Settings')
-                        ->icon('save')
-                        ->method('saveSettings')
-                ),
+            Layout::tabs([
+                'System' => $basicSettings,
+                'Authentication' => $authSettings,
+                'API' => $apiSettings,
+                'Testing' => $test,
+            ]),
         ];
+        
     }
+    /**
+     * Build layout for test settings
+     *
+     * @return \Orchid\Screen\Layout
+     */
+    private function buildTestSettingsLayout()
+    {
+        return Layout::block([
+            Layout::rows([
+                Label::make('config_test_label')
+                    ->title('Configuration Source Testing')
+                    ->help('This shows where each configuration value is coming from: database, environment variables, or defaults')
+                    ->addclass('fw-bold'),
+            ]),
+            
+            // Use table layout with data from query - add render methods to handle array data
+            Layout::table('config_data', [
+                TD::make('key', 'Configuration Key')
+                    ->sort()
+                    ->filter(Input::make())
+                    ->width('200px')
+                    ->render(function ($row) {
+                        return $row['key'];
+                    }),
+                    
+                TD::make('env_value', 'Environment Value')
+                    ->width('250px')
+                    ->render(function ($row) {
+                        return $row['env_value'];
+                    }),
+                    
+                TD::make('db_value', 'Database Value')
+                    ->width('250px')
+                    ->render(function ($row) {
+                        return $row['db_value'];
+                    }),
+                
+                TD::make('config_value', 'Config Value')
+                    ->width('250px')
+                    ->render(function ($row) {
+                        return $row['config_value'];
+                    }),    
+            
+                TD::make('config_source', 'Source')
+                    ->width('120px')
+                    ->align(TD::ALIGN_CENTER)
+                    ->render(function ($row) {
+                        // Highlight the source with a badge
+                        $sourceClass = match($row['config_source']) {
+                            'database' => 'bg-primary',
+                            'environment' => 'bg-success',
+                            'default' => 'bg-info',
+                            default => 'bg-secondary'
+                        };
+                        
+                        return "<span class='badge {$sourceClass}'>{$row['config_source']}</span>";
+                    }),
+            ]),
+            
+        
+        ])->vertical();
+    }
+
 
     /**
      * Build layout for basic settings
      *
      * @return \Orchid\Screen\Layout
      */
-    private function getBasicSettingsLayout()
+    private function buildBasicSettingsLayout()
     {
-        $fields = [];
+        // Get system information
+        Artisan::call('about');
+        $aboutOutput = Artisan::output();
+        
+        $fields = [
+            Label::make('system_info_label')
+                ->title('System Information')
+                ->popover('<Artisan about> outputs a mixed collection of config and .env values, so not all config values are represented correctly.'),
+            Code::make('system_info')
+                ->language('shell')
+                ->readonly()
+                ->value($aboutOutput)
+                ->height('550px')
+        ];
 
         foreach ($this->query()['basic'] as $setting) {
             $fields[] = $this->getFieldForSetting($setting);
@@ -133,7 +239,7 @@ class SystemSettingsScreen extends Screen
      *
      * @return \Orchid\Screen\Layout
      */
-    private function getAuthSettingsLayout()
+    private function buildAuthSettingsLayout()
     {
         $fields = [];
 
@@ -149,7 +255,7 @@ class SystemSettingsScreen extends Screen
      *
      * @return \Orchid\Screen\Layout
      */
-    private function getApiSettingsLayout()
+    private function buildApiSettingsLayout()
     {
         $fields = [];
 
@@ -207,8 +313,7 @@ class SystemSettingsScreen extends Screen
                     TextArea::make("settings.{$key}")
                         ->rows(5)
                         ->value(json_encode($setting->typed_value, JSON_PRETTY_PRINT)),
-                ])
-                ->vertical();
+                ]);
             
             case 'string':
                 // Special handling for AUTHENTICATION_METHOD which should be a dropdown
