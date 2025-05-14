@@ -718,8 +718,218 @@ button:disabled{
     display: none;
 }
 
+.dropzone-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px; /* Abstand zwischen Text und Feld */
+    margin-top: 20px;
+    flex-wrap: wrap; /* Für kleinere Bildschirme */
+  }
+  
+  .dropzone-info {
+    max-width: 300px;
+    font-size: 14px;
+    color: #333;
+    line-height: 1.4;
+  }
+  
+  .drop-zone {
+    width: 300px;
+    height: 150px;
+    border: 2px dashed #FFA500;
+    border-radius: 8px;
+    background-color: #FFF3CD;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #000;
+    font-size: 16px;
+    text-align: center;
+    padding: 20px;
+    transition: all 0.3s ease;
+  }
+
+  .drop-zone.hover {
+    border-color: #0ab601; /* Blau statt Grau */
+    background-color: #85e682; /* Hellblau als Hintergrund */
+    color: #000;
+  }
 
 
+  .drop-zone:hover {
+    border-color: #ff0000; /* Blau statt Grau */
+    background-color: #f2e17f; /* Hellblau als Hintergrund */
+    color: #000;
+  }
+
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid #ccc;
+    width: 90%;
+    margin: 40px auto 20px auto; /* oben / seitlich / unten */
+  }
+
+  .recording-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+  }
+  
+  /* Äußerer Ring – silbrig, rund, 3D-Look */
+  .record-button-ring {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(#ccc, #888); /* metallisch */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 5px #fff, 0 0 10px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: box-shadow 0.3s ease;
+  }
+  
+  /* Innerer Knopf – roter Kreis */
+  .record-button-core {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: radial-gradient(#ff4d4d, #b30000);
+    box-shadow: inset 0 0 5px rgba(255,255,255,0.5);
+  }
+  
+  /* Hover-Effekt für das Gesamt-Element */
+  .record-button-ring:hover {
+    box-shadow: inset 0 0 5px #fff, 0 0 20px rgba(255, 0, 0, 0.5);
+  }
+
+  .record-button-container {
+    padding: 20px;
+    border: 2px solid #ccc;
+    border-radius: 16px;
+    background-color: #fefefe87;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s ease;
+  }
+  
+  .record-button-container:hover {
+    border-color: #999;
+  }
+
+
+  .transcript-choice {
+    text-align: center;
+    margin-top: 40px;
+  }
+  
+  .choice-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 20px;
+  }
+  
+  .transcript-button {
+    padding: 15px 25px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    background-color: #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .transcript-button:hover {
+    background-color: #ddd;
+  }
+
+  .transcript-section {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 60px 20px 40px 20px; /* oben mehr Abstand für den Pfeil */
+	min-height: 400px; /* optional, sorgt für bessere Vertikal-Zentrierung */
+}
+
+.live-transcript-ui {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 0;
+}
+
+.microphone-image {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+
+.recording-controls {
+    display: flex;
+    gap: 30px;
+}
+
+/* Basis-Button */
+.control-button {
+    width: 60px;
+    height: 60px;
+    background-color: transparent;
+    border: 2px solid #ccc;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.control-button:hover {
+    transform: scale(1.1);
+}
+
+/* Aufnahme: roter Kreis im Inneren */
+.control-button.record::after {
+    content: '';
+    width: 18px;
+    height: 18px;
+    background-color: red;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Pause: zwei weiße Balken */
+.control-button.pause::after {
+    content: '';
+    width: 20px;
+    height: 24px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(to right, rgb(75, 229, 14) 6px, transparent 6px 14px, rgb(75, 229, 14)  14px);
+}
+
+/* Stop: weißes Quadrat */
+.control-button.stop::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background-color: rgb(3, 3, 3);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 3px;
+}
 #overlay {
     position: absolute;
     top: 0;
@@ -736,6 +946,79 @@ button:disabled{
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.transcript-sidebar-field {
+    margin-bottom: 15px;
+}
+.back-icon-button {
+	position: absolute;
+	top: 20px;
+	left: 20px;
+	background: none;
+	border: 2px solid #ccc;
+	border-radius: 8px;
+	padding: 6px 10px;
+	font-size: 20px;
+	cursor: pointer;
+	z-index: 10;
+}
+
+.sidebar-upload-options {
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #f6f6f6;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+}
+
+.sidebar-upload-options label {
+    display: block;
+    margin-top: 10px;
+    margin-bottom: 4px;
+    font-weight: bold;
+}
+
+.sidebar-upload-options input,
+.sidebar-upload-options select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 5px;
+    border: 1px solid #bbb;
+}
+#start-upload-btn {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+}
+#start-upload-btn:hover {
+    background-color: #0056b3;
+}
+
+.transcript-sidebar-section {
+    margin-bottom: 15px;
+}
+
+.sidebar-label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.sidebar-input {
+    width: 100%;
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
 }
 /* #overlay-logo{
 
