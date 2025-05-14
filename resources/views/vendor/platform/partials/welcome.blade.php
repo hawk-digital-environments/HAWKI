@@ -91,10 +91,10 @@
                             <x-orchid-icon path="bs.question"/> Storage
                         </li>
                         <li>
-                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.hammer"/> Styling
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check-all"/> Styling
                         </li>
                         <li>
-                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.hammer"/> Texts
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check-all"/> Texts
                         </li>
                     </ul>
                 </div>
