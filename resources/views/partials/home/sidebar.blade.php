@@ -8,13 +8,16 @@
                         {{ $translation["Chat"] }}
                     </div>
                 </button>
-                <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent">
-                    <x-icon name="assistant-icon"/>
 
-                    <div class="label tooltip tt-abs-left">
-                        {{ $translation["Groupchat"] }}
-                    </div>
-                </button>
+                @if(config('app.groupchat_active'))
+                    <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent">
+                        <x-icon name="assistant-icon"/>
+
+                        <div class="label tooltip tt-abs-left">
+                            {{ $translation["Groupchat"] }}
+                        </div>
+                    </button>
+                @endif
 
                 <button id="profile-sb-btn" onclick="onSidebarButtonDown('profile')" class="btn-sm sidebar-btn tooltip-parent">
                     <div class="profile-icon round-icon">
