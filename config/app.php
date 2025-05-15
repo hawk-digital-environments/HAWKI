@@ -117,7 +117,7 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
-
+    
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
@@ -133,8 +133,20 @@ return [
     |
     |
     */
-    'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
+    'ai_handle' => env('APP_AI_HANDLE', 'hawki'),
 
-
+    /*
+    |--------------------------------------------------------------------------
+    | HAWKI Settings
+    |--------------------------------------------------------------------------
+    |
+    | Keys that control HAWKI features. (Experimental)
+    |
+    |
+    */
+    'groupchat_active' => true,
+    //'groupchat_community' => false,
+    //'groupchat_community_autojoin' => false,
+    ''
 
 ];
