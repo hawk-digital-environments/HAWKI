@@ -15,10 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('key')->unique();
             $table->text('value')->nullable();
-            $table->string('group')->default('basic'); // Group categories: basic, authentication, api
-            $table->string('type')->default('string'); // Data type: string, boolean, integer, json
-            $table->text('description')->nullable();
-            $table->boolean('is_private')->default(false); // If true, won't be exposed to frontend
+            $table->string('source')->nullable();           // Source Config File
+            $table->string('group')->default('basic');      // Group categories coresponding to config files: app, authentication, api, ...
+            $table->string('type')->default('string');      // Data type: string, boolean, integer, json
+            $table->text('description')->nullable();        // can be modified in panel
+            $table->boolean('is_private')->default(false);  // If true, won't be exposed to frontend
             $table->timestamps();
         });
     }

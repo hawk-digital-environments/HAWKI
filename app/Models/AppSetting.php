@@ -10,12 +10,13 @@ class AppSetting extends Model
     use AsSource;
 
     protected $fillable = [
-        'key',
-        'value',
-        'group',
-        'type',
-        'description',
-        'is_private',
+        'key',              // setting key mit Unterstrichen (app_name)
+        'value',            // value
+        'source',           // config source file without .php (e.g. app / sanctum / session)
+        'group',            // grouping for ui display
+        'type',             // data type
+        'description',      // what is this setting for?
+        'is_private',       // table entry can be modied via ui
     ];
 
     /**
@@ -25,17 +26,49 @@ class AppSetting extends Model
      */
     public function getTypedValueAttribute()
     {
+        $value = $this->getRawValue();
+        
         switch ($this->type) {
             case 'boolean':
-                return (bool) $this->value;
+                return filter_var($value, FILTER_VALIDATE_BOOLEAN);
             case 'integer':
-                return (int) $this->value;
+                return (int) $value;
             case 'json':
-                return json_decode($this->value, true);
+                return is_array($value) ? $value : json_decode($value, true);
             case 'string':
             default:
-                return $this->value;
+                return $value;
         }
+    }
+
+    /**
+     * Get the config key in dot notation.
+     *
+     * @return string
+     */
+    public function getConfigKeyAttribute(): string
+    {
+        return str_replace('_', '.', $this->key);
+    }
+
+    /**
+     * Get the raw value, with fallback to environment variable if needed
+     *
+     * @return mixed
+     */
+    public function getRawValue()
+    {
+        // If value exists in database, use it
+        if (!is_null($this->value)) {
+            return $this->value;
+        }
+        
+        // Otherwise try to get from .env via source if defined
+        if (!empty($this->source)) {
+            return env($this->source);
+        }
+        
+        return $this->value;
     }
 
     /**
