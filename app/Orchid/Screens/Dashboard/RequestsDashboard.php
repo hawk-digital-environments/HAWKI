@@ -11,6 +11,7 @@ use App\Orchid\Layouts\Charts\PercentageChart;
 use Orchid\Support\Facades\Layout;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class RequestsDashboard extends Screen
 {
@@ -21,8 +22,24 @@ class RequestsDashboard extends Screen
      */
     public function query(): iterable
     {
-    //Labels
-    // Dynamisch erstellte Labels für den aktuell ausgewählten Monat
+        // Überprüfen, ob die benötigten Tabellen existieren
+        $usageRecordsExists = Schema::hasTable('usage_records');
+        
+        // Überprüfen, ob Daten in der usage_records Tabelle vorhanden sind
+        $hasUsageRecords = false;
+        if ($usageRecordsExists) {
+            $hasUsageRecords = DB::table('usage_records')->exists();
+        }
+        
+        // Wenn die benötigten Tabellen nicht existieren oder leer sind, zeige Platzhalter
+        if (!$usageRecordsExists || !$hasUsageRecords) {
+            Log::warning('Usage records table does not exist or is empty. Showing placeholder data.');
+            
+            return $this->getPlaceholderData();
+        }
+
+        //Labels
+        // Dynamisch erstellte Labels für den aktuell ausgewählten Monat
         $currentYear = date('Y');
         $currentMonth = date('m');
         $currentDay = date('d');
@@ -250,6 +267,43 @@ class RequestsDashboard extends Screen
                 'activeUsersDelta'  => number_format($activeUsersDelta),
                 'activeUsersToday'  => ['value' => number_format($activeUsersToday ? $activeUsersToday->activeUsers : 0), 'diff' => $activeUsersDeltaDiff],
             ],
+        ];
+    }
+
+    /**
+     * Liefert Platzhalter-Daten für das Dashboard, wenn keine echten Daten verfügbar sind
+     *
+     * @return array
+     */
+    private function getPlaceholderData(): array
+    {
+        // Aktuelles Datum für Labels
+        $currentYear = date('Y');
+        $currentMonth = date('m');
+        
+        // Platzhalter-Daten für Diagramme
+        return [
+            'requestsPerDay' => [
+                [
+                    'labels' => ['Keine Daten verfügbar'],
+                    'name' => 'Requests',
+                    'values' => [0],
+                ]
+            ],
+            'requestsPerProvider' => [
+                [
+                    'labels' => ['OpenAI', 'Google', 'Anthropic'],
+                    'name' => 'Provider',
+                    'values' => [0, 0, 0],
+                ]
+            ],
+            'metrics' => [
+                'totalRequests' => ['value' => '0', 'icon' => 'bs.chat'],
+                'averageTokens' => ['value' => '0', 'icon' => 'bs.chat-text'],
+                'totalCost' => ['value' => '0.00 €', 'icon' => 'bs.currency-euro'],
+                'averageCost' => ['value' => '0.00 €', 'icon' => 'bs.receipt'],
+            ],
+            // Weitere benötigte Platzhalter-Daten
         ];
     }
 

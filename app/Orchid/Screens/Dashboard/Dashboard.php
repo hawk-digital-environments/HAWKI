@@ -3,14 +3,13 @@
 namespace App\Orchid\Screens\Dashboard;
 
 use Orchid\Screen\Screen;
-
 use App\Orchid\Layouts\Charts\PieChart;
 use App\Orchid\Layouts\Charts\BarChart;
 use App\Orchid\Layouts\Charts\PercentageChart;
-
 use Orchid\Support\Facades\Layout;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class Dashboard extends Screen
 {
@@ -21,41 +20,50 @@ class Dashboard extends Screen
      */
     public function query(): iterable
     {
-    //Labels
-    // Dynamisch erstellte Labels für den aktuell ausgewählten Monat
+        // Überprüfen, ob die benötigten Tabellen existieren
+        $usageRecordsExists = Schema::hasTable('usage_records');
+        $conversationsExists = Schema::hasTable('conversations');
+        
+        // Überprüfen, ob Daten in der usage_records Tabelle vorhanden sind
+        $hasUsageRecords = false;
+        if ($usageRecordsExists) {
+            $hasUsageRecords = DB::table('usage_records')->exists();
+        }
+        
+        // Wenn die benötigten Tabellen nicht existieren oder leer sind, zeige Platzhalter
+        if (!$usageRecordsExists || !$conversationsExists || !$hasUsageRecords) {
+            Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
+            
+            return $this->getPlaceholderData();
+        }
+
+        //Labels
+        // Dynamisch erstellte Labels für den aktuell ausgewählten Monat
         $currentYear = date('Y');
         $currentMonth = date('m');
         $currentDay = date('d');
         $specificDay = '2025-03-21';
-
-
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$currentMonth, (int)$currentYear);
         $labelsForCurrentMonth = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
             $labelsForCurrentMonth[] = sprintf('%s-%02d-%02d', $currentYear, $currentMonth, $d);
         }
 
-        // Statische Labels für einen 24h-Stunden Tag
+        // Statische Labels für einen 24h-Stunden Tag        
         $hourLabels = [];
         for ($hour = 0; $hour < 24; $hour++) {
             $hourLabels[] = sprintf('%02d:00', $hour);
         }
-        //Log::info("BarChart Hour Labels: " . json_encode($hourLabels));
 
-    // User Statistics
+        // User Statistics
         $totalUsers = DB::table('users')->count();
-        //Log::info('Total users in System: ' . $totalUsers);
 
-        //$users = DB::table('users');
-
-    // Anzahl der User, die sich diesen Monat neu angemeldet haben
+        // Anzahl der User, die sich diesen Monat neu angemeldet haben
         $newUsersThisMonth = DB::table('users')
                            ->whereYear('created_at', date('Y'))
                            ->whereMonth('created_at', date('m'))
                            ->count();
-
         $percentage = round((($totalUsers > 0) ? ($newUsersThisMonth / $totalUsers) * 100 : 0), 2);
-
 
         $dailyData = DB::table('usage_records')
                       ->select(DB::raw('DAY(created_at) as day'), DB::raw('count(DISTINCT user_id) as activeUsers'))
@@ -72,28 +80,23 @@ class Dashboard extends Screen
                 $activeUsersPerDay[$index] = $data->activeUsers;
             }
         }
-        //Log::info("Active Users per Day Array: " . json_encode($activeUsersPerDay));
 
-        
         // Neue Log-Ausgabe: Daten für den aktuellen Tag
         $activeUsersToday = $dailyData->firstWhere('day', (int)$currentDay);
-        //Log::info("Aktive Nutzer am heutigen Tag ({$currentDay}): " . ($activeUsersToday ? $activeUsersToday->activeUsers : 0));
 
         // Berechne den Durchschnitt der aktiven Nutzer (activeUsersDelta)
         $activeUsersDelta = $dailyData->avg('activeUsers');
-        //Log::info("Durchschnitt der aktiven Nutzer (activeUsersDelta): " . $activeUsersDelta);
 
         // Berechne den Prozentsatz, um den $activeUsersToday von $activeUsersDelta abweicht
         $todayActive = $activeUsersToday ? $activeUsersToday->activeUsers : 0;
         $activeUsersDeltaDiff = ($activeUsersDelta > 0) ? round((($todayActive - $activeUsersDelta) / $activeUsersDelta) * 100, 2) : 0;
-        //Log::info("Prozentsatzabweichung: " . $activeUsersDeltaDiff . "%");
 
-            // Platzhalter-Array mit fiktiven Nutzerzahlen
-            $fakeUsers = [];
-            for ($i = 0; $i < $daysInMonth; $i++) {
-                $fakeUsers[] = rand(600, 800); // fiktive Nutzerzahlen
-            }
-        
+        // Platzhalter-Array mit fiktiven Nutzerzahlen
+        $fakeUsers = [];
+        for ($i = 0; $i < $daysInMonth; $i++) {
+            $fakeUsers[] = rand(600, 800); // fiktive Nutzerzahlen
+        }
+
         foreach ($dailyData as $data) {
             $index = (int)$data->day - 1;
             if ($index >= 0 && $index < $daysInMonth) {
@@ -109,16 +112,13 @@ class Dashboard extends Screen
             ]
         ];
 
-        //Log::info($dailyActiveUsers);
-
-
-    // Request Statistics
+        // Request Statistics
         $totalRequests = DB::table('usage_records')->count();
         $openAiRequests = DB::table('usage_records')
                              ->where('model', 'gpt-4o')
                              ->get();
 
-    // Lese Modelle aus der Konfiguration
+        // Lese Modelle aus der Konfiguration
         $providers = config('model_providers.providers');
         $allModels = [];
         foreach ($providers as $providerKey => $provider) {
@@ -129,7 +129,7 @@ class Dashboard extends Screen
             }
         }
 
-    // Führe für jedes Modell eine Datenbankabfrage durch und fasse die Ergebnisse pro Provider zusammen
+        // Führe für jedes Modell eine Datenbankabfrage durch und fasse die Ergebnisse pro Provider zusammen
         $providerSummary = [];
         foreach ($providers as $providerKey => $provider) {
             $totalRequestsForProvider = 0;
@@ -154,15 +154,6 @@ class Dashboard extends Screen
             }
         }
 
-        //$providerData = [
-        //        [
-        //            'labels' => $providers,
-        //            'name'   => 'Requests per Provider',
-        //            'values' => $totalRequestsForProvider,
-        //        ]
-        //];        
-
-        
         // Neues ProviderData Array basierend auf der auskommentierten Struktur
         $providerData = [
             [
@@ -171,17 +162,14 @@ class Dashboard extends Screen
                 'values' => array_values($providerSummary),
             ]
         ];
-        //Log::info('Provider request summary: ' . json_encode($providerData));
 
-        
         $specificModel = 'gpt-4o-mini';
         $countForSpecificDay = DB::table('usage_records')
                                 ->where('model', $specificModel)
                                 ->whereDate('created_at', $specificDay)
                                 ->count();
-        //Log::info("Aufrufe von Model {$specificModel} am {$specificDay}: " . $countForSpecificDay);
 
-    // Neue Abfrage: Anzahl der Aufrufe eines spezifischen Models im gesamten Monat
+        // Neue Abfrage: Anzahl der Aufrufe eines spezifischen Models im gesamten Monat
         $specificYear = '2025';
         $specificMonth = '03';
         $countForSpecificMonth = DB::table('usage_records')
@@ -189,10 +177,7 @@ class Dashboard extends Screen
                                    ->whereYear('created_at', $specificYear)
                                    ->whereMonth('created_at', $specificMonth)
                                    ->count();
-        //Log::info("Aufrufe von Model {$specificModel} im {$specificYear}-{$specificMonth}: " . $countForSpecificMonth);
 
-        //Log::info('Total requests: ' . $totalRequests);
-        //Log::info('Requests OpenAI: ' . $openAiRequests->count());
         // Abfrage der Anzahl der Requests für den spezifischen Tag und Erstellen eines Arrays als Werte
         $requestsCountForSpecificDay = DB::table('usage_records')
                                         ->whereDate('created_at', $specificDay)
@@ -218,28 +203,112 @@ class Dashboard extends Screen
                 'values' => array_values($modelSummary),
             ]
         ];
+
         // Aktualisierung der Requests per Hour Chart mit dem neuen Array
         $requestsPerHour = [
-                [
-                    'labels' => $hourLabels,
-                    'name'   => 'Requests per Hour',
-                    'values' => $requestsPerHourArray,
-                ]
-            ];    
-        //Log::info('Total models: ' . count($allModels));
-    
+            [
+                'labels' => $hourLabels,
+                'name'   => 'Requests per Hour',
+                'values' => $requestsPerHourArray,
+            ]
+        ];
+
+        $models = $this->fetchModels();
+
         return [
             'dailyActiveUsers' => $dailyActiveUsers,
             'requestsPerProvider' => $providerData,
             'requestsPerHour' => $requestsPerHour,
             'requestsPerModel' => $requestsPerModel,
-
             'metrics' => [
-                'totalUsers'=> ['value' => number_format($totalUsers), 'icon'  => 'bs.people'],
+                'totalUsers'=> ['value' => number_format($totalUsers), 'icon'  => 'people'],
                 'newUsers'     => ['value' => number_format($newUsersThisMonth), 'diff' => $percentage, 'icon'  => 'bs.graph-up'],
                 'activeUsersDelta'  => ['value' => number_format($activeUsersDelta), 'diff' => $percentage, 'icon'  => 'bs.chat'],
                 'activeUsersToday'  => ['value' => number_format($activeUsersToday ? $activeUsersToday->activeUsers : 0), 'diff' => $activeUsersDeltaDiff, 'icon'  => 'bs.currency-euro'],
             ],
+            'modelCards' => $models,
+            'chatCountToday' => $this->getChatCount('today'),
+            'chatCountWeek' => $this->getChatCount('week'),
+            'chatCountMonth' => $this->getChatCount('month'),
+            'chatCountTotal' => $this->getChatCount('total'),
+        ];
+    }
+
+    /**
+     * Liefert Platzhalter-Daten für das Dashboard, wenn keine echten Daten verfügbar sind
+     *
+     * @return array
+     */
+    private function getPlaceholderData(): array
+    {
+        // Labels für aktuellen Monat erstellen
+        $currentYear = date('Y');
+        $currentMonth = date('m');
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$currentMonth, (int)$currentYear);
+        
+        $labelsForCurrentMonth = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $labelsForCurrentMonth[] = sprintf('%s-%02d-%02d', $currentYear, $currentMonth, $d);
+        }
+        
+        // Statische Labels für 24h-Tag
+        $hourLabels = [];
+        for ($hour = 0; $hour < 24; $hour++) {
+            $hourLabels[] = sprintf('%02d:00', $hour);
+        }
+        
+        // Platzhalterwerte für Charts
+        $placeholderDailyUsers = array_fill(0, $daysInMonth, 0);
+        $placeholderHourlyRequests = array_fill(0, 24, 0);
+        
+        $dailyActiveUsers = [
+            [
+                'labels' => $labelsForCurrentMonth,
+                'name'   => 'Daily Users',
+                'values' => $placeholderDailyUsers,
+            ]
+        ];
+        
+        $requestsPerHour = [
+            [
+                'labels' => $hourLabels,
+                'name'   => 'Requests per Hour',
+                'values' => $placeholderHourlyRequests,
+            ]
+        ];
+        
+        $providerData = [
+            [
+                'labels' => ['OpenAI', 'Google', 'Anthropic'],
+                'name'   => 'Requests per Provider',
+                'values' => [0, 0, 0],
+            ]
+        ];
+        
+        $requestsPerModel = [
+            [
+                'labels' => ['GPT-4', 'Gemini', 'Claude'],
+                'name'   => 'Requests per Model',
+                'values' => [0, 0, 0],
+            ]
+        ];
+        
+        return [
+            'dailyActiveUsers' => $dailyActiveUsers,
+            'requestsPerProvider' => $providerData,
+            'requestsPerHour' => $requestsPerHour,
+            'requestsPerModel' => $requestsPerModel,
+            'metrics' => [
+                'totalUsers' => ['value' => '0', 'icon'  => 'bs.people'],
+                'newUsers' => ['value' => '0', 'diff' => 0, 'icon'  => 'bs.graph-up'],
+                'activeUsersDelta' => ['value' => '0', 'diff' => 0, 'icon'  => 'bs.chat'],
+                'activeUsersToday' => ['value' => '0', 'diff' => 0, 'icon'  => 'bs.currency-euro'],
+            ],
+            'modelCards' => [], // Leeres Array für Modellkarten
+            'chatCountToday' => 0,
+            'chatCountWeek' => 0,
+            'chatCountMonth' => 0,
+            'chatCountTotal' => 0,
         ];
     }
 
@@ -250,15 +319,19 @@ class Dashboard extends Screen
      */
     public function name(): ?string
     {
-        return 'Global Dashboard';
+        return config('app.name') . ' Dashboard';
     }
+
     /**
      * Display header description.
+     *
+     * @return string|null
      */
-     public function description(): ?string
+    public function description(): ?string
     {
-        return 'Overview of global metrics for HAWKI';
+        return 'Overview of global metrics for ' . config('app.name');
     }
+
     /**
      * The screen's action buttons.
      *
@@ -303,7 +376,7 @@ class Dashboard extends Screen
                 'Average Active Users per Month' => 'metrics.newUsers',
                 'Average Requests per User' => 'metrics.activeUsersDelta',
                 'Average Cost per User' => 'metrics.activeUsersToday',
-            ])->title('HAWKI Overview'),    
+            ])->title('Overview'),    
 
             
             Layout::columns([
@@ -333,5 +406,79 @@ class Dashboard extends Screen
                 ],
             ]),
         ];
+    }
+
+    /**
+     * Bereitet die Modelldaten für die Anzeige vor
+     * 
+     * @param array $rawModels Array mit den Rohdaten der Modelle
+     * @return array Aufbereitete Modelldaten
+     */
+    private function prepareModelData($rawModels): array
+    {
+        $models = [];
+        
+        // Überprüfe, ob Modelldaten existieren, bevor wir sie verarbeiten
+        if (empty($rawModels)) {
+            return $models;
+        }
+        
+        foreach ($rawModels as $model) {
+            // Prüfe, ob alle notwendigen Schlüssel existieren
+            if (!isset($model['id']) || !isset($model['name'])) {
+                continue; // Überspringe Modelle mit fehlenden erforderlichen Feldern
+            }
+            
+            $models[] = [
+                'id' => $model['id'] ?? 'unknown',
+                'name' => $model['name'] ?? 'Unbekanntes Modell',
+                'description' => $model['description'] ?? 'Keine Beschreibung verfügbar',
+                'status' => $model['status'] ?? 'unknown',
+                'provider' => $model['provider'] ?? 'unknown',
+                'avatar' => $model['avatar'] ?? null,
+                'provider_model_id' => $model['provider_model_id'] ?? null,
+                'created_at' => isset($model['created_at']) ? 
+                    date('d.m.Y', strtotime($model['created_at'])) : 
+                    'Unbekannt',
+            ];
+        }
+        
+        return $models;
+    }
+
+    /**
+     * Holt die Modelldaten aus dem Cache oder der API
+     * 
+     * @return array Array mit den Modelldaten
+     */
+    private function fetchModels(): array
+    {
+        try {
+            // Prüfen, ob die notwendige Eigenschaft/Service existiert
+            if (!property_exists($this, 'aiHandler') || !$this->aiHandler) {
+                Log::warning('aiHandler is not available.');
+                return [];
+            }
+            
+            // Prüfen, ob die Methode existiert
+            if (!method_exists($this->aiHandler, 'getAvailableModels')) {
+                Log::warning('getAvailableModels method not available.');
+                return [];
+            }
+            
+            // Stelle sicher, dass immer ein Array zurückgegeben wird
+            $result = $this->aiHandler->getAvailableModels();
+            
+            // Prüfe explizit auf null oder nicht-Array
+            if ($result === null || !is_array($result)) {
+                Log::warning('getAvailableModels returned a non-array value or null: ' . gettype($result));
+                return [];
+            }
+            
+            return $this->prepareModelData($result);
+        } catch (\Exception $e) {
+            Log::error("Error fetching models: " . $e->getMessage());
+            return []; // Leeres Array zurückgeben, wenn ein Fehler auftritt
+        }
     }
 }

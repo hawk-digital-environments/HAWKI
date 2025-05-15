@@ -13,6 +13,7 @@ use Orchid\Screen\Fields\DateRange;
 use Orchid\Support\Facades\Layout;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class UserDashboard extends Screen
 {
@@ -23,8 +24,31 @@ class UserDashboard extends Screen
      */
     public function query(): iterable
     {
-    //Labels
-    // Dynamisch erstellte Labels für den aktuell ausgewählten Monat
+        // Überprüfen, ob die benötigten Tabellen existieren
+        $usersExists = Schema::hasTable('users');
+        $usageRecordsExists = Schema::hasTable('usage_records');
+        
+        // Überprüfen, ob Daten in den Tabellen vorhanden sind
+        $hasUsers = false;
+        $hasUsageRecords = false;
+        
+        if ($usersExists) {
+            $hasUsers = DB::table('users')->exists();
+        }
+        
+        if ($usageRecordsExists) {
+            $hasUsageRecords = DB::table('usage_records')->exists();
+        }
+        
+        // Wenn die benötigten Tabellen nicht existieren oder leer sind, zeige Platzhalter
+        if (!$usersExists || !$hasUsers || !$usageRecordsExists || !$hasUsageRecords) {
+            Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
+            
+            return $this->getPlaceholderData();
+        }
+
+        //Labels
+        // Dynamisch erstellte Labels für den aktuell ausgewählten Monat
         $currentYear = date('Y');
         $currentMonth = date('m');
         $currentDay = date('d');
@@ -114,13 +138,21 @@ class UserDashboard extends Screen
                              ->where('model', 'gpt-4o')
                              ->get();
 
-    // Lese Modelle aus der Konfiguration
-        $providers = config('model_providers.providers');
+    // Lese Modelle aus der Konfiguration - mit Absicherung gegen nicht existierende Schlüssel
+        $providers = config('model_providers.providers', []);
         $allModels = [];
-        foreach ($providers as $providerKey => $provider) {
-            if (isset($provider['models'])) {
-                foreach ($provider['models'] as $model) {
-                    $allModels[] = $model;
+        
+        // Prüfen, ob der providers-Schlüssel existiert und ein Array ist
+        if (is_array($providers)) {
+            foreach ($providers as $providerKey => $provider) {
+                // Prüfen, ob der models-Schlüssel existiert und ein Array ist
+                if (isset($provider['models']) && is_array($provider['models'])) {
+                    foreach ($provider['models'] as $model) {
+                        // Prüfen, ob es sich um ein Array mit id-Schlüssel handelt
+                        if (is_array($model) && isset($model['id'])) {
+                            $allModels[] = $model;
+                        }
+                    }
                 }
             }
         }
@@ -214,7 +246,100 @@ class UserDashboard extends Screen
                     'values' => [$recurringUsers, $newUsersThisMonth]
                 ]
             ],
+            // Füge leere Chat-Counts hinzu
+            'chatCountToday' => $this->getChatCount('today'),
+            'chatCountWeek' => $this->getChatCount('week'),
+            'chatCountMonth' => $this->getChatCount('month'),
+            'chatCountTotal' => $this->getChatCount('total'),
         ];
+    }
+
+    /**
+     * Liefert Platzhalter-Daten für das Dashboard, wenn keine echten Daten verfügbar sind
+     *
+     * @return array
+     */
+    private function getPlaceholderData(): array
+    {
+        // Aktuelle Zeiträume für Labels
+        $currentYear = date('Y');
+        $currentMonth = date('m');
+        
+        // Platzhalter-Daten für Diagramme und Metriken
+        return [
+            'dailyActiveUsers' => [
+                [
+                    'labels' => ['Keine Daten verfügbar'],
+                    'name' => 'Benutzer',
+                    'values' => [0],
+                ]
+            ],
+            'usersPerHour' => [
+                [
+                    'labels' => ['00:00', '01:00', '02:00', /* ... */],
+                    'name' => 'Users per Hour',
+                    'values' => array_fill(0, 24, 0),
+                ]
+            ],
+            'percentageChart' => [
+                [
+                    'labels' => ['Recurring Users', 'New Users'],
+                    'name' => 'Recurring vs New Users',
+                    'values' => [0, 0],
+                ]
+            ],
+            'metrics' => [
+                'totalUsers' => ['value' => '0', 'icon' => 'bs.people'],
+                'newUsers' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.person-plus'],
+                'activeUsersDelta' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.chat'],
+                'activeUsersToday' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.calendar'],
+            ],
+            // Chat-Count Platzhalter
+            'chatCountToday' => 0,
+            'chatCountWeek' => 0,
+            'chatCountMonth' => 0,
+            'chatCountTotal' => 0,
+        ];
+    }
+
+    /**
+     * Gibt die Anzahl der Chats für einen bestimmten Zeitraum zurück
+     * 
+     * @param string $period Der Zeitraum ('today', 'week', 'month', 'total')
+     * @return int Die Anzahl der Chats
+     */
+    private function getChatCount(string $period): int
+    {
+        // Prüfen, ob die Tabelle 'conversations' existiert
+        if (!Schema::hasTable('conversations')) {
+            return 0;
+        }
+        
+        $query = DB::table('conversations');
+        
+        switch ($period) {
+            case 'today':
+                $query->whereDate('created_at', date('Y-m-d'));
+                break;
+            case 'week':
+                $query->whereBetween('created_at', [
+                    now()->startOfWeek(),
+                    now()->endOfWeek()
+                ]);
+                break;
+            case 'month':
+                $query->whereYear('created_at', date('Y'))
+                      ->whereMonth('created_at', date('m'));
+                break;
+            // 'total' benötigt keine zusätzlichen Filter
+        }
+        
+        try {
+            return $query->count();
+        } catch (\Exception $e) {
+            Log::error("Error counting conversations: " . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
