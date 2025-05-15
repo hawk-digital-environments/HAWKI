@@ -12,7 +12,6 @@
     "Cnf_deleteRoom": "Möchtest du diesen Raum wirklich löschen?",
     "Cnf_leaveRoom": "Möchtest du diesen Raum wirklich verlassen?",
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
-    "Cnf_checkMembersAdded": "Bitte fügen Sie mindestens ein Mitglied hinzu.",
     
     "Cnf_tokenMsg1": "Bitte bewahre diesen Token sicher auf und verwende ihn mit Bedacht, um dein Konto zu schützen. Wenn HAWKI verdächtiges Verhalten feststellt, wird dieser Token widerrufen.",
     "Cnf_tokenMsg2": "Sobald du dieses Fenster schließt, kannst du diesen Schlüssel nicht mehr erneut abrufen.",

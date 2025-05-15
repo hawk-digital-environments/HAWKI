@@ -529,13 +529,6 @@ async function sendInvitation(btn){
             listOfInvitees.push(userObj);
         }
     });
-
-    // Check if no invitees selected
-    if (listOfInvitees.length === 0) {
-        alert(translation.Cnf_checkMembersAdded);
-        return;
-    }
-
     await createAndSendInvitations(listOfInvitees, activeRoom.slug);
     closeModal(btn);
 }
