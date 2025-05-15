@@ -165,14 +165,14 @@ class TextsSettingsScreen extends Screen
                         ->title('German Content (de_DE)')
                         ->value($deText ? $deText['content'] : '')
                         ->rows(5)
-                        ->style('min-width: 100%; resize: both;'),
+                        ->style('min-width: 100%; resize: vertical;'),
                         
                     // English content
                     TextArea::make("texts[{$key}][en_US]")
                         ->title('English Content (en_US)')
                         ->value($enText ? $enText['content'] : '')
                         ->rows(5)
-                        ->style('min-width: 100%; resize: both;'),
+                        ->style('min-width: 100%; resize: vertical;'),
                 ]),
             ])
             ->vertical()
