@@ -53,9 +53,14 @@
 
                 <span class="ms-3 text-body-emphasis">Dashboard</span>
             </h3>
+
             <p class="ms-md-4 ps-md-2">
                 Gives you an overview of all metrics for HAWKI.
                 <div class="ps-md-3">
+
+                <ul class="list-unstyled ps-md-3">
+                    <li> <x-orchid-icon path="bs.question"/> Needs feedback</li>
+                </ul>
                     <ul class="list-unstyled ps-md-3">
                         <li>
                             <x-orchid-icon path="bs.hammer"/> Global
@@ -82,13 +87,22 @@
                 <div class="ps-md-3">
                     <ul class="list-unstyled ps-md-3">
                         <li>
-                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.hammer"/> Settings
+                            <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.cone-striped"/> Settings
+                            <ul class="list-unstyled ps-md-3">
+                                <li> <x-orchid-icon path="bs.check-all"/>System / App Settings</li>        
+                                <li> <x-orchid-icon path="bs.cone-striped"/>Authentication</li>       
+                                <li> <x-orchid-icon path="bs.cone-striped"/>API (Can't test because of error in HAWKI CLI)</li>        
+
+                            </ul>
                         </li>
                         <li>
-                            <x-orchid-icon path="bs.check"/> Log
+                            <x-orchid-icon path="bs.check"/> Log 
+                            <ul class="list-unstyled ps-md-3">
+                                <li> <x-orchid-icon path="bs.hammer"/> Log DB Driver?</li>        
+                            </ul>
                         </li>
                         <li>
-                            <x-orchid-icon path="bs.question"/> Storage
+                            <s><x-orchid-icon path="bs.question"/> Storage</s>
                         </li>
                         <li>
                             <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.check-all"/> Styling
@@ -173,7 +187,7 @@
                         <x-orchid-icon path="bs.file-code-fill"/> Code-related functionality
                     </li>
                     <li class="me-4 mb-2">
-                        <x-orchid-icon path="bs.cone-striped"/> Feature in progress/limited availability
+                        <x-orchid-icon path="bs.cone-striped"/> Feature needs testing
                     </li>
                     <li class="me-4 mb-2">
                         <x-orchid-icon path="bs.question"/> Status unknown/needs clarification
