@@ -124,19 +124,19 @@ class LocalizationController extends Controller
         }
         
         // Check if the placeholders are already in the static request cache
-        $requestCacheKey = "placeholders_{$language}";
+        $requestCacheKey = "placeholders";
         if (isset(self::$requestCache[$requestCacheKey])) {
             $placeholders = self::$requestCache[$requestCacheKey];
         } else {
             // Cache for placeholders
-            $cacheKey = "placeholders_{$language}";
+            $cacheKey = "placeholders";
             
-            $placeholders = Cache::remember($cacheKey, now()->addDay(), function () use ($language) {
+            $placeholders = Cache::remember($cacheKey, now()->addDay(), function () {
                 // Build placeholder mapping
                 $mapping = [];
                 
-                // Get app name
-                $appName = AppLocalizedText::getContent('app_name', $language) ?? 'HAWKI';
+                // Get app name from config
+                $appName = config('app.name');
                 $mapping[':system'] = $appName;
                 
                 // Additional placeholders can be added here

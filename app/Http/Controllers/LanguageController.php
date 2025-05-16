@@ -13,7 +13,7 @@ use App\Models\AppSystemText;
 
 class LanguageController extends Controller
 {
-    // Statischer Cache für die aktuelle Anfrage, um wiederholte Zugriffe zu vermeiden
+    // Static cache for the current request to avoid repeated accesses
     protected static $requestCache = [];
 
     /// Changes the language based on previous values or falls back to default parameters
@@ -170,25 +170,17 @@ class LanguageController extends Controller
     protected function getCachedAppName(string $language): string
     {
         // Check request cache first
-        $requestCacheKey = "app_name_{$language}";
+        $requestCacheKey = "app_name";
         if (isset(self::$requestCache[$requestCacheKey])) {
             return self::$requestCache[$requestCacheKey];
         }
         
         // Use persistent cache
-        $cacheKey = "app_name_{$language}";
+        $cacheKey = "app_name";
         
-        $appName = Cache::remember($cacheKey, now()->addDay(), function () use ($language) {
-            // Try to get app_name from localized text
-            $appName = AppLocalizedText::getContent('app_name', $language);
-            
-            // Try to get from system texts if not found
-            if (!$appName) {
-                $appName = AppSystemText::getText('app_name', $language);
-            }
-            
-            // Default fallback
-            return $appName ?? 'HAWKI';
+        $appName = Cache::remember($cacheKey, now()->addDay(), function () {
+            // Get app name from config instead of database
+            return config('app.name');
         });
         
         // Store in request cache
