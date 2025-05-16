@@ -20,6 +20,20 @@ use Orchid\Support\Facades\Toast;
 class ProviderSettingsScreen extends Screen
 {
     /**
+     * Mapping für schönere Provider-Namen in Tabs
+     */
+    private $providerTitleMapping = [
+        'openWebUi' => 'Open WebUI',
+        'gwdg' => 'GWDG',
+        'openai' => 'OpenAI',
+        'anthropic' => 'Anthropic',
+        'mistral' => 'Mistral AI',
+        'google' => 'Google AI',
+        'ollama' => 'Ollama',
+        // Weitere Mappings können hier hinzugefügt werden
+    ];
+
+    /**
      * Fetch data to be displayed on the screen.
      *
      * @return array
@@ -62,7 +76,7 @@ class ProviderSettingsScreen extends Screen
             Button::make('Import from Config')
                 ->icon('cloud-download')
                 ->method('importFromConfig')
-                ->confirm('Are you sure? Existing providers will not be overwritten.'),
+                ->confirm('Are you sure? Existing providers will be overwritten with settings from the config file.'),
                 
             Link::make(__('Add'))
                 ->icon('bs.plus-circle')
@@ -94,7 +108,7 @@ class ProviderSettingsScreen extends Screen
         $tabs = [];
         
         foreach ($providers as $provider) {
-            $tabTitle = ucfirst($provider->provider_name);
+            $tabTitle = $this->getProviderTabTitle($provider);
             $tabs[$tabTitle] = $this->providerLayout($provider);
         }
         
@@ -207,10 +221,10 @@ class ProviderSettingsScreen extends Screen
     {
         $stats = $settingsService->importFromConfig();
         
-        if ($stats['imported'] > 0) {
-            Toast::success("{$stats['imported']} providers were imported from the configuration file.");
+        if ($stats['imported'] > 0 || $stats['updated'] > 0) {
+            Toast::success("{$stats['imported']} Provider wurden importiert und {$stats['updated']} Provider wurden aktualisiert.");
         } else {
-            Toast::info("No new providers imported. {$stats['skipped']} providers already exist.");
+            Toast::info("Keine Provider wurden importiert oder aktualisiert. Überprüfen Sie, ob die Datei model_providers.php existiert.");
         }
         
         return redirect()->back();
@@ -240,5 +254,27 @@ class ProviderSettingsScreen extends Screen
         
         Toast::success("Provider '{$providerName}' was successfully deleted.");
         return redirect()->back();
+    }
+
+    /**
+     * Generate formatted tab title for a provider.
+     * 
+     * @param \App\Models\ProviderSetting $provider
+     * @return string
+     */
+    private function getProviderTabTitle($provider): string
+    {
+        $providerName = $provider->provider_name;
+        
+        // Wenn ein spezielles Mapping für diesen Provider existiert, verwende es
+        if (isset($this->providerTitleMapping[$providerName])) {
+            $title = $this->providerTitleMapping[$providerName];
+        } else {
+            // Andernfalls: Standardformatierung mit TitleCase 
+            // (wandelt z.B. "my_provider_name" in "My Provider Name" um)
+            $title = ucwords(str_replace(['_', '-'], ' ', $providerName));
+        }
+        
+        return $title;
     }
 }

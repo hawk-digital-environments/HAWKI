@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             AppLocalizedTextSeeder::class,
             AppCssSeeder::class,
             AppSystemImageSeeder::class,
-            //ToDo: add ProviderSettingsSeeder::class,
+            ProviderSettingsSeeder::class,
             AppSystemPromptSeeder::class,
         ]);
     }

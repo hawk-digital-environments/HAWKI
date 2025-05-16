@@ -40,34 +40,36 @@ return [
     |
     */
     'providers' =>[
-        'openai' => [
-            'id' => 'openai',
-            'active' => true,
-            'api_key' => '',
-            'api_url' => 'https://api.openai.com/v1/chat/completions',
-            'ping_url' => 'https://api.openai.com/v1/models',
+        'ollama'=> [
+            'id' => 'ollama',
+            'active' => false,
+            'api_url' => 'http://localhost:11434/api/generate',
+            'ping_url' => 'http://localhost:11434/api/models',
             'models' => [
                 [
-                    'id' => 'gpt-4o',
-                    'label' => 'OpenAI GPT 4o',
+                    'id' => 'llama3.2',
+                    'label' => 'Llama3.2',
                     'streamable' => true,
-                ],
-                [
-                    'id' => 'gpt-4o-mini',
-                    'label' => 'OpenAI GPT 4o mini',
-                    'streamable' => true,
-                ],
-                [
-                    'id' => 'o1-mini',
-                    'label' => 'OpenAI O1 mini',
-                    'streamable' => false,
                 ]
             ]
         ],
-
+        'openWebUi' => [
+            'id' => 'openWebUi',
+            'active' => false,
+            'api_key' => '',
+            'api_url' => 'your_url/api/chat/completions',
+            'ping_url' => 'your_url/api/models',
+            'models' => [
+                [
+                    'id' => 'model-id',
+                    'label' => 'Model Name',
+                    'streamable' => true,
+                ]
+            ]
+        ],
         'gwdg' => [
             'id' => 'gwdg',
-            'active' => true,
+            'active' => false,
             'api_key' => '',
             'api_url' => 'https://chat-ai.academiccloud.de/v1/chat/completions',
             'ping_url' => 'https://chat-ai.academiccloud.de/v1/models',
@@ -107,10 +109,36 @@ return [
                 
             ]
         ],
+        'openai' => [
+            'id' => 'openai',
+            'active' => false,
+            'api_key' => '',
+            'api_url' => 'https://api.openai.com/v1/chat/completions',
+            'ping_url' => 'https://api.openai.com/v1/models',
+            'models' => [
+                [
+                    'id' => 'gpt-4o',
+                    'label' => 'OpenAI GPT 4o',
+                    'streamable' => true,
+                ],
+                [
+                    'id' => 'gpt-4o-mini',
+                    'label' => 'OpenAI GPT 4o mini',
+                    'streamable' => true,
+                ],
+                [
+                    'id' => 'o1-mini',
+                    'label' => 'OpenAI O1 mini',
+                    'streamable' => false,
+                ]
+            ]
+        ],
+
+        
 
         'google' => [
             'id' => 'google',
-            'active' => true,
+            'active' => false,
             'api_key' => '',
             'api_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
             'streaming_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
@@ -134,32 +162,8 @@ return [
                 ]
             ]
         ],
-        'ollama'=> [
-            'id' => 'ollama',
-            'active' => false,
-            'api_url' => 'http://localhost:11434/api/generate',
-            'models' => [
-                [
-                    'id' => 'llama3.2',
-                    'label' => 'Llama3.2',
-                    'streamable' => true,
-                ]
-            ]
-        ],
-        'openWebUi' => [
-            'id' => 'openWebUi',
-            'active' => false,
-            'api_key' => '',
-            'api_url' => 'your_url/api/chat/completions',
-            'ping_url' => 'your_url/api/models',
-            'models' => [
-                [
-                    'id' => 'model-id',
-                    'label' => 'Model Name',
-                    'streamable' => true,
-                ]
-            ]
-        ],
+        
+        
 
     ]
 ];

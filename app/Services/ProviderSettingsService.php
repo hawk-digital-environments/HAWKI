@@ -81,8 +81,15 @@ class ProviderSettingsService
      */
     public function importFromConfig(): array
     {
-        $config = Config::get('model_providers', []);
-        $stats = ['imported' => 0, 'skipped' => 0, 'total' => 0];
+        $configPath = config_path('model_providers.php');
+        $stats = ['imported' => 0, 'updated' => 0, 'total' => 0];
+        
+        // Prüfen, ob die Konfigurationsdatei existiert
+        if (!file_exists($configPath)) {
+            return $stats;
+        }
+        
+        $config = require $configPath;
         
         // Prüfen, ob die Konfiguration korrekt strukturiert ist
         if (!is_array($config) || !isset($config['providers']) || !is_array($config['providers'])) {
@@ -102,17 +109,12 @@ class ProviderSettingsService
             // Erstelle Standarddaten für den Provider
             $providerData = [
                 'provider_name' => $providerName,
-                'api_format' => $providerName, // Der Provider-Name wird standardmäßig als API-Schema verwendet
+                'api_format' => $providerConfig['api_format'] ?? $providerName, // Api-Format explizit setzen oder Provider-Namen nutzen
                 'api_key' => $providerConfig['api_key'] ?? null,
                 'base_url' => $providerConfig['api_url'] ?? $providerConfig['base_url'] ?? null,
                 'ping_url' => $providerConfig['ping_url'] ?? null,
                 'is_active' => $providerConfig['active'] ?? false,
             ];
-
-            // Überschreibe das Standard-Schema, wenn es explizit angegeben ist
-            if (isset($providerConfig['api_format'])) {
-                $providerData['api_format'] = $providerConfig['api_format'];
-            }
 
             // Speichere zusätzliche Einstellungen im additional_settings Feld
             $additionalSettings = [];
@@ -122,19 +124,21 @@ class ProviderSettingsService
                 }
             }
 
+            // Wenn zusätzliche Einstellungen vorhanden sind, konvertieren wir sie zu JSON
             if (!empty($additionalSettings)) {
-                $providerData['additional_settings'] = $additionalSettings;
+                $providerData['additional_settings'] = json_encode($additionalSettings);
             }
 
-            // Prüfe, ob der Provider bereits existiert
-            $existingProvider = ProviderSetting::where('provider_name', $providerName)->first();
+            // Aktualisiere oder erstelle den Provider - existierende werden überschrieben
+            $existingProvider = ProviderSetting::updateOrCreate(
+                ['provider_name' => $providerName],
+                $providerData
+            );
             
-            if (!$existingProvider) {
-                // Erstelle neuen Provider
-                ProviderSetting::create($providerData);
+            if ($existingProvider->wasRecentlyCreated) {
                 $stats['imported']++;
             } else {
-                $stats['skipped']++;
+                $stats['updated']++;
             }
         }
 
