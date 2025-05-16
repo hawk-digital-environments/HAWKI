@@ -145,13 +145,21 @@ class RequestsDashboard extends Screen
                              ->where('model', 'gpt-4o')
                              ->get();
 
-    // Lese Modelle aus der Konfiguration
-        $providers = config('model_providers.providers');
+    // Lese Modelle aus der Konfiguration - mit verbesserter Absicherung
+        $providers = config('model_providers.providers', []);
         $allModels = [];
-        foreach ($providers as $providerKey => $provider) {
-            if (isset($provider['models'])) {
-                foreach ($provider['models'] as $model) {
-                    $allModels[] = $model;
+        
+        // Prüfen, ob der providers-Schlüssel existiert und ein Array ist
+        if (is_array($providers)) {
+            foreach ($providers as $providerKey => $provider) {
+                // Prüfen, ob der models-Schlüssel existiert und ein Array ist
+                if (isset($provider['models']) && is_array($provider['models'])) {
+                    foreach ($provider['models'] as $model) {
+                        // Prüfen, ob es sich um ein Array mit id-Schlüssel handelt
+                        if (is_array($model) && isset($model['id'])) {
+                            $allModels[] = $model;
+                        }
+                    }
                 }
             }
         }
@@ -160,16 +168,20 @@ class RequestsDashboard extends Screen
         $providerSummary = [];
         foreach ($providers as $providerKey => $provider) {
             $totalRequestsForProvider = 0;
-            if (isset($provider['models'])) {
+            if (isset($provider['models']) && is_array($provider['models'])) {
                 foreach ($provider['models'] as $model) {
-                    $count = DB::table('usage_records')
-                               ->where('model', $model['id'])
-                               ->count();
-                    $totalRequestsForProvider += $count;
+                    // Überprüfe, ob das Model ein Array ist und einen id-Schlüssel hat
+                    if (is_array($model) && isset($model['id'])) {
+                        $count = DB::table('usage_records')
+                                ->where('model', $model['id'])
+                                ->count();
+                        $totalRequestsForProvider += $count;
+                    }
                 }
             }
             $providerSummary[$providerKey] = $totalRequestsForProvider;
         }
+        
         // Erstelle eine modelSummary, die die Anfragen auf die verschiedenen Modelle aufschlüsselt
         $modelSummary = [];
         foreach ($allModels as $model) {
@@ -280,30 +292,59 @@ class RequestsDashboard extends Screen
         // Aktuelles Datum für Labels
         $currentYear = date('Y');
         $currentMonth = date('m');
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$currentMonth, (int)$currentYear);
         
-        // Platzhalter-Daten für Diagramme
+        // Labels für aktuellen Monat erstellen
+        $labelsForCurrentMonth = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $labelsForCurrentMonth[] = sprintf('%s-%02d-%02d', $currentYear, $currentMonth, $d);
+        }
+        
+        // Statische Labels für 24h-Tag
+        $hourLabels = [];
+        for ($hour = 0; $hour < 24; $hour++) {
+            $hourLabels[] = sprintf('%02d:00', $hour);
+        }
+        
+        // Platzhalterwerte für Charts
+        $placeholderDailyUsers = array_fill(0, $daysInMonth, 0);
+        $placeholderHourlyRequests = array_fill(0, 24, 0);
+        
         return [
-            'requestsPerDay' => [
+            'dailyActiveUsers' => [
                 [
-                    'labels' => ['Keine Daten verfügbar'],
-                    'name' => 'Requests',
-                    'values' => [0],
+                    'labels' => $labelsForCurrentMonth,
+                    'name'   => 'Daily Users',
+                    'values' => $placeholderDailyUsers,
                 ]
             ],
             'requestsPerProvider' => [
                 [
                     'labels' => ['OpenAI', 'Google', 'Anthropic'],
-                    'name' => 'Provider',
+                    'name'   => 'Requests per Provider',
+                    'values' => [0, 0, 0],
+                ]
+            ],
+            'requestsPerHour' => [
+                [
+                    'labels' => $hourLabels,
+                    'name'   => 'Requests per Hour',
+                    'values' => $placeholderHourlyRequests,
+                ]
+            ],
+            'requestsPerModel' => [
+                [
+                    'labels' => ['GPT-4', 'Gemini', 'Claude'],
+                    'name'   => 'Requests per Model',
                     'values' => [0, 0, 0],
                 ]
             ],
             'metrics' => [
-                'totalRequests' => ['value' => '0', 'icon' => 'bs.chat'],
-                'averageTokens' => ['value' => '0', 'icon' => 'bs.chat-text'],
-                'totalCost' => ['value' => '0.00 €', 'icon' => 'bs.currency-euro'],
-                'averageCost' => ['value' => '0.00 €', 'icon' => 'bs.receipt'],
+                'totalUsers' => '0',
+                'newUsers'   => ['value' => '0', 'diff' => 0],
+                'activeUsersDelta' => '0',
+                'activeUsersToday' => ['value' => '0', 'diff' => 0],
             ],
-            // Weitere benötigte Platzhalter-Daten
         ];
     }
 

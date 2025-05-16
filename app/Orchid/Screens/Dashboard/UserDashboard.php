@@ -138,7 +138,7 @@ class UserDashboard extends Screen
                              ->where('model', 'gpt-4o')
                              ->get();
 
-    // Lese Modelle aus der Konfiguration - mit Absicherung gegen nicht existierende Schlüssel
+    // Lese Modelle aus der Konfiguration - mit verbesserter Absicherung
         $providers = config('model_providers.providers', []);
         $allModels = [];
         
@@ -161,12 +161,14 @@ class UserDashboard extends Screen
         $providerSummary = [];
         foreach ($providers as $providerKey => $provider) {
             $totalRequestsForProvider = 0;
-            if (isset($provider['models'])) {
+            if (isset($provider['models']) && is_array($provider['models'])) {
                 foreach ($provider['models'] as $model) {
-                    $count = DB::table('usage_records')
-                               ->where('model', $model['id'])
-                               ->count();
-                    $totalRequestsForProvider += $count;
+                    if (isset($model['id'])) {
+                        $count = DB::table('usage_records')
+                                   ->where('model', $model['id'])
+                                   ->count();
+                        $totalRequestsForProvider += $count;
+                    }
                 }
             }
             $providerSummary[$providerKey] = $totalRequestsForProvider;
@@ -264,21 +266,36 @@ class UserDashboard extends Screen
         // Aktuelle Zeiträume für Labels
         $currentYear = date('Y');
         $currentMonth = date('m');
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int)$currentMonth, (int)$currentYear);
         
-        // Platzhalter-Daten für Diagramme und Metriken
+        $labelsForCurrentMonth = [];
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $labelsForCurrentMonth[] = sprintf('%s-%02d-%02d', $currentYear, $currentMonth, $d);
+        }
+        
+        // Statische Labels für 24h-Tag
+        $hourLabels = [];
+        for ($hour = 0; $hour < 24; $hour++) {
+            $hourLabels[] = sprintf('%02d:00', $hour);
+        }
+        
+        // Platzhalterwerte für Charts
+        $placeholderDailyUsers = array_fill(0, $daysInMonth, 0);
+        $placeholderHourlyRequests = array_fill(0, 24, 0);
+        
         return [
             'dailyActiveUsers' => [
                 [
-                    'labels' => ['Keine Daten verfügbar'],
-                    'name' => 'Benutzer',
-                    'values' => [0],
+                    'labels' => $labelsForCurrentMonth,
+                    'name'   => 'Daily Users',
+                    'values' => $placeholderDailyUsers,
                 ]
             ],
             'usersPerHour' => [
                 [
-                    'labels' => ['00:00', '01:00', '02:00', /* ... */],
-                    'name' => 'Users per Hour',
-                    'values' => array_fill(0, 24, 0),
+                    'labels' => $hourLabels,
+                    'name'   => 'Users per Hour',
+                    'values' => $placeholderHourlyRequests,
                 ]
             ],
             'percentageChart' => [
@@ -289,10 +306,10 @@ class UserDashboard extends Screen
                 ]
             ],
             'metrics' => [
-                'totalUsers' => ['value' => '0', 'icon' => 'bs.people'],
-                'newUsers' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.person-plus'],
-                'activeUsersDelta' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.chat'],
-                'activeUsersToday' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.calendar'],
+                'totalUsers'=> '0',
+                'newUsers'     => ['value' => '0', 'diff' => 0],
+                'activeUsersDelta'  => '0',
+                'activeUsersToday'  => ['value' => '0', 'diff' => 0],
             ],
             // Chat-Count Platzhalter
             'chatCountToday' => 0,
