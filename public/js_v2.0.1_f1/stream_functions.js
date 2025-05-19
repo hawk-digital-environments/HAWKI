@@ -307,7 +307,7 @@ async function requestChatlogSummery(msgs = null) {
         return new Promise((resolve, reject) => {
             const onData = (data, done) => {
                 if (done) {
-                    resolve(deconstContent(JSON.parse(data.content).text).messageText);
+                    resolve(deconstContent(data.content.text).messageText);
                 }
             };
             processResponse(response, onData);
