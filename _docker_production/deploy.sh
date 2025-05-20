@@ -1,7 +1,7 @@
 #!/bin/bash
 
 chmod 777 -Rf ./storage
-docker compose up --pull -d
+docker compose up --pull missing -d
 docker compose exec app bash -c "php artisan migrate --force &&
     php artisan db:seed --force && \
     php artisan config:cache && \
