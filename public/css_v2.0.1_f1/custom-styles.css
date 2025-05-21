@@ -95,11 +95,11 @@
 .logo{
     /* adjust width and aspect ratio as needed */
     width: 8rem;
-    /* Aaspect ration of HAWK logo */
+    /* Aspect ratio of HAWK logo */
     aspect-ratio: 2.226/1;
 
-    background-image: url("/img/logo.png");
-    background-size: cover;
+    background-image: url("/system-image/logo_svg");
     background-repeat: no-repeat;
-    /* background-size: auto; */
+    /* background-size: cover; */
+    background-size: auto;
 }

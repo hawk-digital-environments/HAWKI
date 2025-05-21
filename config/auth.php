@@ -2,6 +2,8 @@
 
 return [
 
+    'authentication_method' => env('APP_AUTHENTICATION_METHOD'),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults

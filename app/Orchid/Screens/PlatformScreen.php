@@ -24,7 +24,7 @@ class PlatformScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'Get Started';
+        return 'Get Started with HAWKI2';
     }
 
     /**
@@ -32,7 +32,7 @@ class PlatformScreen extends Screen
      */
     public function description(): ?string
     {
-        return 'Welcome to your Orchid application.';
+        return 'Welcome to your HAWKI2 Administration Panel.';
     }
 
     /**

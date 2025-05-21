@@ -1,5 +1,5 @@
 @import url('./gfont-firesans/firesans.css');
-@import url('custom-styles.css');
+/*@import url('custom-styles.css');*/
 
 
 /* SECTION: GENERALS */
@@ -451,7 +451,9 @@ button:disabled{
 .grn-c{
     background-color: green;
 }
-
+.ai-c{
+    background-color: rgb(179, 0, 255);
+}
 /* SECTION: BURGER MENUS */
 .burger-menu{
     position: relative;

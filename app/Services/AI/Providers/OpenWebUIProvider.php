@@ -3,9 +3,23 @@
 namespace App\Services\AI\Providers;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use App\Models\LanguageModel;
+use App\Models\ProviderSetting;
 
-class OpenWebUIProvider extends BaseAIModelProvider
+class OpenWebUIProvider extends OpenAIProvider
 {
+    /**
+     * Constructor for OpenWebUIProvider
+     *
+     * @param array $config
+     */
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+        $this->providerId = 'openWebUi'; // Explizites Setzen der providerId
+    }
+    
     /**
      * Format the raw payload for OpenAI API
      *
@@ -174,19 +188,19 @@ class OpenWebUIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Make a non-streaming request to the OpenAI API
+     * Make a non-streaming request to the OpenWebUI API
      *
      * @param array $payload The formatted payload
      * @return mixed The response
      */
     public function makeNonStreamingRequest(array $payload)
     {
-        // Ensure stream is set to false
+        // Use the OpenAI implementation, but with OpenWebUI API URL
         $payload['stream'] = false;
         
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -207,7 +221,7 @@ class OpenWebUIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Make a streaming request to the OpenAI API
+     * Make a streaming request to the OpenWebUI API
      *
      * @param array $payload The formatted payload
      * @param callable $streamCallback Callback for streaming responses
@@ -228,7 +242,7 @@ class OpenWebUIProvider extends BaseAIModelProvider
         
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -272,5 +286,90 @@ class OpenWebUIProvider extends BaseAIModelProvider
         }
         
         return $messages;
+    }
+
+    /**
+     * Ping the API to check model status
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function getModelsStatus(): array
+    {
+        $response = $this->pingProvider();
+        if (!$response) {
+            return [];
+        }
+        
+        $referenceList = json_decode($response, true);
+        if (!is_array($referenceList)) {
+            return [];
+        }
+        
+        // Get models from the database instead of from the configuration
+        $providerId = $this->getProviderId();
+        $provider = ProviderSetting::where('provider_name', $providerId)
+            ->where('is_active', true)
+            ->first();
+            
+        if (!$provider) {
+            return [];
+        }
+        
+        $dbModels = LanguageModel::where('provider_id', $provider->id)
+            ->where('is_active', true)
+            ->get();
+        
+        $models = [];
+        foreach ($dbModels as $model) {
+            $models[] = [
+                'id' => $model->model_id,
+                'label' => $model->label,
+                'streamable' => $model->streamable,
+                'provider' => $providerId
+            ];
+        }
+    
+        // Determine model status from the reference list
+        foreach ($models as &$model) {
+            $found = false;
+            
+            // Search for the model in the reference list
+            foreach ($referenceList as $reference) {
+                if (isset($reference['id']) && $reference['id'] === $model['id']) {
+                    $model['status'] = 'ready'; // OpenWebUI defaults to 'ready'
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if (!$found) {
+                $model['status'] = 'unknown';
+            }
+        }
+    
+        return $models;
+    }
+    
+    /**
+     * Ping OpenWebUI API to check status
+     *
+     * @return string|null
+     */
+    protected function pingProvider(): ?string
+    {
+        $url = $this->config['ping_url'];
+        $apiKey = $this->config['api_key'];
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(5)
+                ->get($url);
+
+            return $response;
+        } catch (\Exception $e) {
+            Log::error("Error pinging OpenWebUI provider: " . $e->getMessage());
+            return null;
+        }
     }
 }

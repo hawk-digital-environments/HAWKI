@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\LocalizationController;
+
 
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
@@ -210,7 +212,11 @@ class AuthenticationController extends Controller
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
-
+        
+        // Hole die lokalisierten Texte vom LocalizationController
+        $localizationController = new LocalizationController();
+        $localizedTexts = $localizationController->getAllLocalizedContent();
+        
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'register'){
             $activeOverlay = true;
@@ -219,7 +225,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts'));
     }
 
 
@@ -245,6 +251,8 @@ class AuthenticationController extends Controller
             $name = $userInfo['name'] ?? null;
             $email = $userInfo['email'] ?? null;
             $employeetype = $userInfo['employeetype'] ?? null;
+            $permissions = $userInfo['permissions'] ?? null;
+
     
             $avatarId = $validatedData['avatar_id'] ?? '';
 
@@ -257,7 +265,8 @@ class AuthenticationController extends Controller
                     'employeetype' => $employeetype,
                     'publicKey' => $validatedData['publicKey'],
                     'avatar_id' => $avatarId,
-                    'isRemoved' => false
+                    'isRemoved' => false,
+                    'permissions' => $permissions,
                 ]
             );
     

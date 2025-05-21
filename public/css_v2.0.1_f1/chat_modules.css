@@ -1244,10 +1244,12 @@
     font-weight: 700 !important;
 }
 
-/* #model-selector-burger{
-    bottom: 110%;
-    right: 0;
-} */
+#model-selector-burger{
+    /*bottom: 110%;
+    right: 0;*/
+    max-height: 30vh;
+    overflow-y: scroll;
+} 
 
 
 

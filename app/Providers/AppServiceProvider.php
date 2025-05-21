@@ -16,6 +16,8 @@ use Dotenv\Dotenv;
 
 use App\Services\AI\AIProviderFactory;
 use App\Services\AI\AIConnectionService;
+use App\Services\ProviderSettingsService;
+use App\Providers\ConfigServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,6 +45,13 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(AIProviderFactory::class)
             );
         });
+
+        $this->app->singleton(ProviderSettingsService::class, function ($app) {
+            return new ProviderSettingsService();
+        });
+
+        // Register the ConfigServiceProvider
+        $this->app->register(ConfigServiceProvider::class);
     }
 
     /**

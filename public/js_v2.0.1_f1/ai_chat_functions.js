@@ -2,8 +2,21 @@
 let convMessageTemplate;
 let chatItemTemplate;
 let activeConv;
-let defaultPromt;
+let defaultPrompt;
 let chatlogElement;
+
+// Function to truncate text in the middle if it exceeds a certain length
+function middletruncate(text, maxLength) {
+    if (text.length <= maxLength) {
+        return text;
+    }
+    
+    const halfLength = Math.floor(maxLength / 2);
+    const firstHalf = text.substring(0, halfLength);
+    const secondHalf = text.substring(text.length - halfLength);
+    
+    return firstHalf + '...' + secondHalf;
+}
 
 function initializeAiChatModule(chatsObject){
 
@@ -11,11 +24,11 @@ function initializeAiChatModule(chatsObject){
     chatItemTemplate = document.getElementById('selection-item-template');
     chatlogElement = document.querySelector('.chatlog');
 
-    defaultPromt = translation.Default_Prompt;
+    defaultPrompt = systemPrompts.default_system_prompt;
 
     const systemPromptFields = document.querySelectorAll('.system_prompt_field');
     systemPromptFields.forEach(field => {
-        field.textContent = defaultPromt;
+        field.textContent = defaultPrompt;
     });
 
     chats = chatsObject.original;
@@ -316,7 +329,7 @@ function startNewChat(){
 
     const systemPromptFields = document.querySelectorAll('.system_prompt_field');
     systemPromptFields.forEach(field => {
-        field.textContent = defaultPromt;
+        field.textContent = defaultPrompt;
     });
 
     const lastActive = document.getElementById('chats-list').querySelector('.selection-item.active');
@@ -348,6 +361,8 @@ function createChatItem(conv = null){
 
 
 async function generateChatName(firstMessage, convItem) {
+    firstMessage = middletruncate(firstMessage, 8000);
+
     const requestObject = {
         payload: {
             model: systemModels.title_generator,
@@ -356,7 +371,7 @@ async function generateChatName(firstMessage, convItem) {
                 {
                     role: "system",
                     content: {
-                        text: translation.Name_Prompt
+                        text: systemPrompts.title_generation_prompt
                     }
                 },
                 {

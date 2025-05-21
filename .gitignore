@@ -5,6 +5,7 @@
 /public/storage
 /storage/*.key
 /vendor
+/public/vendor/orchid
 .env
 !/_docker_production/.env
 .env.backup
@@ -22,3 +23,4 @@ yarn-error.log
 /.vscode
 config/model_providers.php
 docker-compose.override.yml
+.DS_Store

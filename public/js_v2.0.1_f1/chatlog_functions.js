@@ -327,42 +327,58 @@ function selectModel(btn){
     setModel(value.id);
 }
 function setModel(modelID = null){
+    // check if modelsList exists and is an array
+    if (!Array.isArray(modelsList) || modelsList.length === 0) {
+        console.warn("No model found.");
+        return; // end function, when no models are loaded via /admin
+    }
+    
     let model;
     if(!modelID){
         if(localStorage.getItem("definedModel")){
-
-            model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
+            model = modelsList.find(m => m && m.id === localStorage.getItem("definedModel"));
         }
         // if there is no defined model 
         // or the defined model is outdated or cruppted
         if(!model){            
-            model = modelsList.find(m => m.id === defaultModel);
+            model = modelsList.find(m => m && m.id === defaultModel);
         }
     }
     else{
-        model = modelsList.find(m => m.id === modelID);
+        model = modelsList.find(m => m && m.id === modelID);
     }
+    
+    // check for available models
+    if (!model) {
+        console.warn("No model found. Fallback to first available model.");
+        model = modelsList[0]; // fallback to first model
+        if (!model) return; // check if modelslist is empty
+    }
+    
     activeModel = model;
     localStorage.setItem("definedModel", activeModel.id);
-
 
     //UI UPDATE...
     const selectors = document.querySelectorAll('.model-selector');
     selectors.forEach(selector => {
-        //if this is our target model selector 
-        if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
-            selector.classList.add('active');            
-            
-            const labels = document.querySelectorAll('.model-selector-label');
-            labels.forEach(label => {
-                label.innerHTML = activeModel.label;
-            });
-        }
-        else{
-            selector.classList.remove('active');
+        try {
+            //if this is our target model selector 
+            const selectorValue = JSON.parse(selector.getAttribute('value'));
+            if(selectorValue && selectorValue.id === activeModel.id){
+                selector.classList.add('active');            
+                
+                const labels = document.querySelectorAll('.model-selector-label');
+                labels.forEach(label => {
+                    label.innerHTML = activeModel.label;
+                });
+            }
+            else{
+                selector.classList.remove('active');
+            }
+        } catch (error) {
+            console.warn("error handling model-selector:", error);
         }
     });
-
 }
 //#endregion
 

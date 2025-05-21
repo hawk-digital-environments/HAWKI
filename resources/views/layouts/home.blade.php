@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html class="lightMode">
 <head>
@@ -10,13 +9,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
     
-	<title>{{ env('APP_NAME') }}</title>
+	<title>{{ config('app.name') }}</title>
 
-	<link rel="icon" href="{{ asset('favicon.ico') }}">
+	<link rel="icon" href="{{ route('system.image', 'favicon') }}">
 	
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/home-style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/settings_style.css') }}">
+	{{-- Insert stylesheet from database --}}
+	<link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
+
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}">
 
     @vite('resources/js/app.js')
@@ -79,12 +81,16 @@
 	const activeModule = @json($activeModule);
 	
     const activeLocale = {!! json_encode(Session::get('language')) !!};
+	//Pass system texts from LanguageController
 	const translation = @json($translation);
+	//Pass prompts from AppSystemPromptController
+	const systemPrompts = @json($systemPrompts);
+	//Pass localized texts from LocalizationController
+	const localizedTexts = @json($localizedTexts);
 
 	const modelsList = @json($models).models;
 	const defaultModel = @json($models).defaultModel;
 	const systemModels = @json($models).systemModels;
-
 
 	const aiHandle = "{{ config('app.aiHandle') }}";
 

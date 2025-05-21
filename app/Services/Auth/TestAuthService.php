@@ -30,6 +30,7 @@ class TestAuthService
                 'name' => $user['name'],
                 'email' => $user['email'],
                 'employeetype' => 'tester',
+                'permissions' => $user['permissions'],
             ];
         }
 

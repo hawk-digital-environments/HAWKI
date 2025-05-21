@@ -14,6 +14,8 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AppCssController;
+use App\Http\Controllers\AppSystemImageController;
 
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\AdminAccess;
@@ -138,3 +140,45 @@ Route::middleware('prevent_back')->group(function () {
 
 
 });
+
+/*
+|--------------------------------------------------------------------------
+| CSS Routes
+|--------------------------------------------------------------------------
+|
+| Routes for serving CSS files from the database
+|
+*/
+Route::get('/css/{name}', [AppCssController::class, 'getByName'])->name('css.get');
+
+/*
+|--------------------------------------------------------------------------
+| System Image Helper
+|--------------------------------------------------------------------------
+|
+| Helper route for dynamic system image serving
+|
+*/
+Route::get('/system-image/{name}', function ($name) {
+    $image = App\Models\AppSystemImage::getByName($name);
+    if ($image) {
+        return redirect(asset($image->file_path));
+    }
+    
+    // Fallback to original paths
+    $fallback = [
+        'favicon' => 'favicon.ico',
+        'logo_svg' => 'img/logo.svg'
+    ];
+    
+    return redirect(asset($fallback[$name] ?? 'img/logo.svg'));
+})->name('system.image');
+/*
+|--------------------------------------------------------------------------
+| Test ConfigValueController
+|--------------------------------------------------------------------------
+|
+| Helper route for testing config values from database
+|
+*/
+Route::get('/test-config-value', App\Http\Controllers\TestConfigValueController::class)->name('test-config-value');
