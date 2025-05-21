@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\LocalizationController;
+
 
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
@@ -85,7 +87,7 @@ class AuthenticationController extends Controller
 
         $redirectUri;
         // If first time on HAWKI
-        if($user){
+        if($user && $user->isRemoved === 0){
             Auth::login($user);
 
             return response()->json([
@@ -119,7 +121,7 @@ class AuthenticationController extends Controller
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
-            if ($user) {
+            if($user && $user->isRemoved === 0){
                 Auth::login($user);
                 return redirect('/handshake');
             }
@@ -150,7 +152,7 @@ class AuthenticationController extends Controller
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
-            if ($user) {
+            if($user && $user->isRemoved === 0){
                 Auth::login($user);
                 return redirect('/handshake');
             }
@@ -201,7 +203,7 @@ class AuthenticationController extends Controller
 
         if (Auth::check()) {
             // The user is logged in, redirect to /chat
-            return redirect('/chat');
+            return redirect('/handshake');
         }
 
         $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
@@ -210,12 +212,11 @@ class AuthenticationController extends Controller
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
-
-
-        // Initialize settings panel
-        $settingsPanel = (new SettingsController())->initialize($translation);
-
-
+        
+        // Hole die lokalisierten Texte vom LocalizationController
+        $localizationController = new LocalizationController();
+        $localizedTexts = $localizationController->getAllLocalizedContent();
+        
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'register'){
             $activeOverlay = true;
@@ -224,7 +225,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts'));
     }
 
 
@@ -250,6 +251,8 @@ class AuthenticationController extends Controller
             $name = $userInfo['name'] ?? null;
             $email = $userInfo['email'] ?? null;
             $employeetype = $userInfo['employeetype'] ?? null;
+            $permissions = $userInfo['permissions'] ?? null;
+
     
             $avatarId = $validatedData['avatar_id'] ?? '';
 
@@ -262,11 +265,13 @@ class AuthenticationController extends Controller
                     'employeetype' => $employeetype,
                     'publicKey' => $validatedData['publicKey'],
                     'avatar_id' => $avatarId,
+                    'isRemoved' => false,
+                    'permissions' => $permissions,
                 ]
             );
     
             // Update or create the Private User Data
-            PrivateUserData::updateOrCreate(
+            PrivateUserData::create(
                 [
                     'user_id' => $user->id,
                     'KCIV' => $validatedData['KCIV'],

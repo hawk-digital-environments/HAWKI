@@ -1,0 +1,31 @@
+[
+	{
+		"username": "testuser",
+		"password": "123",
+		"name": "test",
+		"email": "tester@MyUni.de",
+		"employeetype": "Tester",
+		"avatar_id": "arianAvatar.jpg",
+		"permissions": null
+	},
+	{
+		"username": "testuser1",
+		"password": "123",
+		"name": "test1",
+		"email": "tester@MyUni.de",
+		"employeetype": "Tester",
+		"avatar_id": "arianAvatar.jpg",
+		"permissions": null
+
+	},
+	{
+		"username": "admin",
+		"password": "password",
+		"name": "admin",
+		"email": "admin@admin.com",
+		"employeetype": "Tester",
+		"avatar_id": "arianAvatar.jpg",
+		"permissions": {"platform.index": true, "platform.systems.roles": true, "platform.systems.users": true, "platform.systems.attachment": true}
+
+	}
+]

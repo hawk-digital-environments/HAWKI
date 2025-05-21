@@ -3,9 +3,23 @@
 namespace App\Services\AI\Providers;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use App\Models\LanguageModel;
+use App\Models\ProviderSetting;
 
 class OpenAIProvider extends BaseAIModelProvider
 {
+    /**
+     * Constructor for OpenAIProvider
+     *
+     * @param array $config
+     */
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+        $this->providerId = 'openai'; // Explizites Setzen der providerId
+    }
+    
     /**
      * Format the raw payload for OpenAI API
      *
@@ -70,7 +84,9 @@ class OpenAIProvider extends BaseAIModelProvider
         $content = $jsonContent['choices'][0]['message']['content'] ?? '';
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'usage' => $this->extractUsage($jsonContent)
         ];
     }
@@ -97,6 +113,8 @@ class OpenAIProvider extends BaseAIModelProvider
         // Extract usage data if available
         if (!empty($jsonChunk['usage'])) {
             $usage = $this->extractUsage($jsonChunk);
+            Log::info('OpenAI', ['model' => $jsonChunk['model'], 'usage' => $usage]);
+
         }
         
         // Extract content if available
@@ -105,7 +123,9 @@ class OpenAIProvider extends BaseAIModelProvider
         }
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'isDone' => $isDone,
             'usage' => $usage
         ];
@@ -140,9 +160,9 @@ class OpenAIProvider extends BaseAIModelProvider
         // Ensure stream is set to false
         $payload['stream'] = false;
         
-        // Initialize cURL
+        // Initialize cURL with the base_url from database config
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -173,6 +193,10 @@ class OpenAIProvider extends BaseAIModelProvider
     {
         // Ensure stream is set to true
         $payload['stream'] = true;
+        // Enable usage reporting
+        $payload['stream_options'] = [
+            'include_usage' => true,
+        ];
         
         set_time_limit(120);
         
@@ -182,9 +206,9 @@ class OpenAIProvider extends BaseAIModelProvider
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
-        // Initialize cURL
+        // Initialize cURL with the base_url from database config
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -229,4 +253,5 @@ class OpenAIProvider extends BaseAIModelProvider
         
         return $messages;
     }
+
 }

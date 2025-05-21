@@ -3,7 +3,7 @@
         <div class="modal-content-wrapper">
             <div class="modal-content">
                 <h1>{!! $translation["Guidelines"]; !!}</h1>
-                {!! $translation["_Guidelines_Content"]; !!}
+                {!! $localizedTexts["guidelines_content"]; !!}
                 <br>
                 
                 <div class="modal-buttons-bar">

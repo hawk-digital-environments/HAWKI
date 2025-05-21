@@ -10,11 +10,14 @@ use App\Http\Middleware\EditorAccess;
 use App\Http\Middleware\ExternalCommunicationCheck;
 use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\SessionExpiryChecker;
+use App\Http\Middleware\TokenCreationCheck;
 use Illuminate\Support\Facades\Route;
 use Dotenv\Dotenv;
 
 use App\Services\AI\AIProviderFactory;
 use App\Services\AI\AIConnectionService;
+use App\Services\ProviderSettingsService;
+use App\Providers\ConfigServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -30,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('api_isActive', ExternalCommunicationCheck::class);
         Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
         Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
+        Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
         
         // Register AI services
         $this->app->singleton(AIProviderFactory::class, function ($app) {
@@ -41,6 +45,13 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(AIProviderFactory::class)
             );
         });
+
+        $this->app->singleton(ProviderSettingsService::class, function ($app) {
+            return new ProviderSettingsService();
+        });
+
+        // Register the ConfigServiceProvider
+        $this->app->register(ConfigServiceProvider::class);
     }
 
     /**

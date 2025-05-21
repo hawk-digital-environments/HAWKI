@@ -1,7 +1,6 @@
+## Server Preparation
 
-### Server Preparation
-
-To prepare your server, ensure communication ports are properly configured. HAWKI deployment requires the HTTPS protocol, though testing locally or alternatives using HTTP are possible but not recommended.
+To prepare your server, ensure communication ports are properly configured. HAWKI deployment requires the HTTPS protocol, though testing locally or alternatives using HTTP are possible but not recommended. For local testing, refer to the ["Getting Started"](../Getting%20Started.md) chapter.
 
 For this guide, we'll assume port usage as follows:
 
@@ -44,7 +43,7 @@ Additionally, verify that **Node** and **Composer** are installed on your machin
 
 ---
 
-### Project Deployment Steps
+## Project Deployment
 
 
 1. Copy the HAWKI project content to the desired webserver location, typically `/var/www/html/hawki-project`. This can be done via cloning the git repository or manually uploading files.
@@ -83,11 +82,11 @@ At this point, the project is transferred to the server, but you may encounter a
 
 ---
 
-### DATABASE
+## Database
 
 1- If not already installed, set up a preferred database. This documentation employs MySQL, but selection depends on your usage and specific requirements.
 
-***!!! Please make sure that your database has proper security !!!***
+***!!! Please ensure that your database has adequate security !!!***
 
 2- Create a new, empty database, such as ***HAWKI_DB***.
 
@@ -124,7 +123,7 @@ ___
 
 
 
-### PROJECT CONFIGURATION
+## Project Configuration
 
 Edit the .env file within the root folder. Most variables can remain at their default values unless specific adjustments are required.
 
@@ -144,7 +143,9 @@ Set the variable to one of the following:
 - AUTHENTICATION_METHOD="Shibboleth"
 ```
 
-according to your authentication method set the necessary variables. For more information refer to the documentation in .env file.
+According to your authentication method set the necessary variables. For more information refer to the documentation in .env file.
+
+>If you are using **LDAP** make sure the structure of the LDAP response is setup correctly on the HAWKI side. To do that first make sure the `LDAP_ATTRIBUTES` are set correctly and in the correct order: Username, Email Address, Employee Type, Name. By default HAWKI looks for the `element zero/ variable name/ element zero` `($info[0][$ldapAttr][0])`. If for any reason the response from your LDAP server has a different structure, your can change this in `/app/Services/Auth/LdapService.php`.
 
 **Test User**
 
@@ -168,7 +169,7 @@ In `/storage/app/` locate `test_users.json` file and update it with your desired
 
 **Create Storage Link**
 
-To allow clients too read files from the storage folder, we need to create a symbolic link for the storage.
+To allow clients to read files from the storage folder, we need to create a symbolic link for the storage.
 Use the following command to create the symbolic link:
 
 ```
@@ -199,19 +200,11 @@ For encryption purposes, HAWKI utilises individual salts for each component. Tho
 |BACKUP_SALT  | base64:RandomHash== |
 
 
-**Add Data Protection and Imprint**
-
-Data protection and imprint notes are linked in the login page. To set your organization specific legal notes:
-
-1- In the .env file find `IMPRINT_LOCATION` and add the URL to your organization imprint page.
-
-2- Locate DataProtection Files in the `/resources/language` folder and add the data protection notes for each language **in HTML format**.
-
 
 **Adding API Keys**
 
 Navigate to config folder. There you'll find `model_providers.php.example`. Also rename it to `model_providers.php`.
-Open the file and update the configuration as you need. HAWKI currently supports OpenAI, GWDG, and Google.
+Open the file and update the configuration as you need. HAWKI currently supports models from OpenAI, GWDG, and Google.
 
 ```
     // The Default Model (use the id of one of model you wish)
@@ -243,7 +236,7 @@ Open the file and update the configuration as you need. HAWKI currently supports
 
 
 
-**Broadcasting & Workers**
+## Broadcasting & Workers
 
 HAWKI uses [Laravel Reverb](https://reverb.laravel.com/) for real-time communication between client and server.
 In the .env file you simply need to set reverb variables:
@@ -313,15 +306,16 @@ Preparing workers to broadcast messages follows.
 
 ---
 
-### SERVICES
+## Services
 
 Before broadcasting messages to users, each message is queued on the server and laravel workers.
 In order to automate the reverb broadcasting and laravel workers we need to create extra services in your linux server.
-If Reverb is already running from the previous step, stop it before proceeding.
+If reverb is already running from the previous step, stop it before continuing.
 
 1. Navigate to `/etc/systemd/system`. You will find the list of linux services.
 
 2. Create a new file for reverb and call it reverb.service. Insert this content:
+>**Don't forget to update paths: `/var/www/html/hawki-project`**
 
 ```
 [Unit]
@@ -344,6 +338,8 @@ WantedBy=multi-user.target
 
 3. Create a new file for workers and call it "laravel-worker.service". Insert this content:
 
+>**Don't forget to update paths: `/var/www/html/hawki-project`**
+
 ```
 [Unit]
 Description=Laravel Worker Service
@@ -353,10 +349,17 @@ After=network.target
 User=www-data
 Group=www-data
 WorkingDirectory=/var/www/html/hawki-project
-ExecStart=/usr/bin/php /var/www/html/hawki-project/artisan queue:work --queue=default,mails,message_broadcast --sle>
+ExecStart=/usr/bin/php /var/www/html/hawki-project/artisan queue:work --queue=default,mails,message_broadcast --tries=3 --timeout=90
+
 Restart=always
+RestartSec=5
 TimeoutSec=300
 LimitNOFILE=4096
+
+ExecStartPost=/usr/bin/php /var/www/html/hawki-project/artisan queue:restart
+
+StandardOutput=append:/var/www/html/hawki-project/storage/logs/worker.log
+StandardError=append:/var/www/html/hawki-project/storage/logs/worker-error.log
 
 [Install]
 WantedBy=multi-user.target
@@ -393,9 +396,64 @@ sudo systemctl status laravel-worker.service
 
 Now that workers are running the queued messages should be successfully broadcasted to the users.
 
+
 ---
 
-### FAQs
+## Updating to V2.0.1
+
+If you have already implemented HAWKI 2.0 on your machine, there are a few steps needed to update to version 2.0.1.
+
+1- **As usual, update the project content.**
+
+2- **Set the updated .env variables:**
+
+- **BROADCAST_DRIVER**: Similar to `BROADCAST_CONNECTION`, the `BROADCAST_DRIVER` is set to utilize reverb as the broadcasting backend mechanism.
+
+- **ALLOW_USER_TOKEN_CREATION**: In the new update, the admin can decide whether users are allowed to create API tokens for external communication. You can set `ALLOW_EXTERNAL_COMMUNICATION` to true to allow API communication but restrict key generation by setting `ALLOW_USER_TOKEN_CREATION` accordingly. This setup ensures that tokens can only be created by the server admin using the HAWKI CLI with the command `php hawki create-token`. For more information, refer to the [HAWKI CLI Section](/architecture/HAWKI_CLI).
+
+3- If you are using custom icons different from the ones included in the project, move the icons folder from `resources/views/icons` to `/resources/icons` and change the file formats from .blade.php to .svg. Otherwise, you can skip this step and use the icons included in the 2.0.1 project.
+
+4- **Reinstall Composer and Node packages.**    
+The new packages include:
+
+- **blade-ui-kit**: This Composer component enhances icon management. As mentioned previously, this library is responsible for loading project icons in the GUI. It also ensures that the component library does not conflict with other libraries that are or will be used in the project.
+
+- **HAWKI CLI**: This custom CLI facilitates frequently used commands for the installation and maintenance of HAWKI. For more information, refer to the [HAWKI CLI Section](/architecture/HAWKI_CLI).
+
+- **Pako**: The new data-flow of the message broadcasting mechanism includes a compression step, where broadcasting data is compressed on the server side using `gzencode` and decompressed using `Pako` on the client side. With this broadcasting system, HAWKI can broadcast larger data packets, such as Google search results generated by Gemini in chat rooms.
+
+To install the packages, run:
+
+```
+composer install
+npm install
+npm run build
+```
+
+5- **Migrate the database tables.**
+
+In this version, new attributes have been added to the database:
+
+- **isRemoved**: This attribute is added to the users and members tables. It allows the server to detect if a user profile has been removed. However, after profile removal, shared data such as group memberships and group messages remain connected to the profile, ensuring the integrity and consistency of room messages even if a member is no longer available.
+
+- **Completion**: This property is added in AI-generated conversation messages (private messages). It flags the completion of a message generated by an AI model. If the generation is interrupted (e.g., due to lost connection or aborted generation), the message will be flagged as incomplete.
+
+- **API Type**: This type is added to usage record types. It is used when a message generation request is sent from an external service via the API endpoint.
+
+Finally, remove all cached data from the server to ensure updates are applied correctly:
+
+```
+php artisan config:clear
+php artisan cache:clear
+php artisan route:clear
+php artisan view:clear
+```
+
+At this point, the new version should be ready and running on your machine.
+
+---
+
+## FAQs
 
 >**1. Config updates are not applied to the project.**
 
@@ -430,3 +488,9 @@ php artisan cache:clear
 
 Make sure node packages are built `npm run build`.
 If the problem perists, locate and remove "hot" file in the public folder.
+
+
+>**5.Database is created but throws error when trying to migrate**
+
+- double check your username and password.
+- make sure the database name and the .env variable are identic and there are no typos.

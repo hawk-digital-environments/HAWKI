@@ -3,9 +3,23 @@
 namespace App\Services\AI\Providers;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
+use App\Models\LanguageModel;
+use App\Models\ProviderSetting;
 
-class OpenWebUIProvider extends BaseAIModelProvider
+class OpenWebUIProvider extends OpenAIProvider
 {
+    /**
+     * Constructor for OpenWebUIProvider
+     *
+     * @param array $config
+     */
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+        $this->providerId = 'openWebUi'; // Explizites Setzen der providerId
+    }
+    
     /**
      * Format the raw payload for OpenAI API
      *
@@ -57,7 +71,7 @@ class OpenWebUIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Format the complete response from OpenAI
+     * Format the complete response from OpenWebUI
      *
      * @param mixed $response
      * @return array
@@ -72,7 +86,9 @@ class OpenWebUIProvider extends BaseAIModelProvider
         }
                
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'usage' => $this->extractUsage($jsonContent)
         ];
 
@@ -103,17 +119,54 @@ class OpenWebUIProvider extends BaseAIModelProvider
         }
         
         // Extract content if available
-        if (isset($jsonChunk['choices'][0]['delta']['content'])) {
-            $content = $jsonChunk['choices'][0]['delta']['content'];
+        //if (isset($jsonChunk['choices'][0]['delta']['content'])) {
+        //    $content = $jsonChunk['choices'][0]['delta']['content'];
+        //}
+        if ($this->containsKey($jsonChunk, 'content')){
+            $content = $this->getValueForKey($jsonChunk, 'content');
         }
         
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'isDone' => $isDone,
             'usage' => $usage
         ];
     }
     
+    protected function containsKey($obj, $targetKey)
+    {
+        if (!is_array($obj)) {
+            return false;
+        }
+        if (array_key_exists($targetKey, $obj)) {
+            return true;
+        }
+        foreach ($obj as $value) {
+            if ($this->containsKey($value, $targetKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    protected function getValueForKey($obj, $targetKey)
+    {
+        if (!is_array($obj)) {
+            return null;
+        }
+        if (array_key_exists($targetKey, $obj)) {
+            return $obj[$targetKey];
+        }
+        foreach ($obj as $value) {
+            $result = $this->getValueForKey($value, $targetKey);
+            if ($result !== null) {
+                return $result;
+            }
+        }
+        return null;
+    }
     /**
      * Extract usage information from OpenAI response
      *
@@ -122,30 +175,32 @@ class OpenWebUIProvider extends BaseAIModelProvider
      */
     protected function extractUsage(array $data): ?array
     {
-        if (empty($data['usageMetadata'])) {
+        if (empty($data['usage'])) {
             return null;
         }
-        
+        //Log::info($data['usage']);
         return [
-            'prompt_tokens' => $data['usage']['promptTokenCount'],
-            'completion_tokens' => $data['usage']['response_token/s'],
-        ];
+            'prompt_tokens' => $data['usage']['prompt_tokens'],
+            'completion_tokens' => $data['usage']['completion_tokens'],
+            'prompt_token/s' =>  $data['usage']['prompt_token/s'],
+            'response_token/s' =>  $data['usage']['response_token/s'],
+        ];    
     }
     
     /**
-     * Make a non-streaming request to the OpenAI API
+     * Make a non-streaming request to the OpenWebUI API
      *
      * @param array $payload The formatted payload
      * @return mixed The response
      */
     public function makeNonStreamingRequest(array $payload)
     {
-        // Ensure stream is set to false
+        // Use the OpenAI implementation, but with OpenWebUI API URL
         $payload['stream'] = false;
         
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -166,7 +221,7 @@ class OpenWebUIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Make a streaming request to the OpenAI API
+     * Make a streaming request to the OpenWebUI API
      *
      * @param array $payload The formatted payload
      * @param callable $streamCallback Callback for streaming responses
@@ -187,7 +242,7 @@ class OpenWebUIProvider extends BaseAIModelProvider
         
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
+        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -231,5 +286,90 @@ class OpenWebUIProvider extends BaseAIModelProvider
         }
         
         return $messages;
+    }
+
+    /**
+     * Ping the API to check model status
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function getModelsStatus(): array
+    {
+        $response = $this->pingProvider();
+        if (!$response) {
+            return [];
+        }
+        
+        $referenceList = json_decode($response, true);
+        if (!is_array($referenceList)) {
+            return [];
+        }
+        
+        // Get models from the database instead of from the configuration
+        $providerId = $this->getProviderId();
+        $provider = ProviderSetting::where('provider_name', $providerId)
+            ->where('is_active', true)
+            ->first();
+            
+        if (!$provider) {
+            return [];
+        }
+        
+        $dbModels = LanguageModel::where('provider_id', $provider->id)
+            ->where('is_active', true)
+            ->get();
+        
+        $models = [];
+        foreach ($dbModels as $model) {
+            $models[] = [
+                'id' => $model->model_id,
+                'label' => $model->label,
+                'streamable' => $model->streamable,
+                'provider' => $providerId
+            ];
+        }
+    
+        // Determine model status from the reference list
+        foreach ($models as &$model) {
+            $found = false;
+            
+            // Search for the model in the reference list
+            foreach ($referenceList as $reference) {
+                if (isset($reference['id']) && $reference['id'] === $model['id']) {
+                    $model['status'] = 'ready'; // OpenWebUI defaults to 'ready'
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if (!$found) {
+                $model['status'] = 'unknown';
+            }
+        }
+    
+        return $models;
+    }
+    
+    /**
+     * Ping OpenWebUI API to check status
+     *
+     * @return string|null
+     */
+    protected function pingProvider(): ?string
+    {
+        $url = $this->config['ping_url'];
+        $apiKey = $this->config['api_key'];
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(5)
+                ->get($url);
+
+            return $response;
+        } catch (\Exception $e) {
+            Log::error("Error pinging OpenWebUI provider: " . $e->getMessage());
+            return null;
+        }
     }
 }

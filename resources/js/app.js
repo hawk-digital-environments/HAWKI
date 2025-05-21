@@ -26,6 +26,8 @@ window.katex = katex;
 import renderMathInElement from 'katex/contrib/auto-render/auto-render.js';
 window.renderMathInElement = renderMathInElement;
 
+import pako from 'pako';
+window.pako = pako;
 
 import markdownit from 'markdown-it'
 

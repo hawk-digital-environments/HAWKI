@@ -78,9 +78,9 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    'locale' => env('APP_LOCALE', 'en_US'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en_US'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
@@ -117,10 +117,36 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
-
+    
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI Mention Handle
+    |--------------------------------------------------------------------------
+    |
+    | The handle which allows users to mention AI in groupchats.
+    |
+    |
+    */
+    'ai_handle' => env('APP_AI_HANDLE', 'hawki'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | HAWKI Settings
+    |--------------------------------------------------------------------------
+    |
+    | Keys that control HAWKI features. (Experimental)
+    |
+    |
+    */
+    'groupchat_active' => true,
+    //'groupchat_community' => false,
+    //'groupchat_community_autojoin' => false,
+    ''
 
 ];

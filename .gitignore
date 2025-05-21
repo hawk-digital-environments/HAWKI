@@ -5,8 +5,11 @@
 /public/storage
 /storage/*.key
 /vendor
+/public/vendor/orchid
 .env
+!/_docker_production/.env
 .env.backup
+.env.private
 .env.production
 .phpactor.json
 .phpunit.result.cache
@@ -19,4 +22,5 @@ yarn-error.log
 /.idea
 /.vscode
 config/model_providers.php
-config/model_providers.php
+docker-compose.override.yml
+.DS_Store

@@ -30,9 +30,9 @@ return new class extends Migration
             $table->string('tag');
             
             $table->longText('content');
-
-            $table->boolean('completion');
             
+            $table->boolean('completion');
+
             $table->timestamps();
         });
     }

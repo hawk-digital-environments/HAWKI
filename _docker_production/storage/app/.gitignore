@@ -1,0 +1,7 @@
+*
+!public/
+!public/images/
+!public/profile_avatars/
+!public/room_avatars/
+!test_users.json.example
+!.gitignore

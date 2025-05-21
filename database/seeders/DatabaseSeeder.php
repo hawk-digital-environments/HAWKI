@@ -8,10 +8,21 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     *
+     * @return void
      */
-    public function run(): void
+    public function run()
     {
         // Ensure you call the correct seeder class here
-        $this->call(UserSeeder::class);
+        $this->call([
+            AppSettingsSeeder::class,
+            UserSeeder::class,
+            AppSystemTextSeeder::class,
+            AppLocalizedTextSeeder::class,
+            AppCssSeeder::class,
+            AppSystemImageSeeder::class,
+            ProviderSettingsSeeder::class,
+            AppSystemPromptSeeder::class,
+        ]);
     }
 }

@@ -14,6 +14,8 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\AppCssController;
+use App\Http\Controllers\AppSystemImageController;
 
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\AdminAccess;
@@ -54,10 +56,6 @@ Route::middleware('prevent_back')->group(function () {
     //CHECKS USERS AUTH
     Route::middleware(['auth', 'expiry_check'])->group(function () {
     
-
-        
-
- 
         Route::get('/handshake', [AuthenticationController::class, 'handshake']);
     
         // AI CONVERSATION ROUTES
@@ -103,9 +101,15 @@ Route::middleware('prevent_back')->group(function () {
         Route::get('/profile', [HomeController::class, 'show']);
         Route::post('/req/profile/update', [ProfileController::class, 'update']);
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
-        Route::post('/req/profile/create-token', [AccessTokenController::class, 'createToken']);
-        Route::get('/req/profile/fetch-tokens', [AccessTokenController::class, 'fetchTokenList']);
-        Route::post('/req/profile/revoke-token', [AccessTokenController::class, 'revokeToken']);
+        
+        // Token management routes with token_creation middleware
+        Route::middleware('token_creation')->group(function () {
+            Route::post('/req/profile/create-token', [AccessTokenController::class, 'createToken']);
+            Route::get('/req/profile/fetch-tokens', [AccessTokenController::class, 'fetchTokenList']);
+            Route::post('/req/profile/revoke-token', [AccessTokenController::class, 'revokeToken']);
+        });
+        
+        Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileRest']);
     
         // Invitation Handling
     
@@ -136,3 +140,45 @@ Route::middleware('prevent_back')->group(function () {
 
 
 });
+
+/*
+|--------------------------------------------------------------------------
+| CSS Routes
+|--------------------------------------------------------------------------
+|
+| Routes for serving CSS files from the database
+|
+*/
+Route::get('/css/{name}', [AppCssController::class, 'getByName'])->name('css.get');
+
+/*
+|--------------------------------------------------------------------------
+| System Image Helper
+|--------------------------------------------------------------------------
+|
+| Helper route for dynamic system image serving
+|
+*/
+Route::get('/system-image/{name}', function ($name) {
+    $image = App\Models\AppSystemImage::getByName($name);
+    if ($image) {
+        return redirect(asset($image->file_path));
+    }
+    
+    // Fallback to original paths
+    $fallback = [
+        'favicon' => 'favicon.ico',
+        'logo_svg' => 'img/logo.svg'
+    ];
+    
+    return redirect(asset($fallback[$name] ?? 'img/logo.svg'));
+})->name('system.image');
+/*
+|--------------------------------------------------------------------------
+| Test ConfigValueController
+|--------------------------------------------------------------------------
+|
+| Helper route for testing config values from database
+|
+*/
+Route::get('/test-config-value', App\Http\Controllers\TestConfigValueController::class)->name('test-config-value');

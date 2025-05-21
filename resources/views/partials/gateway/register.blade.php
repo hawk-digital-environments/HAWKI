@@ -41,7 +41,7 @@
             <h1>{{ $translation["Reg_SL4_H"] }}</h1>
             <div class="slide-content">
                 <p>
-                    {{ $translation["Reg_SL4_T"] }}
+                    {!! $translation["Reg_SL4_T"] !!}
                 </p>
             </div>
             <div class="nav-buttons">
@@ -50,13 +50,13 @@
         </div>
 
   
-
+        
         <div class="slide" data-index="5">
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
-            <input placeholder="Erstelle hier einen Passkey/Passwort" id="passkey-input" type="password">
-            <input placeholder="Wiederhole hier einen Passkey/Passwort" id="passkey-repeat" type="password" class="top-gap-2" style="display:none">
+            <input placeholder="{{  $translation["Reg_SL5_PH1"] }}" id="passkey-input" type="password">
+            <input placeholder="{{  $translation["Reg_SL5_PH2"] }}" id="passkey-repeat" type="password" class="top-gap-2" style="display:none">
             <p class="slide-subtitle top-gap-2">
-                {{ $translation["Reg_SL5_T"] }}
+                {!! $translation["Reg_SL5_T"] !!}
             </p>
             <div class="nav-buttons">
                 <button class="btn-lg-fill" onclick="checkPasskey()">{{ $translation["Save"] }}</button>
@@ -66,7 +66,10 @@
         </div>
 
         <div class="slide" data-index="6">
-            <h1>{{ $translation["Reg_SL6_H"] }}</h1>
+            <h1 class="zero-b-margin">{{ $translation["Reg_SL6_H"] }}</h1>
+            <p class="slide-subtitle top-gap-2">
+                {{ $translation["Reg_SL6_T"] }}
+            </p>
             <div class="backup-hash-row">
                 <h3 id="backup-hash" class="demo-hash"></h3>
                 <button class="btn-sm border" onclick="downloadTextFile()">
@@ -92,7 +95,7 @@
 <script>
     let userInfo = @json($userInfo);
     initializeRegistration();
-    window.addEventListener('DOMContentLoaded', switchSlide(1));
+    window.addEventListener('DOMContentLoaded', switchSlide(4));
 
     setTimeout(() => {
         if(@json($activeOverlay)){

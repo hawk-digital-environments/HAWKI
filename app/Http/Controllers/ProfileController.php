@@ -6,8 +6,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\ImageController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\AiConvController;
+use App\Models\User;
 use App\Models\PasskeyBackup;
-
+use App\Models\PrivateUserData;
+use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -102,6 +106,86 @@ class ProfileController extends Controller
             'success' => true,
             'passkeyBackup' => $response,
         ]);
+    }
+
+
+    public function requestProfileRest(Request $request){
+
+        $user = Auth::user();
+        $response = $this->resetUserProfile($user);
+
+        if($response === true){
+
+            $userInfo = [
+                'username' => $user->username,
+                'name' => $user->name,
+                'email' => $user->email,
+                'employeetype' => $user->employeetype,
+            ];
+
+            Auth::logout();
+
+            Session::put('registration_access', true);
+            Session::put('authenticatedUserInfo', json_encode($userInfo));
+
+            return response()->json([
+                'success' => true,
+                'redirectUri' => '/register',
+            ]);
+
+        }
+        else{
+            return response()->json([
+                'success' => false,
+            ]);
+        }
+    }
+
+    public function resetUserProfile(User $user){
+
+        $roomController = new RoomController();
+        $rooms = $user->rooms()->get();
+
+        foreach($rooms as $room){
+            $member = $room->members()->where('user_id', $user->id)->firstOrFail();
+            if ($member) {
+                $response = $roomController->removeRoomMember($member, $room);
+            }
+        }
+        
+        $convCtrl = new AiConvController();
+        $convs = $user->conversations()->get();
+
+        foreach($convs as $conv){
+            $conv->messages()->delete();
+            $conv->delete();
+        }
+
+        $invitations = $user->invitations()->get();
+        foreach($invitations as $inv){
+            $inv->delete();
+        }
+
+        $prvUserData = PrivateUserData::where('user_id', $user->id)->get();
+        foreach($prvUserData as $data){
+            $data->delete();
+        }
+        
+        $backups = PasskeyBackup::where('username', $user->username)->get();
+
+        foreach($backups as $backup){
+            $backup->delete();
+        }
+
+        $tokens = $user->tokens()->get();
+        foreach($tokens as $token){
+            $token->delete();
+        }
+
+        $user->revokProfile();
+        
+        return true;
+
     }
 
 }

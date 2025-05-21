@@ -78,12 +78,47 @@ php artisan storage:link
 Navigate to config folder. There you'll find `model_providers.php.example`. Also rename it to `model_providers.php`.
 Open the file and update the configuration as you need. HAWKI currently supports OpenAI, GWDG, and Google.
 
+
 ```
-    // The Default Model (use the id of one of model you wish)
+    /*
+    |--------------------------------------------------------------------------
+    |   Default AI Model
+    |--------------------------------------------------------------------------
+    |   This Model is used by default before the user choses their
+    |   desired model.
+    */
+    
     'defaultModel' => 'gpt-4o',
 
-    // The model which generates the chat names.
-    'titleGenerationModel' => 'gpt-4o-mini', 
+    /*
+    |--------------------------------------------------------------------------
+    |   System Models
+    |--------------------------------------------------------------------------
+    |
+    |   The system models are responsible for different automated processes
+    |   such as title generation and prompt improvement.
+    |   Add your desired models id. Make sure that the model is included and 
+    |   active in the providers list below.
+    |
+    */
+    
+    'system_models' => [
+        'title_generator' => 'gpt-4o-mini',
+        'prompt_improver' => 'gpt-4o-mini',
+        'summarizer' => 'gpt-4o-mini',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    |   Model Providers
+    |--------------------------------------------------------------------------
+    |
+    |   List of model providers available on HAWKI. Add your API Key and 
+    |   activate the providers.
+    |   To include other providers in this list please refer to the
+    |   documentation of HAWKI
+    |
+    */
 
     'providers' =>[
         'openai' => [

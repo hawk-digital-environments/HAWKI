@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/home-style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/home-style.css') }}">
+    {{-- Insert stylesheet from database --}}
+    <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
+
 
     <title>Document</title>
 </head>
@@ -13,7 +16,7 @@
     <div class="scroll-container">
         <div class="scroll-panel">
             <div class="dataprotection">
-                {!! $translation["_DataProtection"] !!}
+                {!! $dataProtectionContent !!}
             </div>
         </div>
     </div>

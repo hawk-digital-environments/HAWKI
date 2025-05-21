@@ -42,7 +42,7 @@
 			
 			<div class="scroll-container" id="welcome-content">
 				<div class="group-welcome-wrapper scroll-panel">
-					{!! $translation["_GroupWelcome"] !!}
+					{!! $localizedTexts["group_welcome"] !!}
 					<button class="btn-lg-fill" onclick="openRoomCreatorPanel()">{{ $translation["CreateARoom"] }}</button>
 				</div>
 			</div>

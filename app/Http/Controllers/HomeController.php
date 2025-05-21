@@ -6,6 +6,8 @@ use App\Http\Controllers\AiConvController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\InvitationController;
+use App\Http\Controllers\AppSystemPromptController;
+use App\Http\Controllers\LocalizationController;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
@@ -14,19 +16,29 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
-use App\Services\AI\ModelUtilityService;
+use App\Services\AI\AIConnectionService;
 use App\Models\User;
+//use App\Http\Controllers\SettingsController;
 
 
 class HomeController extends Controller
 {
     protected $languageController;
+    protected $appSystemPromptController;
+    protected $localizationController;
 
-    // Inject LanguageController instance
-    public function __construct(LanguageController $languageController, ModelUtilityService $utilities)
+    // Inject controllers
+    public function __construct(
+        LanguageController $languageController, 
+        AIConnectionService $aiConnService, 
+        AppSystemPromptController $appSystemPromptController,
+        LocalizationController $localizationController
+    )
     {
         $this->languageController = $languageController;
-        $this->utilities = $utilities;
+        $this->aiConnService = $aiConnService;
+        $this->appSystemPromptController = $appSystemPromptController;
+        $this->localizationController = $localizationController;
     }
 
     /// Redirects user to Home Layout
@@ -40,6 +52,12 @@ class HomeController extends Controller
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
+
+        // get System Prompts
+        $systemPrompts = $this->appSystemPromptController->getDefaultPrompts();
+
+        // Get localized texts
+        $localizedTexts = $this->localizationController->getAllLocalizedContent();
 
         // get the first part of the path if there's a slug.
         $requestModule = explode('/', $request->path())[0];
@@ -69,7 +87,7 @@ class HomeController extends Controller
         Session::put('last-route', 'home');
 
 
-        $models = $this->utilities->getModels();
+        $models = $this->aiConnService->getAvailableModels();
 
         // Pass translation, authenticationMethod, and authForms to the view
         return view('modules.' . $requestModule, 
@@ -80,7 +98,9 @@ class HomeController extends Controller
                             'userData',
                             'activeModule',
                             'activeOverlay',
-                            'models'));
+                            'models',
+                            'systemPrompts',
+                            'localizedTexts'));
     }
 
     public function print($module, $slug){
@@ -111,7 +131,7 @@ class HomeController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
         
-        $models = $this->utilities->getModels();
+        $models = $this->aiConnService->getAvailableModels();
 
         $activeModule = $module;
         return view('layouts.print_template', 
@@ -143,7 +163,8 @@ class HomeController extends Controller
 
     public function dataprotectionIndex(Request $request){
         $translation = $this->languageController->getTranslation();
-        return view('layouts.dataprotection', compact('translation'));
+        $dataProtectionContent = $this->localizationController->getLocalizedContent('data_protection');
+        return view('layouts.dataprotection', compact('translation', 'dataProtectionContent'));
     }
 }
 

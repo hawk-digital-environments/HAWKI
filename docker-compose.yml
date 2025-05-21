@@ -1,0 +1,115 @@
+services:
+    node:
+        container_name: ${PROJECT_NAME}-node
+        image: ${PROJECT_NAME}-node:dev
+        build:
+            context: .
+            target: node_dev
+            args:
+                - DOCKER_RUNTIME=${DOCKER_RUNTIME:-docker}
+                - DOCKER_GID=${DOCKER_GID:-1000}
+                - DOCKER_UID=${DOCKER_UID:-1000}
+        restart: no
+        volumes:
+            - ./docker/certs:/var/www/certs
+            - ./:/var/www/html
+        environment:
+            - DOCKER_PROJECT_INSTALLED=${DOCKER_PROJECT_INSTALLED:-"false"}
+            - DOCKER_PROJECT_DOMAIN=${DOCKER_PROJECT_DOMAIN:-localhost}
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:8000:8000
+    app:
+        container_name: ${PROJECT_NAME}-app
+        image: ${PROJECT_NAME}-app:dev
+        build:
+            context: .
+            target: app_dev
+            args:
+                - DOCKER_RUNTIME=${DOCKER_RUNTIME:-docker}
+                - DOCKER_GID=${DOCKER_GID:-1000}
+                - DOCKER_UID=${DOCKER_UID:-1000}
+        restart: no
+        volumes:
+            - php_socket:/var/run/php
+            - ./:/var/www/html
+        healthcheck:
+            test: cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
+            interval: 10s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        depends_on:
+            mysql:
+                condition: service_healthy
+    redis:
+        container_name: ${PROJECT_NAME}-redis
+        image: redis:latest
+        restart: always
+        volumes:
+            - redis_data:/root/redis
+        environment:
+            - REDIS_PASSWORD=password
+            - REDIS_PORT=6379
+            - REDIS_DATABASES=16
+    mysql:
+        container_name: ${PROJECT_NAME}-mysql
+        image: mysql:8.0
+        command:
+            - --default-authentication-plugin=mysql_native_password
+            - --max_connections=2000
+        environment:
+            MYSQL_ROOT_PASSWORD: password
+            MYSQL_DATABASE: $DB_DATABASE
+            MYSQL_USER: $DB_USERNAME
+            MYSQL_PASSWORD: $DB_PASSWORD
+        ulimits:
+            nofile:
+                soft: 65536
+                hard: 65536
+        restart: no
+        volumes:
+            - mysql_data:/var/lib/mysql
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:${DB_PORT:-3306}:3306
+        healthcheck:
+            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            start_period: 2s
+            timeout: 20s
+            interval: 5s
+            retries: 10
+    nginx:
+        image: nginx:1.27-alpine
+        container_name: ${PROJECT_NAME}-nginx
+        volumes:
+            - ./docker/certs:/etc/nginx/certs
+            - ./docker/nginx/config/nginx.dev${DOCKER_PROJECT_SSL_MARKER:-}.conf:/etc/nginx/nginx.conf:ro
+            - ./public:/var/www/html/public
+            - ./storage/app/public:/var/www/html/storage
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
+        depends_on:
+            - app
+        healthcheck:
+            test: curl --fail http://localhost || exit 1
+            interval: 10s
+            timeout: 3s
+            retries: 3
+            start_period: 10s
+    mailhog:
+        container_name: ${PROJECT_NAME}-mailhog
+        image: mailhog/mailhog:v1.0.1
+        restart: no
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:1025:1025
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:${MAILHOG_PORT:-8025}:8025
+volumes:
+    php_socket: { }
+    mysql_data:
+        driver: local
+    redis_data:
+        driver: local

@@ -1,4 +1,4 @@
-# HAWKI Model Connection
+# Model Connection
 
 This document describes the architecture and implementation of HAWKI's AI model connection system, including the data flow, components, and how to add new AI providers.
 
@@ -17,7 +17,7 @@ This document describes the architecture and implementation of HAWKI's AI model 
 
 HAWKI's AI integration uses a service-based architecture to process requests to various AI models (OpenAI, GWDG, Google). The system follows a factory and strategy pattern to abstract the connection to different AI service providers while maintaining a consistent interface.
 
-![HAWKI AI Integration Architecture](../img/architecture_diagram.png)
+<!-- ![HAWKI AI Integration Architecture](../img/architecture_diagram.png) -->
 
 Key features include:
 - Support for multiple AI providers (OpenAI, Google, GWDG)
@@ -43,11 +43,6 @@ The AI connection system consists of the following key components:
 - **BaseAIModelProvider**: Abstract base class with common functionality
 - **Provider Implementations**: Concrete implementations for each AI service (OpenAI, GWDG, Google)
 
-<!-- ### Legacy Components (Being Phased Out)
-- **AiPayloadFormatterService**: Formats user messages into provider-specific payloads
-- **ModelConnectionService**: Manages the HTTP connections to AI model providers
-- **AiResponseFormatterService**: Processes and formats responses from AI models
-- **ModelUtilityService**: Provides utility functions for model configuration and provider detection -->
 
 ## Data Flow
 
@@ -65,7 +60,7 @@ The AI connection system consists of the following key components:
 
 ### Request Payload Structure
 
-```php
+```js
 $validatedData = $request->validate([
     'payload.model' => 'required|string',
     'payload.stream' => 'required|boolean',
@@ -86,7 +81,7 @@ $validatedData = $request->validate([
 ### Response Structure
 
 For non-streaming responses:
-```php
+```js
 [
     'content' => 'Response text from AI model',
     'usage' => [
@@ -97,7 +92,7 @@ For non-streaming responses:
 ```
 
 For streaming responses (per chunk):
-```php
+```js
 [
     'content' => 'Partial response text',
     'isDone' => false,
@@ -113,7 +108,7 @@ Each AI provider follows the same interface but implements provider-specific han
 
 All providers must implement the `AIModelProviderInterface`:
 
-```php
+```js
 interface AIModelProviderInterface
 {
     public function formatPayload(array $rawPayload): array;
@@ -131,7 +126,7 @@ interface AIModelProviderInterface
 
 The `BaseAIModelProvider` abstract class provides common functionality:
 
-```php
+```js
 abstract class BaseAIModelProvider implements AIModelProviderInterface
 {
     protected $config;
@@ -160,7 +155,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
 
 #### OpenAI Provider
 
-```php
+```js
 class OpenAIProvider extends BaseAIModelProvider
 {
     public function formatPayload(array $rawPayload): array
@@ -179,7 +174,7 @@ class OpenAIProvider extends BaseAIModelProvider
 
 #### Google Provider
 
-```php
+```js
 class GoogleProvider extends BaseAIModelProvider
 {
     public function formatPayload(array $rawPayload): array
@@ -204,7 +199,7 @@ Adding a new AI provider to HAWKI is a straightforward process that involves cre
 
 Create a new class in the `app/Services/AI/Providers` directory that extends `BaseAIModelProvider`:
 
-```php
+```js
 <?php
 
 namespace App\Services\AI\Providers;
@@ -410,7 +405,7 @@ class OllamaProvider extends BaseAIModelProvider
 
 Update the `AIProviderFactory` class to include your new provider:
 
-```php
+```js
 public function getProviderForModel(string $modelId): AIModelProviderInterface
 {
     $providerId = $this->getProviderId($modelId);
@@ -434,7 +429,7 @@ public function getProviderForModel(string $modelId): AIModelProviderInterface
 
 Add your new provider to the `config/model_providers.php` file:
 
-```php
+```js
 'ollama' => [
     'id' => 'ollama',
     'active' => true,
@@ -485,7 +480,7 @@ HAWKI's model connection system supports both streaming and non-streaming reques
 
 Non-streaming requests wait for the complete response before returning to the client:
 
-```php
+```js
 // In AIConnectionService
 public function processRequest(array $rawPayload, bool $streaming = false, ?callable $streamCallback = null)
 {
@@ -509,7 +504,7 @@ public function processRequest(array $rawPayload, bool $streaming = false, ?call
 
 Streaming requests send partial responses to the client as they become available:
 
-```php
+```js
 // In StreamController
 private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
 {
@@ -545,7 +540,7 @@ The system includes error handling at multiple levels:
 
 Example error handling:
 
-```php
+```js
 try {
     $provider = $this->providerFactory->getProviderForModel($modelId);
     $formattedPayload = $provider->formatPayload($rawPayload);
@@ -560,7 +555,7 @@ try {
 
 The `UsageAnalyzerService` tracks AI model usage for analytics and billing:
 
-```php
+```js
 public function submitUsageRecord($usage, $type, $model, $roomId = null) {
     $today = Carbon::today();
     $userId = Auth::user()->id;

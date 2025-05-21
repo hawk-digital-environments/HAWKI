@@ -2,6 +2,8 @@
 
 return [
 
+    'authentication_method' => env('APP_AUTHENTICATION_METHOD'),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Defaults
@@ -39,7 +41,7 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
-        ],
+        ]
     ],
 
     /*

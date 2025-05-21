@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class AiConvController extends Controller
 {
@@ -222,17 +223,16 @@ class AiConvController extends Controller
 
 
     public function updateMessage(Request $request, $slug) {
-
+        
         $validatedData = $request->validate([
             'message_id' => 'required|string',
             'content' => 'required|string|max:10000',
             'iv' => 'required|string',
             'tag' => 'required|string',
-            'model' => 'string',
+            'model' => 'nullable|string',
             'completion' => 'required|boolean',
-        ]);
+        ]);     
 
-        error_log(json_encode($validatedData));
         $conv = AiConv::where('slug', $slug)->firstOrFail();
         if ($conv->user_id !== Auth::id()) {
             return response()->json(['error' => 'Access denied'], 403);

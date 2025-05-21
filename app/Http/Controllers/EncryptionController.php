@@ -185,12 +185,14 @@ class EncryptionController extends Controller
                     'keychain' => $validatedData['ciphertext'],
                 ]
             );
+
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,
                 'error' => $error->getMessage()
             ]);
         }
+
         
         return response()->json([
             'success' => true,

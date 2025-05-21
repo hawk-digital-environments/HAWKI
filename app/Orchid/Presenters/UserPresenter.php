@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Orchid\Presenters;
 
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Scout\Builder;
 use Orchid\Screen\Contracts\Personable;
@@ -53,6 +54,13 @@ class UserPresenter extends Presenter implements Personable, Searchable
      */
     public function image(): ?string
     {
+        // Check if an avatar_id is present
+        if (!empty($this->entity->avatar_id)) {
+            // Add the complete storage URL to the file name
+            return Storage::disk('public')->url('profile_avatars/' . $this->entity->avatar_id);
+        }
+        
+        // Fallback to Gravatar if no avatar_id is set
         $hash = md5(strtolower(trim($this->entity->email)));
 
         $default = urlencode('https://raw.githubusercontent.com/orchidsoftware/.github/main/web/avatars/gravatar.png');

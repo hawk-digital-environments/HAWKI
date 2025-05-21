@@ -16,15 +16,15 @@ class CreateUsageRecordsTable extends Migration
         Schema::create('usage_records', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('room_id')->nullable()->constrained()->onDelete('set null'); // Foreign key to rooms (nullable for private chats)
+            $table->foreignId('room_id')->nullable()->constrained()->onDelete('set null');
 
             $table->unsignedBigInteger('prompt_tokens')->default(0);
             $table->unsignedBigInteger('completion_tokens')->default(0);
 
+            // ToDo: add "system" type for title generation
             $table->enum('type', ['private', 'group']); // To differentiate chat type
 
             $table->string('model');
-            // $table->enum('type', ['private', 'group']); // To differentiate chat type
             $table->timestamps();
 
         });
