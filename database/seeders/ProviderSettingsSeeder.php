@@ -13,7 +13,7 @@ class ProviderSettingsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Lade die Standard-Konfiguration aus der model_providers.php.example
+        // Load the default configuration from the model_providers.php.example file
         $configPath = config_path('model_providers.php.example');
         
         if (!file_exists($configPath)) {
@@ -21,7 +21,7 @@ class ProviderSettingsSeeder extends Seeder
             return;
         }
         
-        // Direkt die Beispiel-Konfigurationsdatei laden
+        // Directly load the example configuration file
         $config = require $configPath;
 
         if (!$config || !isset($config['providers']) || !is_array($config['providers'])) {
@@ -34,7 +34,7 @@ class ProviderSettingsSeeder extends Seeder
         foreach ($providers as $providerName => $providerConfig) {
             $this->command->info("Importiere Provider: {$providerName}");
 
-            // Erstelle Standarddaten für den Provider
+            // Create default data for the provider
             $providerData = [
                 'provider_name' => $providerName,
                 'api_key' => $providerConfig['api_key'] ?? null,
@@ -44,7 +44,7 @@ class ProviderSettingsSeeder extends Seeder
                 'api_format' => $providerConfig['api_format'] ?? $providerName,
             ];
 
-            // Speichere zusätzliche Einstellungen im additional_settings Feld
+            // Save additional settings in the additional_settings field
             $additionalSettings = [];
             foreach ($providerConfig as $key => $value) {
                 if (!in_array($key, ['api_key', 'api_url', 'base_url', 'ping_url', 'active', 'is_active', 'api_format'])) {
@@ -56,7 +56,7 @@ class ProviderSettingsSeeder extends Seeder
                 $providerData['additional_settings'] = json_encode($additionalSettings); // Hier zu JSON konvertieren
             }
 
-            // Erstelle oder aktualisiere den Provider in der Datenbank
+            // Create or update the provider in the database
             ProviderSetting::updateOrCreate(
                 ['provider_name' => $providerName],
                 $providerData
