@@ -120,17 +120,11 @@ class SystemSettingsScreen extends Screen
         return [
             Button::make($this->isMaintenanceModeActive() ? 'Unlock System' : 'Lock System')
                 ->icon($this->isMaintenanceModeActive() ? 'bs.lock' : 'bs.unlock')
-                //->class($this->isMaintenanceModeActive() ? 'btn-warning' : 'btn-info')
                 ->confirm($this->isMaintenanceModeActive() 
                     ? 'This will disable the maintenance mode. The website will be available to all users.' 
                     : 'This will put the application into maintenance mode. Only users with bypass access will be able to access the site.')
                 ->method('toggleMaintenanceMode'),
-                
-            //Button::make('Run Settings Seeder')
-            //    ->icon('refresh')
-            //    ->confirm('This will reload settings from config files using the AppSettingsSeeder. Any manual changes may be overwritten. Continue?')
-            //    ->method('runSettingsSeeder'),
-                
+                   
             Button::make('Save')
                 ->icon('save')
                 ->method('saveSettings'),
@@ -483,8 +477,7 @@ class SystemSettingsScreen extends Screen
                             ->addclass('fw-bold'),
                         Input::make("settings.{$key}")
                             ->type('password')
-                            ->placeholder('••••••••')
-                            ->value(''),  // Leerer Wert - Passwort wird nicht angezeigt, aber kann neu gesetzt werden
+                            ->value(''),
                     ])
                     ->alignCenter()
                     ->widthColumns('1fr 1fr');
@@ -752,11 +745,22 @@ class SystemSettingsScreen extends Screen
             Artisan::call('up');
             Toast::success('Maintenance mode has been disabled.');
         } else {
+            // Generate a secret bypass path
+            $secret = 'admin-bypass-' . md5(now());
+            
             Artisan::call('down', [
-                '--refresh' => '60',  // Seite alle 60 Sekunden aktualisieren
-                '--secret' => 'admin-bypass-' . md5(now()),  // Geheimer URL-Pfad, um Maintenance-Modus zu umgehen
+                '--refresh' => '60',  // Refresh the page every 60 seconds
+                '--secret' => $secret,  // Secret URL path to bypass maintenance mode
             ]);
-            Toast::success('Maintenance mode has been enabled.');
+            
+            // Generate the full URL for the admin bypass
+            $bypassUrl = url($secret);
+            
+            Toast::info('Maintenance mode has been enabled. Admin bypass URL: ' . $bypassUrl)
+                ->persistent();
+            
+            // Log the link in case of any issues
+            Log::info('Maintenance mode enabled with bypass URL: ' . $bypassUrl);
         }
         
         return redirect()->back();
