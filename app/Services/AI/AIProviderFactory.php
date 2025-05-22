@@ -10,6 +10,8 @@ use App\Services\AI\Providers\GWDGProvider;
 use App\Services\AI\Providers\GoogleProvider;
 use App\Services\AI\Providers\OllamaProvider;
 use App\Services\AI\Providers\OpenWebUIProvider;
+use App\Services\AI\Providers\HAWKIProvider;
+
 use Illuminate\Support\Facades\Log;
 
 class AIProviderFactory
@@ -146,6 +148,8 @@ class AIProviderFactory
             'openWebUi' => 'App\Services\AI\Providers\OpenWebUIProvider',
             'google' => 'App\Services\AI\Providers\GoogleProvider',
             'ollama' => 'App\Services\AI\Providers\OllamaProvider',
+            'hawki' => 'App\Services\AI\Providers\HAWKIProvider',
+
 
             // Add more providers here
         ];
