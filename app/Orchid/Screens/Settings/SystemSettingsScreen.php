@@ -4,10 +4,12 @@ namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppSetting;
 use App\Services\SettingsService;
+use App\Http\Controllers\TestConfigValueController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;  // Fehlender Import hinzugefügt
+use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Fields\Code;
@@ -56,8 +58,10 @@ class SystemSettingsScreen extends Screen
         $configData = [];
         $rawResponse = '';
         try {
-            $response = Http::get(url('/test-config-value'));
-            $responseData = $response->json();
+            // Direct invocation of the controller instead of an HTTP request
+            $controller = new TestConfigValueController();
+            $response = $controller->__invoke();
+            $responseData = $response->getData(true);
             $rawResponse = json_encode($responseData, JSON_PRETTY_PRINT);
             
             // Extract config_values
@@ -535,24 +539,24 @@ class SystemSettingsScreen extends Screen
         $count = 0;
         
         if ($settings) {
-            // Sammle nur Einträge, die sich tatsächlich geändert haben
+            // Collect only entries that have actually changed
             $changedSettings = [];
             
             foreach ($settings as $key => $value) {
-                // Passwortfelder nur speichern, wenn sie nicht leer sind
+                // Only save password fields if they are not empty
                 if ((str_contains($key, 'bind_pw') || str_contains($key, 'password') || str_contains($key, 'secret')) && empty($value)) {
                     continue;
                 }
                 
-                // Da die Keys bereits mit Unterstrichen in der DB sind, können wir direkt suchen
+                // Since the keys are already stored with underscores in the database, we can search directly
                 $setting = AppSetting::where('key', $key)->first();
                 
                 if ($setting) {
-                    // Umwandlung des Werts basierend auf dem Typ für einen korrekten Vergleich
+                    // Transform the value based on its type for proper comparison
                     $normalizedNewValue = $this->normalizeValue($value, $setting->type);
                     $normalizedExistingValue = $this->normalizeValue($setting->value, $setting->type);
                     
-                    // Vergleich der normalisierten Werte für Änderungserkennung
+                    // Comparison of normalized values for change detection
                     if ($normalizedExistingValue !== $normalizedNewValue) {
                         $changedSettings[] = [
                             'key' => $key,
@@ -566,19 +570,19 @@ class SystemSettingsScreen extends Screen
                 }
             }
             
-            // Führe Updates nur für geänderte Einstellungen durch
+            // Perform updates only for changed settings
             foreach ($changedSettings as $changed) {
                 $setting = $changed['model'];
                 $formattedValue = $this->formatValueForStorage($changed['value'], $changed['type']);
                 
-                // Aktualisiere die Einstellung
+                // Update the setting
                 $setting->value = $formattedValue;
                 $setting->save();
                 
                 // Cache für diese Einstellung löschen
                 Cache::forget('app_settings_' . $setting->key);
                 
-                // Auch den Config-Cache für diese Quelle löschen, falls vorhanden
+                // Also clear the config cache for this source, if it exists
                 if ($setting->source) {
                     Cache::forget('config_' . $setting->source);
                 }
@@ -586,21 +590,21 @@ class SystemSettingsScreen extends Screen
                 $count++;
             }
             
-            // Benutzer-Feedback basierend auf den Änderungen
+            // User feedback based on the changes
             if ($count > 0) {
-                // Gesamten Konfigurationscache löschen
+                // Clear the entire configuration cache
                 try {
                     Artisan::call('config:clear');
                     
-                    // Löschen des spezifischen Config-Override-Caches
+                    // Clear the specific config override cache
                     \App\Providers\ConfigServiceProvider::clearConfigCache();
                     
-                    Toast::success("{$count} System-Einstellungen wurden aktualisiert und der Konfigurationscache wurde geleert.");
+                    Toast::success("{$count} system settings have been updated, and the configuration cache has been cleared.");
                 } catch (\Exception $e) {
-                    Toast::warning("Einstellungen gespeichert, aber Cache-Leeren fehlgeschlagen: " . $e->getMessage());
+                    Toast::warning("Settings saved, but clearing cache failed: " . $e->getMessage());
                 }
             } else {
-                Toast::info("Keine Änderungen erkannt");
+                Toast::info("No changes detected");
             }
         }
         
@@ -615,24 +619,24 @@ class SystemSettingsScreen extends Screen
     public function runSettingsSeeder()
     {
         try {
-            // Führe den AppSettingsSeeder aus und erfasse die Ausgabe
+            // Run the AppSettingsSeeder and capture the output
             \Artisan::call('db:seed', [
                 '--class' => 'Database\Seeders\AppSettingsSeeder'
             ]);
             
-            // Erfasse die Ausgabe direkt
+            // Capture the output directly
             $output = \Artisan::output();
             
-            // Konfigurationscache leeren, um neue Einstellungen zu aktivieren
+            // Clear the configuration cache to activate new settings
             Artisan::call('config:clear');
             
-            // Löschen des spezifischen Config-Override-Caches
+            // Clear the specific config override cache
             \App\Providers\ConfigServiceProvider::clearConfigCache();
             
-            // Zeige die unveränderte Ausgabe als Erfolgsmeldung an
+            // Display the unmodified output as a success message
             Toast::success('Settings Seeder Output: ' . PHP_EOL . $output);
             
-            // Logging für Diagnosezwecke
+            // Logging for diagnostic purposes
             Log::info('AppSettingsSeeder Output: ' . $output);
             
         } catch (\Exception $e) {
@@ -655,18 +659,18 @@ class SystemSettingsScreen extends Screen
     {
         switch ($type) {
             case 'boolean':
-                // Konvertiere in einen booleschen Wert für konsistenten Vergleich
+                // Convert to a boolean value for consistent comparison
                 if (is_string($value)) {
                     return filter_var($value, FILTER_VALIDATE_BOOLEAN);
                 }
                 return (bool) $value;
                 
             case 'integer':
-                // Konvertiere in eine Ganzzahl für konsistenten Vergleich
+                // Convert to an integer for consistent comparison
                 return (int) $value;
                 
             case 'json':
-                // Dekodiere JSON-Strings zu Arrays/Objekten für einen strukturellen Vergleich
+                // Decode JSON strings into arrays/objects for structural comparison
                 if (is_string($value)) {
                     try {
                         $decoded = json_decode($value, true);
@@ -674,14 +678,14 @@ class SystemSettingsScreen extends Screen
                             return $decoded;
                         }
                     } catch (\Exception $e) {
-                        // Bei Fehler den Originalwert zurückgeben
+                        // In case of an error, return the original value
                     }
                 }
-                // Wenn es bereits ein Array ist oder die Dekodierung fehlschlägt
+                // If it's already an array or decoding fails
                 return $value;
                 
             default:
-                // Für Strings und andere Typen als String zurückgeben
+                // Return as string for strings and other types
                 return (string) $value;
         }
     }
@@ -697,32 +701,32 @@ class SystemSettingsScreen extends Screen
     {
         switch ($type) {
             case 'boolean':
-                // Speichere als 'true' oder 'false' String
+                // Store as 'true' or 'false' string
                 return (filter_var($value, FILTER_VALIDATE_BOOLEAN)) ? 'true' : 'false';
                 
             case 'integer':
-                // Konvertiere zu String für Speicherung
+                // Convert to string for storage
                 return (string) (int) $value;
                 
             case 'json':
-                // Konvertiere Array/Objekt zu JSON-String
+                // Convert array/object to JSON string
                 if (is_array($value) || is_object($value)) {
                     return json_encode($value);
                 } elseif (is_string($value)) {
                     try {
-                        // Versuche zu dekodieren und wieder zu kodieren, um ein konsistentes Format zu gewährleisten
+                        // Attempt to decode and re-encode to ensure a consistent format
                         $decoded = json_decode($value, true);
                         if (json_last_error() === JSON_ERROR_NONE) {
                             return json_encode($decoded);
                         }
                     } catch (\Exception $e) {
-                        // Bei Fehler: Original zurückgeben, wenn es ein gültiger JSON-String ist
+                        // In case of an error: Return the original value if it is a valid JSON string
                     }
                 }
                 return $value;
                 
             default:
-                // Für alle anderen Typen als String zurückgeben
+                // Return as string for all other types
                 return (string) $value;
         }
     }
