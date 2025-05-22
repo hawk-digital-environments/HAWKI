@@ -6,13 +6,9 @@
 FROM node:23-bookworm AS node_root
 
 ARG APP_ENV=prod
-
 ENV APP_ENV=${APP_ENV}
-
 ARG DOCKER_RUNTIME=docker
-
 ARG DOCKER_GID=1000
-
 ARG DOCKER_UID=1000
 
 WORKDIR /var/www/html
@@ -24,7 +20,6 @@ WORKDIR /var/www/html
 FROM node_root AS node_dev
 
 ENV DOCKER_RUNTIME=${DOCKER_RUNTIME:-docker}
-
 ENV APP_ENV=dev
 
 # Add basics
@@ -48,9 +43,7 @@ RUN (userdel -r $(getent passwd "${DOCKER_UID}" | cut -d: -f1) || true) && \
 
 
 COPY docker/node/node.entrypoint.dev.sh /usr/bin/app/boot.sh
-
 RUN chmod +x /usr/bin/app/boot.sh
-
 ENTRYPOINT /usr/bin/app/boot.sh
 
 USER www-data
@@ -83,13 +76,9 @@ LABEL org.opencontainers.image.authors="HAWKI Team <ki@hawk.de>"
 LABEL org.opencontainers.image.description="The HAWKI application image"
 
 ARG APP_ENV=prod
-
 ENV APP_ENV=${APP_ENV}
-
 ARG DOCKER_RUNTIME=docker
-
 ARG DOCKER_GID=1000
-
 ARG DOCKER_UID=1000
 
 WORKDIR /var/www/html
@@ -130,7 +119,8 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
         xmlrpc \
         zip \
         redis \
-        pcntl
+        pcntl \
+        ldap
 
 # Add additional port for reverb
 EXPOSE 8080
