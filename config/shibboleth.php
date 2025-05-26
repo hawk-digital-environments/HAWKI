@@ -7,8 +7,9 @@ return [
 
     'attribute_map' => [
         'email' => env('SHIBBOLETH_EMAIL_VAR', 'mail'),
-        'employeetype' => env('SHIBBOLETH_EMPLOYEETYPE_VAR', 'employee'),
-        'name' => env('SHIBBOLETH_NAME_VAR', 'displayname'),
+        'employeetype' => env('SHIBBOLETH_EMPLOYEETYPE_VAR', 'affiliation'),
+        'gname' => env('SHIBBOLETH_GNAME_VAR', 'givenName'),
+        'sname' => env('SHIBBOLETH_SNAME_VAR', 'sn'),
     ],
 
 ];
