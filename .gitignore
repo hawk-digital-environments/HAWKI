@@ -22,3 +22,4 @@ yarn-error.log
 /.vscode
 config/model_providers.php
 docker-compose.override.yml
+.DS_Store
