@@ -1020,6 +1020,17 @@ button:disabled{
     border-radius: 6px;
     border: 1px solid #ccc;
 }
+.transcript-file-preview {
+	font-size: 14px;
+	color: #444;
+	background-color: #f4f4f4;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid #ddd;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
 /* #overlay-logo{
 
     width: 15rem;
