@@ -14,6 +14,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TranscriptController;
 
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\AdminAccess;
@@ -66,6 +67,7 @@ Route::middleware('prevent_back')->group(function () {
 
         Route::get('/transcript', [HomeController::class, 'show']);
         Route::get('/transcript/{slug?}' , [HomeController::class, 'show']);
+        Route::post('/transcript/upload', [TranscriptController::class, 'upload']);
     
         
         Route::get('/req/conv/{slug?}', [AiConvController::class, 'loadConv']);
