@@ -790,7 +790,19 @@
     padding-bottom: 1rem;
 }
 
-
+.gen-stat-element{
+    font-style: italic;
+    font-size: var(--font-xs);
+    width: fit-content;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    margin-bottom: 2rem;
+    /* background-color: var(--message-ai-bg); */
+    border: var(--border-stroke-thin);
+    border-radius: var(--border-radius-normal);
+} 
 
 /* SECTION: CHATLIST */
 .selection-list{

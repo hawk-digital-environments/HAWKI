@@ -140,22 +140,32 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
     buildRequestObject(msgAttributes, async (data, done) => {
 
         if(data){
+            if(data.type === 'status'){
+                createStatusElement('isGenerating', msgAttributes.threadIndex);
+                return;
+            }
+            else{
+                removeStatusElement(msgAttributes.threadIndex);
+            }
+
+            const messageData = data.messageData;
+
             if(!msgAttributes['broadcasting'] && msgAttributes['stream']){
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }
 
             // console.log(data.content);
-            const {messageText, groundingMetadata} = deconstContent(data.content);
+            const {messageText, groundingMetadata} = deconstContent(messageData.content);
             if(groundingMetadata != ""){
                 metadata = groundingMetadata;
             }
             
             const content = messageText;
             msg += content;
-            messageObj = data;
+            messageObj = messageData;
             messageObj.message_role = 'assistant';
             messageObj.content = content;
-            messageObj.completion = data.isDone;
+            messageObj.completion = messageData.isDone;
             messageObj.model = msgAttributes['model'];
 
             if (!messageElement) {
@@ -370,15 +380,15 @@ async function generateChatName(firstMessage, convItem) {
         threadIndex: '', 
         slug: '',
     };
-
+    // NOTE:
     return new Promise((resolve, reject) => {
         postData(requestObject)
         .then(response => {
             const convElement = convItem.querySelector('.label');
             let convName = ""; // Initialize to an empty string
             const onData = (data, done) => {
-                if (data) {
-                    convName += deconstContent(data.content).messageText;
+                if (data && 'messageData' in data) {
+                    convName += deconstContent(data.messageData.content).messageText;
                     convElement.innerText = convName;
                 }
                 if (done) {

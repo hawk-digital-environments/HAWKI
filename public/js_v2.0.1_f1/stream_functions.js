@@ -33,16 +33,16 @@ function buildRequestObject(msgAttributes, onData) {
 
         // Check if broadcasting is true
         if (!msgAttributes['broadcasting']) {
-            if(stream){
+            // if(stream){
                 if(response === 'AbortError'){
                     onData('AbortError');
                 }
                 // pass stream callback (response) to processStream
                 processStream(response.body, onData);
-            }
-            else{
-                processResponse(response, onData);
-            }
+            // }
+            // else{
+            //     processResponse(response, onData);
+            // }
         }
     })
     .catch(error => {
@@ -112,19 +112,18 @@ async function processStream(stream, onData) {
                     try {
                         const data = JSON.parse(part);
                         //send back the data
-                        if(data.isDone){
+                        if ('messageData' in data && data.messageData.isDone){
                             onData(data, true);
                             return;
                         }
+                        console.log(data);
                         onData(data, false);
-
 
                     } catch (error) {
                         console.error('Error parsing JSON:', error);
                     }
                 }
             }
-
         }
     }
     catch (error) {
@@ -251,8 +250,8 @@ async function requestPromptImprovement(sender) {
     postData(requestObject)
     .then(response => {
         const onData = (data, done) => {
-            if (data && data.content != "") {
-                result += deconstContent(JSON.parse(data.content).text).messageText
+            if (data && data.messageData.content != "") {
+                result += deconstContent(JSON.parse(data.messageData.content).text).messageText
                 inputField.value = result.trim();
                 resizeInputField(inputField);   
             }
@@ -307,7 +306,9 @@ async function requestChatlogSummery(msgs = null) {
         return new Promise((resolve, reject) => {
             const onData = (data, done) => {
                 if (done) {
-                    resolve(deconstContent(data.content.text).messageText);
+
+                    resolve(deconstContent(JSON.parse(data.messageData.content).text).messageText);
+
                 }
             };
             processResponse(response, onData);
