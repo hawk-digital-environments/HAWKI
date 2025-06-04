@@ -95,7 +95,7 @@
 <script>
     let userInfo = @json($userInfo);
     initializeRegistration();
-    window.addEventListener('DOMContentLoaded', switchSlide(4));
+    window.addEventListener('DOMContentLoaded', switchSlide(1));
 
     setTimeout(() => {
         if(@json($activeOverlay)){

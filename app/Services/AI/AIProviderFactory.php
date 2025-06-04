@@ -8,6 +8,7 @@ use App\Services\AI\Providers\GWDGProvider;
 use App\Services\AI\Providers\GoogleProvider;
 use App\Services\AI\Providers\OllamaProvider;
 use App\Services\AI\Providers\OpenWebUIProvider;
+use App\Services\AI\Providers\RagProvider;
 
 
 class AIProviderFactory
@@ -55,6 +56,8 @@ class AIProviderFactory
                 return new OllamaProvider($this->config['providers']['ollama']);
             case 'openWebUi':
                 return new OpenWebUIProvider($this->config['providers']['openWebUi']);
+            case 'rag':
+                return new RagProvider($this->config['providers']['rag']);
             default:
                 throw new \Exception("Unsupported provider: {$providerId}");
         }

@@ -31,14 +31,8 @@ class User extends Authenticatable
 
     public function rooms()
     {
-        return $this->hasManyThrough(
-            Room::class,
-            Member::class,
-            'user_id', // Foreign key on the members table
-            'id',      // Foreign key on the rooms table
-            'id',      // Local key on the users table
-            'room_id'  // Local key on the members table
-        );
+        return $this->belongsToMany(Room::class, 'members', 'user_id', 'room_id')
+                    ->wherePivot('isRemoved', false);
     }
 
     // Define the relationship with AiConv

@@ -1,0 +1,10 @@
+[
+    {
+        "username": "tester",
+        "password": "123",
+        "name": "TheTester",
+        "email": "tester@MyUni.de",
+        "employeetype": "Tester",
+        "avatar_id": ""
+    }
+]
