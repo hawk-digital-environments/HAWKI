@@ -77,11 +77,11 @@ class RagProvider extends BaseAIModelProvider
     public function formatStreamChunk(string $chunk): array
     {
         $jsonChunk = json_decode($chunk, true);
-        
+
         $content = '';
         $isDone = false;
         $usage = null;
-        
+        $type = null;
         // Check for the finish_reason flag
         if (isset($jsonChunk['choices'][0]['finish_reason']) && $jsonChunk['choices'][0]['finish_reason'] === 'stop') {
             $isDone = true;
@@ -91,18 +91,29 @@ class RagProvider extends BaseAIModelProvider
         if (!empty($jsonChunk['usage'])) {
             $usage = $this->extractUsage($jsonChunk);
             Log::info('Vector DB', ['model' => $jsonChunk['model'], 'usage' => $usage]);
-
         }
         
+        if(isset($jsonChunk['type']) && !empty($jsonChunk['type'])){
+            if($jsonChunk['type'] === 'ragStatus'){{
+                $type = 'status';
+            }}
+            else{
+                $type = 'message';
+            }
+        }
+
         // Extract content if available
         if (isset($jsonChunk['choices'][0]['delta']['content'])) {
             $content = $jsonChunk['choices'][0]['delta']['content'];
         }
-        
+
         return [
-            'content' => $content,
+            'content' => [
+                'text' => $content,
+            ],
             'isDone' => $isDone,
-            'usage' => $usage
+            'usage' => $usage,
+            'type' => $type
         ];
     }
     

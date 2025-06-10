@@ -12,6 +12,7 @@ function initializeMessageFormating() {
 }
 
 function formatChunk(chunk, groundingMetadata) {
+
   // Validate input
   if (chunk === undefined || chunk === null) {
     console.warn('Received empty chunk in formatChunk');

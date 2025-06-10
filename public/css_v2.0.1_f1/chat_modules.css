@@ -797,12 +797,15 @@
     height: 2rem;
     display: flex;
     align-items: center;
-    padding: 0 2rem;
+    padding: 1.1rem 2rem;
     margin-bottom: 2rem;
     /* background-color: var(--message-ai-bg); */
     border: var(--border-stroke-thin);
     border-radius: var(--border-radius-normal);
 } 
+.gen-stat-element .stat-txt{
+    margin: 0 !important;
+}
 
 /* SECTION: CHATLIST */
 .selection-list{

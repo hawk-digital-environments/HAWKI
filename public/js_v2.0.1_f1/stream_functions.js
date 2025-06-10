@@ -116,7 +116,6 @@ async function processStream(stream, onData) {
                             onData(data, true);
                             return;
                         }
-                        console.log(data);
                         onData(data, false);
 
                     } catch (error) {

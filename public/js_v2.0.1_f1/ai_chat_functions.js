@@ -141,15 +141,20 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
         if(data){
             if(data.type === 'status'){
-                createStatusElement('isGenerating', msgAttributes.threadIndex);
+                if(isUpdate){
+                    createStatusElement(data.status_info.message, null, messageElement);
+                }
+                else{
+                    createStatusElement(data.status_info.message, msgAttributes.threadIndex);
+                }
                 return;
             }
             else{
                 removeStatusElement(msgAttributes.threadIndex);
             }
-
+            
             const messageData = data.messageData;
-
+            console.log(messageData);
             if(!msgAttributes['broadcasting'] && msgAttributes['stream']){
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }

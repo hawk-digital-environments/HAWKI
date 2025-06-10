@@ -1,15 +1,35 @@
-window.addEventListener('keydown', async (event) => {
-    if(event.key == "Z" && event.shiftKey){
-        createStatusElement('Generating', '0.000');
+
+
+
+function createStatusElement(status, threadIndex = 0, messageElement = null){
+    if(messageElement){
+        onMessageElement(status, messageElement);
     }
-    if(event.key == "X" && event.shiftKey){
-        createStatusElement('Updating', '0.000');
+    else{
+        onStatElement(status, threadIndex);
     }
-});
+}
 
 
+function onMessageElement(status, messageElement){
+    const txtEl = messageElement.querySelector('.message-text');
+    let statElement = document.querySelector(`.gen-stat-element[data-index="${threadIndex}"]`);
 
-function createStatusElement(status, threadIndex = 0){
+    //create a new element for first status
+    if(!statElement){
+        const statTemp = document.getElementById('gen-stat-template')
+        const statClone = statTemp.content.cloneNode(true);
+        statElement = statClone.querySelector(".gen-stat-element");
+        statElement.dataset.index = threadIndex;
+        txtEl.appendChild(statElement);
+    }
+    const textEl = statElement.querySelector('.stat-txt');
+    textEl.innerText = status;
+    tripleDotAnime(statElement, status);
+}
+
+
+function onStatElement(status, threadIndex){
     let statElement = document.querySelector(`.gen-stat-element[data-index="${threadIndex}"]`);
     let activeThread = findThreadWithID(threadIndex);
 
@@ -35,6 +55,7 @@ function createStatusElement(status, threadIndex = 0){
 
     tripleDotAnime(statElement, status);
 }
+
 
 function removeStatusElement(threadIndex = 0){
     let statElement = document.querySelector(`.gen-stat-element[data-index="${threadIndex}"]`);

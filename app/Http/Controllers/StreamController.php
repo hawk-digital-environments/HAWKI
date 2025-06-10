@@ -133,7 +133,9 @@ class StreamController extends Controller
                     ]
                 ];
                 echo json_encode($response) . "\n";
-                ob_flush();
+                if (ob_get_length()) {
+                    ob_flush();
+                }
                 flush();
 
 
@@ -160,7 +162,9 @@ class StreamController extends Controller
                         ]
                     ];
                     echo json_encode($response) . "\n";
-                    ob_flush();
+                    if (ob_get_length()) {
+                        ob_flush();
+                    }
                     flush();
                     return;
                 }
@@ -219,7 +223,6 @@ class StreamController extends Controller
                 
                 // Format the chunk
                 $formatted = $provider->formatStreamChunk($chunk);
-                // Log::info('Formatted Chunk:' . json_encode($formatted));
 
                 // Record usage if available
                 if ($formatted['usage']) {
@@ -230,15 +233,17 @@ class StreamController extends Controller
                     );
                 }
                 
-                if(isset($result['status'])){
+                if(isset($formatted['type']) && $formatted['type'] === 'status'){
                     $response = [
                         'type'=>'status',
                         'status_info' => [
-                            'message'=> $result['message']
+                            'message'=> json_encode($formatted['content']['text'])
                         ]
                     ];
                     echo json_encode($response) . "\n";
-                    ob_flush();
+                    if (ob_get_length()) {
+                        ob_flush();
+                    }
                     flush();
                     return;
                 }

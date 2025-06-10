@@ -403,11 +403,6 @@ function isValidJson(string) {
     }
 }
 
-// Helper function to escape special characters in regular expressions
-function escapeRegExp(string) {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 
 /// Finds out if HAWKI is mentioned in the text.
 /// rawText = text from input field or decrypted from server.
