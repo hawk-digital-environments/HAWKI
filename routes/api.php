@@ -43,6 +43,14 @@ Route::middleware(['api_isActive', 'auth:sanctum'])->group(function () {
         Route::delete('/room/removeRoom/{slug}', [RoomController::class, 'removeRoom']);
         Route::delete('/room/removeMember/{slug}', [RoomController::class, 'removeMember']);
     });
+    
+    
+    Route::post('/inv/requestPublicKeys', [InvitationController::class, 'onRequestPublicKeys']);
+    Route::post('/inv/store-invitations/{slug}', [InvitationController::class, 'storeInvitations']);
+    Route::post('/inv/sendExternInvitation', [InvitationController::class, 'sendExternInvitationEmail']);
+    Route::post('/inv/roomInvitationAccept',  [InvitationController::class, 'onAcceptInvitation']);
+    Route::get('/inv/requestInvitation/{slug}',  [InvitationController::class, 'getInvitationWithSlug']);
+    Route::get('/inv/requestUserInvitations',  [InvitationController::class, 'getUserInvitations']);
 
 
 });

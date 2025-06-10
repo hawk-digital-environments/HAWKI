@@ -213,4 +213,38 @@ class InvitationController extends Controller
 
     }
 
+    public function onRequestPublicKeys(Request $request)
+    {
+        // Validate the request
+        $validated = $request->validate([
+            'username_list' => 'required|array',
+        ]);
+    
+        $requestedUsernames = $validated['username_list'];
+    
+        // Fetch users from the database
+        $users = User::whereIn('username', $requestedUsernames)->get();
+    
+        // Map found users to the response format
+        $publicKeys = $users->map(function ($user) {
+            return [
+                'username' => $user->username,
+                'public_key' => $user->publicKey,
+            ];
+        });
+    
+        // Determine any missing usernames
+        $foundUsernames = $users->pluck('username')->toArray();
+        $missingUsernames = array_diff($requestedUsernames, $foundUsernames);
+    
+        // Return a comprehensive JSON response
+        return response()->json([
+            'success' => true,
+            'public_keys' => $publicKeys,
+            'missing_users' => array_values($missingUsernames), // Optional: Include this or not depending on frontend needs
+        ]);
+    }
+    
+
+
 }
