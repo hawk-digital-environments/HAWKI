@@ -234,6 +234,16 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     messageElement.dataset.role = messageObj.message_role;
     const msgTxtElement = messageElement.querySelector(".message-text");
 
+    if(messageElement.classList.contains('AI')){
+        const username = messageElement.dataset.author;
+        model = modelsList.find(m => m.id === messageObj.model);
+        messageElement.querySelector('.message-author').innerHTML = 
+            model ?
+            `<span>${username} </span><span class="message-author-model">(${model.label})</span>`:
+            `<span>${username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+        messageElement.dataset.model = messageObj.model;
+    }
+
     if(updateContent){
         const {messageText, groundingMetadata} = deconstContent(messageObj.content);
         
@@ -682,9 +692,10 @@ async function regenerateMessage(messageElement, Done = null){
                 'broadcasting': false,
                 'slug': '',
                 'regenerationElement': messageElement,
-                'stream': true,
+                'stream': activeModel.streamable ? true : false,
                 'model': activeModel.id,
             }
+
             await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
                 if(Done){
                     Done(true);

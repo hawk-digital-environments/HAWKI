@@ -132,7 +132,7 @@ async function exportAsPDF() {
     // doc.setFontSize(16);
     // doc.text("Chatlog Export", 10, 15); // x, y
     doc.setFontSize(textFS);
-    doc.text(`Exportiert aus HAWKI am: ${formattedDate} von ${userInfo.name}`, margin, yOffset); // x, y
+    doc.text(`${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}`, margin, yOffset); // x, y
 
     yOffset += 20;
     doc.setFontSize(sectionFS);
@@ -142,7 +142,7 @@ async function exportAsPDF() {
     const textLenght = translation.Summery.length;
     doc.setFont(font, 'italic');
     doc.setFontSize(titleFS);
-    doc.text(` (automatisiert erstellt)`, margin + (textLenght * 4) + 0, yOffset);
+    doc.text(` (${translation.Auto_Generated})`, margin + (textLenght * 4) + 0, yOffset);
     doc.setFont(font, 'normal');
     
 
@@ -197,6 +197,14 @@ async function exportAsPDF() {
     messages.forEach((msg, index) => {
         // Calculate the height required for the full message
         const metadataHeight = lineHeight * 3; // Header (Message #, Author, Role, etc.)
+
+        if(isValidJson(msg.content)){
+            msg.content = JSON.parse(msg.content).text;
+        }
+        else{
+            msg.content = msg.content;
+        }
+        
         const wrappedContent = doc.splitTextToSize(msg.content, maxWidth); // Split text into lines
         const contentHeight = wrappedContent.length * lineHeight;
         const totalMessageHeight = metadataHeight + contentHeight;
@@ -499,7 +507,12 @@ async function preparePrintPage(){
 
         for (const msg of messages) {
             const decryptedContent =  await decryptWithSymKey(key, msg.content, msg.iv, msg.tag);
-            msg.content = decryptedContent;
+            if(isValidJson(decryptedContent)){
+                msg.content = JSON.parse(decryptedContent).text;
+            }
+            else{
+                msg.content = decryptedContent;
+            }
         };
 
     }
@@ -533,12 +546,12 @@ async function preparePrintPage(){
 
     scrollPanel.innerHTML = 
     `
-        <p>Exportiert aus HAWKI am: ${formattedDate} von ${userInfo.name}</p>
+        <p>${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}</p>
         <h1>${translation.Summery}:</h1>
         <p>${summery}</p>
         <h3>System Prompt</h3>
         <p>${systemPrompt}</p>
-        <h1>Verlauf:</h1>
+        <h1>${translation.Chatlog}</h1>
         <div class="thread trunk" id="0">
         </div>
     `;
