@@ -50,7 +50,10 @@ Route::middleware('prevent_back')->group(function () {
     
     });
     
-
+    // OTP Routes (accessible without full authentication)
+    Route::post('/req/send-otp', [App\Http\Controllers\MailController::class, 'sendOTP']);
+    Route::post('/req/verify-otp', [App\Http\Controllers\AuthenticationController::class, 'verifyOTP']);
+    
     Route::get('/check-session', [HomeController::class, 'CheckSessionTimeout']);
 
     //CHECKS USERS AUTH
@@ -134,8 +137,10 @@ Route::middleware('prevent_back')->group(function () {
     
     
     });
-      // NAVIGATION ROUTES
-      Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
+
+
+    // NAVIGATION ROUTES
+    Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
 
 
 
