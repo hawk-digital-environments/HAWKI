@@ -183,6 +183,9 @@ class AuthenticationController extends Controller
         $cryptoController = new EncryptionController();
         $keychainData = $cryptoController->fetchUserKeychain();
         
+        // Get passkey secret from config
+        $passkeySecret = config('auth.passkey_secret');
+        
         $settingsPanel = (new SettingsController())->initialize($translation);
 
         $activeOverlay = false;
@@ -193,7 +196,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay'));
+        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay', 'passkeySecret'));
   
     }
 
@@ -217,6 +220,9 @@ class AuthenticationController extends Controller
         $localizationController = new LocalizationController();
         $localizedTexts = $localizationController->getAllLocalizedContent();
         
+        // Get passkey secret from config
+        $passkeySecret = config('auth.passkey_secret');
+        
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'register'){
             $activeOverlay = true;
@@ -225,7 +231,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret'));
     }
 
 

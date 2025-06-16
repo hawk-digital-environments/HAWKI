@@ -21,26 +21,28 @@ return [
     |
     */
     'app' => [
-        'name' => 'Name der Anwendung',
-        'url' => 'Basis-URL',
-        'env' => 'Umgebung (local, production, testing)',
-        'timezone' => 'Standard-Zeitzone',
-        'locale' => 'Standard-Spracheinstellung',
-        'debug' => 'Debug-Modus aktivieren (true/false)',
-        'groupchat_active' => 'Gruppenchat aktivieren (true/false)', 
-        'ai_handle' => 'KI-Assistenten Handle für Gruppenchat', 
+        'name' => 'Application name',
+        'url' => 'Base URL',
+        'env' => 'Environment (local, production, testing)',
+        'timezone' => 'Default timezone',
+        'locale' => 'Default locale',
+        'debug' => 'Enable debug mode (true/false)',
+        'groupchat_active' => 'Enable group chat (true/false)', 
+        'ai_handle' => 'AI assistant handle for group chat',
 
     ],
     'sanctum' => [
-        'allow_external_communication' => 'HAWKI-API erlauben',
-        'allow_user_token' => 'Generieren von User API-Token erlauben'
+        'allow_external_communication' => 'Allow HAWKI API',
+        'allow_user_token' => 'Allow generation of user API tokens'
     ],
     'test_users' => [
-        'active' => 'Test-Benutzeranmeldung aktivieren',
-        'testers' => 'Liste der Test-User',
+        'active' => 'Enable test user login',
+        'testers' => 'List of test users',
     ],
     'auth' => [
-        'authentication_method' => 'Die Authentifizierungsmethode (LDAP, OIDC, Shibboleth)',
+        'authentication_method' => 'Authentication method (LDAP, OIDC, Shibboleth)',
+        'passkey_method' => 'Method for generating the PassKey (cannot be changed later)',
+        'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)'
     ],
     'ldap' => [
         //'default' => 'Configure the LDAP connection. Currently only "custom" is supported through hardcoding in ldapservice.php',
@@ -68,10 +70,10 @@ return [
     ],
     'open_id_connect' => [
         'oidc_idp' => 'OpenID Connect Identity Provider (z. B. https://idp.example.com)',
-        'oidc_client_id' => 'Client-ID für die OpenID Connect-Authentifizierung',
-        'oidc_client_secret' => 'Client-Secret für die OpenID Connect-Authentifizierung',
-        'oidc_logout_path' => 'Logout-Pfad für den OpenID Connect Identity Provider',
-        'oidc_scopes' => 'Scopes für die OpenID Connect-Authentifizierung (z. B. profile,email)',
+        'oidc_client_id' => 'Client ID for OpenID Connect authentication',
+        'oidc_client_secret' => 'Client Secret for OpenID Connect authentication',
+        'oidc_logout_path' => 'Logout path for the OpenID Connect Identity Provider',
+        'oidc_scopes' => 'Scopes for OpenID Connect authentication (e.g., profile,email)',
         'attribute_map.firstname' => 'Firstname Key Name Override',
         'attribute_map.lastname' => 'Lastname Key Name Override',
         'attribute_map.email' => 'E-Mail Key Name Override',

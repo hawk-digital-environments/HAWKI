@@ -114,4 +114,17 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Passkey Method
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the method used for passkey generation.
+    | Options: user, auto
+    |
+    */
+    'passkey_method' => 'auto',
+    'passkey_secret' => 'default',
+
+
 ];

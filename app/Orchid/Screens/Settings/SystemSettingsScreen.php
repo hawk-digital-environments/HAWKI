@@ -310,6 +310,8 @@ class SystemSettingsScreen extends Screen
         $ldapSettings = [];
         $oidcSettings = [];
         $shibbolethSettings = [];
+        $passkeySettings = [];
+        $otherAuthSettings = []; // Fallback für nicht kategorisierte Settings
 
         // Alle Authentifizierungseinstellungen nach Typ sortieren
         foreach ($this->query()['authentication'] as $setting) {
@@ -323,15 +325,31 @@ class SystemSettingsScreen extends Screen
                 $oidcSettings[] = $this->getFieldForSetting($setting);
             } else if (str_starts_with($setting->key, 'shibboleth_')) {
                 $shibbolethSettings[] = $this->getFieldForSetting($setting);
+            } else if (str_starts_with($setting->key, 'auth_passkey_')) {
+                $passkeySettings[] = $this->getFieldForSetting($setting);
+            } else {
+                // Fallback für alle anderen Authentication-Settings
+                $otherAuthSettings[] = $this->getFieldForSetting($setting);
             }
         }
 
         // Array für alle Layouts vorbereiten
         $layouts = [];
+        
         // Test User Einstellungen als eigenes Layout
         if (!empty($testUserSettings)) {
             $layouts[] = Layout::rows($testUserSettings)
             ->title('Testusers');;
+        }
+        // Fallback-Layout für nicht kategorisierte Authentication-Settings
+        if (!empty($otherAuthSettings)) {
+            $layouts[] = Layout::rows($otherAuthSettings)
+                ->title('Authentication Settings');
+        }
+        // Passkey-Einstellungen als eigenes Layout
+        if (!empty($passkeySettings)) {
+            $layouts[] = Layout::rows($passkeySettings)
+                ->title('Passkey Settings');
         }
         // Authentifizierungsmethode in separatem Layout, falls vorhanden
         if ($authMethodSetting) {
@@ -468,6 +486,42 @@ class SystemSettingsScreen extends Screen
                     ->alignCenter()
                     ->widthColumns('1fr 1fr');
                 } 
+                // Special handling for PASSKEY_METHOD dropdown
+                else if ($key === 'auth_passkey_method') {
+                    return Group::make([
+                        Label::make("label_{$key}")
+                            ->title($setting->description)
+                            ->help($displayKey)
+                            ->addclass('fw-bold'),
+                        Select::make("settings.{$key}")
+                            ->options([
+                                'user' => 'User (Manual passkey entry)',
+                                'auto' => 'Auto (Automatic passkey generation)',
+                            ])
+                            ->value($setting->value),
+                    ])
+                    ->alignCenter()
+                    ->widthColumns('1fr 1fr');
+                }
+                // Special handling for PASSKEY_SECRET dropdown
+                else if ($key === 'auth_passkey_secret') {
+                    return Group::make([
+                        Label::make("label_{$key}")
+                            ->title($setting->description)
+                            ->help($displayKey),
+                        Select::make("settings.{$key}")
+                            ->options([
+                                'username' => 'Username',
+                                'time' => 'Time of registration',
+                                'mixed' => 'Name and Time of registration',
+                                'publicKey' => 'Public Key',
+                                'default' => 'Default',
+                            ])
+                            ->value($setting->value),
+                    ])
+                    ->alignCenter()
+                    ->widthColumns('1fr 1fr');
+                }
                 // Special handling for password fields - especially LDAP bind password
                 else if (str_contains($key, 'bind_pw') || str_contains($key, 'password') || str_contains($key, 'secret')) {
                     return Group::make([
