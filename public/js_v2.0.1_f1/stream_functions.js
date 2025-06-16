@@ -252,7 +252,7 @@ async function requestPromptImprovement(sender) {
     .then(response => {
         const onData = (data, done) => {
             if (data && data.content != "") {
-                result += deconstContent(data.content).messageText
+                result += deconstContent(JSON.parse(data.content).text).messageText
                 inputField.value = result.trim();
                 resizeInputField(inputField);   
             }
@@ -307,7 +307,7 @@ async function requestChatlogSummery(msgs = null) {
         return new Promise((resolve, reject) => {
             const onData = (data, done) => {
                 if (done) {
-                    resolve(deconstContent(data.content).messageText);
+                    resolve(deconstContent(JSON.parse(data.content).text).messageText);
                 }
             };
             processResponse(response, onData);

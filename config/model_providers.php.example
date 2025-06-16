@@ -115,6 +115,7 @@ return [
             'api_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
             'streaming_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
             'ping_url' => '',
+            'allow_search' => true,
             'models' => [
                 [
                     'id' => 'gemini-1.5-flash',

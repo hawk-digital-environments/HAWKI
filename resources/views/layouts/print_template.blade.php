@@ -73,8 +73,12 @@
 	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
 	const activeModule = @json($activeModule);
     const data = @json($messages);
+	const activeLocale = {!! json_encode(Session::get('language')) !!};
+
 	const modelsList = @json($models).models;
-    const activeLocale = {!! json_encode(Session::get('language')) !!};
+	const defaultModel = @json($models).defaultModel;
+	const systemModels = @json($models).systemModels;
+
 	const translation = @json($translation);
 	window.addEventListener('DOMContentLoaded', async (event) => {
         preparePrintPage();
