@@ -58,6 +58,54 @@
         </div>
 
 
+        {{-- OTP Slide --}}
+        <div class="slide" data-index="0">
+            <h3>{{ $translation["HS-LoginCodeH"] }}</h3>
+            <p class="slide-subtitle">
+                {{ $translation["HS-LoginCodeT"] }}
+            </p>
+
+            {{-- Initial OTP Send Button --}}
+            <div id="otp-send-container">
+                <div class="nav-buttons">
+                    <button id="send-otp-btn" onclick="sendOTP(this)" class="btn-lg-fill">{{ $translation["HS-LoginCodeB1"] }}</button>
+                </div>
+            </div>
+
+            {{-- OTP Input Container (initially hidden) --}}
+            <div id="otp-input-container" style="display: none;">
+                <p class="slide-subtitle" style="color: var(--accent-color); margin-bottom: 15px;">
+                    {{ $translation["HS-LoginCodeM"] }} <span id="otp-email-display"></span>
+                </p>
+                
+                {{-- Individual OTP input fields --}}
+                <div class="otp-input-group">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="0">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="1">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="2">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="3">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="4">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="5">
+                </div>
+                
+                <div class="nav-buttons">
+                    <button id="verify-otp-btn" onclick="verifyOTP(this)" class="btn-lg-fill">{{ $translation["HS-LoginCodeB3"] }}</button>
+                </div>
+                
+                {{-- Resend Button (initially hidden, appears after 60s cooldown) --}}
+                <div id="resend-container" style="display: none; margin-top: 15px;">
+                    <div class="nav-buttons"> 
+                        <button id="resend-otp-btn" onclick="resendOTP(this)" class="btn-md" style="font-size: var(--font-xs)">
+                            {{ $translation["HS-LoginCodeB4"] }}
+                        </button>
+                    </div>
+                </div>
+                {{-- <p id="otp-timer" style="text-align: center; color: var(--accent-color); font-weight: bold; margin-top: 10px;">5:00</p> --}}
+
+            </div>
+
+        </div>
+
     </div>
 </div>
 
@@ -67,7 +115,9 @@
 
 <script>
     let userInfo = @json($userInfo);
-    const serverKeychainCryptoData = @json($keychainData)
+    let passkeySecret = @json($passkeySecret);
+    const serverKeychainCryptoData = @json($keychainData);
+    const translations = @json($translation);
 
     window.addEventListener('DOMContentLoaded', async function (){
 
@@ -78,7 +128,16 @@
         }
         else{
             console.log('opening passkey panel');
-            switchSlide(1)
+            
+            // Check config for passkey method
+            @if(config('auth.passkey_method') === 'auto')
+                switchSlide(0); // Show backup hash input when auto mode is enabled
+                console.log('passkey_method = auto');
+            @else
+                switchSlide(1); // Show manual passkey input (default behavior)
+                console.log('passkey_method = user');
+            @endif
+            
             setTimeout(() => {
                 if(@json($activeOverlay)){
                     setOverlay(false, true)
