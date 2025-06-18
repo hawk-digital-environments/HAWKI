@@ -727,6 +727,15 @@ async function sendOTP(button = null) {
                 email: userInfo.email
             })
         });
+        
+        // Check if response is actually JSON before parsing
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await response.text();
+            console.error('Server returned non-JSON response:', textResponse);
+            throw new Error('Server returned invalid response format');
+        }
+        
         const data = await response.json();
         
         if (data.success) {
@@ -822,6 +831,15 @@ async function resendOTP(button = null) {
                 email: userInfo.email
             })
         });
+        
+        // Check if response is actually JSON before parsing
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const textResponse = await response.text();
+            console.error('Server returned non-JSON response:', textResponse);
+            throw new Error('Server returned invalid response format');
+        }
+        
         const data = await response.json();
         
         if (data.success) {
@@ -886,7 +904,7 @@ function startOTPTimer() {
         return;
     }
     
-    console.log('OTP Timer started with', seconds, 'seconds');
+    //console.log('OTP Timer started with', seconds, 'seconds');
     
     // Clear any existing timer first
     if (otpTimer) {
@@ -904,15 +922,15 @@ function startOTPTimer() {
         timerElement.textContent = timeDisplay;
         
         // Debug output to console
-        console.log('OTP Timer:', {
-            remainingSeconds: remainingSeconds,
-            minutes: minutes,
-            seconds: secondsDisplay,
-            display: timeDisplay,
-            element: timerElement,
-            elementVisible: timerElement.offsetParent !== null,
-            timerExists: !!otpTimer
-        });
+    //    console.log('OTP Timer:', {
+    //        remainingSeconds: remainingSeconds,
+    //        minutes: minutes,
+    //        seconds: secondsDisplay,
+    //        display: timeDisplay,
+    //        element: timerElement,
+    //        elementVisible: timerElement.offsetParent !== null,
+    //        timerExists: !!otpTimer
+    //    });
         
         if (remainingSeconds <= 0) {
             console.log('OTP Timer expired - cleaning up');

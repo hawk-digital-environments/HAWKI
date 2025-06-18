@@ -164,8 +164,10 @@ class SystemSettingsScreen extends Screen
         // Get system information
         Artisan::call('about');
         $aboutOutput = Artisan::output();
-
+        
         return Layout::block([
+    
+        
             Layout::rows([
                 Label::make('system_info_label')
                     ->title('System Information')
@@ -175,12 +177,35 @@ class SystemSettingsScreen extends Screen
                     ->readonly()
                     ->value($aboutOutput)
                     ->height('550px'),
-                
+            ]),
+            // Email Testing Section
+            Layout::rows([
+                Label::make('email_test_label')
+                    ->title('Email Testing')
+                    ->help('Test the email functionality of the system')
+                    ->addclass('fw-bold'),
+                    
+                Group::make([
+                    Button::make('Send Welcome Email')
+                        ->icon('envelope')
+                        ->method('sendWelcomeEmailTest')
+                        ->confirm('This will send a welcome email to the current authenticated user. Continue?'),
+                        
+                    Button::make('Send OTP Email')
+                        ->icon('shield')
+                        ->method('sendOtpEmailTest')
+                        ->confirm('This will send an OTP (One-Time Password) email to the current authenticated user. Continue?'),
+                ])->autoWidth(),
+            ]),
+            
+            Layout::rows([
                 Label::make('config_test_label')
                     ->title('Configuration Source Testing')
                     ->help('This shows where each configuration value is coming from: database, environment variables, or defaults')
                     ->addclass('fw-bold'),
             ]),
+            
+
             
             // Use table layout with data from query - add render methods to handle array data
             Layout::table('config_data', [
@@ -817,5 +842,75 @@ class SystemSettingsScreen extends Screen
         }
         
         return redirect()->back();
+    }
+
+    /**
+     * Send a welcome email test
+     *
+     * @return void
+     */
+    public function sendWelcomeEmailTest()
+    {
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                Toast::error('No authenticated user found for email test.');
+                return;
+            }
+
+            // Use the MailController's sendWelcomeEmail method
+            $mailController = new \App\Http\Controllers\MailController();
+            $mailController->sendWelcomeEmail($user);
+            
+            Toast::success("Welcome email has been sent to: {$user->email}")
+                ->persistent();
+                
+            Log::info("Welcome email test sent to user: {$user->username} ({$user->email})");
+            
+        } catch (\Exception $e) {
+            Log::error('Error sending welcome email test: ' . $e->getMessage());
+            Toast::error('Failed to send welcome email: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send an OTP email test
+     *
+     * @return void
+     */
+    public function sendOtpEmailTest()
+    {
+        try {
+            $user = auth()->user();
+            
+            if (!$user) {
+                Toast::error('No authenticated user found for OTP email test.');
+                return;
+            }
+
+            // Create user info array similar to what's used in the handshake process
+            $userInfo = [
+                'username' => $user->username ?? $user->name,
+                'email' => $user->email,
+                'name' => $user->name ?? $user->username
+            ];
+
+            // Generate test OTP
+            $testOtp = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+            $appName = config('app.name', 'HAWKI');
+
+            // Send OTP email using the OTPMail mailable
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OTPMail($userInfo, $testOtp, $appName));
+
+            Toast::success("OTP email test has been sent to: {$user->email}. Test OTP: {$testOtp}")
+                ->persistent();
+                
+            Log::info("OTP email test sent to user: {$user->username} ({$user->email}) with test OTP: {$testOtp}");
+            
+        } catch (\Exception $e) {
+            Log::error('Error sending OTP email test: ' . $e->getMessage());
+            Toast::error('Failed to send OTP email: ' . $e->getMessage());
+        }
     }
 }
