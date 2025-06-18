@@ -42,7 +42,9 @@ return [
     'auth' => [
         'authentication_method' => 'Authentication method (LDAP, OIDC, Shibboleth)',
         'passkey_method' => 'Method for generating the PassKey (cannot be changed later)',
-        'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)'
+        'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)',
+        'passkey_otp' => 'Send Log-in codes when user tries to login with new device',
+        'passkey_otp_timeout' => 'Set Timeout for Log-in code verification (seconds)'
     ],
     'ldap' => [
         //'default' => 'Configure the LDAP connection. Currently only "custom" is supported through hardcoding in ldapservice.php',

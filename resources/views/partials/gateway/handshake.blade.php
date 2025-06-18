@@ -94,13 +94,18 @@
                 
                 {{-- Resend Button (initially hidden, appears after 60s cooldown) --}}
                 <div id="resend-container" style="display: none; margin-top: 15px;">
+                    <p class="red-text" id="alert-message" style="text-align: center;">{{ $translation["HS-LoginCodeT3"] }}</p>
+
                     <div class="nav-buttons"> 
-                        <button id="resend-otp-btn" onclick="resendOTP(this)" class="btn-md" style="font-size: var(--font-xs)">
+ 
+                        <p id="otp-timer" style="text-align: center; color: var(--accent-color); font-weight: bold; margin-top: 10px; display: none;">5:00</p> 
+
+                        <button id="resend-otp-btn" onclick="resendOTP(this)" class="btn-lg-fill">
                             {{ $translation["HS-LoginCodeB4"] }}
                         </button>
                     </div>
                 </div>
-                {{-- <p id="otp-timer" style="text-align: center; color: var(--accent-color); font-weight: bold; margin-top: 10px;">5:00</p> --}}
+                {{-- --}}
 
             </div>
 
@@ -118,6 +123,7 @@
     let passkeySecret = @json($passkeySecret);
     const serverKeychainCryptoData = @json($keychainData);
     const translations = @json($translation);
+    const otpTimeout = @json(config('auth.passkey_otp_timeout', 300));
 
     window.addEventListener('DOMContentLoaded', async function (){
 
@@ -131,11 +137,16 @@
             
             // Check config for passkey method
             @if(config('auth.passkey_method') === 'auto')
-                switchSlide(0); // Show backup hash input when auto mode is enabled
-                console.log('passkey_method = auto');
+                @if(config('auth.passkey_otp'))
+                    // Show otp dialog
+                    switchSlide(0);
+                @else
+                    // Go directly to chat interface
+                    verifyGeneratedPassKey();
+                @endif
+
             @else
                 switchSlide(1); // Show manual passkey input (default behavior)
-                console.log('passkey_method = user');
             @endif
             
             setTimeout(() => {

@@ -451,7 +451,6 @@ class SystemSettingsScreen extends Screen
                         ->value($setting->value)
                         ->horizontal(),
                 ])
-                ->alignCenter()
                 ->widthColumns('1fr 1fr');
                 
             case 'json':

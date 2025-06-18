@@ -597,8 +597,7 @@ async function requestProfileReset(){
 }
 
 // OTP Functions
-let otpCooldownActive = false;
-let otpCooldownTimer = null;
+let otpTimer = null;
 
 // Initialize OTP input handlers when container is shown
 function initializeOTPInputs() {
@@ -709,12 +708,6 @@ function checkOTPComplete() {
 async function sendOTP(button = null) {
     if (!button) button = event.target;
     
-    // Check if cooldown is active
-    if (otpCooldownActive) {
-        showErrorMessage(translations["HS-LoginCodeE1"]);
-        return;
-    }
-    
     const originalText = button.textContent;
     
     try {
@@ -753,17 +746,8 @@ async function sendOTP(button = null) {
                 firstInput.focus();
             }
             
-            // Display the email address where OTP was sent
-            const emailDisplay = document.getElementById('otp-email-display');
-            if (emailDisplay) {
-                emailDisplay.textContent = userInfo.email;
-            }
-            
-            // Start countdown timer for OTP expiry
-            startOTPTimer(300); // 5 minutes
-            
-            // Start cooldown timer (60 seconds)
-            startOTPCooldown(60);
+            // Start single OTP timer (using config value)
+            startOTPTimer();
             
         } else {
             button.textContent = translations["HS-LoginCodeB6"];
@@ -794,54 +778,220 @@ async function sendOTP(button = null) {
 async function resendOTP(button = null) {
     if (!button) button = event.target;
     
-    // Check if cooldown is active
-    if (otpCooldownActive) {
-        showErrorMessage(translations["HS-LoginCodeE1"]);
+    console.log('Resending OTP...');
+    
+    const originalText = button.textContent;
+    
+    // Hide resend container and show input elements again
+    document.getElementById('resend-container').style.display = 'none';
+    document.querySelector('.otp-input-group').style.display = 'flex';
+    document.getElementById('verify-otp-btn').style.display = 'block';
+    
+    // Clear and re-enable OTP inputs
+    const otpInputs = document.querySelectorAll('.otp-digit');
+    const verifyButton = document.getElementById('verify-otp-btn');
+    
+    otpInputs.forEach(input => {
+        input.disabled = false;
+        input.value = '';
+        input.classList.remove('filled', 'error');
+    });
+    
+    if (verifyButton) verifyButton.disabled = false;
+    
+    // Reset timer display
+    const timerElement = document.getElementById('otp-timer');
+    if (timerElement) {
+        timerElement.style.color = 'var(--accent-color)';
+    }
+    
+    try {
+        button.textContent = translations["HS-LoginCodeB2"]; // 'Sende E-Mail...'
+        button.disabled = true;
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        const response = await fetch('/req/send-otp', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                "X-CSRF-TOKEN": csrfToken
+            },
+            body: JSON.stringify({
+                username: userInfo.username,
+                email: userInfo.email
+            })
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+            button.textContent = translations["HS-LoginCodeB5"];
+            console.log('OTP resent successfully:', data.message);
+            
+            // Focus first input
+            const firstInput = document.querySelector('.otp-digit[data-index="0"]');
+            if (firstInput) {
+                firstInput.focus();
+            }
+            
+            // Start new OTP timer (using config value)
+            startOTPTimer();
+            
+            // Reset button after successful send
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.backgroundColor = '';
+                button.disabled = false;
+            }, 2000);
+            
+        } else {
+            button.textContent = translations["HS-LoginCodeB6"];
+            console.error('OTP resending failed:', data.error);
+            showErrorMessage(data.error);
+            
+            // Show resend container again on error
+            document.getElementById('resend-container').style.display = 'block';
+            
+            // Re-enable button after error
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.backgroundColor = '';
+                button.disabled = false;
+            }, 3000);
+        }
+    } catch (error) {
+        console.error('Error resending OTP:', error);
+        button.textContent = translations["HS-LoginCodeB6"];
+        showErrorMessage(translations["HS-LoginCodeE2"]);
+        
+        // Show resend container again on error
+        document.getElementById('resend-container').style.display = 'block';
+        
+        // Re-enable button after error
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '';
+            button.disabled = false;
+        }, 3000);
+    }
+}
+
+function startOTPTimer() {
+    // Use config value as default timeout
+    const seconds = otpTimeout || 300; // fallback to 5 minutes if config not available
+    
+    const timerElement = document.getElementById('otp-timer');
+    if (!timerElement) {
+        console.error('OTP Timer element not found!');
         return;
     }
     
-    // Hide resend container
-    document.getElementById('resend-container').style.display = 'none';
+    console.log('OTP Timer started with', seconds, 'seconds');
     
-    // Use the same sendOTP logic
-    await sendOTP(button);
-}
-
-function startOTPCooldown(seconds) {
-    otpCooldownActive = true;
+    // Clear any existing timer first
+    if (otpTimer) {
+        console.log('Clearing existing OTP timer');
+        clearInterval(otpTimer);
+    }
+    
     let remainingSeconds = seconds;
     
-    const updateResendTimer = () => {
-        const resendTimerElement = document.getElementById('resend-timer');
-        if (resendTimerElement) {
-            resendTimerElement.textContent = translations["HS-LoginCodeT1"] + ` ${remainingSeconds}` + translations["HS-LoginCodeT2"];
-        }
-    };
-    
-    // Update timer immediately
-    updateResendTimer();
-    
-    otpCooldownTimer = setInterval(() => {
-        remainingSeconds--;
-        updateResendTimer();
+    const updateTimer = () => {
+        const minutes = Math.floor(remainingSeconds / 60);
+        const secondsDisplay = remainingSeconds % 60;
+        const timeDisplay = `${minutes}:${secondsDisplay.toString().padStart(2, '0')}`;
+        
+        timerElement.textContent = timeDisplay;
+        
+        // Debug output to console
+        console.log('OTP Timer:', {
+            remainingSeconds: remainingSeconds,
+            minutes: minutes,
+            seconds: secondsDisplay,
+            display: timeDisplay,
+            element: timerElement,
+            elementVisible: timerElement.offsetParent !== null,
+            timerExists: !!otpTimer
+        });
         
         if (remainingSeconds <= 0) {
-            clearInterval(otpCooldownTimer);
-            otpCooldownActive = false;
+            console.log('OTP Timer expired - cleaning up');
+            clearInterval(otpTimer);
+            otpTimer = null;
             
-            // Show resend container when cooldown is over
+            timerElement.textContent = translations["HS-LoginCodeT3"]; // 'Log-in Code abgelaufen'
+            timerElement.style.color = '#dc3545';
+            
+            // Hide OTP input elements
+            const otpInputGroup = document.querySelector('.otp-input-group');
+            const verifyButton = document.getElementById('verify-otp-btn');
             const resendContainer = document.getElementById('resend-container');
-            const resendTimerElement = document.getElementById('resend-timer');
+            
+            console.log('Hiding OTP input elements and showing resend container');
+            
+            if (otpInputGroup) {
+                otpInputGroup.style.display = 'none';
+            }
+            
+            if (verifyButton) {
+                verifyButton.style.display = 'none';
+            }
             
             if (resendContainer) {
                 resendContainer.style.display = 'block';
             }
-            if (resendTimerElement) {
-                resendTimerElement.textContent = '';
-            }
+            
+            showErrorMessage(translations["HS-LoginCodeE6"]);
+            console.log('OTP Timer finished - all cleanup completed');
+            return;
         }
-    }, 1000);
+        
+        remainingSeconds--;
+    };
+    
+    // Run immediately, then set interval
+    updateTimer();
+    
+    otpTimer = setInterval(updateTimer, 1000);
+    
+    // Store timer reference for debugging
+    window.currentOTPTimer = otpTimer;
+    console.log('OTP Timer reference stored:', {
+        timerId: otpTimer,
+        windowTimer: window.currentOTPTimer,
+        initialSeconds: seconds
+    });
 }
+
+// Add function to manually clear OTP timer for debugging
+function clearOTPTimer() {
+    console.log('Manually clearing OTP timer');
+    if (otpTimer) {
+        clearInterval(otpTimer);
+        otpTimer = null;
+        window.currentOTPTimer = null;
+        console.log('OTP timer cleared');
+    } else {
+        console.log('No OTP timer to clear');
+    }
+}
+
+// Add function to check timer status for debugging
+function checkOTPTimerStatus() {
+    console.log('OTP Timer Status:', {
+        otpTimer: otpTimer,
+        windowCurrentOTPTimer: window.currentOTPTimer,
+        timerElement: document.getElementById('otp-timer'),
+        inputContainer: document.getElementById('otp-input-container'),
+        otpInputGroup: document.querySelector('.otp-input-group'),
+        verifyButton: document.getElementById('verify-otp-btn'),
+        resendContainer: document.getElementById('resend-container')
+    });
+}
+
+// Make debugging functions available globally
+window.clearOTPTimer = clearOTPTimer;
+window.checkOTPTimerStatus = checkOTPTimerStatus;
 
 async function verifyOTP(button = null) {
     if (!button) button = event.target;
@@ -926,43 +1076,9 @@ async function verifyOTP(button = null) {
     }, 3000);
 }
 
-function startOTPTimer(seconds) {
-    const timerElement = document.getElementById('otp-timer');
-    if (!timerElement) return;
-    
-    const timer = setInterval(() => {
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        
-        timerElement.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-        
-        if (seconds <= 0) {
-            clearInterval(timer);
-            timerElement.textContent = translations["HS-LoginCodeT3"]; // 'Log-in Code expired'
-            timerElement.style.color = '#dc3545';
-            
-            // Disable OTP digit inputs and verify button
-            const otpInputs = document.querySelectorAll('.otp-digit');
-            const verifyButton = document.getElementById('verify-otp-btn');
-            
-            otpInputs.forEach(input => {
-                input.disabled = true;
-            });
-            
-            if (verifyButton) verifyButton.disabled = true;
-            
-            // Show resend option when OTP expires
-            const resendContainer = document.getElementById('resend-container');
-            if (resendContainer && !otpCooldownActive) {
-                resendContainer.style.display = 'block';
-            }
-            
-            showErrorMessage(translations["HS-LoginCodeE6"]);
-        }
-        
-        seconds--;
-    }, 1000);
-}
+// Make debugging functions available globally
+window.clearOTPTimer = clearOTPTimer;
+window.checkOTPTimerStatus = checkOTPTimerStatus;
 
 function showErrorMessage(message) {
     const errorElement = document.getElementById('alert-message') || document.getElementById('backup-alert-message');
