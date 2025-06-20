@@ -23,6 +23,7 @@ class ProviderSettingsScreen extends Screen
      * Mapping für schönere Provider-Namen in Tabs
      */
     private $providerTitleMapping = [
+        'hawki' => 'HAWKI',
         'openWebUi' => 'Open WebUI',
         'gwdg' => 'GWDG',
         'openai' => 'OpenAI',
@@ -175,21 +176,36 @@ class ProviderSettingsScreen extends Screen
     }
     
     /**
-     * Get available provider schemas from config.
+     * Get available provider schemas from database.
      *
      * @return array
      */
     private function getProviderSchemas(): array
     {
-        $config = config('model_providers', []);
-        
-        // If the file contains a providers key, we take its child elements
-        $providers = $config['providers'] ?? [];
+        // Retrieve all unique api_format values from the database
+        $formats = ProviderSetting::whereNotNull('api_format')
+            ->distinct()
+            ->pluck('api_format')
+            ->toArray();
         
         $options = [];
-        foreach ($providers as $key => $provider) {
-            // Use the provider's name or the key as the display name
-            $options[$key] = $provider['name'] ?? ucfirst($key);
+        foreach ($formats as $format) {
+            // Use the existing value as the key and generate a displayable name
+            $options[$format] = ucfirst($format);
+        }
+        
+        // If no formats were found in the database, load fallback options from the example configuration
+        if (empty($options)) {
+            $examplePath = config_path('model_providers.php.example');
+            
+            if (file_exists($examplePath)) {
+                $config = include $examplePath;
+                $providers = $config['providers'] ?? [];
+                
+                foreach ($providers as $key => $provider) {
+                    $options[$key] = $provider['name'] ?? ucfirst($key);
+                }
+            }
         }
         
         return $options;
@@ -266,12 +282,12 @@ class ProviderSettingsScreen extends Screen
     {
         $providerName = $provider->provider_name;
         
-        // Wenn ein spezielles Mapping für diesen Provider existiert, verwende es
+        // If a specific mapping for this provider exists, use it
         if (isset($this->providerTitleMapping[$providerName])) {
             $title = $this->providerTitleMapping[$providerName];
         } else {
-            // Andernfalls: Standardformatierung mit TitleCase 
-            // (wandelt z.B. "my_provider_name" in "My Provider Name" um)
+            // Otherwise: Default formatting with TitleCase 
+            // (e.g., converts "my_provider_name" to "My Provider Name")
             $title = ucwords(str_replace(['_', '-'], ' ', $providerName));
         }
         

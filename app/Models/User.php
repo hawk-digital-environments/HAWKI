@@ -6,9 +6,12 @@ use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
 use Orchid\Platform\Models\User as OrchidUser;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends OrchidUser
 {
+    use HasApiTokens;
+
     /**
      * The attributes that are mass assignable.
      *
