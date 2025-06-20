@@ -10,6 +10,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\MailController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SearchController;
@@ -50,7 +51,10 @@ Route::middleware('prevent_back')->group(function () {
     
     });
     
-
+    // OTP Routes (accessible without full authentication)
+    Route::post('/req/send-otp', [MailController::class, 'sendOTP']);
+    Route::post('/req/verify-otp', [AuthenticationController::class, 'verifyOTP']);
+    
     Route::get('/check-session', [HomeController::class, 'CheckSessionTimeout']);
 
     //CHECKS USERS AUTH
@@ -134,8 +138,10 @@ Route::middleware('prevent_back')->group(function () {
     
     
     });
-      // NAVIGATION ROUTES
-      Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
+
+
+    // NAVIGATION ROUTES
+    Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
 
 
 

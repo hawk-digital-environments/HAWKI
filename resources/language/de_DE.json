@@ -67,6 +67,34 @@
     "HS-LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
     "HS-LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
 
+    "HS-LoginCodeH": ":system Log-in Code 🔐",
+    "HS-LoginCodeT": "Wir senden Ihnen einen Log-in Code per E-Mail zur sicheren Anmeldung.",
+    "HS-LoginCodeB1": "Log-in Code per E-Mail senden",
+    "HS-LoginCodeB2": "Sende E-Mail...",
+    "HS-LoginCodeB3": "Log-in Code verifizieren",
+    "HS-LoginCodeB4": "Log-in Code erneut senden",
+    "HS-LoginCodeB5": "Log-in Code gesendet!",
+    "HS-LoginCodeB6": "Fehler beim Senden",
+    "HS-LoginCodeB7": "Verifiziere Log-in Code...",
+    "HS-LoginCodeB8": "Log-in Code verifiziert!",
+    "HS-LoginCodeB9": "Logge ein...",
+    "HS-LoginCodeB10": "Ungültiger Log-in Code",
+    "HS-LoginCodeB11": "Verifizierung fehlgeschlagen",
+
+    "HS-LoginCodeE1": "Bitte warten Sie, bevor Sie erneut einen Log-in Code anfordern können.",
+    "HS-LoginCodeE2": "Fehler beim Senden des Log-in Codes",
+    "HS-LoginCodeE3": "Bitte geben Sie den Log-in Code ein",
+    "HS-LoginCodeE4": "Fehler beim Generieren des Passkeys",
+    "HS-LoginCodeE5": "Fehler bei der Log-in Code-Verifizierung",
+    "HS-LoginCodeE6": "Log-in Code ist abgelaufen. Bitte fordern Sie einen neuen an.",
+    
+    "HS-LoginCodeM": "Log-in Code gesendet an",
+
+    "HS-LoginCodeT1": "Erneut senden in",
+    "HS-LoginCodeT2": "s möglich",
+    "HS-LoginCodeT3": "Log-in Code abgelaufen",
+
+    "HS-LoginCodePH": "6-stelligen Log-in Code eingeben",
 
     "ImgUpload": "Bild hochladen",
     "ImgUploadDesc": "Wähle ein Bild aus oder ziehe es hierher.<br>Doppelklicken, um in den Bearbeitungsmodus zu wechseln.",
@@ -91,7 +119,7 @@
     "Profile": "Profil",
     "Reg_SL1_B": "Das habe ich verstanden!",
     "Reg_SL1_H": "Hey! 😊",
-    "Reg_SL1_T": "Ab jetzt werden deine Chats gespeichert, damit du auch später jederzeit darauf zugreifen kannst - und das geräteübergreifend. Deine Eingaben sind dabei komplett sicher:Alles, was du schreibst, wird verschlüsselt gespeichert. Das bedeutet, dass niemand, auch nicht die Hochschule, einsehen kann, was du geschrieben hast. 🕵️ Deine Eingaben werden bei OpenAI 30 Tage gespeichert und dann gelöscht. Bei der GWDG erfolgt keine Speicherung. In beiden Fällen bleiben deine Daten ungenutzt für Produktverbesserung oder Verhaltensanalyse.",
+    "Reg_SL1_T": "Ab jetzt werden deine Chats gespeichert, damit du auch später jederzeit darauf zugreifen kannst - und das geräteübergreifend. Deine Eingaben sind dabei komplett sicher: Alles, was du schreibst, wird verschlüsselt gespeichert. Das bedeutet, dass niemand, auch nicht die Hochschule, einsehen kann, was du geschrieben hast. 🕵️ Deine Eingaben werden bei OpenAI 30 Tage gespeichert und dann gelöscht. Bei der GWDG erfolgt keine Speicherung. In beiden Fällen bleiben deine Daten ungenutzt für Produktverbesserung oder Verhaltensanalyse.",
     "Reg_SL2_B": "Finde ich gut!",
     "Reg_SL2_H": "Neu: Gruppenchats! 💡",
     "Reg_SL2_T": "In den neuen Gruppenchats können natürlich alle Teilnehmenden der Gruppe deine Nachrichten sehen - das ist ja Sinn der Sache. Aber auch hier bleiben eure Inhalte geschützt und sind für niemanden außerhalb der Gruppe sichtbar. Deine Privatsphäre ist uns wichtig, deshalb kannst du dir sicher sein: Deine Daten gehören nur dir! 🙌",
@@ -102,7 +130,12 @@
     "Reg_SL5_T": "<strong>Bitte beachte:</strong> Deine Chatnachrichten werden sicher verschlüsselt. Wenn du deinen Datakey verlierst, kannst du nicht mehr auf deine bisherigen Chats zugreifen. Bewahre deinen Datakey deshalb gut auf und schütze ihn vor dem Zugriff Dritter.",
     "Reg_SL6_H": "Sichere deinen Wiederherstellungscode! 🔒",
     "Reg_SL6_T": "Mit diesem Wiederherstellungscode kannst du deinen Datakey wiederherstellen, falls du ihn vergessen oder verloren hast. Lade deinen Code auf dein Endgerät und speichere ihn an einem sicheren Ort, z.B. auf einem USB-Stick oder in einer geschützten Umgebung.",
+
     
+    "Reg_SL0_H": "Deine Daten sind sicher! 🔐",
+    "Reg_SL0_B": "Los geht's!",
+    "Reg_SL0_T": "<strong>Wichtig:</strong> Deine Chats werden verschlüsselt, bevor sie auf unserem Server gespeichert werden. Nur die von dir für :system registrierten Geräte können diese Chats entschlüsseln. 💻📲 <br>Wenn du dich auf einem neuen Gerät anmelden möchtest, musst du deine Identität mit einem Freischaltcode bestätigen, den du per E-Mail erhältst. 📫",
+
     "Reg_SL5_PH1": "Erstelle hier einen Datakey",
     "Reg_SL5_PH2": "Wiederhole hier einen Datakey",
     

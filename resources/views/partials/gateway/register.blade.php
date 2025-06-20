@@ -4,9 +4,19 @@
 
 <div class="wrapper">
 
-    <div class="container">
+    <div class="container" style="overflow:auto">
 
         <div class="slide" data-index="0">
+                <h1>{{ $translation["Reg_SL0_H"] }}</h1>
+                <div class="slide-content">
+                    <p>
+                        {!! $translation["Reg_SL0_T"] !!}
+                    </p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="autoGeneratePasskey()">{{ $translation["Reg_SL0_B"] }}</button>
+                </div>                
+                <script>console.log('passkey_method = auto');</script> 
         </div>
 
         <div class="slide" data-index="1">
@@ -38,18 +48,17 @@
 
 
         <div class="slide" data-index="4">
-            <h1>{{ $translation["Reg_SL4_H"] }}</h1>
-            <div class="slide-content">
-                <p>
-                    {!! $translation["Reg_SL4_T"] !!}
-                </p>
-            </div>
-            <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(5)">{{ $translation["Reg_SL4_B"] }}</button>
-            </div>
+                <h1>{{ $translation["Reg_SL4_H"] }}</h1>
+                <div class="slide-content">
+                    <p>
+                        {!! $translation["Reg_SL4_T"] !!}
+                    </p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="switchSlide(5)">{{ $translation["Reg_SL4_B"] }}</button>
+                </div>
+                <script>console.log('passkey_method = user');</script> 
         </div>
-
-  
         
         <div class="slide" data-index="5">
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
@@ -94,6 +103,7 @@
 
 <script>
     let userInfo = @json($userInfo);
+    let passkeySecret = @json($passkeySecret);
     initializeRegistration();
     window.addEventListener('DOMContentLoaded', switchSlide(1));
 
@@ -103,11 +113,6 @@
         }
     }, 100);
 </script>
-
-
-
-
-
 
 
 @endsection
