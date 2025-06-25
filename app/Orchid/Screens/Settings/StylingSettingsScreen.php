@@ -155,7 +155,6 @@ class StylingSettingsScreen extends Screen
                         //->targetRelativeUrl() // The saved value will be in the form of a relative address before the file.
                         ->path('img') //Set custom attachment upload path
                         ->acceptedFiles($config['format'])
-                        ->maxFileSize(5)
                 ])
             ])
             ->title($config['title'])
