@@ -35,6 +35,12 @@ class ConfigServiceProvider extends ServiceProvider
     {
         // Only run after application is fully booted
         try {
+            // Check if required tables exist before proceeding
+            if (!$this->requiredTablesExist()) {
+                Log::info('Required tables do not exist yet. Skipping configuration override.');
+                return;
+            }
+            
             // First, try to load the overridden configurations from cache
             $cachedOverrides = $this->getCachedOverrides();
             
@@ -193,6 +199,29 @@ class ConfigServiceProvider extends ServiceProvider
     {
         Cache::forget(self::CONFIG_CACHE_KEY);
         Log::debug('Configuration override cache cleared');
+    }
+
+    /**
+     * Checks if the required database tables exist
+     *
+     * @return bool True if all required tables exist, false otherwise
+     */
+    private function requiredTablesExist(): bool
+    {
+        try {
+            // Check if app_settings table exists
+            DB::select("SELECT 1 FROM app_settings LIMIT 1");
+            
+            // Check if cache table exists (if using database cache driver)
+            if (config('cache.default') === 'database') {
+                DB::select("SELECT 1 FROM cache LIMIT 1");
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            // Tables don't exist or database connection failed
+            return false;
+        }
     }
 }
 
