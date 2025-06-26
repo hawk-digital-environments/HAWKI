@@ -34,7 +34,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('provider_settings');
-
+        // Drop the foreign key constraint first if the table exists
+        if (Schema::hasTable('language_models')) {
+            Schema::table('language_models', function (Blueprint $table) {
+                $table->dropForeign('language_models_provider_id_foreign');
+            });
         }
+
+        Schema::dropIfExists('provider_settings');
+    }
 };

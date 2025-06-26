@@ -115,8 +115,10 @@ class AIConnectionService
             'prompt_improver' => AppSetting::where('key', 'system_model_prompt_improver')->value('value'),
             'summarizer' => AppSetting::where('key', 'system_model_summarizer')->value('value')
         ];
-        Log::info('Default model:', ['model' => $defaultModel]);
-        Log::info('System models:', $systemModels);
+        if (config('logging.triggers.default_model')) {
+            Log::info('Default model:', ['model' => $defaultModel]);
+            Log::info('System models:', $systemModels);
+        }
         return [
             'models' => $models,
             'defaultModel' => $defaultModel,

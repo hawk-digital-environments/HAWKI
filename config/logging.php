@@ -129,4 +129,22 @@ return [
 
     ],
 
+
+    /*
+     * --------------------------------------------------------------------------
+     * Log Triggers
+     * --------------------------------------------------------------------------
+     *
+     * Configure the log triggers for your application here.
+     * Log triggers allow the HAWKI admin panel to monitor and record specific
+     * function outputs, such as the results returned from chat operations.
+     * Adjust these settings to control which events or data points are logged
+     * for enhanced visibility and debugging within your application.
+     *
+     */
+
+    'triggers' => [
+        'return_object' => false,
+        'default_model' => false,
+    ],
 ];
