@@ -2,7 +2,7 @@
 
 return [
 
-    'authentication_method' => env('APP_AUTHENTICATION_METHOD'),
+    'authentication_method' => env('AUTHENTICATION_METHOD', 'LDAP'),
 
     /*
     |--------------------------------------------------------------------------

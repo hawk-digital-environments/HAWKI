@@ -37,7 +37,7 @@ class AuthenticationController extends Controller
 
     public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, TestAuthService $testAuthService, LanguageController $languageController)
     {
-        $this->authMethod = env('AUTHENTICATION_METHOD');
+        $this->authMethod = config('auth.authentication_method', 'LDAP');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
@@ -61,10 +61,12 @@ class AuthenticationController extends Controller
         $password = $request->input('password');
 
         $authenticatedUserInfo = null;
+        // Teste zuerst Test Users, wenn aktiviert
         if(config('test_users')['active']){
             $authenticatedUserInfo = $this->testAuthService->authenticate($username, $password);
         }
 
+        // Falls Test User Authentication fehlschlägt oder deaktiviert ist, verwende die konfigurierte Authentifizierungsmethode
         if(!$authenticatedUserInfo) {
             if($this->authMethod === 'LDAP'){
                 $authenticatedUserInfo = $this->ldapService->authenticate($username, $password);
@@ -323,7 +325,7 @@ class AuthenticationController extends Controller
         Session::invalidate();
 
         // Determine the logout redirect URI based on the authentication method
-        $authMethod = env('AUTHENTICATION_METHOD');
+        $authMethod = config('auth.authentication_method', 'LDAP');
         if ($authMethod === 'Shibboleth') {
             $redirectUri = config('shibboleth.logout_path');
         } elseif ($authMethod === 'OIDC') {
