@@ -89,7 +89,11 @@ return [
         'attribute_map.employeetype' => 'Employeetype Key Name Override,',
         'attribute_map.name' => 'Displayname Key Name Override,',
     ],
-    'logging' => [],
+    'logging' => [
+        'triggers.return_object' => 'Print return objects in laravel.log',
+        'triggers.default_model' => 'Print model defaults in laravel.log',
+
+    ],
 
         /*
     |--------------------------------------------------------------------------
@@ -97,7 +101,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | This mapping defines which UI group a configuration file belongs to.
-    | It is used to group settings in the administration UI.
+    | It is used to group settings in the administration UI. Also the value
+    | set here will define the 'group' value for the given key during db 
+    | migration. 
     |
     */
     'group_mapping' => [
@@ -109,5 +115,6 @@ return [
         'open_id_connect' => 'authentication',
         'shibboleth' => 'authentication',
         'session' => 'authentication',
+        'logging' => 'logging',
     ],
 ];
