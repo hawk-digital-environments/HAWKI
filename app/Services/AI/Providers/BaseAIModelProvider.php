@@ -9,24 +9,24 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
 {
     /**
      * Provider configuration from config/model_providers.php
-     * 
+     *
      * @var array
      */
     protected $config;
-    
+
     /**
      * Create a new provider instance
-     * 
+     *
      * @param array $config Provider configuration
      */
     public function __construct(array $config)
     {
         $this->config = $config;
     }
-    
+
     /**
      * Extract usage information from the response data
-     * 
+     *
      * @param array $data Response data
      * @return array|null Usage data or null if not available
      */
@@ -34,10 +34,10 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     {
         return null;
     }
-    
+
     /**
      * Get details for a specific model
-     * 
+     *
      * @param string $modelId Model identifier
      * @return array Model details
      */
@@ -48,13 +48,13 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 return $model;
             }
         }
-        
+
         throw new \Exception("Unknown model ID: {$modelId}");
     }
-    
+
     /**
      * Check if a model supports streaming
-     * 
+     *
      * @param string $modelId Model identifier
      * @return bool True if streaming is supported
      */
@@ -62,7 +62,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     {
         return $this->getModelDetails($modelId)['streamable'] ?? false;
     }
-    
+
     /**
      * Establish a connection to the AI provider's API
      *
@@ -73,7 +73,6 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     public function connect(array $payload, ?callable $streamCallback = null)
     {
         $modelId = $payload['model'];
-        
         // Determine whether to use streaming or non-streaming
         if ($streamCallback && $this->supportsStreaming($modelId)) {
             return $this->makeStreamingRequest($payload, $streamCallback);
@@ -81,7 +80,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
             return $this->makeNonStreamingRequest($payload);
         }
     }
-    
+
     /**
      * Set up common HTTP headers for API requests
      *
@@ -93,15 +92,15 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         $headers = [
             'Content-Type: application/json'
         ];
-        
+
         // Add authorization header if API key is present
         if (!empty($this->config['api_key'])) {
             $headers[] = 'Authorization: Bearer ' . $this->config['api_key'];
         }
-        
+
         return $headers;
     }
-    
+
     /**
      * Set common cURL options for all requests
      *
@@ -118,7 +117,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     }
-    
+
     /**
      * Set up streaming-specific cURL options
      *
@@ -132,20 +131,19 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         curl_setopt($ch, CURLOPT_TIMEOUT, 0);
         curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
         curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 20);
-        
+
         // Process each chunk as it arrives
         curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use ($streamCallback) {
             if (connection_aborted()) {
                 return 0;
             }
-            
             $streamCallback($data);
-            
+
             if (ob_get_length()) {
                 ob_flush();
             }
             flush();
-            
+
             return strlen($data);
         });
     }

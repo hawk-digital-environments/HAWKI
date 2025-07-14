@@ -1,4 +1,4 @@
-<div class="burger-dropdown" id="quick-actions">		
+<div class="burger-dropdown" id="quick-actions">
 	<div class="burger-expandable">
 
 		@if($activeModule === 'groupchat')
@@ -56,8 +56,8 @@
 			</div>
 
 			<div class="message-content">
-				<span class="assistant-mention"></span>
-				<span class="message-text"></span>
+				<div class="assistant-mention"></div>
+				<div class="message-text"></div>
 			</div>
 			<div class="message-controls">
 				<div class="controls">
@@ -92,7 +92,7 @@
 						@endif
 						<p id="msg-timestamp"></p>
 						<div id="sent-status-icon" >
-							<x-icon name="check"/>	
+							<x-icon name="check"/>
 						</div>
 					</div>
 				</div>
@@ -164,10 +164,22 @@
 
 
 <template id="gen-stat-template">
-
 	<div class="gen-stat-element">
 		<p class="stat-txt"></p>
 	</div>
-
-
 </template>
+
+
+<template id="inline-link-content-template">
+    <div class="inline-link" href="" target="_blank" rel="noopener noreferrer">
+        <div class="content">
+            <p class="title"></p>
+            <div class="adr-bar">
+                <img src="" alt="" class="adr-icon">
+                <div class="adr-url" href></div>
+            </div>
+            <img src="" alt="" class="link-cover">
+        </div>
+    </div>
+</template>
+

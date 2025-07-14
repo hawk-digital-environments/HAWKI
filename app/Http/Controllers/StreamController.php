@@ -74,12 +74,12 @@ class StreamController extends Controller
             $payload,
             false
         );
-        
+
         // Record usage
         if (isset($result['usage'])) {
             $this->usageAnalyzer->submitUsageRecord(
-                $result['usage'], 
-                'api', 
+                $result['usage'],
+                'api',
                 $validatedData['payload']['model']
             );
         }
@@ -89,7 +89,7 @@ class StreamController extends Controller
             'content' => $result['content'],
         ]);
     }
-    
+
 
 
 
@@ -110,18 +110,17 @@ class StreamController extends Controller
             'broadcast' => 'required|boolean',
             'isUpdate' => 'nullable|boolean',
             'messageId' => 'nullable|string',
-            'threadIndex' => 'nullable|int', 
+            'threadIndex' => 'nullable|int',
             'slug' => 'nullable|string',
             'key' => 'nullable|string',
         ]);
 
-
         if ($validatedData['broadcast']) {
             $this->handleGroupChatRequest($validatedData);
         } else {
-            $user = User::find(1); // HAWKI user 
+            $user = User::find(1); // HAWKI user
             $avatar_url = $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null;
-            
+
             if ($validatedData['payload']['stream'] === true) {
                 // Handle streaming response
                 $this->handleStreamingRequest($validatedData['payload'], $user, $avatar_url);
@@ -144,12 +143,12 @@ class StreamController extends Controller
                     $validatedData['payload'],
                     false
                 );
-                
+
                 // Record usage
                 if (isset($result['usage'])) {
                     $this->usageAnalyzer->submitUsageRecord(
-                        $result['usage'], 
-                        'private', 
+                        $result['usage'],
+                        'private',
                         $validatedData['payload']['model']
                     );
                 }
@@ -189,7 +188,7 @@ class StreamController extends Controller
             }
         }
     }
-    
+
     /**
      * Handle streaming request with the new architecture
      */
@@ -211,28 +210,28 @@ class StreamController extends Controller
                 //Log::info('google chunk detected');
             }
 
-        
+
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
             foreach ($chunks as $chunk) {
                 if (connection_aborted()) break;
                 if (!json_decode($chunk, true) || empty($chunk)) continue;
-                
+
                 // Get the provider for this model
                 $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
-                
+
                 // Format the chunk
                 $formatted = $provider->formatStreamChunk($chunk);
 
                 // Record usage if available
                 if ($formatted['usage']) {
                     $this->usageAnalyzer->submitUsageRecord(
-                        $formatted['usage'], 
-                        'private', 
+                        $formatted['usage'],
+                        'private',
                         $payload['model']
                     );
                 }
-                
+
                 if(isset($formatted['type']) && $formatted['type'] === 'status'){
                     $response = [
                         'type'=>'status',
@@ -265,7 +264,7 @@ class StreamController extends Controller
                 echo json_encode($response) . "\n";
             }
         };
-        
+
 
         $response = [
             'type'=>'status',
@@ -278,8 +277,8 @@ class StreamController extends Controller
 
         // Process the streaming request
         $this->aiConnectionService->processRequest(
-            $payload, 
-            true, 
+            $payload,
+            true,
             $onData
         );
     }
@@ -352,31 +351,31 @@ class StreamController extends Controller
             ]
         ];
         broadcast(new RoomMessageEvent($response));
-        
+
         // Process the request
         $result = $this->aiConnectionService->processRequest(
             $data['payload'],
             false
         );
-        
+
         // Record usage
         if (isset($result['usage'])) {
             $this->usageAnalyzer->submitUsageRecord(
-                $result['usage'], 
-                'group', 
+                $result['usage'],
+                'group',
                 $data['payload']['model'],
                 $room->id
             );
         }
-        
+
         // Encrypt content for storage
         $cryptoController = new EncryptionController();
         $encKey = base64_decode($data['key']);
         $encryptiedData = $cryptoController->encryptWithSymKey($encKey, json_encode($result['content']), false);
-        
+
         // Store message
         $member = $room->members()->where('user_id', 1)->firstOrFail();
-        
+
         if ($isUpdate) {
             $message = $room->messages->where('message_id', $data['messageId'])->first();
             $message->update([
@@ -397,10 +396,10 @@ class StreamController extends Controller
                 'content' => $encryptiedData['ciphertext'],
             ]);
         }
-        
+
         // Queue message for broadcast
         SendMessage::dispatch($message, $isUpdate)->onQueue('message_broadcast');
-        
+
         // Update and broadcast final generation status
         $response = [
             'type' => 'status',
@@ -413,5 +412,5 @@ class StreamController extends Controller
         ];
         broadcast(new RoomMessageEvent($response));
     }
-    
+
 }

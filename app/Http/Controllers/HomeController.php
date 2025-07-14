@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 use App\Services\AI\AIConnectionService;
 use App\Models\User;
@@ -58,7 +60,7 @@ class HomeController extends Controller
             'convs' => $convs,
             'rooms' => $rooms,
         ];
-    
+
 
         $activeModule = $requestModule;
 
@@ -72,11 +74,11 @@ class HomeController extends Controller
         $models = $this->aiConnService->getAvailableModels();
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('modules.' . $requestModule, 
-                    compact('translation', 
+        return view('modules.' . $requestModule,
+                    compact('translation',
                             'settingsPanel',
-                            'slug', 
-                            'userProfile', 
+                            'slug',
+                            'userProfile',
                             'userData',
                             'activeModule',
                             'activeOverlay',
@@ -107,22 +109,22 @@ class HomeController extends Controller
             'hawki_avatar_url'=>$hawkiAvatarUrl,
         ];
 
-        
+
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
-        
+
         $models = $this->aiConnService->getAvailableModels();
 
         $activeModule = $module;
-        return view('layouts.print_template', 
-                compact('translation', 
+        return view('layouts.print_template',
+                compact('translation',
                         'settingsPanel',
                         'messages',
                         'activeModule',
                         'userProfile',
                         'userData',
                         'models'));
-       
+
     }
 
 
@@ -139,11 +141,109 @@ class HomeController extends Controller
             ]);
         }
     }
-    
+
 
     public function dataprotectionIndex(Request $request){
         $translation = $this->languageController->getTranslation();
         return view('layouts.dataprotection', compact('translation'));
     }
+
+
+    public function fetchOgMeta(Request $request)
+    {
+        $url = $request->query('url');
+        // 1. URL sanity‑check
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return response()->json(['error' => 'Invalid URL'], 400);
+        }
+
+        try {
+            // 2. Download with a short timeout & friendly UA
+            $response = Http::withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +https://example.com/bot)'
+            ])->timeout(8)->get($url);
+
+            if (!$response->ok()) {
+                return response()->json(['error' => 'Could not fetch URL'], 502);
+            }
+
+            $html = $response->body();
+
+            // 3. Parse all meta tags once
+            libxml_use_internal_errors(true);           // suppress broken‑HTML warnings
+            $dom   = new \DOMDocument();
+            $dom->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
+            $xpath = new \DOMXPath($dom);
+            $nodes = $xpath->query('//meta[@property or @name]');
+
+            // 4. Extract what we care about
+            $data = [
+                'title'       => null,
+                'description' => null,
+                'image'       => null,
+                'video'       => null,
+                'audio'       => null,
+            ];
+
+            foreach ($nodes as $meta) {
+                $prop = $meta->getAttribute('property') ?: $meta->getAttribute('name');
+                $val  = $meta->getAttribute('content');
+
+                switch (strtolower($prop)) {
+                    case 'og:title':
+                    case 'twitter:title':
+                        $data['title'] = $data['title'] ?? $val;
+                        break;
+
+                    case 'og:description':
+                    case 'twitter:description':
+                        $data['description'] = $data['description'] ?? $val;
+                        break;
+
+                    case 'og:image':
+                    case 'twitter:image':
+                        $data['image'] = $data['image'] ?? $val;
+                        break;
+
+                    case 'og:video':
+                    case 'twitter:player':
+                        $data['video'] = $data['video'] ?? $val;
+                        break;
+
+                    case 'og:audio':
+                        $data['audio'] = $data['audio'] ?? $val;
+                        break;
+                }
+            }
+
+            // 4 b. title fallback (plain <title> tag) if OG data missing
+            if (!$data['title']) {
+                $titleNode = $dom->getElementsByTagName('title')->item(0);
+                $data['title'] = $titleNode ? trim($titleNode->textContent) : null;
+            }
+
+            // ✅ Find favicon or icon
+            $iconNode = $xpath->query('//link[contains(@rel, "icon") or contains(@rel, "shortcut")]')->item(0);
+            if ($iconNode) {
+                $href = $iconNode->getAttribute('href');
+
+                // Make absolute if it's relative
+                if ($href && !preg_match('/^https?:\/\//i', $href)) {
+                    $baseUrl = rtrim(parse_url($url, PHP_URL_SCHEME) . '://' . parse_url($url, PHP_URL_HOST), '/');
+                    $href = $baseUrl . '/' . ltrim($href, '/');
+                }
+
+                $data['favicon'] = $href;
+            }
+
+
+
+            return response()->json($data);
+        } catch (\Throwable $e) {
+            // Log::error($e);    // optionally keep a server log
+            return response()->json(['error' => 'Failed to fetch'], 500);
+        }
+    }
+
 }
 
