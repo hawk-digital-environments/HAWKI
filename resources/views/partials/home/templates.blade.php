@@ -176,7 +176,7 @@
             <p class="title"></p>
             <div class="adr-bar">
                 <img src="" alt="" class="adr-icon">
-                <div class="adr-url" href></div>
+                <a class="adr-url" href></a>
             </div>
             <img src="" alt="" class="link-cover">
         </div>
