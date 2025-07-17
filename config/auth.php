@@ -125,7 +125,7 @@ return [
     */
     'passkey_method' => 'auto',
     'passkey_secret' => 'default',
-    'passkey_otp' => true,
+    'passkey_otp' => false,
     'passkey_otp_timeout' => 300,
 
 ];
