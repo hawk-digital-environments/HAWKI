@@ -385,31 +385,22 @@ class SystemSettingsScreen extends Screen
             // Aktuelle Authentifizierungsmethode ermitteln
             $currentMethod = config('auth.authentication_method', '');
             
-            // Je nach Authentifizierungsmethode die entsprechenden Einstellungen anzeigen
-            switch (strtoupper($currentMethod)) {
-                case 'LDAP':
-                    if (!empty($ldapSettings)) {
-                        $layouts[] = Layout::rows($ldapSettings)
-                            ->title('LDAP Settings')
-                            ->canSee($currentMethod === 'LDAP');
-                    }
-                    break;
-                    
-                case 'OIDC':
-                    if (!empty($oidcSettings)) {
-                        $layouts[] = Layout::rows($oidcSettings)
-                            ->title('OpenID Connect Settings')
-                            ->canSee($currentMethod === 'OIDC');
-                    }
-                    break;
-                    
-                case 'SHIBBOLETH':
-                    if (!empty($shibbolethSettings)) {
-                        $layouts[] = Layout::rows($shibbolethSettings)
-                            ->title('Shibboleth Settings')
-                            ->canSee($currentMethod === 'Shibboleth');
-                    }
-                    break;
+            // Alternative Lösung: Anstatt canSee() zu verwenden, die Layouts bedingt hinzufügen
+            $upperCurrentMethod = strtoupper($currentMethod);
+            
+            if (!empty($ldapSettings) && $upperCurrentMethod === 'LDAP') {
+                $layouts[] = Layout::rows($ldapSettings)
+                    ->title('LDAP Settings');
+            }
+            
+            if (!empty($oidcSettings) && $upperCurrentMethod === 'OIDC') {
+                $layouts[] = Layout::rows($oidcSettings)
+                    ->title('OpenID Connect Settings');
+            }
+            
+            if (!empty($shibbolethSettings) && $upperCurrentMethod === 'SHIBBOLETH') {
+                $layouts[] = Layout::rows($shibbolethSettings)
+                    ->title('Shibboleth Settings');
             }
         }
         
@@ -609,13 +600,46 @@ class SystemSettingsScreen extends Screen
         $settings = $request->input('settings', []);
         $count = 0;
         
+        // Debug: Log all received settings for troubleshooting
+        Log::info('Received settings in saveSettings:', $settings);
+        
+        // Debug: Check current auth method
+        $currentAuthMethod = config('auth.authentication_method', '');
+        Log::info('Current auth method: ' . $currentAuthMethod);
+        
+        // Debug: Check which LDAP settings should be visible
+        $ldapSettingsInDb = AppSetting::where('group', 'authentication')
+            ->where('key', 'like', 'ldap_%')
+            ->pluck('key')
+            ->toArray();
+        Log::info('LDAP settings in DB: ', $ldapSettingsInDb);
+        
+        // Debug: Check ALL authentication settings in DB
+        $allAuthSettingsInDb = AppSetting::where('group', 'authentication')
+            ->pluck('key')
+            ->toArray();
+        Log::info('All authentication settings in DB: ', $allAuthSettingsInDb);
+        
         if ($settings) {
             // Collect only entries that have actually changed
             $changedSettings = [];
             
             foreach ($settings as $key => $value) {
+                // Debug: Log each setting being processed
+                Log::info("Processing setting: {$key} = " . json_encode($value));
+                
+                // Special handling for nested LDAP and OIDC settings that come as JSON objects
+                if (is_array($value) && (str_starts_with($key, 'ldap_') || str_starts_with($key, 'open_id_connect_'))) {
+                    Log::info("Processing nested setting: {$key}");
+                    
+                    // Handle nested settings - flatten them with dot notation
+                    $this->processNestedSettings($key, $value, $changedSettings);
+                    continue; // Skip the main key processing since we handled the nested ones
+                }
+                
                 // Only save password fields if they are not empty
                 if ((str_contains($key, 'bind_pw') || str_contains($key, 'password') || str_contains($key, 'secret')) && empty($value)) {
+                    //Log::info("Skipping empty password field: {$key}");
                     continue;
                 }
                 
@@ -627,6 +651,8 @@ class SystemSettingsScreen extends Screen
                     $normalizedNewValue = $this->normalizeValue($value, $setting->type);
                     $normalizedExistingValue = $this->normalizeValue($setting->value, $setting->type);
                     
+                    //Log::info("Comparing {$key}: old='" . json_encode($normalizedExistingValue) . "' new='" . json_encode($normalizedNewValue) . "'");
+                    
                     // Comparison of normalized values for change detection
                     if ($normalizedExistingValue !== $normalizedNewValue) {
                         $changedSettings[] = [
@@ -635,8 +661,12 @@ class SystemSettingsScreen extends Screen
                             'type' => $setting->type,
                             'model' => $setting
                         ];
+                        //Log::info("Change detected for: {$key}");
+                    } else {
+                        //Log::info("No change detected for: {$key}");
                     }
                 } else {
+                    Log::warning("Setting nicht gefunden: {$key}");
                     Toast::warning("Setting nicht gefunden: {$key}");
                 }
             }
@@ -911,6 +941,64 @@ class SystemSettingsScreen extends Screen
         } catch (\Exception $e) {
             Log::error('Error sending OTP email test: ' . $e->getMessage());
             Toast::error('Failed to send OTP email: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Process nested settings (like LDAP and OIDC settings) that come as JSON objects
+     * but are stored in the database with dot notation
+     *
+     * @param string $parentKey The parent key (e.g., 'ldap_cache', 'ldap_custom_connection')
+     * @param array $nestedData The nested data array
+     * @param array &$changedSettings Reference to the changed settings array
+     */
+    private function processNestedSettings(string $parentKey, array $nestedData, array &$changedSettings)
+    {
+        foreach ($nestedData as $nestedKey => $nestedValue) {
+            // Create the dot notation key
+            $dotNotationKey = $parentKey . '.' . $nestedKey;
+            
+            Log::info("Looking for nested setting: {$dotNotationKey} = " . json_encode($nestedValue));
+            
+            // Handle deeply nested arrays (like attribute_map)
+            if (is_array($nestedValue)) {
+                $this->processNestedSettings($dotNotationKey, $nestedValue, $changedSettings);
+                continue;
+            }
+            
+            // Skip empty password fields
+            if ((str_contains($dotNotationKey, 'bind_pw') || str_contains($dotNotationKey, 'password') || str_contains($dotNotationKey, 'secret')) && empty($nestedValue)) {
+                Log::info("Skipping empty password field: {$dotNotationKey}");
+                continue;
+            }
+            
+            // Look for the setting in the database
+            $setting = AppSetting::where('key', $dotNotationKey)->first();
+            
+            if ($setting) {
+                Log::info("Found nested setting in DB: {$dotNotationKey}");
+                
+                // Process this nested setting
+                $normalizedNewValue = $this->normalizeValue($nestedValue, $setting->type);
+                $normalizedExistingValue = $this->normalizeValue($setting->value, $setting->type);
+                
+                Log::info("Comparing nested {$dotNotationKey}: old='" . json_encode($normalizedExistingValue) . "' new='" . json_encode($normalizedNewValue) . "'");
+                
+                if ($normalizedExistingValue !== $normalizedNewValue) {
+                    $changedSettings[] = [
+                        'key' => $dotNotationKey,
+                        'value' => $normalizedNewValue,
+                        'type' => $setting->type,
+                        'model' => $setting
+                    ];
+                    Log::info("Change detected for nested: {$dotNotationKey}");
+                } else {
+                    Log::info("No change detected for nested: {$dotNotationKey}");
+                }
+            } else {
+                Log::warning("Nested setting not found in DB: {$dotNotationKey}");
+                Toast::warning("Nested setting not found in DB: {$dotNotationKey}");
+            }
         }
     }
 }
