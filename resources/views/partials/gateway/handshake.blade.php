@@ -57,6 +57,14 @@
             </div>
         </div>
 
+        {{-- Error Slide --}}
+        <div class="slide" data-index="5">
+            <h2>{{ $translation["HS-ErrorTitle"] ?? "Fehler beim Handshake" }}</h2>
+            <h3>{{ $translation["HS-ErrorMessage"] ?? "Der Handshake-Prozess ist fehlgeschlagen. Bitte versuchen Sie es erneut oder melden Sie sich ab." }}</h3>
+            <div class="nav-buttons">
+                <button onclick="handleHandshakeError()" class="btn-lg-fill align-end">{{ $translation["HS-Logout"] ?? "Abmelden und Daten bereinigen" }}</button>
+            </div>
+        </div>
 
         {{-- OTP Slide --}}
         <div class="slide" data-index="0">
@@ -109,6 +117,11 @@
 
             </div>
 
+            {{-- Logout Button for OTP Slide --}}
+            <div class="nav-buttons" style="margin-top: 20px;">
+                <button onclick="logout()" class="btn-md">{{ $translation["HS-Logout"] ?? "Abmelden" }}</button>
+            </div>
+
         </div>
 
     </div>
@@ -156,6 +169,18 @@
             }, 100);
         }
     });
+
+    // Function to handle handshake errors
+    function handleHandshakeError() {
+        try {
+            logout();
+            cleanupUserData();
+        } catch (error) {
+            console.error('Error during cleanup:', error);
+            // Force redirect to login even if cleanup fails
+            window.location.href = '/login';
+        }
+    }
 </script>
 
 
