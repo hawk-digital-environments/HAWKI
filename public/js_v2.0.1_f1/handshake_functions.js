@@ -125,14 +125,16 @@ async function checkPasskey(){
 }
 
 
-async function autoGeneratePasskey(){
-    // This function generates the passkey in the background without user interaction
-
+async function generatePasskeyFromSecret(passkeySecret, userInfo) {
     const encoder = new TextEncoder();
-    
     let passkeyValue = null;
 
-    //console.log('passkeySecret: ' + passkeySecret);
+    console.log('Generating passkey with secret:', passkeySecret);
+    console.log('User info for passkey generation:', {
+        username: userInfo.username,
+        created_at: userInfo.created_at,
+        publicKey: userInfo.publicKey ? 'available' : 'not available'
+    });
 
     switch (passkeySecret) {
         case 'username':
@@ -141,7 +143,7 @@ async function autoGeneratePasskey(){
         case 'time':
             passkeyValue = userInfo.created_at;
             break;
-        case 'time':
+        case 'publicKey':
             passkeyValue = userInfo.publicKey;
             break;    
         case 'mixed':
@@ -155,11 +157,9 @@ async function autoGeneratePasskey(){
         default:
             passkeyValue = userInfo.username;
             break;
-        }
+    }
 
-
-    console.log('passkeValue: ' + passkeyValue);
-    console.log('username: ' + userInfo.username);
+    console.log('passkeyValue:', passkeyValue);
     
     const hashBuffer = await crypto.subtle.digest(
         'SHA-256',
@@ -169,8 +169,17 @@ async function autoGeneratePasskey(){
     const generatedPasskey = Array.from(new Uint8Array(hashBuffer))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
+    
+    console.log('Generated passkey:', generatedPasskey);
+    return generatedPasskey;
+}
 
-    console.log('generatedPasskey: ' + generatedPasskey);
+async function autoGeneratePasskey(){
+    // This function generates the passkey in the background without user interaction
+
+    console.log('=== autoGeneratePasskey START ===');
+    const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
+    console.log('=== autoGeneratePasskey - passkey generated ===');
 
     // create backup hash
     backupHash = generatePasskeyBackupHash();
@@ -226,66 +235,76 @@ async function autoGeneratePasskey(){
     // save passkey to localstorage.
     await setPassKey(generatedPasskey);
 
-        console.log('Passkey generated and saved successfully');
-        onBackupCodeComplete();
+    console.log('Passkey generated and saved successfully');
+    console.log('=== autoGeneratePasskey END ===');
+    onBackupCodeComplete();
 }
 
 async function verifyGeneratedPassKey(){
 
-    // user passkey generation logic removed
-    const encoder = new TextEncoder();
-    
-    let passkeyValue = null;
+    try {
+        console.log('=== verifyGeneratedPassKey START ===');
+        
+        // Verify userInfo is available
+        if (!userInfo) {
+            console.error('userInfo is not available');
+            console.log("Failed to verify passkey. User info not available.");
+            return;
+        }
+        
+        // Generate the passkey using the same logic as autoGeneratePasskey
+        const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
+        
+        console.log('serverKeychainCryptoData available:', !!serverKeychainCryptoData);
 
-    console.log('passkeSecret: ' + passkeySecret);
-
-    switch (passkeySecret) {
-        case 'username':
-            passkeyValue = userInfo.username;
-            break;
-        case 'time':
-            passkeyValue = userInfo.created_at;
-            break;
-        case 'time':
-            passkeyValue = userInfo.publicKey;
-            break;    
-        case 'mixed':
-            // Concatenate username and created_at, then hash the result for passkeyValue
-            const mixedString = userInfo.username + userInfo.created_at;
-            const mixedHashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(mixedString));
-            passkeyValue = Array.from(new Uint8Array(mixedHashBuffer))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-            break;
-        default:
-            passkeyValue = userInfo.username;
-            break;
+        // Verify that serverKeychainCryptoData is valid
+        if (!serverKeychainCryptoData) {
+            console.error('serverKeychainCryptoData is not available');
+            console.log("Failed to verify passkey. Server keychain data not available.");
+            return;
         }
 
+        // Try to parse serverKeychainCryptoData first
+        try {
+            const parsedData = JSON.parse(serverKeychainCryptoData);
+            console.log('serverKeychainCryptoData parsed successfully:', {
+                hasKeychain: !!parsedData.keychain,
+                hasKCIV: !!parsedData.KCIV,
+                hasKCTAG: !!parsedData.KCTAG
+            });
+        } catch (parseError) {
+            console.error('Failed to parse serverKeychainCryptoData:', parseError);
+            console.log("Failed to verify passkey. Invalid server keychain data.");
+            return;
+        }
 
-    console.log('passkeValue: ' + passkeyValue);
-    console.log('username: ' + userInfo.username);
-    
-    const hashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        encoder.encode(passkeyValue)
-    );
-
-    const generatedPasskey = Array.from(new Uint8Array(hashBuffer))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-
-    console.log('generatedPasskey: ' + generatedPasskey);
-
-    if(await verifyPasskey(generatedPasskey)){
-        await setPassKey(generatedPasskey);
-        await syncKeychain(serverKeychainCryptoData);
-        console.log('keychain synced');
-        window.location.href = '/chat'; 
-    }
-    else{
+        console.log('=== Attempting passkey verification ===');
+        const verificationResult = await verifyPasskey(generatedPasskey);
+        console.log('Verification result:', verificationResult);
+        
+        if(verificationResult){
+            console.log('=== Passkey verified successfully, setting passkey ===');
+            await setPassKey(generatedPasskey);
+            
+            try {
+                console.log('=== Attempting keychain sync ===');
+                await syncKeychain(serverKeychainCryptoData);
+                console.log('keychain synced successfully');
+                window.location.href = '/chat'; 
+            } catch (syncError) {
+                console.error('Error syncing keychain:', syncError);
+                console.log("Failed to sync keychain. Please try again.");
+            }
+        }
+        else{
+            console.log("Failed to verify passkey. Generated passkey does not match server keychain.");
+        }
+    } catch (error) {
+        console.error('Error in verifyGeneratedPassKey:', error);
         console.log("Failed to verify passkey. Please try again.");
     }
+    
+    console.log('=== verifyGeneratedPassKey END ===');
 
 }
 
@@ -425,11 +444,30 @@ async function verifyEnteredPassKey(provider){
 
 async function verifyPasskey(passkey) {
     try {
+        console.log('=== verifyPasskey START ===');
+        console.log('Input passkey length:', passkey.length);
+        console.log('serverKeychainCryptoData type:', typeof serverKeychainCryptoData);
+        console.log('serverKeychainCryptoData length:', serverKeychainCryptoData?.length);
+        
         const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
+        console.log('udSalt fetched:', !!udSalt);
+        console.log('udSalt type:', typeof udSalt);
+        
         const keychainEncryptor = await deriveKey(passkey, "keychain_encryptor", udSalt);
+        console.log('keychainEncryptor derived:', !!keychainEncryptor);
     
-        const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainCryptoData);
-    
+        const parsedData = JSON.parse(serverKeychainCryptoData);
+        const { keychain, KCIV, KCTAG } = parsedData;
+        console.log('Keychain data parsed:', { 
+            keychain: !!keychain, 
+            KCIV: !!KCIV, 
+            KCTAG: !!KCTAG,
+            keychainLength: keychain?.length,
+            KCIVLength: KCIV?.length,
+            KCTAGLength: KCTAG?.length
+        });
+        
+        console.log('=== Attempting decryption ===');
         const decryptedKeychain = await decryptWithSymKey(
             keychainEncryptor,
             keychain,
@@ -437,11 +475,17 @@ async function verifyPasskey(passkey) {
             KCTAG,
             false
         );
-
+        
+        console.log('Keychain decrypted successfully');
+        console.log('Decrypted keychain length:', decryptedKeychain?.length);
+        console.log('=== verifyPasskey SUCCESS ===');
         return true;
     } catch (error) {
-        // You can log the error if needed
-        // console.error("Error during verification or decryption:", error);
+        console.error("=== verifyPasskey FAILED ===");
+        console.error("Error type:", error.constructor.name);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+        console.error("Full error:", error);
         return false;
     }
 }
@@ -489,7 +533,7 @@ async function extractPasskey(){
         msg.innerText = 'Enter backupHash or upload your backup file.';
         return;
     }
-    if(!isValidBackupKeyFormat){
+    if(!isValidBackupKeyFormat(backupHash)){
         msg.innerText = 'Backup key is not valid!';
         return;
     }
