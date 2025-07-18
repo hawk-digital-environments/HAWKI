@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('LDAP_CONNECTION', 'default'),
+    'connection' => env('LDAP_CONNECTION', 'default'),
 
     /*
     |--------------------------------------------------------------------------
@@ -26,40 +26,20 @@ return [
     |
     */
 
-    'connections' => [
-
-        'default' => [
-            'hosts' => [env('LDAP_HOST', '127.0.0.1')],
-            'username' => env('LDAP_USERNAME', 'cn=user,dc=local,dc=com'),
-            'password' => env('LDAP_PASSWORD', 'secret'),
-            'port' => env('LDAP_PORT', 389),
-            'base_dn' => env('LDAP_BASE_DN', 'dc=local,dc=com'),
-            'timeout' => env('LDAP_TIMEOUT', 5),
-            'use_ssl' => env('LDAP_SSL', false),
-            'use_tls' => env('LDAP_TLS', false),
-            'use_sasl' => env('LDAP_SASL', false),
-            'sasl_options' => [
-                // 'mech' => 'GSSAPI',
-            ],
-        ],
-
-    ],
-
-
-    'custom_connection' =>[
-        'ldap_host' => env('LDAP_HOST'),
-        'ldap_port' => env('LDAP_PORT'),
-        'ldap_base_dn' => env('LDAP_BASE_DN'),
-        'ldap_bind_pw' => env('LDAP_BIND_PW'),
-        'ldap_search_dn' => env('LDAP_SEARCH_DN'),
-        'ldap_filter'=> env('LDAP_FILTER'),
+    'default' => [
+        'host' => env('LDAP_HOST'),
+        'port' => env('LDAP_PORT'),
+        'bind_dn' => env('LDAP_USERNAME'),
+        'bind_pw' => env('LDAP_BIND_PW'),
+        'base_dn' => env('LDAP_BASE_DN'),
+        'filter'=> env('LDAP_FILTER'),
 
         'attribute_map' => [
-            'username' => 'cn',
-            'email' => 'mail',
-            'employeetype' => 'employeetype',
-            'name' => 'displayname',
-        ],
+            'username' => env('LDAP_LOGIN_NAME_ATTR'),
+            'name' => env('LDAP_FULL_NAME_ATTR'),
+            'email' => env('LDAP_MAIL_ATTR'),
+            'employeetype' => env('LDAP_EMPLOYEETYPE_ATTR'),
+        ]
     ],
 
     /*
