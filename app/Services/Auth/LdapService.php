@@ -14,13 +14,16 @@ class LdapService
     public function authenticate($username, $password)
     {
         try {
-            $ldap_host = config('ldap.custom_connection.ldap_host');
-            $ldap_port = config('ldap.custom_connection.ldap_port');
-            $ldap_binddn = config('ldap.custom_connection.ldap_base_dn');
-            $ldap_bindpw = config('ldap.custom_connection.ldap_bind_pw');
-            $ldap_base = config('ldap.custom_connection.ldap_search_dn');
-            $ldap_filter = config('ldap.custom_connection.ldap_filter');
-            $ldap_attributeMap = config('ldap.custom_connection.attribute_map');
+            // may be further integrated as selectable option during login 
+            $connection = config('ldap.connection');
+
+            $ldap_host = config("ldap.$connection.host");
+            $ldap_port = config("ldap.$connection.port");
+            $ldap_bind_dn = config("ldap.$connection.bind_dn");
+            $ldap_bind_pw = config("ldap.$connection.bind_pw");
+            $ldap_base_dn = config("ldap.$connection.base_dn");
+            $ldap_filter = config("ldap.$connection.filter");
+            $ldap_attributeMap = config("ldap.$connection.attribute_map");
 
             // Check if username or password is empty
             if (!$username || !$password) {
@@ -42,13 +45,13 @@ class LdapService
             }
         
             // Bind to LDAP server
-            if (!@ldap_bind($ldapConn, $ldap_binddn, $ldap_bindpw)) {
+            if (!@ldap_bind($ldapConn, $ldap_bind_dn, $ldap_bind_pw)) {
                 return false;
             }
 
             // Search LDAP for user
             $filter = str_replace("username", $username, $ldap_filter);
-            $sr = ldap_search($ldapConn, $ldap_base, $filter);
+            $sr = ldap_search($ldapConn, $ldap_base_dn, $filter);
             if (!$sr) {
                 return false;
             }
@@ -84,10 +87,10 @@ class LdapService
             }
 
             // Example specific logic for display name
-            if (isset($userInfo['displayname'])) {
-                $parts = explode(", ", $userInfo['displayname']);
-                $userInfo['name'] = (isset($parts[1]) ? $parts[1] : '') . " " . (isset($parts[0]) ? $parts[0] : '');
-            }
+            //if (isset($userInfo['name'])) {
+            //    $parts = explode(", ", $userInfo['name']);
+            //    $userInfo['name'] = (isset($parts[1]) ? $parts[1] : '') . " " . (isset($parts[0]) ? $parts[0] : '');
+            //}
             return $userInfo;
         } catch (\Exception $e) {
 
