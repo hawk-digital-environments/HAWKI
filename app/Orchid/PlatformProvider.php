@@ -56,6 +56,7 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('System')
                 ->title('Configuration')
                 ->icon('bs.house-gear')
+                ->badge(fn () => $this->getHawkiCommitId(), Color::DARK)
                 ->list([
                     Menu::make('Settings')
                         ->route('platform.settings.system')
@@ -112,6 +113,32 @@ class PlatformProvider extends OrchidServiceProvider
                 ->target('_blank')
                 ->badge(fn () => Dashboard::version(), Color::DARK),
         ];
+    }
+
+    /**
+     * Get the hawki submodule commit ID from git_info.json
+     *
+     * @return string
+     */
+    private function getHawkiCommitId(): string
+    {
+        try {
+            $gitInfoPath = storage_path('app/git_info.json');
+            
+            if (!file_exists($gitInfoPath)) {
+                return 'N/A';
+            }
+            
+            $gitInfo = json_decode(file_get_contents($gitInfoPath), true);
+            
+            if (!isset($gitInfo['hawki_submodule']['commit_id'])) {
+                return 'N/A';
+            }
+            
+            return $gitInfo['hawki_submodule']['commit_id'];
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
 
