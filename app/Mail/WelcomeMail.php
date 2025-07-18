@@ -18,6 +18,8 @@ class WelcomeMail extends Mailable implements ShouldQueue
     public function __construct($user)
     {
         $this->user = $user;
+        // Queue this mail in the 'emails' queue instead of default
+        $this->onQueue('emails');
     }
 
     public function envelope(): Envelope

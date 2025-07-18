@@ -72,7 +72,10 @@ class PlatformProvider extends OrchidServiceProvider
                         ->icon('bs.paint-bucket'),       
                     Menu::make('Texts')
                         ->route('platform.settings.texts')
-                        ->icon('bs.info-circle'),    
+                        ->icon('bs.info-circle'),
+                    Menu::make('Mail')
+                        ->route('platform.settings.mail')
+                        ->icon('bs.envelope'),    
                     ]),    
             
             Menu::make('Models')

@@ -9,7 +9,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OTPMail extends Mailable
+class OTPMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -22,6 +22,8 @@ class OTPMail extends Mailable
         $this->user = $user;
         $this->otp = $otp;
         $this->appName = $appName ?? config('app.name', 'HAWKI');
+        // Queue this mail in the 'emails' queue instead of default
+        $this->onQueue('emails');
     }
 
     public function envelope(): Envelope

@@ -49,6 +49,16 @@ return [
             //'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
 
+        'herd' => [
+            'transport' => 'smtp',
+            'encryption' => 'tls',
+            'host' => 'localhost',
+            'port' => 2525,
+            'username' => '',
+            'password' => '',
+            'timeout' => null,
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],

@@ -94,6 +94,43 @@ return [
         'triggers.default_model' => 'Print model defaults in laravel.log',
 
     ],
+    'mail' => [
+        'default' => 'Default mailer (smtp, herd, sendmail, log, array, etc.)',
+        'from.address' => 'Global "From" email address',
+        'from.name' => 'Global "From" name',
+        
+        // SMTP Mailer Configuration
+        'mailers.smtp.transport' => 'SMTP transport type (smtp)',
+        'mailers.smtp.url' => 'SMTP URL (alternative to individual settings)',
+        'mailers.smtp.host' => 'SMTP server hostname',
+        'mailers.smtp.port' => 'SMTP server port (usually 587 for TLS, 465 for SSL)',
+        'mailers.smtp.encryption' => 'SMTP encryption method (tls, ssl, or none)',
+        'mailers.smtp.username' => 'SMTP authentication username',
+        'mailers.smtp.password' => 'SMTP authentication password',
+        'mailers.smtp.timeout' => 'SMTP connection timeout in seconds',
+        
+        // Herd Mailer Configuration (Laravel Herd local development)
+        'mailers.herd.transport' => 'Herd transport type (smtp)',
+        'mailers.herd.url' => 'Herd URL (alternative to individual settings)',
+        'mailers.herd.host' => 'Herd SMTP hostname (usually localhost)',
+        'mailers.herd.port' => 'Herd SMTP port (usually 2525)',
+        'mailers.herd.encryption' => 'Herd encryption method (usually tls)',
+        'mailers.herd.username' => 'Herd username (usually empty for local)',
+        'mailers.herd.password' => 'Herd password (usually empty for local)',
+        'mailers.herd.timeout' => 'Herd connection timeout in seconds',
+        
+        // Sendmail Configuration
+        'mailers.sendmail.transport' => 'Sendmail transport type (sendmail)',
+        'mailers.sendmail.url' => 'Sendmail URL (usually not used)',
+        'mailers.sendmail.host' => 'Sendmail host (usually not applicable)',
+        'mailers.sendmail.port' => 'Sendmail port (usually not applicable)',
+        'mailers.sendmail.encryption' => 'Sendmail encryption (usually not applicable)',
+        'mailers.sendmail.username' => 'Sendmail username (usually not applicable)',
+        'mailers.sendmail.password' => 'Sendmail password (usually not applicable)',
+        'mailers.sendmail.timeout' => 'Sendmail timeout in seconds',
+        'mailers.sendmail.path' => 'Path to sendmail binary (e.g., /usr/sbin/sendmail -bs -i)',
+        
+    ],
 
         /*
     |--------------------------------------------------------------------------
@@ -116,5 +153,6 @@ return [
         'shibboleth' => 'authentication',
         'session' => 'authentication',
         'logging' => 'logging',
+        'mail' => 'mail',
     ],
 ];
