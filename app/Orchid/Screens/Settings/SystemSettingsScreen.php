@@ -4,10 +4,12 @@ namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppSetting;
 use App\Services\SettingsService;
+use App\Http\Controllers\TestConfigValueController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;  // Fehlender Import hinzugefügt
+use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Fields\Code;
@@ -56,8 +58,10 @@ class SystemSettingsScreen extends Screen
         $configData = [];
         $rawResponse = '';
         try {
-            $response = Http::get(url('/test-config-value'));
-            $responseData = $response->json();
+            // Direct invocation of the controller instead of an HTTP request
+            $controller = new TestConfigValueController();
+            $response = $controller->__invoke();
+            $responseData = $response->getData(true);
             $rawResponse = json_encode($responseData, JSON_PRETTY_PRINT);
             
             // Extract config_values
@@ -116,17 +120,11 @@ class SystemSettingsScreen extends Screen
         return [
             Button::make($this->isMaintenanceModeActive() ? 'Unlock System' : 'Lock System')
                 ->icon($this->isMaintenanceModeActive() ? 'bs.lock' : 'bs.unlock')
-                //->class($this->isMaintenanceModeActive() ? 'btn-warning' : 'btn-info')
                 ->confirm($this->isMaintenanceModeActive() 
                     ? 'This will disable the maintenance mode. The website will be available to all users.' 
                     : 'This will put the application into maintenance mode. Only users with bypass access will be able to access the site.')
                 ->method('toggleMaintenanceMode'),
-                
-            //Button::make('Run Settings Seeder')
-            //    ->icon('refresh')
-            //    ->confirm('This will reload settings from config files using the AppSettingsSeeder. Any manual changes may be overwritten. Continue?')
-            //    ->method('runSettingsSeeder'),
-                
+                   
             Button::make('Save')
                 ->icon('save')
                 ->method('saveSettings'),
@@ -166,8 +164,10 @@ class SystemSettingsScreen extends Screen
         // Get system information
         Artisan::call('about');
         $aboutOutput = Artisan::output();
-
+        
         return Layout::block([
+    
+        
             Layout::rows([
                 Label::make('system_info_label')
                     ->title('System Information')
@@ -177,12 +177,16 @@ class SystemSettingsScreen extends Screen
                     ->readonly()
                     ->value($aboutOutput)
                     ->height('550px'),
-                
+            ]),
+            
+            Layout::rows([
                 Label::make('config_test_label')
                     ->title('Configuration Source Testing')
                     ->help('This shows where each configuration value is coming from: database, environment variables, or defaults')
                     ->addclass('fw-bold'),
             ]),
+            
+
             
             // Use table layout with data from query - add render methods to handle array data
             Layout::table('config_data', [
@@ -312,6 +316,8 @@ class SystemSettingsScreen extends Screen
         $ldapSettings = [];
         $oidcSettings = [];
         $shibbolethSettings = [];
+        $passkeySettings = [];
+        $otherAuthSettings = []; // Fallback für nicht kategorisierte Settings
 
         // Alle Authentifizierungseinstellungen nach Typ sortieren
         foreach ($this->query()['authentication'] as $setting) {
@@ -325,15 +331,31 @@ class SystemSettingsScreen extends Screen
                 $oidcSettings[] = $this->getFieldForSetting($setting);
             } else if (str_starts_with($setting->key, 'shibboleth_')) {
                 $shibbolethSettings[] = $this->getFieldForSetting($setting);
+            } else if (str_starts_with($setting->key, 'auth_passkey_')) {
+                $passkeySettings[] = $this->getFieldForSetting($setting);
+            } else {
+                // Fallback für alle anderen Authentication-Settings
+                $otherAuthSettings[] = $this->getFieldForSetting($setting);
             }
         }
 
         // Array für alle Layouts vorbereiten
         $layouts = [];
+        
         // Test User Einstellungen als eigenes Layout
         if (!empty($testUserSettings)) {
             $layouts[] = Layout::rows($testUserSettings)
             ->title('Testusers');;
+        }
+        // Fallback-Layout für nicht kategorisierte Authentication-Settings
+        if (!empty($otherAuthSettings)) {
+            $layouts[] = Layout::rows($otherAuthSettings)
+                ->title('Authentication Settings');
+        }
+        // Passkey-Einstellungen als eigenes Layout
+        if (!empty($passkeySettings)) {
+            $layouts[] = Layout::rows($passkeySettings)
+                ->title('Passkey Settings');
         }
         // Authentifizierungsmethode in separatem Layout, falls vorhanden
         if ($authMethodSetting) {
@@ -344,31 +366,22 @@ class SystemSettingsScreen extends Screen
             // Aktuelle Authentifizierungsmethode ermitteln
             $currentMethod = config('auth.authentication_method', '');
             
-            // Je nach Authentifizierungsmethode die entsprechenden Einstellungen anzeigen
-            switch (strtoupper($currentMethod)) {
-                case 'LDAP':
-                    if (!empty($ldapSettings)) {
-                        $layouts[] = Layout::rows($ldapSettings)
-                            ->title('LDAP Settings')
-                            ->canSee($currentMethod === 'LDAP');
-                    }
-                    break;
-                    
-                case 'OIDC':
-                    if (!empty($oidcSettings)) {
-                        $layouts[] = Layout::rows($oidcSettings)
-                            ->title('OpenID Connect Settings')
-                            ->canSee($currentMethod === 'OIDC');
-                    }
-                    break;
-                    
-                case 'SHIBBOLETH':
-                    if (!empty($shibbolethSettings)) {
-                        $layouts[] = Layout::rows($shibbolethSettings)
-                            ->title('Shibboleth Settings')
-                            ->canSee($currentMethod === 'Shibboleth');
-                    }
-                    break;
+            // Alternative Lösung: Anstatt canSee() zu verwenden, die Layouts bedingt hinzufügen
+            $upperCurrentMethod = strtoupper($currentMethod);
+            
+            if (!empty($ldapSettings) && $upperCurrentMethod === 'LDAP') {
+                $layouts[] = Layout::rows($ldapSettings)
+                    ->title('LDAP Settings');
+            }
+            
+            if (!empty($oidcSettings) && $upperCurrentMethod === 'OIDC') {
+                $layouts[] = Layout::rows($oidcSettings)
+                    ->title('OpenID Connect Settings');
+            }
+            
+            if (!empty($shibbolethSettings) && $upperCurrentMethod === 'SHIBBOLETH') {
+                $layouts[] = Layout::rows($shibbolethSettings)
+                    ->title('Shibboleth Settings');
             }
         }
         
@@ -435,7 +448,6 @@ class SystemSettingsScreen extends Screen
                         ->value($setting->value)
                         ->horizontal(),
                 ])
-                ->alignCenter()
                 ->widthColumns('1fr 1fr');
                 
             case 'json':
@@ -470,6 +482,42 @@ class SystemSettingsScreen extends Screen
                     ->alignCenter()
                     ->widthColumns('1fr 1fr');
                 } 
+                // Special handling for PASSKEY_METHOD dropdown
+                else if ($key === 'auth_passkey_method') {
+                    return Group::make([
+                        Label::make("label_{$key}")
+                            ->title($setting->description)
+                            ->help($displayKey)
+                            ->addclass('fw-bold'),
+                        Select::make("settings.{$key}")
+                            ->options([
+                                'user' => 'User (Manual passkey entry)',
+                                'auto' => 'Auto (Automatic passkey generation)',
+                            ])
+                            ->value($setting->value),
+                    ])
+                    ->alignCenter()
+                    ->widthColumns('1fr 1fr');
+                }
+                // Special handling for PASSKEY_SECRET dropdown
+                else if ($key === 'auth_passkey_secret') {
+                    return Group::make([
+                        Label::make("label_{$key}")
+                            ->title($setting->description)
+                            ->help($displayKey),
+                        Select::make("settings.{$key}")
+                            ->options([
+                                'username' => 'Username',
+                                'time' => 'Time of registration',
+                                'mixed' => 'Name and Time of registration',
+                                'publicKey' => 'Public Key',
+                                'default' => 'Default',
+                            ])
+                            ->value($setting->value),
+                    ])
+                    ->alignCenter()
+                    ->widthColumns('1fr 1fr');
+                }
                 // Special handling for password fields - especially LDAP bind password
                 else if (str_contains($key, 'bind_pw') || str_contains($key, 'password') || str_contains($key, 'secret')) {
                     return Group::make([
@@ -479,8 +527,7 @@ class SystemSettingsScreen extends Screen
                             ->addclass('fw-bold'),
                         Input::make("settings.{$key}")
                             ->type('password')
-                            ->placeholder('••••••••')
-                            ->value(''),  // Leerer Wert - Passwort wird nicht angezeigt, aber kann neu gesetzt werden
+                            ->value(''),
                     ])
                     ->alignCenter()
                     ->widthColumns('1fr 1fr');
@@ -534,25 +581,60 @@ class SystemSettingsScreen extends Screen
         $settings = $request->input('settings', []);
         $count = 0;
         
+        // Debug: Log all received settings for troubleshooting
+        Log::info('Received settings in saveSettings:', $settings);
+        
+        // Debug: Check current auth method
+        $currentAuthMethod = config('auth.authentication_method', '');
+        Log::info('Current auth method: ' . $currentAuthMethod);
+        
+        // Debug: Check which LDAP settings should be visible
+        $ldapSettingsInDb = AppSetting::where('group', 'authentication')
+            ->where('key', 'like', 'ldap_%')
+            ->pluck('key')
+            ->toArray();
+        Log::info('LDAP settings in DB: ', $ldapSettingsInDb);
+        
+        // Debug: Check ALL authentication settings in DB
+        $allAuthSettingsInDb = AppSetting::where('group', 'authentication')
+            ->pluck('key')
+            ->toArray();
+        Log::info('All authentication settings in DB: ', $allAuthSettingsInDb);
+        
         if ($settings) {
-            // Sammle nur Einträge, die sich tatsächlich geändert haben
+            // Collect only entries that have actually changed
             $changedSettings = [];
             
             foreach ($settings as $key => $value) {
-                // Passwortfelder nur speichern, wenn sie nicht leer sind
+                // Debug: Log each setting being processed
+                Log::info("Processing setting: {$key} = " . json_encode($value));
+                
+                // Special handling for nested LDAP and OIDC settings that come as JSON objects
+                if (is_array($value) && (str_starts_with($key, 'ldap_') || str_starts_with($key, 'open_id_connect_'))) {
+                    Log::info("Processing nested setting: {$key}");
+                    
+                    // Handle nested settings - flatten them with dot notation
+                    $this->processNestedSettings($key, $value, $changedSettings);
+                    continue; // Skip the main key processing since we handled the nested ones
+                }
+                
+                // Only save password fields if they are not empty
                 if ((str_contains($key, 'bind_pw') || str_contains($key, 'password') || str_contains($key, 'secret')) && empty($value)) {
+                    //Log::info("Skipping empty password field: {$key}");
                     continue;
                 }
                 
-                // Da die Keys bereits mit Unterstrichen in der DB sind, können wir direkt suchen
+                // Since the keys are already stored with underscores in the database, we can search directly
                 $setting = AppSetting::where('key', $key)->first();
                 
                 if ($setting) {
-                    // Umwandlung des Werts basierend auf dem Typ für einen korrekten Vergleich
+                    // Transform the value based on its type for proper comparison
                     $normalizedNewValue = $this->normalizeValue($value, $setting->type);
                     $normalizedExistingValue = $this->normalizeValue($setting->value, $setting->type);
                     
-                    // Vergleich der normalisierten Werte für Änderungserkennung
+                    //Log::info("Comparing {$key}: old='" . json_encode($normalizedExistingValue) . "' new='" . json_encode($normalizedNewValue) . "'");
+                    
+                    // Comparison of normalized values for change detection
                     if ($normalizedExistingValue !== $normalizedNewValue) {
                         $changedSettings[] = [
                             'key' => $key,
@@ -560,25 +642,29 @@ class SystemSettingsScreen extends Screen
                             'type' => $setting->type,
                             'model' => $setting
                         ];
+                        //Log::info("Change detected for: {$key}");
+                    } else {
+                        //Log::info("No change detected for: {$key}");
                     }
                 } else {
+                    Log::warning("Setting nicht gefunden: {$key}");
                     Toast::warning("Setting nicht gefunden: {$key}");
                 }
             }
             
-            // Führe Updates nur für geänderte Einstellungen durch
+            // Perform updates only for changed settings
             foreach ($changedSettings as $changed) {
                 $setting = $changed['model'];
                 $formattedValue = $this->formatValueForStorage($changed['value'], $changed['type']);
                 
-                // Aktualisiere die Einstellung
+                // Update the setting
                 $setting->value = $formattedValue;
                 $setting->save();
                 
                 // Cache für diese Einstellung löschen
                 Cache::forget('app_settings_' . $setting->key);
                 
-                // Auch den Config-Cache für diese Quelle löschen, falls vorhanden
+                // Also clear the config cache for this source, if it exists
                 if ($setting->source) {
                     Cache::forget('config_' . $setting->source);
                 }
@@ -586,21 +672,21 @@ class SystemSettingsScreen extends Screen
                 $count++;
             }
             
-            // Benutzer-Feedback basierend auf den Änderungen
+            // User feedback based on the changes
             if ($count > 0) {
-                // Gesamten Konfigurationscache löschen
+                // Clear the entire configuration cache
                 try {
                     Artisan::call('config:clear');
                     
-                    // Löschen des spezifischen Config-Override-Caches
+                    // Clear the specific config override cache
                     \App\Providers\ConfigServiceProvider::clearConfigCache();
                     
-                    Toast::success("{$count} System-Einstellungen wurden aktualisiert und der Konfigurationscache wurde geleert.");
+                    Toast::success("{$count} system settings have been updated, and the configuration cache has been cleared.");
                 } catch (\Exception $e) {
-                    Toast::warning("Einstellungen gespeichert, aber Cache-Leeren fehlgeschlagen: " . $e->getMessage());
+                    Toast::warning("Settings saved, but clearing cache failed: " . $e->getMessage());
                 }
             } else {
-                Toast::info("Keine Änderungen erkannt");
+                Toast::info("No changes detected");
             }
         }
         
@@ -615,24 +701,24 @@ class SystemSettingsScreen extends Screen
     public function runSettingsSeeder()
     {
         try {
-            // Führe den AppSettingsSeeder aus und erfasse die Ausgabe
+            // Run the AppSettingsSeeder and capture the output
             \Artisan::call('db:seed', [
                 '--class' => 'Database\Seeders\AppSettingsSeeder'
             ]);
             
-            // Erfasse die Ausgabe direkt
+            // Capture the output directly
             $output = \Artisan::output();
             
-            // Konfigurationscache leeren, um neue Einstellungen zu aktivieren
+            // Clear the configuration cache to activate new settings
             Artisan::call('config:clear');
             
-            // Löschen des spezifischen Config-Override-Caches
+            // Clear the specific config override cache
             \App\Providers\ConfigServiceProvider::clearConfigCache();
             
-            // Zeige die unveränderte Ausgabe als Erfolgsmeldung an
+            // Display the unmodified output as a success message
             Toast::success('Settings Seeder Output: ' . PHP_EOL . $output);
             
-            // Logging für Diagnosezwecke
+            // Logging for diagnostic purposes
             Log::info('AppSettingsSeeder Output: ' . $output);
             
         } catch (\Exception $e) {
@@ -655,18 +741,18 @@ class SystemSettingsScreen extends Screen
     {
         switch ($type) {
             case 'boolean':
-                // Konvertiere in einen booleschen Wert für konsistenten Vergleich
+                // Convert to a boolean value for consistent comparison
                 if (is_string($value)) {
                     return filter_var($value, FILTER_VALIDATE_BOOLEAN);
                 }
                 return (bool) $value;
                 
             case 'integer':
-                // Konvertiere in eine Ganzzahl für konsistenten Vergleich
+                // Convert to an integer for consistent comparison
                 return (int) $value;
                 
             case 'json':
-                // Dekodiere JSON-Strings zu Arrays/Objekten für einen strukturellen Vergleich
+                // Decode JSON strings into arrays/objects for structural comparison
                 if (is_string($value)) {
                     try {
                         $decoded = json_decode($value, true);
@@ -674,14 +760,14 @@ class SystemSettingsScreen extends Screen
                             return $decoded;
                         }
                     } catch (\Exception $e) {
-                        // Bei Fehler den Originalwert zurückgeben
+                        // In case of an error, return the original value
                     }
                 }
-                // Wenn es bereits ein Array ist oder die Dekodierung fehlschlägt
+                // If it's already an array or decoding fails
                 return $value;
                 
             default:
-                // Für Strings und andere Typen als String zurückgeben
+                // Return as string for strings and other types
                 return (string) $value;
         }
     }
@@ -697,32 +783,32 @@ class SystemSettingsScreen extends Screen
     {
         switch ($type) {
             case 'boolean':
-                // Speichere als 'true' oder 'false' String
+                // Store as 'true' or 'false' string
                 return (filter_var($value, FILTER_VALIDATE_BOOLEAN)) ? 'true' : 'false';
                 
             case 'integer':
-                // Konvertiere zu String für Speicherung
+                // Convert to string for storage
                 return (string) (int) $value;
                 
             case 'json':
-                // Konvertiere Array/Objekt zu JSON-String
+                // Convert array/object to JSON string
                 if (is_array($value) || is_object($value)) {
                     return json_encode($value);
                 } elseif (is_string($value)) {
                     try {
-                        // Versuche zu dekodieren und wieder zu kodieren, um ein konsistentes Format zu gewährleisten
+                        // Attempt to decode and re-encode to ensure a consistent format
                         $decoded = json_decode($value, true);
                         if (json_last_error() === JSON_ERROR_NONE) {
                             return json_encode($decoded);
                         }
                     } catch (\Exception $e) {
-                        // Bei Fehler: Original zurückgeben, wenn es ein gültiger JSON-String ist
+                        // In case of an error: Return the original value if it is a valid JSON string
                     }
                 }
                 return $value;
                 
             default:
-                // Für alle anderen Typen als String zurückgeben
+                // Return as string for all other types
                 return (string) $value;
         }
     }
@@ -748,13 +834,82 @@ class SystemSettingsScreen extends Screen
             Artisan::call('up');
             Toast::success('Maintenance mode has been disabled.');
         } else {
+            // Generate a secret bypass path
+            $secret = 'admin-bypass-' . md5(now());
+            
             Artisan::call('down', [
-                '--refresh' => '60',  // Seite alle 60 Sekunden aktualisieren
-                '--secret' => 'admin-bypass-' . md5(now()),  // Geheimer URL-Pfad, um Maintenance-Modus zu umgehen
+                '--refresh' => '60',  // Refresh the page every 60 seconds
+                '--secret' => $secret,  // Secret URL path to bypass maintenance mode
             ]);
-            Toast::success('Maintenance mode has been enabled.');
+            
+            // Generate the full URL for the admin bypass
+            $bypassUrl = url($secret);
+            
+            Toast::info('Maintenance mode has been enabled. Admin bypass URL: ' . $bypassUrl)
+                ->persistent();
+            
+            // Log the link in case of any issues
+            Log::info('Maintenance mode enabled with bypass URL: ' . $bypassUrl);
         }
         
-        return redirect()->back();
+        return;
+    }
+
+    /**
+     * Process nested settings (like LDAP and OIDC settings) that come as JSON objects
+     * but are stored in the database with dot notation
+     *
+     * @param string $parentKey The parent key (e.g., 'ldap_cache', 'ldap_custom_connection')
+     * @param array $nestedData The nested data array
+     * @param array &$changedSettings Reference to the changed settings array
+     */
+    private function processNestedSettings(string $parentKey, array $nestedData, array &$changedSettings)
+    {
+        foreach ($nestedData as $nestedKey => $nestedValue) {
+            // Create the dot notation key
+            $dotNotationKey = $parentKey . '.' . $nestedKey;
+            
+            Log::info("Looking for nested setting: {$dotNotationKey} = " . json_encode($nestedValue));
+            
+            // Handle deeply nested arrays (like attribute_map)
+            if (is_array($nestedValue)) {
+                $this->processNestedSettings($dotNotationKey, $nestedValue, $changedSettings);
+                continue;
+            }
+            
+            // Skip empty password fields
+            if ((str_contains($dotNotationKey, 'bind_pw') || str_contains($dotNotationKey, 'password') || str_contains($dotNotationKey, 'secret')) && empty($nestedValue)) {
+                Log::info("Skipping empty password field: {$dotNotationKey}");
+                continue;
+            }
+            
+            // Look for the setting in the database
+            $setting = AppSetting::where('key', $dotNotationKey)->first();
+            
+            if ($setting) {
+                Log::info("Found nested setting in DB: {$dotNotationKey}");
+                
+                // Process this nested setting
+                $normalizedNewValue = $this->normalizeValue($nestedValue, $setting->type);
+                $normalizedExistingValue = $this->normalizeValue($setting->value, $setting->type);
+                
+                Log::info("Comparing nested {$dotNotationKey}: old='" . json_encode($normalizedExistingValue) . "' new='" . json_encode($normalizedNewValue) . "'");
+                
+                if ($normalizedExistingValue !== $normalizedNewValue) {
+                    $changedSettings[] = [
+                        'key' => $dotNotationKey,
+                        'value' => $normalizedNewValue,
+                        'type' => $setting->type,
+                        'model' => $setting
+                    ];
+                    Log::info("Change detected for nested: {$dotNotationKey}");
+                } else {
+                    Log::info("No change detected for nested: {$dotNotationKey}");
+                }
+            } else {
+                Log::warning("Nested setting not found in DB: {$dotNotationKey}");
+                Toast::warning("Nested setting not found in DB: {$dotNotationKey}");
+            }
+        }
     }
 }

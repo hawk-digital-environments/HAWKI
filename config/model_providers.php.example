@@ -40,15 +40,28 @@ return [
     |
     */
     'providers' =>[
+        'hawki'=> [
+            'id' => 'hawki',
+            'active' => true,
+            'api_url' => 'http://localhost:11434/api/chat',
+            'ping_url' => 'http://localhost:11434/api/tags',
+            'models' => [
+                [
+                    'id' => 'llama3.2:1b',
+                    'label' => 'Llama3.2',
+                    'streamable' => true,
+                ]
+            ]
+        ],
         'ollama'=> [
             'id' => 'ollama',
             'active' => false,
-            'api_url' => 'http://localhost:11434/api/generate',
-            'ping_url' => 'http://localhost:11434/api/models',
+            'api_url' => 'http://localhost:11434/api/chat',
+            'ping_url' => 'http://localhost:11434/api/tags',
             'models' => [
                 [
-                    'id' => 'llama3.2',
-                    'label' => 'Llama3.2',
+                    'id' => 'llama3.2:latest',
+                    'label' => 'Llama3.2:latest',
                     'streamable' => true,
                 ]
             ]

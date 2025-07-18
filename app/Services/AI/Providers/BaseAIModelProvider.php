@@ -277,7 +277,10 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
             }
             
             $streamCallback($data);
-            Log::info($data);
+            
+            if (config('logging.triggers.return_object')) {
+                Log::info($data);
+            }
             if (ob_get_length()) {
                 ob_flush();
             }

@@ -37,7 +37,7 @@ class AuthenticationController extends Controller
 
     public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, TestAuthService $testAuthService, LanguageController $languageController)
     {
-        $this->authMethod = env('AUTHENTICATION_METHOD');
+        $this->authMethod = config('auth.authentication_method', 'LDAP');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
@@ -61,10 +61,12 @@ class AuthenticationController extends Controller
         $password = $request->input('password');
 
         $authenticatedUserInfo = null;
+        // Teste zuerst Test Users, wenn aktiviert
         if(config('test_users')['active']){
             $authenticatedUserInfo = $this->testAuthService->authenticate($username, $password);
         }
 
+        // Falls Test User Authentication fehlschlägt oder deaktiviert ist, verwende die konfigurierte Authentifizierungsmethode
         if(!$authenticatedUserInfo) {
             if($this->authMethod === 'LDAP'){
                 $authenticatedUserInfo = $this->ldapService->authenticate($username, $password);
@@ -183,6 +185,9 @@ class AuthenticationController extends Controller
         $cryptoController = new EncryptionController();
         $keychainData = $cryptoController->fetchUserKeychain();
         
+        // Get passkey secret from config
+        $passkeySecret = config('auth.passkey_secret');
+        
         $settingsPanel = (new SettingsController())->initialize($translation);
 
         $activeOverlay = false;
@@ -193,7 +198,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay'));
+        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay', 'passkeySecret'));
   
     }
 
@@ -217,6 +222,9 @@ class AuthenticationController extends Controller
         $localizationController = new LocalizationController();
         $localizedTexts = $localizationController->getAllLocalizedContent();
         
+        // Get passkey secret from config
+        $passkeySecret = config('auth.passkey_secret');
+        
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'register'){
             $activeOverlay = true;
@@ -225,7 +233,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret'));
     }
 
 
@@ -317,7 +325,7 @@ class AuthenticationController extends Controller
         Session::invalidate();
 
         // Determine the logout redirect URI based on the authentication method
-        $authMethod = env('AUTHENTICATION_METHOD');
+        $authMethod = config('auth.authentication_method', 'LDAP');
         if ($authMethod === 'Shibboleth') {
             $redirectUri = config('shibboleth.logout_path');
         } elseif ($authMethod === 'OIDC') {
@@ -328,6 +336,75 @@ class AuthenticationController extends Controller
 
         // Redirect to the appropriate logout URI
         return redirect($redirectUri);
+    }
+
+    /**
+     * Verify the provided OTP
+     */
+    public function verifyOTP(Request $request)
+    {
+        try {
+            $providedOTP = $request->input('otp');
+            
+            if (!$providedOTP) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Log-In Code is required'
+                ], 400);
+            }
+
+            $storedOTP = Session::get('otp_code');
+            $otpEmail = Session::get('otp_email');
+            $expiresAt = Session::get('otp_expires_at');
+
+            // Check if OTP exists
+            if (!$storedOTP) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'No Log-In Code found. Please request a new one.'
+                ], 400);
+            }
+
+            // Check if OTP is expired
+            if (!$expiresAt || now()->isAfter($expiresAt)) {
+                // Clear expired OTP
+                Session::forget(['otp_code', 'otp_email', 'otp_expires_at']);
+                
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Log-In Code has expired. Please request a new one.'
+                ], 400);
+            }
+
+            // Verify OTP
+            if ($providedOTP === $storedOTP) {
+                // Clear OTP after successful verification
+                Session::forget(['otp_code', 'otp_email', 'otp_expires_at']);
+                
+                Log::info('Log-In Code successfully verified for email: ' . $otpEmail);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Log-In Code successfully verified',
+                    'redirect_url' => '/chat'
+                ]);
+            } else {
+                Log::warning('Invalid Log-In Code attempt for email: ' . $otpEmail);
+                
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invalid Log-In Code. Please try again.'
+                ], 400);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Log-In Code verification error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'error' => 'Error during Log-In Code verification'
+            ], 500);
+        }
     }
     
 }
