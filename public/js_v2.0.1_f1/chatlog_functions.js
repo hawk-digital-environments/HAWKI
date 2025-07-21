@@ -38,7 +38,7 @@ function initializeChatlogFunctions(){
 }
 
 function switchDyMainContent(contentID){
-    
+
     const mainPanel = document.querySelector('.dy-main-panel');
 
     const contents = mainPanel.querySelectorAll('.dy-main-content');
@@ -70,7 +70,7 @@ async function submitMessageToServer(requestObj, url){
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify(requestObj)
         });
@@ -91,7 +91,7 @@ async function submitMessageToServer(requestObj, url){
 async function requestMsgUpdate(messageObj, messageElement, url){
     const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    try {        
+    try {
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -104,8 +104,7 @@ async function requestMsgUpdate(messageObj, messageElement, url){
         const data = await response.json();
 
         if (data.success) {
-            // console.log(data);
-            // console.log('Message updated.')
+
             updateMessageElement(messageElement, data.messageData);
         } else {
             // Handle unexpected response
@@ -157,7 +156,7 @@ function setSendBtnStatus(status) {
         }
     });
 
-    // Update the sendbtnstat variable 
+    // Update the sendbtnstat variable
     sendbtnstat = status;
 }
 function getSendBtnStat(){
@@ -220,7 +219,7 @@ function loadMessagesOnGUI(messages) {
     messages.forEach(messageObj => {
         const addedMsg = addMessageToChatlog(messageObj, true);
         updateMessageElement(addedMsg, messageObj);
-        
+
         // Observe unread messages
         if(addedMsg.dataset.read_stat === 'false'){
             observer.observe(addedMsg);
@@ -333,9 +332,9 @@ function setModel(modelID = null){
 
             model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
         }
-        // if there is no defined model 
+        // if there is no defined model
         // or the defined model is outdated or cruppted
-        if(!model){            
+        if(!model){
             model = modelsList.find(m => m.id === defaultModel);
         }
     }
@@ -345,14 +344,26 @@ function setModel(modelID = null){
     activeModel = model;
     localStorage.setItem("definedModel", activeModel.id);
 
+    // If the selected model is a web search model, enable the web search button
+    if (activeModel.id === defaultSearchModel) {
+        const webSearchButton = document.querySelector('.websearch-icon').parentElement;
+        if (webSearchButton) {
+            webSearchButton.classList.add('active');
+        }
+    } else {
+        const webSearchButton = document.querySelector('.websearch-icon').parentElement;
+        if (webSearchButton) {
+            webSearchButton.classList.remove('active');
+        }
+    }
 
     //UI UPDATE...
     const selectors = document.querySelectorAll('.model-selector');
     selectors.forEach(selector => {
-        //if this is our target model selector 
+        //if this is our target model selector
         if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
-            selector.classList.add('active');            
-            
+            selector.classList.add('active');
+
             const labels = document.querySelectorAll('.model-selector-label');
             labels.forEach(label => {
                 label.innerHTML = activeModel.label;
@@ -362,6 +373,20 @@ function setModel(modelID = null){
             selector.classList.remove('active');
         }
     });
+
+}
+
+// Change the Model to a websearch capable model (available models atm.: gemini-2.0-flash-exp)
+function selectWebSearch(button) {
+    const isActive = button.classList.contains('active');
+
+    if (isActive) {
+        button.classList.remove('active');
+        setModel(defaultModel);
+    } else {
+        button.classList.add('active');
+        setModel(defaultSearchModel);
+    }
 
 }
 //#endregion
@@ -385,26 +410,26 @@ function scrollToLast(forceScroll, targetElement = null) {
         // Check if the message is in a branch thread
         const thread = targetElement.closest('.thread');
         const isBranchMessage = thread && thread.classList.contains('branch');
-        
+
         if (isBranchMessage) {
             // Ensure thread is visible
             if (!thread.classList.contains('visible')) {
                 thread.classList.add('visible');
             }
-            
+
             const messageHeight = targetElement.offsetHeight;
             // Calculate position based on thread position and the message's position in thread
             const messageTopOffset = targetElement.offsetTop + messageHeight - (window.innerHeight - 200);
 
             const threadTopOffset = thread.offsetTop;
-            
+
             // Position should include parent message position plus the position within the thread
             scrollTargetPosition =  threadTopOffset + messageTopOffset;
-            
+
             // Add some padding to ensure message is fully visible
             // scrollTargetPosition -= 100;
         } else {
-            
+
             // Add some padding to ensure message is fully visible
             const messageHeight = targetElement.offsetHeight;
 

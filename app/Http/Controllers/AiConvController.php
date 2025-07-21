@@ -21,7 +21,7 @@ class AiConvController extends Controller
     {
         $user = Auth::user();
         $conv = AiConv::where('slug', $slug)->where('user_id', $user->id)->firstOrFail();
-        
+
         // Prepare the data to send back
         $data = [
             'id' => $conv->id,
@@ -32,7 +32,7 @@ class AiConvController extends Controller
         ];
         return response()->json($data);
     }
-    
+
 
 
     ///CREATE NEW CONVERSATION
@@ -42,24 +42,24 @@ class AiConvController extends Controller
             'conv_name' => 'string|max:255',
             'system_prompt' => 'string'
         ]);
-    
+
         if (!$request['conv_name']) {
             $validatedData['conv_name'] = 'New Chat';
         }
 
         $user = Auth::user();
-    
+
         $conv = AiConv::create([
             'conv_name' => $validatedData['conv_name'],
             'user_id' => $user->id, // Associate the conversation with the user
             'slug' => Str::slug(Str::random(16)), // Create a unique slug
             'system_prompt'=> $validatedData['system_prompt'],
         ]);
-    
+
         $response =[
             'success'=> true,
             'conv'=>$conv
-        ];            
+        ];
 
         return response()->json($response, 201);
     }
@@ -91,22 +91,22 @@ class AiConvController extends Controller
     public function removeConv(Request $request, $slug){
         $user = Auth::user();
         $conv = AiConv::where('slug', $slug)->firstOrFail();
-        
+
         // Check if the conv exists
         if (!$conv) {
             return response()->json(['success' => false, 'message' => 'Conv not found'], 404);
         }
-    
+
         // Check if the user is an admin of the conv
         if ($conv->user_id != $user->id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
-    
+
         // Delete related messages and members
         $conv->messages()->delete();
-    
+
         $conv->delete();
-    
+
         return response()->json(['success' => true, 'message' => 'Conv deleted successfully']);
     }
 
@@ -127,7 +127,7 @@ class AiConvController extends Controller
     /// 2. create message array
     /// 3. return message array
     public function fetchConvMessages(AiConv $conv){
-                
+
         $messages = $conv->messages;
         $messagesData = array();
         foreach ($messages as $message){
@@ -152,12 +152,12 @@ class AiConvController extends Controller
                 'completion' => $message->completion,
                 'created_at' => $message->created_at->format('Y-m-d+H:i'),
                 'updated_at' => $message->updated_at->format('Y-m-d+H:i'),
-            ]; 
-     
+            ];
+
             array_push($messagesData, $msgData);
         }
         return $messagesData;
-        
+
     }
 
 
@@ -223,15 +223,15 @@ class AiConvController extends Controller
 
 
     public function updateMessage(Request $request, $slug) {
-        
+
         $validatedData = $request->validate([
             'message_id' => 'required|string',
-            'content' => 'required|string|max:10000',
+            'content' => 'required|string',
             'iv' => 'required|string',
             'tag' => 'required|string',
             'model' => 'nullable|string',
             'completion' => 'required|boolean',
-        ]);     
+        ]);
 
         $conv = AiConv::where('slug', $slug)->firstOrFail();
         if ($conv->user_id !== Auth::id()) {
@@ -258,14 +258,14 @@ class AiConvController extends Controller
             'messageData' => $messageData,
             'response' => "Message updated.",
         ]);
-        
+
     }
 
 
 
     private function generateMessageID(AiConv $conv, int $threadID) {
         $decimalPadding = 3; // Decide how much padding you need. 3 could pad up to 999.
-        
+
         if ($threadID == 0) {
             // Fetch all messages with whole number IDs (e.g., "0.0", "1.0", etc.)
             $allMessages = $conv->messages()
@@ -273,13 +273,13 @@ class AiConvController extends Controller
                                 ->filter(function ($message) {
                                     return floor(floatval($message->message_id)) == floatval($message->message_id);
                                 });
-    
+
             if ($allMessages->isNotEmpty()) {
                 // Find the message with the highest whole number
                 $lastMessage = $allMessages->sortByDesc(function ($message) {
                     return intval($message->message_id);
                 })->first();
-    
+
                 // Increment the whole number part
                 $newWholeNumber = intval($lastMessage->message_id) + 1;
                 $newMessageId = $newWholeNumber . '.000'; // Start with 3 zeros
@@ -292,13 +292,13 @@ class AiConvController extends Controller
             $allMessages = $conv->messages()
                                 ->where('message_id', 'like', "$threadID.%")
                                 ->get();
-    
+
             if ($allMessages->isNotEmpty()) {
                 // Find the message with the highest decimal part
                 $lastMessage = $allMessages->sortByDesc(function ($message) {
                     return floatval($message->message_id);
                 })->first();
-    
+
                 // Increment the decimal part
                 $parts = explode('.', $lastMessage->message_id);
                 $newDecimal = intval($parts[1]) + 1;
@@ -308,7 +308,7 @@ class AiConvController extends Controller
                 $newMessageId = $threadID . '.001';
             }
         }
-    
+
         return $newMessageId;
     }
 

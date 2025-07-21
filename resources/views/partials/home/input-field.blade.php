@@ -44,6 +44,15 @@
                         </div>
                     </button>
                 @endif
+
+                @if($activeModule === 'chat')
+                    <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearch(this)">
+                        <x-icon class="websearch-icon" name="world"/>
+                        <div class="tooltip">
+                            {{ $translation["WebSearch"] }}
+                        </div>
+                    </button>
+                @endif  
    
             </div>
 
@@ -95,7 +104,8 @@
                         <button class="btn-xs menu-item" value="export-panel" onclick="switchControllerProp(this, 'export-panel')">
                             <x-icon name="download"/>
                             <div class="label">{{ $translation["Export"] }}</div>
-                        </button>            
+                        </button>
+             
                     </div>
 
                 </div>
