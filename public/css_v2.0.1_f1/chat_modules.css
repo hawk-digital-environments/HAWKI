@@ -1378,3 +1378,12 @@ background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);
 sup{
     margin: 0 .5rem;
 }
+.source-link{
+    transition: all 0.5s ease-in-out;
+
+}
+.highlight-scroll-target {
+    color: var(--accent-color);
+    font-size: var(--font-md);
+    padding-left: .5rem;
+}
