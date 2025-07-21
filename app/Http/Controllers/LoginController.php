@@ -39,7 +39,7 @@ class LoginController extends Controller
         $authForms = View::make('partials.login.authForms', compact('translation', 'authenticationMethod'))->render();
 
         // Initialize settings panel
-        $settingsPanel = (new SettingsController())->initialize($translation);
+        $settingsPanel = (new SettingsController())->initialize();
 
 
         $activeOverlay = false;
@@ -49,9 +49,9 @@ class LoginController extends Controller
         Session::put('last-route', 'login');
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('layouts.login', compact('translation', 
-                                            'authForms', 
-                                            'settingsPanel', 
+        return view('layouts.login', compact('translation',
+                                            'authForms',
+                                            'settingsPanel',
                                             'activeOverlay'));
     }
 

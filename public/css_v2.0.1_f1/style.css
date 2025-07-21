@@ -5,6 +5,8 @@
 /* SECTION: GENERALS */
 * {
     scrollbar-width: 0px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbcbcb transparent;
     -ms-overflow-style: none;
     font-family: "Fira Sans", sans-serif;
     line-height: 1.5;
@@ -17,7 +19,7 @@
 
 body {
     overflow: hidden;
-    -ms-overflow-style: none; 
+    -ms-overflow-style: none;
     font-family: "Fira Sans", sans-serif;
     color: var(--text-color);
     background-color: var(--background-main);
@@ -99,14 +101,14 @@ label{
 } */
 
 
-
+:mo
 
 .text-input::-webkit-scrollbar{
     width: 0px;
 }
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active  {
     transition: background-color 3s;
     background-color: var(--background-secondary) !important;
@@ -206,7 +208,7 @@ svg{
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     color: var(--text-color);
-  
+
     /* -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -262,7 +264,7 @@ svg{
 /* SECTION: BUTTONS */
 
 button{
-    color: var(--text-color);    
+    color: var(--text-color);
 }
 button:disabled{
     opacity: 0.5;
@@ -503,7 +505,7 @@ button:disabled{
 
 .burger-dropdown{
     position: absolute;
-    
+
     display: none;
     opacity: 0;
 
@@ -514,7 +516,7 @@ button:disabled{
     border: var(--border-stroke-thin);
     border-radius: var(--border-radius-normal);
     overflow: hidden;
-    
+
     transition: all var(--transition-fast);
 }
 

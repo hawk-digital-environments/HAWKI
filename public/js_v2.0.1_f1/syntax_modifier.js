@@ -23,9 +23,9 @@ function formatChunk(chunk, groundingMetadata) {
         // Add a closing triple backtick to close the unclosed code block
         formatText += '```';
     }
-    
 
-    
+
+
     // Count how many <think> and </think> tags are currently in the summedText
     const thinkOpenCount = (summedText.match(/<think>/g) || []).length;
     const thinkCloseCount = (summedText.match(/<\/think>/g) || []).length;
@@ -58,17 +58,17 @@ function escapeHTML(text) {
 function formatMessage(rawContent, groundingMetadata = '') {
     // Process citations and preserve HTML elements in one step
     let contentToProcess = formatGoogleCitations(rawContent, groundingMetadata);
-    
+
     // Process content with placeholders for math and think blocks
     const { processedContent, mathReplacements, thinkReplacements } = preprocessContent(contentToProcess);
-    
+
     // Apply markdown rendering
     const markdownProcessed = md.render(processedContent);
-    
+
     // Restore math and think block content
     let finalContent = postprocessContent(markdownProcessed, mathReplacements, thinkReplacements);
     finalContent = convertHyperlinksToLinks(finalContent);
-    
+
     // Restore preserved HTML elements
     finalContent = restoreGoogleCitations(finalContent);
 
@@ -111,10 +111,10 @@ function preprocessContent(content) {
     // Split the content on code blocks and process only non-code segments
     content.replace(codeBlockRegex, (match, codeBlock, offset) => {
         const nonCodeSegment = content.slice(lastIndex, offset);
-        
+
         // Process and replace math expressions
         const processedSegment = nonCodeSegment.replace(mathRegex, (mathMatch) => {
-            if (/^\$\d+/.test(mathMatch)) { 
+            if (/^\$\d+/.test(mathMatch)) {
                 return mathMatch; // Leave currency values untouched
             }
             mathReplacements.push(mathMatch);
@@ -272,7 +272,7 @@ function addGoogleRenderedContent(messageElement, groundingMetadata){
     if (groundingMetadata && typeof groundingMetadata === 'object' &&
         groundingMetadata.searchEntryPoint &&
         groundingMetadata.searchEntryPoint.renderedContent) {
-                
+
         const render = groundingMetadata.searchEntryPoint.renderedContent;
         // Extract the HTML Tag (Styles already defined in CSS file)
         const parser = new DOMParser();
@@ -295,7 +295,7 @@ function addGoogleRenderedContent(messageElement, groundingMetadata){
                 googleSpan = messageElement.querySelector(".google-search");
             }
 
-            googleSpan.innerHTML = divElement.outerHTML; 
+            googleSpan.innerHTML = divElement.outerHTML;
             // Append the new span to the target element
             messageElement.querySelector(".message-content").appendChild(googleSpan);
         }
@@ -327,7 +327,7 @@ function formatGoogleCitations(content, groundingMetadata = '') {
 
             if (segmentText && Array.isArray(indices) && indices.length) {
                 // Generate footnote references inline
-                const footnotesRef = `<sup><span>` + indices.map(idx => 
+                const footnotesRef = `<sup><span>` + indices.map(idx =>
                     `${idx + 1}
 `
                 ).join(', ') + `</span></sup>`;
@@ -383,14 +383,14 @@ function escapeRegExp(string) {
 // // Restore the preserved HTML after markdown processing
 function restoreGoogleCitations(content) {
     let result = content;
-    
+
     for (let i = 0; i < preservedHTML.length; i++) {
         // Use a regex with \b (if applicable) or a flexible match
         const placeholder = new RegExp(`%%HTML_PRESERVED_${i}%%`, 'g');
-        
+
         // Replace and ensure a new line is added
         result = result.replace(placeholder, preservedHTML[i] + '\n');
     }
-    
+
     return result;
 }

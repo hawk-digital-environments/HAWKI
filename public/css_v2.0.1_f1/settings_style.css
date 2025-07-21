@@ -141,9 +141,10 @@
   padding: 0 2rem;
   overflow-y: scroll;
   scrollbar-width: 0px;
+  scrollbar-width: none;
   box-sizing: border-box;
-  max-height: 90%;  
-} 
+  max-height: 90%;
+}
 .about-content::-webkit-scrollbar{
   width: 0;
   color: var(--text-color) !important;
@@ -170,11 +171,12 @@
   padding: 0 2rem;
   overflow-y: scroll;
   scrollbar-width: 0px;
+  scrollbar-width: none;
   box-sizing: border-box;
-  max-height: 90%;  
+  max-height: 90%;
   max-width: 90%;
   text-wrap: wrap;
-} 
+}
 .guideline-content::-webkit-scrollbar{
   width: 0;
 }
@@ -275,8 +277,8 @@
 
 
 
-@media only screen 
-  and (min-device-width: 320px) 
+@media only screen
+  and (min-device-width: 320px)
   and (max-device-width: 480px)
   and (-webkit-min-device-pixel-ratio: 2)
   and (orientation: portrait) {

@@ -18,7 +18,7 @@ return [
     |
     |   The system models are responsible for different automated processes
     |   such as title generation and prompt improvement.
-    |   Add your desired models id. Make sure that the model is included and 
+    |   Add your desired models id. Make sure that the model is included and
     |   active in the providers list below.
     |
     */
@@ -33,7 +33,7 @@ return [
     |   Model Providers
     |--------------------------------------------------------------------------
     |
-    |   List of model providers available on HAWKI. Add your API Key and 
+    |   List of model providers available on HAWKI. Add your API Key and
     |   activate the providers.
     |   To include other providers in this list please refer to the
     |   documentation of HAWKI
@@ -43,7 +43,7 @@ return [
         'openai' => [
             'id' => 'openai',
             'active' => true,
-            'api_key' => '',
+            'api_key' => env('OPENAI_API_KEY', ''),
             'api_url' => 'https://api.openai.com/v1/chat/completions',
             'ping_url' => 'https://api.openai.com/v1/models',
             'models' => [
@@ -68,7 +68,7 @@ return [
         'gwdg' => [
             'id' => 'gwdg',
             'active' => true,
-            'api_key' => '',
+            'api_key' => env('GWDG_API_KEY', ''),
             'api_url' => 'https://chat-ai.academiccloud.de/v1/chat/completions',
             'ping_url' => 'https://chat-ai.academiccloud.de/v1/models',
             'status_check'=>true,
@@ -104,22 +104,24 @@ return [
                     'label' => 'GWDG Codestral 22b',
                     'streamable' => true,
                 ],
-                
+
             ]
         ],
 
         'google' => [
             'id' => 'google',
             'active' => true,
-            'api_key' => '',
+            'api_key' => env('GOOGLE_API_KEY', ''),
             'api_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
             'streaming_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
             'ping_url' => '',
+            'allow_search' => true,
             'models' => [
                 [
-                    'id' => 'gemini-1.5-flash',
-                    'label' => 'Google Gemini 1.5 Flash',
-                    'streamable' => false,
+                    'id' => 'gemini-2.0-flash',
+                    'label' => 'Google Gemini 2.0 Flash',
+                    'streamable' => true,
+                    'search_tool'=> true,
                 ],
                 [
                     'id' => 'gemini-2.0-flash-lite',
@@ -128,9 +130,10 @@ return [
                     'search_tool'=> false,
                 ],
                 [
-                    'id' => 'gemini-2.0-flash-exp',
-                    'label' => 'Google Gemini 2.0 Flash Exp',
-                    'streamable' => false,
+                    'id' => 'gemini-2.5-pro',
+                    'label' => 'Google Gemini 2.5 Pro',
+                    'streamable' => true,
+                    'search_tool'=> false,
                 ]
             ]
         ],
@@ -149,7 +152,7 @@ return [
         'openWebUi' => [
             'id' => 'openWebUi',
             'active' => false,
-            'api_key' => '',
+            'api_key' => env('OPEN_WEB_UI_API_KEY', ''),
             'api_url' => 'your_url/api/chat/completions',
             'ping_url' => 'your_url/api/models',
             'models' => [

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html class="lightMode">
+<html class="lightMode" lang="{{ Session::get('language')['Content-Language'] }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -16,9 +16,9 @@
     <script src="{{ asset('js_v2.0.1_f1/handshake_functions.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/settings_functions.js') }}"></script>
-	
+
 	{!! $settingsPanel !!}
-    
+
     <script>
 		SwitchDarkMode(false);
 		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');

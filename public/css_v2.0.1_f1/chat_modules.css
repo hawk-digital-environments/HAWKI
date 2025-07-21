@@ -229,7 +229,7 @@
 .add-members-section{
     position: relative;
     display: block;
-    
+
 }
 .add-members-section button{
     margin-top: 0 !important;
@@ -343,7 +343,7 @@
     list-style-type: none;
     margin: 0;
     padding: 0;
-    display: none; 
+    display: none;
     z-index: 1000; /* Ensure it sits above other elements */
 }
 
@@ -578,8 +578,8 @@
     opacity: .5;
 }
 .message-wrapper:hover .message-controls{
-    opacity: 1; 
-} 
+    opacity: 1;
+}
 
 .message-controls .controls{
     display: flex;
@@ -596,7 +596,7 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-}   
+}
 
 
 .reaction {
@@ -859,7 +859,7 @@
 .input-container {
     position: relative;
     display: block;
-    box-sizing: border-box;  
+    box-sizing: border-box;
     padding-left:4rem;
     padding-right:4rem;
     padding-top:0;
@@ -886,7 +886,7 @@
     border-radius: var(--border-radius-normal);
     background-color: var(--background-main);
 }
-  
+
 .input-wrapper {
     max-height: 30vh;
     margin-left: 1px;
@@ -894,13 +894,13 @@
     overflow: hidden;
     outline: none;
     overflow-y: scroll;
-  
+
     direction: rtl; /* flip direction to mode the scrollbar to the left side. The direction is fliped again in the inputfield*/
 
     /* container: inputWrapper / inline-size;
     contain: layout inline-size; */
 }
-  
+
 .input-field {
     width: 100%;
     height: 3rem;
@@ -924,7 +924,7 @@
 
     transition: padding var(--transition-medium);
 }
-  
+
 /* @container inputWrapper (width < 20rem) {
     .input-field {
         background-color: red;
@@ -938,7 +938,7 @@
     opacity: 0.5;
     text-wrap: nowrap;
     text-overflow:ellipsis;
-    
+
 }
 
 .input-field:focus,
@@ -946,7 +946,7 @@
     padding-left:2rem;
 }
 
-  
+
 .input-send {
     display: flex;
     justify-content: center;
@@ -986,7 +986,7 @@
     overflow: visible;
 
 }
-  
+
 .loading {
     display: flex;
     justify-content: center;
@@ -1019,7 +1019,7 @@
 .send-button{
     stroke: var(--stroke-color);
 }
-  
+
 .prompt-improvement-btn{
     display: flex;
     width: fit-content;
@@ -1134,7 +1134,7 @@
 .input-controls .right,
 .input-controls .left{
     display: flex;
-    
+
     align-items: center;
     column-gap: .25rem;
     z-index: 2;
@@ -1244,10 +1244,10 @@
     font-weight: 700 !important;
 }
 
-/* #model-selector-burger{
-    bottom: 110%;
-    right: 0;
-} */
+#model-selector-burger{
+    max-height: 70vh;
+    overflow-y: auto;
+}
 
 
 

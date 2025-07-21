@@ -21,7 +21,7 @@ use App\Models\User;
 class HomeController extends Controller
 {
     protected $languageController;
-
+    protected $aiConnService;
     // Inject LanguageController instance
     public function __construct(LanguageController $languageController, AIConnectionService $aiConnService)
     {
@@ -58,7 +58,7 @@ class HomeController extends Controller
             'convs' => $convs,
             'rooms' => $rooms,
         ];
-    
+
 
         $activeModule = $requestModule;
 
@@ -72,11 +72,11 @@ class HomeController extends Controller
         $models = $this->aiConnService->getAvailableModels();
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('modules.' . $requestModule, 
-                    compact('translation', 
+        return view('modules.' . $requestModule,
+                    compact('translation',
                             'settingsPanel',
-                            'slug', 
-                            'userProfile', 
+                            'slug',
+                            'userProfile',
                             'userData',
                             'activeModule',
                             'activeOverlay',
@@ -107,22 +107,22 @@ class HomeController extends Controller
             'hawki_avatar_url'=>$hawkiAvatarUrl,
         ];
 
-        
+
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsController())->initialize();
-        
+
         $models = $this->aiConnService->getAvailableModels();
 
         $activeModule = $module;
-        return view('layouts.print_template', 
-                compact('translation', 
+        return view('layouts.print_template',
+                compact('translation',
                         'settingsPanel',
                         'messages',
                         'activeModule',
                         'userProfile',
                         'userData',
                         'models'));
-       
+
     }
 
 
@@ -139,7 +139,7 @@ class HomeController extends Controller
             ]);
         }
     }
-    
+
 
     public function dataprotectionIndex(Request $request){
         $translation = $this->languageController->getTranslation();

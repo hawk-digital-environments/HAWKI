@@ -26,7 +26,7 @@ class LanguageController extends Controller
             }
         }
         if(gettype($language) == 'string'){
-            $langs[config($lang)];
+            $langs[config($language)];
         }
 
         // Store the language in session
@@ -47,7 +47,7 @@ class LanguageController extends Controller
 
         $langs = config('locale.langs');
         $language = $langs[$langId];
-        
+
         if (!$language) {
             error_log('bad lang');
             return response()->json(['success' => false, 'error' => 'Invalid language'], 400);
@@ -85,21 +85,21 @@ class LanguageController extends Controller
     private function fetchTranslationFiles($prefix) {
         $languagePath = resource_path('language/');
         $files = scandir($languagePath);
-    
+
         $translations = [];
         $defaultTranslations = [];
-    
+
         // Filter and load files with the specific prefix
         foreach ($files as $file) {
             // Check if the file has the correct prefix
             if (strpos($file, $prefix) !== false) {
                 $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
-    
+
                 if ($fileExtension === 'json') {
                     // Read JSON file as associative array
                     $fileContent = file_get_contents($languagePath . $file);
                     $translationArray = json_decode($fileContent, true);
-    
+
                     if ($translationArray !== null) {
                         // Check if it's a default language file
                         if ($file === $prefix . '.json') {
@@ -117,10 +117,10 @@ class LanguageController extends Controller
                 }
             }
         }
-    
+
         // Merge default translations with lower priority
         $mergedTranslations = array_merge($defaultTranslations, $translations);
-    
+
         return $mergedTranslations;
     }
 }

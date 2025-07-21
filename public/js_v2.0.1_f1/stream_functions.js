@@ -14,7 +14,7 @@ function buildRequestObject(msgAttributes, onData) {
         broadcast: msgAttributes['broadcasting'],
         threadIndex: msgAttributes['threadIndex'],
         slug: msgAttributes['slug'],
-        
+
         isUpdate: isUpdate,
         messageId: msgID,
 
@@ -92,9 +92,9 @@ async function processStream(stream, onData) {
     try{
         let buffer = "";
         while (true) {
-            
+
             const { done, value } = await reader.read();
-            
+
             if (done) {
                 onData(null, true);
                 return;
@@ -152,7 +152,7 @@ function createMessageLogForAI(regenerationElement = null){
         role: 'system',
         content:{
             text: systemPromptContent
-        } 
+        }
     }
 
     //create a selection array starting with systam prompt
@@ -163,8 +163,8 @@ function createMessageLogForAI(regenerationElement = null){
     let lastMsgId;
     if(!regenerationElement){
         const activeThread = document.querySelector(`.thread#${CSS.escape(activeThreadIndex)}`);
-        const lastMsg = activeThreadIndex === 0 
-                        ? activeThread.lastElementChild 
+        const lastMsg = activeThreadIndex === 0
+                        ? activeThread.lastElementChild
                         : [...activeThread.querySelectorAll('.message')].pop();
         lastMsgId = lastMsg.id;
     }
@@ -172,7 +172,7 @@ function createMessageLogForAI(regenerationElement = null){
         lastMsgId = regenerationElement.previousElementSibling.id;
     }
 
-    let [lastWholeNum, lastDecimalNum] = lastMsgId.split('.').map(Number);    
+    let [lastWholeNum, lastDecimalNum] = lastMsgId.split('.').map(Number);
     //get last 100 messages
     const messages = Array.from(document.querySelectorAll('.message')).slice(-100);
 
@@ -254,7 +254,7 @@ async function requestPromptImprovement(sender) {
             if (data && data.content != "") {
                 result += deconstContent(data.content).messageText
                 inputField.value = result.trim();
-                resizeInputField(inputField);   
+                resizeInputField(inputField);
             }
             if (done) {
                 // console.log('done');

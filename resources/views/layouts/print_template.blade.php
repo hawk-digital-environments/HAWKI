@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html class="lightMode">
+<html class="lightMode" lang="{{ Session::get('language')['Content-Language'] }}">
 <head>
-	
+
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-    
+
 	<title>{{ env('APP_NAME') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
@@ -16,13 +16,13 @@
     <!-- <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}"> -->
 
     @vite('resources/js/app.js')
-	
+
 	<script src="{{ asset('js_v2.0.1_f1/message_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/stream_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/syntax_modifier.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/export.js') }}"></script>
-    
+
 
 </head>
 <body>
@@ -74,6 +74,9 @@
 	const activeModule = @json($activeModule);
     const data = @json($messages);
 	const modelsList = @json($models).models;
+	const defaultModel = @json($models).defaultModel;
+	const systemModels = @json($models).systemModels;
+
     const activeLocale = {!! json_encode(Session::get('language')) !!};
 	const translation = @json($translation);
 	window.addEventListener('DOMContentLoaded', async (event) => {

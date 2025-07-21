@@ -49,8 +49,8 @@
             </div>
         </div>
 
-  
-        
+
+
         <div class="slide" data-index="5">
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
             <input placeholder="{{  $translation["Reg_SL5_PH1"] }}" id="passkey-input" type="password">
@@ -82,9 +82,9 @@
         </div>
 
     </div>
-  
+
 </div>
-<div class="slide-back-btn" onclick="switchBackSlide()">
+<div class="slide-back-btn" onclick="switchBackSlide()" style="display: none">
     <x-icon name="chevron-left"/>
 </div>
 @include('partials.home.modals.confirm-modal')

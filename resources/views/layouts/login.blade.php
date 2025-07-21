@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="{{ Session::get('language')['Content-Language'] }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -22,7 +22,7 @@
 		InitializePreDomSettings(false);
         UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
 	</script>
-    
+
 </head>
 <body>
 <div class="wrapper">
@@ -35,7 +35,7 @@
 
 
         <div class="footerPanel">
-  
+
             <button class="btn-sm" onclick="toggleSettingsPanel(true)">
                 <x-icon name="settings-icon"/>
             </button>
