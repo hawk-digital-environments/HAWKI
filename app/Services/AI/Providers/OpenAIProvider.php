@@ -17,10 +17,10 @@ class OpenAIProvider extends BaseAIModelProvider
     {
         $messages = $rawPayload['messages'];
         $modelId = $rawPayload['model'];
-        
+
         // Handle special cases for specific models
         $messages = $this->handleModelSpecificFormatting($modelId, $messages);
-        
+
         // Format messages for OpenAI
         $formattedMessages = [];
         foreach ($messages as $message) {
@@ -29,34 +29,34 @@ class OpenAIProvider extends BaseAIModelProvider
                 'content' => $message['content']['text']
             ];
         }
-        
+
         // Build payload with common parameters
         $payload = [
             'model' => $modelId,
             'messages' => $formattedMessages,
             'stream' => $rawPayload['stream'] && $this->supportsStreaming($modelId),
         ];
-        
+
         // Add optional parameters if present in the raw payload
         if (isset($rawPayload['temperature'])) {
             $payload['temperature'] = $rawPayload['temperature'];
         }
-        
+
         if (isset($rawPayload['top_p'])) {
             $payload['top_p'] = $rawPayload['top_p'];
         }
-        
+
         if (isset($rawPayload['frequency_penalty'])) {
             $payload['frequency_penalty'] = $rawPayload['frequency_penalty'];
         }
-        
+
         if (isset($rawPayload['presence_penalty'])) {
             $payload['presence_penalty'] = $rawPayload['presence_penalty'];
         }
-        
+
         return $payload;
     }
-    
+
     /**
      * Format the complete response from OpenAI
      *
@@ -67,9 +67,9 @@ class OpenAIProvider extends BaseAIModelProvider
     {
         $responseContent = $response->getContent();
         $jsonContent = json_decode($responseContent, true);
-        
+
         $content = $jsonContent['choices'][0]['message']['content'] ?? '';
-        
+
         return [
             'content' => [
                 'text' => $content,
@@ -77,7 +77,7 @@ class OpenAIProvider extends BaseAIModelProvider
             'usage' => $this->extractUsage($jsonContent)
         ];
     }
-    
+
     /**
      * Format a single chunk from a streaming response
      *
@@ -87,28 +87,25 @@ class OpenAIProvider extends BaseAIModelProvider
     public function formatStreamChunk(string $chunk): array
     {
         $jsonChunk = json_decode($chunk, true);
-        
         $content = '';
         $isDone = false;
         $usage = null;
-        
+
         // Check for the finish_reason flag
         if (isset($jsonChunk['choices'][0]['finish_reason']) && $jsonChunk['choices'][0]['finish_reason'] === 'stop') {
             $isDone = true;
         }
-        
+
         // Extract usage data if available
         if (!empty($jsonChunk['usage'])) {
             $usage = $this->extractUsage($jsonChunk);
-            Log::info('OpenAI', ['model' => $jsonChunk['model'], 'usage' => $usage]);
-
         }
-        
+
         // Extract content if available
         if (isset($jsonChunk['choices'][0]['delta']['content'])) {
             $content = $jsonChunk['choices'][0]['delta']['content'];
         }
-        
+
         return [
             'content' => [
                 'text' => $content,
@@ -117,7 +114,7 @@ class OpenAIProvider extends BaseAIModelProvider
             'usage' => $usage
         ];
     }
-    
+
     /**
      * Extract usage information from OpenAI response
      *
@@ -129,13 +126,13 @@ class OpenAIProvider extends BaseAIModelProvider
         if (empty($data['usage'])) {
             return null;
         }
-        
+
         return [
             'prompt_tokens' => $data['usage']['prompt_tokens'],
             'completion_tokens' => $data['usage']['completion_tokens'],
         ];
     }
-    
+
     /**
      * Make a non-streaming request to the OpenAI API
      *
@@ -146,29 +143,29 @@ class OpenAIProvider extends BaseAIModelProvider
     {
         // Ensure stream is set to false
         $payload['stream'] = false;
-        
+
         // Initialize cURL
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
-        
+
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
-        
+
         // Execute the request
         $response = curl_exec($ch);
-        
+
         // Handle errors
         if (curl_errno($ch)) {
             $error = 'Error: ' . curl_error($ch);
             curl_close($ch);
             return response()->json(['error' => $error], 500);
         }
-        
+
         curl_close($ch);
-        
+
         return response($response)->header('Content-Type', 'application/json');
     }
-    
+
     /**
      * Make a streaming request to the OpenAI API
      *
@@ -184,28 +181,28 @@ class OpenAIProvider extends BaseAIModelProvider
         $payload['stream_options'] = [
             'include_usage' => true,
         ];
-        
+
         set_time_limit(120);
-        
+
         // Set headers for SSE
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
-        
+
         // Initialize cURL
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->config['api_url']);
-        
+
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
-        
+
         // Set streaming-specific options
         $this->setStreamingCurlOptions($ch, $streamCallback);
-        
+
         // Execute the cURL session
         curl_exec($ch);
-        
+
         // Handle errors
         if (curl_errno($ch)) {
             $streamCallback('Error: ' . curl_error($ch));
@@ -214,16 +211,16 @@ class OpenAIProvider extends BaseAIModelProvider
             }
             flush();
         }
-        
+
         curl_close($ch);
-        
+
         // Flush any remaining data
         if (ob_get_length()) {
             ob_flush();
         }
         flush();
     }
-    
+
     /**
      * Handle special formatting requirements for specific models
      *
@@ -237,7 +234,7 @@ class OpenAIProvider extends BaseAIModelProvider
         if ($modelId === 'o1-mini' && isset($messages[0]) && $messages[0]['role'] === 'system') {
             $messages[0]['role'] = 'user';
         }
-        
+
         return $messages;
     }
 
@@ -273,7 +270,7 @@ class OpenAIProvider extends BaseAIModelProvider
     //  * @return string
     //  */
     // protected function pingProvider(): string
-    // {        
+    // {
     //     $url = $this->config['ping_url'];
     //     $apiKey = $this->config['api_key'];
 

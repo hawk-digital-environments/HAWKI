@@ -9,7 +9,8 @@ return [
     |   This Model is used by default before the user choses their
     |   desired model.
     */
-    'defaultModel' => 'gpt-4o',
+    'defaultModel' => 'gpt-4.1',
+    'defaultSearchModel' => 'gemini-2.0-flash',
 
     /*
     |--------------------------------------------------------------------------
@@ -23,9 +24,9 @@ return [
     |
     */
     'system_models' => [
-        'title_generator' => 'gpt-4o-mini',
-        'prompt_improver' => 'gpt-4o-mini',
-        'summarizer' => 'gpt-4o-mini',
+        'title_generator' => 'gpt-4.1-nano',
+        'prompt_improver' => 'gpt-4.1-nano',
+        'summarizer' => 'gpt-4.1-nano',
     ],
 
     /*
@@ -48,13 +49,13 @@ return [
             'ping_url' => 'https://api.openai.com/v1/models',
             'models' => [
                 [
-                    'id' => 'gpt-4o',
-                    'label' => 'OpenAI GPT 4o',
+                    'id' => 'gpt-4.1',
+                    'label' => 'OpenAI GPT 4.1',
                     'streamable' => true,
                 ],
                 [
-                    'id' => 'gpt-4o-mini',
-                    'label' => 'OpenAI GPT 4o mini',
+                    'id' => 'gpt-4.1-nano',
+                    'label' => 'OpenAI GPT 4.1 Nano',
                     'streamable' => true,
                 ],
                 [
@@ -71,7 +72,7 @@ return [
             'api_key' => '',
             'api_url' => 'https://chat-ai.academiccloud.de/v1/chat/completions',
             'ping_url' => 'https://chat-ai.academiccloud.de/v1/models',
-            'status_check' => true,
+            'status_check' => false,
 
             'models' => [
                 [
@@ -115,22 +116,25 @@ return [
             'api_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
             'streaming_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
             'ping_url' => '',
+            'allow_search' => true,
             'models' => [
                 [
-                    'id' => 'gemini-1.5-flash',
-                    'label' => 'Google Gemini 1.5 Flash',
-                    'streamable' => false,
+                    'id' => 'gemini-2.0-flash',
+                    'label' => 'Google Gemini 2.0 Flash',
+                    'streamable' => true,
+                    'search_tool'=> true,
                 ],
                 [
                     'id' => 'gemini-2.0-flash-lite',
                     'label' => 'Google Gemini 2.0 Flash Lite',
                     'streamable' => true,
-                    'search_tool' => false,
+                    'search_tool'=> false,
                 ],
                 [
-                    'id' => 'gemini-2.0-flash-exp',
-                    'label' => 'Google Gemini 2.0 Flash Exp',
-                    'streamable' => false,
+                    'id' => 'gemini-2.5-pro',
+                    'label' => 'Google Gemini 2.5 Pro',
+                    'streamable' => true,
+                    'search_tool'=> true,
                 ]
             ]
         ],
