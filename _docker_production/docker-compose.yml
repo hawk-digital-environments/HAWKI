@@ -50,7 +50,7 @@ services:
                 condition: service_healthy
     redis:
         container_name: ${PROJECT_NAME}-redis
-        image: redis:latest
+        image: redis:8.0.3
         restart: always
         volumes:
             - redis_data:/root/redis
@@ -86,7 +86,7 @@ services:
             retries: 10
     nginx:
         container_name: ${PROJECT_NAME}-nginx
-        image: nginx:1.27-alpine
+        image: nginx:1.29-alpine
         volumes:
             - ./certs:/etc/nginx/certs
             - ./nginx.default.conf:/etc/nginx/nginx.conf:ro
