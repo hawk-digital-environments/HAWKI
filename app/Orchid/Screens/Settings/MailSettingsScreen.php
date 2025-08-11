@@ -18,6 +18,7 @@ use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\Switcher;
 use Orchid\Screen\Fields\TextArea;
 use Orchid\Screen\Screen;
+use Orchid\Screen\TD;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
@@ -47,8 +48,34 @@ class MailSettingsScreen extends Screen
     {
         $mailSettings = AppSetting::where('group', 'mail')->get();
 
+        // Get jobs data for the table
+        $jobsData = [];
+        try {
+            $jobs = \DB::table('jobs')
+                ->orderBy('created_at', 'desc')
+                ->limit(50)
+                ->get();
+
+            $jobsData = $jobs->map(function ($job) {
+                $payload = json_decode($job->payload, true);
+                $displayName = $payload['displayName'] ?? 'Unknown Job';
+                
+                return (object) [
+                    'id' => $job->id,
+                    'queue' => $job->queue,
+                    'job_name' => $displayName,
+                    'attempts' => $job->attempts,
+                    'available_at' => date('Y-m-d H:i:s', $job->available_at),
+                    'created_at' => date('Y-m-d H:i:s', $job->created_at),
+                ];
+            })->toArray();
+        } catch (\Exception $e) {
+            // If there's an error, jobsData will remain an empty array
+        }
+
         return [
             'mail' => $mailSettings,
+            'jobsData' => $jobsData,
         ];
     }
 
@@ -92,8 +119,8 @@ class MailSettingsScreen extends Screen
         
         return [
             Layout::tabs([
-                'Mail Configuration' => $mailSettings,
                 'Email Testing' => $emailTesting,
+                'Mail Configuration' => $mailSettings,
             ]),
         ];
     }
@@ -259,10 +286,91 @@ class MailSettingsScreen extends Screen
                     ->language('text')
                     ->readonly()
                     ->value(session('email_test_output', 'No output yet. Run a queue operation to see results here.'))
-                    ->height('300px')
+                    ->height('350px')
                     ->help('Email test output and debug information will appear here'),
             ])->title('Debug Output'),
+
+            $this->buildJobsListLayout(),
         ];
+    }
+
+    /**
+     * Build layout for jobs list from database
+     *
+     * @return \Orchid\Screen\Layout
+     */
+    private function buildJobsListLayout()
+    {
+        try {
+            $jobsData = $this->query()['jobsData'];
+
+            // If no jobs, show empty message
+            if (empty($jobsData)) {
+                return Layout::rows([
+                    Label::make('no_jobs')
+                        ->title('No pending jobs in database')
+                        ->help('All jobs have been processed or no jobs have been queued yet.')
+                        ->addclass('text-center text-muted'),
+                ])->title('Pending Jobs Queue (Database)');
+            }
+
+            return Layout::table('jobsData', [
+                TD::make('id', 'ID')
+                    ->sort()
+                    ->width('80px')
+                    ->render(function ($job) {
+                        return $job->id;
+                    }),
+                    
+                TD::make('queue', 'Queue')
+                    ->sort()
+                    ->width('100px')
+                    ->render(function ($job) {
+                        $badgeClass = match($job->queue) {
+                            'emails' => 'badge bg-primary',
+                            'default' => 'badge bg-secondary',
+                            default => 'badge bg-info'
+                        };
+                        return "<span class='{$badgeClass}'>{$job->queue}</span>";
+                    }),
+                    
+                TD::make('job_name', 'Job Name')
+                    ->sort()
+                    ->render(function ($job) {
+                        return $job->job_name;
+                    }),
+                    
+                TD::make('attempts', 'Attempts')
+                    ->sort()
+                    ->width('80px')
+                    ->render(function ($job) {
+                        $badgeClass = $job->attempts > 0 ? 'badge bg-warning' : 'badge bg-success';
+                        return "<span class='{$badgeClass}'>{$job->attempts}</span>";
+                    }),
+                    
+                TD::make('available_at', 'Available At')
+                    ->sort()
+                    ->width('150px')
+                    ->render(function ($job) {
+                        return $job->available_at;
+                    }),
+                    
+                TD::make('created_at', 'Created At')
+                    ->sort()
+                    ->width('150px')
+                    ->render(function ($job) {
+                        return $job->created_at;
+                    }),
+            ])->title('Pending Jobs Queue (Database) - Last 50 Jobs');
+
+        } catch (\Exception $e) {
+            return Layout::rows([
+                Label::make('jobs_error')
+                    ->title('Error loading jobs from database')
+                    ->help('Error: ' . $e->getMessage())
+                    ->addclass('text-danger'),
+            ])->title('Jobs Queue Error');
+        }
     }
 
     /**
@@ -277,7 +385,7 @@ class MailSettingsScreen extends Screen
             
             if (!$user || !$user->email) {
                 Toast::error('No authenticated user with email address found.');
-                return;
+                return back();
             }
 
             // Send a simple test email
@@ -299,7 +407,7 @@ class MailSettingsScreen extends Screen
             Toast::error('Failed to send test email: ' . $e->getMessage());
         }
         
-        return;
+        return back();
     }
 
     /**
@@ -314,12 +422,12 @@ class MailSettingsScreen extends Screen
             
             if (!$user) {
                 Toast::error('No authenticated user found for email test.');
-                return;
+                return back();
             }
 
             if (!$user->email) {
                 Toast::error('No email address found for current user.');
-                return;
+                return back();
             }
 
             // Use the MailController's sendWelcomeEmail method (this will queue the email)
@@ -337,7 +445,7 @@ class MailSettingsScreen extends Screen
             Toast::error('Failed to queue welcome email: ' . $e->getMessage());
         }
         
-        return;
+        return back();
     }
 
     /**
@@ -352,12 +460,12 @@ class MailSettingsScreen extends Screen
             
             if (!$user) {
                 Toast::error('No authenticated user found for email test.');
-                return;
+                return back();
             }
 
             if (!$user->email) {
                 Toast::error('No email address found for current user.');
-                return;
+                return back();
             }
 
             // Send welcome email synchronously (bypass queue)
@@ -374,7 +482,7 @@ class MailSettingsScreen extends Screen
             Toast::error('Failed to send welcome email (sync): ' . $e->getMessage());
         }
         
-        return;
+        return back();
     }
 
     /**
@@ -389,7 +497,7 @@ class MailSettingsScreen extends Screen
             
             if (!$user) {
                 Toast::error('No authenticated user found for OTP email test.');
-                return;
+                return back();
             }
 
             // Create user info array similar to what's used in the handshake process
@@ -416,7 +524,7 @@ class MailSettingsScreen extends Screen
             Toast::error('Failed to send OTP email: ' . $e->getMessage());
         }
         
-        return;
+        return back();
     }
 
     /**
