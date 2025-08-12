@@ -32,10 +32,14 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     {
         $this->config = $config;
         
-        // Try to extract the provider name from the configuration
-        // This represents a fallback mechanism
-        if (!isset($this->providerId) && isset($config['provider_name'])) {
-            $this->providerId = $config['provider_name'];
+        // Try to extract the provider identifier from the configuration
+        // Use api_format if available, otherwise fall back to provider_name
+        if (!isset($this->providerId)) {
+            if (isset($config['api_format'])) {
+                $this->providerId = $config['api_format'];
+            } elseif (isset($config['provider_name'])) {
+                $this->providerId = $config['provider_name'];
+            }
         }
     }
     
@@ -60,7 +64,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     {
         try {
             // Read model data from the database instead of from the configuration
-            $model = LanguageModel::select('language_models.*', 'provider_settings.provider_name')
+            $model = LanguageModel::select('language_models.*', 'provider_settings.provider_name', 'provider_settings.api_format')
                 ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
                 ->where('language_models.model_id', $modelId)
                 ->where('language_models.is_active', true)
@@ -72,7 +76,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                     'id' => $modelId,
                     'label' => $modelId, // Fallback: Use ID as label
                     'streamable' => false,
-                    'provider' => $this->getProviderId()
+                    'api_format' => $this->getProviderId(),
+                    'provider_name' => $this->getProviderId()
                 ];
             }
             
@@ -80,7 +85,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'provider' => $model->provider_name
+                'api_format' => $model->api_format ?? $model->provider_name,
+                'provider_name' => $model->provider_name
             ];
             
             // Add additional model information if available
@@ -113,7 +119,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 'id' => $modelId,
                 'label' => $modelId,
                 'streamable' => false,
-                'provider' => $this->getProviderId()
+                'api_format' => $this->getProviderId(),
+                'provider_name' => $this->getProviderId()
             ];
         }
     }
@@ -128,10 +135,13 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         try {
             $providerId = $this->getProviderId();
             
-            // Get provider ID from the database
-            $provider = ProviderSetting::where('provider_name', $providerId)
-                ->where('is_active', true)
-                ->first();
+            // Get provider ID from the database by either api_format or provider_name
+            $provider = ProviderSetting::where(function($query) use ($providerId) {
+                $query->where('api_format', $providerId)
+                      ->orWhere('provider_name', $providerId);
+            })
+            ->where('is_active', true)
+            ->first();
                 
             if (!$provider) {
                 Log::warning("Provider not found in database: $providerId");
@@ -151,7 +161,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                     'id' => $model->model_id,
                     'label' => $model->label,
                     'streamable' => $model->streamable,
-                    'provider' => $providerId
+                    'api_format' => $provider->api_format ?? $provider->provider_name,
+                    'provider_name' => $provider->provider_name
                 ];
                 
                 // Extract status from the information field if available
