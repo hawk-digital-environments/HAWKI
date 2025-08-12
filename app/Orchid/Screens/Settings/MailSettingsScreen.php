@@ -5,9 +5,12 @@ namespace App\Orchid\Screens\Settings;
 use App\Models\AppSetting;
 use App\Services\SettingsService;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
+use App\Mail\WelcomeMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Fields\Code;
@@ -48,34 +51,79 @@ class MailSettingsScreen extends Screen
     {
         $mailSettings = AppSetting::where('group', 'mail')->get();
 
-        // Get jobs data for the table
-        $jobsData = [];
+        // Get combined jobs data for the table (pending + failed)
+        $combinedJobsData = [];
         try {
+            // Get pending jobs
             $jobs = \DB::table('jobs')
                 ->orderBy('created_at', 'desc')
-                ->limit(50)
+                ->limit(25)
                 ->get();
 
-            $jobsData = $jobs->map(function ($job) {
+            foreach ($jobs as $job) {
                 $payload = json_decode($job->payload, true);
                 $displayName = $payload['displayName'] ?? 'Unknown Job';
                 
-                return (object) [
+                $combinedJobsData[] = (object) [
                     'id' => $job->id,
+                    'uuid' => null, // Pending jobs don't have UUID
                     'queue' => $job->queue,
                     'job_name' => $displayName,
+                    'status' => 'pending',
                     'attempts' => $job->attempts,
+                    'exception_preview' => null,
+                    'exception_full' => null,
+                    'connection' => null,
                     'available_at' => date('Y-m-d H:i:s', $job->available_at),
                     'created_at' => date('Y-m-d H:i:s', $job->created_at),
+                    'failed_at' => null,
                 ];
-            })->toArray();
+            }
+
+            // Get failed jobs
+            $failedJobs = \DB::table('failed_jobs')
+                ->orderBy('failed_at', 'desc')
+                ->limit(25)
+                ->get();
+
+            foreach ($failedJobs as $failedJob) {
+                $payload = json_decode($failedJob->payload, true);
+                $displayName = $payload['displayName'] ?? 'Unknown Job';
+                $exception = $failedJob->exception;
+                // Extract first line of exception for preview
+                $exceptionPreview = explode("\n", $exception)[0];
+                $exceptionPreview = strlen($exceptionPreview) > 80 ? substr($exceptionPreview, 0, 80) . '...' : $exceptionPreview;
+                
+                $combinedJobsData[] = (object) [
+                    'id' => $failedJob->id,
+                    'uuid' => $failedJob->uuid,
+                    'queue' => $failedJob->queue,
+                    'job_name' => $displayName,
+                    'status' => 'failed',
+                    'attempts' => null, // Failed jobs don't show attempts
+                    'exception_preview' => $exceptionPreview,
+                    'exception_full' => $exception,
+                    'connection' => $failedJob->connection,
+                    'available_at' => null,
+                    'created_at' => null,
+                    'failed_at' => date('Y-m-d H:i:s', strtotime($failedJob->failed_at)),
+                ];
+            }
+
+            // Sort combined data by most recent (either created_at or failed_at)
+            usort($combinedJobsData, function($a, $b) {
+                $timeA = $a->status === 'pending' ? strtotime($a->created_at) : strtotime($a->failed_at);
+                $timeB = $b->status === 'pending' ? strtotime($b->created_at) : strtotime($b->failed_at);
+                return $timeB - $timeA; // Descending order
+            });
+
         } catch (\Exception $e) {
-            // If there's an error, jobsData will remain an empty array
+            // If there's an error, combinedJobsData will remain an empty array
         }
 
         return [
             'mail' => $mailSettings,
-            'jobsData' => $jobsData,
+            'combinedJobsData' => $combinedJobsData,
         ];
     }
 
@@ -290,36 +338,48 @@ class MailSettingsScreen extends Screen
                     ->help('Email test output and debug information will appear here'),
             ])->title('Debug Output'),
 
-            $this->buildJobsListLayout(),
+            $this->buildCombinedJobsListLayout(),
         ];
     }
 
     /**
-     * Build layout for jobs list from database
+     * Build layout for combined jobs list from database (pending + failed)
      *
      * @return \Orchid\Screen\Layout
      */
-    private function buildJobsListLayout()
+    private function buildCombinedJobsListLayout()
     {
         try {
-            $jobsData = $this->query()['jobsData'];
+            $combinedJobsData = $this->query()['combinedJobsData'];
 
             // If no jobs, show empty message
-            if (empty($jobsData)) {
+            if (empty($combinedJobsData)) {
                 return Layout::rows([
                     Label::make('no_jobs')
-                        ->title('No pending jobs in database')
-                        ->help('All jobs have been processed or no jobs have been queued yet.')
+                        ->title('No jobs in database')
+                        ->help('No pending or failed jobs found in the system.')
                         ->addclass('text-center text-muted'),
-                ])->title('Pending Jobs Queue (Database)');
+                ])->title('Jobs Queue');
             }
 
-            return Layout::table('jobsData', [
+            return Layout::table('combinedJobsData', [
                 TD::make('id', 'ID')
+                    ->sort()
+                    ->width('60px')
+                    ->render(function ($job) {
+                        return $job->id;
+                    }),
+                    
+                TD::make('status', 'Status')
                     ->sort()
                     ->width('80px')
                     ->render(function ($job) {
-                        return $job->id;
+                        $badgeClass = match($job->status) {
+                            'pending' => 'badge bg-warning',
+                            'failed' => 'badge bg-danger',
+                            default => 'badge bg-secondary'
+                        };
+                        return "<span class='{$badgeClass}'>" . ucfirst($job->status) . "</span>";
                     }),
                     
                 TD::make('queue', 'Queue')
@@ -327,8 +387,8 @@ class MailSettingsScreen extends Screen
                     ->width('100px')
                     ->render(function ($job) {
                         $badgeClass = match($job->queue) {
-                            'emails' => 'badge bg-primary',
-                            'default' => 'badge bg-secondary',
+                            'emails' => $job->status === 'failed' ? 'badge bg-primary' : 'badge bg-primary',
+                            'default' => $job->status === 'failed' ? 'badge bg-outline-dark' : 'badge bg-secondary',
                             default => 'badge bg-info'
                         };
                         return "<span class='{$badgeClass}'>{$job->queue}</span>";
@@ -336,32 +396,60 @@ class MailSettingsScreen extends Screen
                     
                 TD::make('job_name', 'Job Name')
                     ->sort()
+                    ->width('200px')
                     ->render(function ($job) {
                         return $job->job_name;
                     }),
                     
-                TD::make('attempts', 'Attempts')
-                    ->sort()
-                    ->width('80px')
+                TD::make('details', 'Details')
                     ->render(function ($job) {
-                        $badgeClass = $job->attempts > 0 ? 'badge bg-warning' : 'badge bg-success';
-                        return "<span class='{$badgeClass}'>{$job->attempts}</span>";
+                        if ($job->status === 'pending') {
+                            $badgeClass = $job->attempts > 0 ? 'badge bg-warning' : 'badge bg-success';
+                            return "<span class='{$badgeClass}'>Attempts: {$job->attempts}</span>";
+                        } else {
+                            return "<span class='text-danger small'>{$job->exception_preview}</span>";
+                        }
                     }),
                     
-                TD::make('available_at', 'Available At')
+                TD::make('timestamp', 'Timestamp')
                     ->sort()
                     ->width('150px')
                     ->render(function ($job) {
-                        return $job->available_at;
+                        if ($job->status === 'pending') {
+                            return "<div><small class='text-muted'>Available:</small><br>{$job->available_at}</div>";
+                        } else {
+                            return "<div><small class='text-muted'>Failed:</small><br>{$job->failed_at}</div>";
+                        }
                     }),
                     
-                TD::make('created_at', 'Created At')
-                    ->sort()
+                TD::make('actions', 'Actions')
                     ->width('150px')
                     ->render(function ($job) {
-                        return $job->created_at;
+                        if ($job->status === 'pending') {
+                            // Actions for pending jobs (limited options)
+                            return Group::make([
+                                Button::make('View')
+                                    ->icon('bs.eye')
+                                    ->method('viewJobDetails', ['id' => $job->id, 'type' => 'pending'])
+                                    ->class('btn btn-sm btn-outline-info'),
+                            ])->autoWidth();
+                        } else {
+                            // Actions for failed jobs (full options)
+                            return Group::make([
+                                Button::make('View')
+                                    ->icon('bs.eye')
+                                    ->method('viewFailedJobException', ['uuid' => $job->uuid])
+                                    ->class('btn btn-sm btn-outline-info'),
+                                    
+                                Button::make('Delete')
+                                    ->icon('bs.trash')
+                                    ->method('deleteFailedJob', ['id' => $job->id])
+                                    ->confirm("Delete failed job '{$job->job_name}'? This cannot be undone.")
+                                    ->class('btn btn-sm btn-outline-danger'),
+                            ])->autoWidth();
+                        }
                     }),
-            ])->title('Pending Jobs Queue (Database) - Last 50 Jobs');
+            ])->title('Jobs Queue - Last 50 Jobs');
 
         } catch (\Exception $e) {
             return Layout::rows([
@@ -597,6 +685,56 @@ class MailSettingsScreen extends Screen
     }
 
     /**
+     * View details for a pending job
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function viewJobDetails(Request $request)
+    {
+        try {
+            $id = $request->get('id');
+            $type = $request->get('type');
+            
+            if ($type === 'pending') {
+                $job = \DB::table('jobs')->where('id', $id)->first();
+                
+                if (!$job) {
+                    Toast::error('Job not found.');
+                    return;
+                }
+                
+                $payload = json_decode($job->payload, true);
+                
+                // Store job details in session for display in codebox
+                $timestamp = now()->format('Y-m-d H:i:s');
+                $outputText = "[$timestamp] Pending Job Details\n";
+                $outputText .= str_repeat('=', 60) . "\n\n";
+                $outputText .= "Job ID: {$job->id}\n";
+                $outputText .= "Queue: {$job->queue}\n";
+                $outputText .= "Attempts: {$job->attempts}\n";
+                $outputText .= "Available At: " . date('Y-m-d H:i:s', $job->available_at) . "\n";
+                $outputText .= "Created At: " . date('Y-m-d H:i:s', $job->created_at) . "\n\n";
+                $outputText .= "Payload:\n";
+                $outputText .= str_repeat('-', 40) . "\n";
+                $outputText .= json_encode($payload, JSON_PRETTY_PRINT);
+                $outputText .= "\n" . str_repeat('-', 40) . "\n";
+                $outputText .= "\n[$timestamp] Job details displayed.\n";
+                
+                session(['email_test_output' => $outputText]);
+                
+                Toast::info('Job details displayed in debug output.');
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error viewing job details: ' . $e->getMessage());
+            Toast::error('Failed to view job details: ' . $e->getMessage());
+        }
+        
+        return;
+    }
+
+    /**
      * Manually process queue jobs
      *
      * @return \Illuminate\Http\RedirectResponse
@@ -791,6 +929,103 @@ class MailSettingsScreen extends Screen
         } catch (\Exception $e) {
             Log::error('Error clearing all queues: ' . $e->getMessage());
             Toast::error('Failed to clear all queues: ' . $e->getMessage());
+        }
+        
+        return;
+    }
+
+    /**
+     * View full exception details for a failed job
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function viewFailedJobException(Request $request)
+    {
+        try {
+            $uuid = $request->get('uuid');
+            $failedJob = \DB::table('failed_jobs')->where('uuid', $uuid)->first();
+            
+            if (!$failedJob) {
+                Toast::error('Failed job not found.');
+                return;
+            }
+            
+            // Parse the payload to show job configuration
+            $payload = json_decode($failedJob->payload, true);
+            
+            // Store the full exception in session for display in codebox
+            $timestamp = now()->format('Y-m-d H:i:s');
+            $outputText = "[$timestamp] Failed Job Exception Details\n";
+            $outputText .= str_repeat('=', 60) . "\n\n";
+            $outputText .= "Job UUID: {$failedJob->uuid}\n";
+            $outputText .= "Queue: {$failedJob->queue}\n";
+            $outputText .= "Connection: {$failedJob->connection}\n";
+            $outputText .= "Failed At: {$failedJob->failed_at}\n\n";
+            
+            // Show job payload information
+            $outputText .= "Job Configuration (Stored in Payload):\n";
+            $outputText .= str_repeat('-', 40) . "\n";
+            if (isset($payload['displayName'])) {
+                $outputText .= "Job Type: {$payload['displayName']}\n";
+            }
+            if (isset($payload['data'])) {
+                $outputText .= "Job Data: " . json_encode($payload['data'], JSON_PRETTY_PRINT) . "\n";
+            }
+            $outputText .= "\n⚠️  IMPORTANT NOTICE:\n";
+            $outputText .= "This job contains the configuration that was active when it was originally queued.\n";
+            $outputText .= "If you have changed mail settings since then, consider deleting this failed job and creating a new one.\n\n";
+            
+            $outputText .= "Full Exception:\n";
+            $outputText .= str_repeat('-', 40) . "\n";
+            $outputText .= $failedJob->exception;
+            $outputText .= "\n" . str_repeat('-', 40) . "\n";
+            $outputText .= "\n[$timestamp] Exception details displayed.\n";
+            
+            session(['email_test_output' => $outputText]);
+            
+            Toast::info('Exception details displayed in debug output.')
+                ->autoHide(false);
+            
+        } catch (\Exception $e) {
+            Log::error('Error viewing failed job exception: ' . $e->getMessage());
+            Toast::error('Failed to view job exception: ' . $e->getMessage());
+        }
+        
+        return;
+    }
+
+    /**
+     * Delete a failed job
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function deleteFailedJob(Request $request)
+    {
+        try {
+            $id = $request->get('id');
+            
+            $failedJob = \DB::table('failed_jobs')->where('id', $id)->first();
+            if (!$failedJob) {
+                Toast::error('Failed job not found.');
+                return;
+            }
+            
+            // Delete the failed job
+            $deleted = \DB::table('failed_jobs')->where('id', $id)->delete();
+            
+            if ($deleted) {
+                Toast::success("Failed job has been deleted successfully.");
+                Log::info("Failed job ID {$id} deleted successfully.");
+            } else {
+                Toast::error("Failed to delete job.");
+                Log::error("Failed to delete failed job ID {$id}.");
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error deleting failed job: ' . $e->getMessage());
+            Toast::error('Failed to delete job: ' . $e->getMessage());
         }
         
         return;

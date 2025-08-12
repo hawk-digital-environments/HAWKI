@@ -14,6 +14,20 @@ class WelcomeMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public $user;
+    
+    /**
+     * The number of times the job may be attempted.
+     *
+     * @var int
+     */
+    public $tries = 3;
+    
+    /**
+     * The maximum number of unhandled exceptions to allow before failing.
+     *
+     * @var int
+     */
+    public $maxExceptions = 3;
 
     public function __construct($user)
     {
@@ -25,6 +39,7 @@ class WelcomeMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
+            to: $this->user->email,
             subject: 'Willkommen bei HAWKI!',
         );
     }
