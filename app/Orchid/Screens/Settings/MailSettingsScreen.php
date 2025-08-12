@@ -4,6 +4,7 @@ namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppSetting;
 use App\Services\SettingsService;
+use App\Services\MailTemplateService;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use App\Mail\WelcomeMail;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ use Orchid\Screen\Fields\Switcher;
 use Orchid\Screen\Fields\TextArea;
 use Orchid\Screen\Screen;
 use Orchid\Screen\TD;
+use Orchid\Support\Color;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
@@ -50,6 +52,10 @@ class MailSettingsScreen extends Screen
     public function query(): iterable
     {
         $mailSettings = AppSetting::where('group', 'mail')->get();
+        $mailTemplateSettings = AppSetting::where('group', 'mail_templates')->get();
+
+        // Combine mail and mail template settings
+        $allSettings = $mailSettings->merge($mailTemplateSettings);
 
         // Get combined jobs data for the table (pending + failed)
         $combinedJobsData = [];
@@ -122,7 +128,7 @@ class MailSettingsScreen extends Screen
         }
 
         return [
-            'mail' => $mailSettings,
+            'mail' => $allSettings,
             'combinedJobsData' => $combinedJobsData,
         ];
     }
@@ -164,11 +170,13 @@ class MailSettingsScreen extends Screen
     {
         $mailSettings = $this->buildMailSettingsLayout();
         $emailTesting = $this->buildEmailTestingLayout();
+        $mailTemplates = $this->buildMailTemplatesLayout();
         
         return [
             Layout::tabs([
                 'Email Testing' => $emailTesting,
                 'Mail Configuration' => $mailSettings,
+                'Mail Templates' => $mailTemplates,
             ]),
         ];
     }
@@ -253,6 +261,80 @@ class MailSettingsScreen extends Screen
                 ->title('Log Mailer Configuration');
         }
         
+        return $layouts;
+    }
+
+    /**
+     * Build layout for mail templates editing
+     *
+     * @return \Orchid\Screen\Layout[]
+     */
+    private function buildMailTemplatesLayout()
+    {
+        $templateService = app(MailTemplateService::class);
+        
+        $templates = [
+            'welcome' => [
+                'name' => 'Welcome E-Mail',
+                'description' => 'Email received by new users upon registration',
+                'subject_key' => 'mail_templates.welcome.subject',
+                'body_key' => 'mail_templates.welcome.body',
+                'default_subject' => $templateService->getTemplateContent('welcome')['subject'],
+                'default_body' => $templateService->getTemplateContent('welcome')['body'],
+            ],
+            'otp' => [
+                'name' => 'OTP-Code E-Mail',
+                'description' => 'Email containing the login code for users',
+                'subject_key' => 'mail_templates.otp.subject',
+                'body_key' => 'mail_templates.otp.body',
+                'default_subject' => $templateService->getTemplateContent('otp')['subject'],
+                'default_body' => $templateService->getTemplateContent('otp')['body'],
+            ],
+            //'invitation' => [
+            //    'name' => 'Invitation E-Mail',
+            //    'description' => 'Email for room invitations',
+            //    'subject_key' => 'mail_templates.invitation.subject',
+            //    'body_key' => 'mail_templates.invitation.body',
+            //    'default_subject' => $templateService->getTemplateContent('invitation')['subject'],
+            //    'default_body' => $templateService->getTemplateContent('invitation')['body'],
+            //],
+        ];
+
+        $layouts = [];
+
+        foreach ($templates as $template_id => $template) {
+            $layouts[] = Layout::rows([
+                Group::make([
+                    Label::make('template_label_' . $template_id)
+                        ->title($template['name'])
+                        ->help($template['description']),
+                ])->fullWidth(),
+
+                Input::make('settings[' . str_replace('.', '__', $template['subject_key']) . ']')
+                    ->title('Betreffzeile')
+                    ->value($this->getSettingValue($template['subject_key'], $template['default_subject']))
+                    ->horizontal(),
+
+                Code::make('settings[' . str_replace('.', '__', $template['body_key']) . ']')
+                    ->title('E-Mail Content (HTML)')
+                    ->value($this->getSettingValue($template['body_key'], $template['default_body']))
+                    ->language('html')
+                    ->lineNumbers()
+                    ->rows(25)
+                    ->theme('github')
+                    ->help(app(MailTemplateService::class)->getPlaceholderHelpText($template_id, 'body'))
+                    ->horizontal(),
+
+                Button::make('Vorlage zurücksetzen')
+                    ->method('resetMailTemplate')
+                    ->parameters(['template_id' => $template_id])
+                    ->type(Color::WARNING)
+                    ->confirm('Möchten Sie diese Vorlage auf die Standardwerte zurücksetzen?')
+                    ->icon('refresh'),
+
+            ])->title($template['name'] . ' Template');
+        }
+
         return $layouts;
     }
 
@@ -1029,5 +1111,76 @@ class MailSettingsScreen extends Screen
         }
         
         return;
+    }
+
+    /**
+     * Reset a mail template to default values
+     *
+     * @param Request $request
+     * @return void
+     */
+    public function resetMailTemplate(Request $request)
+    {
+        try {
+            $templateId = $request->get('template_id');
+            $templateService = app(MailTemplateService::class);
+            
+            // Get true default content from MailTemplateService
+            $defaultSubject = $templateService->getDefaultSubject($templateId);
+            $defaultBody = $templateService->getDefaultBody($templateId);
+            
+            if (!$defaultSubject || !$defaultBody) {
+                Toast::error('Unbekannte Template-ID: ' . $templateId);
+                return;
+            }
+
+            $subjectKey = "mail_templates.{$templateId}.subject";
+            $bodyKey = "mail_templates.{$templateId}.body";
+
+            $this->saveSettingValue($subjectKey, $defaultSubject);
+            $this->saveSettingValue($bodyKey, $defaultBody);
+
+            Toast::success("Template '$templateId' wurde auf Standardwerte zurückgesetzt.");
+            Log::info("Mail template reset to defaults", ['template_id' => $templateId]);
+
+        } catch (\Exception $e) {
+            Log::error('Error resetting mail template: ' . $e->getMessage());
+            Toast::error('Fehler beim Zurücksetzen der Vorlage: ' . $e->getMessage());
+        }
+        
+        return;
+    }
+
+    /**
+     * Get setting value with default fallback
+     *
+     * @param string $key
+     * @param string $default
+     * @return string
+     */
+    private function getSettingValue(string $key, string $default = ''): string
+    {
+        $setting = AppSetting::where('key', $key)->first();
+        return $setting ? $setting->value : $default;
+    }
+
+    /**
+     * Save setting value to database
+     *
+     * @param string $key
+     * @param string $value
+     * @return void
+     */
+    private function saveSettingValue(string $key, string $value): void
+    {
+        AppSetting::updateOrCreate(
+            ['key' => $key],
+            [
+                'value' => $value,
+                'group' => 'mail_templates',
+                'type' => 'string',
+                'is_public' => false,
+            ]
+        );
     }
 }

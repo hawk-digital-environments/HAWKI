@@ -10,27 +10,30 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OTPMail extends Mailable implements ShouldQueue
+class InvitationMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
     public $user;
-    public $otp;
-    public $appName;
+    public $inviter;
+    public $roomName;
+    public $invitationUrl;
     public $templateData;
 
-    public function __construct($user, $otp, $appName = null)
+    public function __construct($user, $inviter, $roomName, $invitationUrl)
     {
         $this->user = $user;
-        $this->otp = $otp;
-        $this->appName = $appName ?? config('app.name', 'HAWKI');
+        $this->inviter = $inviter;
+        $this->roomName = $roomName;
+        $this->invitationUrl = $invitationUrl;
         
         // Load template content from database
         $templateService = app(MailTemplateService::class);
-        $this->templateData = $templateService->getTemplateContent('otp', [
+        $this->templateData = $templateService->getTemplateContent('invitation', [
             'user' => $user,
-            'otp' => $otp,
-            'app_name' => $this->appName,
+            'inviter_name' => $inviter->username ?? $inviter->name ?? 'Ein Benutzer',
+            'room_name' => $roomName,
+            'invitation_url' => $invitationUrl,
         ]);
         
         // Queue this mail in the 'emails' queue instead of default
@@ -40,6 +43,7 @@ class OTPMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
+            to: $this->user->email,
             subject: $this->templateData['subject'],
             from: config('mail.from.address', 'noreply@hawki.local'),
         );
@@ -52,8 +56,9 @@ class OTPMail extends Mailable implements ShouldQueue
             with: [
                 'templateData' => $this->templateData,
                 'user' => $this->user,
-                'otp' => $this->otp,
-                'appName' => $this->appName,
+                'inviter' => $this->inviter,
+                'roomName' => $this->roomName,
+                'invitationUrl' => $this->invitationUrl,
             ],
         );
     }

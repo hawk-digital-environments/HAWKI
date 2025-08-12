@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Services\MailTemplateService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -14,6 +15,7 @@ class WelcomeMail extends Mailable implements ShouldQueue
     use Queueable, SerializesModels;
 
     public $user;
+    public $templateData;
     
     /**
      * The number of times the job may be attempted.
@@ -32,6 +34,13 @@ class WelcomeMail extends Mailable implements ShouldQueue
     public function __construct($user)
     {
         $this->user = $user;
+        
+        // Load template content from database
+        $templateService = app(MailTemplateService::class);
+        $this->templateData = $templateService->getTemplateContent('welcome', [
+            'user' => $user,
+        ]);
+        
         // Queue this mail in the 'emails' queue instead of default
         $this->onQueue('emails');
     }
@@ -40,14 +49,18 @@ class WelcomeMail extends Mailable implements ShouldQueue
     {
         return new Envelope(
             to: $this->user->email,
-            subject: 'Willkommen bei HAWKI!',
+            subject: $this->templateData['subject'],
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.welcome',
+            view: 'emails.template',
+            with: [
+                'templateData' => $this->templateData,
+                'user' => $this->user,
+            ],
         );
     }
 
