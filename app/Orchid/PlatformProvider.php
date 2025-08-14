@@ -64,9 +64,9 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('Log')
                         ->route('platform.settings.log')
                         ->icon('bs.journal-code'),    
-                    Menu::make('Storage')
-                        ->route('platform.settings.storage')
-                        ->icon('bs.database'),     
+                    //Menu::make('Storage')
+                    //    ->route('platform.settings.storage')
+                    //    ->icon('bs.database'),     
                     Menu::make('Styling')
                         ->route('platform.settings.styling')
                         ->icon('bs.paint-bucket'),       
