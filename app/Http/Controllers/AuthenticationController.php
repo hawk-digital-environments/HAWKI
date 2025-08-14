@@ -19,6 +19,7 @@ use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
+use App\Services\Auth\LocalAuthService;
 
 use Illuminate\Support\Facades\Log;
 
@@ -31,17 +32,19 @@ class AuthenticationController extends Controller
     protected $shibbolethService;
     protected $oidcService;
     protected $testAuthService;
+    protected $localAuthService;
 
     protected $languageController;
 
 
-    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, TestAuthService $testAuthService, LanguageController $languageController)
+    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, TestAuthService $testAuthService, LocalAuthService $localAuthService, LanguageController $languageController)
     {
         $this->authMethod = config('auth.authentication_method', 'LDAP');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
         $this->testAuthService = $testAuthService;
+        $this->localAuthService = $localAuthService;
 
         $this->languageController = $languageController;
     }
@@ -61,16 +64,10 @@ class AuthenticationController extends Controller
         $password = $request->input('password');
 
         $authenticatedUserInfo = null;
-        // Teste zuerst Test Users, wenn aktiviert
-        if(config('test_users')['active']){
-            $authenticatedUserInfo = $this->testAuthService->authenticate($username, $password);
-        }
-
-        // Falls Test User Authentication fehlschlägt oder deaktiviert ist, verwende die konfigurierte Authentifizierungsmethode
-        if(!$authenticatedUserInfo) {
-            if($this->authMethod === 'LDAP'){
-                $authenticatedUserInfo = $this->ldapService->authenticate($username, $password);
-            }
+        
+        // Use the configured authentication method
+        if($this->authMethod === 'LDAP'){
+            $authenticatedUserInfo = $this->ldapService->authenticate($username, $password);
         }
 
         // If Login Failed
@@ -403,6 +400,63 @@ class AuthenticationController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Error during Log-In Code verification'
+            ], 500);
+        }
+    }
+
+    /**
+     * Local user authentication
+     * Independent of the main authentication method
+     */
+    public function localLogin(Request $request)
+    {
+        $request->validate([
+            'account' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $username = filter_var($request->input('account'), FILTER_UNSAFE_RAW);
+        $password = $request->input('password');
+
+        try {
+            // Authenticate using LocalAuthService
+            $authenticatedUserInfo = $this->localAuthService->authenticate($username, $password);
+
+            // If Login Failed
+            if (!$authenticatedUserInfo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Login Failed!',
+                ]);
+            }
+
+            Log::info('LOCAL LOGIN: ' . $authenticatedUserInfo['username']);
+            $username = $authenticatedUserInfo['username'];
+            $user = User::where('username', $username)->first();
+
+            // If user exists and is not removed
+            if($user && $user->isRemoved === 0){
+                Auth::login($user);
+
+                return response()->json([
+                    'success' => true,
+                    'redirectUri' => '/handshake',
+                ]);
+            }
+            else {
+                // This should not happen for local users, but handle gracefully
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account not found or deactivated.',
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Local authentication error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication error occurred.',
             ], 500);
         }
     }
