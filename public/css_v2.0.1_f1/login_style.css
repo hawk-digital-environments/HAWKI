@@ -39,6 +39,62 @@
   margin-top: auto;
 }
 
+/* Login Panel Styles */
+.loginPanel {
+  flex: 1;
+  margin-bottom: 2rem;
+}
+
+/* Auth Panel Switching */
+#main-auth-panel, 
+#local-auth-panel {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Link Button Styles */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.btn-link:hover {
+  color: var(--text-main);
+  text-decoration: none;
+}
+
+.local-users-link,
+.back-to-main-link {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+/* Separator Styles */
+.separator {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.separator::before,
+.separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.separator span {
+  padding: 0 1rem;
+}
+
 
 .loginPanel {
   flex: 1;
@@ -55,6 +111,19 @@
   margin-bottom: 0.75rem;
 }
 #loginButton{
+  justify-self: end;
+}
+
+#guest-login-Button-panel{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+#guest-login-message{
+  color: red;
+  margin-bottom: 0.75rem;
+}
+#guestLoginButton{
   justify-self: end;
 }
 

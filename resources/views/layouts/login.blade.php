@@ -99,6 +99,23 @@
             }
         }
     }
+
+    function onGuestLoginKeydown(event){
+        if(event.key == "Enter"){
+            const username = document.getElementById('guest-account');
+            if(!username.value){
+                return;
+            }
+            const password = document.getElementById('guest-password');
+            if(document.activeElement != password){
+                password.focus();
+                return;
+            }
+            if(username.value && password.value){
+                LoginLocal();
+            }
+        }
+    }
     async function LoginLDAP() {
         try {
             var formData = new FormData();
@@ -130,6 +147,62 @@
             }
         } catch (error) {
             console.error(error);
+        }
+    }
+
+    async function LoginLocal() {
+        try {
+            var formData = new FormData();
+            formData.append("account", document.getElementById("guest-account").value);
+            formData.append("password", document.getElementById("guest-password").value);
+            const csrfToken = document.getElementById('loginForm-LOCAL').querySelector('input[name="_token"]').value;
+
+            const response = await fetch('/req/login-local', {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error("Guest login request failed");
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                await setOverlay(true, true)
+                window.location.href = data.redirectUri;
+
+            } else {
+                // console.log('guest login failed');
+                document.getElementById("guest-login-message").textContent = data.message || 'Guest Login Failed!';
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById("guest-login-message").textContent = 'Guest Login Error!';
+        }
+    }
+
+    function switchToLocalUsersLogin() {
+        // Hide main auth panel
+        document.getElementById('main-auth-panel').style.display = 'none';
+        // Show local auth panel
+        document.getElementById('local-auth-panel').style.display = 'block';
+        // Focus on username field
+        document.getElementById('guest-account').focus();
+    }
+
+    function switchToMainLogin() {
+        // Hide local auth panel
+        document.getElementById('local-auth-panel').style.display = 'none';
+        // Show main auth panel
+        document.getElementById('main-auth-panel').style.display = 'block';
+        // Focus on main login field if it exists
+        const mainLoginField = document.getElementById('account');
+        if (mainLoginField) {
+            mainLoginField.focus();
         }
     }
 </script>

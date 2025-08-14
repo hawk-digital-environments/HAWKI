@@ -129,6 +129,14 @@
     "PH_ChooseDescription": "Add Description",
     "PH_SystemPrompt": "Enter your prefered system prompt",
     "PH_SearchBar": "Enter Name, Username oder E-Mail Address" ,
+    
+    "local_users_login": "Local Users",
+    "local_login": "Login",
+    "back_to_main_login": "Back to Main Login",
+    "guest_username": "Username",
+    "guest_password": "Password",
+    "or": "or",
+    
     "Api_Warning": "To be able to use the :system language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you."
 
 }

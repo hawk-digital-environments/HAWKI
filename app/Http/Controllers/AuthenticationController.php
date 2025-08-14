@@ -209,6 +209,7 @@ class AuthenticationController extends Controller
         }
 
         $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
+        $isFirstLoginLocalUser = Session::get('first_login_local_user', false);
 
 
         // Call getTranslation method from LanguageController
@@ -230,7 +231,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret', 'isFirstLoginLocalUser'));
     }
 
 
@@ -240,16 +241,24 @@ class AuthenticationController extends Controller
     public function completeRegistration(Request $request)
     {
         try {
+            // Log incoming data for debugging
+            Log::info('completeRegistration called', [
+                'request_data' => $request->all(),
+                'session_first_login_local_user' => Session::get('first_login_local_user', false)
+            ]);
+            
             // Validate input data
             $validatedData = $request->validate([
                 'publicKey' => 'required|string',
                 'keychain' => 'required|string',
                 'KCIV' => 'required|string',
                 'KCTAG' => 'required|string',
+                'newPassword' => 'nullable|string|min:6', // For local users changing password
             ]);
             
             // Retrieve user info from session
             $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
+            $isFirstLoginLocalUser = Session::get('first_login_local_user', false);
 
             // Process user info
             $username = $userInfo['username'] ?? null;
@@ -261,18 +270,31 @@ class AuthenticationController extends Controller
     
             $avatarId = $validatedData['avatar_id'] ?? '';
 
+            // Prepare data for update/create
+            $userData = [
+                'name' => $name,
+                'email' => $email,
+                'employeetype' => $employeetype,
+                'publicKey' => $validatedData['publicKey'],
+                'avatar_id' => $avatarId,
+                'isRemoved' => false,
+                'permissions' => $permissions,
+            ];
+
+            // For local users on first login, update password if provided
+            if ($isFirstLoginLocalUser && !empty($validatedData['newPassword'])) {
+                Log::info('Setting new password for local user', [
+                    'username' => $username,
+                    'newPassword_length' => strlen($validatedData['newPassword'])
+                ]);
+                $userData['password'] = $validatedData['newPassword']; // Will be auto-hashed
+                Session::forget('first_login_local_user'); // Clear the flag
+            }
+
             // Update or create the local user
             $user = User::updateOrCreate(
                 ['username' => $username],
-                [
-                    'name' => $name,
-                    'email' => $email,
-                    'employeetype' => $employeetype,
-                    'publicKey' => $validatedData['publicKey'],
-                    'avatar_id' => $avatarId,
-                    'isRemoved' => false,
-                    'permissions' => $permissions,
-                ]
+                $userData
             );
     
             // Update or create the Private User Data
@@ -436,8 +458,23 @@ class AuthenticationController extends Controller
 
             // If user exists and is not removed
             if($user && $user->isRemoved === 0){
-                Auth::login($user);
+                
+                // Check if this is a first-time login BEFORE logging in
+                if($user->created_at->eq($user->updated_at)) {
+                    // First login - user needs to change password and generate passkey
+                    // Do NOT log the user in yet - they need to complete registration first
+                    Session::put('registration_access', true);
+                    Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
+                    Session::put('first_login_local_user', true);
 
+                    return response()->json([
+                        'success' => true,
+                        'redirectUri' => '/register',
+                    ]);
+                }
+
+                // Regular login - user has already completed first-time setup
+                Auth::login($user);
                 return response()->json([
                     'success' => true,
                     'redirectUri' => '/handshake',

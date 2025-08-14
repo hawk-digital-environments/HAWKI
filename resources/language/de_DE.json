@@ -158,5 +158,13 @@
     "PH_ChooseDescription": "Beschreibung eingeben",
     "PH_SystemPrompt": "Gebe deine bevorzugte Systemprompt ein",
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
+    
+    "local_users_login": "Lokale Benutzer",
+    "local_login": "Anmelden",
+    "back_to_main_login": "Zurück zur Hauptanmeldung",
+    "guest_username": "Benutzername",
+    "guest_password": "Kennwort",
+    "or": "oder",
+    
     "Api_Warning": "Um die Sprachmodelle von :system auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird."
 }
