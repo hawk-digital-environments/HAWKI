@@ -56,6 +56,7 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('System')
                 ->title('Configuration')
                 ->icon('bs.house-gear')
+                ->badge(fn () => $this->getHawkiCommitId(), Color::DARK)
                 ->list([
                     Menu::make('Settings')
                         ->route('platform.settings.system')
@@ -63,15 +64,18 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('Log')
                         ->route('platform.settings.log')
                         ->icon('bs.journal-code'),    
-                    Menu::make('Storage')
-                        ->route('platform.settings.storage')
-                        ->icon('bs.database'),     
+                    //Menu::make('Storage')
+                    //    ->route('platform.settings.storage')
+                    //    ->icon('bs.database'),     
                     Menu::make('Styling')
                         ->route('platform.settings.styling')
                         ->icon('bs.paint-bucket'),       
                     Menu::make('Texts')
                         ->route('platform.settings.texts')
-                        ->icon('bs.info-circle'),    
+                        ->icon('bs.info-circle'),
+                    Menu::make('Mail')
+                        ->route('platform.settings.mail')
+                        ->icon('bs.envelope'),    
                     ]),    
             
             Menu::make('Models')
@@ -112,6 +116,32 @@ class PlatformProvider extends OrchidServiceProvider
                 ->target('_blank')
                 ->badge(fn () => Dashboard::version(), Color::DARK),
         ];
+    }
+
+    /**
+     * Get the hawki submodule commit ID from git_info.json
+     *
+     * @return string
+     */
+    private function getHawkiCommitId(): string
+    {
+        try {
+            $gitInfoPath = storage_path('app/git_info.json');
+            
+            if (!file_exists($gitInfoPath)) {
+                return 'N/A';
+            }
+            
+            $gitInfo = json_decode(file_get_contents($gitInfoPath), true);
+            
+            if (!isset($gitInfo['hawki_submodule']['commit_id'])) {
+                return 'N/A';
+            }
+            
+            return $gitInfo['hawki_submodule']['commit_id'];
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
 

@@ -106,6 +106,37 @@ class AppSettingsSeeder extends Seeder
             
             $value = $flattenedConfig[$realKey];
             
+            // Standardwert für authentication_method setzen, wenn null oder leer
+            if ($realKey === 'authentication_method' && $configName === 'auth' && (is_null($value) || $value === '')) {
+                $value = 'LDAP';
+            }
+            
+            // Standardwert für test_users_testers setzen, wenn leer (wenn test_users.json nicht existiert)
+            if ($realKey === 'testers' && $configName === 'test_users' && (is_null($value) || empty($value))) {
+                // Versuche die Backup-Datei zu laden, falls vorhanden
+                $backupPath = storage_path('app/test_users.json_bak');
+                $examplePath = storage_path('app/test_users.json.example');
+                
+                if (file_exists($backupPath)) {
+                    $value = json_decode(file_get_contents($backupPath), true) ?: [];
+                } elseif (file_exists($examplePath)) {
+                    $value = json_decode(file_get_contents($examplePath), true) ?: [];
+                } else {
+                    // Fallback: Ein Beispiel Test User
+                    $value = [
+                        [
+                            "username" => "testuser",
+                            "password" => "123",
+                            "name" => "Test User",
+                            "email" => "test@example.com",
+                            "employeetype" => "Tester",
+                            "avatar_id" => "",
+                            "permissions" => null
+                        ]
+                    ];
+                }
+            }
+            
             // DB-Key erstellen (mit Unterstrich): app_name
             $dbKey = "{$configName}_{$realKey}";
             

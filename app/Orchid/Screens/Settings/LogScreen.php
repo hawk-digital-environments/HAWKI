@@ -2,6 +2,14 @@
 
 namespace App\Orchid\Screens\Settings;
 
+use App\Models\AppSetting;
+use App\Services\SettingsService;
+use App\Orchid\Traits\OrchidSettingsManagementTrait;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
+
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Screen\Action;
@@ -9,7 +17,7 @@ use Orchid\Screen\Actions\Button;
 use Orchid\Support\Facades\Toast;
 use Orchid\Screen\Fields\Switcher;
 use Orchid\Screen\Fields\Group;
-
+use Orchid\Screen\Fields\Label;
 
 use Illuminate\Support\Facades\Log;
 use Orchid\Support\Color;
@@ -19,6 +27,20 @@ use Orchid\Support\Facades\Alert;
 
 class LogScreen extends Screen
 {
+    use OrchidSettingsManagementTrait;
+    /**
+     * @var SettingsService
+     */
+    private $settingsService;
+
+    /**
+     * Construct the screen
+     */
+    public function __construct(SettingsService $settingsService)
+    {
+        $this->settingsService = $settingsService;
+    }
+
     /**
      * Fetch data to be displayed on the screen.
      *
@@ -26,32 +48,16 @@ class LogScreen extends Screen
      */
     public function query(): iterable
     {
-        // Filterwerte aus Session lesen, Standard: false
-        $localInfo = session()->get('localInfo', true);
-        $localError = session()->get('localError', true);
-
         $log = file_exists(storage_path('logs/laravel.log'))
             ? file_get_contents(storage_path('logs/laravel.log'))
             : 'Log-Datei nicht gefunden.';
-
-        // Log zeilenweise filtern
-        $lines = explode(PHP_EOL, $log);
-        $filteredLines = [];
-        foreach ($lines as $line) {
-            if (!$localInfo && strpos($line, 'local.INFO') !== false) {
-                continue;
-            }
-            if (!$localError && strpos($line, 'local.ERROR') !== false) {
-                continue;
-            }
-            $filteredLines[] = $line;
-        }
-        $log = implode(PHP_EOL, $filteredLines);
+        
+        // Fetch logging settings from database - search for the correct key format
+        $loggingSettings = AppSetting::where('key', 'LIKE', 'logging_%')->get();
         
         return [
-            'logs'       => $log,
-            'localInfo'  => $localInfo,
-            'localError' => $localError,
+            'logs' => $log,
+            'logging_settings' => $loggingSettings,
         ];
     }
 
@@ -65,6 +71,10 @@ class LogScreen extends Screen
         return 'Laravel Log';
     }
 
+    public function description(): ?string
+    {
+        return 'Configure what gets logged to the Laravel log file.';
+    }
     /**
      * The screen's action buttons.
      *
@@ -81,8 +91,11 @@ class LogScreen extends Screen
                 ->method('testLog'),  
             Button::make('Refresh Log')
                 ->icon('arrow-clockwise')
-                ->method('refreshLog'),        
-            ];
+                ->method('refreshLog'),
+            Button::make('Save Settings')
+                ->icon('save')
+                ->method('saveSettings'),
+        ];
     }
 
     /**
@@ -121,6 +134,7 @@ class LogScreen extends Screen
         Toast::warning('Click Processing');
         Log::info("message");
     }
+
     /**
      * The screen's layout elements.
      *
@@ -129,23 +143,8 @@ class LogScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::rows([
-                Group::make([
-                    Switcher::make('localInfo')
-                        ->placeholder('local.INFO')
-                        ->sendTrueOrFalse(),
-                    Switcher::make('localError')
-                        ->placeholder('local.ERROR')
-                        ->sendTrueOrFalse(),
-                    Button::make('Save Filters')
-                        ->icon('check')
-                        ->method('updateSettings')
-                        ->async()
-                        ->type(Color::BASIC),
-                ])
-                ->widthColumns('max-content 1fr max-content'),
-            ]),
-
+            $this->buildLoggingSettingsLayout(),
+            
             Layout::rows([
                 Code::make('logs')
                     ->title('Laravel Log')
@@ -153,6 +152,22 @@ class LogScreen extends Screen
                     ->height("70dvh"),
             ]),
         ];
+    }
+
+    /**
+     * Build layout for logging settings
+     *
+     * @return \Orchid\Screen\Layout
+     */
+    private function buildLoggingSettingsLayout()
+    {
+        $fields = [];
+
+        foreach ($this->query()['logging_settings'] as $setting) {
+            $fields[] = $this->generateFieldForSetting($setting);
+        }
+
+        return Layout::rows($fields)->title('Log Triggers');
     }
 
     /**

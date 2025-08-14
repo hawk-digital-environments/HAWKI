@@ -7,21 +7,21 @@ use Illuminate\Support\Facades\Http;
 use App\Models\LanguageModel;
 use App\Models\ProviderSetting;
 
-class OpenWebUIProvider extends OpenAIProvider
+class HAWKIProvider extends BaseAIModelProvider
 {
     /**
-     * Constructor for OpenWebUIProvider
+     * Constructor for OllamaProvider
      *
      * @param array $config
      */
     public function __construct(array $config)
     {
         parent::__construct($config);
-        $this->providerId = 'openWebUi'; // Explizites Setzen der providerId
+        $this->providerId = 'hawki'; // Explicitly set the providerId
     }
     
     /**
-     * Format the raw payload for OpenAI API
+     * Format the raw payload for Ollama API
      *
      * @param array $rawPayload
      * @return array
@@ -31,10 +31,7 @@ class OpenWebUIProvider extends OpenAIProvider
         $messages = $rawPayload['messages'];
         $modelId = $rawPayload['model'];
         
-        // Handle special cases for specific models
-        $messages = $this->handleModelSpecificFormatting($modelId, $messages);
-        
-        // Format messages for OpenAI
+        // Format messages for Ollama
         $formattedMessages = [];
         foreach ($messages as $message) {
             $formattedMessages[] = [
@@ -42,36 +39,16 @@ class OpenWebUIProvider extends OpenAIProvider
                 'content' => $message['content']['text']
             ];
         }
-        
-        // Build payload with common parameters
-        $payload = [
+        Log::info('stream support: ' . $this->supportsStreaming($modelId));
+        return [
             'model' => $modelId,
             'messages' => $formattedMessages,
             'stream' => $rawPayload['stream'] && $this->supportsStreaming($modelId),
         ];
-        
-        // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['temperature'])) {
-            $payload['temperature'] = $rawPayload['temperature'];
-        }
-        
-        if (isset($rawPayload['top_p'])) {
-            $payload['top_p'] = $rawPayload['top_p'];
-        }
-        
-        if (isset($rawPayload['frequency_penalty'])) {
-            $payload['frequency_penalty'] = $rawPayload['frequency_penalty'];
-        }
-        
-        if (isset($rawPayload['presence_penalty'])) {
-            $payload['presence_penalty'] = $rawPayload['presence_penalty'];
-        }
-        
-        return $payload;
     }
     
     /**
-     * Format the complete response from OpenWebUI
+     * Format the complete response from Ollama
      *
      * @param mixed $response
      * @return array
@@ -80,18 +57,16 @@ class OpenWebUIProvider extends OpenAIProvider
     {
         $responseContent = $response->getContent();
         $jsonContent = json_decode($responseContent, true);
-
-        if (containsKey($jsonContent, 'content')){
-            $content = getValueForKey($jsonContent, 'content');
-        }
-               
+        
+        // Extract content based on Ollama's response format
+        $content = $jsonContent['message']['content'] ?? '';
+        
         return [
             'content' => [
                 'text' => $content,
             ],
             'usage' => $this->extractUsage($jsonContent)
         ];
-
     }
     
     /**
@@ -108,22 +83,19 @@ class OpenWebUIProvider extends OpenAIProvider
         $isDone = false;
         $usage = null;
         
-        // Check for the finish_reason flag
-        if (isset($jsonChunk['choices'][0]['finish_reason']) && $jsonChunk['choices'][0]['finish_reason'] === 'stop') {
+        // Extract content based on Ollama's streaming format
+        if (isset($jsonChunk['message']['content'])) {
+            $content = $jsonChunk['message']['content'];
+        }
+        
+        // Check if this is the final chunk
+        if (isset($jsonChunk['done']) && $jsonChunk['done'] === true) {
             $isDone = true;
-        }
-        
-        // Extract usage data if available
-        if (!empty($jsonChunk['usage'])) {
-            $usage = $this->extractUsage($jsonChunk);
-        }
-        
-        // Extract content if available
-        //if (isset($jsonChunk['choices'][0]['delta']['content'])) {
-        //    $content = $jsonChunk['choices'][0]['delta']['content'];
-        //}
-        if ($this->containsKey($jsonChunk, 'content')){
-            $content = $this->getValueForKey($jsonChunk, 'content');
+            
+            // Extract usage if available in the final chunk
+            if (isset($jsonChunk['eval_count']) && isset($jsonChunk['prompt_eval_count'])) {
+                $usage = $this->extractUsage($jsonChunk);
+            }
         }
         
         return [
@@ -135,70 +107,36 @@ class OpenWebUIProvider extends OpenAIProvider
         ];
     }
     
-    protected function containsKey($obj, $targetKey)
-    {
-        if (!is_array($obj)) {
-            return false;
-        }
-        if (array_key_exists($targetKey, $obj)) {
-            return true;
-        }
-        foreach ($obj as $value) {
-            if ($this->containsKey($value, $targetKey)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected function getValueForKey($obj, $targetKey)
-    {
-        if (!is_array($obj)) {
-            return null;
-        }
-        if (array_key_exists($targetKey, $obj)) {
-            return $obj[$targetKey];
-        }
-        foreach ($obj as $value) {
-            $result = $this->getValueForKey($value, $targetKey);
-            if ($result !== null) {
-                return $result;
-            }
-        }
-        return null;
-    }
     /**
-     * Extract usage information from OpenAI response
+     * Extract usage information from Ollama response
      *
      * @param array $data
      * @return array|null
      */
     protected function extractUsage(array $data): ?array
     {
-        if (empty($data['usage'])) {
+        if (!isset($data['eval_count']) || !isset($data['prompt_eval_count'])) {
             return null;
         }
-        //Log::info($data['usage']);
+        
         return [
-            'prompt_tokens' => $data['usage']['prompt_tokens'],
-            'completion_tokens' => $data['usage']['completion_tokens'],
-            'prompt_token/s' =>  $data['usage']['prompt_token/s'],
-            'response_token/s' =>  $data['usage']['response_token/s'],
-        ];    
+            'prompt_tokens' => $data['prompt_eval_count'],
+            'completion_tokens' => $data['prompt_eval_count'] - $data['eval_count'],
+        ];
     }
     
     /**
-     * Make a non-streaming request to the OpenWebUI API
+     * Make a non-streaming request to the Ollama API
      *
-     * @param array $payload The formatted payload
-     * @return mixed The response
+     * @param array $payload
+     * @return mixed
      */
     public function makeNonStreamingRequest(array $payload)
     {
-        // Use the OpenAI implementation, but with OpenWebUI API URL
+        // Ensure stream is set to false
         $payload['stream'] = false;
         
-        // Initialize cURL
+        // Initialize cURL with the base_url from database config
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
@@ -221,14 +159,17 @@ class OpenWebUIProvider extends OpenAIProvider
     }
     
     /**
-     * Make a streaming request to the OpenWebUI API
+     * Make a streaming request to the Ollama API
      *
-     * @param array $payload The formatted payload
-     * @param callable $streamCallback Callback for streaming responses
+     * @param array $payload
+     * @param callable $streamCallback
      * @return void
      */
     public function makeStreamingRequest(array $payload, callable $streamCallback)
     {
+        // Implementation of streaming request for Ollama
+        // Similar to OpenAI implementation but adapted for Ollama's API
+        
         // Ensure stream is set to true
         $payload['stream'] = true;
         
@@ -240,7 +181,7 @@ class OpenWebUIProvider extends OpenAIProvider
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
-        // Initialize cURL
+        // Initialize cURL with the base_url from database config
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
         
@@ -252,7 +193,7 @@ class OpenWebUIProvider extends OpenAIProvider
         
         // Execute the cURL session
         curl_exec($ch);
-        
+
         // Handle errors
         if (curl_errno($ch)) {
             $streamCallback('Error: ' . curl_error($ch));
@@ -272,35 +213,20 @@ class OpenWebUIProvider extends OpenAIProvider
     }
     
     /**
-     * Handle special formatting requirements for specific models
-     *
-     * @param string $modelId
-     * @param array $messages
-     * @return array
-     */
-    protected function handleModelSpecificFormatting(string $modelId, array $messages): array
-    {
-        // Special case for o1-mini: convert system to user
-        if ($modelId === 'o1-mini' && isset($messages[0]) && $messages[0]['role'] === 'system') {
-            $messages[0]['role'] = 'user';
-        }
-        
-        return $messages;
-    }
-
-    /**
      * Ping the API to check model status
      *
      * @return array
-     * @throws \Exception
      */
     public function getModelsStatus(): array
     {
         $response = $this->pingProvider();
+        
+        // If no response or faulty response, return empty array
         if (!$response) {
             return [];
         }
         
+        // Parse reference list from API response
         $referenceList = json_decode($response, true);
         if (!is_array($referenceList)) {
             return [];
@@ -308,12 +234,9 @@ class OpenWebUIProvider extends OpenAIProvider
         
         // Get models from the database instead of from the configuration
         $providerId = $this->getProviderId();
-        $provider = ProviderSetting::where(function($query) use ($providerId) {
-            $query->where('api_format', $providerId)
-                  ->orWhere('provider_name', $providerId);
-        })
-        ->where('is_active', true)
-        ->first();
+        $provider = ProviderSetting::where('provider_name', $providerId)
+            ->where('is_active', true)
+            ->first();
             
         if (!$provider) {
             return [];
@@ -325,54 +248,48 @@ class OpenWebUIProvider extends OpenAIProvider
         
         $models = [];
         foreach ($dbModels as $model) {
-            $models[] = [
+            $modelData = [
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'api_format' => $provider->api_format ?? $provider->provider_name,
-                'provider_name' => $provider->provider_name
+                'provider' => $providerId
             ];
-        }
-    
-        // Determine model status from the reference list
-        foreach ($models as &$model) {
-            $found = false;
             
-            // Search for the model in the reference list
+            // Determine model status from the API response
             foreach ($referenceList as $reference) {
-                if (isset($reference['id']) && $reference['id'] === $model['id']) {
-                    $model['status'] = 'ready'; // OpenWebUI defaults to 'ready'
-                    $found = true;
+                if (isset($reference['name']) && $reference['name'] === $model->model_id) {
+                    $modelData['status'] = 'ready';
                     break;
                 }
             }
             
-            if (!$found) {
-                $model['status'] = 'unknown';
+            // If no status found, mark as 'unknown'
+            if (!isset($modelData['status'])) {
+                $modelData['status'] = 'unknown';
             }
+            
+            $models[] = $modelData;
         }
-    
+        
         return $models;
     }
     
     /**
-     * Ping OpenWebUI API to check status
+     * Ping the Ollama API to check available models
      *
      * @return string|null
      */
     protected function pingProvider(): ?string
     {
+        Log::info('pingProvider: Ollama');
         $url = $this->config['ping_url'];
-        $apiKey = $this->config['api_key'];
-
+        
         try {
-            $response = Http::withToken($apiKey)
-                ->timeout(5)
-                ->get($url);
-
+            // Ollama API might not require an API key
+            $response = Http::timeout(5)->get($url);
             return $response;
         } catch (\Exception $e) {
-            Log::error("Error pinging OpenWebUI provider: " . $e->getMessage());
+            Log::error("Error pinging Ollama provider: " . $e->getMessage());
             return null;
         }
     }
