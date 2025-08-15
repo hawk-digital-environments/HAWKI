@@ -25,9 +25,9 @@ class LocalAuthService
                 return null;
             }
 
-            // Find local user (has password field filled)
+            // Find local user (auth_type = 'local')
             $user = User::where('username', $username)
-                       ->whereNotNull('password') // Only local users have passwords
+                       ->where('auth_type', 'local')
                        ->where('isRemoved', false)
                        ->first();
 
@@ -55,7 +55,7 @@ class LocalAuthService
     }
 
     /**
-     * Check if a user is a local user (has password)
+     * Check if a user is a local user
      *
      * @param string $username
      * @return bool
@@ -63,7 +63,7 @@ class LocalAuthService
     public function isLocalUser($username)
     {
         return User::where('username', $username)
-                  ->whereNotNull('password')
+                  ->where('auth_type', 'local')
                   ->exists();
     }
 
@@ -71,22 +71,27 @@ class LocalAuthService
      * Create a new local user
      *
      * @param array $userData
+     * @param bool $needsPasswordReset - Whether user needs to reset password (for admin-created users)
      * @return User|null
      */
-    public function createLocalUser($userData)
+    public function createLocalUser($userData, $needsPasswordReset = false)
     {
         try {
-            return User::create([
+            $user = User::create([
                 'username' => $userData['username'],
                 'name' => $userData['name'],
                 'email' => $userData['email'],
                 'password' => $userData['password'], // Will be automatically hashed
                 'employeetype' => $userData['employeetype'] ?? 'local',
+                'auth_type' => 'local', // Explicitly set as local user
+                'reset_pw' => $needsPasswordReset, // Set based on user creation method
                 'publicKey' => $userData['publicKey'] ?? '',
                 'avatar_id' => $userData['avatar_id'] ?? null,
                 'bio' => $userData['bio'] ?? null,
                 'isRemoved' => false,
             ]);
+
+            return $user;
         } catch (Exception $e) {
             Log::error('Failed to create local user: ' . $e->getMessage());
             return null;
@@ -104,7 +109,7 @@ class LocalAuthService
     {
         try {
             $user = User::where('username', $username)
-                       ->whereNotNull('password')
+                       ->where('auth_type', 'local')
                        ->first();
 
             if (!$user) {
@@ -127,19 +132,19 @@ class LocalAuthService
      */
     public function getLocalUsers()
     {
-        return User::whereNotNull('password')
+        return User::where('auth_type', 'local')
                   ->where('isRemoved', false)
                   ->get();
     }
 
     /**
-     * Get all external users (no password)
+     * Get all external users (not local)
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getExternalUsers()
     {
-        return User::whereNull('password')
+        return User::where('auth_type', '!=', 'local')
                   ->where('isRemoved', false)
                   ->get();
     }

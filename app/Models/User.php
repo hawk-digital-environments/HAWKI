@@ -23,6 +23,8 @@ class User extends OrchidUser
         'password',
         'username',
         'employeetype',
+        'auth_type',
+        'reset_pw',
         'publicKey',
         'avatar_id',
         'bio',
