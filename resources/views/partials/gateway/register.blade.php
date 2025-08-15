@@ -74,8 +74,8 @@
 
         </div>
 
-        {{-- Password Change Slide for Local Users --}}
-        @if($isFirstLoginLocalUser ?? false)
+        {{-- Password Change Slide for Local Users who need password reset --}}
+        @if(($isFirstLoginLocalUser ?? false) && ($needsPasswordReset ?? false))
         <div class="slide" data-index="5.5" style="display:none" id="password-change-slide">
             <h1>{{ $translation["change_password"] ?? "Change Password" }}</h1>
             <p class="slide-subtitle">
@@ -121,11 +121,13 @@
     let userInfo = @json($userInfo);
     let passkeySecret = @json($passkeySecret);
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
+    let needsPasswordReset = @json($needsPasswordReset ?? false);
     
     initializeRegistration();
     
-    // For local users, start with password change, otherwise normal flow
-    if (isFirstLoginLocalUser) {
+    // For local users who need password reset, start with password change
+    // For other users (including self-service local users), start with normal flow
+    if (isFirstLoginLocalUser && needsPasswordReset) {
         window.addEventListener('DOMContentLoaded', function() {
             document.getElementById('password-change-slide').style.display = 'block';
             switchSlide(5.5);

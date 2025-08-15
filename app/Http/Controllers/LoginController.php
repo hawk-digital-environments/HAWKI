@@ -35,9 +35,15 @@ class LoginController extends Controller
 
         $authenticationMethod = config('auth.authentication_method', 'LDAP');
         $localUsersActive = config('test_users.active', false);
+        
+        // Get available roles for the guest registration form
+        $availableRoles = [];
+        if ($localUsersActive) {
+            $availableRoles = \Orchid\Platform\Models\Role::orderBy('name')->get();
+        }
 
        // Read authentication forms
-        $authForms = View::make('partials.login.authForms', compact('translation', 'authenticationMethod', 'localUsersActive'))->render();
+        $authForms = View::make('partials.login.authForms', compact('translation', 'authenticationMethod', 'localUsersActive', 'availableRoles'))->render();
 
         // Initialize settings panel
         $settingsPanel = (new SettingsController())->initialize($translation);

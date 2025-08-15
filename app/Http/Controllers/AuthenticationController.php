@@ -22,7 +22,7 @@ use App\Services\Auth\TestAuthService;
 use App\Services\Auth\LocalAuthService;
 
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Validation\ValidationException;
 
 class AuthenticationController extends Controller
 {
@@ -520,6 +520,10 @@ class AuthenticationController extends Controller
      */
     public function submitGuestRequest(Request $request)
     {
+        // Get available role slugs for validation
+        $availableRoles = \Orchid\Platform\Models\Role::pluck('slug')->toArray();
+        $rolesList = implode(',', $availableRoles);
+        
         // Validate the request
         $request->validate([
             'username' => [
@@ -538,7 +542,7 @@ class AuthenticationController extends Controller
             ],
             'password_confirmation' => 'required|string|same:password',
             'email' => 'required|email|max:255|unique:users,email',
-            'employeetype' => 'required|string|in:Student,Employee,External,Guest'
+            'employeetype' => "required|string|in:{$rolesList}"
         ], [
             'username.required' => 'Username is required',
             'username.min' => 'Username must be at least 3 characters long',
