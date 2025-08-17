@@ -42,7 +42,7 @@ class LdapService
             }
         
             // Bind to LDAP server
-            if (!@ldap_bind($ldapConn, $ldap_binddn, $ldap_bindpw)) {
+            if ($ldap_binddn && !@ldap_bind($ldapConn, $ldap_binddn, $ldap_bindpw)) {
                 return false;
             }
 
