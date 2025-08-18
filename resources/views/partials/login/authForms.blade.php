@@ -3,11 +3,12 @@
     @if($authenticationMethod === 'OIDC')
         <form class="form-column" method="post" id="loginForm-OIDC" action="/req/login-oidc">
             @csrf
-            <button id="loginButton" class="btn-lg align-end top-gap-1">{{ $translation['Login'] }}</button>
+            <button id="loginButton" class="btn-lg-fill align-end top-gap-1">{{ $translation['Login'] }}</button>
         </form>
     @elseif($authenticationMethod === 'LDAP' || $authenticationMethod === 'TestAuth')
         <form class="form-column" id="loginForm-LDAP">
             @csrf
+            <h1 class="login-form-title">{{ $translation['login_title'] ?? $translation['Login'] ?? 'Login' }}</h1>
             <label for="account">{{ $translation["username"] }}</label>
             <input type="text" name="account" id="account" onkeypress="onLoginKeydown(event)">
             <label for="password">{{ $translation["password"] }}</label>
@@ -41,6 +42,7 @@
     <div id="local-auth-panel" style="display: none;">
         <form class="form-column" id="loginForm-LOCAL">
             @csrf
+            <h1 class="login-form-title">{{ $translation['login_title'] ?? $translation['Login'] ?? 'Login' }}</h1>
             <label for="guest-account">{{ $translation["guest_username"] ?? "Username" }}</label>
             <input type="text" name="account" id="guest-account" onkeypress="onGuestLoginKeydown(event)">
             <label for="guest-password">{{ $translation["guest_password"] ?? "Password" }}</label>
