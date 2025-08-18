@@ -22,8 +22,8 @@ class UserRoleLayout extends Rows
             Select::make('user.roles.')
                 ->fromModel(Role::class, 'name')
                 ->multiple()
-                ->title(__('Name role'))
-                ->help('Specify which groups this account should belong to'),
+                ->title('Orchid Platform Roles')
+                ->help('Select which Orchid platform roles this user should have. The role corresponding to the employeetype is automatically added but additional roles can be assigned here.'),
         ];
     }
 }

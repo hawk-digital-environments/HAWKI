@@ -18,6 +18,8 @@ use App\Services\AI\AIProviderFactory;
 use App\Services\AI\AIConnectionService;
 use App\Services\ProviderSettingsService;
 use App\Providers\ConfigServiceProvider;
+use App\Models\User;
+use App\Observers\UserObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,6 +61,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
+        // Register User Observer for automatic role synchronization
+        User::observe(UserObserver::class);
     }
 }

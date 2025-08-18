@@ -6,6 +6,7 @@ namespace App\Orchid\Screens\User;
 
 use App\Orchid\Layouts\User\UserEditLayout;
 use App\Orchid\Layouts\User\UserPasswordLayout;
+use App\Orchid\Layouts\User\UserRoleLayout;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -117,6 +118,17 @@ class UserEditScreen extends Screen
                         ->canSee($this->user->exists)
                         ->method('save')
                 ),
+
+            Layout::block(UserRoleLayout::class)
+                ->title('Orchid Roles')
+                ->description('Orchid platform roles for admin panel access. The employeetype role is automatically added, additional roles can be assigned manually.')
+                ->commands(
+                    Button::make('Save')
+                        ->type(Color::BASIC)
+                        ->icon('bs.check-circle')
+                        ->canSee($this->user->exists)
+                        ->method('save')
+                ),
         ];
     }
 
@@ -183,6 +195,11 @@ class UserEditScreen extends Screen
         $user
             ->fill($userData)
             ->save();
+
+        // Handle role assignments
+        if ($request->filled('user.roles')) {
+            $user->roles()->sync($request->input('user.roles', []));
+        }
 
         Toast::info('User was saved.');
 
