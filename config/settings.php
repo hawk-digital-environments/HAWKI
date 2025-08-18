@@ -35,11 +35,8 @@ return [
         'allow_external_communication' => 'Allow HAWKI API',
         'allow_user_token' => 'Allow generation of user API tokens'
     ],
-    'test_users' => [
-        'active' => 'Enable test user login',
-        'testers' => 'List of test users',
-    ],
     'auth' => [
+        'local_authentication' => 'Activate login form for local users ',
         'authentication_method' => 'Authentication method (LDAP, OIDC, Shibboleth)',
         'passkey_method' => 'Method for generating the PassKey (cannot be changed later)',
         'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)',
@@ -147,7 +144,6 @@ return [
         'app' => 'basic',
         'sanctum' => 'api',
         'auth' => 'authentication',
-        'test_users' => 'authentication',
         'ldap' => 'authentication',
         'open_id_connect' => 'authentication',
         'shibboleth' => 'authentication',

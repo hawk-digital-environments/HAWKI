@@ -18,7 +18,6 @@ use App\Http\Controllers\LocalizationController;
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
-use App\Services\Auth\TestAuthService;
 use App\Services\Auth\LocalAuthService;
 
 use Illuminate\Support\Facades\Log;
@@ -31,19 +30,17 @@ class AuthenticationController extends Controller
     protected $ldapService;
     protected $shibbolethService;
     protected $oidcService;
-    protected $testAuthService;
     protected $localAuthService;
 
     protected $languageController;
 
 
-    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, TestAuthService $testAuthService, LocalAuthService $localAuthService, LanguageController $languageController)
+    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, LocalAuthService $localAuthService, LanguageController $languageController)
     {
         $this->authMethod = config('auth.authentication_method', 'LDAP');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
-        $this->testAuthService = $testAuthService;
         $this->localAuthService = $localAuthService;
 
         $this->languageController = $languageController;

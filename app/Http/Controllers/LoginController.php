@@ -34,7 +34,7 @@ class LoginController extends Controller
         $settingsPanel = (new SettingsController())->initialize();
 
         $authenticationMethod = config('auth.authentication_method', 'LDAP');
-        $localUsersActive = config('test_users.active', false);
+        $localUsersActive = config('auth.local_authentication', false);
         
         // Get available roles for the guest registration form
         $availableRoles = [];

@@ -567,10 +567,10 @@ function setupLdapEnv(&$env) {
     $ldapAttributes = promptWithDefault("LDAP_ATTRIBUTES", $current ?: 'cn,mail,displayname');
     $env = setEnvValue('LDAP_ATTRIBUTES', $ldapAttributes, $env);
     
-    // TEST_USER_LOGIN
-    $current = getEnvValue('TEST_USER_LOGIN', $env);
-    $testUserLogin = promptWithDefault("TEST_USER_LOGIN (true/false)", $current ?: 'false');
-    $env = setEnvValue('TEST_USER_LOGIN', $testUserLogin, $env);
+    echo "";
+    echo "All authentication settings are now configured via the admin interface.";
+    echo "Navigate to System Settings > Authentication after installation.";
+    echo "";
     
     saveEnv($env);
     echo GREEN . "✓ LDAP environment variables updated" . RESET . PHP_EOL;

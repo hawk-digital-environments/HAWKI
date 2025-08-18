@@ -122,8 +122,10 @@ To configure the file for the docker-compose.yml file you can use the following 
 
 ```dotenv
 APP_URL=http://localhost
-AUTHENTICATION_METHOD=LDAP# or OPENID or SHIBBOLETH
-TEST_USER_LOGIN=true
+AUTHENTICATION_METHOD="LDAP"
+
+# Note: Local user authentication is now configured via the admin interface
+# Navigate to System Settings > Authentication after starting the containers
 DB_HOST=mysql
 DB_PORT=3306
 DB_DATABASE=db

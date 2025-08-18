@@ -127,5 +127,16 @@ return [
     'passkey_secret' => 'default',
     'passkey_otp' => false,
     'passkey_otp_timeout' => 300,
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Local User Accounts
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define options local User creation.
+    |
+    */
+    'local_authentication' => true,
+
 
 ];
