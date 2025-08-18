@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\PrivateUserData;
+use App\Events\GuestAccountCreated;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -586,6 +587,9 @@ class AuthenticationController extends Controller
                     'auth_type' => $user->auth_type,
                     'reset_pw' => $user->reset_pw
                 ]);
+
+                // Fire event to notify admins about new guest account
+                GuestAccountCreated::dispatch($user);
 
                 return response()->json([
                     'success' => true,
