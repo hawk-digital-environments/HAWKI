@@ -35,15 +35,16 @@ class LoginController extends Controller
 
         $authenticationMethod = config('auth.authentication_method', 'LDAP');
         $localUsersActive = config('auth.local_authentication', false);
+        $localSelfserviceActive = config('auth.local_selfservice', false);
         
         // Get available roles for the guest registration form
         $availableRoles = [];
-        if ($localUsersActive) {
+        if ($localUsersActive && $localSelfserviceActive) {
             $availableRoles = \App\Models\Role::where('selfassign', true)->orderBy('name')->get();
         }
 
        // Read authentication forms
-        $authForms = View::make('partials.login.authForms', compact('translation', 'authenticationMethod', 'localUsersActive', 'availableRoles'))->render();
+        $authForms = View::make('partials.login.authForms', compact('translation', 'authenticationMethod', 'localUsersActive', 'localSelfserviceActive', 'availableRoles'))->render();
 
         // Initialize settings panel
         $settingsPanel = (new SettingsController())->initialize($translation);

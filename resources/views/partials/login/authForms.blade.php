@@ -56,11 +56,13 @@
             </button>
         </div>
         
+        @if($localSelfserviceActive ?? false)
         <div class="guest-access-request">
             <button class="btn-link" onclick="switchToGuestRequestForm()">
                 {{ $translation['request_guest_access'] ?? 'Request Guest Access' }}
             </button>
         </div>
+        @endif
         
         <div class="back-to-main-link">
             <button class="btn-link" onclick="switchToMainLogin()">
@@ -71,7 +73,7 @@
 @endif
 
 {{-- Guest Access Request Form (hidden by default) --}}
-@if($localUsersActive ?? false)
+@if(($localUsersActive ?? false) && ($localSelfserviceActive ?? false))
     <div id="guest-request-panel" style="display: none;">
         <form class="form-column" id="guestRequestForm">
             @csrf

@@ -517,6 +517,14 @@ class AuthenticationController extends Controller
      */
     public function submitGuestRequest(Request $request)
     {
+        // Check if local authentication and self-service are enabled
+        if (!config('auth.local_authentication', false) || !config('auth.local_selfservice', false)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Guest access request is not available.',
+            ], 403);
+        }
+        
         // Get available role slugs for validation
         $availableRoles = \App\Models\Role::pluck('slug')->toArray();
         $rolesList = implode(',', $availableRoles);

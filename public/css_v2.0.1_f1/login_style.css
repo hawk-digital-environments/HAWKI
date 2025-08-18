@@ -76,7 +76,9 @@
   text-align: right;
   margin-top: 1rem;
 }
-.back-to-main-link {
+
+/* Back to main link: no margin when following guest-access-request */
+.guest-access-request + .back-to-main-link {
   margin-top: 0;
 }
 

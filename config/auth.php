@@ -137,6 +137,7 @@ return [
     |
     */
     'local_authentication' => true,
+    'local_selfservice' => true,
 
 
 ];
