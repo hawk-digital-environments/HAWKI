@@ -521,7 +521,7 @@ class AuthenticationController extends Controller
     public function submitGuestRequest(Request $request)
     {
         // Get available role slugs for validation
-        $availableRoles = \Orchid\Platform\Models\Role::pluck('slug')->toArray();
+        $availableRoles = \App\Models\Role::pluck('slug')->toArray();
         $rolesList = implode(',', $availableRoles);
         
         // Validate the request

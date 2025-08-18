@@ -9,7 +9,7 @@ use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Layouts\Rows;
-use Orchid\Platform\Models\Role;
+use App\Models\Role;
 
 class UserEditLayout extends Rows
 {
@@ -51,11 +51,11 @@ class UserEditLayout extends Rows
                 ->disabled($exists),
 
             Select::make('user.employeetype')
-                ->fromModel(Role::class, 'name', 'slug')
+                ->fromQuery(Role::where('selfassign', true), 'name', 'slug')
                 ->empty('Select Employee Type...', '')
                 ->required()
                 ->title('Employee Type')
-                ->help('Select the employee type/role for this user'),
+                ->help('Select the employee type/role for this user (only self-assignable roles are shown)'),
         ];
     }
 }

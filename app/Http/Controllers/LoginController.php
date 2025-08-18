@@ -39,7 +39,7 @@ class LoginController extends Controller
         // Get available roles for the guest registration form
         $availableRoles = [];
         if ($localUsersActive) {
-            $availableRoles = \Orchid\Platform\Models\Role::orderBy('name')->get();
+            $availableRoles = \App\Models\Role::where('selfassign', true)->orderBy('name')->get();
         }
 
        // Read authentication forms

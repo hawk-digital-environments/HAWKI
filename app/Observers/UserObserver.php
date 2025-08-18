@@ -3,7 +3,7 @@
 namespace App\Observers;
 
 use App\Models\User;
-use Orchid\Platform\Models\Role;
+use App\Models\Role;
 use Illuminate\Support\Facades\Log;
 
 class UserObserver

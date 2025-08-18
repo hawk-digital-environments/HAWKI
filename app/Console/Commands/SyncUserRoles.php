@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use Orchid\Platform\Models\Role;
+use App\Models\Role;
 use Illuminate\Support\Facades\DB;
 
 class SyncUserRoles extends Command
