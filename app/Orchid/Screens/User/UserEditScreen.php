@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Screens\User;
 
 use App\Orchid\Layouts\User\UserEditLayout;
+use App\Orchid\Layouts\User\UserApprovalLayout;
 use App\Orchid\Layouts\User\UserPasswordLayout;
 use App\Orchid\Layouts\User\UserRoleLayout;
 use Illuminate\Database\Eloquent\Builder;
@@ -119,6 +120,17 @@ class UserEditScreen extends Screen
                         ->method('save')
                 ),
 
+            Layout::block(UserApprovalLayout::class)
+                ->title('User Approval')
+                ->description('Control whether this user is approved to access the system.')
+                ->commands(
+                    Button::make('Save')
+                        ->type(Color::BASIC)
+                        ->icon('bs.check-circle')
+                        ->canSee($this->user->exists)
+                        ->method('save')
+                ),
+
             Layout::block(UserRoleLayout::class)
                 ->title('Orchid Roles')
                 ->description('Orchid platform roles for admin panel access. The employeetype role is automatically added, additional roles can be assigned manually.')
@@ -170,6 +182,14 @@ class UserEditScreen extends Screen
         
         // Force auth_type to 'local' for all users created in this screen
         $userData['auth_type'] = 'local';
+        
+        // Handle approval status - default to true for new users if not explicitly set
+        if (!$user->exists) {
+            $userData['approval'] = $request->boolean('user.approval', true);
+        } else {
+            // For existing users, use the form value
+            $userData['approval'] = $request->boolean('user.approval', $user->approval);
+        }
         
         // Handle password for local users
         if ($request->filled('user.password')) {

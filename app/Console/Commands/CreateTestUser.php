@@ -18,6 +18,7 @@ class CreateTestUser extends Command
                             {--count=1 : Number of test users to create}
                             {--type=guest : Employee type for the user (guest, student, staff)}
                             {--auth=Local : Authentication type (Local, LDAP)}
+                            {--no-approval : Create users without approval (pending approval)}
                             {--no-notify : Do not send admin notifications for created users}';
 
     /**
@@ -36,8 +37,10 @@ class CreateTestUser extends Command
         $employeeType = $this->option('type');
         $authType = $this->option('auth');
         $shouldNotify = !$this->option('no-notify'); // Notify by default, unless --no-notify
+        $hasApproval = !$this->option('no-approval'); // Approved by default, unless --no-approval
         
-        $this->info("Creating {$count} test user(s) with type '{$employeeType}' and auth '{$authType}'...");
+        $approvalStatus = $hasApproval ? 'approved' : 'pending approval';
+        $this->info("Creating {$count} test user(s) with type '{$employeeType}', auth '{$authType}', and status '{$approvalStatus}'...");
         
         if (!$shouldNotify) {
             $this->comment("Admin notifications are disabled (--no-notify flag used).");
@@ -49,7 +52,7 @@ class CreateTestUser extends Command
         
         for ($i = 0; $i < $count; $i++) {
             try {
-                $user = $this->createTestUser($employeeType, $authType);
+                $user = $this->createTestUser($employeeType, $authType, $hasApproval);
                 $createdUsers[] = $user;
                 
                 $this->line("✅ Created user: {$user->username} (ID: {$user->id})");
@@ -73,7 +76,7 @@ class CreateTestUser extends Command
             $this->newLine();
             $this->info("Summary:");
             $this->table(
-                ['ID', 'Username', 'Name', 'Email', 'Type', 'Auth'],
+                ['ID', 'Username', 'Name', 'Email', 'Type', 'Auth', 'Approval'],
                 collect($createdUsers)->map(function ($user) {
                     return [
                         $user->id,
@@ -81,7 +84,8 @@ class CreateTestUser extends Command
                         $user->name,
                         $user->email,
                         $user->employeetype,
-                        $user->auth_type
+                        $user->auth_type,
+                        $user->approval ? 'Approved' : 'Pending'
                     ];
                 })->toArray()
             );
@@ -103,7 +107,7 @@ class CreateTestUser extends Command
     /**
      * Create a single test user with incremental naming
      */
-    private function createTestUser(string $employeeType, string $authType): User
+    private function createTestUser(string $employeeType, string $authType, bool $hasApproval = true): User
     {
         // Ensure employeeType is lowercase for Orchid role compatibility
         $employeeType = strtolower($employeeType);
@@ -119,6 +123,7 @@ class CreateTestUser extends Command
             'publicKey' => '', // Always empty string
             'avatar_id' => null,
             'reset_pw' => ($authType === 'Local'), // Local users need password reset
+            'approval' => $hasApproval, // Set approval status
             'isRemoved' => false,
             'permissions' => null, // Always NULL
         ];

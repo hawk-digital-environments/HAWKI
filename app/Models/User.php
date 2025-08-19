@@ -25,6 +25,7 @@ class User extends OrchidUser
         'employeetype',
         'auth_type',
         'reset_pw',
+        'approval',
         'publicKey',
         'avatar_id',
         'bio',
@@ -50,6 +51,7 @@ class User extends OrchidUser
     protected $casts = [
         'password' => 'hashed',
         'permissions' => 'array',
+        'approval' => 'boolean',
     ];
 
     /**
@@ -61,6 +63,7 @@ class User extends OrchidUser
         'id' => Where::class,
         'name' => Like::class,
         'email' => Like::class,
+        'approval' => Where::class,
         'updated_at' => WhereDateStartEnd::class,
         'created_at' => WhereDateStartEnd::class,
     ];
@@ -74,6 +77,7 @@ class User extends OrchidUser
         'id',
         'name',
         'email',
+        'approval',
         'updated_at',
         'created_at',
     ];

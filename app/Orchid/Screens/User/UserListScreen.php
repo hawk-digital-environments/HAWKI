@@ -117,4 +117,18 @@ class UserListScreen extends Screen
 
         Toast::info(__('User was removed'));
     }
+
+    /**
+     * Toggle the approval status of a user.
+     */
+    public function toggleApproval(Request $request): void
+    {
+        $user = User::findOrFail($request->get('id'));
+        
+        $newApprovalStatus = !$user->approval;
+        $user->update(['approval' => $newApprovalStatus]);
+        
+        $statusText = $newApprovalStatus ? 'approved' : 'revoked approval for';
+        Toast::info("User '{$user->name}' has been {$statusText}.");
+    }
 }
