@@ -100,47 +100,19 @@ class UserEditScreen extends Screen
         return [
             Layout::block(UserEditLayout::class)
                 ->title('Profile Information')
-                ->description('Basic user information for local user account.')
-                ->commands(
-                    Button::make('Save')
-                        ->type(Color::BASIC)
-                        ->icon('bs.check-circle')
-                        ->canSee($this->user->exists)
-                        ->method('save')
-                ),
+                ->description('Basic user information for local user account.'),
 
             Layout::block(UserPasswordLayout::class)
                 ->title('Password Settings')
-                ->description('Set initial password and password reset requirements for the local user.')
-                ->commands(
-                    Button::make('Save')
-                        ->type(Color::BASIC)
-                        ->icon('bs.check-circle')
-                        ->canSee($this->user->exists)
-                        ->method('save')
-                ),
+                ->description('Set initial password and password reset requirements for the local user.'),
 
             Layout::block(UserApprovalLayout::class)
                 ->title('User Approval')
-                ->description('Control whether this user is approved to access the system.')
-                ->commands(
-                    Button::make('Save')
-                        ->type(Color::BASIC)
-                        ->icon('bs.check-circle')
-                        ->canSee($this->user->exists)
-                        ->method('save')
-                ),
+                ->description('Control whether this user is approved to access the system.'),
 
             Layout::block(UserRoleLayout::class)
                 ->title('Orchid Roles')
-                ->description('Orchid platform roles for admin panel access. The employeetype role is automatically added, additional roles can be assigned manually.')
-                ->commands(
-                    Button::make('Save')
-                        ->type(Color::BASIC)
-                        ->icon('bs.check-circle')
-                        ->canSee($this->user->exists)
-                        ->method('save')
-                ),
+                ->description('Orchid platform roles for admin panel access. The employeetype role is automatically added, additional roles can be assigned manually.'),
         ];
     }
 

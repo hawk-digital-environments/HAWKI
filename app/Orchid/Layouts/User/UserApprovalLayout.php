@@ -29,6 +29,7 @@ class UserApprovalLayout extends Rows
                     ? 'Check to approve this user for system access. Unchecked users cannot access the system.' 
                     : 'Set initial approval status for the new user'
                 )
+                ->value($exists ? $user->approval : true)
                 ->sendTrueOrFalse(),
         ];
     }
