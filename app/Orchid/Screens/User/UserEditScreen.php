@@ -184,18 +184,82 @@ class UserEditScreen extends Screen
             $userData['reset_pw'] = $request->boolean('user.reset_pw', false);
         }
 
+        // Store original approval status to detect changes
+        $originalApproval = $user->exists ? $user->approval : true;
+        
         $user
             ->fill($userData)
             ->save();
 
-        // Handle role assignments
-        if ($request->filled('user.roles')) {
-            $user->roles()->sync($request->input('user.roles', []));
+        // Handle role assignments - always sync roles (even if empty to remove all)
+        $user->roles()->sync($request->input('user.roles', []));
+        
+        // Handle approval status changes after role sync
+        if ($user->exists && $originalApproval !== $user->approval) {
+            if (!$user->approval) {
+                // If approval was deactivated, remove all roles
+                $user->roles()->detach();
+            } else {
+                // If approval was activated, ensure required role is present
+                $this->ensureRequiredRole($user);
+            }
+        } elseif ($user->approval && !empty($user->employeetype)) {
+            // For normal saves, ensure required role is present if user is approved
+            $this->ensureRequiredRole($user);
         }
 
         Toast::info('User was saved.');
 
         return redirect()->route('platform.systems.users');
+    }
+
+    /**
+     * Ensure the user has the required role based on their employeetype
+     */
+    private function ensureRequiredRole(User $user): void
+    {
+        if (empty($user->employeetype) || !$user->approval) {
+            return;
+        }
+
+        // Map employeetype to role slug (same logic as Observer)
+        $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype);
+        if (!$requiredRoleSlug) {
+            return;
+        }
+
+        // Find the corresponding role
+        $requiredRole = \App\Models\Role::where('slug', $requiredRoleSlug)->first();
+        if (!$requiredRole) {
+            return;
+        }
+
+        // Add the required role if not already present
+        if (!$user->roles()->where('roles.id', $requiredRole->id)->exists()) {
+            $user->roles()->attach($requiredRole->id);
+        }
+    }
+
+    /**
+     * Map employeetype values to role slugs (same as Observer)
+     */
+    private function mapEmployeeTypeToRoleSlug(string $employeetype): ?string
+    {
+        $employeetype = trim($employeetype);
+        
+        // First try exact slug match (case-insensitive)
+        $role = \App\Models\Role::whereRaw('LOWER(slug) = ?', [strtolower($employeetype)])->first();
+        if ($role) {
+            return $role->slug;
+        }
+        
+        // Then try exact name match (case-insensitive)
+        $role = \App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($employeetype)])->first();
+        if ($role) {
+            return $role->slug;
+        }
+        
+        return null;
     }
 
     /**
