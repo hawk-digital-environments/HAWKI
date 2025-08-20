@@ -13,7 +13,7 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // Admin role with all permissions
-        $adminRole = Role::firstOrCreate([
+        $adminRole = Role::updateOrCreate([
             'slug' => 'admin',
         ], [
             'name' => 'Administrator',
@@ -22,38 +22,57 @@ class RoleSeeder extends Seeder
                 'platform.systems.roles' => true,
                 'platform.systems.users' => true,
                 'platform.systems.attachment' => true,
+                'chat.access' => true,
+                'groupchat.access' => true,
             ],
             'selfassign' => false,
         ]);
 
         // Standard university roles
-        Role::firstOrCreate(['slug' => 'student'], [
+        Role::updateOrCreate(['slug' => 'student'], [
             'name' => 'Studierende',
-            'permissions' => [],
+            'permissions' => [
+                'chat.access' => true,
+                'groupchat.access' => true,
+            ],
             'selfassign' => true,
         ]);
 
-        Role::firstOrCreate(['slug' => 'lecturer'], [
+        Role::updateOrCreate(['slug' => 'lecturer'], [
             'name' => 'Lehrende', 
-            'permissions' => [],
+            'permissions' => [
+                'chat.access' => true,
+                'groupchat.access' => true,
+            ],
             'selfassign' => true,
         ]);
 
-        Role::firstOrCreate(['slug' => 'staff'], [
+        Role::updateOrCreate(['slug' => 'staff'], [
             'name' => 'Mitarbeiter',
-            'permissions' => [],
+            'permissions' => [
+                'chat.access' => true,
+                'groupchat.access' => true,
+            ],
             'selfassign' => true,
         ]);
 
-        Role::firstOrCreate(['slug' => 'guest'], [
+        Role::updateOrCreate(['slug' => 'guest'], [
             'name' => 'Gast',
-            'permissions' => [],
+            'permissions' => [
+                'chat.access' => true,
+                'groupchat.access' => false, // Guests can't access group chats
+            ],
             'selfassign' => true,
         ]);
 
-        Role::firstOrCreate(['slug' => 'mod'], [
+        Role::updateOrCreate(['slug' => 'mod'], [
             'name' => 'Moderator',
-            'permissions' => [],
+            'permissions' => [
+                'platform.index' => true, // Moderators also get admin panel access
+                'platform.systems.users' => true, // Can manage users
+                'chat.access' => true,
+                'groupchat.access' => true,
+            ],
             'selfassign' => false,
         ]);
 

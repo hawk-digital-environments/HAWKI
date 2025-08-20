@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\PreventRequestsDuringMaintenance::class, // Middleware added
         ]);
         $middleware->redirectGuestsTo('/login');
+        
+        // Register chat access middleware
+        $middleware->alias([
+            'chat.access' => \App\Http\Middleware\ChatAccessMiddleware::class,
+        ]);
     })
     
     ->withExceptions(function (Exceptions $exceptions) {

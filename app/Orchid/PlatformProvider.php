@@ -92,17 +92,21 @@ class PlatformProvider extends OrchidServiceProvider
                         ->icon('bs.tools'),                  
                     ]),
 
+            Menu::make('')
+                ->title(__('Access Controls'))
+                ->permission('platform.systems.*'),
+
             Menu::make(__('Users'))
                 ->icon('bs.people')
                 ->route('platform.systems.users')
-                ->permission('platform.systems.users')
-                ->title(__('Access Controls')),
+                ->permission('platform.systems.users'),
 
             Menu::make(__('Roles'))
                 ->icon('bs.shield')
                 ->route('platform.systems.roles')
                 ->permission('platform.systems.roles')
                 ->divider(),
+
 
             Menu::make('Documentation')
                 ->title('Docs')
@@ -153,9 +157,13 @@ class PlatformProvider extends OrchidServiceProvider
     public function permissions(): array
     {
         return [
-            ItemPermission::group(__('System'))
+            ItemPermission::group(__('Main'))
                 ->addPermission('platform.systems.roles', __('Roles'))
                 ->addPermission('platform.systems.users', __('Users')),
+                
+            ItemPermission::group(__('Chat Access'))
+                ->addPermission('chat.access', __('Chat Access'))
+                ->addPermission('groupchat.access', __('Group Chat Access')),
         ];
     }
 }
