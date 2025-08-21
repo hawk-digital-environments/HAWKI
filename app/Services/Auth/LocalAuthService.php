@@ -77,6 +77,12 @@ class LocalAuthService
     public function createLocalUser($userData, $needsPasswordReset = false)
     {
         try {
+            // Approval-Logik: Standardmäßig approval=false, wenn local_needapproval aktiv ist
+            $needsApproval = config('auth.local_needapproval') === true;
+            $approval = array_key_exists('approval', $userData)
+                ? (bool)$userData['approval']
+                : !$needsApproval; // Wenn approval nicht gesetzt und Approval benötigt: false, sonst true
+
             $user = User::create([
                 'username' => $userData['username'],
                 'name' => $userData['name'],
@@ -89,6 +95,7 @@ class LocalAuthService
                 'avatar_id' => $userData['avatar_id'] ?? null,
                 'bio' => $userData['bio'] ?? null,
                 'isRemoved' => false,
+                'approval' => $approval,
             ]);
 
             return $user;
