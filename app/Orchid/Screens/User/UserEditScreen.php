@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Orchid\Screens\User;
 
-use App\Orchid\Layouts\Role\RolePermissionLayout;
 use App\Orchid\Layouts\User\UserEditLayout;
+use App\Orchid\Layouts\User\UserApprovalLayout;
 use App\Orchid\Layouts\User\UserPasswordLayout;
 use App\Orchid\Layouts\User\UserRoleLayout;
 use Illuminate\Database\Eloquent\Builder;
@@ -62,7 +62,7 @@ class UserEditScreen extends Screen
     public function permission(): ?iterable
     {
         return [
-            'platform.systems.users',
+            'platform.access.users',
         ];
     }
 
@@ -74,9 +74,9 @@ class UserEditScreen extends Screen
     public function commandBar(): iterable
     {
         return [
-            Button::make(__('Impersonate user'))
+            Button::make('Impersonate user')
                 ->icon('bg.box-arrow-in-right')
-                ->confirm(__('You can revert to your original state by logging out.'))
+                ->confirm('You can revert to your original state by logging out.')
                 ->method('loginAs')
                 ->canSee($this->user->exists && $this->user->id !== \request()->user()->id),
 
@@ -86,7 +86,7 @@ class UserEditScreen extends Screen
             //    ->method('remove')
             //    ->canSee($this->user->exists),
 
-            Button::make(__('Save'))
+            Button::make('Save')
                 ->icon('bs.check-circle')
                 ->method('save'),
         ];
@@ -98,51 +98,21 @@ class UserEditScreen extends Screen
     public function layout(): iterable
     {
         return [
-
             Layout::block(UserEditLayout::class)
-                ->title(__('Profile Information'))
-                ->description(__('Update your account\'s profile information and email address.'))
-                ->commands(
-                    Button::make(__('Save'))
-                        ->type(Color::BASIC)
-                        ->icon('bs.check-circle')
-                        ->canSee($this->user->exists)
-                        ->method('save')
-                ),
+                ->title('Profile Information')
+                ->description('Basic user information for local user account.'),
 
-            //Layout::block(UserPasswordLayout::class)
-            //    ->title(__('Password'))
-            //    ->description(__('Ensure your account is using a long, random password to stay secure.'))
-            //    ->commands(
-            //        Button::make(__('Save'))
-            //            ->type(Color::BASIC)
-            //            ->icon('bs.check-circle')
-            //            ->canSee($this->user->exists)
-            //            ->method('save')
-            //    ),
+            Layout::block(UserPasswordLayout::class)
+                ->title('Password Settings')
+                ->description('Set initial password and password reset requirements for the local user.'),
+
+            Layout::block(UserApprovalLayout::class)
+                ->title('User Approval')
+                ->description('Control whether this user is approved to access the system.'),
 
             Layout::block(UserRoleLayout::class)
-                ->title(__('Roles'))
-                ->description(__('A Role defines a set of tasks a user assigned the role is allowed to perform.'))
-                ->commands(
-                    Button::make(__('Save'))
-                        ->type(Color::BASIC)
-                        ->icon('bs.check-circle')
-                        ->canSee($this->user->exists)
-                        ->method('save')
-                ),
-
-            Layout::block(RolePermissionLayout::class)
-                ->title(__('Permissions'))
-                ->description(__('Allow the user to perform some actions that are not provided for by his roles'))
-                ->commands(
-                    Button::make(__('Save'))
-                        ->type(Color::BASIC)
-                        ->icon('bs.check-circle')
-                        ->canSee($this->user->exists)
-                        ->method('save')
-                ),
-
+                ->title('Orchid Roles')
+                ->description('Orchid platform roles for admin panel access. The employeetype role is automatically added, additional roles can be assigned manually.'),
         ];
     }
 
@@ -151,32 +121,145 @@ class UserEditScreen extends Screen
      */
     public function save(User $user, Request $request)
     {
-        $request->validate([
+        // Basic validation
+        $validationRules = [
             'user.email' => [
                 'required',
+                'email',
                 Rule::unique(User::class, 'email')->ignore($user),
             ],
-        ]);
+            'user.name' => ['required', 'string', 'max:255'],
+            'user.employeetype' => ['required', 'string'],
+        ];
 
-        $permissions = collect($request->get('permissions'))
-            ->map(fn ($value, $key) => [base64_decode($key) => $value])
-            ->collapse()
-            ->toArray();
+        // Username validation only for new users (since it's disabled for existing users)
+        if (!$user->exists) {
+            $validationRules['user.username'] = [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(User::class, 'username'),
+            ];
+        }
 
-        $user->when($request->filled('user.password'), function (Builder $builder) use ($request) {
-            $builder->getModel()->password = Hash::make($request->input('user.password'));
-        });
+        // Password is required for new local users
+        if (!$user->exists) {
+            $validationRules['user.password'] = ['required', 'string', 'min:8'];
+        }
 
+        $request->validate($validationRules);
+
+        // Prepare user data
+        $userData = $request->collect('user')->except(['password', 'permissions', 'roles'])->toArray();
+        
+        // Force auth_type to 'local' for all users created in this screen
+        $userData['auth_type'] = 'local';
+        
+        // Handle approval status - default to true for new users if not explicitly set
+        if (!$user->exists) {
+            $userData['approval'] = $request->boolean('user.approval', true);
+        } else {
+            // For existing users, use the form value
+            $userData['approval'] = $request->boolean('user.approval', $user->approval);
+        }
+        
+        // Handle password for local users
+        if ($request->filled('user.password')) {
+            $userData['password'] = Hash::make($request->input('user.password'));
+        }
+        
+        // Ensure required fields have default values for new users
+        if (!$user->exists) {
+            $userData['publicKey'] = $userData['publicKey'] ?? '';
+            $userData['bio'] = $userData['bio'] ?? null;
+            $userData['avatar_id'] = $userData['avatar_id'] ?? null;
+            $userData['isRemoved'] = false;
+        }
+        
+        // For new local users, set reset_pw based on checkbox (default true)
+        if (!$user->exists) {
+            $userData['reset_pw'] = $request->boolean('user.reset_pw', true);
+        } elseif ($user->exists) {
+            // For existing users, preserve the reset_pw value from form
+            $userData['reset_pw'] = $request->boolean('user.reset_pw', false);
+        }
+
+        // Store original approval status to detect changes
+        $originalApproval = $user->exists ? $user->approval : true;
+        
         $user
-            ->fill($request->collect('user')->except(['password', 'permissions', 'roles'])->toArray())
-            ->forceFill(['permissions' => $permissions])
+            ->fill($userData)
             ->save();
 
-        $user->replaceRoles($request->input('user.roles'));
+        // Handle role assignments - always sync roles (even if empty to remove all)
+        $user->roles()->sync($request->input('user.roles', []));
+        
+        // Handle approval status changes after role sync
+        if ($user->exists && $originalApproval !== $user->approval) {
+            if (!$user->approval) {
+                // If approval was deactivated, remove all roles
+                $user->roles()->detach();
+            } else {
+                // If approval was activated, ensure required role is present
+                $this->ensureRequiredRole($user);
+            }
+        } elseif ($user->approval && !empty($user->employeetype)) {
+            // For normal saves, ensure required role is present if user is approved
+            $this->ensureRequiredRole($user);
+        }
 
-        Toast::info(__('User was saved.'));
+        Toast::info('User was saved.');
 
         return redirect()->route('platform.systems.users');
+    }
+
+    /**
+     * Ensure the user has the required role based on their employeetype
+     */
+    private function ensureRequiredRole(User $user): void
+    {
+        if (empty($user->employeetype) || !$user->approval) {
+            return;
+        }
+
+        // Map employeetype to role slug (same logic as Observer)
+        $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype);
+        if (!$requiredRoleSlug) {
+            return;
+        }
+
+        // Find the corresponding role
+        $requiredRole = \App\Models\Role::where('slug', $requiredRoleSlug)->first();
+        if (!$requiredRole) {
+            return;
+        }
+
+        // Add the required role if not already present
+        if (!$user->roles()->where('roles.id', $requiredRole->id)->exists()) {
+            $user->roles()->attach($requiredRole->id);
+        }
+    }
+
+    /**
+     * Map employeetype values to role slugs (same as Observer)
+     */
+    private function mapEmployeeTypeToRoleSlug(string $employeetype): ?string
+    {
+        $employeetype = trim($employeetype);
+        
+        // First try exact slug match (case-insensitive)
+        $role = \App\Models\Role::whereRaw('LOWER(slug) = ?', [strtolower($employeetype)])->first();
+        if ($role) {
+            return $role->slug;
+        }
+        
+        // Then try exact name match (case-insensitive)
+        $role = \App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($employeetype)])->first();
+        if ($role) {
+            return $role->slug;
+        }
+        
+        return null;
     }
 
     /**
@@ -188,7 +271,7 @@ class UserEditScreen extends Screen
     {
         $user->delete();
 
-        Toast::info(__('User was removed'));
+        Toast::info('User was removed');
 
         return redirect()->route('platform.systems.users');
     }
@@ -200,7 +283,7 @@ class UserEditScreen extends Screen
     {
         Impersonation::loginAs($user);
 
-        Toast::info(__('You are now impersonating this user'));
+        Toast::info('You are now impersonating this user');
 
         return redirect()->route(config('platform.index'));
     }

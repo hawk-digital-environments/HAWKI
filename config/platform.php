@@ -222,7 +222,7 @@ return [
 
     'notifications' => [
         'enabled'  => true,
-        'interval' => 60,
+        'interval' => 15, // Check for new notifications every 15 seconds
     ],
 
     /*

@@ -20,8 +20,12 @@ class User extends OrchidUser
     protected $fillable = [
         'name',
         'email',
+        'password',
         'username',
         'employeetype',
+        'auth_type',
+        'reset_pw',
+        'approval',
         'publicKey',
         'avatar_id',
         'bio',
@@ -35,6 +39,7 @@ class User extends OrchidUser
      * @var array
      */
     protected $hidden = [
+        'password',
         'permissions',
     ];
 
@@ -44,7 +49,9 @@ class User extends OrchidUser
      * @var array
      */
     protected $casts = [
+        'password' => 'hashed',
         'permissions' => 'array',
+        'approval' => 'boolean',
     ];
 
     /**
@@ -56,6 +63,7 @@ class User extends OrchidUser
         'id' => Where::class,
         'name' => Like::class,
         'email' => Like::class,
+        'approval' => Where::class,
         'updated_at' => WhereDateStartEnd::class,
         'created_at' => WhereDateStartEnd::class,
     ];
@@ -69,6 +77,7 @@ class User extends OrchidUser
         'id',
         'name',
         'email',
+        'approval',
         'updated_at',
         'created_at',
     ];
@@ -97,6 +106,38 @@ class User extends OrchidUser
 
     public function revokProfile(){
         $this->update(['isRemoved'=> 1]);
+    }
+
+    /**
+     * Scope to get only local users (users with password)
+     */
+    public function scopeLocalUsers($query)
+    {
+        return $query->whereNotNull('password');
+    }
+
+    /**
+     * Scope to get only external users (users without password)
+     */
+    public function scopeExternalUsers($query)
+    {
+        return $query->whereNull('password');
+    }
+
+    /**
+     * Check if this user is a local user
+     */
+    public function isLocalUser()
+    {
+        return !is_null($this->password);
+    }
+
+    /**
+     * Check if this user is an external user
+     */
+    public function isExternalUser()
+    {
+        return is_null($this->password);
     }
 
 }

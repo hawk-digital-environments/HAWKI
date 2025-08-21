@@ -6,7 +6,10 @@ namespace App\Orchid\Layouts\User;
 
 use Orchid\Screen\Field;
 use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Select;
+use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Layouts\Rows;
+use App\Models\Role;
 
 class UserEditLayout extends Rows
 {
@@ -17,19 +20,42 @@ class UserEditLayout extends Rows
      */
     public function fields(): array
     {
+        /** @var \App\Models\User $user */
+        $user = $this->query->get('user');
+        $exists = $user && $user->exists;
+
         return [
             Input::make('user.name')
                 ->type('text')
                 ->max(255)
                 ->required()
-                ->title(__('Name'))
-                ->placeholder(__('Name')),
+                ->title('Name')
+                ->placeholder('Name'),
 
             Input::make('user.email')
                 ->type('email')
                 ->required()
-                ->title(__('Email'))
-                ->placeholder(__('Email')),
+                ->title('Email')
+                ->placeholder('Email'),
+
+            Input::make('user.username')
+                ->type('text')
+                ->max(255)
+                ->required()
+                ->title('Username')
+                ->placeholder('Username')
+                ->help($exists 
+                    ? 'Username cannot be changed after creation' 
+                    : 'Unique identifier for the user'
+                )
+                ->disabled($exists),
+
+            Select::make('user.employeetype')
+                ->fromQuery(Role::where('selfassign', true), 'name', 'slug')
+                ->empty('Select Employee Type...', '')
+                ->required()
+                ->title('Employee Type')
+                ->help('Select the employee type/role for this user (only self-assignable roles are shown)'),
         ];
     }
 }

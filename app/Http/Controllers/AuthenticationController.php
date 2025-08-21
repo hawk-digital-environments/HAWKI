@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\PrivateUserData;
+use App\Events\GuestAccountCreated;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -18,10 +19,10 @@ use App\Http\Controllers\LocalizationController;
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
-use App\Services\Auth\TestAuthService;
+use App\Services\Auth\LocalAuthService;
 
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Validation\ValidationException;
 
 class AuthenticationController extends Controller
 {
@@ -30,18 +31,18 @@ class AuthenticationController extends Controller
     protected $ldapService;
     protected $shibbolethService;
     protected $oidcService;
-    protected $testAuthService;
+    protected $localAuthService;
 
     protected $languageController;
 
 
-    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, TestAuthService $testAuthService, LanguageController $languageController)
+    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, LocalAuthService $localAuthService, LanguageController $languageController)
     {
         $this->authMethod = config('auth.authentication_method', 'LDAP');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
-        $this->testAuthService = $testAuthService;
+        $this->localAuthService = $localAuthService;
 
         $this->languageController = $languageController;
     }
@@ -61,16 +62,10 @@ class AuthenticationController extends Controller
         $password = $request->input('password');
 
         $authenticatedUserInfo = null;
-        // Teste zuerst Test Users, wenn aktiviert
-        if(config('test_users')['active']){
-            $authenticatedUserInfo = $this->testAuthService->authenticate($username, $password);
-        }
-
-        // Falls Test User Authentication fehlschlägt oder deaktiviert ist, verwende die konfigurierte Authentifizierungsmethode
-        if(!$authenticatedUserInfo) {
-            if($this->authMethod === 'LDAP'){
-                $authenticatedUserInfo = $this->ldapService->authenticate($username, $password);
-            }
+        
+        // Use the configured authentication method
+        if($this->authMethod === 'LDAP'){
+            $authenticatedUserInfo = $this->ldapService->authenticate($username, $password);
         }
 
         // If Login Failed
@@ -212,6 +207,14 @@ class AuthenticationController extends Controller
         }
 
         $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
+        $isFirstLoginLocalUser = Session::get('first_login_local_user', false);
+        
+        // Check if local user needs password reset
+        $needsPasswordReset = false;
+        if ($isFirstLoginLocalUser && isset($userInfo['username'])) {
+            $user = User::where('username', $userInfo['username'])->first();
+            $needsPasswordReset = $user && $user->reset_pw;
+        }
 
 
         // Call getTranslation method from LanguageController
@@ -233,7 +236,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret', 'isFirstLoginLocalUser', 'needsPasswordReset'));
     }
 
 
@@ -243,16 +246,24 @@ class AuthenticationController extends Controller
     public function completeRegistration(Request $request)
     {
         try {
+            // Log incoming data for debugging
+            Log::info('completeRegistration called', [
+                'request_data' => $request->all(),
+                'session_first_login_local_user' => Session::get('first_login_local_user', false)
+            ]);
+            
             // Validate input data
             $validatedData = $request->validate([
                 'publicKey' => 'required|string',
                 'keychain' => 'required|string',
                 'KCIV' => 'required|string',
                 'KCTAG' => 'required|string',
+                'newPassword' => 'nullable|string|min:6', // For local users changing password
             ]);
             
             // Retrieve user info from session
             $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
+            $isFirstLoginLocalUser = Session::get('first_login_local_user', false);
 
             // Process user info
             $username = $userInfo['username'] ?? null;
@@ -264,18 +275,40 @@ class AuthenticationController extends Controller
     
             $avatarId = $validatedData['avatar_id'] ?? '';
 
+            // Prepare data for update/create
+            $userData = [
+                'name' => $name,
+                'email' => $email,
+                'employeetype' => $employeetype,
+                'publicKey' => $validatedData['publicKey'],
+                'avatar_id' => $avatarId,
+                'isRemoved' => false,
+                'permissions' => $permissions,
+            ];
+
+            // For local users on first login, update password if provided and needed
+            if ($isFirstLoginLocalUser && !empty($validatedData['newPassword'])) {
+                // Check if user needs password reset
+                $currentUser = User::where('username', $username)->first();
+                if ($currentUser && $currentUser->reset_pw) {
+                    Log::info('Setting new password for local user who needs reset', [
+                        'username' => $username,
+                        'newPassword_length' => strlen($validatedData['newPassword'])
+                    ]);
+                    $userData['password'] = $validatedData['newPassword']; // Will be auto-hashed
+                    $userData['reset_pw'] = false; // Password has been reset
+                } else {
+                    Log::info('Password change skipped - user does not need reset', [
+                        'username' => $username
+                    ]);
+                }
+                Session::forget('first_login_local_user'); // Clear the flag
+            }
+
             // Update or create the local user
             $user = User::updateOrCreate(
                 ['username' => $username],
-                [
-                    'name' => $name,
-                    'email' => $email,
-                    'employeetype' => $employeetype,
-                    'publicKey' => $validatedData['publicKey'],
-                    'avatar_id' => $avatarId,
-                    'isRemoved' => false,
-                    'permissions' => $permissions,
-                ]
+                $userData
             );
     
             // Update or create the Private User Data
@@ -403,6 +436,186 @@ class AuthenticationController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Error during Log-In Code verification'
+            ], 500);
+        }
+    }
+
+    /**
+     * Local user authentication
+     * Independent of the main authentication method
+     */
+    public function localLogin(Request $request)
+    {
+        $request->validate([
+            'account' => 'required|string',
+            'password' => 'required|string',
+        ]);
+
+        $username = filter_var($request->input('account'), FILTER_UNSAFE_RAW);
+        $password = $request->input('password');
+
+        try {
+            // Authenticate using LocalAuthService
+            $authenticatedUserInfo = $this->localAuthService->authenticate($username, $password);
+
+            // If Login Failed
+            if (!$authenticatedUserInfo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Login Failed!',
+                ]);
+            }
+
+            Log::info('LOCAL LOGIN: ' . $authenticatedUserInfo['username']);
+            $username = $authenticatedUserInfo['username'];
+            $user = User::where('username', $username)->first();
+
+            // If user exists and is not removed
+            if($user && $user->isRemoved === 0){
+                
+                // Check if this is a local user who needs to complete registration
+                if($user->auth_type === 'local' && empty($user->publicKey)) {
+                    // Local user who needs to complete registration process
+                    // This includes both admin-created users and self-service users
+                    Session::put('registration_access', true);
+                    Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
+                    Session::put('first_login_local_user', true);
+
+                    return response()->json([
+                        'success' => true,
+                        'redirectUri' => '/register',
+                    ]);
+                }
+
+                // Regular login - user has already completed registration or is not local
+                Auth::login($user);
+                return response()->json([
+                    'success' => true,
+                    'redirectUri' => '/handshake',
+                ]);
+            }
+            else {
+                // This should not happen for local users, but handle gracefully
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User account not found or deactivated.',
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Local authentication error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Authentication error occurred.',
+            ], 500);
+        }
+    }
+    
+    /**
+     * Submit guest access request
+     * Creates a new local user account with submitted credentials
+     */
+    public function submitGuestRequest(Request $request)
+    {
+        // Check if local authentication and self-service are enabled
+        if (!config('auth.local_authentication', false) || !config('auth.local_selfservice', false)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Guest access request is not available.',
+            ], 403);
+        }
+        
+        // Get available role slugs for validation
+        $availableRoles = \App\Models\Role::pluck('slug')->toArray();
+        $rolesList = implode(',', $availableRoles);
+        
+        // Validate the request
+        $request->validate([
+            'username' => [
+                'required', 
+                'string', 
+                'min:3', 
+                'max:255',
+                'regex:/^[a-zA-Z0-9_-]+$/',
+                'unique:users,username'
+            ],
+            'password' => [
+                'required', 
+                'string', 
+                'min:8',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/'
+            ],
+            'password_confirmation' => 'required|string|same:password',
+            'email' => 'required|email|max:255|unique:users,email',
+            'employeetype' => "required|string|in:{$rolesList}"
+        ], [
+            'username.required' => 'Username is required',
+            'username.min' => 'Username must be at least 3 characters long',
+            'username.regex' => 'Username can only contain letters, numbers, underscores, and hyphens',
+            'username.unique' => 'This username is already taken',
+            'password.required' => 'Password is required',
+            'password.min' => 'Password must be at least 8 characters long',
+            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+            'password_confirmation.required' => 'Password confirmation is required',
+            'password_confirmation.same' => 'Passwords do not match',
+            'email.required' => 'Email is required',
+            'email.email' => 'Please enter a valid email address',
+            'email.unique' => 'This email address is already registered',
+            'employeetype.required' => 'User group is required',
+            'employeetype.in' => 'Please select a valid user group'
+        ]);
+
+        try {
+            // Create the local user using LocalAuthService
+            $userData = [
+                'username' => $request->input('username'),
+                'email' => $request->input('email'),
+                'employeetype' => $request->input('employeetype'),
+                'password' => $request->input('password'),
+                'name' => $request->input('username'), // Use username as name initially
+            ];
+
+            // Guest request users don't need to reset their password - they chose it themselves
+            $user = $this->localAuthService->createLocalUser($userData, false);
+
+            if ($user) {
+                Log::info('Guest request submitted successfully', [
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'employeetype' => $user->employeetype,
+                    'auth_type' => $user->auth_type,
+                    'reset_pw' => $user->reset_pw
+                ]);
+
+                // Fire event to notify admins about new guest account
+                GuestAccountCreated::dispatch($user);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Your guest access request has been submitted successfully. You can now log in with your credentials.',
+                ]);
+            } else {
+                throw new \Exception('Failed to create user account');
+            }
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Guest request submission error: ' . $e->getMessage(), [
+                'username' => $request->input('username'),
+                'email' => $request->input('email'),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while processing your request. Please try again.',
             ], 500);
         }
     }

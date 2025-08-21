@@ -39,23 +39,152 @@
   margin-top: auto;
 }
 
-
+/* Login Panel Styles */
 .loginPanel {
   flex: 1;
   margin-bottom: 2rem;
+  overflow-y: auto;
+  max-height: 100%;
 }
 
-#login-Button-panel{
+/* Auth Panel Switching */
+#main-auth-panel, 
+#local-auth-panel,
+#guest-request-panel {
+  transition: opacity 0.3s ease-in-out;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+/* Button Styles - Consolidated */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text-accent);
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  font-size: 0.8rem;
+  transition: color 0.2s ease;
+  text-align: right;
+}
+
+.btn-link:hover {
+  color: var(--accent-color);
+}
+
+/* Local Auth Panel Links */
+.local-users-link,
+.back-to-main-link,
+.guest-access-request {
+  text-align: right;
+  margin-top: 1rem;
+}
+
+/* Back to main link: no margin when following guest-access-request */
+.guest-access-request + .back-to-main-link {
+  margin-top: 0;
+}
+
+/* Login Button Panels */
+#login-Button-panel,
+#guest-login-Button-panel,
+#guest-request-Button-panel {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: end;
+  margin-top: 1.5rem;
 }
-#login-message{
+
+/* Login Messages */
+#login-message,
+#guest-login-message {
   color: red;
   margin-bottom: 0.75rem;
 }
-#loginButton{
+
+/* Button Alignment */
+#loginButton,
+#guestLoginButton,
+#submitGuestRequestButton {
   justify-self: end;
+}
+
+/* Guest Request Form Styles */
+#guest-request-panel {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+#guest-request-panel h3 {
+  margin-bottom: 1.5rem;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+#guest-request-panel .form-column {
+  gap: 0.5rem;
+}
+
+#guest-request-panel input,
+#guest-request-panel select {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease;
+}
+
+#guest-request-panel input:focus,
+#guest-request-panel select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.1);
+}
+
+#guest-request-panel label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+/* Guest Request Back Link */
+#guest-request-panel .back-to-local-link {
+  margin-top: 1rem;
+  text-align: right;
+}
+
+/* Error Message Styles */
+.error-message {
+  color: #dc3545;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  display: none;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .footerPanel {
@@ -170,6 +299,17 @@ main {
   main {
     padding: 10vmin 10vmin 50vmin;
   }
+  
+  .sidebar {
+    height: 100vh;
+    overflow-y: auto;
+  }
+  
+  .loginPanel {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
 }
 
 
@@ -192,5 +332,24 @@ main {
     }
     .backgroundImageContainer{
       display: none;
+    }
+    
+    .sidebar {
+      height: 100vh;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+    
+    .loginPanel {
+      overflow-y: auto;
+      max-height: calc(100vh - 12rem);
+      margin-bottom: 1rem;
+    }
+    
+    #main-auth-panel, 
+    #local-auth-panel,
+    #guest-request-panel {
+      overflow-y: auto;
+      max-height: 100%;
     }
 }

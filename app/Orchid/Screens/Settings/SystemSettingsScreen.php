@@ -315,7 +315,6 @@ class SystemSettingsScreen extends Screen
     private function buildAuthSettingsLayout()
     {
         $authMethodSetting = null;
-        $testUserSettings = [];
         $ldapSettings = [];
         $oidcSettings = [];
         $shibbolethSettings = [];
@@ -326,8 +325,6 @@ class SystemSettingsScreen extends Screen
         foreach ($this->query()['authentication'] as $setting) {
             if ($setting->key === 'auth_authentication_method') {
                 $authMethodSetting = $setting;
-            } else if (str_starts_with($setting->key, 'test_users_')) {
-                $testUserSettings[] = $this->generateFieldForSetting($setting);
             } else if (str_starts_with($setting->key, 'ldap_')) {
                 $ldapSettings[] = $this->generateFieldForSetting($setting);
             } else if (str_starts_with($setting->key, 'open_id_connect_')) {
@@ -345,15 +342,10 @@ class SystemSettingsScreen extends Screen
         // Array für alle Layouts vorbereiten
         $layouts = [];
         
-        // Test User Einstellungen als eigenes Layout
-        if (!empty($testUserSettings)) {
-            $layouts[] = Layout::rows($testUserSettings)
-            ->title('Testusers');;
-        }
         // Fallback-Layout für nicht kategorisierte Authentication-Settings
         if (!empty($otherAuthSettings)) {
             $layouts[] = Layout::rows($otherAuthSettings)
-                ->title('Authentication Settings');
+                ->title('Local User Authentication System');
         }
         // Passkey-Einstellungen als eigenes Layout
         if (!empty($passkeySettings)) {
@@ -364,7 +356,7 @@ class SystemSettingsScreen extends Screen
         if ($authMethodSetting) {
             $layouts[] = Layout::rows([
                 $this->generateFieldForSetting($authMethodSetting)
-            ])->title('Change Authentication Method');
+            ])->title('External Authentication Method');
             
             // Aktuelle Authentifizierungsmethode ermitteln
             $currentMethod = config('auth.authentication_method', '');

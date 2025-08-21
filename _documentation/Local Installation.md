@@ -1,7 +1,24 @@
 
 ### Pre Requirements
 
-HAWKI 2.0 utilizes the Laravel 11 backend framework. To run HAWKI on your local machine, it is essential to ensure that all Laravel prerequisites are installed. Specifically, you need PHP, Composer, and Node.js (including npm) on your system. For comprehensive setup instructions, please refer to the [laravel documentation](https://laravel.com/docs/11.x).
+HAWKI 2.0 utili**Local User Authentication**
+
+HAWKI's built-in Local User Authentication system is now configured via the admin interface:
+
+1. Run the database seeders to create an admin user:
+   ```bash
+   php artisan db:seed --class=UserSeeder
+   ```
+2. Access the admin interface at `/admin` with:
+   - Username: `admin`
+   - Password: `password`
+3. Navigate to **System Settings > Authentication** to enable local user authentication
+4. Configure guest registration and available roles as needed
+
+**Managing Local Users:**
+- Create users via admin interface at `/admin/users`
+- Users created by admin need to complete registration on first login
+- Enable guest registration to allow self-service user creation11 backend framework. To run HAWKI on your local machine, it is essential to ensure that all Laravel prerequisites are installed. Specifically, you need PHP, Composer, and Node.js (including npm) on your system. For comprehensive setup instructions, please refer to the [laravel documentation](https://laravel.com/docs/11.x).
 Moreover, HAWKI requires a database to store the messaegs. We suggest that you use a mySQL database. Also having administration tools such as phpMyAdmin can speed up the process.
 
 ---
