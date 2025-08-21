@@ -20,6 +20,7 @@
 
     <script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/guest_request_functions.js') }}"></script>
 
     {!! $settingsPanel !!}
 
@@ -99,6 +100,23 @@
             }
         }
     }
+
+    function onGuestLoginKeydown(event){
+        if(event.key == "Enter"){
+            const username = document.getElementById('guest-account');
+            if(!username.value){
+                return;
+            }
+            const password = document.getElementById('guest-password');
+            if(document.activeElement != password){
+                password.focus();
+                return;
+            }
+            if(username.value && password.value){
+                LoginLocal();
+            }
+        }
+    }
     async function LoginLDAP() {
         try {
             var formData = new FormData();
@@ -131,5 +149,91 @@
         } catch (error) {
             console.error(error);
         }
+    }
+
+    async function LoginLocal() {
+        try {
+            var formData = new FormData();
+            formData.append("account", document.getElementById("guest-account").value);
+            formData.append("password", document.getElementById("guest-password").value);
+            const csrfToken = document.getElementById('loginForm-LOCAL').querySelector('input[name="_token"]').value;
+
+            const response = await fetch('/req/login-local', {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error("Guest login request failed");
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                await setOverlay(true, true)
+                window.location.href = data.redirectUri;
+
+            } else {
+                // console.log('guest login failed');
+                document.getElementById("guest-login-message").textContent = data.message || 'Guest Login Failed!';
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById("guest-login-message").textContent = 'Guest Login Error!';
+        }
+    }
+
+    function switchToLocalUsersLogin() {
+        // Use the guest request function if available, otherwise fall back to manual handling
+        if (typeof resetAllAuthPanels === 'function') {
+            resetAllAuthPanels();
+            document.getElementById('local-auth-panel').style.display = 'block';
+        } else {
+            // Fallback for cases where guest_request_functions.js is not loaded
+            hideAllAuthPanelsManual();
+            document.getElementById('local-auth-panel').style.display = 'block';
+        }
+        // Focus on username field
+        const guestAccountField = document.getElementById('guest-account');
+        if (guestAccountField) {
+            guestAccountField.focus();
+        }
+    }
+
+    function switchToMainLogin() {
+        // Use the guest request function if available, otherwise fall back to manual handling
+        if (typeof resetAllAuthPanels === 'function') {
+            resetAllAuthPanels();
+            document.getElementById('main-auth-panel').style.display = 'block';
+        } else {
+            // Fallback for cases where guest_request_functions.js is not loaded
+            hideAllAuthPanelsManual();
+            document.getElementById('main-auth-panel').style.display = 'block';
+        }
+        // Focus on main login field if it exists
+        const mainLoginField = document.getElementById('account');
+        if (mainLoginField) {
+            mainLoginField.focus();
+        }
+    }
+
+    // Fallback function for manual panel hiding
+    function hideAllAuthPanelsManual() {
+        const panels = ['main-auth-panel', 'local-auth-panel', 'guest-request-panel'];
+        panels.forEach(panelId => {
+            const panel = document.getElementById(panelId);
+            if (panel) {
+                panel.style.display = 'none';
+            }
+        });
+    }
+
+    function requestGuestAccess() {
+        // This function is now replaced by switchToGuestRequestForm()
+        // Kept for backward compatibility
+        switchToGuestRequestForm();
     }
 </script>

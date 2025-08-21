@@ -21,26 +21,29 @@ return [
     |
     */
     'app' => [
-        'name' => 'Name der Anwendung',
-        'url' => 'Basis-URL',
-        'env' => 'Umgebung (local, production, testing)',
-        'timezone' => 'Standard-Zeitzone',
-        'locale' => 'Standard-Spracheinstellung',
-        'debug' => 'Debug-Modus aktivieren (true/false)',
-        'groupchat_active' => 'Gruppenchat aktivieren (true/false)', 
-        'ai_handle' => 'KI-Assistenten Handle für Gruppenchat', 
+        'name' => 'Application name',
+        'url' => 'Base URL',
+        'env' => 'Environment (local, production, testing)',
+        'timezone' => 'Default timezone',
+        'locale' => 'Default locale',
+        'debug' => 'Enable debug mode (true/false)',
+        'groupchat_active' => 'Enable group chat (true/false)', 
+        'ai_handle' => 'AI assistant handle for group chat',
 
     ],
     'sanctum' => [
-        'allow_external_communication' => 'HAWKI-API erlauben',
-        'allow_user_token' => 'Generieren von User API-Token erlauben'
-    ],
-    'test_users' => [
-        'active' => 'Test-Benutzeranmeldung aktivieren',
-        'testers' => 'Liste der Test-User',
+        'allow_external_communication' => 'Allow HAWKI API',
+        'allow_user_token' => 'Allow generation of user API tokens'
     ],
     'auth' => [
-        'authentication_method' => 'Die Authentifizierungsmethode (LDAP, OIDC, Shibboleth)',
+        'local_authentication' => 'Activate login form for local users ',
+        'local_selfservice' => 'Activate registration form for local user account creation',
+        'local_needapproval' => 'New local users need admin approval before given access',
+        'authentication_method' => 'Authentication method (LDAP, OIDC, Shibboleth)',
+        'passkey_method' => 'Method for generating the PassKey (cannot be changed later)',
+        'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)',
+        'passkey_otp' => 'Send Log-in codes when user tries to login with new device',
+        'passkey_otp_timeout' => 'Set Timeout for Log-in code verification (seconds)'
     ],
     'ldap' => [
         //'default' => 'Configure the LDAP connection. Currently only "custom" is supported through hardcoding in ldapservice.php',
@@ -68,10 +71,10 @@ return [
     ],
     'open_id_connect' => [
         'oidc_idp' => 'OpenID Connect Identity Provider (z. B. https://idp.example.com)',
-        'oidc_client_id' => 'Client-ID für die OpenID Connect-Authentifizierung',
-        'oidc_client_secret' => 'Client-Secret für die OpenID Connect-Authentifizierung',
-        'oidc_logout_path' => 'Logout-Pfad für den OpenID Connect Identity Provider',
-        'oidc_scopes' => 'Scopes für die OpenID Connect-Authentifizierung (z. B. profile,email)',
+        'oidc_client_id' => 'Client ID for OpenID Connect authentication',
+        'oidc_client_secret' => 'Client Secret for OpenID Connect authentication',
+        'oidc_logout_path' => 'Logout path for the OpenID Connect Identity Provider',
+        'oidc_scopes' => 'Scopes for OpenID Connect authentication (e.g., profile,email)',
         'attribute_map.firstname' => 'Firstname Key Name Override',
         'attribute_map.lastname' => 'Lastname Key Name Override',
         'attribute_map.email' => 'E-Mail Key Name Override',
@@ -85,7 +88,48 @@ return [
         'attribute_map.employeetype' => 'Employeetype Key Name Override,',
         'attribute_map.name' => 'Displayname Key Name Override,',
     ],
-    'logging' => [],
+    'logging' => [
+        'triggers.return_object' => 'Print return objects in laravel.log',
+        'triggers.default_model' => 'Print model defaults in laravel.log',
+
+    ],
+    'mail' => [
+        'default' => 'Default mailer (smtp, herd, sendmail, log, array, etc.)',
+        'from.address' => 'Global "From" email address',
+        'from.name' => 'Global "From" name',
+        
+        // SMTP Mailer Configuration
+        'mailers.smtp.transport' => 'SMTP transport type (smtp)',
+        'mailers.smtp.url' => 'SMTP URL (alternative to individual settings)',
+        'mailers.smtp.host' => 'SMTP server hostname',
+        'mailers.smtp.port' => 'SMTP server port (usually 587 for TLS, 465 for SSL)',
+        'mailers.smtp.encryption' => 'SMTP encryption method (tls, ssl, or none)',
+        'mailers.smtp.username' => 'SMTP authentication username',
+        'mailers.smtp.password' => 'SMTP authentication password',
+        'mailers.smtp.timeout' => 'SMTP connection timeout in seconds',
+        
+        // Herd Mailer Configuration (Laravel Herd local development)
+        'mailers.herd.transport' => 'Herd transport type (smtp)',
+        'mailers.herd.url' => 'Herd URL (alternative to individual settings)',
+        'mailers.herd.host' => 'Herd SMTP hostname (usually localhost)',
+        'mailers.herd.port' => 'Herd SMTP port (usually 2525)',
+        'mailers.herd.encryption' => 'Herd encryption method (usually tls)',
+        'mailers.herd.username' => 'Herd username (usually empty for local)',
+        'mailers.herd.password' => 'Herd password (usually empty for local)',
+        'mailers.herd.timeout' => 'Herd connection timeout in seconds',
+        
+        // Sendmail Configuration
+        'mailers.sendmail.transport' => 'Sendmail transport type (sendmail)',
+        'mailers.sendmail.url' => 'Sendmail URL (usually not used)',
+        'mailers.sendmail.host' => 'Sendmail host (usually not applicable)',
+        'mailers.sendmail.port' => 'Sendmail port (usually not applicable)',
+        'mailers.sendmail.encryption' => 'Sendmail encryption (usually not applicable)',
+        'mailers.sendmail.username' => 'Sendmail username (usually not applicable)',
+        'mailers.sendmail.password' => 'Sendmail password (usually not applicable)',
+        'mailers.sendmail.timeout' => 'Sendmail timeout in seconds',
+        'mailers.sendmail.path' => 'Path to sendmail binary (e.g., /usr/sbin/sendmail -bs -i)',
+        
+    ],
 
         /*
     |--------------------------------------------------------------------------
@@ -93,17 +137,20 @@ return [
     |--------------------------------------------------------------------------
     |
     | This mapping defines which UI group a configuration file belongs to.
-    | It is used to group settings in the administration UI.
+    | It is used to group settings in the administration UI. Also the value
+    | set here will define the 'group' value for the given key during db 
+    | migration. 
     |
     */
     'group_mapping' => [
         'app' => 'basic',
         'sanctum' => 'api',
         'auth' => 'authentication',
-        'test_users' => 'authentication',
         'ldap' => 'authentication',
         'open_id_connect' => 'authentication',
         'shibboleth' => 'authentication',
         'session' => 'authentication',
+        'logging' => 'logging',
+        'mail' => 'mail',
     ],
 ];

@@ -63,7 +63,7 @@ class AIConnectionService
         $models = [];
         
         // Read models from the database
-        $dbModels = LanguageModel::select('language_models.*', 'provider_settings.provider_name')
+        $dbModels = LanguageModel::select('language_models.*', 'provider_settings.provider_name', 'provider_settings.api_format')
             ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
             ->where('language_models.is_active', true)
             ->where('language_models.is_visible', true)
@@ -78,7 +78,8 @@ class AIConnectionService
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'provider' => $model->provider_name,
+                'api_format' => $model->api_format ?? $model->provider_name,
+                'provider_name' => $model->provider_name,
                 'status' => 'ready' // 'ready', 'loading', 'unavailable' Default value, will be updated below
             ];
 
@@ -115,8 +116,10 @@ class AIConnectionService
             'prompt_improver' => AppSetting::where('key', 'system_model_prompt_improver')->value('value'),
             'summarizer' => AppSetting::where('key', 'system_model_summarizer')->value('value')
         ];
-        Log::info('Default model:', ['model' => $defaultModel]);
-        Log::info('System models:', $systemModels);
+        if (config('logging.triggers.default_model')) {
+            Log::info('Default model:', ['model' => $defaultModel]);
+            Log::info('System models:', $systemModels);
+        }
         return [
             'models' => $models,
             'defaultModel' => $defaultModel,
