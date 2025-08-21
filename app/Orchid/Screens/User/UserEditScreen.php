@@ -62,7 +62,7 @@ class UserEditScreen extends Screen
     public function permission(): ?iterable
     {
         return [
-            'platform.systems.users',
+            'platform.access.users',
         ];
     }
 

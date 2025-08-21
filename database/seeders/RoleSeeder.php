@@ -19,9 +19,11 @@ class RoleSeeder extends Seeder
             'name' => 'Administrator',
             'permissions' => [
                 'platform.index' => true,
-                'platform.systems.roles' => true,
-                'platform.systems.users' => true,
-                'platform.systems.attachment' => true,
+                'platform.access.roles' => true,
+                'platform.access.users' => true,
+                'platform.systems.settings' => true,
+                'platform.systems.models' => true,
+                'platform.dashboard' => true,
                 'chat.access' => true,
                 'groupchat.access' => true,
             ],
@@ -69,7 +71,7 @@ class RoleSeeder extends Seeder
             'name' => 'Moderator',
             'permissions' => [
                 'platform.index' => true, // Moderators also get admin panel access
-                'platform.systems.users' => true, // Can manage users
+                'platform.access.users' => true, // Can manage users
                 'chat.access' => true,
                 'groupchat.access' => true,
             ],

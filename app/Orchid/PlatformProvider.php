@@ -37,10 +37,12 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Get Started')
                 ->icon('bs.book')
                 ->title('Overview')
+                ->permission('platform.systems.*')
                 ->route(config('platform.index')),
             
             Menu::make('Dashboard')
                 ->icon('bs.rocket-takeoff')
+                ->permission('platform.dashboard')
                 ->list([
                     Menu::make('Global')
                         ->route('platform.dashboard.global')
@@ -52,10 +54,14 @@ class PlatformProvider extends OrchidServiceProvider
                         ->route('platform.dashboard.requests')
                         ->icon('bs.bar-chart'),
                     ]),
+            
+            Menu::make('')
+                ->title(__('Configuration'))
+                ->permission('platform.systems.*'),
 
             Menu::make('System')
-                ->title('Configuration')
                 ->icon('bs.house-gear')
+                ->permission('platform.systems.settings')
                 ->badge(fn () => $this->getHawkiCommitId(), Color::DARK)
                 ->list([
                     Menu::make('Settings')
@@ -80,6 +86,7 @@ class PlatformProvider extends OrchidServiceProvider
             
             Menu::make('Models')
                 ->icon('bs.stars')
+                ->permission('platform.systems.models')
                 ->list([        
                     Menu::make('API Providers')
                         ->route('platform.modelsettings.providers')
@@ -94,19 +101,20 @@ class PlatformProvider extends OrchidServiceProvider
 
             Menu::make('')
                 ->title(__('Access Controls'))
-                ->permission('platform.systems.*'),
+                ->permission('platform.access.*'),
 
             Menu::make(__('Users'))
                 ->icon('bs.people')
                 ->route('platform.systems.users')
-                ->permission('platform.systems.users'),
+                ->permission('platform.access.users'),
 
             Menu::make(__('Roles'))
                 ->icon('bs.shield')
                 ->route('platform.systems.roles')
-                ->permission('platform.systems.roles')
+                ->permission('platform.access.roles'),
+            
+            Menu::make('')
                 ->divider(),
-
 
             Menu::make('Documentation')
                 ->title('Docs')
@@ -158,9 +166,13 @@ class PlatformProvider extends OrchidServiceProvider
     {
         return [
             ItemPermission::group(__('Main'))
-                ->addPermission('platform.systems.roles', __('Roles'))
-                ->addPermission('platform.systems.users', __('Users')),
-                
+                ->addPermission('platform.systems.settings', __('System Settings'))
+                ->addPermission('platform.systems.models', __('Model Settings')),
+            ItemPermission::group(__('Access Controls'))
+                ->addPermission('platform.access.roles', __('Roles'))
+                ->addPermission('platform.access.users', __('Users')),
+            ItemPermission::group(__('Reporting'))
+                ->addPermission('platform.dashboard', __('Dashboard')),
             ItemPermission::group(__('Chat Access'))
                 ->addPermission('chat.access', __('Chat Access'))
                 ->addPermission('groupchat.access', __('Group Chat Access')),

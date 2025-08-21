@@ -35,17 +35,30 @@ class ChatAccessMiddleware
             default => throw new \InvalidArgumentException("Invalid chat type: {$chatType}")
         };
 
+        // Check system settings for groupchat
+        if ($chatType === 'groupchat' && !config('app.groupchat_active', true)) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'error' => 'Feature disabled',
+                    'message' => 'Group chat is currently disabled'
+                ], 403);
+            }
+            
+            // For web requests, show 403 error page
+            abort(403, 'Group chat is currently disabled');
+        }
+
         // Check if user has the required permission
         if (!$user->hasAccess($permission)) {
             if ($request->expectsJson()) {
                 return response()->json([
                     'error' => 'Access denied',
-                    'message' => "You don't have permission to access {$chatType}"
+                    'message' => "No Permission for {$chatType}"
                 ], 403);
             }
             
             // For web requests, show 403 error page
-            abort(403, "You don't have permission to access {$chatType}");
+            abort(403, "No Permission for {$chatType}");
         }
 
         return $next($request);
