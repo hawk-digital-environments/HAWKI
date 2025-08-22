@@ -54,7 +54,7 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'], // Standard nur File-Logging
+            'channels' => ['single', 'database'], // File + Database logging
             'ignore_exceptions' => false,
         ],
 
@@ -136,6 +136,7 @@ return [
         'database' => [
             'driver' => 'custom',
             'via' => \App\Logging\DatabaseLogger::class,
+            'name' => 'database',
             'level' => env('LOG_LEVEL', config('logging.channels.database.level', 'debug')),
             'bubble' => true, // Allow bubbling to other handlers
         ],
