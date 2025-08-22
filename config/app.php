@@ -147,6 +147,5 @@ return [
     'groupchat_active' => true,
     //'groupchat_community' => false,
     //'groupchat_community_autojoin' => false,
-    ''
 
 ];

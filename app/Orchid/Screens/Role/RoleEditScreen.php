@@ -8,7 +8,7 @@ use App\Orchid\Layouts\Role\RoleEditLayout;
 use App\Orchid\Layouts\Role\RolePermissionLayout;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Orchid\Platform\Models\Role;
+use App\Models\Role;
 use Orchid\Screen\Action;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Screen;
@@ -57,7 +57,7 @@ class RoleEditScreen extends Screen
     public function permission(): ?iterable
     {
         return [
-            'platform.systems.roles',
+            'platform.access.roles',
         ];
     }
 
@@ -115,7 +115,13 @@ class RoleEditScreen extends Screen
             ],
         ]);
 
-        $role->fill($request->get('role'));
+        // Get role data from request
+        $roleData = $request->get('role', []);
+        
+        // Handle checkbox: if not present in request, set to false
+        $roleData['selfassign'] = $request->boolean('role.selfassign', false);
+
+        $role->fill($roleData);
 
         $role->permissions = collect($request->get('permissions'))
             ->map(fn ($value, $key) => [base64_decode($key) => $value])

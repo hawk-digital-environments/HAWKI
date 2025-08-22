@@ -90,8 +90,8 @@
                             <x-orchid-icon path="bs.file-code-fill"/><x-orchid-icon path="bs.cone-striped"/> Settings
                             <ul class="list-unstyled ps-md-3">
                                 <li> <x-orchid-icon path="bs.check-all"/>System / App Settings</li>        
-                                <li> <x-orchid-icon path="bs.cone-striped"/>Authentication</li>       
-                                <li> <x-orchid-icon path="bs.cone-striped"/>API (Can't test because of error in HAWKI CLI)</li>        
+                                <li> <x-orchid-icon path="bs.check-all"/>Authentication</li>       
+                                <li> <x-orchid-icon path="bs.check-all"/>API</li>        
 
                             </ul>
                         </li>

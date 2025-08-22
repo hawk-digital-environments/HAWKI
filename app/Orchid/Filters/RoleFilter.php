@@ -6,7 +6,7 @@ namespace App\Orchid\Filters;
 
 use Illuminate\Database\Eloquent\Builder;
 use Orchid\Filters\Filter;
-use Orchid\Platform\Models\Role;
+use App\Models\Role;
 use Orchid\Screen\Fields\Select;
 
 class RoleFilter extends Filter

@@ -147,24 +147,21 @@ According to your authentication method set the necessary variables. For more in
 
 >If you are using **LDAP** make sure the structure of the LDAP response is setup correctly on the HAWKI side. To do that first make sure the `LDAP_ATTRIBUTES` are set correctly and in the correct order: Username, Email Address, Employee Type, Name. By default HAWKI looks for the `element zero/ variable name/ element zero` `($info[0][$ldapAttr][0])`. If for any reason the response from your LDAP server has a different structure, your can change this in `/app/Services/Auth/LdapService.php`.
 
-**Test User**
+**Local User Authentication**
 
-To login using test users, set the authentication method to LDAP.
-In `/storage/app/` locate `test_users.json` file and update it with your desired profiles as below:
+HAWKI includes a built-in Local User Authentication system that allows:
+- Admin-created local user accounts via the Orchid admin interface
+- Guest self-registration (if enabled)
+- Independent password management for local users
 
-```
-[
-    {
-        "username": "tester",
-        "password": "123",
-        "name": "TheTester",
-        "email": "tester@MyUni.de",
-        "employeetype": "Tester",
-        "avatar_id": ""
-    },
-    ...
-]
-```
+Local user authentication is configured via the admin interface:
+1. Navigate to **System Settings > Authentication**
+2. Enable "Local User Authentication"
+3. Configure guest registration settings
+
+Local users can be managed through the admin interface at `/admin/users`. 
+
+**Guest Registration**: When enabled, users can register themselves through the login page. Available user roles for guest registration can be configured in the admin interface under Settings → Roles (enable "Self Assign" for roles that guests can choose).
 
 
 **Create Storage Link**
