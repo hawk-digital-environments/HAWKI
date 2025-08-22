@@ -515,6 +515,54 @@ trait OrchidSettingsManagementTrait
             ->widthColumns('1fr 1fr');
         }
 
+        // Special handling for logging default channel
+        if ($key === 'logging_default') {
+            return \Orchid\Screen\Fields\Group::make([
+                \Orchid\Screen\Fields\Label::make("label_{$key}")
+                    ->title($setting->description)
+                    ->help($displayKey)
+                    ->addclass('fw-bold'),
+                \Orchid\Screen\Fields\Select::make($inputName)
+                    ->options([
+                        'stack' => 'Stack (Multiple channels)',
+                        'single' => 'Single File',
+                        'daily' => 'Daily Rotating Files',
+                        'syslog' => 'System Log',
+                        'database' => 'Database',
+                        'errorlog' => 'PHP Error Log',
+                        'null' => 'Null (Disable logging)',
+                        'emergency' => 'Emergency (Write to error log)',
+                    ])
+                    ->value($setting->value),
+            ])
+            ->alignCenter()
+            ->widthColumns('1fr 1fr');
+        }
+
+        // Special handling for log levels
+        if (str_contains($key, '_level') && (str_contains($key, 'logging_') || str_contains($key, 'log_'))) {
+            return \Orchid\Screen\Fields\Group::make([
+                \Orchid\Screen\Fields\Label::make("label_{$key}")
+                    ->title($setting->description)
+                    ->help($displayKey)
+                    ->addclass('fw-bold'),
+                \Orchid\Screen\Fields\Select::make($inputName)
+                    ->options([
+                        'debug' => 'Debug',
+                        'info' => 'Info',
+                        'notice' => 'Notice',
+                        'warning' => 'Warning',
+                        'error' => 'Error',
+                        'critical' => 'Critical',
+                        'alert' => 'Alert',
+                        'emergency' => 'Emergency',
+                    ])
+                    ->value($setting->value),
+            ])
+            ->alignCenter()
+            ->widthColumns('1fr 1fr');
+        }
+
         // Special handling for encryption
         if (str_contains($key, 'encryption')) {
             return \Orchid\Screen\Fields\Group::make([
