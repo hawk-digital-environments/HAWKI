@@ -15,6 +15,7 @@ use App\Orchid\Screens\Settings\MailSettingsScreen;
 
 use App\Orchid\Screens\ModelSettings\ProviderSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
+use App\Orchid\Screens\ModelSettings\ProviderEditScreen;
 
 use App\Orchid\Screens\ModelSettings\ModelSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ModelInformationScreen;
@@ -132,6 +133,12 @@ Route::screen('/modelsettings/providers/create', ProviderCreateScreen::class)
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.modelsettings.providers')
         ->push(__('Create Provider'), route('platform.modelsettings.provider.create')));
+
+Route::screen('/modelsettings/providers/{provider}/edit', ProviderEditScreen::class)
+    ->name('platform.modelsettings.provider.edit')
+    ->breadcrumbs(fn (Trail $trail, $provider) => $trail
+        ->parent('platform.modelsettings.providers')
+        ->push(__('Edit Provider'), route('platform.modelsettings.provider.edit', $provider)));
 
 Route::screen('/modelsettings/models', ModelSettingsScreen::class)
     ->name('platform.modelsettings.models')

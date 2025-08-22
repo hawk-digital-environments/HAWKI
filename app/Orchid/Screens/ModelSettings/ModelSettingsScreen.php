@@ -4,8 +4,8 @@ namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\LanguageModel;
 use App\Models\ProviderSetting;
-//use App\Services\AI\ModelUtilityService;
 use App\Services\Settings\ModelSettingsService;
+use App\Orchid\Traits\OrchidLoggingTrait;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -20,11 +20,12 @@ use Orchid\Screen\Screen;
 use Orchid\Screen\TD;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
-use Illuminate\Support\Facades\Log;
 
 
 class ModelSettingsScreen extends Screen
 {
+    use OrchidLoggingTrait;
+
     /**
      * @var modelSettingsService
      */
@@ -296,27 +297,34 @@ class ModelSettingsScreen extends Screen
             return redirect()->route('platform.modelsettings.models');
         }
         
-        $totalFound = 0;
-        $errors = [];
+        $results = [
+            'providers_checked' => 0,
+            'models_added' => 0,
+            'models_updated' => 0,
+            'errors' => 0
+        ];
         
         foreach ($providers as $provider) {
             try {
                 // Check if the provider has a ping URL
                 if (!$provider->ping_url) {
-                    $errors[] = "Provider '{$provider->provider_name}' has no configured API URL for model discovery.";
+                    Toast::warning("Provider '{$provider->provider_name}' has no configured API URL for model discovery.");
+                    $results['errors']++;
                     continue;
                 }
                 
                 $request = new Request(['provider_id' => $provider->id]);
                 $result = $this->checkProviderModels($request, false);
                 
-                if (is_array($result) && isset($result['added'])) {
-                    $totalFound += $result['added'];
-                }
+                $results['providers_checked']++;
             } catch (\Exception $e) {
-                $errors[] = "Error checking models for {$provider->provider_name}: " . $e->getMessage();
+                $results['errors']++;
+                Toast::error("Error checking models for {$provider->provider_name}: " . $e->getMessage());
             }
         }
+        
+        // Log the batch operation result
+        $this->logBatchOperation('check_all_providers', 'model_discovery', $results);
         
         return;
     }
@@ -351,9 +359,6 @@ class ModelSettingsScreen extends Screen
             // Get available models from provider API - Here comes the API response
             $apiResponse = $this->modelSettingsService->getModelStatus($provider->provider_name);
             
-            // Debug log for the complete API response
-            Log::debug('Raw API Response: ' . json_encode($apiResponse));
-            
             if (empty($apiResponse) || !is_array($apiResponse)) {
                 Toast::warning("No models returned from {$provider->provider_name} API.");
                 return;
@@ -362,13 +367,11 @@ class ModelSettingsScreen extends Screen
             // Extract the models array from the API response
             $availableModels = [];
             if (isset($apiResponse['data']) && is_array($apiResponse['data'])) {
-                // For APIs that have a 'data' property (as in the example)
+                // For APIs that have a 'data' property
                 $availableModels = $apiResponse['data'];
-                Log::info("Using 'data' array from API response containing " . count($availableModels) . " models");
             } else {
                 // Fallback, if the format is different
                 $availableModels = $apiResponse;
-                Log::info("Using entire API response as models array containing " . count($availableModels) . " items");
             }
             
             // Statistics counters
@@ -376,22 +379,16 @@ class ModelSettingsScreen extends Screen
             $updated = 0;
             $skipped = 0;
             
-            Log::info("Processing " . count($availableModels) . " models for provider {$provider->provider_name} (ID: {$provider->id})");
-            
             // Process each available model
             foreach ($availableModels as $modelObject) {
                 // Ensure that the model object has an ID
                 if (!isset($modelObject['id']) || empty($modelObject['id'])) {
-                    Log::warning("Skipped model without ID from provider {$provider->provider_name}");
                     $skipped++;
                     continue;
                 }
                 
                 $modelId = $modelObject['id'];
                 $label = isset($modelObject['name']) ? $modelObject['name'] : $modelId;
-                
-                // Debug log for the individual model object
-                Log::debug("Model object for ID {$modelId}: " . json_encode($modelObject));
                 
                 // IMPORTANT: Save the entire, unmodified model object as information
                 // Do not perform any further modifications
@@ -404,8 +401,6 @@ class ModelSettingsScreen extends Screen
                 
                 if ($existingModel) {
                     // Update existing model for the same provider
-                    Log::info("Updating existing model {$modelId} for provider {$provider->provider_name}");
-                    
                     $existingModel->update([
                         'label' => $label,
                         'streamable' => $modelObject['streamable'] ?? true,
@@ -425,8 +420,6 @@ class ModelSettingsScreen extends Screen
                     // a unique model ID by appending the provider name
                     $uniqueModelId = $modelId . '-' . strtolower($provider->provider_name);
                     
-                    Log::info("Model ID {$modelId} already exists under provider {$conflictModel->provider->provider_name}, creating as {$uniqueModelId}");
-                    
                     // Create the new model with the unique ID
                     LanguageModel::create([
                         'model_id' => $uniqueModelId,
@@ -445,8 +438,6 @@ class ModelSettingsScreen extends Screen
                 }
                 
                 // Create new model (without conflicts)
-                Log::info("Creating new model {$modelId} for provider {$provider->provider_name}");
-                
                 LanguageModel::create([
                     'model_id' => $modelId,
                     'label' => $label,
@@ -461,6 +452,21 @@ class ModelSettingsScreen extends Screen
                 
                 $added++;
             }
+            
+            // Log the operation result using the trait
+            $this->logProviderOperation(
+                'model_import',
+                $provider->provider_name,
+                $provider->id,
+                'completed',
+                [
+                    'models_processed' => count($availableModels),
+                    'models_added' => $added,
+                    'models_updated' => $updated,
+                    'models_skipped' => $skipped,
+                    'api_response_type' => isset($apiResponse['data']) ? 'structured' : 'direct'
+                ]
+            );
             
             // Detailed success message
             if ($added > 0 || $updated > 0) {
@@ -486,7 +492,10 @@ class ModelSettingsScreen extends Screen
             
             return;
         } catch (\Exception $e) {
-            Log::error("Error checking models for {$provider->provider_name}: " . $e->getMessage());
+            $this->logError('model_import', $e, [
+                'provider_name' => $provider->provider_name,
+                'provider_id' => $provider->id
+            ]);
             Toast::error("Error checking models for {$provider->provider_name}: " . $e->getMessage());
             return;
         }
@@ -500,15 +509,12 @@ class ModelSettingsScreen extends Screen
      */
      public function deleteModel(Request $request)
     {
-        Log::info('Delete model method called');
-
         try {
             $id = $request->get('id');
             
             // Modell vor dem Löschen finden, um den Namen für die Erfolgsmeldung zu haben
             $model = LanguageModel::find($id);
             if (!$model) {
-                Log::warning("Model with ID {$id} not found for deletion");
                 Toast::error('Model not found');
                 return redirect()->back();
             }
@@ -519,14 +525,20 @@ class ModelSettingsScreen extends Screen
             $result = $model->delete();
             
             if ($result) {
-                Log::info("Model '{$modelName}' (ID: {$id}) was successfully deleted");
+                $this->logModelOperation('delete', 'LanguageModel', $id, 'success', [
+                    'model_name' => $modelName,
+                    'provider_id' => $model->provider_id
+                ]);
                 Toast::success("Model '{$modelName}' has been deleted");
             } else {
-                Log::error("Failed to delete model '{$modelName}' (ID: {$id})");
+                $this->logModelOperation('delete', 'LanguageModel', $id, 'failed', [
+                    'model_name' => $modelName,
+                    'provider_id' => $model->provider_id
+                ]);
                 Toast::error("Could not delete model");
             }
         } catch (\Exception $e) {
-            Log::error("Error deleting model: " . $e->getMessage());
+            $this->logError('delete_model', $e, ['model_id' => $request->get('id')]);
             Toast::error("Error deleting model: " . $e->getMessage());
         }
         
@@ -543,8 +555,6 @@ class ModelSettingsScreen extends Screen
     {
         try {
             $providerId = $request->get('provider_id');
-            
-            Log::info("Attempting to delete all models for provider ID: {$providerId}");
             
             $provider = ProviderSetting::find($providerId);
             if (!$provider) {
@@ -563,11 +573,18 @@ class ModelSettingsScreen extends Screen
             // Delete all models for this provider
             LanguageModel::where('provider_id', $providerId)->delete();
             
-            Log::info("Successfully deleted {$count} models for provider '{$provider->provider_name}' (ID: {$providerId})");
+            $this->logProviderOperation(
+                'delete_all_models',
+                $provider->provider_name,
+                $providerId,
+                'success',
+                ['models_deleted' => $count]
+            );
+            
             Toast::success("{$count} models were deleted successfully for provider '{$provider->provider_name}'");
             
         } catch (\Exception $e) {
-            Log::error("Error deleting models for provider: " . $e->getMessage());
+            $this->logError('delete_all_models_for_provider', $e, ['provider_id' => $request->get('provider_id')]);
             Toast::error("Error deleting models: " . $e->getMessage());
         }
         
