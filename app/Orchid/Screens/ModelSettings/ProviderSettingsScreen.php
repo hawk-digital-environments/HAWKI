@@ -1,18 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ProviderSetting;
 use App\Services\ProviderSettingsService;
+use App\Orchid\Layouts\ModelSettings\ProviderSettingsListLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderSettingsFiltersLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderSettingsEditLayout;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
-use Orchid\Screen\Fields\CheckBox;
-use Orchid\Screen\Fields\Input;
-use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Fields\Group;
-use Orchid\Screen\Fields\Switcher;
-
+use Orchid\Screen\Actions\ModalToggle;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
@@ -20,33 +21,16 @@ use Orchid\Support\Facades\Toast;
 class ProviderSettingsScreen extends Screen
 {
     /**
-     * Mapping für schönere Provider-Namen in Tabs
-     */
-    private $providerTitleMapping = [
-        'hawki' => 'HAWKI',
-        'openWebUi' => 'Open WebUI',
-        'gwdg' => 'GWDG',
-        'openai' => 'OpenAI',
-        'anthropic' => 'Anthropic',
-        'mistral' => 'Mistral AI',
-        'google' => 'Google AI',
-        'ollama' => 'Ollama',
-        // Weitere Mappings können hier hinzugefügt werden
-    ];
-
-    /**
      * Fetch data to be displayed on the screen.
      *
      * @return array
      */
     public function query(): iterable
     {
-        // Load all existing providers from the database
-        $providers = ProviderSetting::all()->keyBy('id');
-        
         return [
-            'providers' => $providers,
-            'hasProviders' => $providers->isNotEmpty(),
+            'providers' => ProviderSetting::filters(ProviderSettingsFiltersLayout::class)
+                ->defaultSort('id', 'desc')
+                ->paginate(),
         ];
     }
 
@@ -59,12 +43,23 @@ class ProviderSettingsScreen extends Screen
     {
         return 'API Provider Settings';
     }
+
     /**
      * Display header description.
      */
-     public function description(): ?string
+    public function description(): ?string
     {
-        return 'Configure the API Provider connections.';
+        return 'Manage API provider connections and their configurations.';
+    }
+
+    /**
+     * Permission required to access this screen.
+     */
+    public function permission(): ?iterable
+    {
+        return [
+            'platform.modelsettings.providers',
+        ];
     }
     /**
      * The screen's action buttons.
@@ -79,13 +74,9 @@ class ProviderSettingsScreen extends Screen
                 ->method('importFromConfig')
                 ->confirm('Are you sure? Existing providers will be overwritten with settings from the config file.'),
                 
-            Link::make(__('Add'))
+            Link::make('Add Provider')
                 ->icon('bs.plus-circle')
                 ->route('platform.modelsettings.provider.create'),
-
-            Button::make('Save')
-                ->icon('save')
-                ->method('saveSettings'),
         ];
     }
 
@@ -96,138 +87,124 @@ class ProviderSettingsScreen extends Screen
      */
     public function layout(): iterable
     {
-        $providers = $this->query()['providers'];
-        
-        // If no providers exist, show the info template
-        if ($providers->isEmpty()) {
-            return [
-                Layout::view('orchid.provider-settings.no-providers')
-            ];
-        }
-        
-        // Otherwise, show the tabs with the providers
-        $tabs = [];
-        
-        foreach ($providers as $provider) {
-            $tabTitle = $this->getProviderTabTitle($provider);
-            $tabs[$tabTitle] = $this->providerLayout($provider);
-        }
-        
         return [
-            Layout::accordion([
-            'Show more Information' => [
-                Layout::view('orchid.provider-settings.provider-info')
-            ]
-            ])->open([]),
+            ProviderSettingsFiltersLayout::class,
+            ProviderSettingsListLayout::class,
 
-            Layout::tabs($tabs)
+            Layout::modal('editProviderModal', ProviderSettingsEditLayout::class)
+                ->title('Edit Provider Settings')
+                ->applyButton('Save Provider')
+                ->closeButton('Cancel')
+                ->deferred('loadProviderOnOpenModal'),
         ];
     }
-    
-    /**
-     * Generate layout for each provider.
-     */
-    private function providerLayout($provider): iterable
-    {
-        $providerId = $provider->id;
-        $providerName = $provider->provider_name;
-        // Basic fields for all providers
-        $fields = [
-            //Group::make([
-            Input::make("providers.{$providerId}.provider_name")
-                ->title('Provider Name')
-                ->value($providerName),
 
-            Switcher::make("providers.{$providerId}.is_active")
-                                        ->sendTrueOrFalse()
-                                        ->value($provider->is_active)
-                                        ->title('Active')
-                                        ->help('Activate this provider for use in the application'),
-            //]),
-            Select::make("providers.{$providerId}.api_format")
-                ->title('API Interface')
-                ->options($this->getProviderSchemas())
-                ->help('The API interface to use for this provider'),
-                
-            Input::make("providers.{$providerId}.api_key")
-                ->title('API Key')
-                ->type('password')
-                ->help('The API key for authentication'),
-                
-            Input::make("providers.{$providerId}.base_url")
-                ->title('API URL')
-                ->placeholder('https://api.example.com/v1')
-                ->help('The URL for API requests'),
-                
-            Input::make("providers.{$providerId}.ping_url")
-                ->title('Models URL')
-                ->placeholder('https://api.example.com/v1/models')
-                ->help('The URL to retrieve the available models'),
-                
-            Button::make('Delete')
-                ->icon('trash')
-                ->confirm('Are you sure you want to delete this provider? This action cannot be undone.')
-                ->method('deleteProvider', ['id' => $providerId]),
-        ];
-        
-        return [
-            Layout::rows($fields)
-        ];
-    }
-    
     /**
-     * Get available provider schemas from database.
+     * Loads provider data when opening the modal window.
      *
      * @return array
      */
-    private function getProviderSchemas(): array
+    public function loadProviderOnOpenModal(ProviderSetting $provider): iterable
     {
-        // Retrieve all unique api_format values from the database
-        $formats = ProviderSetting::whereNotNull('api_format')
-            ->distinct()
-            ->pluck('api_format')
-            ->toArray();
-        
-        $options = [];
-        foreach ($formats as $format) {
-            // Use the existing value as the key and generate a displayable name
-            $options[$format] = ucfirst($format);
+        // Convert additional_settings to string for form display
+        $providerData = $provider->toArray();
+        if (isset($providerData['additional_settings']) && is_array($providerData['additional_settings'])) {
+            $providerData['additional_settings'] = json_encode($providerData['additional_settings'], JSON_PRETTY_PRINT);
+        } elseif (is_null($providerData['additional_settings'])) {
+            $providerData['additional_settings'] = '';
         }
         
-        // If no formats were found in the database, load fallback options from the example configuration
-        if (empty($options)) {
-            $examplePath = config_path('model_providers.php.example');
-            
-            if (file_exists($examplePath)) {
-                $config = include $examplePath;
-                $providers = $config['providers'] ?? [];
-                
-                foreach ($providers as $key => $provider) {
-                    $options[$key] = $provider['name'] ?? ucfirst($key);
-                }
-            }
-        }
-        
-        return $options;
+        return [
+            'provider' => $providerData,
+        ];
     }
-    
     /**
-     * Save settings to the database.
+     * Save provider settings from modal.
      */
-    public function saveSettings(Request $request, ProviderSettingsService $settingsService)
+    public function saveProvider(Request $request, ProviderSetting $provider)
     {
-        $providers = $request->get('providers');
+        $request->validate([
+            'provider.provider_name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique(ProviderSetting::class, 'provider_name')->ignore($provider),
+            ],
+            'provider.api_format' => 'required|string|max:255',
+            'provider.base_url' => 'nullable|url|max:500',
+            'provider.ping_url' => 'nullable|url|max:500',
+            'provider.api_key' => 'nullable|string|max:500',
+            'provider.is_active' => 'boolean',
+            'provider.additional_settings' => 'nullable|string',
+        ]);
+
+        $providerData = $request->input('provider');
         
-        foreach ($providers as $providerId => $settings) {
-            $provider = ProviderSetting::find($providerId);
-            if ($provider) {
-                $provider->update($settings);
-            }
+        // Handle password field - only update if not empty
+        if (empty($providerData['api_key'])) {
+            unset($providerData['api_key']);
         }
         
-        Toast::info('Provider settings saved successfully.');
+        // Convert JSON string to array for storage
+        if (!empty($providerData['additional_settings'])) {
+            $decoded = json_decode($providerData['additional_settings'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Toast::error('Additional settings must be valid JSON format.');
+                return back()->withInput();
+            }
+            $providerData['additional_settings'] = $decoded;
+        } else {
+            $providerData['additional_settings'] = null;
+        }
         
-        return redirect()->back();
+        $provider->fill($providerData)->save();
+
+        Toast::info('Provider settings have been updated successfully.');
+    }
+
+    /**
+     * Toggle the active status of a provider.
+     */
+    public function toggleStatus(Request $request): void
+    {
+        $provider = ProviderSetting::findOrFail($request->get('id'));
+        
+        $newStatus = !$provider->is_active;
+        $provider->update(['is_active' => $newStatus]);
+        
+        $statusText = $newStatus ? 'activated' : 'deactivated';
+        Toast::info("Provider '{$provider->provider_name}' has been {$statusText}.");
+    }
+
+    /**
+     * Test connection to a provider.
+     */
+    public function testConnection(Request $request): void
+    {
+        $provider = ProviderSetting::findOrFail($request->get('id'));
+        
+        if (!$provider->is_active) {
+            Toast::warning("Provider '{$provider->provider_name}' is currently inactive.");
+            return;
+        }
+        
+        if (empty($provider->ping_url)) {
+            Toast::warning("No models URL configured for provider '{$provider->provider_name}'.");
+            return;
+        }
+        
+        try {
+            // Simple connection test - this could be enhanced with actual API testing
+            $response = @get_headers($provider->ping_url);
+            
+            if ($response !== false) {
+                Toast::success("Connection test successful for provider '{$provider->provider_name}'.");
+            } else {
+                Toast::error("Connection test failed for provider '{$provider->provider_name}'.");
+            }
+        } catch (\Exception $e) {
+            Toast::error("Connection test error for provider '{$provider->provider_name}': " . $e->getMessage());
+        }
     }
 
     /**
@@ -238,9 +215,9 @@ class ProviderSettingsScreen extends Screen
         $stats = $settingsService->importFromConfig();
         
         if ($stats['imported'] > 0 || $stats['updated'] > 0) {
-            Toast::success("{$stats['imported']} Provider wurden importiert und {$stats['updated']} Provider wurden aktualisiert.");
+            Toast::success("{$stats['imported']} providers imported and {$stats['updated']} providers updated.");
         } else {
-            Toast::info("Keine Provider wurden importiert oder aktualisiert. Überprüfen Sie, ob die Datei model_providers.php existiert.");
+            Toast::info("No providers were imported or updated. Please check if the model_providers.php file exists.");
         }
         
         return redirect()->back();
@@ -248,10 +225,6 @@ class ProviderSettingsScreen extends Screen
 
     /**
      * Delete a provider.
-     * 
-     * @param Request $request
-     * @param ProviderSettingsService $settingsService
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function deleteProvider(Request $request, ProviderSettingsService $settingsService)
     {
@@ -270,27 +243,5 @@ class ProviderSettingsScreen extends Screen
         
         Toast::success("Provider '{$providerName}' was successfully deleted.");
         return redirect()->back();
-    }
-
-    /**
-     * Generate formatted tab title for a provider.
-     * 
-     * @param \App\Models\ProviderSetting $provider
-     * @return string
-     */
-    private function getProviderTabTitle($provider): string
-    {
-        $providerName = $provider->provider_name;
-        
-        // If a specific mapping for this provider exists, use it
-        if (isset($this->providerTitleMapping[$providerName])) {
-            $title = $this->providerTitleMapping[$providerName];
-        } else {
-            // Otherwise: Default formatting with TitleCase 
-            // (e.g., converts "my_provider_name" to "My Provider Name")
-            $title = ucwords(str_replace(['_', '-'], ' ', $providerName));
-        }
-        
-        return $title;
     }
 }
