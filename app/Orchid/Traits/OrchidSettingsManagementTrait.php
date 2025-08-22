@@ -41,25 +41,16 @@ trait OrchidSettingsManagementTrait
         $settings = $request->input('settings', []);
         $count = 0;
         
-        // Debug: Log all received settings for troubleshooting
-        Log::info('Received settings in saveSettings:', $settings);
-        
         if ($settings) {
             // Collect only entries that have actually changed
             $changedSettings = [];
             
             foreach ($settings as $key => $value) {
-                // Debug: Log each setting being processed
-                Log::info("Processing setting: {$key} = " . json_encode($value));
-                
                 // Convert flat input names back to database keys (e.g., mail_from__address -> mail_from.address)
                 $dbKey = $this->convertFlatInputToDbKey($key);
-                Log::info("Converted input key '{$key}' to DB key '{$dbKey}'");
                 
                 // Special handling for nested LDAP, OIDC and Mail settings that come as JSON objects
                 if (is_array($value) && (str_starts_with($dbKey, 'ldap_') || str_starts_with($dbKey, 'open_id_connect_') || str_starts_with($dbKey, 'mail_'))) {
-                    Log::info("Processing nested setting: {$dbKey}");
-                    
                     // Handle nested settings - flatten them with dot notation
                     $this->processNestedSettings($dbKey, $value, $changedSettings);
                     continue; // Skip the main key processing since we handled the nested ones
@@ -86,13 +77,11 @@ trait OrchidSettingsManagementTrait
                             'type' => $setting->type,
                             'model' => $setting
                         ];
-                        Log::info("Change detected for: {$dbKey}");
-                    } else {
-                        Log::info("No change detected for: {$dbKey}");
+                        Log::info("Setting changed: {$dbKey} from '" . json_encode($normalizedExistingValue) . "' to '" . json_encode($normalizedNewValue) . "'");
                     }
                 } else {
-                    Log::warning("Setting nicht gefunden: {$dbKey}");
-                    Toast::warning("Setting nicht gefunden: {$dbKey}");
+                    Log::warning("Setting not found: {$dbKey}");
+                    Toast::warning("Setting not found: {$dbKey}");
                 }
             }
             
@@ -151,8 +140,6 @@ trait OrchidSettingsManagementTrait
             // Create the dot notation key
             $dotNotationKey = $parentKey . '.' . $nestedKey;
             
-            Log::info("Looking for nested setting: {$dotNotationKey} = " . json_encode($nestedValue));
-            
             // Handle deeply nested arrays (like attribute_map)
             if (is_array($nestedValue)) {
                 $this->processNestedSettings($dotNotationKey, $nestedValue, $changedSettings);
@@ -161,7 +148,6 @@ trait OrchidSettingsManagementTrait
             
             // Skip empty password fields
             if ((str_contains($dotNotationKey, 'bind_pw') || str_contains($dotNotationKey, 'password') || str_contains($dotNotationKey, 'secret')) && empty($nestedValue)) {
-                Log::info("Skipping empty password field: {$dotNotationKey}");
                 continue;
             }
             
@@ -169,13 +155,9 @@ trait OrchidSettingsManagementTrait
             $setting = AppSetting::where('key', $dotNotationKey)->first();
             
             if ($setting) {
-                Log::info("Found nested setting in DB: {$dotNotationKey}");
-                
                 // Process this nested setting
                 $normalizedNewValue = $this->normalizeValueForComparison($nestedValue, $setting->type);
                 $normalizedExistingValue = $this->normalizeValueForComparison($setting->value, $setting->type);
-                
-                Log::info("Comparing nested {$dotNotationKey}: old='" . json_encode($normalizedExistingValue) . "' new='" . json_encode($normalizedNewValue) . "'");
                 
                 if ($normalizedExistingValue !== $normalizedNewValue) {
                     $changedSettings[] = [
@@ -184,13 +166,11 @@ trait OrchidSettingsManagementTrait
                         'type' => $setting->type,
                         'model' => $setting
                     ];
-                    Log::info("Change detected for nested: {$dotNotationKey}");
-                } else {
-                    Log::info("No change detected for nested: {$dotNotationKey}");
+                    Log::info("Nested setting changed: {$dotNotationKey} from '" . json_encode($normalizedExistingValue) . "' to '" . json_encode($normalizedNewValue) . "'");
                 }
             } else {
-                Log::warning("Nested setting not found in DB: {$dotNotationKey}");
-                Toast::warning("Nested setting not found in DB: {$dotNotationKey}");
+                Log::warning("Nested setting not found: {$dotNotationKey}");
+                Toast::warning("Nested setting not found: {$dotNotationKey}");
             }
         }
     }
