@@ -113,6 +113,27 @@
 /* Guest Request Form Styles */
 #guest-request-panel {
   animation: slideIn 0.3s ease-in-out;
+  padding-right: 1.5rem;
+  box-sizing: border-box;
+  scrollbar-gutter: stable both-edges;
+}
+
+/* Guest Request Panel Scrollbar Styling */
+#guest-request-panel {
+  overflow-y: auto;
+}
+#guest-request-panel::-webkit-scrollbar {
+  width: 10px;
+  background: transparent;
+}
+#guest-request-panel::-webkit-scrollbar-thumb {
+  background: #cbcbcb;
+  border-radius: 8px;
+  background-clip: padding-box;
+  border: 3px solid transparent;
+}
+#guest-request-panel::-webkit-scrollbar-thumb:hover {
+  background: #888;
 }
 
 #guest-request-panel h3 {

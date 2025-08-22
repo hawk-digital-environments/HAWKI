@@ -37,7 +37,7 @@ input, .text-panel, .text-input {
     border: var(--border-stroke-thin);
     border-radius: var(--border-radius-tight);
 
-    background-color: var(--background-main) !important;
+    background-color: var(--background-main);
     color: var(--text-color);
 }
 input{

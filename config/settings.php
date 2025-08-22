@@ -89,6 +89,9 @@ return [
         'attribute_map.name' => 'Displayname Key Name Override,',
     ],
     'logging' => [
+        'default' => 'Default log channel (stack, single, daily, database, stack_with_database, etc.)',
+        'channels.stack.channels' => 'Comma-separated list of channels for stack driver',
+        'channels.database.level' => 'Minimum log level for database logging (debug, info, warning, error, critical)',
         'triggers.return_object' => 'Print return objects in laravel.log',
         'triggers.default_model' => 'Print model defaults in laravel.log',
 
