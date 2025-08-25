@@ -101,8 +101,9 @@ class AIProviderFactory
         }
         
         try {
-            // Get the provider settings from the database
-            $provider = ProviderSetting::where('id', $providerId)
+            // Get the provider settings from the database with API format relationship
+            $provider = ProviderSetting::with('apiFormat')
+                ->where('id', $providerId)
                 ->where('is_active', true)
                 ->first();
             
@@ -110,8 +111,8 @@ class AIProviderFactory
                 throw new \Exception("Provider not found or not active with ID: $providerId");
             }
             
-            // Use api_format for class selection, fall back to provider_name
-            $apiFormat = $provider->api_format ?? $provider->provider_name;
+            // Use the API format unique_name for class selection, fall back to provider_name
+            $apiFormat = $provider->apiFormat ? $provider->apiFormat->unique_name : $provider->provider_name;
             
             // Create the provider class based on the API format
             $providerClass = $this->getProviderClass($apiFormat);
@@ -121,12 +122,12 @@ class AIProviderFactory
             }
             
             // Create an instance of the provider with the settings from the database
+            // Note: URLs are now generated dynamically by the ProviderSetting model using accessor methods
             $this->providerInstances[$providerId] = new $providerClass([
                 'api_key' => $provider->api_key,
-                'base_url' => $provider->base_url,
-                'ping_url' => $provider->ping_url,
-                'api_format' => $provider->api_format,
                 'provider_name' => $provider->provider_name,
+                'api_format' => $apiFormat,
+                'provider_id' => $provider->id,
                 'additional_settings' => is_string($provider->additional_settings)
                     ? json_decode($provider->additional_settings, true)
                     : ($provider->additional_settings ?? [])
@@ -149,12 +150,15 @@ class AIProviderFactory
     public function getProviderInterface(string $apiFormat)
     {
         try {
-            // Find the first active provider with this API format
-            $provider = ProviderSetting::where('api_format', $apiFormat)
+            // Find the first active provider with this API format through the relationship
+            $provider = ProviderSetting::with('apiFormat')
+                ->whereHas('apiFormat', function($query) use ($apiFormat) {
+                    $query->where('unique_name', $apiFormat);
+                })
                 ->where('is_active', true)
                 ->first();
             
-            // If no provider found with api_format, fall back to provider_name search
+            // If no provider found with api_format relationship, fall back to provider_name search
             if (!$provider) {
                 $provider = ProviderSetting::where('provider_name', $apiFormat)
                     ->where('is_active', true)
@@ -181,20 +185,29 @@ class AIProviderFactory
     private function getProviderClass(string $apiFormat)
     {
         // Map of API formats to provider classes
-        // This could be moved to the database in the future
+        // Using unique_name values from the database
         $providerClasses = [
+            'openai-api' => 'App\Services\AI\Providers\OpenAIProvider',
+            'ollama-api' => 'App\Services\AI\Providers\OllamaProvider',
+            'google-generative-language-api' => 'App\Services\AI\Providers\GoogleProvider',
+            'google-vertex-ai-api' => 'App\Services\AI\Providers\GoogleProvider',
+            'gwdg-api' => 'App\Services\AI\Providers\GWDGProvider',
+            'openwebui-api' => 'App\Services\AI\Providers\OpenWebUIProvider',
+            'anthropic-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
+            'huggingface-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
+            'cohere-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
+            
+            // Legacy support for old provider names
             'openai' => 'App\Services\AI\Providers\OpenAIProvider',
             'gwdg' => 'App\Services\AI\Providers\GWDGProvider',
             'openWebUi' => 'App\Services\AI\Providers\OpenWebUIProvider',
             'google' => 'App\Services\AI\Providers\GoogleProvider',
             'ollama' => 'App\Services\AI\Providers\OllamaProvider',
             'hawki' => 'App\Services\AI\Providers\HAWKIProvider',
-
-            // Add more API formats here
         ];
         
-        // Fallback to the generic implementation
-        return $providerClasses[$apiFormat] ?? 'App\Services\AI\Providers\GenericProvider';
+        // Fallback to OpenAI provider for unknown formats (most compatible)
+        return $providerClasses[$apiFormat] ?? 'App\Services\AI\Providers\OpenAIProvider';
     }
     
     /**
