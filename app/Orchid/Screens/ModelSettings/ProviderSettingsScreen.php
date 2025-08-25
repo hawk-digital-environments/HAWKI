@@ -80,7 +80,7 @@ class ProviderSettingsScreen extends Screen
                 ->modal('importProvidersModal')
                 ->method('importProvidersFromJson'),
                 
-            Link::make('Add Provider')
+            Link::make('Add')
                 ->icon('bs.plus-circle')
                 ->route('platform.modelsettings.provider.create'),
         ];

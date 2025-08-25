@@ -92,6 +92,10 @@ class PlatformProvider extends OrchidServiceProvider
                         ->route('platform.modelsettings.providers')
                         ->permission('platform.modelsettings.providers')
                         ->icon('bs.plug'),
+                    Menu::make('API Formats')
+                        ->route('platform.modelsettings.api-format')
+                        ->permission('systems.modelsettings')
+                        ->icon('bs.diagram-3'),
                     Menu::make('Model Settings')
                         ->route('platform.modelsettings.models')
                         ->permission('platform.modelsettings.models')
@@ -174,6 +178,7 @@ class PlatformProvider extends OrchidServiceProvider
                 
             ItemPermission::group(__('Model Settings'))
                 ->addPermission('platform.modelsettings.providers', __('API Providers'))
+                ->addPermission('systems.modelsettings', __('API Formats'))
                 ->addPermission('platform.modelsettings.models', __('Language Models'))
                 ->addPermission('platform.modelsettings.utilitymodels', __('Utility Models')),
                 

@@ -17,6 +17,9 @@ use App\Orchid\Screens\ModelSettings\ProviderSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
 use App\Orchid\Screens\ModelSettings\ProviderEditScreen;
 
+use App\Orchid\Screens\ModelSettings\ApiFormatSettingsScreen;
+use App\Orchid\Screens\ModelSettings\ApiFormatEditScreen;
+
 use App\Orchid\Screens\ModelSettings\ModelSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ModelInformationScreen;
 use App\Orchid\Screens\ModelSettings\ModelEditSettingsScreen;
@@ -139,6 +142,25 @@ Route::screen('/modelsettings/providers/{provider}/edit', ProviderEditScreen::cl
     ->breadcrumbs(fn (Trail $trail, $provider) => $trail
         ->parent('platform.modelsettings.providers')
         ->push(__('Edit Provider'), route('platform.modelsettings.provider.edit', $provider)));
+
+// API Formats
+Route::screen('/modelsettings/api-formats', ApiFormatSettingsScreen::class)
+    ->name('platform.modelsettings.api-format')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('API Formats'), route('platform.modelsettings.api-format')));
+        
+Route::screen('/modelsettings/api-formats/create', ApiFormatEditScreen::class)
+    ->name('platform.modelsettings.api-format.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.modelsettings.api-format')
+        ->push(__('Create API Format'), route('platform.modelsettings.api-format.create')));
+
+Route::screen('/modelsettings/api-formats/{apiFormat}/edit', ApiFormatEditScreen::class)
+    ->name('platform.modelsettings.api-format.edit')
+    ->breadcrumbs(fn (Trail $trail, $apiFormat) => $trail
+        ->parent('platform.modelsettings.api-format')
+        ->push(__('Edit API Format'), route('platform.modelsettings.api-format.edit', $apiFormat)));
 
 Route::screen('/modelsettings/models', ModelSettingsScreen::class)
     ->name('platform.modelsettings.models')

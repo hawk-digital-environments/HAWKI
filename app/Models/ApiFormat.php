@@ -29,6 +29,14 @@ class ApiFormat extends Model
     }
 
     /**
+     * Get the provider settings that use this API format.
+     */
+    public function providerSettings()
+    {
+        return $this->hasMany(ProviderSetting::class, 'api_format_id');
+    }
+
+    /**
      * Get the endpoints for this API format.
      */
     public function endpoints()
