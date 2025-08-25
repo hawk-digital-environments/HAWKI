@@ -50,7 +50,18 @@ class ProviderEditScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'Edit Provider: ' . ($this->provider->provider_name ?? 'Unknown');
+        $provider = $this->provider;
+        // Fallback: Versuche Provider aus Route oder Request zu laden, falls nicht gesetzt
+        if (!$provider || empty($provider->provider_name)) {
+            $routeProvider = request()->route('provider');
+            if ($routeProvider && $routeProvider instanceof \App\Models\ProviderSetting) {
+                $provider = $routeProvider;
+            } elseif ($routeProvider && is_numeric($routeProvider)) {
+                $provider = \App\Models\ProviderSetting::find($routeProvider);
+            }
+        }
+        $providerName = $provider && $provider->provider_name ? $provider->provider_name : 'Unknown';
+        return 'Edit Provider: ' . $providerName;
     }
 
     /**
