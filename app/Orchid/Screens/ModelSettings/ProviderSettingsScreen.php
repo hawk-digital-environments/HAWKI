@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ProviderSetting;
+use App\Models\ApiFormat;
 use App\Services\ProviderSettingsService;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsListLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsFiltersLayout;
@@ -32,7 +33,8 @@ class ProviderSettingsScreen extends Screen
     public function query(): iterable
     {
         return [
-            'providers' => ProviderSetting::filters(ProviderSettingsFiltersLayout::class)
+            'providers' => ProviderSetting::with('apiFormat')
+                ->filters(ProviderSettingsFiltersLayout::class)
                 ->defaultSort('id', 'desc')
                 ->paginate(),
         ];
@@ -99,76 +101,7 @@ class ProviderSettingsScreen extends Screen
                 ->title('Import Providers from JSON')
                 ->applyButton('Import')
                 ->closeButton('Cancel'),
-
-            Layout::modal('editProviderModal', ProviderSettingsEditLayout::class)
-                ->title('Edit Provider Settings')
-                ->applyButton('Save Provider')
-                ->closeButton('Cancel')
-                ->deferred('loadProviderOnOpenModal'),
         ];
-    }
-
-    /**
-     * Loads provider data when opening the modal window.
-     *
-     * @return array
-     */
-    public function loadProviderOnOpenModal(ProviderSetting $provider): iterable
-    {
-        // Convert additional_settings to string for form display
-        $providerData = $provider->toArray();
-        if (isset($providerData['additional_settings']) && is_array($providerData['additional_settings'])) {
-            $providerData['additional_settings'] = json_encode($providerData['additional_settings'], JSON_PRETTY_PRINT);
-        } elseif (is_null($providerData['additional_settings'])) {
-            $providerData['additional_settings'] = '';
-        }
-        
-        return [
-            'provider' => $providerData,
-        ];
-    }
-    /**
-     * Save provider settings from modal.
-     */
-    public function saveProvider(Request $request, ProviderSetting $provider)
-    {
-        $request->validate([
-            'provider.provider_name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique(ProviderSetting::class, 'provider_name')->ignore($provider),
-            ],
-            'provider.api_format' => 'required|string|max:255',
-            'provider.base_url' => 'nullable|url|max:500',
-            'provider.ping_url' => 'nullable|url|max:500',
-            'provider.api_key' => 'nullable|string|max:500',
-            'provider.is_active' => 'boolean',
-            'provider.additional_settings' => 'nullable|string',
-        ]);
-
-        $providerData = $request->input('provider');
-        
-        // Handle password field - only update if not empty
-        if (empty($providerData['api_key'])) {
-            unset($providerData['api_key']);
-        }
-        
-        // Convert JSON string to array for storage
-        if (!empty($providerData['additional_settings'])) {
-            $decoded = json_decode($providerData['additional_settings'], true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                Toast::error('Additional settings must be valid JSON format.');
-                return back()->withInput();
-            }
-            $providerData['additional_settings'] = $decoded;
-        } else {
-            $providerData['additional_settings'] = null;
-        }
-        
-        $provider->fill($providerData)->save();
-
-        Toast::info('Provider settings have been updated successfully.');
     }
 
     /**
@@ -308,9 +241,8 @@ class ProviderSettingsScreen extends Screen
                 // Convert to ProviderSetting format
                 $convertedProvider = [
                     'provider_name' => $extractedData['id'],
-                    'api_format' => $this->deriveApiFormatFromProviderId($extractedData['id']),
+                    'api_format_id' => $this->deriveApiFormatFromProviderId($extractedData['id']),
                     'api_key' => $extractedData['api_key'],
-                    'base_url' => $extractedData['api_url']
                 ];
 
                 $convertedProviders[] = $convertedProvider;
@@ -337,44 +269,38 @@ class ProviderSettingsScreen extends Screen
     }
 
     /**
-     * Derive API format from provider ID.
+     * Derive API format from provider ID using database.
      */
-    private function deriveApiFormatFromProviderId(string $providerId): string
+    private function deriveApiFormatFromProviderId(string $providerId): ?int
     {
         $providerId = strtolower($providerId);
         
-        // Map provider IDs to their API formats
-        $apiFormatMap = [
-            'openai' => 'openai',
-            'openwebui' => 'openai',  // OpenWebUI uses OpenAI-compatible format
-            'ollama' => 'ollama',
-            'google' => 'google',
-            'gemini' => 'google',
-            'gwdg' => 'openai',       // GWDG typically uses OpenAI-compatible format
-            'anthropic' => 'anthropic',
-            'claude' => 'anthropic',
-            'mistral' => 'openai',    // Mistral API is OpenAI-compatible
-            'groq' => 'openai',       // Groq uses OpenAI-compatible format
-            'huggingface' => 'huggingface',
-            'cohere' => 'cohere',
-            'together' => 'openai',   // Together AI uses OpenAI-compatible format
-            'perplexity' => 'openai', // Perplexity uses OpenAI-compatible format
-        ];
-
+        // Get all API formats from database
+        $apiFormats = ApiFormat::all();
+        
         // Check for exact matches first
-        if (isset($apiFormatMap[$providerId])) {
-            return $apiFormatMap[$providerId];
-        }
-
-        // Check for partial matches (contains)
-        foreach ($apiFormatMap as $pattern => $format) {
-            if (str_contains($providerId, $pattern)) {
-                return $format;
+        foreach ($apiFormats as $format) {
+            if ($format->unique_name === $providerId) {
+                return $format->id;
             }
         }
-
-        // Default to OpenAI format (most common)
-        return 'openai';
+        
+        // Check for partial matches (contains) based on metadata
+        foreach ($apiFormats as $format) {
+            $compatibleProviders = $format->metadata['compatible_providers'] ?? [];
+            if (in_array($providerId, $compatibleProviders)) {
+                return $format->id;
+            }
+            
+            // Also check if provider ID contains format unique_name
+            if (str_contains($providerId, $format->unique_name)) {
+                return $format->id;
+            }
+        }
+        
+        // Default to OpenAI format (most common) - find by unique_name
+        $defaultFormat = ApiFormat::where('unique_name', 'openai-api')->first();
+        return $defaultFormat?->id;
     }
 
     /**
@@ -413,9 +339,8 @@ class ProviderSettingsScreen extends Screen
             // Convert to ProviderSetting format
             $convertedProvider = [
                 'provider_name' => $extractedData['id'],
-                'api_format' => $this->deriveApiFormatFromProviderId($extractedData['id']),
+                'api_format_id' => $this->deriveApiFormatFromProviderId($extractedData['id']),
                 'api_key' => $extractedData['api_key'],
-                'base_url' => $extractedData['api_url']
             ];
 
             $convertedProviders[] = $convertedProvider;
@@ -432,9 +357,8 @@ class ProviderSettingsScreen extends Screen
         // Define allowed keys matching ProviderSetting fillable fields
         $allowedKeys = [
             'provider_name',
-            'api_format',
+            'api_format_id',
             'api_key',
-            'base_url',
             'additional_settings',
             'created_at',
             'updated_at'

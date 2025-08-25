@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ProviderSetting;
+use App\Models\ApiFormat;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsEditLayout;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -29,6 +30,9 @@ class ProviderEditScreen extends Screen
     public function query(ProviderSetting $provider): iterable
     {
         $this->provider = $provider;
+        
+        // Load API format relationship
+        $provider->load('apiFormat');
         
         // Convert additional_settings to string for form display
         $providerData = $provider->toArray();
@@ -131,9 +135,11 @@ class ProviderEditScreen extends Screen
                 'max:255',
                 Rule::unique(ProviderSetting::class, 'provider_name')->ignore($provider),
             ],
-            'provider.api_format' => 'required|string|max:255',
-            'provider.base_url' => 'nullable|url|max:500',
-            'provider.ping_url' => 'nullable|url|max:500',
+            'provider.api_format_id' => [
+                'required',
+                'integer',
+                'exists:api_formats,id'
+            ],
             'provider.api_key' => 'nullable|string|max:500',
             'provider.is_active' => 'boolean',
             'provider.additional_settings' => 'nullable|string',
@@ -175,19 +181,35 @@ class ProviderEditScreen extends Screen
             return;
         }
         
-        if (empty($provider->ping_url)) {
-            Toast::warning("No models URL configured for provider '{$provider->provider_name}'.");
+        // Load API format relationship
+        $provider->load('apiFormat');
+        
+        if (!$provider->apiFormat) {
+            Toast::warning("No API format configured for provider '{$provider->provider_name}'.");
+            return;
+        }
+        
+        // Get models endpoint from API format
+        $modelsEndpoint = $provider->apiFormat->getModelsEndpoint();
+        if (!$modelsEndpoint) {
+            Toast::warning("No models endpoint available for API format '{$provider->apiFormat->display_name}'.");
+            return;
+        }
+        
+        $testUrl = $modelsEndpoint->full_url;
+        if (empty($testUrl)) {
+            Toast::warning("Cannot construct test URL for provider '{$provider->provider_name}'.");
             return;
         }
         
         try {
             // Simple connection test - this could be enhanced with actual API testing
-            $response = @get_headers($provider->ping_url);
+            $response = @get_headers($testUrl);
             
             if ($response !== false) {
-                Toast::success("Connection test successful for provider '{$provider->provider_name}'.");
+                Toast::success("Connection test successful for provider '{$provider->provider_name}' at {$testUrl}.");
             } else {
-                Toast::error("Connection test failed for provider '{$provider->provider_name}'.");
+                Toast::error("Connection test failed for provider '{$provider->provider_name}' at {$testUrl}.");
             }
         } catch (\Exception $e) {
             Toast::error("Connection test error for provider '{$provider->provider_name}': " . $e->getMessage());
