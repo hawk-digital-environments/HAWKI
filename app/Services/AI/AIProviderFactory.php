@@ -127,7 +127,9 @@ class AIProviderFactory
                 'ping_url' => $provider->ping_url,
                 'api_format' => $provider->api_format,
                 'provider_name' => $provider->provider_name,
-                'additional_settings' => $provider->additional_settings ? json_decode($provider->additional_settings, true) : []
+                'additional_settings' => is_string($provider->additional_settings)
+                    ? json_decode($provider->additional_settings, true)
+                    : ($provider->additional_settings ?? [])
             ]);
             
             return $this->providerInstances[$providerId];
