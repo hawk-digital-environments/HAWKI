@@ -60,13 +60,14 @@ class ModelSettingsService
             // The detailed logging is handled in the provider-specific fetch methods
             return $this->fetchModelsFromProvider($provider);
         } catch (\Exception $e) {
-            Log::error("Failed to retrieve models from {$providerName}: " . json_encode([
+            Log::error("Failed to retrieve models from provider", [
+                'provider_name' => $providerName,
                 'provider_id' => $provider->id,
                 'api_format' => $provider->api_format,
                 'ping_url' => $provider->ping_url,
                 'error' => $e->getMessage(),
                 'status' => 'error'
-            ]));
+            ]);
             throw $e;
         }
     }
@@ -153,7 +154,7 @@ class ModelSettingsService
                     'response_body' => substr($response->body(), 0, 200),
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2)
                 ];
-                Log::error("OpenAI model fetch failed: " . json_encode($logData));
+                Log::error("OpenAI model fetch failed", $logData);
                 throw new \Exception("Failed to fetch OpenAI models: HTTP {$response->status()}");
             }
             
@@ -206,7 +207,7 @@ class ModelSettingsService
                     'response_body' => substr($response->body(), 0, 200),
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2)
                 ];
-                Log::error("OpenWebUi model fetch failed: " . json_encode($logData));
+                Log::error("OpenWebUi model fetch failed", $logData);
                 throw new \Exception("Failed to fetch OpenWebUi models: HTTP {$response->status()}");
             }
             
@@ -261,7 +262,7 @@ private function fetchOllamaModels(string $pingUrl, ?string $apiKey): array
             $logData['response_body'] = substr($response->body(), 0, 200);
             $logData['duration_ms'] = round((microtime(true) - $startTime) * 1000, 2);
             
-            Log::error("Ollama model fetch failed: " . json_encode($logData));
+            Log::error("Ollama model fetch failed", $logData);
             throw new \Exception("Failed to fetch Ollama models: HTTP {$response->status()}");
         }
         
@@ -345,7 +346,7 @@ private function fetchOllamaModels(string $pingUrl, ?string $apiKey): array
                     'error' => 'HTTP request failed',
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2)
                 ];
-                Log::error("GWDG model fetch failed: " . json_encode($logData));
+                Log::error("GWDG model fetch failed", $logData);
                 throw new \Exception("Failed to fetch GWDG models: HTTP {$response->status()}");
             }
             
@@ -398,7 +399,7 @@ private function fetchOllamaModels(string $pingUrl, ?string $apiKey): array
                     'response_body' => substr($response->body(), 0, 200),
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2)
                 ];
-                Log::error("Google model fetch failed: " . json_encode($logData));
+                Log::error("Google model fetch failed", $logData);
                 throw new \Exception("Failed to fetch Google models: HTTP {$response->status()}");
             }
             
@@ -450,7 +451,7 @@ private function fetchOllamaModels(string $pingUrl, ?string $apiKey): array
                     'error' => 'HTTP request failed',
                     'duration_ms' => round((microtime(true) - $startTime) * 1000, 2)
                 ];
-                Log::error("Generic model fetch failed: " . json_encode($logData));
+                Log::error("Generic model fetch failed", $logData);
                 throw new \Exception("Failed to fetch models: HTTP {$response->status()}");
             }
             

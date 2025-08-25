@@ -116,7 +116,13 @@ trait OrchidLoggingTrait
             'timestamp' => now()->toISOString(),
         ];
 
-        $total = array_sum($results);
+        // Calculate total from numeric values only
+        $total = 0;
+        foreach ($results as $key => $value) {
+            if (is_numeric($value)) {
+                $total += (int) $value;
+            }
+        }
         $message = "Batch {$operation} for {$type} completed - Total: {$total}";
         
         Log::{$level}($message, $logData);
