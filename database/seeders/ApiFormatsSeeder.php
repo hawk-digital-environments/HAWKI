@@ -52,20 +52,47 @@ class ApiFormatsSeeder extends Seeder
                 ]
             ],
             [
-                'unique_name' => 'google-api',
-                'display_name' => 'Google Gemini API',
+                'unique_name' => 'google-generative-language-api',
+                'display_name' => 'Google Generative Language API',
                 'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
                 'metadata' => [
                     'auth_type' => 'api_key',
                     'content_type' => 'application/json',
                     'supports_streaming' => true,
                     'supports_function_calling' => true,
-                    'compatible_providers' => ['google', 'gemini'],
+                    'supports_grounding' => true,
+                    'description' => 'Direct access to Gemini models via Google AI Studio',
+                    'compatible_providers' => ['google', 'gemini', 'google-ai-studio'],
                 ],
                 'endpoints' => [
                     ['name' => 'models.list', 'path' => '/models', 'method' => 'GET'],
                     ['name' => 'chat.create', 'path' => '/models/{model}:generateContent', 'method' => 'POST'],
+                    ['name' => 'chat.stream', 'path' => '/models/{model}:streamGenerateContent', 'method' => 'POST'],
                     ['name' => 'embeddings.create', 'path' => '/models/{model}:embedContent', 'method' => 'POST'],
+                    ['name' => 'count_tokens', 'path' => '/models/{model}:countTokens', 'method' => 'POST'],
+                ]
+            ],
+            [
+                'unique_name' => 'google-vertex-ai-api',
+                'display_name' => 'Google Vertex AI API',
+                'base_url' => 'https://{region}-aiplatform.googleapis.com/v1',
+                'metadata' => [
+                    'auth_type' => 'oauth2',
+                    'content_type' => 'application/json',
+                    'supports_streaming' => true,
+                    'supports_function_calling' => true,
+                    'supports_grounding' => true,
+                    'supports_enterprise_features' => true,
+                    'description' => 'Enterprise-grade Gemini models via Google Cloud Vertex AI',
+                    'compatible_providers' => ['google', 'vertex-ai', 'google-cloud'],
+                    'region_dependent' => true,
+                ],
+                'endpoints' => [
+                    ['name' => 'models.list', 'path' => '/projects/{project}/locations/{region}/publishers/google/models', 'method' => 'GET'],
+                    ['name' => 'chat.create', 'path' => '/projects/{project}/locations/{region}/publishers/google/models/{model}:generateContent', 'method' => 'POST'],
+                    ['name' => 'chat.stream', 'path' => '/projects/{project}/locations/{region}/publishers/google/models/{model}:streamGenerateContent', 'method' => 'POST'],
+                    ['name' => 'embeddings.create', 'path' => '/projects/{project}/locations/{region}/publishers/google/models/{model}:predict', 'method' => 'POST'],
+                    ['name' => 'count_tokens', 'path' => '/projects/{project}/locations/{region}/publishers/google/models/{model}:countTokens', 'method' => 'POST'],
                 ]
             ],
             [
@@ -115,6 +142,44 @@ class ApiFormatsSeeder extends Seeder
                     ['name' => 'models.list', 'path' => '/models', 'method' => 'GET'],
                     ['name' => 'chat.create', 'path' => '/chat', 'method' => 'POST'],
                     ['name' => 'embeddings.create', 'path' => '/embed', 'method' => 'POST'],
+                ]
+            ],
+            [
+                'unique_name' => 'gwdg-api',
+                'display_name' => 'GWDG AI Service',
+                'base_url' => 'https://chat-ai.academiccloud.de/v1',
+                'metadata' => [
+                    'auth_type' => 'bearer',
+                    'content_type' => 'application/json',
+                    'supports_streaming' => true,
+                    'supports_function_calling' => true,
+                    'compatible_providers' => ['gwdg'],
+                    'description' => 'GWDG (Gesellschaft für wissenschaftliche Datenverarbeitung mbH Göttingen) AI service based on OpenAI API'
+                ],
+                'endpoints' => [
+                    ['name' => 'models.list', 'path' => '/models', 'method' => 'GET'],
+                    ['name' => 'chat.create', 'path' => '/chat/completions', 'method' => 'POST'],
+                    ['name' => 'completions.create', 'path' => '/completions', 'method' => 'POST'],
+                    ['name' => 'embeddings.create', 'path' => '/embeddings', 'method' => 'POST'],
+                ]
+            ],
+            [
+                'unique_name' => 'openwebui-api',
+                'display_name' => 'Open WebUI API',
+                'base_url' => 'http://localhost:3000',
+                'metadata' => [
+                    'auth_type' => 'bearer',
+                    'content_type' => 'application/json',
+                    'supports_streaming' => true,
+                    'supports_function_calling' => true,
+                    'compatible_providers' => ['openwebui'],
+                    'description' => 'Open WebUI - Self-hosted web interface for various AI models'
+                ],
+                'endpoints' => [
+                    ['name' => 'models.list', 'path' => '/api/v1/models', 'method' => 'GET'],
+                    ['name' => 'chat.create', 'path' => '/api/v1/chat/completions', 'method' => 'POST'],
+                    ['name' => 'completions.create', 'path' => '/api/v1/completions', 'method' => 'POST'],
+                    ['name' => 'embeddings.create', 'path' => '/api/v1/embeddings', 'method' => 'POST'],
                 ]
             ],
         ];
