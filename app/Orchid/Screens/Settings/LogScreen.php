@@ -147,24 +147,30 @@ class LogScreen extends Screen
      */
     public function commandBar(): iterable
     {
-        return [
-            // Database Log Actions
-            //Button::make('Test Log')
-            //    ->icon('database')
-            //    ->method('testDatabaseLog'),
-            //Button::make('Clear')
-            //    ->icon('trash')
-            //    ->method('clearDatabaseLogs')
-            //    ->confirm('Are you sure you want to delete all database logs? This action cannot be undone.'),
-            
-            // General Actions
-            Button::make('Refresh')
-                ->icon('arrow-clockwise')
-                ->method('refreshLog'),
-            Button::make('Save')
-                ->icon('save')
-                ->method('saveSettings'),
-        ];
+        $buttons = [];
+
+        // Database Log Actions
+        //Button::make('Test Log')
+        //    ->icon('database')
+        //    ->method('testDatabaseLog'),
+
+        // "Clear" Button nur anzeigen, wenn nicht production
+        if (config('app.env') !== 'production') {
+            $buttons[] = Button::make('Clear')
+                ->icon('trash')
+                ->method('clearDatabaseLogs')
+                ->confirm('Are you sure you want to delete all database logs? This action cannot be undone.');
+        }
+
+        // General Actions
+        $buttons[] = Button::make('Refresh')
+            ->icon('arrow-clockwise')
+            ->method('refreshLog');
+        $buttons[] = Button::make('Save')
+            ->icon('save')
+            ->method('saveSettings');
+
+        return $buttons;
     }
 
     /**
