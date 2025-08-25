@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Layouts\ModelSettings;
 
 use App\Models\ProviderSetting;
+use App\Models\ApiFormat;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\Switcher;
@@ -26,23 +27,11 @@ class ProviderSettingsEditLayout extends Rows
                 ->required()
                 ->help('Unique name for this provider'),
 
-            Select::make('provider.api_format')
+            Select::make('provider.api_format_id')
                 ->title('API Format')
                 ->options($this->getApiFormatOptions())
                 ->required()
                 ->help('The API interface format to use'),
-
-            Input::make('provider.base_url')
-                ->title('Base URL')
-                ->type('url')
-                ->placeholder('https://api.example.com/v1')
-                ->help('The base URL for API requests'),
-
-            Input::make('provider.ping_url')
-                ->title('Models URL')
-                ->type('url')
-                ->placeholder('https://api.example.com/v1/models')
-                ->help('The URL to retrieve available models'),
 
             Input::make('provider.api_key')
                 ->title('API Key')
@@ -62,38 +51,14 @@ class ProviderSettingsEditLayout extends Rows
     }
 
     /**
-     * Get available API format options
+     * Get available API format options from database
      *
      * @return array
      */
     private function getApiFormatOptions(): array
     {
-        // Get existing formats from database
-        $formats = ProviderSetting::whereNotNull('api_format')
-            ->distinct()
-            ->pluck('api_format')
+        return ApiFormat::all()
+            ->pluck('display_name', 'id')
             ->toArray();
-        
-        $options = [];
-        foreach ($formats as $format) {
-            $options[$format] = ucfirst($format);
-        }
-        
-        // Add common formats if they don't exist
-        $commonFormats = [
-            'openai' => 'OpenAI',
-            'anthropic' => 'Anthropic',
-            'ollama' => 'Ollama',
-            'google' => 'Google AI',
-            'mistral' => 'Mistral AI',
-        ];
-        
-        foreach ($commonFormats as $key => $label) {
-            if (!isset($options[$key])) {
-                $options[$key] = $label;
-            }
-        }
-        
-        return $options;
     }
 }
