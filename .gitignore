@@ -20,4 +20,4 @@ yarn-error.log
 /.vscode
 config/model_providers.php
 config/model_providers.php
-whisper/venv/
+whisper/venv/venv/
