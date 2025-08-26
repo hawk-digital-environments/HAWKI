@@ -67,7 +67,7 @@ class ModelInformationScreen extends Screen
         return [
             Link::make('Back to Models')
                 ->icon('arrow-left')
-                ->route('platform.modelsettings.models'),
+                ->route('platform.models.language'),
         ];
     }
 

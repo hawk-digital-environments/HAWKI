@@ -9,8 +9,8 @@ use App\Models\ApiFormat;
 use App\Services\ProviderSettingsService;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsListLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsFiltersLayout;
-use App\Orchid\Layouts\ModelSettings\ProviderSettingsEditLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsImportLayout;
+use App\Orchid\Layouts\ModelSettings\ApiManagementTabMenu;
 use App\Orchid\Traits\OrchidImportTrait;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
@@ -82,7 +82,7 @@ class ProviderSettingsScreen extends Screen
                 
             Link::make('Add')
                 ->icon('bs.plus-circle')
-                ->route('platform.modelsettings.provider.create'),
+                ->route('platform.models.api.providers.create'),
         ];
     }
 
@@ -94,6 +94,8 @@ class ProviderSettingsScreen extends Screen
     public function layout(): iterable
     {
         return [
+            ApiManagementTabMenu::class,
+            
             ProviderSettingsFiltersLayout::class,
             ProviderSettingsListLayout::class,
 

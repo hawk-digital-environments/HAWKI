@@ -33,7 +33,7 @@ class ApiFormatSettingsListLayout extends Table
                 ->sort()
                 ->render(function (ApiFormat $apiFormat) {
                     return Link::make($apiFormat->display_name)
-                        ->route('platform.modelsettings.api-format.edit', $apiFormat->id);
+                        ->route('platform.models.api.formats.edit', $apiFormat->id);
                 }),
 
             TD::make('unique_name', 'Unique Name')
@@ -101,7 +101,7 @@ class ApiFormatSettingsListLayout extends Table
                         ->list([
                             Link::make('Edit')
                                 ->icon('bs.pencil')
-                                ->route('platform.modelsettings.api-format.edit', $apiFormat->id),
+                                ->route('platform.models.api.formats.edit', $apiFormat->id),
 
                             Button::make('Delete')
                                 ->icon('bs.trash')
