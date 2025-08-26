@@ -32,19 +32,46 @@ class ApiFormatEditScreen extends Screen
      */
     public function query(ApiFormat $apiFormat): iterable
     {
+        // Prepare endpoints data for Matrix field
+        $endpointsData = [];
+        if ($apiFormat->exists && $apiFormat->endpoints) {
+            $endpointsData = $apiFormat->endpoints->map(function($endpoint) {
+                return [
+                    'Name' => $endpoint->name,
+                    'Path' => $endpoint->path,
+                    'Method' => $endpoint->method,
+                    'Is Active' => $endpoint->is_active ? '1' : '0'
+                ];
+            })->toArray();
+        }
+        
+        // If no endpoints exist, provide one empty row
+        if (empty($endpointsData)) {
+            $endpointsData = [
+                [
+                    'Name' => '',
+                    'Path' => '',
+                    'Method' => 'POST',
+                    'Is Active' => '1'
+                ]
+            ];
+        }
+
         return [
-            'apiFormat' => $apiFormat->load('endpoints'),
+            'apiFormat' => $apiFormat,
+            'endpoints' => $endpointsData,
         ];
     }
 
     /**
      * The name of the screen displayed in the header.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
-        return $this->apiFormat->exists ? 'Edit API Format' : 'Create API Format';
+        if ($this->apiFormat->exists) {
+            return 'Edit API Format: ' . $this->apiFormat->display_name;
+        }
+        return 'Create API Format';
     }
 
     /**
@@ -71,7 +98,7 @@ class ApiFormatEditScreen extends Screen
 
             Link::make('Cancel')
                 ->icon('bs.x-circle')
-                ->route('platform.modelsettings.api-format'),
+                ->route('platform.models.api.formats'),
         ];
     }
 
@@ -114,7 +141,10 @@ class ApiFormatEditScreen extends Screen
                 'apiFormat.display_name' => 'required|string|max:255',
                 'apiFormat.base_url' => 'required|url|max:500',
                 'apiFormat.metadata' => 'nullable|json',
-                'endpoints_json' => 'required|json',
+                'endpoints' => 'required|array|min:1',
+                'endpoints.*.Name' => 'required|string|max:255',
+                'endpoints.*.Path' => 'required|string|max:500',
+                'endpoints.*.Method' => 'required|string|in:GET,POST,PUT,DELETE,PATCH',
             ]);
 
             // Save API format
@@ -134,17 +164,12 @@ class ApiFormatEditScreen extends Screen
             
             $apiFormat->save();
 
-            // Handle endpoints JSON
-            $endpointsData = json_decode($data['endpoints_json'], true);
-            
-            // Validate endpoints structure
-            if (!is_array($endpointsData)) {
-                throw new \Exception('Endpoints must be provided as JSON array.');
-            }
+            // Handle endpoints from Matrix field
+            $endpointsData = $data['endpoints'];
             
             // Filter out empty endpoints
             $endpointsData = array_filter($endpointsData, function($endpoint) {
-                return !empty($endpoint['name']) && !empty($endpoint['path']) && !empty($endpoint['method']);
+                return !empty($endpoint['Name']) && !empty($endpoint['Path']) && !empty($endpoint['Method']);
             });
 
             // Delete existing endpoints
@@ -152,25 +177,22 @@ class ApiFormatEditScreen extends Screen
 
             // Create new endpoints
             foreach ($endpointsData as $endpointData) {
-                if (!isset($endpointData['name']) || !isset($endpointData['path']) || !isset($endpointData['method'])) {
-                    throw new \Exception('Each endpoint must contain "name", "path" and "method" fields.');
-                }
-
-                if (!in_array(strtoupper($endpointData['method']), ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'])) {
-                    throw new \Exception('Invalid HTTP method: ' . $endpointData['method']);
-                }
-
                 $apiFormat->endpoints()->create([
-                    'name' => $endpointData['name'],
-                    'path' => $endpointData['path'],
-                    'method' => strtoupper($endpointData['method']),
+                    'name' => $endpointData['Name'],
+                    'path' => $endpointData['Path'],
+                    'method' => strtoupper($endpointData['Method']),
+                    'is_active' => !empty($endpointData['Is Active']) && $endpointData['Is Active'] !== '0',
                 ]);
             }
 
-            $this->logSuccess("API format '{$apiFormat->display_name}' has been saved successfully");
+            $this->logScreenOperation('api_format_save', 'success', [
+                'api_format_id' => $apiFormat->id,
+                'api_format_name' => $apiFormat->display_name,
+                'endpoints_count' => count($endpointsData)
+            ]);
             Toast::success('API format has been saved successfully.');
 
-            return redirect()->route('platform.modelsettings.api-format');
+            return redirect()->route('platform.models.api.formats');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->logError('Validation error while saving API format', $e);

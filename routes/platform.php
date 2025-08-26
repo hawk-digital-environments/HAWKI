@@ -124,67 +124,75 @@ Route::screen('/settings/mail', MailSettingsScreen::class)
             ->push('Mail');
     });
 
-// Models
-Route::screen('/modelsettings/providers', ProviderSettingsScreen::class)
-    ->name('platform.modelsettings.providers')
+// Models - API Management - Providers
+Route::screen('/models/api/providers', ProviderSettingsScreen::class)
+    ->name('platform.models.api.providers')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push(__('API Providers'), route('platform.modelsettings.providers')));
+        ->push(__('Models'), '#')
+        ->push(__('API Management'), '#')
+        ->push(__('API Providers'), route('platform.models.api.providers')));
         
-Route::screen('/modelsettings/providers/create', ProviderCreateScreen::class)
-    ->name('platform.modelsettings.provider.create')
+Route::screen('/models/api/providers/create', ProviderCreateScreen::class)
+    ->name('platform.models.api.providers.create')
     ->breadcrumbs(fn (Trail $trail) => $trail
-        ->parent('platform.modelsettings.providers')
-        ->push(__('Create Provider'), route('platform.modelsettings.provider.create')));
+        ->parent('platform.models.api.providers')
+        ->push(__('Create Provider'), route('platform.models.api.providers.create')));
 
-Route::screen('/modelsettings/providers/{provider}/edit', ProviderEditScreen::class)
-    ->name('platform.modelsettings.provider.edit')
+Route::screen('/models/api/providers/{provider}/edit', ProviderEditScreen::class)
+    ->name('platform.models.api.providers.edit')
     ->breadcrumbs(fn (Trail $trail, $provider) => $trail
-        ->parent('platform.modelsettings.providers')
-        ->push(__('Edit Provider'), route('platform.modelsettings.provider.edit', $provider)));
+        ->parent('platform.models.api.providers')
+        ->push(__('Edit Provider'), route('platform.models.api.providers.edit', $provider)));
 
-// API Formats
-Route::screen('/modelsettings/api-formats', ApiFormatSettingsScreen::class)
-    ->name('platform.modelsettings.api-format')
+// Models - API Management - Formats
+Route::screen('/models/api/formats', ApiFormatSettingsScreen::class)
+    ->name('platform.models.api.formats')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push(__('API Formats'), route('platform.modelsettings.api-format')));
+        ->push(__('Models'), '#')
+        ->push(__('API Management'), '#')
+        ->push(__('API Formats'), route('platform.models.api.formats')));
         
-Route::screen('/modelsettings/api-formats/create', ApiFormatEditScreen::class)
-    ->name('platform.modelsettings.api-format.create')
+Route::screen('/models/api/formats/create', ApiFormatEditScreen::class)
+    ->name('platform.models.api.formats.create')
     ->breadcrumbs(fn (Trail $trail) => $trail
-        ->parent('platform.modelsettings.api-format')
-        ->push(__('Create API Format'), route('platform.modelsettings.api-format.create')));
+        ->parent('platform.models.api.formats')
+        ->push(__('Create API Format'), route('platform.models.api.formats.create')));
 
-Route::screen('/modelsettings/api-formats/{apiFormat}/edit', ApiFormatEditScreen::class)
-    ->name('platform.modelsettings.api-format.edit')
+Route::screen('/models/api/formats/{apiFormat}/edit', ApiFormatEditScreen::class)
+    ->name('platform.models.api.formats.edit')
     ->breadcrumbs(fn (Trail $trail, $apiFormat) => $trail
-        ->parent('platform.modelsettings.api-format')
-        ->push(__('Edit API Format'), route('platform.modelsettings.api-format.edit', $apiFormat)));
+        ->parent('platform.models.api.formats')
+        ->push(__('Edit API Format'), route('platform.models.api.formats.edit', $apiFormat)));
 
-Route::screen('/modelsettings/models', ModelSettingsScreen::class)
-    ->name('platform.modelsettings.models')
+// Models - Language Models
+Route::screen('/models/language', ModelSettingsScreen::class)
+    ->name('platform.models.language')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push(__('Model Settings'), route('platform.modelsettings.models')));
+        ->push(__('Models'), '#')
+        ->push(__('Language Models'), route('platform.models.language')));
         
-Route::screen('/modelsettings/models/{model}/info', ModelInformationScreen::class)
-    ->name('platform.modelsettings.models.info')
+Route::screen('/models/language/{model}/info', ModelInformationScreen::class)
+    ->name('platform.models.language.info')
     ->breadcrumbs(fn (Trail $trail, $model) => $trail
-        ->parent('platform.modelsettings.models')
-        ->push($model->name ?? __('Model Information'), route('platform.modelsettings.models.info', $model)));
+        ->parent('platform.models.language')
+        ->push($model->name ?? __('Model Information'), route('platform.models.language.info', $model)));
         
-Route::screen('/modelsettings/models/{model}/settings', ModelEditSettingsScreen::class)
-    ->name('platform.modelsettings.models.settings')
+Route::screen('/models/language/{model}/settings', ModelEditSettingsScreen::class)
+    ->name('platform.models.language.settings')
     ->breadcrumbs(fn (Trail $trail, $model) => $trail
-        ->parent('platform.modelsettings.models', $model)
-        ->push(__('Edit Model Settings'), route('platform.modelsettings.models.settings', $model)));
+        ->parent('platform.models.language', $model)
+        ->push(__('Edit Model Settings'), route('platform.models.language.settings', $model)));
 
-Route::screen('/modelsettings/utilitymodels', UtilityModelsSettingsScreen::class)
-    ->name('platform.modelsettings.utilitymodels')
+// Models - Utility Models  
+Route::screen('/models/utility', UtilityModelsSettingsScreen::class)
+    ->name('platform.models.utility')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push(__('Utility Models'), route('platform.modelsettings.utilitymodels')));
+        ->push(__('Models'), '#')
+        ->push(__('Utility Models'), route('platform.models.utility')));
 
     
 

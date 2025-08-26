@@ -4,6 +4,7 @@ namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ApiFormat;
 use App\Orchid\Layouts\ModelSettings\ApiFormatSettingsListLayout;
+use App\Orchid\Layouts\ModelSettings\ApiManagementTabMenu;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Link;
@@ -40,6 +41,14 @@ class ApiFormatSettingsScreen extends Screen
     }
 
     /**
+     * Display header description.
+     */
+    public function description(): ?string
+    {
+        return 'Manage API format settings and structure definitions for different AI providers.';
+    }
+
+    /**
      * The screen's action buttons.
      *
      * @return \Orchid\Screen\Action[]
@@ -49,7 +58,7 @@ class ApiFormatSettingsScreen extends Screen
         return [
             Link::make('Add')
                 ->icon('bs.plus-circle')
-                ->route('platform.modelsettings.api-format.create'),
+                ->route('platform.models.api.formats.create'),
         ];
     }
 
@@ -61,8 +70,7 @@ class ApiFormatSettingsScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::view('platform::partials.alert'),
-            
+            ApiManagementTabMenu::class,
             ApiFormatSettingsListLayout::class,
         ];
     }
@@ -88,7 +96,7 @@ class ApiFormatSettingsScreen extends Screen
             
             if ($usedByProviders > 0) {
                 Toast::error("API format '{$apiFormat->display_name}' cannot be deleted because it is used by {$usedByProviders} provider(s).");
-                return redirect()->route('platform.modelsettings.api-format');
+                return redirect()->route('platform.models.api.formats');
             }
             
             // Delete endpoints first
@@ -105,6 +113,6 @@ class ApiFormatSettingsScreen extends Screen
             Toast::error('Error deleting API format: ' . $e->getMessage());
         }
         
-        return redirect()->route('platform.modelsettings.api-format');
+        return redirect()->route('platform.models.api.formats');
     }
 }

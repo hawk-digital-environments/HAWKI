@@ -6,7 +6,10 @@ namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ProviderSetting;
 use App\Models\ApiFormat;
-use App\Orchid\Layouts\ModelSettings\ProviderSettingsEditLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderBasicInfoLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderAuthenticationLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderStatusLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderAdvancedSettingsLayout;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Orchid\Screen\Actions\Button;
@@ -107,7 +110,7 @@ class ProviderEditScreen extends Screen
 
             Link::make('Cancel')
                 ->icon('x-circle')
-                ->route('platform.modelsettings.providers'),
+                ->route('platform.models.api.providers'),
         ];
     }
 
@@ -119,7 +122,21 @@ class ProviderEditScreen extends Screen
     public function layout(): iterable
     {
         return [
-            ProviderSettingsEditLayout::class,
+            Layout::block(ProviderBasicInfoLayout::class)
+                ->title('Basic Information')
+                ->description('Configure the provider name and API format.'),
+
+            Layout::block(ProviderAuthenticationLayout::class)
+                ->title('Authentication')
+                ->description('Set up authentication credentials for this provider.'),
+
+            Layout::block(ProviderStatusLayout::class)
+                ->title('Provider Status')
+                ->description('Control whether this provider is active and available for use.'),
+
+            Layout::block(ProviderAdvancedSettingsLayout::class)
+                ->title('Advanced Settings')
+                ->description('Additional configuration options in JSON format.'),
         ];
     }
 
@@ -168,7 +185,7 @@ class ProviderEditScreen extends Screen
 
         Toast::success('Provider settings have been updated successfully.');
         
-        return redirect()->route('platform.modelsettings.providers');
+        return redirect()->route('platform.models.api.providers');
     }
 
     /**

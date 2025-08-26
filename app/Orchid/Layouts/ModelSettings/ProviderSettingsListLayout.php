@@ -28,14 +28,13 @@ class ProviderSettingsListLayout extends Table
     public function columns(): array
     {
         return [
-            TD::make('provider_name', __('Provider Name'))
-                ->sort()
-                ->cantHide()
-                ->filter(Input::make())
-                ->render(fn (ProviderSetting $provider) => 
-                    Link::make($provider->provider_name)
-                        ->route('platform.modelsettings.provider.edit', $provider->id)
-                ),
+            TD::make('provider_name', 'Provider Name')
+                    ->render(function (ProviderSetting $provider) {
+                        return Link::make($provider->provider_name)
+                        ->route('platform.models.api.providers.edit', $provider->id);
+                    })
+                    ->sort()
+                    ->filter(),
 
             TD::make('api_format_id', __('API Format'))
                 ->sort()
@@ -85,7 +84,7 @@ class ProviderSettingsListLayout extends Table
                     ->icon('bs.three-dots-vertical')
                     ->list([
                         Link::make(__('Edit'))
-                            ->route('platform.modelsettings.provider.edit', $provider->id)
+                            ->route('platform.models.api.providers.edit', $provider->id)
                             ->icon('bs.pencil'),
 
                         Button::make(__('Test Connection'))

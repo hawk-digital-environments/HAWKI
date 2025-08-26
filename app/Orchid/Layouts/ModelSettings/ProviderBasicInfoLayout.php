@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Orchid\Layouts\ModelSettings;
 
-use App\Models\ProviderSetting;
 use App\Models\ApiFormat;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Select;
-use Orchid\Screen\Fields\Switcher;
-use Orchid\Screen\Fields\TextArea;
 use Orchid\Screen\Layouts\Rows;
 
-class ProviderSettingsEditLayout extends Rows
+class ProviderBasicInfoLayout extends Rows
 {
     /**
      * The screen's layout elements.
@@ -32,21 +29,6 @@ class ProviderSettingsEditLayout extends Rows
                 ->options($this->getApiFormatOptions())
                 ->required()
                 ->help('The API interface format to use'),
-
-            Input::make('provider.api_key')
-                ->title('API Key')
-                ->type('password')
-                ->help('Authentication key for the API'),
-
-            Switcher::make('provider.is_active')
-                ->title('Active')
-                ->sendTrueOrFalse()
-                ->help('Enable this provider for use in the application'),
-
-            TextArea::make('provider.additional_settings')
-                ->title('Additional Settings (JSON)')
-                ->rows(5)
-                ->help('Additional configuration in JSON format (optional)'),
         ];
     }
 

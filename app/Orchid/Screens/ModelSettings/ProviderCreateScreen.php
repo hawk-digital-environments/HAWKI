@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ProviderSetting;
-use App\Orchid\Layouts\ModelSettings\ProviderSettingsEditLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderBasicInfoLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderAuthenticationLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderStatusLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderAdvancedSettingsLayout;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
 class ProviderCreateScreen extends Screen
@@ -68,7 +72,7 @@ class ProviderCreateScreen extends Screen
 
             Link::make('Cancel')
                 ->icon('x-circle')
-                ->route('platform.modelsettings.providers'),
+                ->route('platform.models.api.providers'),
         ];
     }
 
@@ -80,7 +84,21 @@ class ProviderCreateScreen extends Screen
     public function layout(): iterable
     {
         return [
-            ProviderSettingsEditLayout::class,
+            Layout::block(ProviderBasicInfoLayout::class)
+                ->title('Basic Information')
+                ->description('Configure the provider name and API format.'),
+
+            Layout::block(ProviderAuthenticationLayout::class)
+                ->title('Authentication')
+                ->description('Set up authentication credentials for this provider.'),
+
+            Layout::block(ProviderStatusLayout::class)
+                ->title('Provider Status')
+                ->description('Control whether this provider is active and available for use.'),
+
+            Layout::block(ProviderAdvancedSettingsLayout::class)
+                ->title('Advanced Settings')
+                ->description('Additional configuration options in JSON format.'),
         ];
     }
 
@@ -118,6 +136,6 @@ class ProviderCreateScreen extends Screen
         ProviderSetting::create($providerData);
         
         Toast::success("New provider '{$providerName}' was successfully created.");
-        return redirect()->route('platform.modelsettings.providers');
+        return redirect()->route('platform.models.api.providers');
     }
 }

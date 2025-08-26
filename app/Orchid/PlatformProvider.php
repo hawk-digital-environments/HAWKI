@@ -87,21 +87,19 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Models')
                 ->icon('bs.stars')
                 ->permission('platform.systems.models')
+                ->active('platform.models.*')
                 ->list([        
-                    Menu::make('API Providers')
-                        ->route('platform.modelsettings.providers')
+                    Menu::make('API Management')
+                        ->route('platform.models.api.providers')
                         ->permission('platform.modelsettings.providers')
-                        ->icon('bs.plug'),
-                    Menu::make('API Formats')
-                        ->route('platform.modelsettings.api-format')
-                        ->permission('systems.modelsettings')
-                        ->icon('bs.diagram-3'),
-                    Menu::make('Model Settings')
-                        ->route('platform.modelsettings.models')
+                        ->icon('bs.cloud-upload')
+                        ->active('platform.models.api*'),
+                    Menu::make('Language Models')
+                        ->route('platform.models.language')
                         ->permission('platform.modelsettings.models')
                         ->icon('bs.toggles'),
                     Menu::make('Utility Models')
-                        ->route('platform.modelsettings.utilitymodels')
+                        ->route('platform.models.utility')
                         ->permission('platform.modelsettings.utilitymodels')
                         ->icon('bs.tools'),                  
                     ]),
