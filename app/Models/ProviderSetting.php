@@ -17,8 +17,6 @@ class ProviderSetting extends Model
         'provider_name',
         'api_format_id',
         'api_key',
-        'base_url',
-        'ping_url',
         'is_active',
         'additional_settings',
     ];

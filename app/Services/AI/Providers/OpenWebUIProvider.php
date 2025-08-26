@@ -348,12 +348,15 @@ class OpenWebUIProvider extends OpenAIProvider
         
         // Get models from the database instead of from the configuration
         $providerId = $this->getProviderId();
-        $provider = ProviderSetting::where(function($query) use ($providerId) {
-            $query->where('api_format', $providerId)
-                  ->orWhere('provider_name', $providerId);
-        })
-        ->where('is_active', true)
-        ->first();
+        $provider = ProviderSetting::with('apiFormat')
+            ->where(function($query) use ($providerId) {
+                $query->where('provider_name', $providerId)
+                      ->orWhereHas('apiFormat', function($subQuery) use ($providerId) {
+                          $subQuery->where('unique_name', $providerId);
+                      });
+            })
+            ->where('is_active', true)
+            ->first();
             
         if (!$provider) {
             return [];
@@ -369,7 +372,7 @@ class OpenWebUIProvider extends OpenAIProvider
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'api_format' => $provider->api_format ?? $provider->provider_name,
+                'api_format' => $provider->apiFormat?->unique_name ?? $provider->provider_name,
                 'provider_name' => $provider->provider_name
             ];
         }
