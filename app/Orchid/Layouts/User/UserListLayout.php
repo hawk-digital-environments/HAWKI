@@ -58,6 +58,13 @@ class UserListLayout extends Table
                     $badgeText = $user->approval ? 'Approved' : 'Pending';
                     $badgeClass = $user->approval ? 'bg-success' : 'bg-secondary';
                     
+                    // Prevent current user from changing their own approval status
+                    $currentUserId = auth()->id();
+                    if ($user->id === $currentUserId) {
+                        $dimmedBadgeClass = $user->approval ? 'bg-success bg-opacity-50' : 'bg-secondary bg-opacity-50';
+                        return "<span class=\"badge {$dimmedBadgeClass} border-0\" title=\"Cannot change your own approval status\">{$badgeText}</span>";
+                    }
+                    
                     return Button::make($badgeText)
                         ->method('toggleApproval', [
                             'id' => $user->id,

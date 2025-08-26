@@ -121,6 +121,18 @@ class UserEditScreen extends Screen
      */
     public function save(User $user, Request $request)
     {
+        // Prevent admin from deactivating themselves
+        $currentUserId = $request->user()->id;
+        if ($user->exists && $user->id === $currentUserId) {
+            $currentApproval = $user->approval;
+            $newApproval = $request->boolean('user.approval', $currentApproval);
+            
+            if ($currentApproval && !$newApproval) {
+                Toast::error('You cannot deactivate your own account while logged in.');
+                return redirect()->back()->withInput();
+            }
+        }
+
         // Basic validation
         $validationRules = [
             'user.email' => [
