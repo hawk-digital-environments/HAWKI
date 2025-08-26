@@ -62,9 +62,10 @@ class AIConnectionService
     {
         $models = [];
         
-        // Read models from the database
-        $dbModels = LanguageModel::select('language_models.*', 'provider_settings.provider_name', 'provider_settings.api_format')
+        // Read models from the database with API format relationship
+        $dbModels = LanguageModel::select('language_models.*', 'provider_settings.provider_name', 'api_formats.unique_name as api_format_name')
             ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
+            ->leftJoin('api_formats', 'provider_settings.api_format_id', '=', 'api_formats.id')
             ->where('language_models.is_active', true)
             ->where('language_models.is_visible', true)
             ->where('provider_settings.is_active', true)
@@ -78,7 +79,7 @@ class AIConnectionService
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'api_format' => $model->api_format ?? $model->provider_name,
+                'api_format' => $model->api_format_name ?? $model->provider_name,
                 'provider_name' => $model->provider_name,
                 'status' => 'ready' // 'ready', 'loading', 'unavailable' Default value, will be updated below
             ];
