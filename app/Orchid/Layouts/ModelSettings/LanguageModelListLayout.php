@@ -41,13 +41,13 @@ class LanguageModelListLayout extends Table
                     $providerName = $model->provider->provider_name ?? 'Unknown Provider';
                     $apiFormat = $model->provider->apiFormat ?? null;
                     
-                    // Use trait method for consistent styling, but show provider name instead of API format name
+                    // Use trait method for consistent styling with rounded pills and larger text
                     if ($apiFormat) {
                         $badgeColor = $this->getApiFormatBadgeColor($apiFormat->id);
-                        return '<span class="badge bg-' . $badgeColor . '-subtle text-' . $badgeColor . '-emphasis">' . e($providerName) . '</span>';
+                        return $this->getProviderBadge($providerName, $badgeColor);
                     }
                     
-                    return '<span class="badge bg-secondary-subtle text-secondary-emphasis">' . e($providerName) . '</span>';
+                    return $this->getProviderBadge($providerName, 'secondary');
                 }),
 
             TD::make('is_active', 'Active')
@@ -60,7 +60,7 @@ class LanguageModelListLayout extends Table
                         ->method('toggleActive', [
                             'id' => $model->id,
                         ])
-                        ->class("badge {$badgeClass} border-0");
+                        ->class("badge {$badgeClass} border-0 rounded-pill");
                 }),
 
             TD::make('is_visible', 'Visible')
@@ -73,7 +73,7 @@ class LanguageModelListLayout extends Table
                         ->method('toggleVisible', [
                             'id' => $model->id,
                         ])
-                        ->class("badge {$badgeClass} border-0");
+                        ->class("badge {$badgeClass} border-0 rounded-pill");
                 }),
 
             TD::make('created_at', 'Created')
