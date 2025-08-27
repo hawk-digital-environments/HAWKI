@@ -10,6 +10,7 @@ use App\Orchid\Layouts\ModelSettings\ProviderBasicInfoLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderAuthenticationLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderStatusLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderAdvancedSettingsLayout;
+use App\Orchid\Traits\AiConnectionTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -21,6 +22,7 @@ use Orchid\Support\Facades\Toast;
 
 class ProviderEditScreen extends Screen
 {
+    use AiConnectionTrait;
     /**
      * @var ProviderSetting
      */
@@ -244,50 +246,5 @@ class ProviderEditScreen extends Screen
         }
         
         return redirect()->route('platform.models.api.providers.edit', $provider);
-    }
-
-    /**
-     * Test connection to the provider.
-     */
-    public function testConnection(ProviderSetting $provider)
-    {
-        if (!$provider->is_active) {
-            Toast::warning("Provider '{$provider->provider_name}' is currently inactive.");
-            return;
-        }
-        
-        // Load API format relationship
-        $provider->load('apiFormat');
-        
-        if (!$provider->apiFormat) {
-            Toast::warning("No API format configured for provider '{$provider->provider_name}'.");
-            return;
-        }
-        
-        // Get models endpoint from API format
-        $modelsEndpoint = $provider->apiFormat->getModelsEndpoint();
-        if (!$modelsEndpoint) {
-            Toast::warning("No models endpoint available for API format '{$provider->apiFormat->display_name}'.");
-            return;
-        }
-        
-        $testUrl = $modelsEndpoint->full_url;
-        if (empty($testUrl)) {
-            Toast::warning("Cannot construct test URL for provider '{$provider->provider_name}'.");
-            return;
-        }
-        
-        try {
-            // Simple connection test - this could be enhanced with actual API testing
-            $response = @get_headers($testUrl);
-            
-            if ($response !== false) {
-                Toast::success("Connection test successful for provider '{$provider->provider_name}' at {$testUrl}.");
-            } else {
-                Toast::error("Connection test failed for provider '{$provider->provider_name}' at {$testUrl}.");
-            }
-        } catch (\Exception $e) {
-            Toast::error("Connection test error for provider '{$provider->provider_name}': " . $e->getMessage());
-        }
     }
 }
