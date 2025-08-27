@@ -11,6 +11,7 @@ use App\Orchid\Layouts\ModelSettings\ProviderSettingsListLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsFiltersLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderSettingsImportLayout;
 use App\Orchid\Layouts\ModelSettings\ApiManagementTabMenu;
+use App\Orchid\Traits\AiConnectionTrait;
 use App\Orchid\Traits\OrchidImportTrait;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
@@ -24,7 +25,7 @@ use Orchid\Support\Facades\Toast;
 
 class ProviderSettingsScreen extends Screen
 {
-    use OrchidImportTrait, OrchidLoggingTrait;
+    use AiConnectionTrait, OrchidImportTrait, OrchidLoggingTrait;
     /**
      * Fetch data to be displayed on the screen.
      *
@@ -448,34 +449,20 @@ class ProviderSettingsScreen extends Screen
     }
 
     /**
-     * Test connection to a provider.
+     * Test connection to a provider using the AiConnectionTrait.
      */
-    public function testConnection(Request $request): void
+    public function testProviderConnection(Request $request): void
     {
-        $provider = ProviderSetting::findOrFail($request->get('id'));
+        $providerId = $request->get('id');
+        $provider = ProviderSetting::with('apiFormat.endpoints')->find($providerId);
         
-        if (!$provider->is_active) {
-            Toast::warning("Provider '{$provider->provider_name}' is currently inactive.");
+        if (!$provider) {
+            Toast::error('Provider not found.');
             return;
         }
         
-        if (empty($provider->ping_url)) {
-            Toast::warning("No models URL configured for provider '{$provider->provider_name}'.");
-            return;
-        }
-        
-        try {
-            // Simple connection test - this could be enhanced with actual API testing
-            $response = @get_headers($provider->ping_url);
-            
-            if ($response !== false) {
-                Toast::success("Connection test successful for provider '{$provider->provider_name}'.");
-            } else {
-                Toast::error("Connection test failed for provider '{$provider->provider_name}'.");
-            }
-        } catch (\Exception $e) {
-            Toast::error("Connection test error for provider '{$provider->provider_name}': " . $e->getMessage());
-        }
+        // Use the trait method for consistent connection testing
+        $this->testConnection($provider);
     }
 
     /**

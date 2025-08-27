@@ -11,6 +11,7 @@ use App\Orchid\Layouts\ModelSettings\ProviderAuthenticationLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderStatusLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderAdvancedSettingsLayout;
 use App\Orchid\Traits\AiConnectionTrait;
+use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -22,7 +23,7 @@ use Orchid\Support\Facades\Toast;
 
 class ProviderEditScreen extends Screen
 {
-    use AiConnectionTrait;
+    use AiConnectionTrait, OrchidSettingsManagementTrait;
     /**
      * @var ProviderSetting
      */
@@ -167,11 +168,8 @@ class ProviderEditScreen extends Screen
             ]);
 
             // Store original values for change tracking
-            $originalName = $provider->provider_name;
-            $originalApiFormat = $provider->api_format_id;
-            $originalActive = $provider->is_active;
-            $originalSettings = $provider->additional_settings;
-
+            $originalValues = $provider->getOriginal();
+            
             $providerData = $request->input('provider');
             
             // Handle password field - only update if not empty
@@ -179,49 +177,30 @@ class ProviderEditScreen extends Screen
                 unset($providerData['api_key']);
             }
             
-            // Convert JSON string to array for storage
+            // Validate and process JSON field
             if (!empty($providerData['additional_settings'])) {
-                $decoded = json_decode($providerData['additional_settings'], true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    Log::warning('Invalid JSON in provider additional settings', [
-                        'provider_id' => $provider->id,
-                        'json_error' => json_last_error_msg(),
-                        'input' => $providerData['additional_settings'],
-                    ]);
-                    
-                    Toast::error('Additional settings must be valid JSON format.');
+                $decoded = $this->validateAndProcessJsonField(
+                    $providerData['additional_settings'], 
+                    'Additional settings', 
+                    $provider->id
+                );
+                
+                if ($decoded === false) {
                     return back()->withInput();
                 }
+                
                 $providerData['additional_settings'] = $decoded;
             } else {
                 $providerData['additional_settings'] = null;
             }
             
-            $provider->fill($providerData)->save();
-
-            // Log successful update with change details
-            $changes = [];
-            if ($originalName !== $provider->provider_name) {
-                $changes['provider_name'] = ['from' => $originalName, 'to' => $provider->provider_name];
-            }
-            if ($originalApiFormat !== $provider->api_format_id) {
-                $changes['api_format_id'] = ['from' => $originalApiFormat, 'to' => $provider->api_format_id];
-            }
-            if ($originalActive !== $provider->is_active) {
-                $changes['is_active'] = ['from' => $originalActive, 'to' => $provider->is_active];
-            }
-            if ($originalSettings !== $provider->additional_settings) {
-                $changes['additional_settings'] = 'updated';
-            }
-
-            Log::info("Provider settings updated successfully - {$provider->provider_name}", [
-                'provider_id' => $provider->id,
-                'provider_name' => $provider->provider_name,
-                'changes' => $changes,
-                'updated_by' => auth()->id(),
-            ]);
-
-            Toast::success("Provider '{$provider->provider_name}' has been updated successfully.");
+            // Use trait method for save with change detection
+            $result = $this->saveModelWithChangeDetection(
+                $provider,
+                $providerData,
+                $provider->provider_name,
+                $originalValues
+            );
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::warning('Validation failed for provider update', [
