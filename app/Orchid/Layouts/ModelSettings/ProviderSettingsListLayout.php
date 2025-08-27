@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Layouts\ModelSettings;
 
 use App\Models\ProviderSetting;
+use App\Orchid\Traits\ApiFormatColorTrait;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\DropDown;
 use Orchid\Screen\Actions\Link;
@@ -17,6 +18,7 @@ use Orchid\Screen\TD;
 
 class ProviderSettingsListLayout extends Table
 {
+    use ApiFormatColorTrait;
     /**
      * @var string
      */
@@ -37,9 +39,9 @@ class ProviderSettingsListLayout extends Table
 
             TD::make('api_format_id', __('API Format'))
                 ->sort()
-                ->render(fn (ProviderSetting $provider) => 
-                    $provider->apiFormat ? $provider->apiFormat->display_name : 'Not Set'
-                ),
+                ->render(function (ProviderSetting $provider) {
+                    return $this->getApiFormatBadge($provider->apiFormat);
+                }),
 
             TD::make('is_active', __('Status'))
                 ->sort()
