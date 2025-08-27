@@ -211,6 +211,74 @@ trait OrchidSettingsManagementTrait
         return isset($casts[$field]) && in_array($casts[$field], ['array', 'json', 'object', 'collection']);
     }
 
+    /**
+     * Clear all records from a specified model class.
+     * Provides standardized logging and user feedback for bulk delete operations.
+     *
+     * @param string $modelClass The fully qualified model class name
+     * @param string $modelDisplayName Human-readable name for user feedback
+     * @param array $whereConditions Optional where conditions for selective deletion
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function clearAllModelsOfType(string $modelClass, string $modelDisplayName, array $whereConditions = [])
+    {
+        try {
+            // Build query
+            $query = $modelClass::query();
+            
+            // Apply where conditions if provided
+            if (!empty($whereConditions)) {
+                foreach ($whereConditions as $field => $value) {
+                    $query->where($field, $value);
+                }
+            }
+            
+            // Get count before deletion for logging
+            $totalModels = $query->count();
+            
+            if ($totalModels === 0) {
+                Toast::info("No {$modelDisplayName} found to clear.");
+                return redirect()->back();
+            }
+
+            // Delete records
+            $query->delete();
+
+            // Use trait method for structured logging
+            $this->logScreenOperation(
+                'clear_all_models',
+                'success',
+                [
+                    'model_class' => $modelClass,
+                    'model_display_name' => $modelDisplayName,
+                    'models_deleted' => $totalModels,
+                    'where_conditions' => $whereConditions,
+                    'action_type' => 'bulk_delete_all'
+                ]
+            );
+
+            Toast::success("Successfully cleared all {$totalModels} {$modelDisplayName} from the database.");
+
+        } catch (\Exception $e) {
+            $this->logScreenOperation(
+                'clear_all_models',
+                'error',
+                [
+                    'model_class' => $modelClass,
+                    'model_display_name' => $modelDisplayName,
+                    'where_conditions' => $whereConditions,
+                    'error' => $e->getMessage(),
+                    'action_type' => 'bulk_delete_all'
+                ],
+                'error'
+            );
+            
+            Toast::error("Failed to clear {$modelDisplayName}: " . $e->getMessage());
+        }
+
+        return redirect()->back();
+    }
+
     // ========================================================================================
     // SETTINGS PERSISTENCE METHODS
     // ========================================================================================

@@ -38,10 +38,10 @@ trait ApiFormatColorTrait
     protected function getApiFormatBadge($apiFormat, string $additionalClasses = ''): string
     {
         if (!$apiFormat) {
-            return '<span class="badge bg-secondary ' . $additionalClasses . '">Not Set</span>';
+            return '<span class="badge bg-secondary-subtle text-secondary-emphasis ' . $additionalClasses . '">Not Set</span>';
         }
 
         $badgeColor = $this->getApiFormatBadgeColor($apiFormat->id);
-        return '<span class="badge bg-' . $badgeColor . ' ' . $additionalClasses . '">' . e($apiFormat->display_name) . '</span>';
+        return '<span class="badge bg-' . $badgeColor . '-subtle text-' . $badgeColor . '-emphasis ' . $additionalClasses . '">' . e($apiFormat->display_name) . '</span>';
     }
 }

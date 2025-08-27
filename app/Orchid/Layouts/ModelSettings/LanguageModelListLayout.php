@@ -28,24 +28,26 @@ class LanguageModelListLayout extends Table
     public function columns(): array
     {
         return [
-            TD::make('model_id', 'Model ID')
-                ->sort()
-                ->render(function (LanguageModel $model) {
-                    return Link::make($model->model_id)
-                        ->route('platform.models.language.edit', $model->id);
-                }),
-
-            TD::make('label', 'Display Name')
+            TD::make('label', 'Name')
                 ->sort()
                 ->render(function (LanguageModel $model) {
                     return Link::make($model->label)
                         ->route('platform.models.language.edit', $model->id);
                 }),
 
-            TD::make('provider_id', 'Provider')
+            TD::make('provider.provider_name', 'Provider')
                 ->sort()
                 ->render(function (LanguageModel $model) {
-                    return $this->getApiFormatBadge($model->provider->apiFormat ?? null);
+                    $providerName = $model->provider->provider_name ?? 'Unknown Provider';
+                    $apiFormat = $model->provider->apiFormat ?? null;
+                    
+                    // Use trait method for consistent styling, but show provider name instead of API format name
+                    if ($apiFormat) {
+                        $badgeColor = $this->getApiFormatBadgeColor($apiFormat->id);
+                        return '<span class="badge bg-' . $badgeColor . '-subtle text-' . $badgeColor . '-emphasis">' . e($providerName) . '</span>';
+                    }
+                    
+                    return '<span class="badge bg-secondary-subtle text-secondary-emphasis">' . e($providerName) . '</span>';
                 }),
 
             TD::make('is_active', 'Active')
