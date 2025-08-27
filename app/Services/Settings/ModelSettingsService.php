@@ -39,7 +39,7 @@ class ModelSettingsService
      */
     public function getModelStatus(string $providerName): array
     {
-        $provider = ProviderSetting::where('provider_name', $providerName)->first();
+        $provider = ProviderSetting::with('apiFormat.endpoints')->where('provider_name', $providerName)->first();
 
         if (!$provider) {
             Log::error("Provider '{$providerName}' not found in database");
@@ -51,7 +51,8 @@ class ModelSettingsService
             throw new \Exception("Provider '{$providerName}' is not active");
         }
 
-        if (!$provider->ping_url) {
+        $pingUrl = $provider->ping_url;
+        if (!$pingUrl) {
             Log::error("No ping URL configured for provider '{$providerName}'");
             throw new \Exception("No ping URL configured for provider '{$providerName}'");
         }
@@ -63,8 +64,8 @@ class ModelSettingsService
             Log::error("Failed to retrieve models from provider", [
                 'provider_name' => $providerName,
                 'provider_id' => $provider->id,
-                'api_format' => $provider->api_format,
-                'ping_url' => $provider->ping_url,
+                'api_format' => $provider->api_format_id,
+                'ping_url' => $pingUrl,
                 'error' => $e->getMessage(),
                 'status' => 'error'
             ]);
@@ -81,7 +82,7 @@ class ModelSettingsService
      */
     private function fetchModelsFromProvider(ProviderSetting $provider): array
     {
-        $apiFormat = $provider->api_format ?? $provider->provider_name;
+        $apiFormatName = $provider->apiFormat?->unique_name ?? $provider->provider_name;
         $pingUrl = $provider->ping_url;
         $apiKey = $provider->api_key;
 
@@ -89,7 +90,7 @@ class ModelSettingsService
             $result = [];
 
             // Different provider types may have different API formats
-            switch ($apiFormat) {
+            switch ($apiFormatName) {
                 case 'openai':
                     $result = $this->fetchOpenAIModels($pingUrl, $apiKey);
                     break;
@@ -159,6 +160,19 @@ class ModelSettingsService
             }
             
             $data = $response->json();
+            
+            // Debug: Log the actual response structure from OpenAI API
+            Log::info("OpenAI API Response Debug", [
+                'provider' => 'openai',
+                'url' => $pingUrl,
+                'api_key' => $keyMask,
+                'response_structure' => [
+                    'type' => gettype($data),
+                    'keys' => is_array($data) ? array_keys($data) : 'not_array',
+                    'data_sample' => is_array($data) ? array_slice($data, 0, 2, true) : $data,
+                ],
+                'duration_ms' => round((microtime(true) - $startTime) * 1000, 2)
+            ]);
             
             return $data;
         } catch (\Exception $e) {

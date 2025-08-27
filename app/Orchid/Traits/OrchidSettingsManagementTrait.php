@@ -27,6 +27,191 @@ use Orchid\Support\Facades\Toast;
 trait OrchidSettingsManagementTrait
 {
     // ========================================================================================
+    // MODEL MANAGEMENT METHODS
+    // ========================================================================================
+
+    /**
+     * Save a model with comprehensive change detection, logging, and user feedback
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array $data Validated data to fill the model
+     * @param string $modelDisplayName Display name for logging and messages
+     * @param array $originalValues Original values for change tracking
+     * @param callable|null $beforeSave Optional callback before saving
+     * @param callable|null $afterSave Optional callback after saving
+     * @return array ['hasChanges' => bool, 'changes' => array]
+     */
+    protected function saveModelWithChangeDetection($model, array $data, string $modelDisplayName, array $originalValues = [], callable $beforeSave = null, callable $afterSave = null): array
+    {
+        // Store original values if not provided
+        if (empty($originalValues)) {
+            $originalValues = $model->getOriginal();
+        }
+
+        // Fill model with new data
+        $model->fill($data);
+
+        // Execute before save callback if provided
+        if ($beforeSave) {
+            $beforeSave($model, $data);
+        }
+
+        // Save the model
+        $model->save();
+
+        // Execute after save callback if provided
+        if ($afterSave) {
+            $afterSave($model, $data);
+        }
+
+        // Detect changes
+        $changes = $this->detectModelChanges($model, $originalValues);
+        $hasChanges = !empty($changes);
+
+        // Log and provide feedback
+        $this->logModelChanges($model, $modelDisplayName, $changes, $hasChanges);
+        $this->provideSaveFeedback($modelDisplayName, $hasChanges);
+
+        return [
+            'hasChanges' => $hasChanges,
+            'changes' => $changes
+        ];
+    }
+
+    /**
+     * Detect changes in a model by comparing original and current values
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array $originalValues
+     * @return array
+     */
+    protected function detectModelChanges($model, array $originalValues): array
+    {
+        $changes = [];
+        $currentValues = $model->getAttributes();
+
+        foreach ($currentValues as $key => $newValue) {
+            $originalValue = $originalValues[$key] ?? null;
+
+            // Special handling for JSON fields
+            if ($this->isJsonField($model, $key)) {
+                $originalValue = is_string($originalValue) ? json_decode($originalValue, true) : $originalValue;
+                $newValue = is_string($newValue) ? json_decode($newValue, true) : $newValue;
+            }
+
+            // Compare values
+            if ($originalValue !== $newValue) {
+                $changes[$key] = [
+                    'from' => $originalValue,
+                    'to' => $newValue
+                ];
+            }
+        }
+
+        return $changes;
+    }
+
+    /**
+     * Log model changes with structured format
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param string $modelDisplayName
+     * @param array $changes
+     * @param bool $hasChanges
+     */
+    protected function logModelChanges($model, string $modelDisplayName, array $changes, bool $hasChanges): void
+    {
+        $logData = [
+            'model_type' => get_class($model),
+            'model_id' => $model->getKey(),
+            'model_name' => $modelDisplayName,
+            'changes' => $changes,
+            'updated_by' => auth()->id(),
+        ];
+
+        if ($hasChanges) {
+            Log::info("{$this->getModelTypeName($model)} updated successfully - {$modelDisplayName}", $logData);
+        } else {
+            Log::debug("{$this->getModelTypeName($model)} saved without changes - {$modelDisplayName}", $logData);
+        }
+    }
+
+    /**
+     * Provide user feedback based on whether changes were made
+     *
+     * @param string $modelDisplayName
+     * @param bool $hasChanges
+     */
+    protected function provideSaveFeedback(string $modelDisplayName, bool $hasChanges): void
+    {
+        if ($hasChanges) {
+            Toast::success("'{$modelDisplayName}' has been updated successfully.");
+        } else {
+            Toast::info("No changes detected for '{$modelDisplayName}'.");
+        }
+    }
+
+    /**
+     * Validate and process JSON field with proper error handling
+     *
+     * @param string $jsonString
+     * @param string $fieldName
+     * @param int|null $modelId
+     * @return array|null Returns decoded array on success, null on failure
+     */
+    protected function validateAndProcessJsonField(string $jsonString, string $fieldName, int $modelId = null): ?array
+    {
+        if (empty($jsonString)) {
+            return null;
+        }
+
+        $decoded = json_decode($jsonString, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::warning("Invalid JSON in {$fieldName}", [
+                'model_id' => $modelId,
+                'field_name' => $fieldName,
+                'json_error' => json_last_error_msg(),
+                'input' => $jsonString,
+            ]);
+            
+            Toast::error("{$fieldName} must be valid JSON format.");
+            return false; // Return false to indicate validation error
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Get a user-friendly model type name for logging
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @return string
+     */
+    protected function getModelTypeName($model): string
+    {
+        $className = class_basename($model);
+        
+        // Convert CamelCase to human-readable format
+        return preg_replace('/(?<!^)[A-Z]/', ' $0', $className);
+    }
+
+    /**
+     * Check if a model field should be treated as JSON
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param string $field
+     * @return bool
+     */
+    protected function isJsonField($model, string $field): bool
+    {
+        // Check if model has casts defined for this field
+        $casts = $model->getCasts();
+        
+        return isset($casts[$field]) && in_array($casts[$field], ['array', 'json', 'object', 'collection']);
+    }
+
+    // ========================================================================================
     // SETTINGS PERSISTENCE METHODS
     // ========================================================================================
 

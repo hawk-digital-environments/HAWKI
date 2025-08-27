@@ -15,7 +15,7 @@ class LanguageModelTabMenu extends TabMenu
     protected function navigations(): array
     {
         return [
-            Menu::make('Models List')
+            Menu::make('Model List')
                 ->route('platform.models.language')
                 ->active('platform.models.language*'),
         ];

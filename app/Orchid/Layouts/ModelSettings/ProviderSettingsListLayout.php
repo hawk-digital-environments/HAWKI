@@ -79,7 +79,7 @@ class ProviderSettingsListLayout extends Table
 
                         Button::make(__('Test Connection'))
                             ->icon('bs.wifi')
-                            ->method('testConnection', [
+                            ->method('testProviderConnection', [
                                 'id' => $provider->id,
                             ]),
 

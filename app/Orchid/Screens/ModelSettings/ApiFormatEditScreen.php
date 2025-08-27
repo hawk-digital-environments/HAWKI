@@ -9,6 +9,7 @@ use App\Models\ApiFormatEndpoint;
 use App\Orchid\Layouts\ModelSettings\ApiFormatSettingsEditLayout;
 use App\Orchid\Layouts\ModelSettings\ApiFormatEndpointsLayout;
 use App\Orchid\Traits\OrchidLoggingTrait;
+use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
@@ -19,7 +20,7 @@ use Orchid\Support\Facades\Toast;
 
 class ApiFormatEditScreen extends Screen
 {
-    use OrchidLoggingTrait;
+    use OrchidLoggingTrait, OrchidSettingsManagementTrait;
 
     /**
      * @var ApiFormat
@@ -152,36 +153,29 @@ class ApiFormatEditScreen extends Screen
             ]);
 
             // Store original values for change tracking
-            $originalUniqueName = $apiFormat->unique_name;
-            $originalDisplayName = $apiFormat->display_name;
-            $originalBaseUrl = $apiFormat->base_url;
-            $originalMetadata = $apiFormat->metadata;
+            $originalValues = $apiFormat->getOriginal();
             $originalEndpointsCount = $apiFormat->endpoints()->count();
 
-            // Save API format
-            $apiFormat->fill($data['apiFormat']);
+            $apiFormatData = $data['apiFormat'];
             
-            // Parse metadata JSON
-            if (!empty($data['apiFormat']['metadata'])) {
-                $decoded = json_decode($data['apiFormat']['metadata'], true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    Log::warning('Invalid JSON in API format metadata', [
-                        'api_format_id' => $apiFormat->id,
-                        'json_error' => json_last_error_msg(),
-                        'input' => $data['apiFormat']['metadata'],
-                    ]);
-                    
-                    Toast::error('Metadata must be valid JSON format.');
+            // Validate and process JSON metadata
+            if (!empty($apiFormatData['metadata'])) {
+                $decoded = $this->validateAndProcessJsonField(
+                    $apiFormatData['metadata'], 
+                    'Metadata', 
+                    $apiFormat->id
+                );
+                
+                if ($decoded === false) {
                     return back()->withInput();
                 }
-                $apiFormat->metadata = $decoded;
+                
+                $apiFormatData['metadata'] = $decoded;
             } else {
-                $apiFormat->metadata = null;
+                $apiFormatData['metadata'] = null;
             }
-            
-            $apiFormat->save();
 
-            // Handle endpoints from Matrix field
+            // Handle endpoints processing
             $endpointsData = $data['endpoints'];
             
             // Filter out empty endpoints
@@ -189,56 +183,47 @@ class ApiFormatEditScreen extends Screen
                 return !empty($endpoint['Name']) && !empty($endpoint['Path']) && !empty($endpoint['Method']);
             });
 
-            // Delete existing endpoints
-            $apiFormat->endpoints()->delete();
+            // Use trait method for save with change detection and custom after-save logic
+            $result = $this->saveModelWithChangeDetection(
+                $apiFormat,
+                $apiFormatData,
+                $apiFormat->display_name,
+                $originalValues,
+                null, // no before-save callback
+                function($model) use ($endpointsData, $originalEndpointsCount) {
+                    // Delete existing endpoints
+                    $model->endpoints()->delete();
 
-            // Create new endpoints
-            foreach ($endpointsData as $endpointData) {
-                // Convert 'Is Active' value to boolean
-                $isActive = isset($endpointData['Is Active']) && $endpointData['Is Active'] === '1';
-                
-                $apiFormat->endpoints()->create([
-                    'name' => $endpointData['Name'],
-                    'path' => $endpointData['Path'],
-                    'method' => strtoupper($endpointData['Method']),
-                    'is_active' => $isActive,
-                ]);
-            }
+                    // Create new endpoints
+                    foreach ($endpointsData as $endpointData) {
+                        // Convert 'Is Active' value to boolean
+                        $isActive = isset($endpointData['Is Active']) && $endpointData['Is Active'] === '1';
+                        
+                        $model->endpoints()->create([
+                            'name' => $endpointData['Name'],
+                            'path' => $endpointData['Path'],
+                            'method' => strtoupper($endpointData['Method']),
+                            'is_active' => $isActive,
+                        ]);
+                    }
 
-            // Log successful update with change details
-            $changes = [];
-            if ($originalUniqueName !== $apiFormat->unique_name) {
-                $changes['unique_name'] = ['from' => $originalUniqueName, 'to' => $apiFormat->unique_name];
-            }
-            if ($originalDisplayName !== $apiFormat->display_name) {
-                $changes['display_name'] = ['from' => $originalDisplayName, 'to' => $apiFormat->display_name];
-            }
-            if ($originalBaseUrl !== $apiFormat->base_url) {
-                $changes['base_url'] = ['from' => $originalBaseUrl, 'to' => $apiFormat->base_url];
-            }
-            if ($originalMetadata !== $apiFormat->metadata) {
-                $changes['metadata'] = 'updated';
-            }
-            if ($originalEndpointsCount !== count($endpointsData)) {
-                $changes['endpoints_count'] = ['from' => $originalEndpointsCount, 'to' => count($endpointsData)];
-            }
-
-            Log::info("API format updated successfully - {$apiFormat->display_name}", [
-                'api_format_id' => $apiFormat->id,
-                'api_format_name' => $apiFormat->display_name,
-                'endpoints_count' => count($endpointsData),
-                'endpoints_details' => collect($endpointsData)->map(function($endpoint) {
-                    return [
-                        'name' => $endpoint['Name'],
-                        'method' => $endpoint['Method'],
-                        'is_active' => isset($endpoint['Is Active']) && $endpoint['Is Active'] === '1',
-                    ];
-                })->toArray(),
-                'changes' => $changes,
-                'updated_by' => auth()->id(),
-            ]);
-
-            Toast::success("API format '{$apiFormat->display_name}' has been updated successfully.");
+                    // Add endpoint change info to log
+                    if ($originalEndpointsCount !== count($endpointsData)) {
+                        Log::info("API format endpoints updated - {$model->display_name}", [
+                            'api_format_id' => $model->id,
+                            'endpoints_count_change' => ['from' => $originalEndpointsCount, 'to' => count($endpointsData)],
+                            'endpoints_details' => collect($endpointsData)->map(function($endpoint) {
+                                return [
+                                    'name' => $endpoint['Name'],
+                                    'method' => $endpoint['Method'],
+                                    'is_active' => isset($endpoint['Is Active']) && $endpoint['Is Active'] === '1',
+                                ];
+                            })->toArray(),
+                            'updated_by' => auth()->id(),
+                        ]);
+                    }
+                }
+            );
 
             // Redirect back to the edit screen instead of the list
             return redirect()->route('platform.models.api.formats.edit', $apiFormat);

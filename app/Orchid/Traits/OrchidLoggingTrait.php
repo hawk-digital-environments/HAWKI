@@ -60,7 +60,15 @@ trait OrchidLoggingTrait
         // Merge additional data
         $logData = array_merge($logData, $data);
 
-        $message = "Model {$action} for {$modelType} (ID: {$modelId}) {$status}";
+        // Build message with model identifier if available
+        $message = "Model {$action} for {$modelType} (ID: {$modelId})";
+        
+        // Add model identifier to message if available in data
+        if (isset($data['model_identifier']) && !empty($data['model_identifier'])) {
+            $message = "Model {$action} for {$modelType} '{$data['model_identifier']}' (ID: {$modelId})";
+        }
+        
+        $message .= " {$status}";
         
         Log::{$level}($message, $logData);
     }
