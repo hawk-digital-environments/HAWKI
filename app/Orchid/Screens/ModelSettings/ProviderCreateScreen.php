@@ -109,9 +109,7 @@ class ProviderCreateScreen extends Screen
     {
         $request->validate([
             'provider.provider_name' => 'required|string|max:255|unique:provider_settings,provider_name',
-            'provider.api_format' => 'required|string|max:255',
-            'provider.base_url' => 'nullable|url|max:500',
-            'provider.ping_url' => 'nullable|url|max:500',
+            'provider.api_format_id' => 'required|exists:api_formats,id',
             'provider.api_key' => 'nullable|string|max:500',
             'provider.is_active' => 'boolean',
             'provider.additional_settings' => 'nullable|string',

@@ -62,7 +62,7 @@ class AIConnectionService
     {
         $models = [];
         
-        // Read models from the database with API format relationship
+                // Read models from the database
         $dbModels = LanguageModel::select('language_models.*', 'provider_settings.provider_name', 'api_formats.unique_name as api_format_name')
             ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
             ->leftJoin('api_formats', 'provider_settings.api_format_id', '=', 'api_formats.id')

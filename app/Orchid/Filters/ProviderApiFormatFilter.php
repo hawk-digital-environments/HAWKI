@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Filters;
 
 use App\Models\ProviderSetting;
+use App\Models\ApiFormat;
 use Illuminate\Database\Eloquent\Builder;
 use Orchid\Filters\Filter;
 use Orchid\Screen\Fields\Select;
@@ -28,7 +29,7 @@ class ProviderApiFormatFilter extends Filter
      */
     public function parameters(): array
     {
-        return ['api_format'];
+        return ['api_format_id'];
     }
 
     /**
@@ -40,13 +41,13 @@ class ProviderApiFormatFilter extends Filter
      */
     public function run(Builder $builder): Builder
     {
-        $format = $this->request->get('api_format');
+        $formatId = $this->request->get('api_format_id');
         
-        if (empty($format)) {
+        if (empty($formatId)) {
             return $builder;
         }
 
-        return $builder->where('api_format', $format);
+        return $builder->where('api_format_id', $formatId);
     }
 
     /**
@@ -55,10 +56,10 @@ class ProviderApiFormatFilter extends Filter
     public function display(): array
     {
         return [
-            Select::make('api_format')
+            Select::make('api_format_id')
                 ->options($this->getApiFormatOptions())
                 ->empty('All Formats')
-                ->value($this->request->get('api_format'))
+                ->value($this->request->get('api_format_id'))
                 ->title('API Format'),
         ];
     }
@@ -70,10 +71,8 @@ class ProviderApiFormatFilter extends Filter
      */
     private function getApiFormatOptions(): array
     {
-        return ProviderSetting::whereNotNull('api_format')
-            ->distinct()
-            ->pluck('api_format')
-            ->mapWithKeys(fn ($format) => [$format => ucfirst($format)])
+        return ApiFormat::all()
+            ->pluck('display_name', 'id')
             ->toArray();
     }
 
@@ -82,7 +81,13 @@ class ProviderApiFormatFilter extends Filter
      */
     public function value(): string
     {
-        $format = $this->request->get('api_format');
-        return $this->name().': '.ucfirst($format);
+        $formatId = $this->request->get('api_format_id');
+        
+        if (empty($formatId)) {
+            return '';
+        }
+        
+        $format = ApiFormat::find($formatId);
+        return $this->name().': '.($format ? $format->display_name : 'Unknown');
     }
 }
