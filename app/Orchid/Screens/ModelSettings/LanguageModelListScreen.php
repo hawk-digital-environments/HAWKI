@@ -32,6 +32,9 @@ class LanguageModelListScreen extends Screen
     {
         return [
             'models' => LanguageModel::with(['provider', 'provider.apiFormat'])
+                ->whereHas('provider', function ($query) {
+                    $query->where('is_active', true);
+                })
                 ->filters(LanguageModelFiltersLayout::class)
                 ->defaultSort('label')
                 ->paginate(50)
@@ -274,7 +277,12 @@ class LanguageModelListScreen extends Screen
 
             if ($validProviders->isEmpty()) {
                 $refreshResults['result'] = 'no_valid_providers';
-                Log::warning('Model refresh - no valid providers found', $refreshResults);
+                $this->logScreenOperation(
+                    'refresh_models',
+                    'warning',
+                    $refreshResults,
+                    'warning'
+                );
                 Toast::warning('No active providers with models endpoints found to refresh models from.');
                 return redirect()->back();
             }
@@ -352,9 +360,9 @@ class LanguageModelListScreen extends Screen
                                 'model_id' => $modelId,
                                 'label' => $modelLabel,
                                 'provider_id' => $provider->id,
-                                'is_active' => true,
+                                'is_active' => false,
                                 'streamable' => true,
-                                'is_visible' => true,
+                                'is_visible' => false,
                                 'display_order' => 0,
                                 'information' => $modelData,
                                 'settings' => [],
