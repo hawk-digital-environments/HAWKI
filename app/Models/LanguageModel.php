@@ -79,6 +79,7 @@ class LanguageModel extends Model
         'model_id',
         'label',
         'provider_id',
+        'provider_name',
         'is_active',
         'is_visible',
         'streamable',

@@ -35,7 +35,7 @@ class LanguageModelListLayout extends Table
                         ->route('platform.models.language.edit', $model->id);
                 }),
 
-            TD::make('provider.provider_name', 'Provider')
+            TD::make('provider_name', 'Provider')
                 ->sort()
                 ->render(function (LanguageModel $model) {
                     $providerName = $model->provider->provider_name ?? 'Unknown Provider';

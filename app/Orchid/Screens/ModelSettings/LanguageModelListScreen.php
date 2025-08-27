@@ -32,6 +32,8 @@ class LanguageModelListScreen extends Screen
     {
         return [
             'models' => LanguageModel::with(['provider', 'provider.apiFormat'])
+                ->leftJoin('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
+                ->select('language_models.*', 'provider_settings.provider_name')
                 ->whereHas('provider', function ($query) {
                     $query->where('is_active', true);
                 })
@@ -114,13 +116,14 @@ class LanguageModelListScreen extends Screen
         try {
             $model = LanguageModel::findOrFail($request->get('id'));
             $originalStatus = $model->is_active;
-            $model->is_active = !$model->is_active;
             
             // Use trait method for model save with change detection
             $this->saveModelWithChangeDetection(
                 $model,
-                $request,
-                "Model '{$model->label}' active status has been " . ($model->is_active ? 'activated' : 'deactivated') . ".",
+                ['is_active' => !$model->is_active],
+                "Model '{$model->label}' active status",
+                ['is_active' => $originalStatus],
+                null,
                 function($savedModel) use ($originalStatus) {
                     // After-save callback with structured logging
                     $this->logModelOperation(
@@ -158,13 +161,14 @@ class LanguageModelListScreen extends Screen
         try {
             $model = LanguageModel::findOrFail($request->get('id'));
             $originalVisibility = $model->is_visible;
-            $model->is_visible = !$model->is_visible;
             
             // Use trait method for model save with change detection
             $this->saveModelWithChangeDetection(
                 $model,
-                $request,
-                "Model '{$model->label}' has been " . ($model->is_visible ? 'made visible' : 'hidden') . ".",
+                ['is_visible' => !$model->is_visible],
+                "Model '{$model->label}' visibility",
+                ['is_visible' => $originalVisibility],
+                null,
                 function($savedModel) use ($originalVisibility) {
                     // After-save callback with structured logging
                     $this->logModelOperation(
