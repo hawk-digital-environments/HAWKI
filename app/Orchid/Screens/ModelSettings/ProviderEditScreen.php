@@ -214,7 +214,7 @@ class ProviderEditScreen extends Screen
                 $changes['additional_settings'] = 'updated';
             }
 
-            Log::info('Provider settings updated successfully', [
+            Log::info("Provider settings updated successfully - {$provider->provider_name}", [
                 'provider_id' => $provider->id,
                 'provider_name' => $provider->provider_name,
                 'changes' => $changes,
