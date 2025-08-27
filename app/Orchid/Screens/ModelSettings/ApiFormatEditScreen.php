@@ -10,6 +10,7 @@ use App\Orchid\Layouts\ModelSettings\ApiFormatSettingsEditLayout;
 use App\Orchid\Layouts\ModelSettings\ApiFormatEndpointsLayout;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
@@ -93,12 +94,14 @@ class ApiFormatEditScreen extends Screen
     {
         return [
             Button::make('Save')
-                ->icon('bs.check-circle')
+                ->icon('save')
                 ->method('save'),
 
             Link::make('Cancel')
-                ->icon('bs.x-circle')
+                ->icon('x-circle')
                 ->route('platform.models.api.formats'),
+
+
         ];
     }
 
@@ -147,6 +150,13 @@ class ApiFormatEditScreen extends Screen
                 'endpoints.*.Method' => 'required|string|in:GET,POST,PUT,DELETE,PATCH',
             ]);
 
+            // Store original values for change tracking
+            $originalUniqueName = $apiFormat->unique_name;
+            $originalDisplayName = $apiFormat->display_name;
+            $originalBaseUrl = $apiFormat->base_url;
+            $originalMetadata = $apiFormat->metadata;
+            $originalEndpointsCount = $apiFormat->endpoints()->count();
+
             // Save API format
             $apiFormat->fill($data['apiFormat']);
             
@@ -154,6 +164,12 @@ class ApiFormatEditScreen extends Screen
             if (!empty($data['apiFormat']['metadata'])) {
                 $decoded = json_decode($data['apiFormat']['metadata'], true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
+                    Log::warning('Invalid JSON in API format metadata', [
+                        'api_format_id' => $apiFormat->id,
+                        'json_error' => json_last_error_msg(),
+                        'input' => $data['apiFormat']['metadata'],
+                    ]);
+                    
                     Toast::error('Metadata must be valid JSON format.');
                     return back()->withInput();
                 }
@@ -185,24 +201,57 @@ class ApiFormatEditScreen extends Screen
                 ]);
             }
 
-            $this->logScreenOperation('api_format_save', 'success', [
+            // Log successful update with change details
+            $changes = [];
+            if ($originalUniqueName !== $apiFormat->unique_name) {
+                $changes['unique_name'] = ['from' => $originalUniqueName, 'to' => $apiFormat->unique_name];
+            }
+            if ($originalDisplayName !== $apiFormat->display_name) {
+                $changes['display_name'] = ['from' => $originalDisplayName, 'to' => $apiFormat->display_name];
+            }
+            if ($originalBaseUrl !== $apiFormat->base_url) {
+                $changes['base_url'] = ['from' => $originalBaseUrl, 'to' => $apiFormat->base_url];
+            }
+            if ($originalMetadata !== $apiFormat->metadata) {
+                $changes['metadata'] = 'updated';
+            }
+            if ($originalEndpointsCount !== count($endpointsData)) {
+                $changes['endpoints_count'] = ['from' => $originalEndpointsCount, 'to' => count($endpointsData)];
+            }
+
+            Log::info('API format updated successfully', [
                 'api_format_id' => $apiFormat->id,
                 'api_format_name' => $apiFormat->display_name,
-                'endpoints_count' => count($endpointsData)
+                'endpoints_count' => count($endpointsData),
+                'changes' => $changes,
+                'updated_by' => auth()->id(),
             ]);
-            Toast::success('API format has been saved successfully.');
 
-            return redirect()->route('platform.models.api.formats');
+            Toast::success("API format '{$apiFormat->display_name}' has been updated successfully.");
+
+            // Redirect back to the edit screen instead of the list
+            return redirect()->route('platform.models.api.formats.edit', $apiFormat);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            $this->logError('Validation error while saving API format', $e);
-            Toast::error('Please check your input data.');
-            throw $e;
-        } catch (\Exception $e) {
-            $this->logError('Error while saving API format', $e);
-            Toast::error('Error saving API format: ' . $e->getMessage());
+            Log::warning('Validation failed for API format update', [
+                'api_format_id' => $apiFormat->id,
+                'errors' => $e->errors(),
+                'updated_by' => auth()->id(),
+            ]);
             
-            return redirect()->back()->withInput();
+            throw $e; // Re-throw validation exceptions to show form errors
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating API format', [
+                'api_format_id' => $apiFormat->id,
+                'api_format_name' => $apiFormat->display_name ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'updated_by' => auth()->id(),
+            ]);
+            
+            Toast::error('Error saving API format: ' . $e->getMessage());
+            return back()->withInput();
         }
     }
 }

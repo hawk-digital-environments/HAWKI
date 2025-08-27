@@ -11,6 +11,7 @@ use App\Orchid\Layouts\ModelSettings\ProviderAuthenticationLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderStatusLayout;
 use App\Orchid\Layouts\ModelSettings\ProviderAdvancedSettingsLayout;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
@@ -99,7 +100,7 @@ class ProviderEditScreen extends Screen
         $provider = request()->route('provider');
         
         return [
-            Button::make('Save Changes')
+            Button::make('Save')
                 ->icon('save')
                 ->method('save'),
 
@@ -145,47 +146,104 @@ class ProviderEditScreen extends Screen
      */
     public function save(Request $request, ProviderSetting $provider)
     {
-        $request->validate([
-            'provider.provider_name' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique(ProviderSetting::class, 'provider_name')->ignore($provider),
-            ],
-            'provider.api_format_id' => [
-                'required',
-                'integer',
-                'exists:api_formats,id'
-            ],
-            'provider.api_key' => 'nullable|string|max:500',
-            'provider.is_active' => 'boolean',
-            'provider.additional_settings' => 'nullable|string',
-        ]);
+        try {
+            $request->validate([
+                'provider.provider_name' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    Rule::unique(ProviderSetting::class, 'provider_name')->ignore($provider),
+                ],
+                'provider.api_format_id' => [
+                    'required',
+                    'integer',
+                    'exists:api_formats,id'
+                ],
+                'provider.api_key' => 'nullable|string|max:500',
+                'provider.is_active' => 'boolean',
+                'provider.additional_settings' => 'nullable|string',
+            ]);
 
-        $providerData = $request->input('provider');
-        
-        // Handle password field - only update if not empty
-        if (empty($providerData['api_key'])) {
-            unset($providerData['api_key']);
-        }
-        
-        // Convert JSON string to array for storage
-        if (!empty($providerData['additional_settings'])) {
-            $decoded = json_decode($providerData['additional_settings'], true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                Toast::error('Additional settings must be valid JSON format.');
-                return back()->withInput();
+            // Store original values for change tracking
+            $originalName = $provider->provider_name;
+            $originalApiFormat = $provider->api_format_id;
+            $originalActive = $provider->is_active;
+            $originalSettings = $provider->additional_settings;
+
+            $providerData = $request->input('provider');
+            
+            // Handle password field - only update if not empty
+            if (empty($providerData['api_key'])) {
+                unset($providerData['api_key']);
             }
-            $providerData['additional_settings'] = $decoded;
-        } else {
-            $providerData['additional_settings'] = null;
+            
+            // Convert JSON string to array for storage
+            if (!empty($providerData['additional_settings'])) {
+                $decoded = json_decode($providerData['additional_settings'], true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    Log::warning('Invalid JSON in provider additional settings', [
+                        'provider_id' => $provider->id,
+                        'json_error' => json_last_error_msg(),
+                        'input' => $providerData['additional_settings'],
+                    ]);
+                    
+                    Toast::error('Additional settings must be valid JSON format.');
+                    return back()->withInput();
+                }
+                $providerData['additional_settings'] = $decoded;
+            } else {
+                $providerData['additional_settings'] = null;
+            }
+            
+            $provider->fill($providerData)->save();
+
+            // Log successful update with change details
+            $changes = [];
+            if ($originalName !== $provider->provider_name) {
+                $changes['provider_name'] = ['from' => $originalName, 'to' => $provider->provider_name];
+            }
+            if ($originalApiFormat !== $provider->api_format_id) {
+                $changes['api_format_id'] = ['from' => $originalApiFormat, 'to' => $provider->api_format_id];
+            }
+            if ($originalActive !== $provider->is_active) {
+                $changes['is_active'] = ['from' => $originalActive, 'to' => $provider->is_active];
+            }
+            if ($originalSettings !== $provider->additional_settings) {
+                $changes['additional_settings'] = 'updated';
+            }
+
+            Log::info('Provider settings updated successfully', [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->provider_name,
+                'changes' => $changes,
+                'updated_by' => auth()->id(),
+            ]);
+
+            Toast::success("Provider '{$provider->provider_name}' has been updated successfully.");
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Validation failed for provider update', [
+                'provider_id' => $provider->id,
+                'errors' => $e->errors(),
+                'updated_by' => auth()->id(),
+            ]);
+            
+            throw $e; // Re-throw validation exceptions to show form errors
+            
+        } catch (\Exception $e) {
+            Log::error('Error updating provider settings', [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->provider_name ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'updated_by' => auth()->id(),
+            ]);
+            
+            Toast::error('An error occurred while saving: ' . $e->getMessage());
+            return back()->withInput();
         }
         
-        $provider->fill($providerData)->save();
-
-        Toast::success('Provider settings have been updated successfully.');
-        
-        return redirect()->route('platform.models.api.providers');
+        return redirect()->route('platform.models.api.providers.edit', $provider);
     }
 
     /**

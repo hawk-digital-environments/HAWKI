@@ -20,9 +20,8 @@ use App\Orchid\Screens\ModelSettings\ProviderEditScreen;
 use App\Orchid\Screens\ModelSettings\ApiFormatSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ApiFormatEditScreen;
 
-use App\Orchid\Screens\ModelSettings\ModelSettingsScreen;
-use App\Orchid\Screens\ModelSettings\ModelInformationScreen;
-use App\Orchid\Screens\ModelSettings\ModelEditSettingsScreen;
+use App\Orchid\Screens\ModelSettings\LanguageModelEditScreen;
+use App\Orchid\Screens\ModelSettings\LanguageModelListScreen;
 
 use App\Orchid\Screens\ModelSettings\UtilityModelsSettingsScreen;
 
@@ -167,24 +166,18 @@ Route::screen('/models/api/formats/{apiFormat}/edit', ApiFormatEditScreen::class
         ->push(__('Edit API Format'), route('platform.models.api.formats.edit', $apiFormat)));
 
 // Models - Language Models
-Route::screen('/models/language', ModelSettingsScreen::class)
+Route::screen('/models/language', LanguageModelListScreen::class)
     ->name('platform.models.language')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
         ->push(__('Models'), '#')
         ->push(__('Language Models'), route('platform.models.language')));
         
-Route::screen('/models/language/{model}/info', ModelInformationScreen::class)
-    ->name('platform.models.language.info')
+Route::screen('/models/language/{model}/edit', LanguageModelEditScreen::class)
+    ->name('platform.models.language.edit')
     ->breadcrumbs(fn (Trail $trail, $model) => $trail
         ->parent('platform.models.language')
-        ->push($model->name ?? __('Model Information'), route('platform.models.language.info', $model)));
-        
-Route::screen('/models/language/{model}/settings', ModelEditSettingsScreen::class)
-    ->name('platform.models.language.settings')
-    ->breadcrumbs(fn (Trail $trail, $model) => $trail
-        ->parent('platform.models.language', $model)
-        ->push(__('Edit Model Settings'), route('platform.models.language.settings', $model)));
+        ->push(__('Edit Model'), route('platform.models.language.edit', $model)));
 
 // Models - Utility Models  
 Route::screen('/models/utility', UtilityModelsSettingsScreen::class)
