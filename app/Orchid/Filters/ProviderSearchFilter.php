@@ -47,9 +47,11 @@ class ProviderSearchFilter extends Filter
 
         return $builder->where(function (Builder $query) use ($search) {
             $query->where('provider_name', 'like', "%{$search}%")
-                  ->orWhere('base_url', 'like', "%{$search}%")
-                  ->orWhere('ping_url', 'like', "%{$search}%")
-                  ->orWhere('api_format', 'like', "%{$search}%");
+                  ->orWhereHas('apiFormat', function (Builder $subQuery) use ($search) {
+                      $subQuery->where('unique_name', 'like', "%{$search}%")
+                               ->orWhere('display_name', 'like', "%{$search}%")
+                               ->orWhere('base_url', 'like', "%{$search}%");
+                  });
         });
     }
 
