@@ -3,6 +3,7 @@
 namespace App\Orchid\Layouts\ModelSettings;
 
 use App\Models\ApiFormat;
+use Illuminate\Database\Eloquent\Builder;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\DropDown;
 use Orchid\Screen\Actions\Link;
@@ -43,6 +44,7 @@ class ApiFormatSettingsListLayout extends Table
                 }),
 
             TD::make('base_url', 'Base URL')
+                ->sort()
                 ->render(function (ApiFormat $apiFormat) {
                     $url = $apiFormat->base_url;
                     if (strlen($url) > 50) {
@@ -52,14 +54,16 @@ class ApiFormatSettingsListLayout extends Table
                 }),
 
             TD::make('endpoints_count', 'Endpoints')
+                ->sort()
                 ->render(function (ApiFormat $apiFormat) {
-                    $count = $apiFormat->endpoints->count();
+                    $count = $apiFormat->endpoints_count ?? $apiFormat->endpoints->count();
                     return '<span class="badge bg-info">' . $count . ' Endpoint' . ($count != 1 ? 's' : '') . '</span>';
                 }),
 
-            TD::make('providers_count', 'Usage')
+            TD::make('provider_settings_count', 'Usage')
+                ->sort()
                 ->render(function (ApiFormat $apiFormat) {
-                    $count = $apiFormat->providerSettings()->count();
+                    $count = $apiFormat->provider_settings_count ?? $apiFormat->providerSettings()->count();
                     if ($count > 0) {
                         return '<span class="badge bg-success">' . $count . ' Provider' . ($count != 1 ? 's' : '') . '</span>';
                     }
