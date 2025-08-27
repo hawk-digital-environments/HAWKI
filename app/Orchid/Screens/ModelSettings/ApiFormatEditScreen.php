@@ -148,6 +148,7 @@ class ApiFormatEditScreen extends Screen
                 'endpoints.*.Name' => 'required|string|max:255',
                 'endpoints.*.Path' => 'required|string|max:500',
                 'endpoints.*.Method' => 'required|string|in:GET,POST,PUT,DELETE,PATCH',
+                'endpoints.*.Is Active' => 'nullable|string|in:0,1',
             ]);
 
             // Store original values for change tracking
@@ -193,11 +194,14 @@ class ApiFormatEditScreen extends Screen
 
             // Create new endpoints
             foreach ($endpointsData as $endpointData) {
+                // Convert 'Is Active' value to boolean
+                $isActive = isset($endpointData['Is Active']) && $endpointData['Is Active'] === '1';
+                
                 $apiFormat->endpoints()->create([
                     'name' => $endpointData['Name'],
                     'path' => $endpointData['Path'],
                     'method' => strtoupper($endpointData['Method']),
-                    'is_active' => !empty($endpointData['Is Active']) && $endpointData['Is Active'] !== '0',
+                    'is_active' => $isActive,
                 ]);
             }
 
@@ -219,10 +223,17 @@ class ApiFormatEditScreen extends Screen
                 $changes['endpoints_count'] = ['from' => $originalEndpointsCount, 'to' => count($endpointsData)];
             }
 
-            Log::info('API format updated successfully', [
+            Log::info("API format updated successfully - {$apiFormat->display_name}", [
                 'api_format_id' => $apiFormat->id,
                 'api_format_name' => $apiFormat->display_name,
                 'endpoints_count' => count($endpointsData),
+                'endpoints_details' => collect($endpointsData)->map(function($endpoint) {
+                    return [
+                        'name' => $endpoint['Name'],
+                        'method' => $endpoint['Method'],
+                        'is_active' => isset($endpoint['Is Active']) && $endpoint['Is Active'] === '1',
+                    ];
+                })->toArray(),
                 'changes' => $changes,
                 'updated_by' => auth()->id(),
             ]);
