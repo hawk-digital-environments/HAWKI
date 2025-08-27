@@ -77,10 +77,18 @@ class LanguageModelListScreen extends Screen
     public function commandBar(): iterable
     {
         return [
+
+            Button::make('Clear')
+                ->icon('bs.trash')
+                ->method('clearAllModels')
+                ->confirm('This will permanently delete ALL language models from the database. This action cannot be undone. Are you sure?')
+                ->class('btn btn-outline-danger ms-2'),
             Button::make('Refresh Models')
                 ->icon('bs.arrow-clockwise')
                 ->method('refreshModels')
                 ->confirm('This will contact all active providers to check for new models. Continue?'),
+            
+
         ];
     }
 
@@ -456,5 +464,19 @@ class LanguageModelListScreen extends Screen
         }
 
         return redirect()->back();
+    }
+
+    /**
+     * Clear all language models from the database.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function clearAllModels(Request $request)
+    {
+        return $this->clearAllModelsOfType(
+            LanguageModel::class,
+            'language models'
+        );
     }
 }
