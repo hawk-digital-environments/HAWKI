@@ -33,28 +33,16 @@ class ProviderSettingsListLayout extends Table
                         return Link::make($provider->provider_name)
                         ->route('platform.models.api.providers.edit', $provider->id);
                     })
-                    ->sort()
-                    ->filter(),
+                    ->sort(),
 
             TD::make('api_format_id', __('API Format'))
                 ->sort()
-                ->filter(Input::make())
                 ->render(fn (ProviderSetting $provider) => 
                     $provider->apiFormat ? $provider->apiFormat->display_name : 'Not Set'
                 ),
 
-            TD::make('base_url', __('Base URL'))
-                ->render(fn (ProviderSetting $provider) => 
-                    $provider->base_url ?: 'Not Set'
-                )
-                ->defaultHidden(),
-
             TD::make('is_active', __('Status'))
                 ->sort()
-                ->filter(Select::make()->options([
-                    1 => 'Active',
-                    0 => 'Inactive',
-                ])->empty('All Status'))
                 ->render(function (ProviderSetting $provider) {
                     $badgeText = $provider->is_active ? 'Active' : 'Inactive';
                     $badgeClass = $provider->is_active ? 'bg-success' : 'bg-secondary';

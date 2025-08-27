@@ -4,6 +4,7 @@ namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ApiFormat;
 use App\Orchid\Layouts\ModelSettings\ApiFormatSettingsListLayout;
+use App\Orchid\Layouts\ModelSettings\ApiFormatFiltersLayout;
 use App\Orchid\Layouts\ModelSettings\ApiManagementTabMenu;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
@@ -24,8 +25,10 @@ class ApiFormatSettingsScreen extends Screen
     public function query(): iterable
     {
         return [
-            'api_formats' => ApiFormat::with('endpoints')
-                ->orderBy('display_name')
+            'api_formats' => ApiFormat::with(['endpoints', 'providerSettings'])
+                ->withCount(['endpoints', 'providerSettings'])
+                ->filters(ApiFormatFiltersLayout::class)
+                ->defaultSort('display_name')
                 ->paginate(15)
         ];
     }
@@ -71,6 +74,7 @@ class ApiFormatSettingsScreen extends Screen
     {
         return [
             ApiManagementTabMenu::class,
+            ApiFormatFiltersLayout::class,
             ApiFormatSettingsListLayout::class,
         ];
     }

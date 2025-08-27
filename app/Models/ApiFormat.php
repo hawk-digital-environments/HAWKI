@@ -4,10 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Orchid\Filters\Types\Like;
+use Orchid\Filters\Types\Where;
+use Orchid\Filters\Types\WhereDateStartEnd;
+use Orchid\Screen\AsSource;
+use Orchid\Filters\Filterable;
 
 class ApiFormat extends Model
 {
-    use HasFactory;
+    use HasFactory, AsSource, Filterable;
 
     protected $fillable = [
         'unique_name',
@@ -18,6 +23,34 @@ class ApiFormat extends Model
 
     protected $casts = [
         'metadata' => 'array',
+    ];
+
+    /**
+     * The attributes for which you can use filters in url.
+     *
+     * @var array
+     */
+    protected $allowedFilters = [
+        'id' => Where::class,
+        'unique_name' => Like::class,
+        'display_name' => Like::class,
+        'base_url' => Like::class,
+    ];
+
+    /**
+     * The attributes for which can use sort in url.
+     *
+     * @var array
+     */
+    protected $allowedSorts = [
+        'id',
+        'unique_name',
+        'display_name',
+        'base_url',
+        'created_at',
+        'updated_at',
+        'endpoints_count',
+        'provider_settings_count',
     ];
 
     /**
@@ -58,6 +91,81 @@ class ApiFormat extends Model
     public function scopeActive($query)
     {
         return $query;
+    }
+
+    /**
+     * Custom sorting scope for endpoints_count
+     */
+    public function scopeSortByEndpointsCount($query, $direction = 'asc')
+    {
+        return $query->withCount('endpoints')->orderBy('endpoints_count', $direction);
+    }
+
+    /**
+     * Custom sorting scope for provider_settings_count
+     */
+    public function scopeSortByProviderSettingsCount($query, $direction = 'asc')
+    {
+        return $query->withCount('providerSettings')->orderBy('provider_settings_count', $direction);
+    }
+
+    /**
+     * Custom search filter across multiple fields
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $builder
+     * @param string $value
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSearch($builder, $value)
+    {
+        return $builder->where(function ($query) use ($value) {
+            $query->where('unique_name', 'like', "%{$value}%")
+                  ->orWhere('display_name', 'like', "%{$value}%")
+                  ->orWhere('base_url', 'like', "%{$value}%")
+                  ->orWhereJsonContains('metadata', $value);
+        });
+    }
+
+    /**
+     * Custom usage filter
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $builder
+     * @param string $value
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeUsage($builder, $value)
+    {
+        switch ($value) {
+            case 'used':
+                return $builder->whereHas('providerSettings');
+            case 'unused':
+                return $builder->whereDoesntHave('providerSettings');
+            default:
+                return $builder;
+        }
+    }
+
+    /**
+     * Custom features filter
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $builder
+     * @param string $value
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeFeatures($builder, $value)
+    {
+        switch ($value) {
+            case 'streaming':
+                return $builder->whereJsonContains('metadata->supports_streaming', true);
+            case 'functions':
+                return $builder->whereJsonContains('metadata->supports_function_calling', true);
+            case 'grounding':
+                return $builder->whereJsonContains('metadata->supports_grounding', true);
+            case 'vision':
+                return $builder->whereJsonContains('metadata->supports_vision', true);
+            default:
+                return $builder;
+        }
     }
 
     /**

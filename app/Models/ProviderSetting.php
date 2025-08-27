@@ -35,10 +35,7 @@ class ProviderSetting extends Model
         'id' => Where::class,
         'provider_name' => Like::class,
         'api_format_id' => Where::class,
-        'base_url' => Like::class,
-        'ping_url' => Like::class,
         'is_active' => Where::class,
-        'search' => Like::class, // Custom search filter
         'created_at' => WhereDateStartEnd::class,
         'updated_at' => WhereDateStartEnd::class,
     ];
