@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\DropDown;
 use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Components\Cells\DateTimeSplit;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
 
@@ -91,10 +92,15 @@ class ApiFormatSettingsListLayout extends Table
                 }),
 
             TD::make('created_at', 'Created')
-                ->sort()
-                ->render(function (ApiFormat $apiFormat) {
-                    return '<span class="text-muted small">' . $apiFormat->created_at->format('M d, Y H:i') . '</span>';
-                }),
+                ->usingComponent(DateTimeSplit::class)
+                ->align(TD::ALIGN_RIGHT)
+                ->defaultHidden()
+                ->sort(),
+
+            TD::make('updated_at', 'Last Updated')
+                ->usingComponent(DateTimeSplit::class)
+                ->align(TD::ALIGN_RIGHT)
+                ->sort(),
 
             TD::make('actions', 'Actions')
                 ->align(TD::ALIGN_CENTER)
