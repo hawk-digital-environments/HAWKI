@@ -8,12 +8,14 @@ use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
 use Orchid\Screen\AsSource;
 use Orchid\Filters\Filterable;
+use Illuminate\Support\Str;
 
 class LanguageModel extends Model
 {
     use AsSource, Filterable;
 
     protected $fillable = [
+        'system_id',
         'model_id',
         'label',
         'provider_id',
@@ -35,12 +37,27 @@ class LanguageModel extends Model
     ];
 
     /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::creating(function ($model) {
+            if (empty($model->system_id)) {
+                $model->system_id = Str::uuid();
+            }
+        });
+    }
+
+    /**
      * The attributes for which you can use filters in url.
      *
      * @var array
      */
     protected $allowedFilters = [
         'id' => Where::class,
+        'system_id' => Like::class,
         'model_id' => Like::class,
         'label' => Like::class,
         'provider_id' => Where::class,
@@ -58,6 +75,7 @@ class LanguageModel extends Model
      */
     protected $allowedSorts = [
         'id',
+        'system_id',
         'model_id',
         'label',
         'provider_id',
