@@ -94,12 +94,12 @@ class LanguageModelEditScreen extends Screen
     {
         return [
             Layout::block(LanguageModelBasicInfoLayout::class)
-                ->title('Basic Information')
-                ->description('Provider details and model identification.'),
+                ->title('Model Information')
+                ->description('System ID, provider details, and model identification.'),
 
             Layout::block(LanguageModelStatusLayout::class)
                 ->title('Model Status')
-                ->description('Control model availability and visibility.'),
+                ->description('Control model availability and visibility for users.'),
 
             Layout::block(LanguageModelSettingsLayout::class)
                 ->title('Model Settings')

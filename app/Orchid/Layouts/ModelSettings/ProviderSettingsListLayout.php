@@ -53,7 +53,7 @@ class ProviderSettingsListLayout extends Table
                         ->method('toggleStatus', [
                             'id' => $provider->id,
                         ])
-                        ->class("badge {$badgeClass} border-0");
+                        ->class("badge {$badgeClass} border-0 rounded-pill");
                 }),
 
             TD::make('created_at', __('Created'))
