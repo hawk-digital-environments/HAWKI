@@ -76,7 +76,13 @@ class AuthenticationController extends Controller
             ]);
         }
 
-        Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+        // Log successful login (LDAP debugging is handled in LdapService)
+        Log::info('Successful LDAP Login', [
+            'username' => $authenticatedUserInfo['username'],
+            'auth_method' => 'LDAP',
+            'user_info' => array_diff_key($authenticatedUserInfo, array_flip(['password', 'userpassword', 'pwd']))
+        ]);
+        
         $username = $authenticatedUserInfo['username'];
         $user = User::where('username', $username)->first();
 
@@ -114,7 +120,11 @@ class AuthenticationController extends Controller
                 return response()->json(['error' => 'Login Failed!'], 401);
             }
     
-            Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+            Log::info('Successful Shibboleth Login', [
+                'username' => $authenticatedUserInfo['username'],
+                'auth_method' => 'Shibboleth',
+                'user_info' => array_diff_key($authenticatedUserInfo, array_flip(['password', 'userpassword', 'pwd']))
+            ]);
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
@@ -145,7 +155,11 @@ class AuthenticationController extends Controller
                 return response()->json(['error' => 'Login Failed!'], 401);
             }
     
-            Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+            Log::info('Successful OpenID Connect Login', [
+                'username' => $authenticatedUserInfo['username'],
+                'auth_method' => 'OpenID Connect',
+                'user_info' => array_diff_key($authenticatedUserInfo, array_flip(['password', 'userpassword', 'pwd']))
+            ]);
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
