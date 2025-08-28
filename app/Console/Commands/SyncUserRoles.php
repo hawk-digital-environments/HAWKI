@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\User;
 use App\Models\Role;
+use App\Observers\UserObserver;
 use Illuminate\Support\Facades\DB;
 
 class SyncUserRoles extends Command
@@ -15,24 +16,41 @@ class SyncUserRoles extends Command
      * @var string
      */
     protected $signature = 'users:sync-roles 
+                           {user? : Username or ID of specific user to sync}
                            {--dry-run : Show what would be changed without making changes}
-                           {--force : Skip confirmation prompt}';
+                           {--force : Skip confirmation prompt}
+                           {--all : Sync roles for all users}
+                           {--observer : Use UserObserver logic instead of direct sync}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Synchronize Orchid roles for all users based on their employeetype';
+    protected $description = 'Synchronize Orchid roles for users based on their employeetype or manually trigger UserObserver';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
+        $userParam = $this->argument('user');
         $dryRun = $this->option('dry-run');
         $force = $this->option('force');
+        $syncAll = $this->option('all');
+        $useObserver = $this->option('observer');
 
+        // Handle specific user with observer logic
+        if ($userParam && $useObserver) {
+            return $this->handleUserObserver($userParam);
+        }
+
+        // Handle all users with observer logic
+        if ($syncAll && $useObserver) {
+            return $this->handleAllUsersObserver($force);
+        }
+
+        // Original bulk sync logic
         $this->info('🔄 Starting User-Role Synchronization');
         $this->newLine();
 
@@ -215,5 +233,111 @@ class SyncUserRoles extends Command
 
         $this->newLine();
         $this->info("📊 Summary: {$successCount} successful, {$errorCount} errors");
+    }
+
+    /**
+     * Handle single user with UserObserver logic
+     */
+    private function handleUserObserver(string $userParam): int
+    {
+        $user = $this->findUser($userParam);
+        
+        if (!$user) {
+            $this->error("User not found: {$userParam}");
+            return 1;
+        }
+
+        $this->info("Triggering UserObserver for user: {$user->username} (ID: {$user->id})");
+        $this->info("Employee Type: {$user->employeetype}");
+        $this->info("Approval Status: " . ($user->approval ? 'Approved' : 'Pending'));
+        
+        try {
+            $observer = new UserObserver();
+            
+            // Use reflection to call the private syncOrchidRole method
+            $reflection = new \ReflectionClass($observer);
+            $method = $reflection->getMethod('syncOrchidRole');
+            $method->setAccessible(true);
+            $method->invoke($observer, $user);
+            
+            $this->info("✅ UserObserver executed successfully for {$user->username}");
+            
+            // Show current roles after sync
+            $user->refresh();
+            $roles = $user->roles->pluck('name')->join(', ') ?: 'None';
+            $this->info("Current Orchid roles: {$roles}");
+            
+            return 0;
+            
+        } catch (\Exception $e) {
+            $this->error("❌ Failed to execute UserObserver: " . $e->getMessage());
+            return 1;
+        }
+    }
+
+    /**
+     * Handle all users with UserObserver logic
+     */
+    private function handleAllUsersObserver(bool $force): int
+    {
+        $users = User::whereNotIn('username', ['HAWKI'])->get();
+        
+        if ($users->isEmpty()) {
+            $this->info('No users found.');
+            return 0;
+        }
+
+        $this->info("Found {$users->count()} users to process with UserObserver");
+        
+        if (!$force && !$this->confirm('Do you want to trigger UserObserver for all users?')) {
+            $this->info('Operation cancelled.');
+            return 1;
+        }
+
+        $progressBar = $this->output->createProgressBar($users->count());
+        $progressBar->start();
+
+        $successCount = 0;
+        $errorCount = 0;
+        $observer = new UserObserver();
+        
+        // Use reflection to call the private syncOrchidRole method
+        $reflection = new \ReflectionClass($observer);
+        $method = $reflection->getMethod('syncOrchidRole');
+        $method->setAccessible(true);
+
+        foreach ($users as $user) {
+            try {
+                $method->invoke($observer, $user);
+                $successCount++;
+            } catch (\Exception $e) {
+                $this->line("\n❌ Failed for user {$user->username}: " . $e->getMessage());
+                $errorCount++;
+            }
+            $progressBar->advance();
+        }
+        
+        $progressBar->finish();
+        $this->newLine(2);
+        $this->info("📊 UserObserver Summary: {$successCount} successful, {$errorCount} errors");
+        
+        return 0;
+    }
+
+    /**
+     * Find user by username or ID
+     */
+    private function findUser(string $userParam): ?User
+    {
+        // Try to find by ID first (if numeric)
+        if (is_numeric($userParam)) {
+            $user = User::find($userParam);
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // Try to find by username
+        return User::where('username', $userParam)->first();
     }
 }

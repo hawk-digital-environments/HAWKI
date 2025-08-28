@@ -87,15 +87,20 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('Models')
                 ->icon('bs.stars')
                 ->permission('platform.systems.models')
+                ->active('platform.models.*')
                 ->list([        
-                    Menu::make('API Providers')
-                        ->route('platform.modelsettings.providers')
-                        ->icon('bs.plug'),
-                    Menu::make('Model Settings')
-                        ->route('platform.modelsettings.models')
+                    Menu::make('API Management')
+                        ->route('platform.models.api.providers')
+                        ->permission('platform.modelsettings.providers')
+                        ->icon('bs.cloud-upload')
+                        ->active('platform.models.api*'),
+                    Menu::make('Language Models')
+                        ->route('platform.models.language')
+                        ->permission('platform.modelsettings.models')
                         ->icon('bs.toggles'),
                     Menu::make('Utility Models')
-                        ->route('platform.modelsettings.utilitymodels')
+                        ->route('platform.models.utility')
+                        ->permission('platform.modelsettings.utilitymodels')
                         ->icon('bs.tools'),                  
                     ]),
 
@@ -168,11 +173,20 @@ class PlatformProvider extends OrchidServiceProvider
             ItemPermission::group(__('Main'))
                 ->addPermission('platform.systems.settings', __('System Settings'))
                 ->addPermission('platform.systems.models', __('Model Settings')),
+                
+            ItemPermission::group(__('Model Settings'))
+                ->addPermission('platform.modelsettings.providers', __('API Providers'))
+                ->addPermission('systems.modelsettings', __('API Formats'))
+                ->addPermission('platform.modelsettings.models', __('Language Models'))
+                ->addPermission('platform.modelsettings.utilitymodels', __('Utility Models')),
+                
             ItemPermission::group(__('Access Controls'))
                 ->addPermission('platform.access.roles', __('Roles'))
                 ->addPermission('platform.access.users', __('Users')),
+                
             ItemPermission::group(__('Reporting'))
                 ->addPermission('platform.dashboard', __('Dashboard')),
+                
             ItemPermission::group(__('Chat Access'))
                 ->addPermission('chat.access', __('Chat Access'))
                 ->addPermission('groupchat.access', __('Group Chat Access')),

@@ -10,7 +10,7 @@ use App\Models\ProviderSetting;
 class HAWKIProvider extends BaseAIModelProvider
 {
     /**
-     * Constructor for OllamaProvider
+     * Constructor for HAWKIProvider
      *
      * @param array $config
      */
@@ -18,6 +18,40 @@ class HAWKIProvider extends BaseAIModelProvider
     {
         parent::__construct($config);
         $this->providerId = 'hawki'; // Explicitly set the providerId
+    }
+    
+    /**
+     * Get the chat endpoint URL from the provider's API format configuration
+     *
+     * @return string
+     */
+    protected function getChatEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->chat_url : $this->config['base_url'] ?? '';
+    }
+    
+    /**
+     * Get the models endpoint URL from the provider's API format configuration  
+     *
+     * @return string
+     */
+    protected function getModelsEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->ping_url : $this->config['ping_url'] ?? '';
+    }
+    
+    /**
+     * Get the provider settings from database
+     *
+     * @return ProviderSetting|null
+     */
+    protected function getProviderFromDatabase(): ?ProviderSetting
+    {
+        return ProviderSetting::where('provider_name', $this->providerId)
+            ->where('is_active', true)
+            ->first();
     }
     
     /**
@@ -126,7 +160,7 @@ class HAWKIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Make a non-streaming request to the Ollama API
+     * Make a non-streaming request to the HAWKI API
      *
      * @param array $payload
      * @return mixed
@@ -136,9 +170,12 @@ class HAWKIProvider extends BaseAIModelProvider
         // Ensure stream is set to false
         $payload['stream'] = false;
         
-        // Initialize cURL with the base_url from database config
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
+        // Initialize cURL with the database-configured URL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -159,7 +196,7 @@ class HAWKIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Make a streaming request to the Ollama API
+     * Make a streaming request to the HAWKI API
      *
      * @param array $payload
      * @param callable $streamCallback
@@ -167,8 +204,8 @@ class HAWKIProvider extends BaseAIModelProvider
      */
     public function makeStreamingRequest(array $payload, callable $streamCallback)
     {
-        // Implementation of streaming request for Ollama
-        // Similar to OpenAI implementation but adapted for Ollama's API
+        // Implementation of streaming request for HAWKI
+        // Similar to Ollama implementation but adapted for HAWKI's API
         
         // Ensure stream is set to true
         $payload['stream'] = true;
@@ -181,9 +218,12 @@ class HAWKIProvider extends BaseAIModelProvider
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
-        // Initialize cURL with the base_url from database config
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
+        // Initialize cURL with the database-configured URL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -275,21 +315,23 @@ class HAWKIProvider extends BaseAIModelProvider
     }
     
     /**
-     * Ping the Ollama API to check available models
+     * Ping the HAWKI API to check available models
      *
      * @return string|null
      */
     protected function pingProvider(): ?string
     {
-        Log::info('pingProvider: Ollama');
-        $url = $this->config['ping_url'];
+        Log::info('pingProvider: HAWKI');
+        
+        // Get the models endpoint URL from database configuration
+        $url = $this->getModelsEndpointUrl();
         
         try {
-            // Ollama API might not require an API key
+            // HAWKI API might not require an API key
             $response = Http::timeout(5)->get($url);
             return $response;
         } catch (\Exception $e) {
-            Log::error("Error pinging Ollama provider: " . $e->getMessage());
+            Log::error("Error pinging HAWKI provider: " . $e->getMessage());
             return null;
         }
     }

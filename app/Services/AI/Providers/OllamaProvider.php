@@ -21,6 +21,40 @@ class OllamaProvider extends BaseAIModelProvider
     }
     
     /**
+     * Get the chat endpoint URL from the provider's API format configuration
+     *
+     * @return string
+     */
+    protected function getChatEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->chat_url : $this->config['base_url'] ?? '';
+    }
+    
+    /**
+     * Get the models endpoint URL from the provider's API format configuration  
+     *
+     * @return string
+     */
+    protected function getModelsEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->ping_url : $this->config['ping_url'] ?? '';
+    }
+    
+    /**
+     * Get the provider settings from database
+     *
+     * @return ProviderSetting|null
+     */
+    protected function getProviderFromDatabase(): ?ProviderSetting
+    {
+        return ProviderSetting::where('provider_name', $this->providerId)
+            ->where('is_active', true)
+            ->first();
+    }
+    
+    /**
      * Format the raw payload for Ollama API
      *
      * @param array $rawPayload
@@ -136,9 +170,12 @@ class OllamaProvider extends BaseAIModelProvider
         // Ensure stream is set to false
         $payload['stream'] = false;
         
-        // Initialize cURL with the base_url from database config
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
+        // Initialize cURL with the database-configured URL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -181,9 +218,12 @@ class OllamaProvider extends BaseAIModelProvider
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
-        // Initialize cURL with the base_url from database config
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
+        // Initialize cURL with the database-configured URL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -282,7 +322,9 @@ class OllamaProvider extends BaseAIModelProvider
     protected function pingProvider(): ?string
     {
         Log::info('pingProvider: Ollama');
-        $url = $this->config['ping_url'];
+        
+        // Get the models endpoint URL from database configuration
+        $url = $this->getModelsEndpointUrl();
         
         try {
             // Ollama API might not require an API key

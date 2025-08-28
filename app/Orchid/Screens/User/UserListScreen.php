@@ -143,6 +143,13 @@ class UserListScreen extends Screen
     {
         $user = User::findOrFail($request->get('id'));
         
+        // Prevent current user from changing their own approval status
+        $currentUserId = $request->user()->id;
+        if ($user->id === $currentUserId) {
+            Toast::error('You cannot change your own approval status.');
+            return;
+        }
+        
         $newApprovalStatus = !$user->approval;
         $user->update(['approval' => $newApprovalStatus]);
         
