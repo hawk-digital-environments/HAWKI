@@ -20,7 +20,7 @@ class ListTestUsers extends Command
      *
      * @var string
      */
-    protected $description = 'List all test users created with user:create-test';
+    protected $description = 'List all test users created with user:manage';
 
     /**
      * Execute the console command.
@@ -45,7 +45,7 @@ class ListTestUsers extends Command
                 ->orderBy('username')
                 ->get();
                 
-            $this->info("Test users created with 'user:create-test' command:");
+            $this->info("Test users created with 'user:manage' command:");
         }
         
         if ($testUsers->isEmpty()) {
