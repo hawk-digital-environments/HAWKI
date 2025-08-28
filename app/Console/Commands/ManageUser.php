@@ -7,7 +7,7 @@ use App\Events\GuestAccountCreated;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
-class CreateTestUser extends Command
+class ManageUser extends Command
 {
     /**
      * The name and signature of the console command.
