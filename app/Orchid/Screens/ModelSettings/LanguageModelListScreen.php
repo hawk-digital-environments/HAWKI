@@ -35,8 +35,9 @@ class LanguageModelListScreen extends Screen
                 ->leftJoin('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
                 ->select('language_models.*', 'provider_settings.provider_name')
                 ->whereHas('provider', function ($query) {
-                    $query->where('is_active', true);
+                    $query->where('provider_settings.is_active', true);
                 })
+                ->where('language_models.is_active', true)
                 ->filters(LanguageModelFiltersLayout::class)
                 ->defaultSort('label')
                 ->paginate(50)
