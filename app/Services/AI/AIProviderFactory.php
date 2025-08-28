@@ -13,6 +13,7 @@ use App\Services\AI\Providers\OpenWebUIProvider;
 use App\Services\AI\Providers\HAWKIProvider;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class AIProviderFactory
 {
@@ -29,9 +30,19 @@ class AIProviderFactory
      * @var array
      */
     private $modelProviderIdMap = [];
+
+    /**
+     * Cache duration for provider mappings (30 minutes)
+     */
+    const MAPPING_CACHE_TTL = 1800;
+
+    /**
+     * Cache duration for provider instances (1 hour)
+     */
+    const INSTANCE_CACHE_TTL = 3600;
     
     /**
-     * Constructor - loads model-provider mappings from database
+     * Constructor - loads model-provider mappings from database with caching
      */
     public function __construct()
     {
@@ -39,27 +50,34 @@ class AIProviderFactory
     }
     
     /**
-     * Load model to provider mappings from the database
+     * Load model to provider mappings from the database with caching
      */
     private function loadModelProviderMappings()
     {
-        try {
-            // Load all active models and their providers from the database
-            $models = LanguageModel::select('language_models.model_id', 'language_models.provider_id')
-                ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
-                ->where('language_models.is_active', true)
-                ->where('provider_settings.is_active', true)
-                ->get();
-            
-            foreach ($models as $model) {
-                // Store the actual provider ID for each model
-                $this->modelProviderIdMap[$model->model_id] = $model->provider_id;
+        $cacheKey = 'ai_model_provider_mappings';
+        
+        $this->modelProviderIdMap = Cache::remember($cacheKey, self::MAPPING_CACHE_TTL, function () {
+            try {
+                // Load all active models and their providers from the database
+                $models = LanguageModel::select('language_models.model_id', 'language_models.provider_id')
+                    ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
+                    ->where('language_models.is_active', true)
+                    ->where('provider_settings.is_active', true)
+                    ->get();
+                
+                $mappings = [];
+                foreach ($models as $model) {
+                    // Store the actual provider ID for each model
+                    $mappings[$model->model_id] = $model->provider_id;
+                }
+                
+                return $mappings;
+            } catch (\Exception $e) {
+                Log::error('Failed to load model-provider mappings: ' . $e->getMessage());
+                // Fallback to an empty array if the database is not ready yet
+                return [];
             }
-        } catch (\Exception $e) {
-            Log::error('Failed to load model-provider mappings: ' . $e->getMessage());
-            // Fallback to an empty array if the database is not ready yet
-            $this->modelProviderIdMap = [];
-        }
+        });
     }
     
     /**
@@ -87,7 +105,7 @@ class AIProviderFactory
     }
     
     /**
-     * Get a provider interface by provider ID (database ID)
+     * Get a provider interface by provider ID (database ID) with caching
      * 
      * @param int $providerId
      * @return \App\Services\AI\Interfaces\AIModelProviderInterface
@@ -100,12 +118,17 @@ class AIProviderFactory
             return $this->providerInstances[$providerId];
         }
         
+        // Try to get from cache first
+        $cacheKey = "provider_instance_{$providerId}";
+        
         try {
             // Get the provider settings from the database with API format relationship
-            $provider = ProviderSetting::with('apiFormat')
-                ->where('id', $providerId)
-                ->where('is_active', true)
-                ->first();
+            $provider = Cache::remember("provider_data_{$providerId}", self::INSTANCE_CACHE_TTL, function () use ($providerId) {
+                return ProviderSetting::with('apiFormat')
+                    ->where('id', $providerId)
+                    ->where('is_active', true)
+                    ->first();
+            });
             
             if (!$provider) {
                 throw new \Exception("Provider not found or not active with ID: $providerId");
@@ -122,7 +145,7 @@ class AIProviderFactory
             }
             
             // Create an instance of the provider with the settings from the database
-            // Note: URLs are now generated dynamically by the ProviderSetting model using accessor methods
+            // Note: URLs are now generated dynamically by the ProviderSetting model using cached accessor methods
             $this->providerInstances[$providerId] = new $providerClass([
                 'api_key' => $provider->api_key,
                 'provider_name' => $provider->provider_name,
@@ -215,6 +238,51 @@ class AIProviderFactory
      */
     public function refreshMappings()
     {
+        // Clear the cache and reload
+        Cache::forget('ai_model_provider_mappings');
         $this->loadModelProviderMappings();
+        
+        // Also clear provider data cache
+        foreach (array_keys($this->providerInstances) as $providerId) {
+            Cache::forget("provider_data_{$providerId}");
+        }
+        
+        // Clear local instances cache
+        $this->providerInstances = [];
+    }
+
+    /**
+     * Clear all cached data for this factory
+     */
+    public function clearAllCaches(): void
+    {
+        // Clear mappings cache
+        Cache::forget('ai_model_provider_mappings');
+        
+        // Clear all provider data caches
+        foreach (array_keys($this->providerInstances) as $providerId) {
+            Cache::forget("provider_data_{$providerId}");
+        }
+        
+        // Clear local caches
+        $this->modelProviderIdMap = [];
+        $this->providerInstances = [];
+        
+        // Reload fresh data
+        $this->loadModelProviderMappings();
+    }
+
+    /**
+     * Get cache statistics for debugging
+     */
+    public function getCacheStats(): array
+    {
+        return [
+            'mappings_cached' => count($this->modelProviderIdMap),
+            'instances_cached' => count($this->providerInstances),
+            'mapping_cache_key' => 'ai_model_provider_mappings',
+            'cache_ttl_mappings' => self::MAPPING_CACHE_TTL,
+            'cache_ttl_instances' => self::INSTANCE_CACHE_TTL,
+        ];
     }
 }

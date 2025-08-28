@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
@@ -190,5 +191,24 @@ class ApiFormat extends Model
     public function getChatEndpoint(): ?ApiFormatEndpoint
     {
         return $this->getEndpoint('chat.create');
+    }
+
+    /**
+     * Clear all related caches when API format changes
+     */
+    public function clearRelatedCaches(): void
+    {
+        // Clear endpoint URL caches
+        foreach ($this->endpoints as $endpoint) {
+            $endpoint->clearUrlCache();
+        }
+
+        // Clear provider URL caches
+        foreach ($this->providerSettings as $provider) {
+            $provider->clearUrlCaches();
+        }
+
+        // Clear any cached provider instances in factory
+        Cache::forget("provider_instances_cleared_" . time());
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Orchid\Filters\Types\Like;
 use Orchid\Filters\Types\Where;
 use Orchid\Filters\Types\WhereDateStartEnd;
@@ -108,6 +109,11 @@ class ProviderSetting extends Model
     }
 
     /**
+     * Cache duration for URL generation (1 hour)
+     */
+    const URL_CACHE_TTL = 3600;
+
+    /**
      * Get the base URL from API format
      */
     public function getBaseUrlAttribute(): ?string
@@ -116,20 +122,44 @@ class ProviderSetting extends Model
     }
 
     /**
-     * Get the models endpoint URL (ping_url equivalent)
+     * Get the models endpoint URL (ping_url equivalent) with caching
      */
     public function getPingUrlAttribute(): ?string
     {
-        $modelsEndpoint = $this->apiFormat?->getModelsEndpoint();
-        return $modelsEndpoint?->full_url;
+        $cacheKey = "provider_ping_url_{$this->id}_{$this->updated_at?->timestamp}";
+        
+        return Cache::remember($cacheKey, self::URL_CACHE_TTL, function () {
+            $modelsEndpoint = $this->apiFormat?->getModelsEndpoint();
+            return $modelsEndpoint?->full_url;
+        });
     }
 
     /**
-     * Get the chat endpoint URL
+     * Get the chat endpoint URL with caching
      */
     public function getChatUrlAttribute(): ?string
     {
-        $chatEndpoint = $this->apiFormat?->getChatEndpoint();
-        return $chatEndpoint?->full_url;
+        $cacheKey = "provider_chat_url_{$this->id}_{$this->updated_at?->timestamp}";
+        
+        return Cache::remember($cacheKey, self::URL_CACHE_TTL, function () {
+            $chatEndpoint = $this->apiFormat?->getChatEndpoint();
+            return $chatEndpoint?->full_url;
+        });
+    }
+
+    /**
+     * Clear URL caches for this provider
+     */
+    public function clearUrlCaches(): void
+    {
+        Cache::forget("provider_ping_url_{$this->id}_{$this->updated_at?->timestamp}");
+        Cache::forget("provider_chat_url_{$this->id}_{$this->updated_at?->timestamp}");
+        
+        // Also clear related endpoint caches
+        if ($this->apiFormat) {
+            foreach ($this->apiFormat->endpoints as $endpoint) {
+                $endpoint->clearUrlCache();
+            }
+        }
     }
 }
