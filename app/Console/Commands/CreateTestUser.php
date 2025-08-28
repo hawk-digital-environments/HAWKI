@@ -167,7 +167,7 @@ class CreateTestUser extends Command
      */
     private function createAdminUser(): int
     {
-        $username = $this->option('username') ?: 'admin';
+        $username = $this->option('username') ?: 'admin-local';
         $password = $this->option('password') ?: 'password';
 
         // Check if user already exists
