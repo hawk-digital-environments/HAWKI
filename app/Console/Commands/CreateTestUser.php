@@ -16,23 +16,31 @@ class CreateTestUser extends Command
      */
     protected $signature = 'user:create-test 
                             {--count=1 : Number of test users to create}
-                            {--type=guest : Employee type for the user (guest, student, staff)}
+                            {--type=guest : Employee type for the user (guest, student, staff, admin)}
                             {--auth=Local : Authentication type (Local, LDAP)}
                             {--no-approval : Create users without approval (pending approval)}
-                            {--no-notify : Do not send admin notifications for created users}';
+                            {--no-notify : Do not send admin notifications for created users}
+                            {--admin : Create a default admin user (name=admin, password=password, type=admin)}
+                            {--username= : Custom username (only with --admin flag)}
+                            {--password= : Custom password (only with --admin flag)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create test users with incremental naming (Testuser<ID>)';
+    protected $description = 'Create test users with incremental naming (Testuser<ID>) or create a default admin user';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
+        // Handle admin user creation
+        if ($this->option('admin')) {
+            return $this->createAdminUser();
+        }
+
         $count = (int) $this->option('count');
         $employeeType = $this->option('type');
         $authType = $this->option('auth');
@@ -152,5 +160,81 @@ class CreateTestUser extends Command
         ]);
         
         return $user;
+    }
+
+    /**
+     * Create a default admin user
+     */
+    private function createAdminUser(): int
+    {
+        $username = $this->option('username') ?: 'admin';
+        $password = $this->option('password') ?: 'password';
+
+        // Check if user already exists
+        if (User::where('username', $username)->exists()) {
+            $this->error("❌ User with username '{$username}' already exists!");
+            return Command::FAILURE;
+        }
+
+        try {
+            $this->info("Creating admin user...");
+            $this->info("Username: {$username}");
+            $this->info("Password: {$password}");
+            $this->info("Type: admin");
+            $this->info("Approval: true");
+
+            $userData = [
+                'username' => $username,
+                'name' => ucfirst($username), // 'admin' -> 'Admin'
+                'email' => $username . '@hawki.local',
+                'employeetype' => 'admin',
+                'auth_type' => 'Local',
+                'password' => $password, // Will be auto-hashed by User model
+                'publicKey' => '',
+                'avatar_id' => null,
+                'reset_pw' => false, // Admin doesn't need to reset password immediately
+                'approval' => true, // Admin is always approved
+                'isRemoved' => false,
+                'permissions' => null,
+            ];
+
+            $user = User::create($userData);
+
+            $this->info("✅ Admin user created successfully!");
+            $this->table(
+                ['Field', 'Value'],
+                [
+                    ['ID', $user->id],
+                    ['Username', $user->username],
+                    ['Name', $user->name],
+                    ['Email', $user->email],
+                    ['Employee Type', $user->employeetype],
+                    ['Auth Type', $user->auth_type],
+                    ['Approval', $user->approval ? 'Approved' : 'Pending'],
+                    ['Reset Password', $user->reset_pw ? 'Required' : 'Not Required'],
+                ]
+            );
+
+            $this->newLine();
+            $this->comment("The admin user has been created with approval=true.");
+            $this->comment("The UserObserver will automatically assign the 'Administrator' role if it exists.");
+            $this->comment("You can now log in with username '{$username}' and password '{$password}'.");
+
+            Log::info('Admin user created via artisan command', [
+                'username' => $user->username,
+                'id' => $user->id,
+                'type' => 'admin'
+            ]);
+
+            return Command::SUCCESS;
+
+        } catch (\Exception $e) {
+            $this->error("❌ Failed to create admin user: " . $e->getMessage());
+            Log::error('Failed to create admin user', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return Command::FAILURE;
+        }
     }
 }
