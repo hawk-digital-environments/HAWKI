@@ -56,7 +56,7 @@ return [
         //'connections.default.use_ssl' => 'Use SSL to connect to the LDAP server (not recommended)',
         //'connections.default.use_tls' => 'Use TLS to connect to the LDAP server (recommended)',
         //'connections.default.use_sasl' => 'Use SASL to connect to the LDAP server',
-        'logging.enabled' => 'Lgging of LDAP queries',
+        'logging.enabled' => 'Logging of LDAP queries',
         'cache.enabled' => 'Caching of LDAP queries',
         'custom_connection.ldap_host' => 'Hostname of the LDAP server',
         'custom_connection.ldap_port' => 'Port number of the LDAP server',
@@ -66,7 +66,7 @@ return [
         'custom_connection.ldap_filter' => 'Filter required for authentication based on Username',
         'custom_connection.attribute_map.username' => 'Username Key Name Override',
         'custom_connection.attribute_map.email' => 'Email Key Name Override',
-        'custom_connection.attribute_map.employeetype' => 'Employeetype Key Name Overridebut',
+        'custom_connection.attribute_map.employeetype' => 'Employeetype Key Name Override',
         'custom_connection.attribute_map.name' => 'Displayname Key Name Override',
     ],
     'open_id_connect' => [
