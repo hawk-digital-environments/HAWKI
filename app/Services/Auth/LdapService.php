@@ -21,6 +21,11 @@ class LdapService
             $ldap_base = config('ldap.custom_connection.ldap_search_dn');
             $ldap_filter = config('ldap.custom_connection.ldap_filter');
             $ldap_attributeMap = config('ldap.custom_connection.attribute_map');
+            
+            // Get logging configuration
+            $loggingEnabled = config('ldap.logging.enabled', false);
+            $logChannel = config('ldap.logging.channel', 'stack');
+            $logLevel = config('ldap.logging.level', 'info');
 
             // Check if username or password is empty
             if (!$username || !$password) {
@@ -73,6 +78,10 @@ class LdapService
             $info = ldap_get_entries($ldapConn, $sr);
             ldap_close($ldapConn);
 
+            // Debug: Log all available LDAP attributes (only if logging enabled)
+            if ($loggingEnabled) {
+                Log::channel($logChannel)->log($logLevel, 'Available LDAP attributes for user ' . $username . ':', array_keys($info[0]));
+            }
 
             $userInfo = [];
             foreach ($ldap_attributeMap as $appAttr => $ldapAttr) {
@@ -90,9 +99,12 @@ class LdapService
             }
             return $userInfo;
         } catch (\Exception $e) {
-
-            Log::error('ERROR LOGIN LDAP');
-            Log::error($e);
+            // Log errors only if logging is enabled
+            if (config('ldap.logging.enabled', false)) {
+                $logChannel = config('ldap.logging.channel', 'stack');
+                Log::channel($logChannel)->error('ERROR LOGIN LDAP');
+                Log::channel($logChannel)->error($e);
+            }
             return false;
         }
     }
