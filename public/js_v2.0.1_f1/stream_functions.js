@@ -208,7 +208,7 @@ function createMsgObject(msg){
         role: role,
         content:{
             text: filteredText,
-            previousMessageId: msg.dataset.previousMessageId
+            providerMessageId: msg.dataset.providerMessageId
         }
     }
     return messageObject;

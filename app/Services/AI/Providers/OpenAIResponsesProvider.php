@@ -38,10 +38,10 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
 
         // Convert messages into the Responses API "input" shape
         $input = [];
-        $previousMessageId = '';
+        $providerMessageId = '';
         foreach ($messages as $message) {
             $contentText = $message['content']['text'] ?? '';
-            $previousMessageId = $message['content']['previousMessageId'] ?? '';
+            $providerMessageId = $message['content']['providerMessageId'] ?? '';
             $input[] = [
                 'role' => $message['role'],
                 'content' => $contentText
@@ -53,31 +53,32 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         $payload = [
             'model' => $modelId,
             'input' => $input,
-            // keep stream flag; streaming handled by makeStreamingRequest
-            //'stream' => !empty($rawPayload['stream']) && $this->supportsStreaming($modelId),
-            //'reasoning' => ['effort' => 'low']
+             // keep stream flag; streaming handled by makeStreamingRequest
+            'stream' => !empty($rawPayload['stream']) && $this->supportsStreaming($modelId),
         ];
 
         // include previous_response_id if provided (Responses API uses previous_response to continue reasoning)
-        if (!empty($previousMessageId)) {
-            $payload['previous_response_id'] = $previousMessageId;
+        if (!empty($providerMessageId)) {
+            $payload['previous_response_id'] = $providerMessageId;
         }
 
         // add aditional configuration options
         $config = $this->config;
+
+        // set the reasoning effort
         if (isset($config[$modelId]['reasoning_effort'])) {
             $payload['reasoning'] = ['effort' => $config[$modelId]['reasoning_effort']];
         }
 
+        // store message on the server side / or not...
         if (isset($config['store'])) {
             $payload['store'] = $config['store'];
         }
 
+        // if store := false, this option is additionally required to keep things encrypted.
         if (isset($config['encrypt_reasoning_content']) && $config['encrypt_reasoning_content']) {
             $payload['include'] = ["reasoning.encrypted_content"];
         }
-
-        error_log(print_r($payload, true));
 
         return $payload;
     }
@@ -94,9 +95,6 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         $responseContent = $response->getContent();
         $jsonContent = json_decode($responseContent, true);
 
-        //error_log(print_r($jsonContent, true));
-
-        // Extract text from the Responses "output" structure
         $texts = [];
         
         if (!empty($jsonContent['output']) && is_array($jsonContent['output'])) {
@@ -123,7 +121,10 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         return [
             'content' => [
                 'text' => $contentText,
-                'previousMessageId' => $jsonContent['id'],
+                // we keep this so we can reuse reasoning results
+                // treating it as part of the content keeps things secure
+                // because it will be encrypted.
+                'providerMessageId' => $jsonContent['id'],
             ],
             'usage' => $this->extractUsage($jsonContent),
             
@@ -178,7 +179,10 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         return [
             'content' => [
                 'text' => $content,
-                'previousMessageId' => $responseId,
+                // we keep this so we can reuse reasoning results
+                // treating it as part of the content keeps things secure
+                // because it will be encrypted.
+                'providerMessageId' => $responseId,
             ],
             'isDone' => $isDone,
             'usage' => $usage,
@@ -238,18 +242,14 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
 
         // Execute the request
         $response = curl_exec($ch);
-        //error_log(print_r($response, true));
-        //error_log(print_r("1", true));
-
+        
         // Handle errors
         if (curl_errno($ch)) {
             $error = 'Error: ' . curl_error($ch);
             curl_close($ch);
             return response()->json(['error' => $error], 500);
         }
-         //error_log(print_r("2", true));
         curl_close($ch);
-         //error_log(print_r("3", true));
         return response($response)->header('Content-Type', 'application/json');
     }
 
