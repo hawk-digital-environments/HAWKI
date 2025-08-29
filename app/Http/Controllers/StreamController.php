@@ -56,7 +56,7 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
-                'payload.messages.*.content.previousMessageId' => 'nullable|string',
+                'payload.messages.*.content.providerMessageId' => 'nullable|string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
@@ -107,7 +107,7 @@ class StreamController extends Controller
             'payload.messages.*.role' => 'required|string',
             'payload.messages.*.content' => 'required|array',
             'payload.messages.*.content.text' => 'required|string',
-            'payload.messages.*.content.previousMessageId' => 'nullable|string',
+            'payload.messages.*.content.providerMessageId' => 'nullable|string',
 
             'broadcast' => 'required|boolean',
             'isUpdate' => 'nullable|boolean',

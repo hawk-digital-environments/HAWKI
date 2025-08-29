@@ -9,7 +9,7 @@ return [
     |   This Model is used by default before the user choses their
     |   desired model.
     */
-    'defaultModel' => 'gpt-5',
+    'defaultModel' => 'gpt-4o',
 
     /*
     |--------------------------------------------------------------------------
@@ -73,7 +73,7 @@ return [
             'api_url' => 'https://api.openai.com/v1/responses',
             'ping_url' => 'https://api.openai.com/v1/models',
             // set store := false and encrypt_reasoning_content := true to 
-            // ensure reasoning data is secu
+            // ensure that reasoning data is secure
             'store' => false,
             "encrypt_reasoning_content" => true,
             'models' => [
