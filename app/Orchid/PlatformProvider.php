@@ -117,6 +117,11 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('bs.shield')
                 ->route('platform.systems.roles')
                 ->permission('platform.access.roles'),
+
+            Menu::make('Role Assignments')
+                ->icon('bs.diagram-3')
+                ->route('platform.role-assignments')
+                ->permission('platform.role-assignments'),
             
             Menu::make('')
                 ->divider(),
@@ -182,7 +187,8 @@ class PlatformProvider extends OrchidServiceProvider
                 
             ItemPermission::group(__('Access Controls'))
                 ->addPermission('platform.access.roles', __('Roles'))
-                ->addPermission('platform.access.users', __('Users')),
+                ->addPermission('platform.access.users', __('Users'))
+                ->addPermission('platform.role-assignments', __('Role Assignments')),
                 
             ItemPermission::group(__('Reporting'))
                 ->addPermission('platform.dashboard', __('Dashboard')),

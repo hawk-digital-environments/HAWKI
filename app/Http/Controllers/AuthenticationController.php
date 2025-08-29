@@ -20,6 +20,7 @@ use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\LocalAuthService;
+use App\Services\EmployeetypeMappingService;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -32,17 +33,19 @@ class AuthenticationController extends Controller
     protected $shibbolethService;
     protected $oidcService;
     protected $localAuthService;
+    protected $employeetypeMappingService;
 
     protected $languageController;
 
 
-    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, LocalAuthService $localAuthService, LanguageController $languageController)
+    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, LocalAuthService $localAuthService, EmployeetypeMappingService $employeetypeMappingService, LanguageController $languageController)
     {
         $this->authMethod = config('auth.authentication_method', 'LDAP');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
         $this->localAuthService = $localAuthService;
+        $this->employeetypeMappingService = $employeetypeMappingService;
 
         $this->languageController = $languageController;
     }
@@ -283,8 +286,22 @@ class AuthenticationController extends Controller
             $username = $userInfo['username'] ?? null;
             $name = $userInfo['name'] ?? null;
             $email = $userInfo['email'] ?? null;
-            $employeetype = $userInfo['employeetype'] ?? null;
+            $rawEmployeetype = $userInfo['employeetype'] ?? null;
             $permissions = $userInfo['permissions'] ?? null;
+
+            // Map employeetype using the mapping service (only for external auth)
+            $employeetype = $rawEmployeetype;
+            if (!$isFirstLoginLocalUser && $rawEmployeetype && $this->authMethod !== 'local') {
+                $mappedRole = $this->employeetypeMappingService->mapEmployeetypeToRole($rawEmployeetype, $this->authMethod);
+                $employeetype = $mappedRole;
+                
+                Log::info('Employeetype mapped during registration', [
+                    'username' => $username,
+                    'auth_method' => $this->authMethod,
+                    'raw_employeetype' => $rawEmployeetype,
+                    'mapped_employeetype' => $mappedRole,
+                ]);
+            }
 
     
             $avatarId = $validatedData['avatar_id'] ?? '';
