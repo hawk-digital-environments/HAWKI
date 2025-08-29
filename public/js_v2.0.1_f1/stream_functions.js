@@ -204,11 +204,11 @@ function createMsgObject(msg){
     // ToDo: insert search results
     // I'm not sure if the data from processStream() lands before getting plotted
     const filteredText = detectMentioning(msgTxt).filteredText;
-
     messageObject = {
         role: role,
         content:{
             text: filteredText,
+            previousMessageId: msg.dataset.previousMessageId
         }
     }
     return messageObject;

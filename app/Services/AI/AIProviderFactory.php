@@ -4,6 +4,7 @@ namespace App\Services\AI;
 
 use App\Services\AI\Interfaces\AIModelProviderInterface;
 use App\Services\AI\Providers\OpenAIProvider;
+use App\Services\AI\Providers\OpenAIResponsesProvider;
 use App\Services\AI\Providers\GWDGProvider;
 use App\Services\AI\Providers\GoogleProvider;
 use App\Services\AI\Providers\OllamaProvider;
@@ -47,6 +48,8 @@ class AIProviderFactory
         switch ($providerId) {
             case 'openai':
                 return new OpenAIProvider($this->config['providers']['openai']);
+            case 'openai-responses':
+                return new OpenAIResponsesProvider($this->config['providers']['openai-responses']);
             case 'gwdg':
                 return new GWDGProvider($this->config['providers']['gwdg']);
             case 'google':
