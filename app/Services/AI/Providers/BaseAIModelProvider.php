@@ -32,10 +32,14 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     {
         $this->config = $config;
         
-        // Try to extract the provider name from the configuration
-        // This represents a fallback mechanism
-        if (!isset($this->providerId) && isset($config['provider_name'])) {
-            $this->providerId = $config['provider_name'];
+        // Try to extract the provider identifier from the configuration
+        // Use provider_name if available, otherwise fall back to other fields
+        if (!isset($this->providerId)) {
+            if (isset($config['provider_name'])) {
+                $this->providerId = $config['provider_name'];
+            } elseif (isset($config['api_format'])) {
+                $this->providerId = $config['api_format'];
+            }
         }
     }
     
@@ -59,9 +63,10 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     public function getModelDetails(string $modelId): array
     {
         try {
-            // Read model data from the database instead of from the configuration
-            $model = LanguageModel::select('language_models.*', 'provider_settings.provider_name')
+            // Read model data from the database with API format information
+            $model = LanguageModel::select('language_models.*', 'provider_settings.provider_name', 'api_formats.unique_name as api_format_name')
                 ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
+                ->leftJoin('api_formats', 'provider_settings.api_format_id', '=', 'api_formats.id')
                 ->where('language_models.model_id', $modelId)
                 ->where('language_models.is_active', true)
                 ->first();
@@ -72,7 +77,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                     'id' => $modelId,
                     'label' => $modelId, // Fallback: Use ID as label
                     'streamable' => false,
-                    'provider' => $this->getProviderId()
+                    'api_format' => $this->getProviderId(),
+                    'provider_name' => $this->getProviderId()
                 ];
             }
             
@@ -80,7 +86,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'provider' => $model->provider_name
+                'api_format' => $model->api_format_name ?? $model->provider_name,
+                'provider_name' => $model->provider_name
             ];
             
             // Add additional model information if available
@@ -113,7 +120,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 'id' => $modelId,
                 'label' => $modelId,
                 'streamable' => false,
-                'provider' => $this->getProviderId()
+                'api_format' => $this->getProviderId(),
+                'provider_name' => $this->getProviderId()
             ];
         }
     }
@@ -128,7 +136,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         try {
             $providerId = $this->getProviderId();
             
-            // Get provider ID from the database
+            // Get provider from the database by provider_name (since providerId is the name)
             $provider = ProviderSetting::where('provider_name', $providerId)
                 ->where('is_active', true)
                 ->first();
@@ -138,9 +146,12 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 return [];
             }
             
-            // Retrieve all active models for this provider
-            $models = LanguageModel::where('provider_id', $provider->id)
-                ->where('is_active', true)
+            // Retrieve all active models for this provider with API format information
+            $models = LanguageModel::select('language_models.*', 'api_formats.unique_name as api_format_name')
+                ->leftJoin('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
+                ->leftJoin('api_formats', 'provider_settings.api_format_id', '=', 'api_formats.id')
+                ->where('language_models.provider_id', $provider->id)
+                ->where('language_models.is_active', true)
                 ->orderBy('display_order')
                 ->get();
                 
@@ -151,7 +162,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                     'id' => $model->model_id,
                     'label' => $model->label,
                     'streamable' => $model->streamable,
-                    'provider' => $providerId
+                    'api_format' => $model->api_format_name ?? $provider->provider_name,
+                    'provider_name' => $provider->provider_name
                 ];
                 
                 // Extract status from the information field if available
@@ -277,7 +289,10 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
             }
             
             $streamCallback($data);
-            Log::info($data);
+            
+            if (config('logging.triggers.return_object')) {
+                Log::info($data);
+            }
             if (ob_get_length()) {
                 ob_flush();
             }

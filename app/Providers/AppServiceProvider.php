@@ -18,6 +18,16 @@ use App\Services\AI\AIProviderFactory;
 use App\Services\AI\AIConnectionService;
 use App\Services\ProviderSettingsService;
 use App\Providers\ConfigServiceProvider;
+use App\Models\User;
+use App\Models\LanguageModel;
+use App\Models\ProviderSetting;
+use App\Models\ApiFormat;
+use App\Models\ApiFormatEndpoint;
+use App\Observers\UserObserver;
+use App\Observers\LanguageModelObserver;
+use App\Observers\ProviderSettingObserver;
+use App\Observers\ApiFormatObserver;
+use App\Observers\ApiFormatEndpointObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,6 +69,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
+        // Register User Observer for automatic role synchronization
+        User::observe(UserObserver::class);
+        
+        // Register AI-related observers for cache invalidation
+        LanguageModel::observe(LanguageModelObserver::class);
+        ProviderSetting::observe(ProviderSettingObserver::class);
+        ApiFormat::observe(ApiFormatObserver::class);
+        ApiFormatEndpoint::observe(ApiFormatEndpointObserver::class);
     }
 }

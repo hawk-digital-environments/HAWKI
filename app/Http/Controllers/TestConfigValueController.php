@@ -221,7 +221,7 @@ class TestConfigValueController extends Controller
         $specialCases = [
             'sanctum.allow_external_communication' => 'ALLOW_EXTERNAL_COMMUNICATION',
             'auth.authentication_method' => 'AUTHENTICATION_METHOD',
-            'test_users.active' => 'TEST_USER_LOGIN',
+            'auth.local_authentication' => 'LOCAL_AUTHENTICATION',
             'session.lifetime' => 'SESSION_LIFETIME',
             'ldap.default' => 'LDAP_CONNECTION',
             'ldap.connections.default.hosts' => 'LDAP_HOST',

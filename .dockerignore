@@ -9,7 +9,7 @@
 /storage/*.key
 /storage/logs/laravel.log#
 /storage/framework/views/*.php
-/storage/app/test_users.json
+/storage/app/test_users.json.legacy
 /.env
 /.env.private
 /.gitattributes

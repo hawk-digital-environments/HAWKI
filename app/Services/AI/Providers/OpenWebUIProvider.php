@@ -21,6 +21,40 @@ class OpenWebUIProvider extends OpenAIProvider
     }
     
     /**
+     * Get the provider settings from database
+     *
+     * @return ProviderSetting|null
+     */
+    protected function getProviderFromDatabase(): ?ProviderSetting
+    {
+        return ProviderSetting::where('provider_name', $this->providerId)
+            ->where('is_active', true)
+            ->first();
+    }
+    
+    /**
+     * Get the chat endpoint URL from the provider's API format configuration
+     *
+     * @return string
+     */
+    protected function getChatEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->chat_url : $this->config['base_url'] ?? '';
+    }
+    
+    /**
+     * Get the models endpoint URL from the provider's API format configuration  
+     *
+     * @return string
+     */
+    protected function getModelsEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->ping_url : $this->config['ping_url'] ?? '';
+    }
+    
+    /**
      * Format the raw payload for OpenAI API
      *
      * @param array $rawPayload
@@ -198,9 +232,12 @@ class OpenWebUIProvider extends OpenAIProvider
         // Use the OpenAI implementation, but with OpenWebUI API URL
         $payload['stream'] = false;
         
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -240,9 +277,12 @@ class OpenWebUIProvider extends OpenAIProvider
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -308,7 +348,13 @@ class OpenWebUIProvider extends OpenAIProvider
         
         // Get models from the database instead of from the configuration
         $providerId = $this->getProviderId();
-        $provider = ProviderSetting::where('provider_name', $providerId)
+        $provider = ProviderSetting::with('apiFormat')
+            ->where(function($query) use ($providerId) {
+                $query->where('provider_name', $providerId)
+                      ->orWhereHas('apiFormat', function($subQuery) use ($providerId) {
+                          $subQuery->where('unique_name', $providerId);
+                      });
+            })
             ->where('is_active', true)
             ->first();
             
@@ -326,7 +372,8 @@ class OpenWebUIProvider extends OpenAIProvider
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
-                'provider' => $providerId
+                'api_format' => $provider->apiFormat?->unique_name ?? $provider->provider_name,
+                'provider_name' => $provider->provider_name
             ];
         }
     
@@ -358,7 +405,8 @@ class OpenWebUIProvider extends OpenAIProvider
      */
     protected function pingProvider(): ?string
     {
-        $url = $this->config['ping_url'];
+        // Get the models endpoint URL from database configuration
+        $url = $this->getModelsEndpointUrl();
         $apiKey = $this->config['api_key'];
 
         try {

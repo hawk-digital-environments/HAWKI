@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\ProviderSetting;
-use Illuminate\Support\Facades\Config;
+use App\Models\ApiFormat;
 
 class ProviderSettingsSeeder extends Seeder
 {
@@ -13,56 +13,69 @@ class ProviderSettingsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Lade die Standard-Konfiguration aus der model_providers.php.example
-        $configPath = config_path('model_providers.php.example');
+        // Default provider configurations using the new database-driven API format system
+        $defaultProviders = [
+            [
+                'provider_name' => 'OpenAI',
+                'api_key' => null,
+                'api_format_id' => $this->getApiFormatId('openai'),
+                'is_active' => false,
+                'additional_settings' => json_encode([
+                    'description' => 'OpenAI GPT Models',
+                    'models' => ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo']
+                ])
+            ],
+            [
+                'provider_name' => 'Google',
+                'api_key' => null,
+                'api_format_id' => $this->getApiFormatId('google'),
+                'is_active' => false,
+                'additional_settings' => json_encode([
+                    'description' => 'Google Gemini Models',
+                    'models' => ['gemini-pro', 'gemini-pro-vision']
+                ])
+            ],
+            [
+                'provider_name' => 'Ollama',
+                'api_key' => null,
+                'api_format_id' => $this->getApiFormatId('ollama'),
+                'is_active' => false,
+                'additional_settings' => json_encode([
+                    'description' => 'Local Ollama Installation',
+                    'models' => ['llama2', 'mistral', 'codellama']
+                ])
+            ],
+            [
+                'provider_name' => 'GWDG',
+                'api_key' => null,
+                'api_format_id' => $this->getApiFormatId('openai'),
+                'is_active' => false,
+                'additional_settings' => json_encode([
+                    'description' => 'GWDG AI Service',
+                    'models' => ['gpt-3.5-turbo', 'gpt-4']
+                ])
+            ],
+        ];
         
-        if (!file_exists($configPath)) {
-            $this->command->info('Keine Beispiel-Provider-Konfiguration gefunden unter: ' . $configPath);
-            return;
-        }
-        
-        // Direkt die Beispiel-Konfigurationsdatei laden
-        $config = require $configPath;
+        foreach ($defaultProviders as $providerData) {
+            $this->command->info("Erstelle Standard-Provider: {$providerData['provider_name']}");
 
-        if (!$config || !isset($config['providers']) || !is_array($config['providers'])) {
-            $this->command->info('Keine gültige Provider-Konfiguration in der Beispieldatei gefunden.');
-            return;
-        }
-
-        $providers = $config['providers'];
-        
-        foreach ($providers as $providerName => $providerConfig) {
-            $this->command->info("Importiere Provider: {$providerName}");
-
-            // Erstelle Standarddaten für den Provider
-            $providerData = [
-                'provider_name' => $providerName,
-                'api_key' => $providerConfig['api_key'] ?? null,
-                'base_url' => $providerConfig['api_url'] ?? $providerConfig['base_url'] ?? null,
-                'ping_url' => $providerConfig['ping_url'] ?? null,
-                'is_active' => $providerConfig['active'] ?? false,
-                'api_format' => $providerConfig['api_format'] ?? $providerName,
-            ];
-
-            // Speichere zusätzliche Einstellungen im additional_settings Feld
-            $additionalSettings = [];
-            foreach ($providerConfig as $key => $value) {
-                if (!in_array($key, ['api_key', 'api_url', 'base_url', 'ping_url', 'active', 'is_active', 'api_format'])) {
-                    $additionalSettings[$key] = $value;
-                }
-            }
-
-            if (!empty($additionalSettings)) {
-                $providerData['additional_settings'] = json_encode($additionalSettings); // Hier zu JSON konvertieren
-            }
-
-            // Erstelle oder aktualisiere den Provider in der Datenbank
+            // Create or update the provider in the database
             ProviderSetting::updateOrCreate(
-                ['provider_name' => $providerName],
+                ['provider_name' => $providerData['provider_name']],
                 $providerData
             );
         }
 
-        $this->command->info('Provider-Daten wurden erfolgreich aus der Beispielkonfiguration importiert.');
+        $this->command->info('Standard-Provider wurden erfolgreich erstellt.');
+    }
+
+    /**
+     * Get API format ID by name
+     */
+    private function getApiFormatId(string $formatName): ?int
+    {
+        $apiFormat = ApiFormat::where('unique_name', $formatName)->first();
+        return $apiFormat ? $apiFormat->id : null;
     }
 }

@@ -19,7 +19,6 @@ class AppSettingsSeeder extends Seeder
         'app' => 'basic',
         'sanctum' => 'api',
         'auth' => 'authentication',
-        'test_users' => 'authentication',
         'ldap' => 'authentication',
         'open_id_connect' => 'authentication',
         'shibboleth' => 'authentication',
@@ -105,6 +104,11 @@ class AppSettingsSeeder extends Seeder
             }
             
             $value = $flattenedConfig[$realKey];
+            
+            // Standardwert für authentication_method setzen, wenn null oder leer
+            if ($realKey === 'authentication_method' && $configName === 'auth' && (is_null($value) || $value === '')) {
+                $value = 'LDAP';
+            }
             
             // DB-Key erstellen (mit Unterstrich): app_name
             $dbKey = "{$configName}_{$realKey}";

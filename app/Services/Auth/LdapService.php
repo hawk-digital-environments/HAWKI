@@ -21,6 +21,11 @@ class LdapService
             $ldap_base = config('ldap.custom_connection.ldap_search_dn');
             $ldap_filter = config('ldap.custom_connection.ldap_filter');
             $ldap_attributeMap = config('ldap.custom_connection.attribute_map');
+            
+            // Get logging configuration
+            $loggingEnabled = config('ldap.logging.enabled', false);
+            $logChannel = config('ldap.logging.channel', 'stack');
+            $logLevel = config('ldap.logging.level', 'info');
 
             // Check if username or password is empty
             if (!$username || !$password) {
@@ -73,6 +78,42 @@ class LdapService
             $info = ldap_get_entries($ldapConn, $sr);
             ldap_close($ldapConn);
 
+            // Collect all LDAP debugging information for single log entry
+            $ldapDebugInfo = [
+                'username' => $username,
+                'ldap_search_successful' => true,
+                'available_attributes' => [],
+                'attribute_mapping' => [],
+                'mapping_results' => [],
+                'display_name_processing' => null
+            ];
+
+            // Collect available attributes with values (only if logging enabled)
+            if ($loggingEnabled) {
+                $ldapDebugInfo['available_attributes']['keys'] = array_keys($info[0]);
+                
+                // Process detailed attribute values (excluding sensitive data)
+                $detailedAttributes = [];
+                foreach ($info[0] as $key => $value) {
+                    if (is_array($value) && isset($value['count'])) {
+                        // LDAP attributes are arrays with count as first element
+                        unset($value['count']);
+                        $detailedAttributes[$key] = count($value) === 1 ? $value[0] : $value;
+                    } else {
+                        $detailedAttributes[$key] = $value;
+                    }
+                }
+                
+                // Remove sensitive fields from detailed logging
+                $sensitiveFields = ['userpassword', 'password', 'pwd'];
+                foreach ($sensitiveFields as $sensitiveField) {
+                    if (isset($detailedAttributes[$sensitiveField])) {
+                        $detailedAttributes[$sensitiveField] = '***HIDDEN***';
+                    }
+                }
+                
+                $ldapDebugInfo['available_attributes']['details'] = $detailedAttributes;
+            }
 
             $userInfo = [];
             foreach ($ldap_attributeMap as $appAttr => $ldapAttr) {
@@ -83,16 +124,39 @@ class LdapService
                 }
             }
 
+            // Collect mapping information for debug log
+            if ($loggingEnabled) {
+                $ldapDebugInfo['attribute_mapping']['config'] = $ldap_attributeMap;
+                $ldapDebugInfo['mapping_results'] = $userInfo;
+            }
+
             // Example specific logic for display name
             if (isset($userInfo['displayname'])) {
                 $parts = explode(", ", $userInfo['displayname']);
                 $userInfo['name'] = (isset($parts[1]) ? $parts[1] : '') . " " . (isset($parts[0]) ? $parts[0] : '');
+                
+                // Collect display name processing info for debug log
+                if ($loggingEnabled) {
+                    $ldapDebugInfo['display_name_processing'] = [
+                        'original' => $userInfo['displayname'],
+                        'parts' => $parts,
+                        'final_name' => $userInfo['name']
+                    ];
+                }
+            }
+
+            // Single comprehensive LDAP debug log entry (only if logging enabled)
+            if ($loggingEnabled) {
+                Log::channel($logChannel)->log($logLevel, 'LDAP Authentication Debug Information', $ldapDebugInfo);
             }
             return $userInfo;
         } catch (\Exception $e) {
-
-            Log::error('ERROR LOGIN LDAP');
-            Log::error($e);
+            // Log errors only if logging is enabled
+            if (config('ldap.logging.enabled', false)) {
+                $logChannel = config('ldap.logging.channel', 'stack');
+                Log::channel($logChannel)->error('ERROR LOGIN LDAP');
+                Log::channel($logChannel)->error($e);
+            }
             return false;
         }
     }
