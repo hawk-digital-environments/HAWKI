@@ -75,7 +75,7 @@ class ProviderSettingsSeeder extends Seeder
      */
     private function getApiFormatId(string $formatName): ?int
     {
-        $apiFormat = ApiFormat::where('name', $formatName)->first();
+        $apiFormat = ApiFormat::where('unique_name', $formatName)->first();
         return $apiFormat ? $apiFormat->id : null;
     }
 }
