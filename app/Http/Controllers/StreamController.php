@@ -179,7 +179,6 @@ class StreamController extends Controller
                 //Log::info('google chunk detected');
             }
 
-        
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
             foreach ($chunks as $chunk) {
