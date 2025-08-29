@@ -1,56 +1,63 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\EncryptionController;
+use App\Http\Controllers\ExtAppController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\RoomController;
-
 use App\Http\Controllers\StreamController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
-use App\Models\User;
-
-// routes/api.php
 Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    error_log('sanctum');
     return $request->user();
 });
 
-Route::middleware(['api_isActive', 'auth:sanctum'])->group(function () {
+// Routes for external apps
+Route::middleware(['external_access:enabled,apps', 'auth:sanctum', 'app_access:enforcedToken'])
+    ->attribute('prefix', 'apps')
+    ->group(static function () {
+        Route::group(['prefix' => 'connection'], static function () {
+            Route::get('/{ext_user_id}', [ExtAppController::class, 'getConnection']);
+            Route::post('/{ext_user_id}', [ExtAppController::class, 'createConnection']);
+        });
+    });
+
+// Routes that do not allow apps
+Route::middleware(['external_access:enabled', 'auth:sanctum', 'app_access:declined'])->group(function () {
 
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
-
     
-
-
-    // GROUPCHAT ROUTES
-
-    Route::get('/user/rooms', [RoomController::class, 'getUserRooms']);
-    Route::get('/room/{slug?}', [RoomController::class, 'loadRoom']);
-    Route::post('/room/createRoom', [RoomController::class, 'createRoom']);
-    Route::delete('/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom']);
-    Route::post('/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
-
-    Route::middleware('roomEditor')->group(function () {
-        Route::post('/room/sendMessage/{slug}', [RoomController::class, 'sendMessage']);
-        Route::post('/room/updateMessage/{slug}', [RoomController::class, 'updateMessage']);
-        Route::post('/room/streamAI/{slug}', [StreamController::class, 'handleAiConnectionRequest']);
+    Route::middleware(['external_access:chat'])->group(function () {
+        Route::group(['prefix' => 'crypto'], static function () {
+            Route::post('/keychain', [EncryptionController::class, 'backupKeychain']);
+        });
+        
+        Route::group(['prefix' => 'rooms'], static function () {
+            Route::post('/', [RoomController::class, 'createRoom']);
+            Route::post('/{slug}/messages/mark-read', [RoomController::class, 'markAsRead']);
+            Route::delete('/{slug}/membership', [RoomController::class, 'leaveRoom']);
+            
+            Route::middleware('roomEditor')->group(function () {
+                Route::post('/{slug}/messages', [RoomController::class, 'sendMessage']);
+                Route::put('/{slug}/messages', [RoomController::class, 'updateMessage']);
+                Route::post('/{slug}/messages/stream-ai', [StreamController::class, 'handleAiConnectionRequest'])
+                    ->defaults('external_app', true);
+            });
+            
+            Route::middleware('roomAdmin')->group(function () {
+                Route::put('/{slug}', [RoomController::class, 'updateInfo']);
+                Route::delete('/{slug}', [RoomController::class, 'removeRoom']);
+                Route::post('/members', [RoomController::class, 'addMember']);
+                Route::delete('/{slug}/members', [RoomController::class, 'removeMember']);
+            });
+        });
+        
+        Route::post('/inv/requestPublicKeys', [InvitationController::class, 'onRequestPublicKeys']);
+        Route::post('/inv/store-invitations/{slug}', [InvitationController::class, 'storeInvitations']);
+        Route::post('/inv/sendExternInvitation', [InvitationController::class, 'sendExternInvitationEmail']);
+        Route::post('/inv/roomInvitationAccept', [InvitationController::class, 'onAcceptInvitation']);
+        Route::get('/inv/requestInvitation/{slug}', [InvitationController::class, 'getInvitationWithSlug']);
+        Route::get('/inv/requestUserInvitations', [InvitationController::class, 'getUserInvitations']);
     });
-
-    Route::middleware('roomAdmin')->group(function () {
-        Route::post('/room/addMember', [RoomController::class, 'addMember']);
-        Route::post('/room/updateInfo/{slug}', [RoomController::class, 'updateInfo']);
-        Route::delete('/room/removeRoom/{slug}', [RoomController::class, 'removeRoom']);
-        Route::delete('/room/removeMember/{slug}', [RoomController::class, 'removeMember']);
-    });
     
-    
-    Route::post('/inv/requestPublicKeys', [InvitationController::class, 'onRequestPublicKeys']);
-    Route::post('/inv/store-invitations/{slug}', [InvitationController::class, 'storeInvitations']);
-    Route::post('/inv/sendExternInvitation', [InvitationController::class, 'sendExternInvitationEmail']);
-    Route::post('/inv/roomInvitationAccept',  [InvitationController::class, 'onAcceptInvitation']);
-    Route::get('/inv/requestInvitation/{slug}',  [InvitationController::class, 'getInvitationWithSlug']);
-    Route::get('/inv/requestUserInvitations',  [InvitationController::class, 'getUserInvitations']);
-
-
 });

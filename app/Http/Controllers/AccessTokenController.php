@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PersonalAccessTokenCreateEvent;
+use App\Events\PersonalAccessTokenRemoveEvent;
 use Illuminate\Http\Request;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Laravel\Sanctum\PersonalAccessToken;
 
 
 class AccessTokenController extends Controller
@@ -27,7 +29,9 @@ class AccessTokenController extends Controller
         try {
             // Create a new token for the authenticated user
             $token = $user->createToken($validatedData['name']);
-    
+            
+            PersonalAccessTokenCreateEvent::dispatch($user, $token);
+            
             // Return a JSON response with the new token
             return response()->json([
                 'success' => true,
@@ -91,10 +95,15 @@ class AccessTokenController extends Controller
             }
     
             // Attempt to delete the token and capture the result
-            $deleted = $user->tokens()->where('id', $validatedData['tokenId'])->delete();
-    
+            $tokens = $user->tokens()->where('id', $validatedData['tokenId']);
+            $hasTokens = $tokens->count() > 0;
+            $tokens->each(function (PersonalAccessToken $token) use ($user) {
+                PersonalAccessTokenRemoveEvent::dispatch($user, $token);
+                $token->delete();
+            });
+            
             // Check if any row was actually deleted
-            if ($deleted) {
+            if ($hasTokens) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Token revoked successfully.',

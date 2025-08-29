@@ -2,25 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\RoomController;
-
-use App\Models\User;
-use App\Models\Room;
-use App\Models\Message;
-use App\Models\Member;
-
-
-use App\Services\AI\UsageAnalyzerService;
-use App\Services\AI\AIConnectionService;
-use App\Services\AI\AIProviderFactory;
-
-use App\Jobs\SendMessage;
+use App\Events\MessageSentEvent;
+use App\Events\MessageUpdateEvent;
+use App\Events\RoomAiWritingEndedEvent;
+use App\Events\RoomAiWritingStartedEvent;
 use App\Events\RoomMessageEvent;
-
+use App\Jobs\SendMessage;
+use App\Models\Message;
+use App\Models\Room;
+use App\Models\User;
+use App\Services\AI\AIConnectionService;
+use App\Services\AI\UsageAnalyzerService;
+use App\Services\File\PublicStoragePaths;
+use App\Services\Message\LegacyMessageHelper;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
@@ -29,14 +24,17 @@ class StreamController extends Controller
 
     protected $usageAnalyzer;
     protected $aiConnectionService;
+    protected LegacyMessageHelper $messageHelper;
     private $jsonBuffer = '';
 
     public function __construct(
         UsageAnalyzerService $usageAnalyzer,
-        AIConnectionService $aiConnectionService
+        AIConnectionService $aiConnectionService,
+        LegacyMessageHelper $threadHelper
     ){
         $this->usageAnalyzer = $usageAnalyzer;
         $this->aiConnectionService = $aiConnectionService;
+        $this->messageHelper = $threadHelper;
     }
 
 
@@ -109,50 +107,84 @@ class StreamController extends Controller
 
             'broadcast' => 'required|boolean',
             'isUpdate' => 'nullable|boolean',
-            'messageId' => 'nullable|string',
-            'threadIndex' => 'nullable|int', 
+            'messageId' => 'nullable|string|int',
+            'threadIndex' => 'nullable|int',
+            'thread_id_version' => 'nullable|int|in:1,2', // 1 for legacy message (192.000) ID, 2 for new message ID (12), defaults to 1
             'slug' => 'nullable|string',
             'key' => 'nullable|string',
         ]);
 
 
         if ($validatedData['broadcast']) {
-            $this->handleGroupChatRequest($validatedData);
-        } else {
-            $user = User::find(1); // HAWKI user 
-            $avatar_url = $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null;
+            $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
+            // When called via an external "api", the "external_application" default is set on the route, meaning we can check here if the user has access to the model
+            $model = app(AIConnectionService::class)->getModelById(
+                $validatedData['payload']['model'],
+                $request->route('external_app', false)
+            );
             
-            if ($validatedData['payload']['stream']) {
-                // Handle streaming response
-                $this->handleStreamingRequest($validatedData['payload'], $user, $avatar_url);
-            } else {
-                // Handle standard response
-                $result = $this->aiConnectionService->processRequest(
-                    $validatedData['payload'],
-                    false
-                );
-                
-                // Record usage
-                if (isset($result['usage'])) {
-                    $this->usageAnalyzer->submitUsageRecord(
-                        $result['usage'], 
-                        'private', 
-                        $validatedData['payload']['model']
-                    );
-                }
-                
-                // Return response to client
-                return response()->json([
-                    'author' => [
-                        'username' => $user->username,
-                        'name' => $user->name,
-                        'avatar_url' => $avatar_url,
-                    ],
-                    'model' => $validatedData['payload']['model'],
-                    'isDone' => true,
-                    'content' => json_encode($result['content']),
-                ]);
+            if (!$model) {
+                return response()->json(['error' => 'The requested model is not available.'], 400);
             }
+            
+            RoomAiWritingStartedEvent::dispatch($room, $model);
+            
+            // Broadcast initial generation status immediately
+            broadcast(new RoomMessageEvent([
+                'type' => 'aiGenerationStatus',
+                'messageData' => [
+                    'room_id' => Room::where('slug', $validatedData['slug'])->firstOrFail()->id,
+                    'isGenerating' => true,
+                    'model' => $validatedData['payload']['model']
+                ]
+            ]));
+            
+            // We want the request to be handled after the response is sent,
+            // so we register a shutdown function to handle the group chat request
+            // This allows the client to receive a response immediately while processing continues in the background
+            // This is useful for group chat requests where we don't want to block the client waiting for the AI response
+            // and we want to handle the request asynchronously.
+            // Note: This is not the best practice and should be migrated into a proper job queue in the future.
+            register_shutdown_function(function () use ($validatedData) {
+                $this->handleGroupChatRequest($validatedData);
+            });
+            
+            return response()->json(['success' => true]);
+        }
+        
+        $user = User::find(1); // HAWKI user
+        $avatar_url = $user->avatar_id !== '' ? app(PublicStoragePaths::class)->getUserProfileAvatarPath($user) : null;
+        
+        if ($validatedData['payload']['stream']) {
+            // Handle streaming response
+            $this->handleStreamingRequest($validatedData['payload'], $user, $avatar_url);
+        } else {
+            // Handle standard response
+            $result = $this->aiConnectionService->processRequest(
+                $validatedData['payload'],
+                false
+            );
+            
+            // Record usage
+            if (isset($result['usage'])) {
+                $this->usageAnalyzer->submitUsageRecord(
+                    $result['usage'],
+                    'private',
+                    $validatedData['payload']['model']
+                );
+            }
+            
+            // Return response to client
+            return response()->json([
+                'author' => [
+                    'username' => $user->username,
+                    'name' => $user->name,
+                    'avatar_url' => $avatar_url,
+                ],
+                'model' => $validatedData['payload']['model'],
+                'isDone' => true,
+                'content' => json_encode($result['content']),
+            ]);
         }
     }
     
@@ -194,8 +226,8 @@ class StreamController extends Controller
                 // Record usage if available
                 if ($formatted['usage']) {
                     $this->usageAnalyzer->submitUsageRecord(
-                        $formatted['usage'], 
-                        'private', 
+                        $formatted['usage'],
+                        'private',
                         $payload['model']
                     );
                 }
@@ -217,8 +249,8 @@ class StreamController extends Controller
         
         // Process the streaming request
         $this->aiConnectionService->processRequest(
-            $payload, 
-            true, 
+            $payload,
+            true,
             $onData
         );
     }
@@ -277,17 +309,6 @@ class StreamController extends Controller
         $isUpdate = (bool) ($data['isUpdate'] ?? false);
         $room = Room::where('slug', $data['slug'])->firstOrFail();
         
-        // Broadcast initial generation status
-        $generationStatus = [
-            'type' => 'aiGenerationStatus',
-            'messageData' => [
-                'room_id' => $room->id,
-                'isGenerating' => true,
-                'model' => $data['payload']['model']
-            ]
-        ];
-        broadcast(new RoomMessageEvent($generationStatus));
-        
         // Process the request
         $result = $this->aiConnectionService->processRequest(
             $data['payload'],
@@ -313,16 +334,23 @@ class StreamController extends Controller
         $roomController = new RoomController();
         $member = $room->members()->where('user_id', 1)->firstOrFail();
         
+        $messageId = $this->messageHelper->getMessageIdInfo($data['messageId']);
+        $threadInfo = $this->messageHelper->getThreadInfo(
+            $data['threadIndex'],
+            ($data['thread_id_version'] ?? 1) === 1
+        );
+        
         if ($isUpdate) {
-            $message = $room->messages->where('message_id', $data['messageId'])->first();
+            $message = Message::findOrFail($messageId->id);
             $message->update([
                 'iv' => $encryptiedData['iv'],
                 'tag' => $encryptiedData['tag'],
                 'content' => $encryptiedData['ciphertext'],
                 'model' => $data['payload']['model'],
             ]);
+            MessageUpdateEvent::dispatch($message);
         } else {
-            $nextMessageId = $roomController->generateMessageID($room, $data['threadIndex']);
+            $nextMessageId = $roomController->generateMessageID($room, $threadInfo->legacyThreadId);
             $message = Message::create([
                 'room_id' => $room->id,
                 'member_id' => $member->id,
@@ -333,10 +361,18 @@ class StreamController extends Controller
                 'tag' => $encryptiedData['tag'],
                 'content' => $encryptiedData['ciphertext'],
             ]);
+            MessageSentEvent::dispatch($message);
         }
         
         // Queue message for broadcast
         SendMessage::dispatch($message, $isUpdate)->onQueue('message_broadcast');
+        
+        // When called via an external "api", the "external_application" default is set on the route, meaning we can check here if the user has access to the model
+        $model = app(AIConnectionService::class)->getModelById($data['payload']['model']);
+        
+        if ($model) {
+            RoomAiWritingEndedEvent::dispatch($room, $model);
+        }
         
         // Update and broadcast final generation status
         $generationStatus = [

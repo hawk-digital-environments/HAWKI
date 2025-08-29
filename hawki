@@ -124,7 +124,7 @@ function showHelp() {
 
 function checkDependencies() {
     echo BOLD . "Checking dependencies..." . RESET . PHP_EOL;
-    
+
     // Check PHP version
     $phpVersion = phpversion();
     $phpRequired = '8.1.0';
@@ -133,7 +133,7 @@ function checkDependencies() {
     } else {
         echo RED . "✗ PHP Version: $phpVersion (required: >= $phpRequired)" . RESET . PHP_EOL;
     }
-    
+
     // Check Composer
     exec('composer --version 2>/dev/null', $composerOutput, $composerReturnVar);
     if ($composerReturnVar === 0) {
@@ -142,7 +142,7 @@ function checkDependencies() {
         echo RED . "✗ Composer not found" . RESET . PHP_EOL;
         $missingDeps[] = 'composer';
     }
-    
+
     // Check Node.js
     exec('node --version 2>/dev/null', $nodeOutput, $nodeReturnVar);
     if ($nodeReturnVar === 0) {
@@ -152,7 +152,7 @@ function checkDependencies() {
         echo RED . "✗ Node.js not found" . RESET . PHP_EOL;
         $missingDeps[] = 'nodejs';
     }
-    
+
     // Check npm
     exec('npm --version 2>/dev/null', $npmOutput, $npmReturnVar);
     if ($npmReturnVar === 0) {
@@ -162,11 +162,11 @@ function checkDependencies() {
         echo RED . "✗ npm not found" . RESET . PHP_EOL;
         $missingDeps[] = 'npm';
     }
-    
+
     // Check PHP extensions
     $requiredExtensions = ['mbstring', 'xml', 'pdo', 'curl', 'zip', 'json', 'fileinfo', 'openssl'];
     $missingExtensions = [];
-    
+
     foreach ($requiredExtensions as $extension) {
         if (extension_loaded($extension)) {
             echo GREEN . "✓ PHP extension: $extension" . RESET . PHP_EOL;
@@ -175,11 +175,11 @@ function checkDependencies() {
             $missingExtensions[] = $extension;
         }
     }
-    
+
     // Summary and offer to install missing dependencies
     if (!empty($missingDeps) || !empty($missingExtensions)) {
         echo PHP_EOL . YELLOW . "Some dependencies are missing. Installation instructions:" . RESET . PHP_EOL;
-        
+
         if (!empty($missingDeps)) {
             echo BOLD . "Missing tools:" . RESET . PHP_EOL;
             foreach ($missingDeps as $dep) {
@@ -194,11 +194,11 @@ function checkDependencies() {
                 }
             }
         }
-        
+
         if (!empty($missingExtensions)) {
             echo BOLD . "Missing PHP extensions:" . RESET . PHP_EOL;
             echo "You can install them using your package manager, for example:" . PHP_EOL;
-            
+
             // Detect OS
             $os = PHP_OS;
             if (stripos($os, 'darwin') !== false) {
@@ -218,12 +218,12 @@ function checkDependencies() {
                 echo "  Find the php.ini file and uncomment the lines with these extensions" . PHP_EOL;
             }
         }
-        
+
         // Ask if auto-installation should be attempted (for some dependencies)
         if (!empty($missingDeps) && (stripos(PHP_OS, 'linux') !== false || stripos(PHP_OS, 'darwin') !== false)) {
             echo PHP_EOL . "Would you like to try to install the missing tools? (y/n) ";
             $answer = trim(fgets(STDIN));
-            
+
             if (strtolower($answer) === 'y') {
                 foreach ($missingDeps as $dep) {
                     switch ($dep) {
@@ -255,7 +255,7 @@ function checkDependencies() {
 
 #NOTE:
 function initializeAll(){
-    
+
     initialize();
 
     if(askForNextStep('Variables Setup')){
@@ -284,7 +284,7 @@ function askForNextStep($nextStep){
 function initialize() {
 
     echo BOLD . "Initializing HAWKI project..." . RESET . PHP_EOL;
-    
+
     echo PHP_EOL . BLUE . LOGO . RESET . PHP_EOL . PHP_EOL;
 
     // Check for .env file
@@ -299,7 +299,7 @@ function initialize() {
     } else {
         echo GREEN . "✓ .env file already exists" . RESET . PHP_EOL;
     }
-    
+
     // Check for test_users.json
     if (!file_exists('storage/app/test_users.json')) {
         if (file_exists('storage/app/test_users.json.example')) {
@@ -312,7 +312,7 @@ function initialize() {
     } else {
         echo GREEN . "✓ test_users.json already exists" . RESET . PHP_EOL;
     }
-    
+
     // Check for model_providers.php
     if (!file_exists('config/model_providers.php')) {
         if (file_exists('config/model_providers.php.example')) {
@@ -325,14 +325,14 @@ function initialize() {
     } else {
         echo GREEN . "✓ model_providers.php already exists" . RESET . PHP_EOL;
     }
-    
+
     // Run initialization commands
     echo PHP_EOL . "Running initialization commands..." . PHP_EOL;
-    
+
     // Composer install
     echo YELLOW . "Running composer install..." . RESET . PHP_EOL;
     passthru('composer install');
-    
+
     // Check if we need to update composer
     echo YELLOW . "Checking for composer updates..." . RESET . PHP_EOL;
     exec('composer outdated --direct', $outdatedOutput);
@@ -342,15 +342,15 @@ function initialize() {
     } else {
         echo GREEN . "✓ All composer packages are up to date" . RESET . PHP_EOL;
     }
-    
+
     // npm install
     echo YELLOW . "Running npm install..." . RESET . PHP_EOL;
     passthru('npm install');
-    
+
     // Create storage symlink
     echo YELLOW . "Creating storage link..." . RESET . PHP_EOL;
     passthru('php artisan storage:link');
-    
+
     // Generate app key if not present
     $env = getEnvContent();
     if (strpos($env, 'APP_KEY=') === false || strpos($env, 'APP_KEY=base64:') === false) {
@@ -358,23 +358,23 @@ function initialize() {
         passthru('php artisan key:generate');
         $env = getEnvContent(); // Reload env content after key generation
     }
-    
+
     // Generate security keys and salts if not present
     echo YELLOW . "Checking security keys and salts..." . RESET . PHP_EOL;
-    
+
     // Reverb App Keys
     if (!getEnvValue('REVERB_APP_KEY', $env)) {
         $reverbAppKey = generateAlphanumeric(32);
         $env = setEnvValue('REVERB_APP_KEY', $reverbAppKey, $env);
         echo GREEN . "✓ Generated REVERB_APP_KEY" . RESET . PHP_EOL;
     }
-    
+
     if (!getEnvValue('REVERB_APP_SECRET', $env)) {
         $reverbAppSecret = generateAlphanumeric(32);
         $env = setEnvValue('REVERB_APP_SECRET', $reverbAppSecret, $env);
         echo GREEN . "✓ Generated REVERB_APP_SECRET" . RESET . PHP_EOL;
     }
-    
+
     // Security Salts - use secure random bytes for these
     $saltKeys = [
         'USERDATA_ENCRYPTION_SALT',
@@ -383,7 +383,7 @@ function initialize() {
         'PASSKEY_SALT',
         'BACKUP_SALT'
     ];
-    
+
     foreach ($saltKeys as $saltKey) {
         if (!getEnvValue($saltKey, $env)) {
             $salt = bin2hex(random_bytes(16)); // 32 character hex string
@@ -391,13 +391,13 @@ function initialize() {
             echo GREEN . "✓ Generated $saltKey" . RESET . PHP_EOL;
         }
     }
-    
+
     // Save environment changes
     saveEnv($env);
-    
+
     // Clear all caches to ensure everything is fresh
     clearCache();
-    
+
     echo PHP_EOL . GREEN . BOLD . "Initialization complete!" . RESET . PHP_EOL;
 }
 
@@ -410,7 +410,7 @@ function setupEnv($flags) {
         setupReverbEnv();
         return;
     }
-    
+
     // Process specific flags
     switch ($flags[0]) {
         case '-g':
@@ -433,88 +433,98 @@ function setupEnv($flags) {
 
 function setupGeneralEnv() {
     echo BOLD . "Setting up General Environment Variables" . RESET . PHP_EOL;
-    
+
     $env = getEnvContent();
-    
+
     // APP_NAME
     $current = getEnvValue('APP_NAME', $env);
     $appName = promptWithDefault("APP_NAME", $current);
     $env = setEnvValue('APP_NAME', $appName, $env);
-    
+
     // APP_URL
     $current = getEnvValue('APP_URL', $env);
     $appUrl = promptWithDefault("APP_URL", $current ?: 'http://localhost:8000');
     $env = setEnvValue('APP_URL', $appUrl, $env);
-    
+
     // APP_TIMEZONE
     $current = getEnvValue('APP_TIMEZONE', $env);
     $appTimezone = promptWithDefault("APP_TIMEZONE", $current ?: 'UTC');
     $env = setEnvValue('APP_TIMEZONE', $appTimezone, $env);
-    
+
     // APP_LOCALE
     $current = getEnvValue('APP_LOCALE', $env);
     $appLocale = promptWithDefault("APP_LOCALE (de_DE or en_US)", $current ?: 'en_US');
     $env = setEnvValue('APP_LOCALE', $appLocale, $env);
-    
+
     // ALLOW_EXTERNAL_COMMUNICATION
     $current = getEnvValue('ALLOW_EXTERNAL_COMMUNICATION', $env);
     $allowExtComm = promptWithDefault("ALLOW_EXTERNAL_COMMUNICATION (true/false)", $current ?: 'false');
     $env = setEnvValue('ALLOW_EXTERNAL_COMMUNICATION', $allowExtComm, $env);
-    
+
+    // ALLOW_EXTERNAL_APPS
+    $current = getEnvValue('ALLOW_EXTERNAL_APPS', $env);
+    $allowExtComm = promptWithDefault("ALLOW_EXTERNAL_APPS (true/false)", $current ?: 'false');
+    $env = setEnvValue('ALLOW_EXTERNAL_APPS', $allowExtComm, $env);
+
+    // ALLOW_EXTERNAL_CHAT
+    $current = getEnvValue('ALLOW_EXTERNAL_CHAT', $env);
+    $allowExtComm = promptWithDefault("ALLOW_EXTERNAL_CHAT (true/false)", $current ?: 'false');
+    $env = setEnvValue('ALLOW_EXTERNAL_CHAT', $allowExtComm, $env);
+
     saveEnv($env);
     echo GREEN . "✓ General environment variables updated" . RESET . PHP_EOL;
 }
 
 function setupDatabaseEnv() {
     echo BOLD . "Setting up Database Environment Variables" . RESET . PHP_EOL;
-    
+
     $env = getEnvContent();
-    
+
     // DB_CONNECTION
     $current = getEnvValue('DB_CONNECTION', $env);
     $dbConnection = promptWithDefault("DB_CONNECTION (mysql, sqlite, pgsql)", $current ?: 'mysql');
     $env = setEnvValue('DB_CONNECTION', $dbConnection, $env);
-    
+
     // DB_HOST
     $current = getEnvValue('DB_HOST', $env);
     $dbHost = promptWithDefault("DB_HOST", $current ?: '127.0.0.1');
     $env = setEnvValue('DB_HOST', $dbHost, $env);
-    
+
     // DB_PORT
     $current = getEnvValue('DB_PORT', $env);
     $defaultPort = $dbConnection === 'mysql' ? '3306' : ($dbConnection === 'pgsql' ? '5432' : '');
     $dbPort = promptWithDefault("DB_PORT", $current ?: $defaultPort);
     $env = setEnvValue('DB_PORT', $dbPort, $env);
-    
+
     // DB_DATABASE
     $current = getEnvValue('DB_DATABASE', $env);
     $dbDatabase = promptWithDefault("DB_DATABASE", $current ?: 'hawki');
     $env = setEnvValue('DB_DATABASE', $dbDatabase, $env);
-    
+
     // DB_USERNAME
     $current = getEnvValue('DB_USERNAME', $env);
     $dbUsername = promptWithDefault("DB_USERNAME", $current ?: 'root');
     $env = setEnvValue('DB_USERNAME', $dbUsername, $env);
-    
+
     // DB_PASSWORD
     $current = getEnvValue('DB_PASSWORD', $env);
     $dbPassword = promptWithDefault("DB_PASSWORD", $current ?: '');
     $env = setEnvValue('DB_PASSWORD', $dbPassword, $env);
-    
+
     saveEnv($env);
     echo GREEN . "✓ Database environment variables updated" . RESET . PHP_EOL;
 }
 
 function setupAuthEnv() {
     echo BOLD . "Setting up Authentication Environment Variables" . RESET . PHP_EOL;
-    
+
     $env = getEnvContent();
-    
+
     // AUTHENTICATION_METHOD
     $current = getEnvValue('AUTHENTICATION_METHOD', $env);
     $authMethod = promptWithDefault("AUTHENTICATION_METHOD (LDAP, Shibboleth, OIDC)", $current ?: 'LDAP');
     $env = setEnvValue('AUTHENTICATION_METHOD', $authMethod, $env);
-    
+
     // Setup specific auth method variables
     switch (strtoupper($authMethod)) {
         case 'LDAP':
@@ -536,42 +546,42 @@ function setupLdapEnv(&$env) {
     $current = getEnvValue('LDAP_CONNECTION', $env);
     $ldapConnection = promptWithDefault("LDAP_CONNECTION", $current ?: 'default');
     $env = setEnvValue('LDAP_CONNECTION', $ldapConnection, $env);
-    
+
     // LDAP_HOST
     $current = getEnvValue('LDAP_HOST', $env);
     $ldapHost = promptWithDefault("LDAP_HOST", $current ?: 'ldap.example.com');
     $env = setEnvValue('LDAP_HOST', $ldapHost, $env);
-    
+
     // LDAP_PORT
     $current = getEnvValue('LDAP_PORT', $env);
     $ldapPort = promptWithDefault("LDAP_PORT", $current ?: '389');
     $env = setEnvValue('LDAP_PORT', $ldapPort, $env);
-    
+
     // LDAP_USERNAME
     $current = getEnvValue('LDAP_USERNAME', $env);
     $ldapUsername = promptWithDefault("LDAP_USERNAME", $current ?: 'cn=admin,dc=example,dc=com');
     $env = setEnvValue('LDAP_USERNAME', $ldapUsername, $env);
-    
+
     // LDAP_BIND_PW
     $current = getEnvValue('LDAP_BIND_PW', $env);
     $ldapBindPw = promptWithDefault("LDAP_BIND_PW", $current ?: '');
     $env = setEnvValue('LDAP_BIND_PW', $ldapBindPw, $env);
-    
+
     // LDAP_BASE_DN
     $current = getEnvValue('LDAP_BASE_DN', $env);
     $ldapBaseDn = promptWithDefault("LDAP_BASE_DN", $current ?: 'dc=example,dc=com');
     $env = setEnvValue('LDAP_BASE_DN', $ldapBaseDn, $env);
-    
+
     // LDAP_ATTRIBUTES
     $current = getEnvValue('LDAP_ATTRIBUTES', $env);
     $ldapAttributes = promptWithDefault("LDAP_ATTRIBUTES", $current ?: 'cn,mail,displayname');
     $env = setEnvValue('LDAP_ATTRIBUTES', $ldapAttributes, $env);
-    
+
     // TEST_USER_LOGIN
     $current = getEnvValue('TEST_USER_LOGIN', $env);
     $testUserLogin = promptWithDefault("TEST_USER_LOGIN (true/false)", $current ?: 'false');
     $env = setEnvValue('TEST_USER_LOGIN', $testUserLogin, $env);
-    
+
     saveEnv($env);
     echo GREEN . "✓ LDAP environment variables updated" . RESET . PHP_EOL;
 }
@@ -581,27 +591,27 @@ function setupShibbolethEnv(&$env) {
     $current = getEnvValue('SHIBBOLETH_LOGIN_URL', $env);
     $shibLoginUrl = promptWithDefault("SHIBBOLETH_LOGIN_URL", $current ?: '/Shibboleth.sso/Login');
     $env = setEnvValue('SHIBBOLETH_LOGIN_URL', $shibLoginUrl, $env);
-    
+
     // SHIBBOLETH_LOGOUT_URL
     $current = getEnvValue('SHIBBOLETH_LOGOUT_URL', $env);
     $shibLogoutUrl = promptWithDefault("SHIBBOLETH_LOGOUT_URL", $current ?: '/Shibboleth.sso/Logout');
     $env = setEnvValue('SHIBBOLETH_LOGOUT_URL', $shibLogoutUrl, $env);
-    
+
     // SHIBBOLETH_NAME_VAR
     $current = getEnvValue('SHIBBOLETH_NAME_VAR', $env);
     $shibNameVar = promptWithDefault("SHIBBOLETH_NAME_VAR", $current ?: 'HTTP_DISPLAYNAME');
     $env = setEnvValue('SHIBBOLETH_NAME_VAR', $shibNameVar, $env);
-    
+
     // SHIBBOLETH_EMAIL_VAR
     $current = getEnvValue('SHIBBOLETH_EMAIL_VAR', $env);
     $shibEmailVar = promptWithDefault("SHIBBOLETH_EMAIL_VAR", $current ?: 'HTTP_MAIL');
     $env = setEnvValue('SHIBBOLETH_EMAIL_VAR', $shibEmailVar, $env);
-    
+
     // SHIBBOLETH_EMPLOYEETYPE_VAR
     $current = getEnvValue('SHIBBOLETH_EMPLOYEETYPE_VAR', $env);
     $shibEmployeeVar = promptWithDefault("SHIBBOLETH_EMPLOYEETYPE_VAR", $current ?: 'HTTP_EMPLOYEETYPE');
     $env = setEnvValue('SHIBBOLETH_EMPLOYEETYPE_VAR', $shibEmployeeVar, $env);
-    
+
     saveEnv($env);
     echo GREEN . "✓ Shibboleth environment variables updated" . RESET . PHP_EOL;
 }
@@ -611,88 +621,88 @@ function setupOidcEnv(&$env) {
     $current = getEnvValue('OIDC_IDP', $env);
     $oidcIdp = promptWithDefault("OIDC_IDP", $current ?: 'https://oidc.example.com');
     $env = setEnvValue('OIDC_IDP', $oidcIdp, $env);
-    
+
     // OIDC_CLIENT_ID
     $current = getEnvValue('OIDC_CLIENT_ID', $env);
     $oidcClientId = promptWithDefault("OIDC_CLIENT_ID", $current ?: '');
     $env = setEnvValue('OIDC_CLIENT_ID', $oidcClientId, $env);
-    
+
     // OIDC_CLIENT_SECRET
     $current = getEnvValue('OIDC_CLIENT_SECRET', $env);
     $oidcClientSecret = promptWithDefault("OIDC_CLIENT_SECRET", $current ?: '');
     $env = setEnvValue('OIDC_CLIENT_SECRET', $oidcClientSecret, $env);
-    
+
     // OIDC_LOGOUT_URI
     $current = getEnvValue('OIDC_LOGOUT_URI', $env);
     $oidcLogoutUri = promptWithDefault("OIDC_LOGOUT_URI", $current ?: 'https://oidc.example.com/logout');
     $env = setEnvValue('OIDC_LOGOUT_URI', $oidcLogoutUri, $env);
-    
+
     // OIDC_SCOPES
     $current = getEnvValue('OIDC_SCOPES', $env);
     $oidcScopes = promptWithDefault("OIDC_SCOPES", $current ?: 'openid profile email');
     $env = setEnvValue('OIDC_SCOPES', $oidcScopes, $env);
-    
+
     // OIDC_FIRSTNAME_VAR
     $current = getEnvValue('OIDC_FIRSTNAME_VAR', $env);
     $oidcFirstnameVar = promptWithDefault("OIDC_FIRSTNAME_VAR", $current ?: 'given_name');
     $env = setEnvValue('OIDC_FIRSTNAME_VAR', $oidcFirstnameVar, $env);
-    
+
     // OIDC_LASTNAME_VAR
     $current = getEnvValue('OIDC_LASTNAME_VAR', $env);
     $oidcLastnameVar = promptWithDefault("OIDC_LASTNAME_VAR", $current ?: 'family_name');
     $env = setEnvValue('OIDC_LASTNAME_VAR', $oidcLastnameVar, $env);
-    
+
     // OIDC_EMAIL_VAR
     $current = getEnvValue('OIDC_EMAIL_VAR', $env);
     $oidcEmailVar = promptWithDefault("OIDC_EMAIL_VAR", $current ?: 'email');
     $env = setEnvValue('OIDC_EMAIL_VAR', $oidcEmailVar, $env);
-    
+
     // OIDC_EMPLOYEETYPE_VAR
     $current = getEnvValue('OIDC_EMPLOYEETYPE_VAR', $env);
     $oidcEmployeetypeVar = promptWithDefault("OIDC_EMPLOYEETYPE_VAR", $current ?: 'employee_type');
     $env = setEnvValue('OIDC_EMPLOYEETYPE_VAR', $oidcEmployeetypeVar, $env);
-    
+
     saveEnv($env);
     echo GREEN . "✓ OIDC environment variables updated" . RESET . PHP_EOL;
 }
 
 function setupReverbEnv() {
     echo BOLD . "Setting up Reverb Environment Variables" . RESET . PHP_EOL;
-    
+
     $env = getEnvContent();
-    
+
     // REVERB_HOST
     $current = getEnvValue('REVERB_HOST', $env);
     $reverbHost = promptWithDefault("REVERB_HOST", $current ?: '127.0.0.1');
     $env = setEnvValue('REVERB_HOST', $reverbHost, $env);
-    
+
     // REVERB_PORT
     $current = getEnvValue('REVERB_PORT', $env);
     $reverbPort = promptWithDefault("REVERB_PORT", $current ?: '8080');
     $env = setEnvValue('REVERB_PORT', $reverbPort, $env);
-    
+
     // REVERB_SERVER_HOST
     $current = getEnvValue('REVERB_SERVER_HOST', $env);
     $reverbServerHost = promptWithDefault("REVERB_SERVER_HOST", $current ?: '127.0.0.1');
     $env = setEnvValue('REVERB_SERVER_HOST', $reverbServerHost, $env);
-    
+
     // REVERB_SERVER_PORT
     $current = getEnvValue('REVERB_SERVER_PORT', $env);
     $reverbServerPort = promptWithDefault("REVERB_SERVER_PORT", $current ?: '8085');
     $env = setEnvValue('REVERB_SERVER_PORT', $reverbServerPort, $env);
-    
+
     // REVERB_SCHEME
     $current = getEnvValue('REVERB_SCHEME', $env);
     $reverbScheme = promptWithDefault("REVERB_SCHEME (http, https)", $current ?: 'http');
     $env = setEnvValue('REVERB_SCHEME', $reverbScheme, $env);
-    
+
     saveEnv($env);
     echo GREEN . "✓ Reverb environment variables updated" . RESET . PHP_EOL;
 }
 
 function runDev() {
     echo BOLD . "Starting development servers..." . RESET . PHP_EOL;
-    
+
     // Create a temporary bash script
     $script = "#!/bin/bash
                 trap 'kill \$(jobs -p) 2>/dev/null' EXIT
@@ -711,25 +721,25 @@ function runDev() {
                 # Wait for user to press Ctrl+C
                 wait
                 ";
-    
+
     $tmpfile = tempnam(sys_get_temp_dir(), 'hawki_');
     file_put_contents($tmpfile, $script);
     chmod($tmpfile, 0755);
-    
+
     // Run the script
     passthru("bash $tmpfile");
-    
+
     // Clean up the temporary file
     unlink($tmpfile);
 }
 
 function runBuild() {
     echo BOLD . "Building project..." . RESET . PHP_EOL;
-    
+
     // Run composer install
     echo YELLOW . "Running composer install..." . RESET . PHP_EOL;
     passthru('composer install');
-    
+
     // Check if we need to update composer
     echo YELLOW . "Checking for composer updates..." . RESET . PHP_EOL;
     exec('composer outdated --direct', $outdatedOutput);
@@ -737,20 +747,20 @@ function runBuild() {
         echo "Outdated packages found. Running composer update..." . PHP_EOL;
         passthru('composer update');
     }
-    
+
     // Run npm build
     echo YELLOW . "Running npm run build..." . RESET . PHP_EOL;
     passthru('npm run build');
-    
+
     // Clear all caches to ensure build is fresh
     clearCache();
-    
+
     echo PHP_EOL . GREEN . BOLD . "Build completed!" . RESET . PHP_EOL;
 }
 
 function stopProcesses() {
     echo BOLD . "Stopping all HAWKI processes..." . RESET . PHP_EOL;
-    
+
     // Find and kill PHP artisan processes
     echo "Finding and stopping PHP artisan processes..." . PHP_EOL;
     $script = "
@@ -758,23 +768,23 @@ function stopProcesses() {
     pkill -f 'php artisan queue:work' 2>/dev/null
     pkill -f 'php artisan reverb:start' 2>/dev/null
     ";
-    
+
     // Find and kill any Node processes related to Vite
     echo "Finding and stopping npm/node processes..." . PHP_EOL;
     $script .= "
     pkill -f 'vite' 2>/dev/null
     ";
-    
+
     $tmpfile = tempnam(sys_get_temp_dir(), 'hawki_stop_');
     file_put_contents($tmpfile, $script);
     chmod($tmpfile, 0755);
-    
+
     // Run the script
     passthru("bash $tmpfile");
-    
+
     // Clean up the temporary file
     unlink($tmpfile);
-    
+
     echo GREEN . "All HAWKI processes have been stopped." . RESET . PHP_EOL;
 }
 
@@ -803,24 +813,24 @@ function getEnvValue($key, $envContent) {
 function setEnvValue($key, $value, $envContent) {
     $value = trim($value);
     $pattern = "/^{$key}=(.*)$/m";
-    
+
     // If the key exists, replace it at its current position
     if (preg_match($pattern, $envContent)) {
         return preg_replace($pattern, "{$key}={$value}", $envContent);
     }
-    
+
     // If the key doesn't exist, add it in the right section if possible
     // Split the content into lines
     $lines = explode(PHP_EOL, $envContent);
     $newLines = [];
     $added = false;
-    
+
     // Try to determine which section this key belongs to
     $keyPrefix = strtoupper(explode('_', $key)[0]);
     $sectionMatches = [];
     $currentSection = null;
     $lastLine = count($lines) - 1;
-    
+
     // First pass: identify sections and where our key might belong
     foreach ($lines as $i => $line) {
         // Skip comment lines for section detection, but check if they mark a section
@@ -830,47 +840,47 @@ function setEnvValue($key, $value, $envContent) {
             }
             continue;
         }
-        
+
         // Check if this line starts a variable with our prefix
         if (preg_match('/^' . $keyPrefix . '_[A-Z0-9_]+=/', $line)) {
             $currentSection = $keyPrefix;
             $sectionMatches[] = $i;
         }
     }
-    
+
     // If we found matching sections, try to add our key after the last match
     if (!empty($sectionMatches)) {
         $lastMatch = max($sectionMatches);
-        
+
         // Find the end of this section (next empty line or next section start)
         for ($i = $lastMatch + 1; $i <= $lastLine; $i++) {
             if (!isset($lines[$i])) {
                 break;
             }
-            
+
             $line = $lines[$i];
-            
+
             // If we hit an empty line or a new section, we've found the insertion point
-            if (trim($line) === '' || 
+            if (trim($line) === '' ||
                 (preg_match('/^[A-Z0-9_]+=/', $line) && !preg_match('/^' . $keyPrefix . '_[A-Z0-9_]+=/', $line))) {
                 array_splice($lines, $i, 0, "{$key}={$value}");
                 $added = true;
                 break;
             }
         }
-        
+
         // If we reached the end of the file without finding a break
         if (!$added && isset($lines[$lastLine])) {
             array_splice($lines, $lastLine + 1, 0, "{$key}={$value}");
             $added = true;
         }
     }
-    
+
     // If we couldn't find an appropriate section or add it within a section, just append to the end
     if (!$added) {
         $lines[] = "{$key}={$value}";
     }
-    
+
     return implode(PHP_EOL, $lines);
 }
 
@@ -884,9 +894,9 @@ function promptWithDefault($prompt, $default = '') {
     } else {
         echo "$prompt: ";
     }
-    
+
     $input = trim(fgets(STDIN));
-    
+
     // Return default if input is empty
     return !empty($input) ? $input : $default;
 }
@@ -910,29 +920,29 @@ function generateAlphanumeric($length = 32) {
  */
 function clearCache() {
     echo BOLD . "Clearing Laravel caches..." . RESET . PHP_EOL;
-    
+
     // Execute cache clearing commands
     echo YELLOW . "Running config:clear..." . RESET . PHP_EOL;
     passthru('php artisan config:clear');
-    
+
     echo YELLOW . "Running cache:clear..." . RESET . PHP_EOL;
     passthru('php artisan cache:clear');
-    
+
     echo YELLOW . "Running view:clear..." . RESET . PHP_EOL;
     passthru('php artisan view:clear');
-    
+
     echo YELLOW . "Running route:clear..." . RESET . PHP_EOL;
     passthru('php artisan route:clear');
-    
+
     echo YELLOW . "Running event:clear..." . RESET . PHP_EOL;
     passthru('php artisan event:clear');
-    
+
     echo YELLOW . "Running compiled:clear..." . RESET . PHP_EOL;
     passthru('php artisan clear-compiled');
-    
+
     echo YELLOW . "Running optimize:clear..." . RESET . PHP_EOL;
     passthru('php artisan optimize:clear');
-    
+
     echo GREEN . "✓ All caches have been cleared" . RESET . PHP_EOL;
 }
 
@@ -941,10 +951,10 @@ function clearCache() {
  */
 function migrate($flags) {
     echo BOLD . "Running database migrations..." . RESET . PHP_EOL;
-    
+
     // Check if we need to run a fresh migration
     $fresh = in_array('--fresh', $flags);
-    
+
     if ($fresh) {
         // Get database information for warning message
         $env = getEnvContent();
@@ -952,7 +962,7 @@ function migrate($flags) {
         $dbHost = getEnvValue('DB_HOST', $env) ?: 'localhost';
         $dbPort = getEnvValue('DB_PORT', $env) ?: '3306';
         $dbName = getEnvValue('DB_DATABASE', $env) ?: 'hawki';
-        
+
         // Display warning about data loss
         echo RED . BOLD . "⚠️  WARNING: You are about to run a fresh migration!" . RESET . PHP_EOL;
         echo RED . "This will delete ALL data in your database:" . RESET . PHP_EOL;
@@ -960,29 +970,29 @@ function migrate($flags) {
         echo "  - Database: $dbName" . PHP_EOL;
         echo "  - Host: $dbHost:$dbPort" . PHP_EOL . PHP_EOL;
         echo YELLOW . "Are you sure you want to continue? Type 'yes' to confirm: " . RESET;
-        
+
         $confirmation = trim(fgets(STDIN));
-        
+
         if (strtolower($confirmation) !== 'yes') {
             echo YELLOW . "Migration cancelled by user." . RESET . PHP_EOL;
             return;
         }
-        
+
         echo YELLOW . "Running migrate:fresh..." . RESET . PHP_EOL;
         passthru('php artisan migrate:fresh');
     } else {
         echo YELLOW . "Running migrate..." . RESET . PHP_EOL;
         passthru('php artisan migrate');
     }
-    
+
     // Run seeders
     echo YELLOW . "Running db:seed..." . RESET . PHP_EOL;
     passthru('php artisan db:seed');
-    
+
     // Clear cache to ensure fresh database reflection
     echo YELLOW . "Clearing cache to refresh database schema..." . RESET . PHP_EOL;
     passthru('php artisan cache:clear');
-    
+
     echo GREEN . "✓ Database migration completed!" . RESET . PHP_EOL;
 }
 
@@ -991,7 +1001,7 @@ function migrate($flags) {
  */
 function setupModelProviders() {
     echo BOLD . "Setting up AI Model Providers" . RESET . PHP_EOL;
-    
+
     // Check if model_providers.php exists
     if (!file_exists('config/model_providers.php')) {
         if (file_exists('config/model_providers.php.example')) {
@@ -1003,28 +1013,28 @@ function setupModelProviders() {
             return;
         }
     }
-    
+
     // Load the configuration file
     $config = require('config/model_providers.php');
-    
+
     // List of active models (to help user select default model later)
     $availableModels = [];
-    
+
     // Process each provider
     echo PHP_EOL . BOLD . "AI Providers Configuration:" . RESET . PHP_EOL;
     foreach ($config['providers'] as $providerId => &$provider) {
         echo PHP_EOL . "Do you want to activate the " . BOLD . $providerId . RESET . " provider? (y/n): ";
         $answer = strtolower(trim(fgets(STDIN)));
-        
+
         if ($answer === 'y') {
             $apiKey = promptWithDefault($providerId . " API Key", $provider['api_key'] ?? '');
-            
+
             if (!empty($apiKey)) {
                 $provider['active'] = true;
                 $provider['api_key'] = $apiKey;
-                
+
                 echo GREEN . "✓ " . $providerId . " provider activated" . RESET . PHP_EOL;
-                
+
                 // Add this provider's models to the available models list
                 echo "Available models from this provider:" . PHP_EOL;
                 foreach ($provider['models'] as $model) {
@@ -1040,26 +1050,26 @@ function setupModelProviders() {
             echo YELLOW . "! " . $providerId . " provider will be inactive" . RESET . PHP_EOL;
         }
     }
-    
+
     // Configure default model if we have available models
     if (!empty($availableModels)) {
         echo PHP_EOL . BOLD . "Default Model Configuration:" . RESET . PHP_EOL;
-        
+
         echo "Available models:" . PHP_EOL;
         foreach ($availableModels as $modelId => $label) {
             echo "  - $label ($modelId)" . PHP_EOL;
         }
-        
+
         // Get current default model
         $currentDefaultModel = $config['defaultModel'] ?? '';
         $currentLabel = isset($availableModels[$currentDefaultModel]) ? $availableModels[$currentDefaultModel] : "";
-        
+
         // Set the default model
         if (!empty($currentLabel)) {
             echo "Current default model: $currentDefaultModel ($currentLabel)" . PHP_EOL;
         }
         $defaultModel = promptWithDefault("Enter the model ID to use as default", $currentDefaultModel);
-        
+
         // Validate the model ID
         if (isset($availableModels[$defaultModel])) {
             $config['defaultModel'] = $defaultModel;
@@ -1067,16 +1077,16 @@ function setupModelProviders() {
         } else {
             echo RED . "! Invalid model ID: $defaultModel. Using previous value: {$config['defaultModel']}" . RESET . PHP_EOL;
         }
-        
+
         // Configure system models
         echo PHP_EOL . BOLD . "System Models Configuration:" . RESET . PHP_EOL;
         echo "These models are used for specific automated tasks." . PHP_EOL;
         echo "It's recommended to use lightweight models like gpt-4o-mini or GWDG models." . PHP_EOL;
-        
+
         foreach ($config['system_models'] as $purpose => &$modelId) {
             $currentModel = $modelId;
             $modelId = promptWithDefault("$purpose model", $currentModel);
-            
+
             // Validate the model ID
             if (!isset($availableModels[$modelId])) {
                 echo RED . "! Warning: '$modelId' is not in the list of available models. Make sure it's accessible." . RESET . PHP_EOL;
@@ -1088,10 +1098,10 @@ function setupModelProviders() {
         echo PHP_EOL . RED . "No active models available. Please activate at least one provider with an API key." . RESET . PHP_EOL;
         return;
     }
-    
+
     // Save the configuration
     $content = "<?php\n\nreturn " . var_export($config, true) . ";\n";
     file_put_contents('config/model_providers.php', $content);
-    
+
     echo PHP_EOL . GREEN . BOLD . "AI Model providers configuration completed!" . RESET . PHP_EOL;
 }

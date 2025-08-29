@@ -6,13 +6,17 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-openssl": "*",
         "blade-ui-kit/blade-icons": "^1.8",
         "blade-ui-kit/blade-ui-kit": "^0.7.0",
+        "hawk-hhg/hawki-crypto": "^0.5.2",
         "jumbojett/openid-connect-php": "^1.0",
         "laravel/framework": "^11.0",
         "laravel/reverb": "^1.1",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "neunerlei/dbg": "^3.0",
+        "phpseclib/phpseclib": "^3.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -53,9 +57,11 @@
             "@php artisan migrate --graceful --ansi"
         ],
         "queue": [
-            "@php artisan queue:work -vv --queue=default,mails,message_broadcast"
+            "Composer\\Config::disableProcessTimeout",
+            "@php artisan queue:work -vv --queue=default,mails,message_broadcast --timeout=0"
         ],
         "websocket": [
+            "Composer\\Config::disableProcessTimeout",
             "@php artisan reverb:start --debug"
         ],
         "dev": [
@@ -73,6 +79,7 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
+            "0.0.0/composer-include-files": true,
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         }

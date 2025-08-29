@@ -2,23 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Room;
-use App\Models\User;
+use App\Events\MessageSentEvent;
+use App\Events\MessageUpdateEvent;
+use App\Events\RoomCreateEvent;
+use App\Events\RoomRemoveEvent;
+use App\Events\RoomUpdateEvent;
+use App\Jobs\SendMessage;
 use App\Models\Member;
 use App\Models\Message;
-
-use App\Jobs\SendMessage;
-
-use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\ImageController;
-use Illuminate\Support\Facades\Storage;
-
-use Illuminate\Http\Request;
+use App\Models\Room;
+use App\Models\User;
+use App\Services\File\PublicStoragePaths;
+use App\Services\Message\LegacyMessageHelper;
 use Illuminate\Http\JsonResponse;
-
-use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 
 class RoomController extends Controller
@@ -35,9 +33,9 @@ class RoomController extends Controller
         }
         
         // Prepare the data to send back
-
-        $roomIcon = ($room->room_icon !== '' && $room->room_icon !== null) 
-        ? Storage::disk('public')->url('room_avatars/' . $room->room_icon) 
+        
+        $roomIcon = ($room->room_icon !== '' && $room->room_icon !== null)
+            ? app(PublicStoragePaths::class)->getRoomAvatarPath($room)
         : null;
 
 
@@ -62,7 +60,8 @@ class RoomController extends Controller
                     'username' => $member->user->username,
                     'role' => $member->role,
                     'employeetype' => $member->user->employeetype,
-                    'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
+                    'avatar_url' => $member->user->avatar_id !== '' ?
+                        app(PublicStoragePaths::class)->getUserProfileAvatarPath($member->user) : null,
                 ];
             }),
         
@@ -97,7 +96,9 @@ class RoomController extends Controller
         $room->addMember(1, Member::ROLE_ASSISTANT);
         // Add the creator as admin
         $room->addMember($user->id, Member::ROLE_ADMIN);
-
+        
+        RoomCreateEvent::dispatch($room);
+        
         $data =[
             'success' => true,
             'roomData' => $room,
@@ -117,7 +118,9 @@ class RoomController extends Controller
         if (!$room) {
             return response()->json(['success' => false, 'message' => 'Room not found'], 404);
         }
-    
+        
+        RoomRemoveEvent::dispatch($room);
+        
         // Delete related messages and members
         $room->messages()->delete();
         $room->members()->delete();
@@ -158,7 +161,7 @@ class RoomController extends Controller
             } else {
                 return response()->json([
                     'success' => false,
-                    'response' => 'Image upload failed: ' . $response['error'] ?? 'Unknown error'
+                    'response' => 'Image upload failed: ' . ($response['error'] ?? 'Unknown error')
                 ]);
             }
         }
@@ -175,7 +178,9 @@ class RoomController extends Controller
         if(!empty($validatedData['name'])){
             $room->update(['room_name' => $validatedData['name']]);
         }
-
+        
+        RoomUpdateEvent::dispatch($room);
+        
         return response()->json([
             'success' => true,
             'response' => "Info updated successfully",
@@ -318,7 +323,7 @@ class RoomController extends Controller
                     'username' => $member->user->username,
                     'name' => $member->user->name,
                     'isRemoved' => $member->isRemoved,
-                    'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
+                    'avatar_url' => $member->user->avatar_id !== '' ? app(PublicStoragePaths::class)->getUserProfileAvatarPath($member->user) : null,
                 ],
                 'model' => $message->model,
 
@@ -327,7 +332,7 @@ class RoomController extends Controller
                 'tag' => $message->tag,
                 'created_at' => $message->created_at->format('Y-m-d+H:i'),
                 'updated_at' => $message->updated_at->format('Y-m-d+H:i'),
-            ]; 
+            ];
 
             array_push($messagesData, $msgData);
         }
@@ -344,23 +349,30 @@ class RoomController extends Controller
     /// 4. create message object
     /// 5. qeue message for broadcasting
     /// 6. send response to the sender
-    public function sendMessage(Request $request, $slug) {
-        
+    public function sendMessage(Request $request, $slug, LegacyMessageHelper $messageHelper): JsonResponse
+    {
         $validatedData = $request->validate([
             'content' => 'required|string',
             'iv' => 'required|string',
             'tag' => 'required|string',
             'threadID' => 'required|int',
+            'thread_id_version' => 'nullable|int|in:1,2', // 1 for legacy thread (192.000) ID, 2 for new thread ID (12), defaults to 1
         ]);
 
         $room = Room::where('slug', $slug)->firstOrFail();
         $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
         $messageRole = 'user';
-
-        $nextMessageId = $this->generateMessageID($room, $validatedData['threadID']);
+        
+        $threadInfo = $messageHelper->getThreadInfo(
+            $validatedData['threadID'],
+            ($validatedData['thread_id_version'] ?? 1) === 1
+        );
+        
+        $nextMessageId = $this->generateMessageID($room, $threadInfo->legacyThreadId);
 
         $message = Message::create([
             'room_id' => $room->id,
+            'thread_id' => $threadInfo->threadId,
             'member_id' => $member->id,
             'user_id' => Auth::id(),
             'message_id' => $nextMessageId,
@@ -370,8 +382,8 @@ class RoomController extends Controller
             'content' => $validatedData['content'],
         ]);
         $message->addReadSignature($member);
-
-
+        
+        MessageSentEvent::dispatch($message);
         SendMessage::dispatch($message, false)->onQueue('message_broadcast');
 
         if(!$room || !$member){
@@ -392,7 +404,8 @@ class RoomController extends Controller
             'author' => [
                 'username' => $member->user->username,
                 'name' => $member->user->name,
-                'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
+                'avatar_url' => $member->user->avatar_id !== '' ?
+                    app(PublicStoragePaths::class)->getUserProfileAvatarPath($member->user) : null,
             ],
             
             'content' => $message->content,
@@ -401,7 +414,7 @@ class RoomController extends Controller
 
             'created_at' => $message->created_at->format('Y-m-d+H:i'),
             'updated_at' => $message->updated_at->format('Y-m-d+H:i'),
-        ]; 
+        ];
 
 
         return response()->json([
@@ -410,30 +423,39 @@ class RoomController extends Controller
             'response' => "Message created and boradcasted.",
         ]);
     }
-
-
-
-    public function updateMessage(Request $request, $slug) {
+    
+    
+    public function updateMessage(Request $request, $slug, LegacyMessageHelper $messageHelper)
+    {
 
         $validatedData = $request->validate([
             'iv' => 'required|string',
             'tag' => 'required|string',
             'content' => 'required|string|max:10000',
-            'message_id' => 'required|string',
+            'message_id' => 'required|string|int',
         ]);
 
         $room = Room::where('slug', $slug)->firstOrFail();
         $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
-
-
-        $message = $room->messages->where('message_id', $validatedData['message_id'])->first();
-
+        
+        $messageId = $messageHelper->getMessageIdInfo($validatedData['message_id']);
+        
+        $message = $room->messages->where('id', $messageId->id)->first();
+        
+        if ($message && $message->member->id !== $member->id) {
+            return response()->json([
+                'success' => false,
+                'response' => "You can only update your own messages.",
+            ], 403);
+        }
+        
         $message->update([
             'content' => $validatedData['content'],
             'iv' => $validatedData['iv'],
             'tag' => $validatedData['tag']
         ]);
-
+        
+        MessageUpdateEvent::dispatch($message);
         SendMessage::dispatch($message, true)->onQueue('message_broadcast');
 
         $messageData = $message->toArray();
@@ -447,15 +469,19 @@ class RoomController extends Controller
         ]);
         
     }
-
-
-    public function markAsRead(Request $request, $slug){
+    
+    
+    public function markAsRead(Request $request, $slug, LegacyMessageHelper $messageHelper)
+    {
         $validatedData = $request->validate([
-            'message_id' => 'required|string',
+            'message_id' => 'required|string|int',
         ]);
         $room = Room::where('slug', $slug)->firstOrFail();
         $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
-        $message = $room->messages->where('message_id', $validatedData['message_id'])->first();
+        
+        $messageId = $messageHelper->getMessageIdInfo($validatedData['message_id']);
+        
+        $message = $room->messages->where('id', $messageId->id)->first();
 
         $message->addReadSignature($member);
 

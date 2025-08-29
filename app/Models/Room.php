@@ -2,17 +2,18 @@
 
 namespace App\Models;
 
+use App\Events\MemberAddToRoomEvent;
+use App\Events\MemberUpdateEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 
 class Room extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'room_name', 
+        'room_name',
         'room_icon',
         'room_description',
         'system_prompt',
@@ -64,38 +65,41 @@ class Room extends Model
                     ->exists();
     }
     
-    public function addMember($userId, $role)
+    public function addMember($userId, $role): Member
     {
         if($this->isMember($userId)){
             $member = $this->members()->where('user_id', $userId)->first();
             if(!$member->hasRole($role)){
                 $member->updateRole($role);
             }
+            MemberUpdateEvent::dispatch($member);
+            return $member;
         }
-        else{
-            if($this->isOldMember($userId)){
-
-                // if an old membership exists for the user
-                // reactivate the old membership.
-                $member = $this->membersAll()->where('user_id', $userId)->first();
-                $member->recreateMembership();
-
-                if(!$member->hasRole($role)){
-                    $member->updateRole($role);
-                }
-
+        
+        if ($this->isOldMember($userId)) {
+            // if an old membership exists for the user
+            // reactivate the old membership.
+            $member = $this->membersAll()->where('user_id', $userId)->first();
+            $member->recreateMembership();
+            
+            if (!$member->hasRole($role)) {
+                $member->updateRole($role);
             }
-            else{
-                // create new member for the room
-                $this->members()->create([
-                    'user_id' => $userId,
-                    'role' => $role,
-                ]);
-            }
-
+            
+            MemberAddToRoomEvent::dispatch($member);
+            
+            return $member;
         }
-
-
+        
+        // create new member for the room
+        $member = $this->members()->create([
+            'user_id' => $userId,
+            'role' => $role,
+        ]);
+        
+        MemberAddToRoomEvent::dispatch($member);
+        
+        return $member;
     }
 
     public function removeMember($userId)

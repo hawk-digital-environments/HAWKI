@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Cookie; // Ensure this is imported
-use Illuminate\Support\Facades\Log;
+
+// Ensure this is imported
 
 class LanguageController extends Controller
 {
@@ -26,7 +27,7 @@ class LanguageController extends Controller
             }
         }
         if(gettype($language) == 'string'){
-            $langs[config($lang)];
+            $langs[config($language)];
         }
 
         // Store the language in session

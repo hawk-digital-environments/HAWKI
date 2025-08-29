@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PrivateUserDataCreateEvent;
+use App\Events\PrivateUserdataUpdateEvent;
+use App\Models\PrivateUserData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
-use App\Models\PrivateUserData;
 
 class EncryptionController extends Controller
 {
@@ -185,7 +187,11 @@ class EncryptionController extends Controller
                     'keychain' => $validatedData['ciphertext'],
                 ]
             );
-
+            if ($privateUserData->wasRecentlyCreated) {
+                PrivateUserDataCreateEvent::dispatch($privateUserData);
+            } else {
+                PrivateUserdataUpdateEvent::dispatch($privateUserData);
+            }
         } catch (\Exception $error) {
             return response()->json([
                 'success' => false,

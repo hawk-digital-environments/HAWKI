@@ -3,22 +3,18 @@
 namespace App\Http\Controllers;
 
 
-use App\Models\User;
+use App\Events\PrivateUserDataCreateEvent;
 use App\Models\PrivateUserData;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
-
-use App\Http\Controllers\Controller;
-use App\Http\Controllers\LanguageController;
-
+use App\Models\User;
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
-
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
 
 
 class AuthenticationController extends Controller
@@ -262,7 +258,7 @@ class AuthenticationController extends Controller
             );
     
             // Update or create the Private User Data
-            PrivateUserData::create(
+            $data = PrivateUserData::create(
                 [
                     'user_id' => $user->id,
                     'KCIV' => $validatedData['KCIV'],
@@ -270,6 +266,7 @@ class AuthenticationController extends Controller
                     'keychain' => $validatedData['keychain']
                 ]
             );
+            PrivateUserDataCreateEvent::dispatch($data);
             // Log the user in
             Session::put('registration_access', false);
             Auth::login($user);

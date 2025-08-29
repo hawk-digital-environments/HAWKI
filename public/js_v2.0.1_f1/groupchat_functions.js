@@ -1,15 +1,14 @@
-
-let inputField;        
-let roomMsgTemp;       
-let roomItemTemplate;  
-let rooms;             
-let typingStatusDiv;   
-let activeRoom = null; 
+let inputField;
+let roomMsgTemp;
+let roomItemTemplate;
+let rooms;
+let typingStatusDiv;
+let activeRoom = null;
 
 /**
  * Initialize the group chat module with available rooms
  * @param {Object} roomsObject - Object containing rooms data from server
- * 
+ *
  */
 function initializeGroupChatModule(roomsObject){
     // Get DOM elements and templates
@@ -32,7 +31,7 @@ function initializeGroupChatModule(roomsObject){
             connectWhisperSocket(roomItem.room.slug)                // Connect to typing indicator socket
         });
     }
-    
+
     // Set up scroll detection for auto-scrolling behavior
     document.querySelector('.chatlog').querySelector('.scroll-container').addEventListener('scroll', function() {
         isScrolling = true;
@@ -40,9 +39,9 @@ function initializeGroupChatModule(roomsObject){
     document.querySelector('.chatlog').querySelector('.scroll-container').addEventListener('scroll', function() {
         setTimeout(function() {
             isScrolling = false;
-        }, 800); 
+        }, 800);
     });
-    
+
     // Initialize chatlog functions from chatlog_functions.js
     initializeChatlogFunctions();
 }
@@ -96,7 +95,7 @@ async function onSendMessageToRoom(inputField) {
     // Encrypt message with room key
     const roomKey = await keychainGet(activeRoom.slug); // From encryption.js - get stored room key
     const contData = await encryptWithSymKey(roomKey, inputText, false); // From encryption.js - encrypt message
-    
+
     // Prepare message object for sending
     const messageObj = {
         content: contData.ciphertext,
@@ -131,7 +130,7 @@ async function onSendMessageToRoom(inputField) {
             'key': aiKeyBase64,          // Encrypted key for AI to use
             'stream': false,             // Not using streaming for this message
         }
-        
+
         // Send to AI controller (from stream_functions.js)
         buildRequestObject(msgAttributes, async (updatedText, done) => {
             // Callback for handling AI response
@@ -143,9 +142,9 @@ async function onSendMessageToRoom(inputField) {
 /**
  * Connect to WebSocket for real-time room messages
  * @param {string} roomSlug - Unique identifier for the room
- * 
+ *
  * structure of receiving message data (only message case):
- *         
+ *
  * $messageData = [
  *      'room_id'
  *      'member_id'
@@ -156,7 +155,7 @@ async function onSendMessageToRoom(inputField) {
  *          'isRemoved'
  *          'avatar_url'
  *      ],
- * 
+ *
  *      'model'
  *      'message_role'
  *      'message_id'
@@ -164,14 +163,14 @@ async function onSendMessageToRoom(inputField) {
  *      'tag'
  *      'content'
  *      'read_status'=> false,
- *      
+ *
  *      'created_at'
  *      'updated_at'
  * ];
  */
 const connectWebSocket = (roomSlug) => {
     const webSocketChannel = `Rooms.${roomSlug}`;
-    
+
     // Using Laravel Echo to connect to private channel
     window.Echo.private(webSocketChannel)
         .listen('RoomMessageEvent', async (e) => {
@@ -183,7 +182,7 @@ const connectWebSocket = (roomSlug) => {
                 const data = JSON.parse(jsonString); // Parse JSON data
 
                 console.log(`Message received in room ${roomSlug}:`, data);
-                
+
                 // Handle different types of events
                 if(data.type === 'message'){
                     // If this is the currently active room
@@ -194,7 +193,7 @@ const connectWebSocket = (roomSlug) => {
                         } else {
                             handleAIMessage(data.messageData, roomSlug)      // AI assistant message
                         }
-                        
+
                         // Play notification sound for messages from others
                         if(data.messageData.author.username != userInfo.username){
                             playSound('in');  // From functions.js - play incoming message sound
@@ -208,12 +207,12 @@ const connectWebSocket = (roomSlug) => {
                         flagRoomUnreadMessages(roomSlug, true);  // From chatlog_functions.js - flag room with unread messages
                     }
                 }
-    
+
                 // Handle message updates (edits)
                 if(data.type === "messageUpdate"){
                     handleUpdateMessage(data.messageData, roomSlug)
                 }
-    
+
                 // Handle AI typing indicator
                 if(data.type === "aiGenerationStatus"){
                     if (data.messageData.isGenerating) {
@@ -256,7 +255,7 @@ async function handleUserMessages(messageData, slug){
     if(element.dataset.read_stat === 'false'){
         observer.observe(element);  // From chatlog_functions.js - mark as read when viewed
     }
-    
+
     // Check thread unread messages status
     if(!element.querySelector('.branch')){
         const thread = element.parentElement;
@@ -293,7 +292,7 @@ async function handleAIMessage(messageData, slug){
     if(element.dataset.read_stat === 'false'){
         observer.observe(element);  // From chatlog_functions.js
     }
-    
+
     // Check thread unread messages status
     if(!element.querySelector('.branch')){
         const thread = element.parentElement;
@@ -322,7 +321,7 @@ async function handleUpdateMessage(messageData, slug){
 
     // Decrypt message content
     messageData.content = await decryptWithSymKey(key, messageData.content, messageData.iv, messageData.tag);
-    
+
     // Update message in DOM
     let element = document.getElementById(messageData.message_id);
 
@@ -340,7 +339,7 @@ async function handleUpdateMessage(messageData, slug){
     if(element.dataset.read_stat === 'false'){
         observer.observe(element);  // From chatlog_functions.js
     }
-    
+
     // Check thread unread messages status
     if(!element.querySelector('.branch')){
         const thread = element.parentElement;
@@ -416,7 +415,7 @@ function stopTyping() {
  */
 function connectWhisperSocket(roomSlug){
     const webSocketChannel = `Rooms.${roomSlug}`;
-    
+
     // Listen for typing events using Laravel Echo
     Echo.private(webSocketChannel)
     .listenForWhisper('typing', (e) => {
@@ -449,7 +448,7 @@ function addUserToTypingList(user) {
         removeUserFromTypingList(user);
         updateTypingStatus();
     }, typingTimeout);
-    
+
     updateTypingStatus();
 }
 
@@ -470,7 +469,7 @@ function removeUserFromTypingList(user) {
  */
 function updateTypingStatus() {
     const users = Object.keys(typingUsers);
-    
+
     if (users.length === 0) {
         // No one is typing
         typingStatusDiv.textContent = '';
@@ -513,10 +512,10 @@ function openRoomCreatorPanel(){
 
     // Get reference to the creation panel
     const roomCreationPanel = document.getElementById('room-creation');
-    
+
     // Get default prompt from translations
     defaultPromt = translation.Default_Prompt;
-    
+
     // Reset all form fields
     roomCreationPanel.querySelector('#chat-name-input').value = '';
     roomCreationPanel.querySelector('#user-search-bar').value = '';
@@ -538,7 +537,7 @@ function finishRoomCreation(){
     textareas.forEach(txt => {
         txt.value = "";
     });
-    
+
     // Clear added members list
     const addedMembers = document.querySelector('.added-members-list');
     while (addedMembers.firstChild) {
@@ -594,7 +593,7 @@ async function createNewRoom(){
                 // Handle unexpected response
                 console.error('Unexpected response:', data);
                 alert('Failed to create room. Please try again.');
-            }  
+            }
         })
     } catch (error) {
         console.error('There was a problem with the fetch operation:', error);
@@ -627,7 +626,7 @@ async function onSuccessfullRoomCreation(data){
         'iv': cryptDescription.iv,
         'tag': cryptDescription.tag,
     });
-    
+
     const cryptSystemPrompt = await encryptWithSymKey(roomKey, systemPrompt, false);  // From encryption.js
     const systemPromptStr = JSON.stringify({
         'ciphertext': cryptSystemPrompt.ciphertext,
@@ -639,7 +638,7 @@ async function onSuccessfullRoomCreation(data){
     attributes = {
         'systemPrompt': systemPromptStr,
         'description': descriptionStr,
-        'img': avatar_url     
+        'img': avatar_url
     }
 
     // Update room info on server
@@ -657,7 +656,7 @@ async function onSuccessfullRoomCreation(data){
 
     // Create and send invitations to members
     await createAndSendInvitations(usersList, roomData.slug);
-    
+
     // Finalize UI setup
     finishRoomCreation();             // Clean up form
     createRoomItem(roomData);         // Create room item in sidebar
@@ -685,7 +684,7 @@ async function sendInvitation(btn){
             listOfInvitees.push(userObj);
         }
     });
-    
+
     // Create and send invitations to all users
     await createAndSendInvitations(listOfInvitees, activeRoom.slug);
     closeModal(btn);  // From functions.js - close the modal
@@ -700,16 +699,16 @@ async function createAndSendInvitations(usersList, roomSlug){
     // Get the room encryption key
     const roomKey = await keychainGet(roomSlug);  // From encryption.js
     const invitations = [];
-    
+
     // Process each invitee
     for (const invitee of usersList) {
         let invitation;
-        
+
         // For users with a public key, use asymmetric encryption
         if (invitee.publicKey) {
             // Encrypt room key with the user's public key
             const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(invitee.publicKey)); // From encryption.js
-            
+
             invitation = {
                 username: invitee.username,
                 encryptedRoomKey: encryptedRoomKey.ciphertext, // The encrypted room key
@@ -741,7 +740,7 @@ async function createAndSendInvitations(usersList, roomSlug){
         }
         invitations.push(invitation);
     }
-    
+
     // Store all invitations on the server
     requestStoreInvitationsOnServer(invitations, roomSlug);
 }
@@ -756,7 +755,7 @@ async function requestStoreInvitationsOnServer(invitations, slug){
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify({invitations})
     });
@@ -771,7 +770,7 @@ async function sendInvitationEmail(mailContent){
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify(mailContent)
     });
@@ -795,13 +794,13 @@ async function handleUserInvitations() {
         if(!response.ok){
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         if(data.formattedInvitations){
             // Process each invitation
             const invitations = data.formattedInvitations;
             const privateKeyBase64 = await keychainGet('privateKey');  // From encryption.js
-            
+
             // Convert private key from Base64 to ArrayBuffer
             const privateKey = base64ToArrayBuffer(privateKeyBase64);  // From encryption.js
 
@@ -811,7 +810,7 @@ async function handleUserInvitations() {
                     // Decrypt room key using user's private key
                     const encryptedRoomKeyBuffer = base64ToArrayBuffer(inv.invitation);  // From encryption.js
                     const roomKey = await decryptWithPrivateKey(encryptedRoomKeyBuffer, privateKey);  // From encryption.js
-                    
+
                     if (roomKey) {
                         await finishInvitationHandling(inv.invitation_id, roomKey)
                     }
@@ -837,7 +836,7 @@ async function handleTempLinkInvitation(tempLink){
     const parsedLink = JSON.parse(tempLink);
     tempHash = parsedLink.tempHash;
     slug = parsedLink.slug;
-    
+
     // Get invitation details from server
     try{
         const response = await fetch(`/req/inv/requestInvitation/${slug}`, {
@@ -851,11 +850,11 @@ async function handleTempLinkInvitation(tempLink){
         if(!response.ok){
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         // Decrypt room key using temp hash
         const data = await response.json();
         roomKey = await decryptWithTempHash(data.invitation, tempHash, data.iv, data.tag);  // From encryption.js
-        
+
         if(roomKey){
             await finishInvitationHandling(data.invitation_id, roomKey);
         }
@@ -877,11 +876,11 @@ async function finishInvitationHandling(invitation_id, roomKey){
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content') 
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         },
         body: JSON.stringify({ invitation_id: invitation_id })
     });
-    
+
     const data = await response.json();
     if(data.success){
         // Store room key in keychain
@@ -899,14 +898,14 @@ async function finishInvitationHandling(invitation_id, roomKey){
  */
 function openInvitationPanel(){
     const modal = document.querySelector('#add-member-modal');
-    
+
     // Reset all fields in the modal
     modal.querySelector('#user-search-bar').value = '';
     modal.querySelector('#searchResults').innerHTML = '';
     modal.querySelector('#searchResults').style.display = 'none';
     modal.querySelector('.added-members-list').innerHTML = '';
     tempSearchResult = '';
-    
+
     // Display the modal
     modal.style.display = 'flex';
 }
@@ -927,18 +926,18 @@ function createRoomItem(roomData){
 }
 
 /**
- * 
- * @param {button} btn 
- * @param {string} slug 
- * 
+ *
+ * @param {button} btn
+ * @param {string} slug
+ *
  * Load room on the GUI either from the sidepanel button or the slug
- * 
+ *
  * PREP
  * 1- sync btn and slug
  * 2- deactivate last active room
  * 3- deactivate submodule if it wasn't the chat (creation, control panel)
  * 4- update the url
- * 
+ *
  * LOAD
  * 1- Download room data
  * 2- Update Active Room Atrributes
@@ -946,8 +945,8 @@ function createRoomItem(roomData){
  * 4- Decrypt Messages and room secrets
  * 5- Setup GUI for User Permissions
  * 6- Load messages on GUI -> See Chatlog_functions.js
- * 
- * 
+ *
+ *
  */
 async function loadRoom(btn=null, slug=null){
 
@@ -961,7 +960,7 @@ async function loadRoom(btn=null, slug=null){
         return;
     }
 
-    if(!slug) slug = btn.getAttribute('slug'); 
+    if (!slug) slug = btn.getAttribute('slug');
     if(!btn) btn = document.querySelector(`.selection-item[slug="${slug}"]`);
 
     const lastActive = document.getElementById('rooms-list').querySelector('.selection-item.active');
@@ -977,7 +976,7 @@ async function loadRoom(btn=null, slug=null){
     if(!roomData){
         return;
     }
-    
+
     clearChatlog();
 
     activeRoom = roomData;
@@ -1002,6 +1001,7 @@ async function loadRoom(btn=null, slug=null){
     const roomKey = await keychainGet(slug);
     const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
     const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
+    const legacyAiKey = await deriveKey('[object CryptoKey]', slug, aiCryptoSalt);
 
     if(roomData.room_description){
         const descriptObj = JSON.parse(roomData.room_description);
@@ -1019,7 +1019,16 @@ async function loadRoom(btn=null, slug=null){
 
     for (const msgData of roomData.messagesData) {
         const key = msgData.message_role === 'assistant' ? aiKey : roomKey;
-        msgData.content = await decryptWithSymKey(key, msgData.content, msgData.iv, msgData.tag, false);
+        try {
+            msgData.content = await decryptWithSymKey(key, msgData.content, msgData.iv, msgData.tag, false);
+        } catch (error) {
+            if (msgData.message_role === 'assistant') {
+                // If decryption fails for AI messages, try legacy key
+                msgData.content = await decryptWithSymKey(legacyAiKey, msgData.content, msgData.iv, msgData.tag, false);
+            } else {
+                throw error;
+            }
+        }
     }
     filterRoleElements(roomData.role);
     loadMessagesOnGUI(roomData.messagesData);
@@ -1028,9 +1037,9 @@ async function loadRoom(btn=null, slug=null){
 
 
 /**
- * 
- * @param {array} roomData 
- * 
+ *
+ * @param {array} roomData
+ *
  * Creates a btn on the control panel for each member of the room
  */
 function loadRoomMembers(roomData) {
@@ -1057,6 +1066,7 @@ function loadRoomMembers(roomData) {
             memberBtnInit.remove();
         } else {
             memberBtnIcon.remove();
+            console.log('MEMBER', member);
             memberBtnInit.textContent = member.name.slice(0, 2).toUpperCase();
         }
         // Set member object in the button attribute
@@ -1069,12 +1079,12 @@ function loadRoomMembers(roomData) {
 
 
 /**
- * 
- * @param {string} slug 
+ *
+ * @param {string} slug
  * @returns {json}
- * 
+ *
  * Downloads Room Content form the server
- * 
+ *
  * Returning Data
  * $data = [
  *      'id',
@@ -1115,7 +1125,7 @@ async function RequestRoomContent(slug){
         if(!response.ok){
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         return data;
     }
@@ -1132,7 +1142,7 @@ const MemberRoles = {
 };
 function filterRoleElements(roleId) {
     const role = Object.values(MemberRoles).find(r => r.id === roleId);
-    
+
     if (!role) {
         throw new Error('Invalid User Role.');
     }
@@ -1158,7 +1168,7 @@ function filterRoleElements(roleId) {
             toggleDisplay(elements, false);
         }
     }
-} 
+}
 
 //#endregion
 
@@ -1191,7 +1201,7 @@ async function searchUser(searchBar) {
                         ignoreList.push(username);
                     }
                 });
-                
+
                 data.users.forEach(user => {
                     // Check if the user's username is already in the ignoreList
                     const isAlreadyAdded = ignoreList.some(invitedUsername => invitedUsername === user.username);
@@ -1210,7 +1220,7 @@ async function searchUser(searchBar) {
                         resultPanel.innerHTML = '';
                         resultPanel.style.display = "none";
                     })
-                    
+
                     resultPanel.appendChild(option);
 
                 });
@@ -1254,7 +1264,7 @@ function onAddUserButton(btn){
 }
 
 function addUserToList(searchBar) {
-    
+
     const selectedUser = searchBar.value.trim();
     if (!selectedUser || !tempSearchResult || tempSearchResult.length === 0) {
         // alert('Please select a valid user.');
@@ -1297,7 +1307,7 @@ function removeAddedMember(btn){
 
 function generateRandomColor() {
     const r = Math.floor(Math.random() * 128) + 127; // Random value between 127 and 255
-    const g = Math.floor(Math.random() * 128) + 127; 
+    const g = Math.floor(Math.random() * 128) + 127;
     const b = Math.floor(Math.random() * 128) + 127;
     return `rgba(${r}, ${g}, ${b}, 0.7)`;
 }
@@ -1331,7 +1341,7 @@ function openRoomCP(){
     descField.addEventListener('paste', function(e) {
         // Prevent the default paste behavior
         e.preventDefault();
-        
+
         // Get clipboard data as plain text
         const text = (e.clipboardData || window.clipboardData).getData('text');
 
@@ -1379,7 +1389,7 @@ function editTextPanel(btn) {
         selection.addRange(range);
     }
     else if(document.selection)//IE 8 and lower
-    { 
+    {
         range = document.body.createTextRange();
         range.moveToElementText(textField);
         range.collapse(false);
@@ -1427,9 +1437,9 @@ function confirmTextPanelEdit(btn){
 
 async function submitInfoField(){
 
-    const roomCP = document.getElementById('room-control-panel');    
+    const roomCP = document.getElementById('room-control-panel');
 
-    
+
     const chatName = roomCP.querySelector('#chat-name').textContent;
     document.getElementById('rooms-list')
             .querySelector(`.selection-item[slug="${activeRoom.slug}"`)
@@ -1576,7 +1586,7 @@ async function removeMemberFromRoom(username){
     } catch (error) {
         console.error('Failed to remove user!');
     }
-    
+
 }
 
 //#endregion
@@ -1619,7 +1629,7 @@ async function uploadRoomAvatar(imgBase64){
 
         if (data.success) {
             // console.log('Image Uploaded Successfully');
-            
+
         } else {
             console.error('Upload not successfull');
         }
@@ -1639,7 +1649,7 @@ async function updateRoomInfo(slug, attributes){
     }
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const url = `/req/room/updateInfo/${slug}`; 
+    const url = `/req/room/updateInfo/${slug}`;
 
     let requestObj = {};
     if(attributes.systemPrompt) requestObj.system_prompt = attributes.systemPrompt;
@@ -1660,11 +1670,11 @@ async function updateRoomInfo(slug, attributes){
         if(!response.ok){
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         if(data.success){
             // console.log('Room Information updated successfully');
-        }        
+        }
     }
     catch (err){
         console.error('Error fetching data:', error);

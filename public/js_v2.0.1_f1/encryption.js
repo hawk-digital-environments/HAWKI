@@ -50,9 +50,12 @@ function generatePasskeyBackupHash(){
 
 //NOTE: DERIVEKEY MISTAKE?
 async function deriveKey(passkey, label, serverSalt) {
+    if (passkey instanceof CryptoKey) {
+        passkey = arrayBufferToBase64(await window.crypto.subtle.exportKey('raw', passkey));
+    }
 
     const enc = new TextEncoder();
-    
+
     const keyMaterial = await window.crypto.subtle.importKey(
         "raw",
         enc.encode(passkey),
@@ -63,7 +66,7 @@ async function deriveKey(passkey, label, serverSalt) {
 
     // Combine label and serverSalt to create a unique salt for this derived key
     const combinedSalt = new Uint8Array([
-        ...new TextEncoder().encode(label), 
+        ...new TextEncoder().encode(label),
         ...new Uint8Array(serverSalt)
     ]);
 
@@ -231,9 +234,89 @@ async function decryptWithPrivateKey(encryptedData, privateKey) {
 }
 //#endregion
 
+//#region Hybrid
+/**
+ * Uses the best of both worlds: symmetric encryption for the data and asymmetric encryption for the passphrase.
+ * This allows for efficient encryption of large data while maintaining the security of the passphrase.
+ * @param {string} data
+ * @param {string} publicKey
+ * @returns {Promise<{
+ *     passphrase: string,
+ *     value: {
+ *         ciphertext: string,
+ *         iv: string,
+ *         tag: string,
+ *     },
+ *     toString: function(): string
+ * }>}
+ */
+async function encryptWithHybrid(data, publicKey) {
+    const passphrase = await generateKey();
+    const encryptedData = await encryptWithSymKey(passphrase, data, false);
+    const encryptedPassphrase = await encryptWithPublicKey(passphrase, base64ToArrayBuffer(publicKey));
+    // This value would be assignable to: \App\Services\Crypto\Value\HybridCryptoValue
+    return {
+        passphrase: encryptedPassphrase.ciphertext,
+        value: encryptedData,
+        toString: function () {
+            const {iv, ciphertext, tag} = this.value;
+            const valueString = [iv, tag, ciphertext].map(v => btoa(v)).join('|');
+            return [this.passphrase, valueString].map(v => btoa(v)).join('|');
+        }
+    };
+}
 
+/**
+ * Decrypts the hybrid encrypted value using the provided private key.
+ * This method first decrypts the passphrase using the private key, then uses that passphrase to decrypt the symmetric value.
+ * @param {{
+ *     passphrase: string,
+ *     value: {
+ *         ciphertext: string,
+ *         iv: string,
+ *         tag: string,
+ *     },
+ *     toString: function(): string
+ * }|string} ciphertext
+ * @param {string} privateKey
+ * @return {Promise<string>} The decrypted data
+ */
+async function decryptWithHybrid(ciphertext, privateKey) {
+    if (typeof ciphertext === 'string') {
+        const cipherParts = ciphertext.split('|');
+        if (cipherParts.length !== 2) {
+            throw new Error('Invalid hybrid ciphertext format');
+        }
+        const passphraseCiphertext = atob(cipherParts[0]);
+        const valueParts = cipherParts[1].split('|').map(part => atob(part));
+        ciphertext = {
+            passphrase: passphraseCiphertext,
+            value: {
+                iv: valueParts[0],
+                tag: valueParts[1],
+                ciphertext: valueParts[2]
+            },
+            toString: function () {
+                return ''; // This method is not used in the decryption process, but can be implemented if needed.
+            }
+        };
+    }
 
+    if (!ciphertext || !ciphertext.passphrase || typeof ciphertext.value !== 'object' || !ciphertext.value.ciphertext || !ciphertext.value.iv || !ciphertext.value.tag) {
+        throw new Error('Invalid hybrid ciphertext format');
+    }
 
+    const passphrase = await decryptWithPrivateKey(ciphertext.passphrase, privateKey, true);
+    return await decryptWithSymKey(
+        passphrase,
+        ciphertext.value.ciphertext,
+        ciphertext.value.iv,
+        ciphertext.value.tag,
+        false
+    );
+}
+
+//#endregion
 
 
 //#region HASH KEYS
@@ -607,7 +690,7 @@ async function fetchServerSalt(saltLabel) {
         return serverSalt;
     }
 
-    
+
     try {
         // Make a GET request to the server with saltlabel in the headers
         const response = await fetch('/req/crypto/getServerSalt', {
@@ -710,7 +793,7 @@ async function importSymmetricKey(decryptedRoomKey) {
 async function getPassKey(){
 
     if(passKey){
-       return passKey; 
+        return passKey;
     }
     else{
         try{
@@ -718,9 +801,9 @@ async function getPassKey(){
             const keyJson = JSON.parse(keyData);
             const salt = await fetchServerSalt('PASSKEY_SALT');
             const key = await deriveKey(userInfo.email, userInfo.username, salt);
-        
+
             passKey = await decryptWithSymKey(key, keyJson.ciphertext, keyJson.iv, keyJson.tag, false);
-            
+
             if(await testPassKey()){
                 return passKey;
             }
@@ -754,7 +837,7 @@ async function testPassKey(passKey){
 
     if( await keychainGet('username') === userInfo.username){
         return true;
-    }    
+    }
     else{
         return false;
     }

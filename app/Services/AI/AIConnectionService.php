@@ -2,21 +2,22 @@
 
 namespace App\Services\AI;
 
-use App\Services\AI\AIProviderFactory;
-use Illuminate\Support\Facades\Log;
+use App\Services\AI\Value\AiModel;
+use App\Services\AI\Value\FilteredModelList;
+use App\Services\AI\Value\ModelListUsageType;
 
 class AIConnectionService
 {
     /**
      * The provider factory
-     * 
+     *
      * @var AIProviderFactory
      */
     private $providerFactory;
     
     /**
      * Create a new connection service
-     * 
+     *
      * @param AIProviderFactory $providerFactory
      */
     public function __construct(AIProviderFactory $providerFactory)
@@ -26,7 +27,7 @@ class AIConnectionService
     
     /**
      * Process a request to an AI model
-     * 
+     *
      * @param array $rawPayload The unformatted payload
      * @param bool $streaming Whether to stream the response
      * @param callable|null $streamCallback Callback for streaming responses
@@ -52,45 +53,77 @@ class AIConnectionService
     
     /**
      * Get a list of all available models
-     * 
-     * @return array
+     *
+     * @param bool|null $external Set this to true, to receive the models enabled for external applications.
+     *                           If null, the default models will be returned.
      */
-    public function getAvailableModels(): array
+    public function getAvailableModels(?bool $external = null): array
     {
-        $models = [];
-        $providers = config('model_providers')['providers'];
+        $list = new FilteredModelList(
+            $external ? ModelListUsageType::EXTERNAL_APP : ModelListUsageType::DEFAULT
+        );
         
-        foreach ($providers as $provider) {
+        $config = config('model_providers') ?? [];
+        
+        $list->setDefaultModelName(ModelListUsageType::DEFAULT, $config['defaultModel']);
+        $list->setDefaultModelName(ModelListUsageType::EXTERNAL_APP, $config['defaultModel.external'] ?? null);
+        
+        foreach ($config['system_models'] as $modelType => $modelName) {
+            $list->addSystemModelMapping($modelType, $modelName);
+        }
+        if ($external) {
+            foreach ($config['system_models.external'] ?? [] as $modelType => $modelName) {
+                $list->addSystemModelMapping($modelType, $modelName, ModelListUsageType::EXTERNAL_APP);
+            }
+        }
+        
+        foreach ($config['providers'] as $provider) {
             if ($provider['active']) {
-
                 $providerInterface = $this->providerFactory->getProviderInterface($provider['id']);
-
-                if (method_exists($providerInterface, 'getModelsStatus') && 
-                    $provider['status_check'] &&
-                    !empty($provider['ping_url'])) {
-
-                        $stats = $providerInterface->getModelsStatus();
-                        foreach($stats as $stat){
-                            $models[] = $stat;
-                        }
+                if (method_exists($providerInterface, 'getModelsStatus') &&
+                    $provider['status_check'] && !empty($provider['ping_url'])) {
+                    foreach ($providerInterface->getModelsStatus() as $stat) {
+                        $list->addModel(new AiModel($stat));
+                    }
                 } else {
                     foreach ($provider['models'] as $model) {
-                        $models[] = $model;
+                        $list->addModel(new AiModel($model));
                     }
-                }  
+                }
             }
         }
 
         return [
-            'models' => $models,
-            'defaultModel' => config('model_providers')['defaultModel'],
-            'systemModels' => config('model_providers')['system_models']
+            'models' => array_map(static fn(AiModel $model) => $model->toArray(), $list->getModels()),
+            'defaultModel' => $list->getDefaultModel()->getId(),
+            'systemModels' => array_map(
+                static fn(AiModel $model) => $model->getId(),
+                $list->getSystemModels()
+            )
         ];
     }
     
     /**
+     * Get a specific model by its ID
+     *
+     * @param string $modelId The model ID to retrieve
+     * @param bool|null $external Set this to true, to receive the models enabled for external applications.
+     *                           If null, the default models will be returned.
+     * @return AiModel|null
+     */
+    public function getModelById(string $modelId, ?bool $external = null): ?AiModel
+    {
+        foreach ($this->getAvailableModels($external)['models'] as $model) {
+            if ($model['id'] === $modelId) {
+                return new AiModel($model);
+            }
+        }
+        return null;
+    }
+    
+    /**
      * Get details for a specific model
-     * 
+     *
      * @param string $modelId
      * @return array
      */
@@ -102,7 +135,7 @@ class AIConnectionService
     
     /**
      * Get the provider instance for a specific model
-     * 
+     *
      * @param string $modelId
      * @return \App\Services\AI\Interfaces\AIModelProviderInterface
      */

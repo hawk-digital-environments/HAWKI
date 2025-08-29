@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\PrivateUserdataRemoveEvent;
+use App\Events\UserResetEvent;
+use App\Events\UserUpdateEvent;
+use App\Models\PasskeyBackup;
+use App\Models\PrivateUserData;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use App\Http\Controllers\ImageController;
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\AiConvController;
-use App\Models\User;
-use App\Models\PasskeyBackup;
-use App\Models\PrivateUserData;
-use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
@@ -38,7 +37,7 @@ class ProfileController extends Controller
             } else {
                 return response()->json([
                     'success' => false,
-                    'response' => 'Image upload failed: ' . $response['error'] ?? 'Unknown error'
+                    'response' => 'Image upload failed: ' . ($response['error'] ?? 'Unknown error')
                 ]);
             }
         }
@@ -50,15 +49,18 @@ class ProfileController extends Controller
         if(!empty($validatedData['bio'])){
             $user->update(['bio' => $validatedData['bio']]);
         }
+        
+        UserUpdateEvent::dispatch($user);
+        
         return response()->json([
             'success' => true,
             'response' => 'User information updated'
         ]);
     }
-
-
-
-    public function backupPassKey(Request $request){        
+    
+    
+    public function backupPassKey(Request $request)
+    {
         $validatedData = $request->validate([
             'username' => 'required|string',
             'cipherText' => 'required|string',
@@ -90,8 +92,9 @@ class ProfileController extends Controller
 
 
     }
-
-    public function requestPasskeyBackup(Request $request){      
+    
+    public function requestPasskeyBackup(Request $request)
+    {
 
         $user = Auth::user();
         $backup = PasskeyBackup::where('username', $user->username)->firstOrFail();
@@ -142,6 +145,7 @@ class ProfileController extends Controller
     }
 
     public function resetUserProfile(User $user){
+        UserResetEvent::dispatch($user);
 
         $roomController = new RoomController();
         $rooms = $user->rooms()->get();
@@ -168,6 +172,7 @@ class ProfileController extends Controller
 
         $prvUserData = PrivateUserData::where('user_id', $user->id)->get();
         foreach($prvUserData as $data){
+            PrivateUserdataRemoveEvent::dispatch($data);
             $data->delete();
         }
         

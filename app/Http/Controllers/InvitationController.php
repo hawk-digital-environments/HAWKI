@@ -2,21 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\InvitationCreateEvent;
+use App\Events\InvitationUpdateEvent;
+use App\Jobs\SendEmailJob;
+use App\Models\Invitation;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Member;
-use App\Models\Invitation;
-
-use App\Jobs\SendEmailJob;
-
 use Illuminate\Http\Request;
-
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\InvitationController;
-
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\URL;
 
 
 class InvitationController extends Controller
@@ -42,9 +37,9 @@ class InvitationController extends Controller
     
         // Generate a signed URL with the hash
         $url = URL::signedRoute('open.invitation', [
-            'tempHash' => $validatedData['hash'], 
+            'tempHash' => $validatedData['hash'],
             'slug' => $validatedData['slug']
-        ], now()->addHours(48));    
+        ], now()->addHours(48));
     
         // Prepare email data
         $emailData = [
@@ -85,9 +80,10 @@ class InvitationController extends Controller
                     'tag' => $inv['tag'],
                     'invitation' => $inv['encryptedRoomKey']
                 ]);
+                InvitationUpdateEvent::dispatch($existingInvitation);
             } else {
                 // Create a new invitation
-                Invitation::create([
+                $invitation = Invitation::create([
                     'room_id' => $roomId,
                     'username' => $inv['username'],  // Use array notation
                     'role' => $inv['role'],
@@ -95,6 +91,7 @@ class InvitationController extends Controller
                     'tag' => $inv['tag'],
                     'invitation' => $inv['encryptedRoomKey']
                 ]);
+                InvitationCreateEvent::dispatch($invitation);
             }
         }
     }
@@ -150,7 +147,7 @@ class InvitationController extends Controller
 
     /// return invitation with the specific slug.
     /// thought for external invitation opening. (check groupchat functions)
-    /// NOTE: Not finished yet 
+    /// NOTE: Not finished yet
     public function getInvitationWithSlug(Request $request, $slug)
     {
         // Get the authenticated user

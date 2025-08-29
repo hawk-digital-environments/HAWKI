@@ -86,10 +86,27 @@ return [
                 'allowed_origins' => ['*'],
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'max_message_size' => env('REVERB_APP_MAX_MESSAGE_SIZE', 250000),
-
             ],
         ],
 
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Frontend Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Allows you to define frontend specific configurations for Reverb.
+    | This can be useful if you work with a reverse proxy or CDN.
+    | Normally, these values represent the default values configured above.
+    |
+    */
+    'frontend' => [
+        'key' => env('VITE_REVERB_APP_KEY', env('REVERB_APP_KEY')),
+        'cluster' => env('VITE_REVERB_APP_CLUSTER', null),
+        'host' => env('VITE_REVERB_HOST', env('REVERB_HOST')),
+        'port' => env('VITE_REVERB_PORT', env('REVERB_PORT', 443)),
+        'scheme' => env('VITE_REVERB_SCHEME', env('REVERB_SCHEME', 'https')),
+    ]
 
 ];

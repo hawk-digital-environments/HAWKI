@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use App\Models\User; // Assuming you have a User model
-use Adldap\Laravel\Facades\Adldap; // Assuming you're using Adldap2-Laravel for LDAP
 
 class SearchController extends Controller
 {
@@ -13,11 +13,15 @@ class SearchController extends Controller
         $query = $request->input('query');
 
         // Search in the database for users matching the query
-        $users = User::where('name', 'like', "%{$query}%")
+        $users = User::where(
+            static function (Builder $b) use ($query) {
+                $b->where('name', 'like', "%{$query}%")
                     ->orWhere('username', 'like', "%{$query}%")
-                    ->orWhere('email', 'like', "%{$query}%")
-                    ->take(5) 
-                    ->get();
+                    ->orWhere('email', 'like', "%{$query}%");
+            })
+            ->whereNot('employeetype', 'app')
+            ->take(5)
+            ->get();
 
 
         if (count($users) > 0) {

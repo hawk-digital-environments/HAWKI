@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (settingsStatus === 'true') {
         toggleSettingsPanel(true);
     }
-    
+
     //DOUBLE CHECK DARK MODE AFTER THE DOM IS LOADED.
     setupLoginBackgroud();
 
@@ -41,7 +41,7 @@ function toggleSettingsPanel(activation){
 /// Toggle about us in the settings panel.
 function ToggleSettingsContent(content, activation){
     const panel = document.querySelector('.settings-panel');
-    
+
     switch(content){
         case "aboutHAWKI":
             if(activation == true){
@@ -101,13 +101,13 @@ function SwitchDarkMode(isSet){
 
     if(darkMode === 'enabled'){
         document.documentElement.className = 'darkMode';
-        icon.setAttribute('src', '/img/moon.svg');
-        tog.classList.add('active');
+        icon && icon.setAttribute('src', '/img/moon.svg');
+        tog && tog.classList.add('active');
     }
     else{
         document.documentElement.className = 'lightMode';
-        icon.setAttribute('src', '/img/sun.svg');
-        tog.classList.remove('active');
+        icon && icon.setAttribute('src', '/img/sun.svg');
+        tog && tog.classList.remove('active');
     }
     setupLoginBackgroud();
 }
@@ -116,9 +116,13 @@ async function setupLoginBackgroud(){
     const loginBg = document.querySelector('.image_preview_container');
     const loginBgCredit = document.querySelector('.video-credits')
 
+    if (loginBg == null || loginBgCredit == null) {
+        return;
+    }
+
     const videosUrl = '../bg_videos'
     let videosIndex;
-    
+
     await fetch(`${videosUrl}/bg_videos.json`)
     .then(response => {
         if (!response.ok) {
@@ -130,10 +134,10 @@ async function setupLoginBackgroud(){
         videosIndex = data;
     })
     .catch(error => console.error("Error fetching JSON:", error));
-    
+
     if(darkMode === 'enabled'){
         if(loginBg != null){
-            
+
             let fileIndex = Math.floor(Math.random() * videosIndex.darkmode.length);
             if(localStorage.getItem('lbgd')){
                 fileIndex = (Number(localStorage.getItem('lbgd')) + 1) % videosIndex.darkmode.length;
@@ -167,6 +171,9 @@ async function setupLoginBackgroud(){
 /// Change active language button in settings panel.
 function UpdateSettingsLanguage(lang){
     const btn = document.getElementById(lang + '_btn');
+    if (!btn) {
+        return;
+    }
     btn.classList.add('accentText');
     btn.style.fontWeight= '700';
 }

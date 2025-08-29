@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Events\MemberAddToRoomEvent;
+use App\Events\MemberRemoveFromRoomEvent;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Model;
 
 class Member extends Model
 {
@@ -14,17 +15,17 @@ class Member extends Model
     const ROLE_ASSISTANT = 'assistant';
 
     protected $fillable = [
-        'room_id', 
+        'room_id',
         'user_id',
         'role',
         'last_read',
         'isRemoved'
     ];
 
-    // public function room()
-    // {
-    //     return $this->belongsTo(Room::class);
-    // }
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
 
     public function user()
     {
@@ -45,10 +46,12 @@ class Member extends Model
     }
 
     public function revokeMembership(){
+        MemberRemoveFromRoomEvent::dispatch($this);
         $this->update(['isRemoved'=> 1]);
     }
 
     public function recreateMembership(){
+        MemberAddToRoomEvent::dispatch($this);
         $this->update(['isRemoved'=> 0]);
     }
 }

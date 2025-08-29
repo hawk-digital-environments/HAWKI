@@ -17,7 +17,7 @@
 
 body {
     overflow: hidden;
-    -ms-overflow-style: none; 
+    -ms-overflow-style: none;
     font-family: "Fira Sans", sans-serif;
     color: var(--text-color);
     background-color: var(--background-main);
@@ -105,8 +105,8 @@ label{
     width: 0px;
 }
 input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
 input:-webkit-autofill:active  {
     transition: background-color 3s;
     background-color: var(--background-secondary) !important;
@@ -206,7 +206,7 @@ svg{
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     color: var(--text-color);
-  
+
     /* -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -262,7 +262,7 @@ svg{
 /* SECTION: BUTTONS */
 
 button{
-    color: var(--text-color);    
+    color: var(--text-color);
 }
 button:disabled{
     opacity: 0.5;
@@ -371,13 +371,19 @@ button:disabled{
     /* margin-top: 1rem; */
     padding: 0.75rem 2rem 0.75rem 2rem;
 
-    line-height: 0;
+    line-height: 100%;
     border: 0;
     font-family: inherit;
     cursor: pointer;
     font-size: 1rem;
     border-radius: var(--border-radius-normal);
 }
+
+.btn-lg-fill:disabled, .btn-lg-stroke:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .btn-lg-fill{
     font-weight: 400;
     background: var(--button-color);
@@ -503,7 +509,7 @@ button:disabled{
 
 .burger-dropdown{
     position: absolute;
-    
+
     display: none;
     opacity: 0;
 
@@ -514,7 +520,7 @@ button:disabled{
     border: var(--border-stroke-thin);
     border-radius: var(--border-radius-normal);
     overflow: hidden;
-    
+
     transition: all var(--transition-fast);
 }
 
@@ -755,3 +761,94 @@ button:disabled{
 
     width: 15rem;
 } */
+
+.link-button {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 1.17em;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+    font-weight: bold;
+}
+
+/*#region LinkButtons */
+.link-button > .link-button-arrow {
+    margin-left: 0;
+    transition: var(--transition-extra-fast);
+    width: 30px;
+    height: 30px;
+}
+
+.link-button:hover > .link-button-arrow {
+    margin-left: 0.3rem;
+}
+
+/*#endregion*/
+
+/*#region NavButtons */
+.nav-buttons {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    margin-top: 2rem;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/*#endregion*/
+
+/*#region CenterContent */
+.center-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+    margin: -8px;
+}
+
+.center-content > .center-content-inner {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    width: 42rem;
+    height: fit-content;
+    max-width: 100vw;
+    max-height: 100vh;
+    overflow: hidden;
+    overflow-y: auto;
+    align-items: center;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/*#endregion*/
+
+/*#region Alert */
+.alert {
+    position: relative;
+    border: var(--border-stroke-thin);
+    border-radius: var(--border-radius-tight);
+    background-color: var(--background-secondary);
+    padding: 0.5rem;
+}
+
+.alert.info {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.alert.error {
+    color: red;
+    border-color: red;
+}
+
+.alert.success {
+    color: green;
+    border-color: green;
+}
+
+/*#endregion*/

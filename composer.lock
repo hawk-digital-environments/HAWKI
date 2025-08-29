@@ -4,8 +4,62 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "8e0e847498954eec27b098e6489e1ff5",
+    "content-hash": "2bf2a7ce00c210838a86887d550af5d9",
     "packages": [
+        {
+            "name": "0.0.0/composer-include-files",
+            "version": "1.6.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hopeseekr-contribs/composer-include-files.git",
+                "reference": "0e77aa7a723ac7a32a6b4f4ce4666872a642e845"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hopeseekr-contribs/composer-include-files/zipball/0e77aa7a723ac7a32a6b4f4ce4666872a642e845",
+                "reference": "0e77aa7a723ac7a32a6b4f4ce4666872a642e845",
+                "shasum": ""
+            },
+            "require": {
+                "composer-plugin-api": "^1.0 || ^2.0"
+            },
+            "require-dev": {
+                "composer/composer": "^2.0"
+            },
+            "type": "composer-plugin",
+            "extra": {
+                "class": "ComposerIncludeFiles\\Plugin"
+            },
+            "autoload": {
+                "psr-4": {
+                    "ComposerIncludeFiles\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Tim Robertson",
+                    "email": "funkjedi@gmail.com"
+                },
+                {
+                    "name": "Theodore R. Smith",
+                    "email": "theodore@phpexperts.pro"
+                }
+            ],
+            "description": "Include files at a higher priority than autoload files. Useful for overriding Laravel helpers.",
+            "homepage": "https://github.com/funkjedi/composer-include-files",
+            "keywords": [
+                "autoload",
+                "composer"
+            ],
+            "support": {
+                "source": "https://github.com/hopeseekr-contribs/composer-include-files/tree/1.6.1"
+            },
+            "time": "2022-06-18T07:04:13+00:00"
+        },
         {
             "name": "blade-ui-kit/blade-icons",
             "version": "1.8.0",
@@ -1391,6 +1445,47 @@
             "time": "2025-02-03T10:55:03+00:00"
         },
         {
+            "name": "hawk-hhg/hawki-crypto",
+            "version": "0.5.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hawk-digital-environments/hawki-crypto.git",
+                "reference": "ffee0f9a559c02d0d41324c8de5c3cc3e46712ba"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hawk-digital-environments/hawki-crypto/zipball/ffee0f9a559c02d0d41324c8de5c3cc3e46712ba",
+                "reference": "ffee0f9a559c02d0d41324c8de5c3cc3e46712ba",
+                "shasum": ""
+            },
+            "require": {
+                "ext-openssl": "*",
+                "php": "^8.2",
+                "phpseclib/phpseclib": "^3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^11.5.6",
+                "roave/security-advisories": "dev-latest"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Hawk\\HawkiCrypto\\": "src/",
+                    "Hawk\\HawkiCrypto\\Tests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "The shared cryptographic module of HAWKI, providing secure encryption and decryption functionalities.",
+            "support": {
+                "issues": "https://github.com/hawk-digital-environments/hawki-crypto/issues",
+                "source": "https://github.com/hawk-digital-environments/hawki-crypto/tree/v0.5.2"
+            },
+            "time": "2025-07-09T14:58:09+00:00"
+        },
+        {
             "name": "jumbojett/openid-connect-php",
             "version": "v1.0.2",
             "source": {
@@ -1431,6 +1526,69 @@
                 "source": "https://github.com/jumbojett/OpenID-Connect-PHP/tree/v1.0.2"
             },
             "time": "2024-09-13T07:08:11+00:00"
+        },
+        {
+            "name": "kint-php/kint",
+            "version": "6.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/kint-php/kint.git",
+                "reference": "2bd133be30a0d4f5523e3d7d8e94b788d95978e6"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/kint-php/kint/zipball/2bd133be30a0d4f5523e3d7d8e94b788d95978e6",
+                "reference": "2bd133be30a0d4f5523e3d7d8e94b788d95978e6",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.4"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3",
+                "phpunit/phpunit": "^9",
+                "seld/phar-utils": "^1",
+                "symfony/finder": ">=7",
+                "vimeo/psalm": "^5"
+            },
+            "suggest": {
+                "kint-php/kint-helpers": "Provides extra helper functions",
+                "kint-php/kint-twig": "Provides d() and s() functions in twig templates"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "init.php"
+                ],
+                "psr-4": {
+                    "Kint\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jonathan Vollebregt",
+                    "homepage": "https://github.com/jnvsor"
+                },
+                {
+                    "name": "Contributors",
+                    "homepage": "https://github.com/kint-php/kint/graphs/contributors"
+                }
+            ],
+            "description": "Kint - Advanced PHP dumper",
+            "homepage": "https://kint-php.github.io/kint/",
+            "keywords": [
+                "debug",
+                "dump"
+            ],
+            "support": {
+                "issues": "https://github.com/kint-php/kint/issues",
+                "source": "https://github.com/kint-php/kint/tree/6.0.1"
+            },
+            "time": "2025-01-01T23:10:26+00:00"
         },
         {
             "name": "laravel/framework",
@@ -2888,6 +3046,59 @@
             "time": "2025-03-30T21:06:30+00:00"
         },
         {
+            "name": "neunerlei/dbg",
+            "version": "3.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Neunerlei/dbg.git",
+                "reference": "b9c52c19d40fdcf494095343e2b756ff436c06ec"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Neunerlei/dbg/zipball/b9c52c19d40fdcf494095343e2b756ff436c06ec",
+                "reference": "b9c52c19d40fdcf494095343e2b756ff436c06ec",
+                "shasum": ""
+            },
+            "require": {
+                "0.0.0/composer-include-files": "^1.6",
+                "kint-php/kint": "^6.0",
+                "php": ">=8.2",
+                "php-console/php-console": "^3.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.6"
+            },
+            "type": "library",
+            "extra": {
+                "include_files": [
+                    "src/init.php"
+                ]
+            },
+            "autoload": {
+                "psr-4": {
+                    "Neunerlei\\Dbg\\": "src/Classes/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Martin Neundorfer",
+                    "email": "code@neunerlei.eu",
+                    "homepage": "https://www.neunerlei.eu",
+                    "role": "Developer"
+                }
+            ],
+            "description": "PHP debugging suitcase for your daily work",
+            "support": {
+                "issues": "https://github.com/neunerlei/dbg/issues",
+                "source": "https://github.com/neunerlei/dbg"
+            },
+            "time": "2025-03-19T21:51:44+00:00"
+        },
+        {
             "name": "nikic/php-parser",
             "version": "v5.4.0",
             "source": {
@@ -3241,6 +3452,61 @@
             "time": "2024-09-04T12:51:01+00:00"
         },
         {
+            "name": "php-console/php-console",
+            "version": "3.1.8",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/barbushin/php-console.git",
+                "reference": "aa1d71d4ea3dc91e126edc9aa4f3c10eb8559cff"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/barbushin/php-console/zipball/aa1d71d4ea3dc91e126edc9aa4f3c10eb8559cff",
+                "reference": "aa1d71d4ea3dc91e126edc9aa4f3c10eb8559cff",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "ext-mbstring": "*",
+                "phpunit/phpunit": "^4.8",
+                "psr/log": "^1.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "PhpConsole\\": "src/PhpConsole"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sergey Barbushin",
+                    "email": "barbushin@gmail.com",
+                    "homepage": "http://linkedin.com/in/barbushin"
+                }
+            ],
+            "description": "PHP library for Google Chrome extension \"PHP Console\".",
+            "homepage": "https://github.com/barbushin/php-console",
+            "keywords": [
+                "chrome",
+                "debug",
+                "error handler",
+                "errors",
+                "google chrome",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/barbushin/php-console/issues",
+                "source": "https://github.com/barbushin/php-console/tree/master"
+            },
+            "time": "2019-07-25T03:43:28+00:00"
+        },
+        {
             "name": "phpoption/phpoption",
             "version": "1.9.3",
             "source": {
@@ -3317,16 +3583,16 @@
         },
         {
             "name": "phpseclib/phpseclib",
-            "version": "3.0.43",
+            "version": "3.0.46",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpseclib/phpseclib.git",
-                "reference": "709ec107af3cb2f385b9617be72af8cf62441d02"
+                "reference": "56483a7de62a6c2a6635e42e93b8a9e25d4f0ec6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/709ec107af3cb2f385b9617be72af8cf62441d02",
-                "reference": "709ec107af3cb2f385b9617be72af8cf62441d02",
+                "url": "https://api.github.com/repos/phpseclib/phpseclib/zipball/56483a7de62a6c2a6635e42e93b8a9e25d4f0ec6",
+                "reference": "56483a7de62a6c2a6635e42e93b8a9e25d4f0ec6",
                 "shasum": ""
             },
             "require": {
@@ -3407,7 +3673,7 @@
             ],
             "support": {
                 "issues": "https://github.com/phpseclib/phpseclib/issues",
-                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.43"
+                "source": "https://github.com/phpseclib/phpseclib/tree/3.0.46"
             },
             "funding": [
                 {
@@ -3423,7 +3689,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-12-14T21:12:59+00:00"
+            "time": "2025-06-26T16:29:55+00:00"
         },
         {
             "name": "psr/clock",
@@ -9861,7 +10127,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.2"
+        "php": "^8.2",
+        "ext-openssl": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.6.0"

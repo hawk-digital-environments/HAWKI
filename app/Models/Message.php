@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\MessageUpdateEvent;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Message extends Model
 {
@@ -11,6 +11,7 @@ class Message extends Model
 
     protected $fillable = [
         'room_id',
+        'thread_id',
         'message_id',
         'message_role',
         'member_id',
@@ -50,6 +51,7 @@ class Message extends Model
             $signs = json_decode($this->reader_signs, true) ?? [];
             $signs[] = $member->id;
             $this->reader_signs = json_encode($signs);
+            MessageUpdateEvent::dispatch($this);
             $this->save();
         }
     }
