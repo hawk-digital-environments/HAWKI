@@ -148,7 +148,6 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                 'content' => ['text' => ''],
                 'isDone' => false,
                 'usage' => null,
-                'raw' => $chunk,
             ];
         }
 
@@ -159,36 +158,8 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         }
 
         // Delta-style updates may include output/content deltas
-        // Try to collect any text we find in a few common locations
-        if (!empty($jsonChunk['delta'])) {
-            // delta may mirror the output structure
-            $delta = $jsonChunk['delta'];
-            if (!empty($delta['content']) && is_array($delta['content'])) {
-                foreach ($delta['content'] as $c) {
-                    if (is_string($c)) {
-                        $content .= $c;
-                    } elseif (!empty($c['text'])) {
-                        $content .= $c['text'];
-                    }
-                }
-            } elseif (!empty($delta['text'])) {
-                $content .= $delta['text'];
-            }
-        }
-
-        // Some stream chunks may include an 'output' directly
-        if (empty($content) && !empty($jsonChunk['output']) && is_array($jsonChunk['output'])) {
-            foreach ($jsonChunk['output'] as $outputItem) {
-                if (!empty($outputItem['content']) && is_array($outputItem['content'])) {
-                    foreach ($outputItem['content'] as $c) {
-                        if (is_string($c)) {
-                            $content .= $c;
-                        } elseif (!empty($c['text'])) {
-                            $content .= $c['text'];
-                        }
-                    }
-                }
-            }
+        if (isset($jsonChunk['type']) && in_array($jsonChunk['type'], ['response.output_text.delta'], true)) {
+           $content = $jsonChunk['delta'];
         }
 
         // Extract usage data if available
@@ -198,13 +169,19 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
             $usage = $this->extractUsage($jsonChunk['metadata']['usage']);
         }
 
+        $responseId = '';
+        if (!empty($jsonChunk['id'])) {
+            $responseId = $jsonChunk['id'];
+        }
+        
+
         return [
             'content' => [
                 'text' => $content,
+                'previousMessageId' => $responseId,
             ],
             'isDone' => $isDone,
             'usage' => $usage,
-            'raw' => $jsonChunk,
         ];
     }
 
@@ -287,11 +264,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
     {
         // Ensure stream is set to true
         $payload['stream'] = true;
-        // Enable usage reporting
-        $payload['stream_options'] = [
-            'include_usage' => true,
-        ];
-
+        
         set_time_limit(120);
 
         // Set headers for SSE

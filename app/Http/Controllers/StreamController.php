@@ -99,7 +99,6 @@ class StreamController extends Controller
      */
     public function handleAiConnectionRequest(Request $request)
     {
-        //error_log(print_r($request, true));
         //validate payload
         $validatedData = $request->validate([
             'payload.model' => 'required|string',
@@ -192,7 +191,6 @@ class StreamController extends Controller
                 
                 // Format the chunk
                 $formatted = $provider->formatStreamChunk($chunk);
-                // Log::info('Formatted Chunk:' . json_encode($formatted));
 
                 // Record usage if available
                 if ($formatted['usage']) {
