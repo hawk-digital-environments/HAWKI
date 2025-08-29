@@ -41,6 +41,9 @@ use App\Orchid\Screens\Role\RoleListScreen;
 use App\Orchid\Screens\User\UserEditScreen;
 use App\Orchid\Screens\User\UserListScreen;
 use App\Orchid\Screens\User\UserProfileScreen;
+use App\Orchid\Screens\RoleAssignmentScreen;
+use App\Orchid\Screens\RoleAssignmentEditScreen;
+use App\Http\Controllers\Admin\RoleAssignmentController;
 use Illuminate\Support\Facades\Route;
 use Tabuna\Breadcrumbs\Trail;
 
@@ -218,6 +221,34 @@ Route::screen('users', UserListScreen::class)
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
         ->push(__('Users'), route('platform.systems.users')));
+
+// Platform > System > Role Assignments
+Route::screen('role-assignments', RoleAssignmentScreen::class)
+    ->name('platform.role-assignments')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Role Assignments'), route('platform.role-assignments')));
+
+// Platform > System > Role Assignments > Edit
+Route::screen('role-assignments/{employeetype}/edit', RoleAssignmentEditScreen::class)
+    ->name('platform.role-assignments.edit')
+    ->breadcrumbs(fn (Trail $trail, $employeetype) => $trail
+        ->parent('platform.role-assignments')
+        ->push($employeetype->display_name, route('platform.role-assignments.edit', $employeetype)));
+
+// Platform > System > Role Assignments > Create
+Route::screen('role-assignments/create', RoleAssignmentEditScreen::class)
+    ->name('platform.role-assignments.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.role-assignments')
+        ->push(__('Create Mapping'), route('platform.role-assignments.create')));
+
+// API Routes for Role Assignment Management
+Route::post('role-assignments/make-primary/{assignment}', [RoleAssignmentController::class, 'makePrimary'])
+    ->name('platform.role-assignments.make-primary');
+    
+Route::delete('role-assignments/remove-assignment/{assignment}', [RoleAssignmentController::class, 'removeAssignment'])
+    ->name('platform.role-assignments.remove-assignment');
 
 // Platform > System > Roles > Role
 Route::screen('roles/{role}/edit', RoleEditScreen::class)
