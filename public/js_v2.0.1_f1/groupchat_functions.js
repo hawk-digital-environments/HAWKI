@@ -5,30 +5,21 @@ let rooms;
 let typingStatusDiv;
 let activeRoom = null;
 
-/**
- * Initialize the group chat module with available rooms
- * @param {Object} roomsObject - Object containing rooms data from server
- *
- */
-function initializeGroupChatModule(roomsObject){
-    // Get DOM elements and templates
+function initializeGroupChatModule(roomsData){
+    rooms = roomsData;
     roomMsgTemp = document.getElementById('message-template');
     roomItemTemplate = document.getElementById('selection-item-template');
     inputField = document.querySelector(".input-field");
     typingStatusDiv = document.querySelector('.isTypingStatus');
 
-    // Store rooms data from server
-    rooms = roomsObject.original;
-
-    if(rooms){
-        // Initialize each room in the UI
-        rooms.forEach(roomItem => {
-            createRoomItem(roomItem.room);                          // Create UI element for room
+    if(roomsData){
+        roomsData.forEach(roomItem => {
+            createRoomItem(roomItem);
             if(roomItem.hasUnreadMessages){
-              flagRoomUnreadMessages(roomItem.room.slug, true);     // Mark rooms with unread messages
+              flagRoomUnreadMessages(roomItem.slug, true);
             }
-            connectWebSocket(roomItem.room.slug);                   // Connect to real-time socket for messages
-            connectWhisperSocket(roomItem.room.slug)                // Connect to typing indicator socket
+            connectWebSocket(roomItem.slug);
+            connectWhisperSocket(roomItem.slug)
         });
     }
 
@@ -42,7 +33,9 @@ function initializeGroupChatModule(roomsObject){
         }, 800);
     });
 
-    // Initialize chatlog functions from chatlog_functions.js
+    const input = document.getElementById('input-container');
+    initFileUploader(input);
+
     initializeChatlogFunctions();
 }
 
@@ -87,34 +80,44 @@ async function onSendMessageToRoom(inputField) {
         return;
     }
 
-    // Process and clear input
-    inputText = escapeHTML(inputField.value.trim());   // Sanitize input to prevent XSS
-    inputField.value = "";                             // Clear input field
-    resizeInputField(inputField);                      // From inputfield_functions.js - resize input field
+    inputText = escapeHTML(inputField.value.trim());
 
-    // Encrypt message with room key
-    const roomKey = await keychainGet(activeRoom.slug); // From encryption.js - get stored room key
-    const contData = await encryptWithSymKey(roomKey, inputText, false); // From encryption.js - encrypt message
+    /// UPLOAD ATTACHMENTS
+    const input = inputField.closest('.input');
+    const attachments = await uploadAttachmentQueue(input.id, 'room', activeRoom.slug);
 
-    // Prepare message object for sending
+
+    const roomKey = await keychainGet(activeRoom.slug);
+    const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
+
     const messageObj = {
-        content: contData.ciphertext,
-        iv: contData.iv,                // Initialization vector for encryption
-        tag: contData.tag,              // Authentication tag for encryption
-        threadID: activeThreadIndex,    // Current thread being replied to
+        'content': {
+            "text": {
+                'ciphertext': cryptoMsg.ciphertext,
+                "iv": cryptoMsg.iv,
+                "tag": cryptoMsg.tag,
+            },
+            "attachments": attachments
+        },
+        'threadID' : activeThreadIndex,
     };
 
     // Send message to server and get response with message ID
     const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`)
-    submittedObj.content = inputText;   // Use plaintext for local display
+    submittedObj.content.text = inputText;
+    submittedObj.filteredContent = detectMentioning(inputText),
 
-    // Process for AI mentions and formatting
-    submittedObj.filteredContent = detectMentioning(inputText), // From message_functions.js - detect @mentions
+    // empty input field
+    inputField.value = "";
+    resizeInputField(inputField);
+    const fileAtchs = input.querySelector('.file-attachments');
+    fileAtchs.querySelector('.attachments-list').innerHTML = "";
+    fileAtchs.classList.remove('active');
 
-    // Add message to UI
-    addMessageToChatlog(submittedObj);  // From chatlog_functions.js - display message
+    addMessageToChatlog(submittedObj);
 
-    // If HAWKI AI is mentioned, send to AI stream controller for processing
+
+    /// if HAWKI is targeted send copy to stream controller
     if(submittedObj.filteredContent.aiMention && submittedObj.filteredContent.aiMention.toLowerCase().includes(aiHandle.toLowerCase())){
         // Create AI-specific encryption key
         const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');  // From encryption.js - get salt
@@ -131,9 +134,8 @@ async function onSendMessageToRoom(inputField) {
             'stream': false,             // Not using streaming for this message
         }
 
-        // Send to AI controller (from stream_functions.js)
-        buildRequestObject(msgAttributes, async (updatedText, done) => {
-            // Callback for handling AI response
+        buildRequestObject(msgAttributes,  async (updatedText, done) => {
+
         });
     }
 }
@@ -171,7 +173,6 @@ async function onSendMessageToRoom(inputField) {
 const connectWebSocket = (roomSlug) => {
     const webSocketChannel = `Rooms.${roomSlug}`;
 
-    // Using Laravel Echo to connect to private channel
     window.Echo.private(webSocketChannel)
         .listen('RoomMessageEvent', async (e) => {
             try {
@@ -208,12 +209,10 @@ const connectWebSocket = (roomSlug) => {
                     }
                 }
 
-                // Handle message updates (edits)
                 if(data.type === "messageUpdate"){
                     handleUpdateMessage(data.messageData, roomSlug)
                 }
 
-                // Handle AI typing indicator
                 if(data.type === "aiGenerationStatus"){
                     if (data.messageData.isGenerating) {
                         // Show typing indicator when AI is generating
@@ -242,9 +241,8 @@ async function handleUserMessages(messageData, slug){
     // Find or create message element in the DOM
     let element = document.getElementById(messageData.message_id);
     if (!element) {
-        // New message - add to chatlog
-        element = addMessageToChatlog(messageData, true);  // From chatlog_functions.js
-        activateMessageControls(element);                  // From message_functions.js - activate controls
+        element = addMessageToChatlog(messageData, true);
+        activateMessageControls(element);
     }
     else {
         // Update existing message
@@ -277,20 +275,18 @@ async function handleAIMessage(messageData, slug){
     // Decrypt message using AI key
     messageData.content = await decryptWithSymKey(aiKey, messageData.content, messageData.iv, messageData.tag);
 
-    // Find or create message element in the DOM
+    // CREATE AND UPDATE MESSAGE
     let element = document.getElementById(messageData.message_id);
     if (!element) {
-        // New message - add to chatlog
-        element = addMessageToChatlog(messageData, true);  // From chatlog_functions.js
-        activateMessageControls(element);                  // From message_functions.js
-    } else {
-        // Update existing message
-        updateMessageElement(element, messageData);        // From chatlog_functions.js
+        element = addMessageToChatlog(messageData, true);
+        activateMessageControls(element);
+    }else{
+        updateMessageElement(element, messageData);
     }
 
     // Track read status with Intersection Observer
     if(element.dataset.read_stat === 'false'){
-        observer.observe(element);  // From chatlog_functions.js
+        observer.observe(element);
     }
 
     // Check thread unread messages status
@@ -513,10 +509,8 @@ function openRoomCreatorPanel(){
     // Get reference to the creation panel
     const roomCreationPanel = document.getElementById('room-creation');
 
-    // Get default prompt from translations
     defaultPromt = translation.Default_Prompt;
 
-    // Reset all form fields
     roomCreationPanel.querySelector('#chat-name-input').value = '';
     roomCreationPanel.querySelector('#user-search-bar').value = '';
     roomCreationPanel.querySelector('#room-description-input').value = '';
@@ -588,7 +582,8 @@ async function createNewRoom(){
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                onSuccessfullRoomCreation(data);
+                onSuccessfullRoomCreation(data.roomData);
+
             } else {
                 // Handle unexpected response
                 console.error('Unexpected response:', data);
@@ -600,21 +595,16 @@ async function createNewRoom(){
     }
 }
 
-/**
- * Handle successful room creation response from server
- * @param {Object} data - Server response containing room data
- */
-async function onSuccessfullRoomCreation(data){
-    // Get remaining form values
+
+async function onSuccessfullRoomCreation(roomData){
+
     const inputs = document.querySelector('.inputs-list');
     const description = inputs.querySelector('#room-description-input').value;
     const systemPrompt = inputs.querySelector('#system-prompt-input').value;
     const avatar_url = inputs.querySelector('#room-creation-avatar').getAttribute('src');
 
-    const roomData = data.roomData;
-
-    // Generate encryption key for the room
-    const roomKey = await generateKey();  // From encryption.js
+    //generate encryption key
+    const roomKey = await generateKey();
 
     // Save key in keychain
     await keychainSet(roomData.slug, roomKey, true);  // From encryption.js
@@ -634,11 +624,10 @@ async function onSuccessfullRoomCreation(data){
         'tag': cryptSystemPrompt.tag,
     });
 
-    // Prepare attributes for room update
-    attributes = {
-        'systemPrompt': systemPromptStr,
-        'description': descriptionStr,
-        'img': avatar_url
+    attributes ={
+        'systemPrompt':systemPromptStr,
+        'description':descriptionStr,
+        'img':avatar_url
     }
 
     // Update room info on server
@@ -657,11 +646,14 @@ async function onSuccessfullRoomCreation(data){
     // Create and send invitations to members
     await createAndSendInvitations(usersList, roomData.slug);
 
-    // Finalize UI setup
-    finishRoomCreation();             // Clean up form
-    createRoomItem(roomData);         // Create room item in sidebar
-    loadRoom(null, roomData.slug);    // Load the new room
-    connectWebSocket(roomData.slug);  // Connect to room's WebSocket
+    //close UI
+    finishRoomCreation();
+    //create sidebar button
+    createRoomItem(roomData);
+    //load room
+    loadRoom(null, roomData.slug);
+    //connect to broadcasting
+    connectWebSocket(roomData.slug);
 }
 
 //#endregion
@@ -706,8 +698,7 @@ async function createAndSendInvitations(usersList, roomSlug){
 
         // For users with a public key, use asymmetric encryption
         if (invitee.publicKey) {
-            // Encrypt room key with the user's public key
-            const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(invitee.publicKey)); // From encryption.js
+            const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(invitee.publicKey));
 
             invitation = {
                 username: invitee.username,
@@ -837,7 +828,7 @@ async function handleTempLinkInvitation(tempLink){
     tempHash = parsedLink.tempHash;
     slug = parsedLink.slug;
 
-    // Get invitation details from server
+    // GET INVITATION OBJECT
     try{
         const response = await fetch(`/req/inv/requestInvitation/${slug}`, {
             method: 'GET',
@@ -851,7 +842,6 @@ async function handleTempLinkInvitation(tempLink){
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Decrypt room key using temp hash
         const data = await response.json();
         roomKey = await decryptWithTempHash(data.invitation, tempHash, data.iv, data.tag);  // From encryption.js
 
@@ -949,7 +939,6 @@ function createRoomItem(roomData){
  *
  */
 async function loadRoom(btn=null, slug=null){
-
     if(rooms.length === 0){
         history.replaceState(null, '', `/groupchat`);
         switchDyMainContent('group-welcome-panel');
@@ -960,8 +949,20 @@ async function loadRoom(btn=null, slug=null){
         return;
     }
 
-    if (!slug) slug = btn.getAttribute('slug');
+    if(!slug) slug = btn.getAttribute('slug');
     if(!btn) btn = document.querySelector(`.selection-item[slug="${slug}"]`);
+
+
+    let roomData;
+    try{
+        roomData = await RequestRoomContent(slug);
+    }
+    catch{
+        console.error('room not found', slug);
+        history.replaceState(null, '', `/groupchat`);
+        switchDyMainContent('group-welcome-panel');
+        return;
+    }
 
     const lastActive = document.getElementById('rooms-list').querySelector('.selection-item.active');
     if(lastActive){
@@ -972,12 +973,8 @@ async function loadRoom(btn=null, slug=null){
     switchDyMainContent('chat');
     history.replaceState(null, '', `/groupchat/${slug}`);
 
-    const roomData = await RequestRoomContent(slug);
-    if(!roomData){
-        return;
-    }
-
     clearChatlog();
+    clearInput();
 
     activeRoom = roomData;
     const chatControlPanel = document.querySelector('#room-control-panel');
@@ -1020,11 +1017,11 @@ async function loadRoom(btn=null, slug=null){
     for (const msgData of roomData.messagesData) {
         const key = msgData.message_role === 'assistant' ? aiKey : roomKey;
         try {
-            msgData.content = await decryptWithSymKey(key, msgData.content, msgData.iv, msgData.tag, false);
+            msgData.content = await decryptWithSymKey(key, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
         } catch (error) {
             if (msgData.message_role === 'assistant') {
                 // If decryption fails for AI messages, try legacy key
-                msgData.content = await decryptWithSymKey(legacyAiKey, msgData.content, msgData.iv, msgData.tag, false);
+                msgData.content = await decryptWithSymKey(legacyAiKey, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
             } else {
                 throw error;
             }
@@ -1036,12 +1033,6 @@ async function loadRoom(btn=null, slug=null){
 }
 
 
-/**
- *
- * @param {array} roomData
- *
- * Creates a btn on the control panel for each member of the room
- */
 function loadRoomMembers(roomData) {
     const membersList = document.getElementById('room-control-panel').querySelector('.members-list');
     // Clear existing members
@@ -1075,39 +1066,6 @@ function loadRoomMembers(roomData) {
         membersList.insertBefore(memberBtnTemp, membersList.querySelector('#invite-btn'));
     });
 }
-
-
-
-/**
- *
- * @param {string} slug
- * @returns {json}
- *
- * Downloads Room Content form the server
- *
- * Returning Data
- * $data = [
- *      'id',
- *      'name',
- *      'room_icon',
- *      'slug',
- *      'system_prompt',
- *      'room_description',
- *      'role',
- *
- *      'members' {
- *         [
- *              'user_id' => $member->user->id,
- *              'name' => $member->user->name,
- *              'username' => $member->user->username,
- *              'role' => $member->role,
- *              'employeetype' => $member->user->employeetype,
- *              'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
- *          ]
- *      }),
- *      'messagesData' => $this->fetchRoomMessages($room)
- * ];
- */
 
 async function RequestRoomContent(slug){
 
@@ -1180,7 +1138,19 @@ async function searchUser(searchBar) {
 
     if (query.length > 2) { // Start searching after 3 characters
         try {
-            const response = await fetch(`/req/search?query=${encodeURIComponent(query)}`);
+            // const response = await fetch(`/req/room/search?query=${encodeURIComponent(query)}`);
+            const response = await fetch(`/req/room/search`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    "query": encodeURIComponent(query)
+                })
+
+            });
+
             const data = await response.json();
 
             if (data.success) {
@@ -1321,7 +1291,6 @@ function openRoomCP(){
     const editBtns = cp.querySelectorAll('#edit-abort');
     editBtns.forEach(btn => {
         if(btn.closest('.edit-panel').parentElement.querySelector('.text-field').getAttribute('contenteditable') === true){
-            // console.log('switching edit panel')
             abortTextPanelEdit(btn);
         }
     });
@@ -1494,23 +1463,7 @@ async function requestDeleteRoom() {
         const data = await response.json();
 
         if (data.success) {
-            // console.log('Room removed successfully');
-
-            const listItem = document.querySelector(`.selection-item[slug="${activeRoom.slug}"]`);
-            const list = listItem.parentElement;
-            listItem.remove();
-
-            if(list.childElementCount > 0){
-                loadRoom(list.firstElementChild, null);
-                switchDyMainContent('chat');
-
-            }
-            else{
-                switchDyMainContent('group-welcome-panel');
-                history.replaceState(null, '', `/groupchat`);
-            }
-
-
+            removeListItem(activeRoom.slug);
         } else {
             console.error('Room removal was not successful!');
         }
@@ -1541,9 +1494,7 @@ async function leaveRoom(){
         const data = await response.json();
 
         if (data.success) {
-            const listItem = document.querySelector(`.selection-item[slug="${activeRoom.slug}"]`);
-            const list = listItem.parentElement;
-            listItem.remove();
+            removeListItem(activeRoom.slug);
             loadRoom(list.firstElementChild, null);
             switchDyMainContent('chat');
 
@@ -1555,6 +1506,22 @@ async function leaveRoom(){
     }
 }
 
+
+function removeListItem(slug){
+        const listItem = document.querySelector(`.selection-item[slug="${slug}"]`);
+        const list = listItem.parentElement;
+        listItem.remove();
+
+        if(list.childElementCount > 0){
+            loadRoom(list.firstElementChild, null);
+            switchDyMainContent('chat');
+
+        }
+        else{
+            switchDyMainContent('group-welcome-panel');
+            history.replaceState(null, '', `/groupchat`);
+        }
+}
 
 async function removeMemberFromRoom(username){
 
@@ -1578,7 +1545,6 @@ async function removeMemberFromRoom(username){
         const data = await response.json();
 
         if (data.success) {
-            // console.log('user removed from room');
             return true;
         } else {
             console.error('Removeing user was not successful!');
@@ -1597,7 +1563,6 @@ function selectRoomAvatar(btn, upload = false){
 
     const imageElement = btn.parentElement.querySelector('.selectable-image');
     const initials = btn.parentElement.querySelector('#control-panel-chat-initials');
-    // console.log(imageElement);
     openImageSelection(imageElement.getAttribute('src'), function(croppedImage) {
         imageElement.style.display = 'block';
         if(initials){
@@ -1612,7 +1577,6 @@ function selectRoomAvatar(btn, upload = false){
 }
 
 async function uploadRoomAvatar(imgBase64){
-    // console.log(activeRoom)
     const url = `/req/room/updateInfo/${activeRoom.slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 

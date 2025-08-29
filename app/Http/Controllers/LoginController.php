@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Session;
 use App\Http\Controllers\LanguageController;
 
-
+use App\Services\System\SettingsService;
 
 class LoginController extends Controller
 {
@@ -31,7 +31,7 @@ class LoginController extends Controller
 
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsController())->initialize();
+        $settingsPanel = (new SettingsService())->render();
 
         $authenticationMethod = env('AUTHENTICATION_METHOD', 'LDAP');
 
@@ -39,7 +39,7 @@ class LoginController extends Controller
         $authForms = View::make('partials.login.authForms', compact('translation', 'authenticationMethod'))->render();
 
         // Initialize settings panel
-        $settingsPanel = (new SettingsController())->initialize($translation);
+        $settingsPanel = (new SettingsService())->render();
 
 
         $activeOverlay = false;
@@ -49,9 +49,9 @@ class LoginController extends Controller
         Session::put('last-route', 'login');
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('layouts.login', compact('translation', 
-                                            'authForms', 
-                                            'settingsPanel', 
+        return view('layouts.login', compact('translation',
+                                            'authForms',
+                                            'settingsPanel',
                                             'activeOverlay'));
     }
 

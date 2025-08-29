@@ -29,6 +29,7 @@ function toggleSettingsPanel(activation){
     if(activation == true){
         settingsModal.style.display = 'flex';
         settingToggleValue = 'true';
+        fetchGuidelines();
     }
     else{
         settingsModal.style.display = 'none';
@@ -36,6 +37,27 @@ function toggleSettingsPanel(activation){
         ToggleSettingsContent('aboutHAWKI', false);
         ToggleSettingsContent('guideline', false);
     }
+}
+
+async function fetchGuidelines(){
+            // Assume fetchLatestPolicy() returns an object {view, announcement}
+        const {view, announcement} = await fetchLatestPolicy();
+
+        // Render the HTML (MD rendered to HTML string)
+        const renderedHtml = md.render(view, false);
+
+        // const parent = document.querySelector('')
+        // Insert the rendered HTML into the designated container
+        const settingsModal = document.querySelector('.settings-modal');
+        const policyContentBox = settingsModal.querySelector('#policy-content');
+        policyContentBox.innerHTML = renderedHtml;
+
+        // Add target and rel attributes for external links (XSS-protection best practice)
+        policyContentBox.querySelectorAll('a').forEach(a => {
+            a.setAttribute('target', '_blank');
+            a.setAttribute("rel", "noopener noreferrer");
+        });
+        policyContentBox.querySelector('h1').style.textAlign ='center';
 }
 
 /// Toggle about us in the settings panel.

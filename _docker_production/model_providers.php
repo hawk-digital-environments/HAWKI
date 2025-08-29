@@ -125,7 +125,7 @@ return [
                     'id' => 'gemini-2.0-flash-lite',
                     'label' => 'Google Gemini 2.0 Flash Lite',
                     'streamable' => true,
-                    'search_tool' => false,
+                    'web_search' => false,
                 ],
                 [
                     'id' => 'gemini-2.0-flash-exp',

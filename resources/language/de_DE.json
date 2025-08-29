@@ -1,6 +1,6 @@
 {
     "Guidelines": "Leitfaden zum Umgang mit HAWKI",
-    
+
     "Chat":"Chat",
     "Groupchat":"Gruppenchat",
     "Logout":"Ausloggen",
@@ -12,12 +12,14 @@
     "Cnf_deleteRoom": "Möchtest du diesen Raum wirklich löschen?",
     "Cnf_leaveRoom": "Möchtest du diesen Raum wirklich verlassen?",
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
-    
+
     "Cnf_tokenMsg1": "Bitte bewahre diesen Token sicher auf und verwende ihn mit Bedacht, um dein Konto zu schützen. Wenn HAWKI verdächtiges Verhalten feststellt, wird dieser Token widerrufen.",
     "Cnf_tokenMsg2": "Sobald du dieses Fenster schließt, kannst du diesen Schlüssel nicht mehr erneut abrufen.",
     "Cnf_tokenMsgSuccess": "Token erfolgreich erstellt",
     "Cnf_tokenRevoke": "Bist du sicher, dass du den Token widerrufen möchtest?",
     "Cnf_passkeyRemove": "Durch die Bestätigung werden dein Passwort und deine Schlüsselbunddaten aus diesem Browser entfernt. Bitte beachte, dass wir derzeit keine Lösungen zur Wiederherstellung von Passwörtern anbieten. <br> <b>Bitte stelle sicher, dass du eine sichere Sicherung deines Passworts hast, bevor du fortfährst.<b>",
+
+    "Cnf_RemoveFile":"Möchtest du diese Datei wirklich löschen?",
 
     "Exp_Title":"SESSION-TIMEOUT",
     "Exp_MSG":"Bitte logg dich erneut ein!",
@@ -61,14 +63,14 @@
     "ExtAccToken": "Externe Zugangstoken",
     "General": "Allgemein",
     "History": "Verlauf",
-    
+
     "HS-EnterBackupMsg": "Bitte gib deinen Wiederherstellungscode ein.",
     "HS-EnterPasskeyMsg": "Bitte gib deinen Datakey ein.",
     "HS-ForgottenPasskey": "Datakey vergessen?",
     "HS-ForgottenBackup": "Wiederherstellungscode verloren?",
     "HS-PasskeyIs": "Dein Datakey ist:",
     "HS-ResetProfile": "Profil zurücksetzen",
-    
+
     "HS-LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
     "HS-LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
 
@@ -107,10 +109,10 @@
     "Reg_SL5_T": "<strong>Bitte beachte:</strong> Deine Chatnachrichten werden sicher verschlüsselt. Wenn du deinen Datakey verlierst, kannst du nicht mehr auf deine bisherigen Chats zugreifen. Bewahre deinen Datakey deshalb gut auf und schütze ihn vor dem Zugriff Dritter.",
     "Reg_SL6_H": "Sichere deinen Wiederherstellungscode! 🔒",
     "Reg_SL6_T": "Mit diesem Wiederherstellungscode kannst du deinen Datakey wiederherstellen, falls du ihn vergessen oder verloren hast. Lade deinen Code auf dein Endgerät und speichere ihn an einem sicheren Ort, z.B. auf einem USB-Stick oder in einer geschützten Umgebung.",
-    
+
     "Reg_SL5_PH1": "Erstelle hier einen Datakey",
     "Reg_SL5_PH2": "Wiederhole hier einen Datakey",
-    
+
     "RoomDesc": "Raumbeschreibung",
     "RoomName": "Raumname",
     "Save": "Speichern",

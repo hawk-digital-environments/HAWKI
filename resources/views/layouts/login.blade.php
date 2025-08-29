@@ -22,7 +22,7 @@
 		InitializePreDomSettings(false);
         UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
 	</script>
-    
+
 </head>
 <body>
 <div class="wrapper">
@@ -35,7 +35,7 @@
 
 
         <div class="footerPanel">
-  
+
             <button class="btn-sm" onclick="toggleSettingsPanel(true)">
                 <x-icon name="settings-icon"/>
             </button>

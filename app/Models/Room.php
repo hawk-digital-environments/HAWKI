@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use App\Events\MemberAddToRoomEvent;
 use App\Events\MemberUpdateEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,11 +35,19 @@ class Room extends Model
         return $this->hasMany(Message::class)->orderBy('message_id');
     }
 
+    public function messageObjects(){
+
+        $messages = $this->messages;
+
+        $messagesData = array();
+        foreach ($messages as $message){
+            $msgData = $message->createMessageObject();
+            array_push($messagesData, $msgData);
+        }
+        return $messagesData;
+    }
 
 
-    /**
-     * The users that are members of the room.
-     */
     public function membersAll()
     {
         return $this->hasMany(Member::class);
@@ -102,20 +111,48 @@ class Room extends Model
         return $member;
     }
 
-    public function removeMember($userId)
+    public function removeMember($userId): bool
     {
         if($this->isMember($userId)){
-            
-            // Attempt to delete the member from the room based on user ID
-            return $this->members()
-                        ->where('user_id', $userId)
-                        ->firstOrFail()
-                        ->revokeMembership();
+            try{
+                // Attempt to delete the member from the room based on user ID
+                $this->members()
+                    ->where('user_id', $userId)
+                    ->firstOrFail()
+                    ->revokeMembership();
+
+                //Check if All the members have left the room.
+                if ($this->members()->count() === 1) {
+                    $this->deleteRoom();
+                }
+                return true;
+            }
+            catch(Exception $e){
+                Log::error("Failed to remove member: $e");
+                return false;
+            }
         }
+        return false;
     }
 
 
-    
+    public function deleteRoom(): bool{
+        try{
+            // Delete related messages and members
+            $this->messages()->delete();
+            $this->members()->delete();
+            // Delete the room itself
+            $this->delete();
+            return true;
+        }
+        catch(Exception $e){
+            Log::error("Failed to remove member: $e");
+            return false;
+        }
+
+    }
+
+
 
     public function hasRole($userId, $role)
     {

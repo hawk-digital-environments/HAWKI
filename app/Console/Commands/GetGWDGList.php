@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Services\AI\Providers\GWDGProvider;
+use App\Services\AI\Providers\GWDG\GWDGProvider;
 
 class GetGWDGList extends Command
 {
@@ -30,6 +30,6 @@ class GetGWDGList extends Command
         $service = new GWDGProvider($config['providers']['gwdg']);
         $list = $service->checkAllModelsStatus();
         $jsonString = json_encode($list, JSON_PRETTY_PRINT);
-        $this->info($jsonString);   
+        $this->info($jsonString);
     }
 }

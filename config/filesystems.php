@@ -11,9 +11,15 @@ return [
     | by the framework. The "local" disk, as well as a variety of cloud
     | based disks are available to your application for file storage.
     |
+    | default filesystem handles the main system files
+    | storage handles the data repo for storing large and numerous files such as user uploaded files.
     */
 
     'default' => env('FILESYSTEM_DISK', 'local'),
+
+    'file_storage' => env('STORAGE_DISK', 'local_file_storage'),
+
+    'avatar_storage' => env('AVATAR_STORAGE', 'public'),
 
     /*
     |--------------------------------------------------------------------------
@@ -44,16 +50,44 @@ return [
             'throw' => false,
         ],
 
+        'local_file_storage' => [
+            'driver' => 'local',
+            'root' => storage_path('app/data_repo'),
+            'url' => env('APP_URL').'/data_repo',
+            'visibility' => 'private',
+            'serve' => true,
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
-            'throw' => false,
+            'key' => env('S3_ACCESS_KEY'),
+            'secret' => env('S3_SECRET_KEY'),
+            'region' => env('S3_REGION'),
+            'bucket' => env('S3_DEFAULT_BUCKET'),
+            'endpoint' => env('S3_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'private',
+        ],
+
+        'nextcloud' => [
+            'driver' => 'webdav',
+            'base_uri' => env('NEXTCLOUD_BASE_URL') . '/remote.php/dav/files/' . env('NEXTCLOUD_USERNAME') . '/',
+            'username' => env('NEXTCLOUD_USERNAME'),
+            'password' => env('NEXTCLOUD_PASSWORD'),
+            'prefix' => env('NEXTCLOUD_BASE_PATH', ''),
+            'timeout' => 60,
+
+        ],
+
+        'sftp' => [
+            'driver' => 'sftp',
+            'host' => env('SFTP_HOST'),
+            'port' => env('SFTP_PORT', 22),
+            'username' => env('SFTP_USERNAME'),
+            'password' => env('SFTP_PASSWORD'),
+            'root' => env('SFTP_BASE_PATH', '/'),
+            'timeout' => 30,
         ],
 
     ],

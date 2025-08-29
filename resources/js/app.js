@@ -10,11 +10,35 @@ import Cropper from 'cropperjs';
 window.Cropper = Cropper;
 
 
+
+
+
 import jsPDF from 'jspdf';
 window.jsPDF = jsPDF;
 
+import * as pdfjsLib from 'pdfjs-dist';
+window.pdfjsLib = pdfjsLib;
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+// import { TextLayerBuilder } from 'pdfjs-dist/web/pdf_viewer';
+// window.TextLayerBuilder = TextLayerBuilder;
+
+import {
+  PDFPageView,
+  EventBus
+} from 'pdfjs-dist/web/pdf_viewer';
+window.PDFPageView = PDFPageView;
+window.EventBus = EventBus;
+
+
 import * as docx from "docx";
 window.docx = docx;
+
+import * as docxPreview from "docx-preview"
+window.docxPreview = docxPreview;
+
 
 import hljs from "highlight.js"
 window.hljs = hljs;

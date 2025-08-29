@@ -14,7 +14,7 @@ class AIConnectionService
      * @var AIProviderFactory
      */
     private $providerFactory;
-    
+
     /**
      * Create a new connection service
      *
@@ -24,7 +24,7 @@ class AIConnectionService
     {
         $this->providerFactory = $providerFactory;
     }
-    
+
     /**
      * Process a request to an AI model
      *
@@ -37,10 +37,9 @@ class AIConnectionService
     {
         $modelId = $rawPayload['model'];
         $provider = $this->providerFactory->getProviderForModel($modelId);
-        
+
         // Format the payload according to provider requirements
         $formattedPayload = $provider->formatPayload($rawPayload);
-        
         if ($streaming && $streamCallback) {
             // Handle streaming response
             return $provider->connect($formattedPayload, $streamCallback);
@@ -50,7 +49,7 @@ class AIConnectionService
             return $provider->formatResponse($response);
         }
     }
-    
+
     /**
      * Get a list of all available models
      *
@@ -59,6 +58,7 @@ class AIConnectionService
      */
     public function getAvailableModels(?bool $external = null): array
     {
+        
         $list = new FilteredModelList(
             $external ? ModelListUsageType::EXTERNAL_APP : ModelListUsageType::DEFAULT
         );
@@ -78,24 +78,23 @@ class AIConnectionService
         }
         
         foreach ($config['providers'] as $provider) {
-            if ($provider['active']) {
-                $providerInterface = $this->providerFactory->getProviderInterface($provider['id']);
-                if (method_exists($providerInterface, 'getModelsStatus') &&
-                    $provider['status_check'] && !empty($provider['ping_url'])) {
-                    foreach ($providerInterface->getModelsStatus() as $stat) {
-                        $list->addModel(new AiModel($stat));
-                    }
-                } else {
-                    foreach ($provider['models'] as $model) {
-                        $list->addModel(new AiModel($model));
-                    }
+            if(empty($provider['active'])){
+                continue;
+            }
+            
+            foreach ($provider['models'] as $model) {
+                if(empty($model['active'])) {
+                    continue;
                 }
+                
+                $list->addModel(new AiModel($model));
             }
         }
 
         return [
             'models' => array_map(static fn(AiModel $model) => $model->toArray(), $list->getModels()),
-            'defaultModel' => $list->getDefaultModel()->getId(),
+            // @todo             'defaultModels' => config('model_providers')['default_models'],
+            'defaultModels' => $list->getDefaultModel()->getId(),
             'systemModels' => array_map(
                 static fn(AiModel $model) => $model->getId(),
                 $list->getSystemModels()
@@ -119,33 +118,5 @@ class AIConnectionService
             }
         }
         return null;
-    }
-    
-    /**
-     * Get details for a specific model
-     *
-     * @param string $modelId
-     * @return array
-     */
-    public function getModelDetails(string $modelId): array
-    {
-        $provider = $this->providerFactory->getProviderForModel($modelId);
-        return $provider->getModelDetails($modelId);
-    }
-    
-    /**
-     * Get the provider instance for a specific model
-     *
-     * @param string $modelId
-     * @return \App\Services\AI\Interfaces\AIModelProviderInterface
-     */
-    public function getProviderForModel(string $modelId)
-    {
-        return $this->providerFactory->getProviderForModel($modelId);
-    }
-
-
-    public function checkModelsStatus(){
-
     }
 }

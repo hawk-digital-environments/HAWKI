@@ -8,7 +8,10 @@ function initializeInputField(){
 
 }
 
+
+let activeInputField;
 function onInputFieldFocus(inputField){
+    activeInputField = inputField;
     const thread = inputField.closest('.thread');
     let targetID = 0;
     if(thread){
@@ -17,6 +20,9 @@ function onInputFieldFocus(inputField){
 }
 
 function onInputFieldFocusOut(inputField){
+    if(activeInputField === inputField){
+        activeInputField = null;
+    }
     const thread = inputField.closest('.thread');
     let targetID = 0;
 
@@ -136,7 +142,7 @@ async function updateAiChatSystemPrompt(inputPrompt){
                 'X-CSRF-TOKEN': csrfToken
             },
             body: JSON.stringify({
-                'system_prompt': systemPromptStr   
+                'system_prompt': systemPromptStr
             })
         });
         const data = await response.json();
@@ -150,4 +156,19 @@ async function updateAiChatSystemPrompt(inputPrompt){
         console.error('Failed to Update System Prompt!');
     }
 
+}
+
+
+
+// Show error message when file validation fails
+function showFeedbackMsg(inputfield, type, message) {
+    const feedbackEl = inputfield.closest('.input-container').querySelector('#input-feedback-msg');
+    feedbackEl.dataset.type = type;
+    feedbackEl.innerText = message;
+
+    setTimeout(() => {
+        feedbackEl.innerText = '';
+        feedbackEl.dataset.type = null
+    }, 3000);
+    console.log(feedbackEl);
 }

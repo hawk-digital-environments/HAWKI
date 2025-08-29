@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html class="lightMode">
 <head>
-	
+
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-    
+
 	<title>{{ env('APP_NAME') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
@@ -16,13 +16,15 @@
     <!-- <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}"> -->
 
     @vite('resources/js/app.js')
-	
+
 	<script src="{{ asset('js_v2.0.1_f1/message_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/stream_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/syntax_modifier.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/export.js') }}"></script>
-    
+    <script src="{{ asset('js_v2.0.1_f1/file_manager.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/attachment_handler.js') }}"></script>
+
 
 </head>
 <body>
@@ -52,6 +54,7 @@
 			<div class="message-header">
 				<div class="message-author"></div>
 			</div>
+			<div class="attachments"></div>
 
 			<div class="message-content">
 				<span class="assistant-mention"></span>
@@ -62,21 +65,22 @@
 	</div>
 </template>
 
+@include('partials.home.templates.attachment-template')
 </body>
 </html>
 
 
 <script>
 
-    const userInfo = @json($userProfile);
+    const userInfo = @json($user);
 	const userAvatarUrl = @json($userData['avatar_url']);
 	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
 	const activeModule = @json($activeModule);
-    const data = @json($messages);
+    const chatData = @json($chatData);
 	const activeLocale = {!! json_encode(Session::get('language')) !!};
 
 	const modelsList = @json($models).models;
-	const defaultModel = @json($models).defaultModel;
+	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
 
 	const translation = @json($translation);

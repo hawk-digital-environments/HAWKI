@@ -142,8 +142,8 @@
   overflow-y: scroll;
   scrollbar-width: 0px;
   box-sizing: border-box;
-  max-height: 90%;  
-} 
+  max-height: 90%;
+}
 .about-content::-webkit-scrollbar{
   width: 0;
   color: var(--text-color) !important;
@@ -171,10 +171,10 @@
   overflow-y: scroll;
   scrollbar-width: 0px;
   box-sizing: border-box;
-  max-height: 90%;  
+  max-height: 90%;
   max-width: 90%;
   text-wrap: wrap;
-} 
+}
 .guideline-content::-webkit-scrollbar{
   width: 0;
 }
@@ -202,10 +202,15 @@
   width: 0;
 }
 
+#policy-content{
+    margin-top: -3rem;
+}
+
 .back-btn{
   position: relative;
   top: 1.5rem;
   cursor: pointer;
+  z-index: 2;
 }
 
 .language-selection {
@@ -275,8 +280,8 @@
 
 
 
-@media only screen 
-  and (min-device-width: 320px) 
+@media only screen
+  and (min-device-width: 320px)
   and (max-device-width: 480px)
   and (-webkit-min-device-pixel-ratio: 2)
   and (orientation: portrait) {

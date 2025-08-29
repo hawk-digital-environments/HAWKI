@@ -21,6 +21,9 @@ function onSidebarButtonDown(pageID){
     if(pageID === activeModule){
         if(document.getElementById(`${pageID}-sidebar`) != null){
             togglePanelClass(`${pageID}-sidebar`, 'expanded');
+
+            document.querySelector('.dy-main-content').classList.toggle('expanded');
+
             const sidebar = document.getElementById(`${pageID}-sidebar`);
             const manualExpanded = sidebar.classList.contains('expanded');
             sidebar.dataset.manualExpanded = manualExpanded;
@@ -341,6 +344,7 @@ function checkWindowSize(thresholdWidth, thresholdHeight) {
             if(sidebar){
                 if(!sidebar.dataset.manualExpanded){
                     document.getElementById(`${activeModule}-sidebar`).classList.remove('expanded');
+                    document.querySelector('.dy-main-content').classList.remove('expanded');
                 }
             }
         } else {
@@ -348,6 +352,8 @@ function checkWindowSize(thresholdWidth, thresholdHeight) {
             if(sidebar){
                 if(!sidebar.dataset.manualExpanded){
                     document.getElementById(`${activeModule}-sidebar`).classList.add('expanded');
+                    document.querySelector('.dy-main-content').classList.add('expanded');
+
                 }
             }
         }

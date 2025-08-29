@@ -12,8 +12,10 @@ use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
+use App\Services\Announcements\AnnouncementService;
+use App\Services\System\SettingsService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 
@@ -77,9 +79,7 @@ class AuthenticationController extends Controller
         $username = $authenticatedUserInfo['username'];
         $user = User::where('username', $username)->first();
 
-        
 
-        $redirectUri;
         // If first time on HAWKI
         if($user && $user->isRemoved === 0){
             Auth::login($user);
@@ -106,25 +106,25 @@ class AuthenticationController extends Controller
     {
         try {
             $authenticatedUserInfo = $this->shibbolethService->authenticate($request);
-    
+
             if (!$authenticatedUserInfo) {
                 return response()->json(['error' => 'Login Failed!'], 401);
             }
-    
+
             Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
-    
+
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
-    
+
             if($user && $user->isRemoved === 0){
                 Auth::login($user);
                 return redirect('/handshake');
             }
-    
+
             Session::put('registration_access', true);
             Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
-    
+
             return redirect('/register');
-    
+
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -133,29 +133,29 @@ class AuthenticationController extends Controller
 
 
 
-    public function openIDLogin(Request $request)
+    public function openIDLogin()
     {
         try {
-            $authenticatedUserInfo = $this->oidcService->authenticate($request);
-    
+            $authenticatedUserInfo = $this->oidcService->authenticate();
+
             if (!$authenticatedUserInfo) {
                 return response()->json(['error' => 'Login Failed!'], 401);
             }
-    
+
             Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
-    
+
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
-    
+
             if($user && $user->isRemoved === 0){
                 Auth::login($user);
                 return redirect('/handshake');
             }
-    
+
             Session::put('registration_access', true);
             Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
-    
+
             return redirect('/register');
-    
+
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -167,17 +167,15 @@ class AuthenticationController extends Controller
     /// sends back the user keychain.
     /// keychain sync will be done on the frontend side (check encryption.js)
     public function handshake(Request $request){
-        
+
         $userInfo = Auth::user();
 
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsController())->initialize();
+        $settingsPanel = (new SettingsService())->render();
 
         $cryptoController = new EncryptionController();
         $keychainData = $cryptoController->fetchUserKeychain();
-        
-        $settingsPanel = (new SettingsController())->initialize($translation);
 
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'handshake'){
@@ -188,7 +186,7 @@ class AuthenticationController extends Controller
 
         // Pass translation, authenticationMethod, and authForms to the view
         return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay'));
-  
+
     }
 
 
@@ -205,7 +203,7 @@ class AuthenticationController extends Controller
 
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsController())->initialize();
+        $settingsPanel = (new SettingsService())->render();
 
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'register'){
@@ -222,7 +220,7 @@ class AuthenticationController extends Controller
 
     /// Setup User
     /// Create backup for userkeychain on the DB
-    public function completeRegistration(Request $request)
+    public function completeRegistration(Request $request, AnnouncementService $announcementService)
     {
         try {
             // Validate input data
@@ -232,7 +230,7 @@ class AuthenticationController extends Controller
                 'KCIV' => 'required|string',
                 'KCTAG' => 'required|string',
             ]);
-            
+
             // Retrieve user info from session
             $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
 
@@ -241,7 +239,7 @@ class AuthenticationController extends Controller
             $name = $userInfo['name'] ?? null;
             $email = $userInfo['email'] ?? null;
             $employeetype = $userInfo['employeetype'] ?? null;
-    
+
             $avatarId = $validatedData['avatar_id'] ?? '';
 
             // Update or create the local user
@@ -256,7 +254,11 @@ class AuthenticationController extends Controller
                     'isRemoved' => false
                 ]
             );
-    
+
+            $policy = $announcementService->fetchLatestPolicy();
+            $announcementService->markAnnouncementAsSeen($user, $policy->id);
+            $announcementService->markAnnouncementAsAccepted($user, $policy->id);
+
             // Update or create the Private User Data
             $data = PrivateUserData::create(
                 [
@@ -270,23 +272,18 @@ class AuthenticationController extends Controller
             // Log the user in
             Session::put('registration_access', false);
             Auth::login($user);
-    
+
             return response()->json([
                 'success' => true,
                 'redirectUri' => '/chat',
                 'userData' => $user
             ]);
-    
+
         } catch (ValidationException $e) {
-            // error_log('Validation Error: ' . json_encode($e->errors()));
-    
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors()
-            ], 422);  // Return HTTP 422 Unprocessable Entity
+            throw $e;
         }
     }
-    
+
     public function logout(Request $request)
     {
         // Unset all session variables
@@ -317,5 +314,5 @@ class AuthenticationController extends Controller
         // Redirect to the appropriate logout URI
         return redirect($redirectUri);
     }
-    
+
 }

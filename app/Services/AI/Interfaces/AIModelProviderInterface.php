@@ -54,19 +54,6 @@ interface AIModelProviderInterface
      */
     public function makeStreamingRequest(array $payload, callable $streamCallback);
 
-    /**
-     * Get details for a specific model
-     *
-     * @param string $modelId
-     * @return array
-     */
-    public function getModelDetails(string $modelId): array;
-    
-    /**
-     * Check if a model supports streaming
-     *
-     * @param string $modelId
-     * @return bool
-     */
-    public function supportsStreaming(string $modelId): bool;
+
+
 }

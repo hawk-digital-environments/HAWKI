@@ -28,6 +28,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Translation\TranslationServiceProvider;
+use App\Http\Middleware\MandatorySignatureCheck;
+use App\Services\Storage\StorageServiceFactory;
+use App\Services\Storage\DefaultStorageService;
+use App\Services\Storage\FileStorageService;
+use App\Services\Storage\AvatarStorageService;
+use Illuminate\Support\Facades\Storage;
+use League\Flysystem\WebDAV\WebDAVAdapter;
+use Sabre\DAV\Client;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -48,17 +56,34 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('app_access', AppAccessMiddleware::class);
         Route::aliasMiddleware('handle_app_connect', HandleAppConnectMiddleware::class);
         Route::aliasMiddleware('app_user_request_required', AppUserRequestRequiredMiddleware::class);
+        Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
         
+        // @todo fix singletons
         // Register AI services
         $this->app->singleton(AIProviderFactory::class, function ($app) {
             return new AIProviderFactory();
         });
-
+        
         $this->app->singleton(AIConnectionService::class, function ($app) {
             return new AIConnectionService(
                 $app->make(AIProviderFactory::class)
             );
         });
+
+        $this->app->singleton(
+            DefaultStorageService::class,
+            fn(Application $app) => $app->make(StorageServiceFactory::class)->getDefaultStorage()
+        );
+
+        $this->app->singleton(
+            AvatarStorageService::class,
+            fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
+        );
+
+        $this->app->singleton(
+            FileStorageService::class,
+            fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
+        );
         
         $this->registerHawkiTranslationLoader();
         $this->registerSyncLogServices();
@@ -70,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->bootSyncLogTracker();
+        $this->bootWebdavStorage();
     }
     
     /**
@@ -109,5 +135,25 @@ class AppServiceProvider extends ServiceProvider
     protected function bootSyncLogTracker(): void
     {
         $this->app->get(SyncLogTracker::class)->registerListeners();
+    }
+    
+    protected function bootWebdavStorage(): void
+    {
+        // Register WebDAV driver for NextCloud support
+        Storage::extend('webdav', function ($app, $config) {
+            $client = new Client([
+                'baseUri' => $config['base_uri'],
+                'userName' => $config['username'],
+                'password' => $config['password'],
+            ]);
+            
+            $adapter = new WebDAVAdapter($client, $config['prefix'] ?? '');
+            
+            return new \Illuminate\Filesystem\FilesystemAdapter(
+                new \League\Flysystem\Filesystem($adapter),
+                $adapter,
+                $config
+            );
+        });
     }
 }

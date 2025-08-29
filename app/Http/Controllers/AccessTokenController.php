@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Laravel\Sanctum\PersonalAccessToken;
 
-
+// @todo delete when migrated
 class AccessTokenController extends Controller
 {
     public function createToken(Request $request)

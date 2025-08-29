@@ -228,7 +228,13 @@ svg{
     overflow: hidden;
     padding-top: 1rem;
     padding-bottom: 1rem;
+    padding-left: 0rem;
 }
+.modal-panel.wide{
+    width: 60em;
+}
+
+
 .modal-content-wrapper{
     direction: rtl;
     overflow-y: scroll;
@@ -246,9 +252,15 @@ svg{
     direction: ltr;
 }
 
+.content-box{
+    padding-bottom: 3rem;
+}
+
+
 .modal-buttons-bar{
     display: flex;
     justify-content: space-between;
+    margin-top: 3rem;
 }
 
 #member-info-modal .modal-panel{
@@ -544,10 +556,15 @@ button:disabled{
     z-index: 99;
     transition: font-weight 0.05s;
 }
-.burger-item:hover{
+.burger-item:not(:disabled):hover{
     background-color: var(--background-secondary);
     font-weight: 700;
 }
+/* .burger-item:disabled:hover,
+.burger-item[disabled]:hover{
+    background-color: red;
+} */
+
 .burger-item .loading{
     display: none;
 }

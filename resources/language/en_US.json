@@ -1,6 +1,6 @@
 {
     "Guidelines": "Guidelines for Using HAWKI",
-    
+
 
     "Chat":"Chat",
     "Groupchat":"Group Chat",
@@ -12,12 +12,14 @@
     "Cnf_deleteRoom":"Do you really want to delete this Room?",
     "Cnf_leaveRoom":"Do you really want to leave this Room?",
     "Cnf_removeMember":"Do you really want to remove this member?",
-    
+
     "Cnf_tokenMsg1":"Please keep this token safe and use it carefully to keep you account safe. If HAWKI detects suspicious behaviour this token will be revoked.",
     "Cnf_tokenMsg2":"Once you close this window you will not be able to get this key again.",
     "Cnf_tokenMsgSuccess":"Token Created Successfully",
     "Cnf_tokenRevoke":"Are you sure you want to revoke token",
     "Cnf_passkeyRemove":"By confirming this, your Datakey and keychain data will be removed from this browser. Please remember that we currently don't provide any Datakey recovery solutions. <br> <b>Please make sure that you have a secure backup of your Datakey before proceeding.<b>",
+
+    "Cnf_RemoveFile":"Are you sure you want to delete this file?",
 
     "Exp_Title":"SESSION TIMEOUT",
     "Exp_MSG":"Please login again!",
@@ -100,15 +102,15 @@
     "Reg_SL2_T": "In the new group chats, naturally, all group members can see your messages - that's the whole point. But even here, your content remains protected and is not visible to anyone outside the group. Your privacy is important to us, so you can rest assured: your data belongs to you alone! 🙌",
     "Reg_SL4_B": "Will do!",
     "Reg_SL4_H": "Create your Datakey! 🔒",
-    "Reg_SL4_T": "<strong>Important:</strong> On your first login, you create your personal data key, a type of password. Your chats are encrypted with this data key before being stored on our server. In addition to the login, you will need your data key when you log in on a new device. Your device or browser remembers your data key, so you don't have to enter it every time. In the final step, you can also download the recovery code for your data key.",    
+    "Reg_SL4_T": "<strong>Important:</strong> On your first login, you create your personal data key, a type of password. Your chats are encrypted with this data key before being stored on our server. In addition to the login, you will need your data key when you log in on a new device. Your device or browser remembers your data key, so you don't have to enter it every time. In the final step, you can also download the recovery code for your data key.",
     "Reg_SL5_H": "Create your Datakey! 🔒",
     "Reg_SL5_T": "<strong>Please note:</strong> Your chat messages are securely encrypted. If you lose your data key, you will no longer be able to access your previous chats. Therefore, keep your data key safe and protect it from third-party access.",
     "Reg_SL6_H": "Secure your Recovery Code! 🔒",
     "Reg_SL6_T": "With this recovery code, you can restore your data key if you forget or lose it. Download your code onto your device and store it in a secure location, such as on a USB stick or in a protected environment.",
-    
+
     "Reg_SL5_PH1": "Enter your Datakey",
     "Reg_SL5_PH2": "Repeat the Datakey",
-    
+
     "RoomDesc": "Room Description",
     "RoomName": "Room Name",
     "Save": "Save",

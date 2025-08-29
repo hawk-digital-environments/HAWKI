@@ -1,7 +1,7 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
 
-    const {messageText, groundingMetadata} = deconstContent(messageObj.content);
+    const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
 
     /// CLONE
     // clone message element
@@ -16,14 +16,14 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     messageElement.dataset.role = messageObj.message_role;
     messageElement.dataset.rawMsg = messageText;
     // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
-    
+
     //if date and time is confirmed from the server add them
     if(messageObj.created_at) messageElement.dataset.created_at = messageObj.created_at;
 
     // set id (whole . deci format)
     if(messageObj.message_id){
         messageElement.id = messageObj.message_id;
-    } 
+    }
 
     /// CLASSES & AVATARS
     // add classes AI ME MEMBER to the element
@@ -70,7 +70,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     /// Set Author Name
     if(messageObj.model && messageObj.message_role === 'assistant'){
         model = modelsList.find(m => m.id === messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML = 
+        messageElement.querySelector('.message-author').innerHTML =
             model ?
             `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>`:
             `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
@@ -125,11 +125,36 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     }
     setDateSpan(activeThread, msgDate);
 
+
+    ///ATTACHMENTS
+    if(messageObj.content.attachments && messageObj.content.attachments.length != 0){
+
+        const attachmentContainer = messageElement.querySelector('.attachments');
+
+        messageObj.content.attachments.forEach(attachment => {
+
+            const thumbnail = createAttachmentThumbnail(attachment.fileData);
+            thumbnail.querySelector('.content').addEventListener('click', ()=> {
+                if(activeModule === 'chat'){
+                    previewFile(thumbnail, attachment.fileData, 'conv');
+                }
+                if(activeModule === 'groupchat'){
+                    previewFile(thumbnail, attachment.fileData, 'room');
+                }
+            })
+            const rmBtn = thumbnail.querySelector('.remove-btn');
+            rmBtn.removeAttribute('onclick');
+            rmBtn.disabled = true;
+            rmBtn.style.display = 'none';
+
+            // Add to file preview container
+            attachmentContainer.appendChild(thumbnail);
+        });
+    }
+
     /// CONTENT
     // Setup Message Content
     const msgTxtElement = messageElement.querySelector(".message-text");
-
-    
 
     if(!messageElement.classList.contains('AI')){
         let processedContent = detectMentioning(messageText).modifiedText;
@@ -140,10 +165,10 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         let markdownProcessed = formatMessage(messageText, groundingMetadata);
         msgTxtElement.innerHTML = markdownProcessed;
         formatMathFormulas(msgTxtElement);
-        
-        if (groundingMetadata && 
-            groundingMetadata != '' && 
-            groundingMetadata.searchEntryPoint && 
+
+        if (groundingMetadata &&
+            groundingMetadata != '' &&
+            groundingMetadata.searchEntryPoint &&
             groundingMetadata.searchEntryPoint.renderedContent) {
 
             addGoogleRenderedContent(messageElement, groundingMetadata);
@@ -176,7 +201,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
             setMessageStatusAsRead(messageElement);
         }
     }
- 
+
 
     /// INSERT IN CHATLOG
     // insert into target thread
@@ -191,10 +216,15 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
         if(messageObj.message_id){
             threadDiv.id = messageObj.message_id.split('.')[0];
+            threadDiv.querySelector('.input').id = threadDiv.id;
         }
+
+        const input = threadDiv.querySelector('.input-container');
 
         messageElement.appendChild(threadDiv);
         activeThread.appendChild(messageElement);
+	    initFileUploader(input);
+
     }
     else{
         const branchInput = activeThread.querySelector('.input-container');
@@ -217,6 +247,8 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     messageElement.id = messageObj.message_id;
     if(messageElement.querySelector('.thread')){
         messageElement.querySelector('.thread').id = messageObj.message_id.split('.')[0];
+        messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0]
+
     }
 
     if(messageElement.classList.contains('me')){
@@ -237,7 +269,7 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     if(messageElement.classList.contains('AI')){
         const username = messageElement.dataset.author;
         model = modelsList.find(m => m.id === messageObj.model);
-        messageElement.querySelector('.message-author').innerHTML = 
+        messageElement.querySelector('.message-author').innerHTML =
             model ?
             `<span>${username} </span><span class="message-author-model">(${model.label})</span>`:
             `<span>${username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
@@ -246,7 +278,7 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
 
     if(updateContent){
         const {messageText, groundingMetadata} = deconstContent(messageObj.content);
-        
+
         const filteredContent = detectMentioning(messageText);
         messageElement.dataset.rawMsg = messageText;
         // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
@@ -259,11 +291,11 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             let markdownProcessed = formatMessage(messageText, groundingMetadata);
             msgTxtElement.innerHTML = markdownProcessed;
             formatMathFormulas(msgTxtElement);
-            if (groundingMetadata && 
-                groundingMetadata != '' && 
-                groundingMetadata.searchEntryPoint && 
+            if (groundingMetadata &&
+                groundingMetadata != '' &&
+                groundingMetadata.searchEntryPoint &&
                 groundingMetadata.searchEntryPoint.renderedContent) {
-    
+
                 addGoogleRenderedContent(messageElement, groundingMetadata);
             }
             else{
@@ -322,11 +354,11 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
         const formattedDate = `${msgDateObj.getDate()}.${msgDateObj.getMonth()+1}.${msgDateObj.getFullYear()}`
         dateText = formattedDate;
     }
-    
+
     // Find the last date span in the thread
     const lastThreadDateSpan = activeThread.querySelector('span.date_span:last-of-type');
     const lastDate = lastThreadDateSpan ? lastThreadDateSpan.getAttribute('data-date') : null;
-    
+
     // Initialize variable to keep track of the last found date_span
     let lastTrunkDate = null;
     //if in a banch then find out the last time span in the main thread
@@ -366,10 +398,10 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
 
 
 function deconstContent(inputContent){
-    
+
     let messageText = '';
     let groundingMetadata = '';
-    
+
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
         if(json.hasOwnProperty('groundingMetadata')){
@@ -430,7 +462,7 @@ function detectMentioning(rawText){
 
     if (mentionMatches) {
         let processedText = rawText;
-        
+
         for (const mention of mentionMatches) {
             if (mention.toLowerCase() === aiHandle.toLowerCase()) {
                 returnObj.aiMentioned = true;
@@ -543,21 +575,78 @@ function copyCodeBlockToClipboard(provider) {
 
 function editMessage(provider){
     const msgControls = provider.closest('.message-controls');
-    msgControls.querySelector('.controls').style.opacity = '0';
-    msgControls.querySelector('.edit-controls').style.opacity = '1';
-    msgControls.querySelector('.edit-controls').style.display = 'flex';
-    const wrapper = provider.closest('.message-wrapper');
+    const controls = msgControls.querySelector('.controls');
+    const editControls = msgControls.querySelector('.edit-bar');
+
+    controls.style.display = 'none';
+    editControls.style.display = 'flex';
+
+    const message = provider.closest('.message');
+    const wrapper = message.querySelector('.message-wrapper');
     wrapper.classList.add('edit-mode');
-    
-    const content = wrapper.querySelector('.message-content');
+
+    const content = message.querySelector('.message-content');
+
+    /// PASTE STYLE
+    content.addEventListener("paste", function(e) {
+        e.preventDefault();
+
+        // Get the plain text from clipboard
+        let text = (e.clipboardData || window.clipboardData).getData("text/plain");
+
+        // Get selection and range
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return;
+        const range = selection.getRangeAt(0);
+
+        // Split text by lines
+        const lines = text.split(/\r?\n/);
+        // Create a DocumentFragment to hold nodes
+        const fragment = document.createDocumentFragment();
+
+        for (let i = 0; i < lines.length; i++) {
+            if(i > 0) fragment.appendChild(document.createElement("br"));
+            fragment.appendChild(document.createTextNode(lines[i]));
+        }
+
+        // Insert the fragment at the cursor
+        range.deleteContents();
+        range.insertNode(fragment);
+
+        // Move cursor to the end of the pasted content
+        // Create a new range after the inserted content
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    });
+
+
+    /// ATTACHMENTS
+    if(wrapper.querySelectorAll('.attachment').length > 0){
+        const atchs = wrapper.querySelectorAll('.attachment');
+        atchs.forEach(atch => {
+            atch.classList.add('edit-mode');
+            const rmBtn = atch.querySelector('.remove-btn');
+            rmBtn.style.display = 'flex';
+            rmBtn.disabled = false;
+            rmBtn.addEventListener('click', async ()=> {
+                const confirm = await openModal(ModalType.WARNING, translation.Cnf_RemoveFile);
+                if(!confirm){
+                    return;
+                }
+                const deleted = await requestAtchDelete(atch.dataset.fileId, 'conv');
+                if(deleted){
+                    atch.remove();
+                }
+            });
+        });
+    }
 
     content.setAttribute('contenteditable', true);
     content.dataset.tempContent = content.innerHTML;
-    
     const rawMsg = content.closest('.message').dataset.rawMsg;
-    
     content.innerHTML = escapeHTML(rawMsg).replace(/\n/g, '<br>');
-    
+
     content.focus();
 
     var range,selection;
@@ -571,7 +660,7 @@ function editMessage(provider){
         selection.addRange(range);
     }
     else if(document.selection)
-    { 
+    {
         range = document.body.createTextRange();
         range.moveToElementText(content);
         range.collapse(false);
@@ -581,11 +670,27 @@ function editMessage(provider){
 
 function abortEditMessage(provider){
     const msgControls = provider.closest('.message-controls');
-    msgControls.querySelector('.controls').style.opacity = '1';
-    msgControls.querySelector('.edit-controls').style.opacity = '0';
-    msgControls.querySelector('.edit-controls').style.display = 'none';
+    const controls = msgControls.querySelector('.controls');
+    const editControls = msgControls.querySelector('.edit-bar');
+    controls.style.display = 'flex';
+    editControls.style.display = 'none';
+
+
+
     const wrapper = provider.closest('.message-wrapper');
     wrapper.classList.remove('edit-mode');
+
+
+    if(wrapper.querySelectorAll('.attachment').length > 0){
+        const atchs = wrapper.querySelectorAll('.attachment');
+        atchs.forEach(atch => {
+            atch.classList.remove('edit-mode');
+            const rmBtn = atch.querySelector('.remove-btn');
+            rmBtn.disabled = true;
+            rmBtn.style.display = 'none';
+        })
+    };
+
 
     const content = wrapper.querySelector('.message-content');
     content.setAttribute('contenteditable', false);
@@ -599,16 +704,28 @@ async function confirmEditMessage(provider){
     const messageElement = provider.closest('.message');
 
     if(!messageElement.classList.contains('me')){
-        // console.log('Not Your Message!');
         return;
     }
 
-    msgControls.querySelector('.controls').style.opacity = '1';
-    msgControls.querySelector('.edit-controls').style.opacity = '0';
-    msgControls.querySelector('.edit-controls').style.display = 'none';
-    
+    const controls = msgControls.querySelector('.controls');
+    const editControls = msgControls.querySelector('.edit-bar');
+    controls.style.display = 'flex';
+    editControls.style.display = 'none';
+
     const wrapper = provider.closest('.message-wrapper');
     wrapper.classList.remove('edit-mode');
+
+
+    if(wrapper.querySelectorAll('.attachment').length > 0){
+        const atchs = wrapper.querySelectorAll('.attachment');
+        atchs.forEach(atch => {
+            atch.classList.remove('edit-mode');
+            const rmBtn = atch.querySelector('.remove-btn');
+            rmBtn.disabled = true;
+            rmBtn.style.display = 'none';
+        })
+    };
+
 
     const content = wrapper.querySelector('.message-content');
     content.setAttribute('contenteditable', false);
@@ -637,7 +754,6 @@ async function confirmEditMessage(provider){
             if(messageElement.dataset.role === 'assistant'){
                 const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
                 key = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-                // console.log(key);
             }else{
                 key = roomKey;
             }
@@ -646,12 +762,17 @@ async function confirmEditMessage(provider){
 
     const cryptoMsg = await encryptWithSymKey(key, cont, false);
     const messageObj = {
-        'content' : cryptoMsg.ciphertext,
-        'iv' : cryptoMsg.iv,
-        'tag' : cryptoMsg.tag,
+        'content':{
+                'text': {
+                    'ciphertext': cryptoMsg.ciphertext,
+                    'iv': cryptoMsg.iv,
+                    'tag': cryptoMsg.tag,
+                }
+            },
+        'isAi': false,
+        'model': '',
+        'completion': true,
         'message_id': messageElement.id,
-        'model': null,
-        'completion': true
     }
 
     requestMsgUpdate(messageObj, messageElement ,url);
@@ -674,7 +795,6 @@ async function onRegenerateBtn(btn){
 
 async function regenerateMessage(messageElement, Done = null){
     if(!messageElement.classList.contains('AI')){
-        // console.log('Not AI Message!');
         return;
     }
     const threadIndex = messageElement.closest('.thread').id;
@@ -692,7 +812,7 @@ async function regenerateMessage(messageElement, Done = null){
                 'broadcasting': false,
                 'slug': '',
                 'regenerationElement': messageElement,
-                'stream': activeModel.streamable ? true : false,
+                'stream': activeModel.tools.stream ? true : false,
                 'model': activeModel.id,
             }
 
@@ -718,7 +838,6 @@ async function regenerateMessage(messageElement, Done = null){
                 'stream': false,
                 'model': activeModel.id,
             }
-            // console.log('buildRequestObject');
             buildRequestObject(msgAttributes,  async (updatedText, done) => {});
         break;
     }
@@ -770,7 +889,7 @@ function messageReadAloud(provider) {
     provider.innerHTML = stopReadIcon;
 
     synth.speak(utterance);
-    
+
     // Reset icon when speech ends
     utterance.onend = () => {
         if (provider === previousProvider) {

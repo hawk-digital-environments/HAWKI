@@ -2,88 +2,58 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\PrivateUserdataRemoveEvent;
-use App\Events\UserResetEvent;
-use App\Events\UserUpdateEvent;
-use App\Models\PasskeyBackup;
-use App\Models\PrivateUserData;
-use App\Models\User;
+use App\Services\Profile\ProfileService;
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+
+use Exception;
+use Illuminate\Support\Facades\Log;
+
 
 class ProfileController extends Controller
 {
- 
+    protected $profileService;
+    public function __construct(ProfileService $profileService){
+        $this->profileService = $profileService;
+    }
 
-    /// Update user information
-    public function update(Request $request){
+
+    // SECTION: PROFILE INFORMATION
+    public function update(Request $request): JsonResponse{
 
         $validatedData = $request->validate([
             'img' => 'string',
             'displayName' => 'string|max:20',
             'bio' => 'string|max:255',
         ]);
-        $user = Auth::user();
 
-
-        if(!empty($validatedData['img'])){
-            $imageController = new ImageController();
-            $response = $imageController->storeImage($validatedData['img'], 'profile_avatars');
-            $response = $response->original;
-
-            if ($response && $response['success']) {
-                $user->update(['avatar_id' => $response['fileName']]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'response' => 'Image upload failed: ' . ($response['error'] ?? 'Unknown error')
-                ]);
-            }
-        }
-
-        if(!empty($validatedData['displayName'])){
-            $user->update(['name' => $validatedData['displayName']]);
-        }
-
-        if(!empty($validatedData['bio'])){
-            $user->update(['bio' => $validatedData['bio']]);
-        }
-        
-        UserUpdateEvent::dispatch($user);
-        
+        $this->profileService->update($validatedData);
         return response()->json([
             'success' => true,
             'response' => 'User information updated'
         ]);
     }
-    
-    
-    public function backupPassKey(Request $request)
-    {
+
+
+    public function requestProfileReset(): JsonResponse|RedirectResponse{
+        $this->profileService->resetProfile();
+        return response()->redirectTo('/register');
+    }
+
+
+
+    // SECTION: PASSKEY BACKUP
+    public function backupPassKey(Request $request): JsonResponse{
+
         $validatedData = $request->validate([
-            'username' => 'required|string',
             'cipherText' => 'required|string',
             'tag' => 'required|string',
             'iv' => 'required|string',
         ]);
 
-        $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
-        $username = $userInfo['username'];
-
-        if($username != $validatedData['username']){
-            return response()->json([
-                'success' => false,
-                'message' => 'Username comparision failed!',
-            ]);
-        }
-
-        $backup = PasskeyBackup::updateOrCreate([
-            'username' => $validatedData['username'],
-            'ciphertext' => $validatedData['cipherText'],
-            'iv' => $validatedData['iv'],
-            'tag' => $validatedData['tag'],
-        ]);
+        $this->profileService->backupPassKey($validatedData);
 
         return response()->json([
             'success' => true,
@@ -92,19 +62,10 @@ class ProfileController extends Controller
 
 
     }
-    
-    public function requestPasskeyBackup(Request $request)
-    {
 
-        $user = Auth::user();
-        $backup = PasskeyBackup::where('username', $user->username)->firstOrFail();
+    public function requestPasskeyBackup(): JsonResponse{
 
-        $response = [
-            'ciphertext' => $backup->ciphertext,
-            'iv' => $backup->iv,
-            'tag' => $backup->tag,
-        ];
-
+        $response = $this->profileService->retrievePasskeyBackup();
         return response()->json([
             'success' => true,
             'passkeyBackup' => $response,
@@ -112,85 +73,57 @@ class ProfileController extends Controller
     }
 
 
-    public function requestProfileRest(Request $request){
+    // SECTION: API TOKENS
 
-        $user = Auth::user();
-        $response = $this->resetUserProfile($user);
-
-        if($response === true){
-
-            $userInfo = [
-                'username' => $user->username,
-                'name' => $user->name,
-                'email' => $user->email,
-                'employeetype' => $user->employeetype,
-            ];
-
-            Auth::logout();
-
-            Session::put('registration_access', true);
-            Session::put('authenticatedUserInfo', json_encode($userInfo));
-
+    public function requestApiToken(Request $request): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:16',
+        ]);
+        try {
+            $token = $this->profileService->createApiToken($validatedData['name']);
+            // Return a JSON response with the new token
             return response()->json([
                 'success' => true,
-                'redirectUri' => '/register',
+                'token' => $token->plainTextToken,
+                'name' => $token->accessToken->name,
+                'id' => $token->accessToken->id,
             ]);
-
-        }
-        else{
-            return response()->json([
-                'success' => false,
-            ]);
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            throw $e;
         }
     }
 
-    public function resetUserProfile(User $user){
-        UserResetEvent::dispatch($user);
 
-        $roomController = new RoomController();
-        $rooms = $user->rooms()->get();
-
-        foreach($rooms as $room){
-            $member = $room->members()->where('user_id', $user->id)->firstOrFail();
-            if ($member) {
-                $response = $roomController->removeRoomMember($member, $room);
-            }
-        }
-        
-        $convCtrl = new AiConvController();
-        $convs = $user->conversations()->get();
-
-        foreach($convs as $conv){
-            $conv->messages()->delete();
-            $conv->delete();
-        }
-
-        $invitations = $user->invitations()->get();
-        foreach($invitations as $inv){
-            $inv->delete();
-        }
-
-        $prvUserData = PrivateUserData::where('user_id', $user->id)->get();
-        foreach($prvUserData as $data){
-            PrivateUserdataRemoveEvent::dispatch($data);
-            $data->delete();
-        }
-        
-        $backups = PasskeyBackup::where('username', $user->username)->get();
-
-        foreach($backups as $backup){
-            $backup->delete();
-        }
-
-        $tokens = $user->tokens()->get();
-        foreach($tokens as $token){
-            $token->delete();
-        }
-
-        $user->revokProfile();
-        
-        return true;
-
+    public function fetchTokenList(): JsonResponse
+    {
+        $tokenList = $this->profileService->fetchTokenList();
+        // Return a JSON response with the token data
+        return response()->json([
+            'success' => true,
+            'tokens' => $tokenList,
+        ]);
     }
+
+
+
+    public function revokeToken(Request $request): JsonResponse
+    {
+        // Validate request data with appropriate rules
+        $validatedData = $request->validate([
+            'tokenId' => 'required|integer',
+        ]);
+
+        $this->profileService->revokeToken($validatedData['tokenId']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Token revoked successfully.',
+        ]);
+    }
+
+
+
 
 }

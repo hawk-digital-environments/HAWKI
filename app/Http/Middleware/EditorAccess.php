@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 use App\Models\Room;
 use App\Models\Member;
+use Illuminate\Support\Facades\Log;
 
 class EditorAccess
 {
@@ -28,7 +29,7 @@ class EditorAccess
         if($member->hasRole('admin') || $member->hasRole('editor')){
             return $next($request);
         }
-   
+
         // Optionally, you can redirect back or return a response with a 403 error.
         return response()->json(['response' => 'Forbidden'], 403);
     }

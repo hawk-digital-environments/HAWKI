@@ -17,8 +17,9 @@
     <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}">
 
     @vite('resources/js/app.js')
+    @vite('resources/css/app.css')
 
-    <script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/home_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/stream_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/ai_chat_functions.js') }}"></script>
@@ -32,6 +33,10 @@
     <script src="{{ asset('js_v2.0.1_f1/image-selector.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/export.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/user_profile.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/file_manager.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/attachment_handler.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/model_list_filtering.js') }}"></script>
+    <script src="{{ asset('js_v2.0.1_f1/announcements.js') }}"></script>
 
     @if(config('external_access.enabled'))
 		<script src="{{ asset('js_v2.0.1_f1/sanctum_functions.js') }}"></script>
@@ -47,7 +52,7 @@
 </head>
 <body>
 
-<div class="wrapper">
+	<div class="wrapper">
 
 		@include('partials.home.sidebar')
 		<div class="main">
@@ -55,22 +60,30 @@
 		</div>
 	</div>
 
-	@include('partials.home.modals.confirm-modal')
 	@include('partials.home.modals.guidelines-modal')
 	@include('partials.home.modals.add-member-modal')
 	@include('partials.home.modals.session-expiry-modal')
+	@include('partials.home.modals.file-viewer-modal')
+	@include('partials.home.modals.announcements-modal')
 
-@include('partials.overlay')
+	@include('partials.overlay')
 
-
-@include('partials.home.templates')
+    @php
+        $templates = collect(File::files(resource_path('views/partials/home/templates')))
+            ->sortBy(fn($file) => $file->getFilename())
+            ->values();
+    @endphp
+    @foreach ($templates as $temp)
+        @include('partials.home.templates.' . $viewName = str_replace('.blade', '',  $temp->getFilenameWithoutExtension()))
+    @endforeach
+	@include('partials.home.modals.confirm-modal')
 
 </body>
 </html>
 
 <script>
 
-	const userInfo = @json($userProfile);
+	const userInfo = @json($user);
 	const userAvatarUrl = @json($userData['avatar_url']);
 	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
 	const activeModule = @json($activeModule);
@@ -79,15 +92,13 @@
 	const translation = @json($translation);
 
 	const modelsList = @json($models).models;
-	const defaultModel = @json($models).defaultModel;
+	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
-
 
 	const aiHandle = "{{ config('app.aiHandle') }}";
 
 
-    window.addEventListener('DOMContentLoaded', async (event) => {
-
+	window.addEventListener('DOMContentLoaded', async (event) => {
 		setSessionCheckerTimer(0);
 		CheckModals()
 
@@ -98,7 +109,7 @@
 
 		handleUserInvitations();
 
-        //Module Checkup
+		//Module Checkup
 		setActiveSidebarButton(activeModule);
 
 		const sidebarBtn = document.getElementById('profile-sb-btn');
@@ -118,6 +129,8 @@
 
 		initializeGUI();
 		checkWindowSize(800, 600);
+
+        initAnnouncements(@json($announcements));
 
 
 		setTimeout(() => {
