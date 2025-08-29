@@ -56,6 +56,7 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
+                'payload.messages.*.content.previousMessageId' => 'nullable|string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
@@ -98,6 +99,7 @@ class StreamController extends Controller
      */
     public function handleAiConnectionRequest(Request $request)
     {
+        //error_log(print_r($request, true));
         //validate payload
         $validatedData = $request->validate([
             'payload.model' => 'required|string',
@@ -106,6 +108,7 @@ class StreamController extends Controller
             'payload.messages.*.role' => 'required|string',
             'payload.messages.*.content' => 'required|array',
             'payload.messages.*.content.text' => 'required|string',
+            'payload.messages.*.content.previousMessageId' => 'nullable|string',
 
             'broadcast' => 'required|boolean',
             'isUpdate' => 'nullable|boolean',

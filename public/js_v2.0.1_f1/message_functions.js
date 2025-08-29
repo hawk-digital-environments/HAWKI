@@ -1,7 +1,7 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
 
-    const {messageText, groundingMetadata} = deconstContent(messageObj.content);
+    const {messageText, groundingMetadata, previousMessageId} = deconstContent(messageObj.content);
 
     /// CLONE
     // clone message element
@@ -23,6 +23,13 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     // set id (whole . deci format)
     if(messageObj.message_id){
         messageElement.id = messageObj.message_id;
+    }
+
+    // allows e.g. gpt-5 to keep track of previous reasoning
+    if(messageObj.previousMessageId) {
+        messageElement.dataset.previousMessageId = messageObj.previousMessageId;
+    } else {
+        messageElement.dataset.previousMessageId = '';
     }
 
     /// CLASSES & AVATARS
@@ -235,11 +242,13 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     const msgTxtElement = messageElement.querySelector(".message-text");
 
     if(updateContent){
-        const {messageText, groundingMetadata} = deconstContent(messageObj.content);
+        const {messageText, groundingMetadata, previousMessageId} = deconstContent(messageObj.content);
 
         const filteredContent = detectMentioning(messageText);
         messageElement.dataset.rawMsg = messageText;
+        messageElement.dataset.previousMessageId = previousMessageId;
         // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
+    
 
         if(!messageElement.classList.contains('AI')){
             msgTxtElement.innerHTML = filteredContent.modifiedText;
@@ -358,11 +367,15 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
 function deconstContent(inputContent){
     let messageText = '';
     let groundingMetadata = '';
+    let previousMessageId = '';
 
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
         if(json.hasOwnProperty('groundingMetadata')){
             groundingMetadata = json.groundingMetadata
+        }
+        if(json.hasOwnProperty('previousMessageId')){
+            previousMessageId = json.previousMessageId
         }
         if(json.hasOwnProperty('text')){
             messageText = json.text;
@@ -372,8 +385,12 @@ function deconstContent(inputContent){
         }
     }
     else{
+        
         if(inputContent.text){
             messageText = inputContent.text;
+        }
+        if(inputContent.previousMessageId){
+            previousMessageId = inputContent.previousMessageId;
         }
         else{
             messageText = inputContent;
@@ -382,7 +399,8 @@ function deconstContent(inputContent){
 
     return {
         messageText: messageText,
-        groundingMetadata: groundingMetadata
+        groundingMetadata: groundingMetadata,
+        previousMessageId: previousMessageId
     }
 
 }

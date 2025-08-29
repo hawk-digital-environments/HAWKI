@@ -143,9 +143,11 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             if(!msgAttributes['broadcasting'] && msgAttributes['stream']){
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }
+            console.log("!!!!!");
+            console.log(data.content);
 
             // console.log(data.content);
-            const {messageText, groundingMetadata} = deconstContent(data.content);
+            const {messageText, groundingMetadata, previousMessageId} = deconstContent(data.content);
             if(groundingMetadata != ""){
                 metadata = groundingMetadata;
             }
@@ -157,6 +159,9 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.content = content;
             messageObj.completion = data.isDone;
             messageObj.model = msgAttributes['model'];
+            messageObj.previousMessageId = previousMessageId;
+
+            console.log(messageObj);
 
             if (!messageElement) {
                 initializeMessageFormating()
