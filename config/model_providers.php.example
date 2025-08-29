@@ -9,7 +9,7 @@ return [
     |   This Model is used by default before the user choses their
     |   desired model.
     */
-    'defaultModel' => 'gpt-4o',
+    'defaultModel' => 'gpt-5',
 
     /*
     |--------------------------------------------------------------------------
@@ -61,6 +61,33 @@ return [
                     'id' => 'o1-mini',
                     'label' => 'OpenAI O1 mini',
                     'streamable' => false,
+                ]
+            ]
+        ],
+
+        // GPT-5 models work better with the responses API
+        'openai-responses' => [
+            'id' => 'openai-responses',
+            'active' => true,
+            'api_key' => env('OPENAI_API_KEY', ''),
+            'api_url' => 'https://api.openai.com/v1/responses',
+            'ping_url' => 'https://api.openai.com/v1/models',
+            // set store := false and encrypt_reasoning_content := true to 
+            // ensure reasoning data is secu
+            'store' => false,
+            "encrypt_reasoning_content" => true,
+            'models' => [
+                [
+                    'id' => 'gpt-5',
+                    'label' => 'OpenAI GPT 5',
+                    'streamable' => false,
+                    'reasoning_effort' => 'medium',
+                ],
+                [
+                    'id' => 'gpt-5-mini',
+                    'label' => 'OpenAI GPT 5 mini',
+                    'streamable' => false,
+                    'reasoning_effort' => 'medium',
                 ]
             ]
         ],
@@ -166,3 +193,4 @@ return [
 
     ]
 ];
+
