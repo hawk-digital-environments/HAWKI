@@ -55,17 +55,29 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
             'input' => $input,
             // keep stream flag; streaming handled by makeStreamingRequest
             //'stream' => !empty($rawPayload['stream']) && $this->supportsStreaming($modelId),
-            'reasoning' => ['effort' => 'low']
+            //'reasoning' => ['effort' => 'low']
         ];
-
-       
 
         // include previous_response_id if provided (Responses API uses previous_response to continue reasoning)
         if (!empty($previousMessageId)) {
             $payload['previous_response_id'] = $previousMessageId;
         }
 
-        //error_log(print_r($payload, true));
+        // add aditional configuration options
+        $config = $this->config;
+        if (isset($config[$modelId]['reasoning_effort'])) {
+            $payload['reasoning'] = ['effort' => $config[$modelId]['reasoning_effort']];
+        }
+
+        if (isset($config['store'])) {
+            $payload['store'] = $config['store'];
+        }
+
+        if (isset($config['encrypt_reasoning_content']) && $config['encrypt_reasoning_content']) {
+            $payload['include'] = ["reasoning.encrypted_content"];
+        }
+
+        error_log(print_r($payload, true));
 
         return $payload;
     }
@@ -114,7 +126,6 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                 'previousMessageId' => $jsonContent['id'],
             ],
             'usage' => $this->extractUsage($jsonContent),
-            // keep the whole raw response optionally for debugging/traceability
             
         ];
     }
