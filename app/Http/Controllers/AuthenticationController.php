@@ -315,6 +315,11 @@ class AuthenticationController extends Controller
                 'avatar_id' => $avatarId,
                 'isRemoved' => false,
                 'permissions' => $permissions,
+                'auth_type' => $this->authMethod,
+                // Approval logic based on auth method
+                'approval' => $this->authMethod === 'local' 
+                    ? !config('auth.local_needapproval', false)  // Local users: depends on config
+                    : true,  // External auth users: always auto-approved
             ];
 
             // For local users on first login, update password if provided and needed
