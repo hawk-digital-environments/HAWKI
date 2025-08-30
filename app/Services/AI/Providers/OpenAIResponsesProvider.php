@@ -64,10 +64,17 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
 
         // add aditional configuration options
         $config = $this->config;
+        $modelConfig = [];
+        foreach ($config['models'] as $conf) {
+            if ($conf['id'] == $modelId) {
+                $modelConfig = $conf;
+                break;
+            }
+        }
 
         // set the reasoning effort
-        if (isset($config[$modelId]['reasoning_effort'])) {
-            $payload['reasoning'] = ['effort' => $config[$modelId]['reasoning_effort']];
+        if (isset($modelConfig['reasoning_effort'])) {
+            $payload['reasoning'] = ['effort' => $modelConfig['reasoning_effort']];
         }
 
         // store message on the server side / or not...
