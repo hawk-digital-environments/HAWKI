@@ -56,6 +56,7 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
+                'payload.messages.*.content.providerMessageId' => 'nullable|string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
@@ -106,6 +107,7 @@ class StreamController extends Controller
             'payload.messages.*.role' => 'required|string',
             'payload.messages.*.content' => 'required|array',
             'payload.messages.*.content.text' => 'required|string',
+            'payload.messages.*.content.providerMessageId' => 'nullable|string',
 
             'broadcast' => 'required|boolean',
             'isUpdate' => 'nullable|boolean',
@@ -177,7 +179,6 @@ class StreamController extends Controller
                 //Log::info('google chunk detected');
             }
 
-        
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
             foreach ($chunks as $chunk) {
@@ -189,7 +190,6 @@ class StreamController extends Controller
                 
                 // Format the chunk
                 $formatted = $provider->formatStreamChunk($chunk);
-                // Log::info('Formatted Chunk:' . json_encode($formatted));
 
                 // Record usage if available
                 if ($formatted['usage']) {
