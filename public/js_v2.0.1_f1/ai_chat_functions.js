@@ -98,6 +98,19 @@ async function sendMessageConv(inputField) {
         messageObj.iv = cryptoMsg.iv;
         messageObj.tag = cryptoMsg.tag;
 
+        // handle auxiliaries data
+        messageObj.auxiliaries = messageObj.auxiliaries ?? []
+        auxiliaries = []
+        for (const auxiliary of messageObj.auxiliaries) {
+            const cryptoMsg = await encryptWithSymKey(convKey, auxiliary.content, false);
+            auxiliaries.push({
+                content: cryptoMsg.ciphertext,
+                iv: cryptoMsg.iv,
+                tag: cryptoMsg.tag,
+                type: auxiliary.type,
+            })
+        };
+
         // Submit Message to server.
 
         const requestObj = {
@@ -107,6 +120,7 @@ async function sendMessageConv(inputField) {
             'iv': messageObj.iv,
             'tag': messageObj.tag,
             'completion': true,
+            'auxiliaries': auxiliaries
         }
         const submittedObj = await submitMessageToServer(requestObj, `/req/conv/sendMessage/${activeConv.slug}`);
         submittedObj.content = messageObj.content;
@@ -115,6 +129,7 @@ async function sendMessageConv(inputField) {
         // create and add message element to chatlog.
         const messageElement = addMessageToChatlog(submittedObj);
         messageElement.dataset.rawMsg = submittedObj.content;
+        messageElement.dataset.auxiliaries = JSON.stringify(submittedObj.auxiliaries);
         scrollToLast(true, messageElement);
     }
 
@@ -144,7 +159,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }
             
-            const {messageText, groundingMetadata, providerMessageId} = deconstContent(data.content);
+            const {messageText, groundingMetadata} = deconstContent(data.content);
             if(groundingMetadata != ""){
                 metadata = groundingMetadata;
             }
@@ -156,14 +171,15 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.content = content;
             messageObj.completion = data.isDone;
             messageObj.model = msgAttributes['model'];
-            messageObj.providerMessageId = providerMessageId;
+            messageObj.auxiliaries = data.auxiliaries;
 
             if (!messageElement) {
                 initializeMessageFormating()
                 messageElement = addMessageToChatlog(messageObj, false);
             }
             messageElement.dataset.rawMsg = msg;
-    
+
+            messageElement.dataset.auxiliaries = JSON.stringify(messageObj.auxiliaries);
             const msgTxtElement = messageElement.querySelector(".message-text");
     
             msgTxtElement.innerHTML = formatChunk(content, groundingMetadata);
@@ -206,6 +222,24 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.iv = cryptoMsg.iv;
             messageObj.tag = cryptoMsg.tag;
 
+            // handle auxiliaries data
+            messageObj.auxiliaries = messageObj.auxiliaries ?? []
+            auxiliaries = []
+            for (const auxiliary of messageObj.auxiliaries) {
+                const cryptoMsg = await encryptWithSymKey(convKey, auxiliary.content, false);
+                aux = {
+                    content: cryptoMsg.ciphertext,
+                    iv: cryptoMsg.iv,
+                    tag: cryptoMsg.tag,
+                    type: auxiliary.type,
+                    
+                };
+                if (isUpdate) {
+                    aux.id = auxiliary.id;
+                }
+                auxiliaries.push(aux);
+            };
+            
             activateMessageControls(messageElement);
             
             const requestObj = {
@@ -214,7 +248,8 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 'iv': messageObj.iv,
                 'tag': messageObj.tag,
                 'model': messageObj.model,
-                'completion': messageObj.completion
+                'completion': messageObj.completion,
+                'auxiliaries': auxiliaries
             }
 
             if(isUpdate){
@@ -228,6 +263,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
                 submittedObj.content = cryptoContent;
                 messageElement.dataset.rawMsg = msg;
+                messageElement.dataset.auxiliaries = JSON.stringify(submittedObj.auxiliaries);
                 // messageElement.dataset.groundingMetadata = metadata;
                 addGoogleRenderedContent(messageElement, metadata);
                 updateMessageElement(messageElement, submittedObj);
@@ -284,6 +320,18 @@ async function initNewConv(messageObj){
     messageObj.iv = contData.iv;
     messageObj.tag = contData.tag;
 
+    messageObj.auxiliaries = messageObj.auxiliaries ?? []
+    auxiliaries = []
+    for (const auxiliary of messageObj.auxiliaries) {
+        const cryptoMsg = await encryptWithSymKey(convKey, auxiliary.content, false);
+        auxiliaries.push({
+            content: cryptoMsg.ciphertext,
+            iv: cryptoMsg.iv,
+            tag: cryptoMsg.tag,
+            type: auxiliary.type,
+        })
+    };
+
     //submit message to server
     const requestObj = {
         'isAi': false,
@@ -292,6 +340,7 @@ async function initNewConv(messageObj){
         'iv': messageObj.iv,
         'tag': messageObj.tag,
         'completion': true,
+        'auxiliaries': auxiliaries,
     }
     const submittedObj = await submitMessageToServer(requestObj, `/req/conv/sendMessage/${activeConv.slug}`);
 
@@ -300,6 +349,7 @@ async function initNewConv(messageObj){
     submittedObj.content = messageObj.content;
     // messageObj.content is still not processed. it equals the rawData.
     messageElement.dataset.rawMsg = submittedObj.content;
+    messageElement.dataset.auxiliaries = JSON.stringify(submittedObj.auxiliaries);
 
     // set the unassigned attirbutes to the temporarily made message Element.
     updateMessageElement(messageElement, submittedObj);
@@ -486,7 +536,14 @@ async function loadConv(btn=null, slug=null){
         const decryptedContent =  await decryptWithSymKey(convKey, msg.content, msg.iv, msg.tag);
         msg.content = decryptedContent;
         // console.log(msg.content);
+        const auxiliaries = msg.auxiliaries ?? []
+        for (const aux of auxiliaries) {
+            const decryptedContent =  await decryptWithSymKey(convKey, aux.content, aux.iv, aux.tag);
+            aux.content = decryptedContent;
+        }
     };
+
+    
 
     if(msgs.length > 0){
         chatlogElement.classList.remove('start-state');
@@ -494,7 +551,6 @@ async function loadConv(btn=null, slug=null){
     else{
         chatlogElement.classList.add('start-state');
     }
-
     loadMessagesOnGUI(convData.messages);
     scrollToLast(true);
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AiConv;
 use App\Models\AiConvMsg;
+use App\Models\AiConvMsgAux;
 use App\Models\User;
 
 use Illuminate\Http\JsonResponse;
@@ -152,23 +153,21 @@ class AiConvController extends Controller
                 'completion' => $message->completion,
                 'created_at' => $message->created_at->format('Y-m-d+H:i'),
                 'updated_at' => $message->updated_at->format('Y-m-d+H:i'),
+                'auxiliaries' => $message->auxiliaries ? $message->auxiliaries->toArray() : [],
             ]; 
-     
             array_push($messagesData, $msgData);
         }
         return $messagesData;
         
     }
 
-
     /// 1. find the conv on DB
     /// 2. check the membership validation
     /// 3. assign an id to the message
-    /// 4. create message object
+    /// 4. create message object and any auxiliary data
     /// 5. qeue message for broadcasting
     /// 6. send response to the sender
     public function sendMessage(Request $request, $slug) {
-
         $validatedData = $request->validate([
             'isAi' => 'required|boolean',
             'threadID' => 'required|integer|min:0',
@@ -177,8 +176,12 @@ class AiConvController extends Controller
             'tag' => 'required|string',
             'model' => 'string',
             'completion' => 'required|boolean',
+            'auxiliaries' => 'nullable|array',
+            'auxiliaries.*.type' => 'required|string',
+            'auxiliaries.*.iv' => 'required|string',
+            'auxiliaries.*.tag' => 'required|string',
+            'auxiliaries.*.content' => 'required|string',
         ]);
-
 
         $conv = AiConv::where('slug', $slug)->firstOrFail();
         if ($conv->user_id !== Auth::id()) {
@@ -202,6 +205,23 @@ class AiConvController extends Controller
             'completion' => $validatedData['completion'],
         ]);
 
+        // add any auxiliary data
+        $auxiliaries = [];
+        if (isset($validatedData['auxiliaries'])) {
+            foreach($validatedData['auxiliaries'] as $auxiliary) {
+                $aux = AiConvMsgAux::create([
+                    'msg_id' => $message->id,
+                    'user_id' => $user->id,
+                    'iv' => $auxiliary['iv'],
+                    'tag' => $auxiliary['tag'],
+                    'type' => $auxiliary['type'],
+                    'content' => $auxiliary['content'],
+                ]);
+                $auxiliaries[] = $aux->toArray();
+            }
+            
+        }
+
         // add author data + creation and update dates to response data.
         $messageData = $message->toArray();
         $messageData['author'] = [
@@ -211,7 +231,7 @@ class AiConvController extends Controller
         ];
         $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
         $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
-
+        $messageData['auxiliaries'] =  $auxiliaries;
 
         return response()->json([
             'success' => true,
@@ -224,6 +244,7 @@ class AiConvController extends Controller
 
     public function updateMessage(Request $request, $slug) {
         
+        Log::info("!!!!", $request->all());
         $validatedData = $request->validate([
             'message_id' => 'required|string',
             'content' => 'required|string|max:10000',
@@ -231,6 +252,12 @@ class AiConvController extends Controller
             'tag' => 'required|string',
             'model' => 'nullable|string',
             'completion' => 'required|boolean',
+            'auxiliaries' => 'nullable|array',
+            'auxiliaries.*.id' => 'nullable|string',
+            'auxiliaries.*.type' => 'required|string',
+            'auxiliaries.*.iv' => 'required|string',
+            'auxiliaries.*.tag' => 'required|string',
+            'auxiliaries.*.content' => 'required|string',
         ]);     
 
         $conv = AiConv::where('slug', $slug)->firstOrFail();
@@ -246,8 +273,28 @@ class AiConvController extends Controller
             'iv' => $validatedData['iv'],
             'tag' => $validatedData['tag'],
             'model' => $validatedData['model'],
-            'completion' => $validatedData['completion']
+            'completion' => $validatedData['completion'],
         ]);
+
+        $auxiliaries = [];
+        if (isset($validatedData['auxiliaries'])) {
+            foreach($validatedData['auxiliaries'] as $auxiliary) {
+                if (!isset($auxiliary['id'])) {
+                    continue;
+                }
+                $aux = $message->auxilaries->where('id', $auxiliary['id'])->first();
+                $aux->update([
+                    'msg_id' => $message->id,
+                    'user_id' => $user->id,
+                    'iv' => $auxiliary['iv'],
+                    'tag' => $auxiliary['tag'],
+                    'type' => $auxiliary['type'],
+                    'content' => $auxiliary['content'],
+                ]);
+                $auxiliaries[] = $aux->toArray();
+            }
+            
+        }
 
         $messageData = $message->toArray();
         $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');

@@ -17,6 +17,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                 // change: map "system" -> "developer"
                 'role' => ($message['role'] === 'system') ? 'developer' : $message['role'],
                 'content' => $message['content'],
+                'auxiliaries' => $message['auxiliaries'] ?? [],
             ];
         }
 
@@ -34,19 +35,32 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         $modelId = $rawPayload['model'];
         
         // Handle special cases for specific models
+        
         $messages = $this->mapMessages($messages);
+        
 
         // Convert messages into the Responses API "input" shape
         $input = [];
-        $providerMessageId = '';
         foreach ($messages as $message) {
             $contentText = $message['content']['text'] ?? '';
-            $providerMessageId = $message['content']['providerMessageId'] ?? '';
+            
             $input[] = [
                 'role' => $message['role'],
                 'content' => $contentText
             ];
+
+            $auxiliaries = $message['auxiliaries'] ?? [];
             
+            foreach($auxiliaries as $aux) {
+                // only handle auxiliaries of the correct type
+                if ($aux['type'] == 'openAiResponsesSpecific') {
+                    $modelSpecific = json_decode($aux['content'], true);
+                    $reasoning = $modelSpecific['reasoning'] ?? [];
+                    foreach ($reasoning as $reasoningItem) {
+                        $input[] = $reasoningItem;
+                    }
+                }
+            }
         }
 
         // Build payload for Responses endpoint
@@ -55,12 +69,9 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
             'input' => $input,
              // keep stream flag; streaming handled by makeStreamingRequest
             'stream' => !empty($rawPayload['stream']) && $this->supportsStreaming($modelId),
+            'store' => false, // always false for data safety, otherwise OpenAI retain may responses
         ];
 
-        // include previous_response_id if provided (Responses API uses previous_response to continue reasoning)
-        if (!empty($providerMessageId)) {
-            $payload['previous_response_id'] = $providerMessageId;
-        }
 
         // add aditional configuration options
         $config = $this->config;
@@ -77,16 +88,11 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
             $payload['reasoning'] = ['effort' => $modelConfig['reasoning_effort']];
         }
 
-        // store message on the server side / or not...
-        if (isset($config['store'])) {
-            $payload['store'] = $config['store'];
-        }
-
-        // if store := false, this option is additionally required to keep things encrypted.
-        if (isset($config['encrypt_reasoning_content']) && $config['encrypt_reasoning_content']) {
+        // keep encrypted reasoning tokens if requested
+        if (isset($config['keep_reasoning_tokens']) && $config['keep_reasoning_tokens']) {
             $payload['include'] = ["reasoning.encrypted_content"];
         }
-
+        
         return $payload;
     }
 
@@ -103,23 +109,24 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         $jsonContent = json_decode($responseContent, true);
 
         $texts = [];
+        $reasoning = [];
         
         if (!empty($jsonContent['output']) && is_array($jsonContent['output'])) {
             foreach ($jsonContent['output'] as $outputItem) {
-                
-                
-                if (!empty($outputItem['content']) && is_array($outputItem['content'])) {
-                    if ($outputItem['type'] == "message") {
-                        foreach ($outputItem['content'] as $c) {
-                            if (is_string($c)) {
-                                $texts[] = $c;
-                            } elseif (!empty($c['text'])) {
-                                $texts[] = $c['text'];
+                // this is the actual model output
+                if ($outputItem['type'] == "message") {
+                    if (!empty($outputItem['content']) && is_array($outputItem['content'])) {
+                            foreach ($outputItem['content'] as $c) {
+                                if ($c['type'] == 'output_text') {
+                                    $texts[] = $c['text'];
+                                }
                             }
                         }
-                    }
+                } else if ($outputItem['type'] == "reasoning") {
+                    // here we get encrypted reasoning tokens
+                    // for input we'll need the entire data structure
+                    $reasoning[] = $outputItem;
                 }
-            
             }
         }
 
@@ -128,13 +135,15 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         return [
             'content' => [
                 'text' => $contentText,
-                // we keep this so we can reuse reasoning results
-                // treating it as part of the content keeps things secure
-                // because it will be encrypted.
-                'providerMessageId' => $jsonContent['id'],
             ],
             'usage' => $this->extractUsage($jsonContent),
-            
+            // we don't need this in the CLI, hence we pass an encoded vesion
+            'auxiliaries' => [
+                [
+                    'type' => 'openAiResponsesSpecific',
+                    'content' => json_encode(["reasoning" => $reasoning]),
+                ]
+            ],
         ];
     }
 
@@ -161,8 +170,16 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
 
         // The Responses streaming events often include a "type" field.
         // Completed event:
+        $reasoning = [];
         if (isset($jsonChunk['type']) && in_array($jsonChunk['type'], ['response.completed', 'response.refreshed'], true)) {
             $isDone = true;
+            // check for encrypted reasoning tokens
+            $output = $jsonChunk['response']['output'];
+            foreach($output as $item) {
+                if ($item['type'] == 'reasoning' && isset($item['encrypted_content'])) {
+                    $reasoning[] = $item;
+                }
+            }
         }
 
         // Delta-style updates may include output/content deltas
@@ -183,17 +200,23 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         }
         
 
-        return [
+        $response = [
             'content' => [
                 'text' => $content,
-                // we keep this so we can reuse reasoning results
-                // treating it as part of the content keeps things secure
-                // because it will be encrypted.
-                'providerMessageId' => $responseId,
             ],
             'isDone' => $isDone,
             'usage' => $usage,
         ];
+
+        if ($reasoning) {
+            $response['auxiliaries'] = [
+                [
+                    'type' => 'openAiResponsesSpecific',
+                    'content' => json_encode(["reasoning" => $reasoning]),
+                ]
+            ];
+        }
+        return $response;
     }
 
     /**

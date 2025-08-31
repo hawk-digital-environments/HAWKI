@@ -1,7 +1,7 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
 
-    const {messageText, groundingMetadata, providerMessageId} = deconstContent(messageObj.content);
+    const {messageText, groundingMetadata} = deconstContent(messageObj.content);
 
     /// CLONE
     // clone message element
@@ -26,10 +26,11 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     }
 
     // allows e.g. gpt-5 to keep track of previous reasoning
-    if(messageObj.providerMessageId) {
-        messageElement.dataset.providerMessageId = messageObj.providerMessageId;
+    //console.log(messageObj.auxiliaries);
+    if(messageObj.auxiliaries) {
+        messageElement.dataset.auxiliaries = JSON.stringify(messageObj.auxiliaries);
     } else {
-        messageElement.dataset.providerMessageId = '';
+        messageElement.dataset.auxiliaries = '';
     }
 
     /// CLASSES & AVATARS
@@ -242,11 +243,11 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     const msgTxtElement = messageElement.querySelector(".message-text");
 
     if(updateContent){
-        const {messageText, groundingMetadata, providerMessageId} = deconstContent(messageObj.content);
+        const {messageText, groundingMetadata} = deconstContent(messageObj.content);
 
         const filteredContent = detectMentioning(messageText);
         messageElement.dataset.rawMsg = messageText;
-        messageElement.dataset.providerMessageId = providerMessageId;
+        messageElement.dataset.auxiliaries = JSON.stringify(messageObj.auxiliaries);
         // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
     
 
@@ -367,15 +368,11 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
 function deconstContent(inputContent){
     let messageText = '';
     let groundingMetadata = '';
-    let providerMessageId = '';
-
+    
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
         if(json.hasOwnProperty('groundingMetadata')){
             groundingMetadata = json.groundingMetadata
-        }
-        if(json.hasOwnProperty('providerMessageId')){
-            providerMessageId = json.providerMessageId
         }
         if(json.hasOwnProperty('text')){
             messageText = json.text;
@@ -389,9 +386,6 @@ function deconstContent(inputContent){
         if(inputContent.text){
             messageText = inputContent.text;
         }
-        if(inputContent.providerMessageId){
-            providerMessageId = inputContent.providerMessageId;
-        }
         else{
             messageText = inputContent;
         }
@@ -400,7 +394,6 @@ function deconstContent(inputContent){
     return {
         messageText: messageText,
         groundingMetadata: groundingMetadata,
-        providerMessageId: providerMessageId
     }
 
 }

@@ -31,4 +31,10 @@ class AiConvMsg extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Define the relationship with AiConvMsg
+    public function auxiliaries()
+    {
+        return $this->hasMany(AiConvMsgAux::class, 'msg_id');
+    }
+
 }

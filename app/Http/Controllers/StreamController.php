@@ -56,7 +56,7 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
-                'payload.messages.*.content.providerMessageId' => 'nullable|string',
+                'payload.messages.*.reasoning' => 'nullable|string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
@@ -100,6 +100,7 @@ class StreamController extends Controller
     public function handleAiConnectionRequest(Request $request)
     {
         //validate payload
+       
         $validatedData = $request->validate([
             'payload.model' => 'required|string',
             'payload.stream' => 'required|boolean',
@@ -107,7 +108,9 @@ class StreamController extends Controller
             'payload.messages.*.role' => 'required|string',
             'payload.messages.*.content' => 'required|array',
             'payload.messages.*.content.text' => 'required|string',
-            'payload.messages.*.content.providerMessageId' => 'nullable|string',
+            'payload.messages.*.auxiliaries' => 'nullable|array',
+            'payload.messages.*.auxiliaries.*.type' => 'required|string',
+            'payload.messages.*.auxiliaries.*.content' => 'required|string',
 
             'broadcast' => 'required|boolean',
             'isUpdate' => 'nullable|boolean',
@@ -116,7 +119,6 @@ class StreamController extends Controller
             'slug' => 'nullable|string',
             'key' => 'nullable|string',
         ]);
-
 
         if ($validatedData['broadcast']) {
             $this->handleGroupChatRequest($validatedData);
@@ -142,7 +144,7 @@ class StreamController extends Controller
                         $validatedData['payload']['model']
                     );
                 }
-                
+
                 // Return response to client
                 return response()->json([
                     'author' => [
@@ -153,6 +155,7 @@ class StreamController extends Controller
                     'model' => $validatedData['payload']['model'],
                     'isDone' => true,
                     'content' => $result['content'],
+                    'auxiliaries' => $result['auxiliaries'] ?? [],
                 ]);
             }
         }
@@ -210,11 +213,11 @@ class StreamController extends Controller
                     'model' => $payload['model'],
                     'isDone' => $formatted['isDone'],
                     'content' => json_encode($formatted['content']),
+                    'auxiliaries' => $formatted['auxiliaries'] ?? [],
                 ];
                 echo json_encode($messageData) . "\n";
             }
         };
-        
         // Process the streaming request
         $this->aiConnectionService->processRequest(
             $payload, 

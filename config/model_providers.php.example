@@ -72,10 +72,11 @@ return [
             'api_key' => env('OPENAI_API_KEY', ''),
             'api_url' => 'https://api.openai.com/v1/responses',
             'ping_url' => 'https://api.openai.com/v1/models',
-            // set store := false and encrypt_reasoning_content := true to 
-            // ensure that reasoning data is secure
-            'store' => false,
-            "encrypt_reasoning_content" => true,
+            // set this to true to keep encrypted reasoning
+            // tokens as part of the conversation history
+            // reasoning tokens are used in their encrypred variant
+            // with the store := false setting of messages
+            'keep_reasoning_tokens' => true,
             'models' => [
                 [
                     'id' => 'gpt-5',
