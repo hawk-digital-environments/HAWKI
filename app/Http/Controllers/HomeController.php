@@ -68,8 +68,8 @@ class HomeController extends Controller
         $roomController = new RoomController();
         $rooms = $roomController->getUserRooms(request());
 
-        $avatarUrl = $userProfile->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $userProfile->avatar_id) : null;
-        $hawkiAvatarUrl = Storage::disk('public')->url('profile_avatars/' . User::find(1)->avatar_id);
+        $avatarUrl = $userProfile->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $userProfile->avatar_id : null;
+        $hawkiAvatarUrl = config('app.url') . '/storage/profile_avatars/' . User::find(1)->avatar_id;
         $userData = [
             'avatar_url'=> $avatarUrl,
             'hawki_avatar_url'=>$hawkiAvatarUrl,
@@ -120,8 +120,8 @@ class HomeController extends Controller
         }
 
         $userProfile = Auth::user();
-        $avatarUrl = $userProfile->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $userProfile->avatar_id) : null;
-        $hawkiAvatarUrl = Storage::disk('public')->url('profile_avatars/' . User::find(1)->avatar_id);
+        $avatarUrl = $userProfile->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $userProfile->avatar_id : null;
+        $hawkiAvatarUrl = config('app.url') . '/storage/profile_avatars/' . User::find(1)->avatar_id;
         $userData = [
             'avatar_url'=> $avatarUrl,
             'hawki_avatar_url'=>$hawkiAvatarUrl,

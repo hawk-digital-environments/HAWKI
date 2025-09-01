@@ -84,7 +84,7 @@ class PlatformProvider extends OrchidServiceProvider
                         ->icon('bs.envelope'),
                     Menu::make('WebSockets')
                         ->route('platform.settings.websockets')
-                        ->icon('bs.wifi'),    
+                        ->icon('bs.wifi'),
                     ]),    
             
             Menu::make('Models')

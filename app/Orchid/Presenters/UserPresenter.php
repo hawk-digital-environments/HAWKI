@@ -57,7 +57,7 @@ class UserPresenter extends Presenter implements Personable, Searchable
         // Check if an avatar_id is present
         if (!empty($this->entity->avatar_id)) {
             // Add the complete storage URL to the file name
-            return Storage::disk('public')->url('profile_avatars/' . $this->entity->avatar_id);
+            return config('app.url') . '/storage/profile_avatars/' . $this->entity->avatar_id;
         }
         
         // Fallback to Gravatar if no avatar_id is set

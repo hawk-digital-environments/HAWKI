@@ -27,6 +27,22 @@ return [
     ],
 
     'v2.1.0' => [
+        // Filesystem settings removed from admin UI - no longer needed
+        'filesystems_default' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_local_driver' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_local_root' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_public_driver' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_public_root' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_public_url' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_public_visibility' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_s3_driver' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_s3_key' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_s3_secret' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_s3_region' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_s3_bucket' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_s3_url' => 'Filesystem settings moved out of admin UI - use config files directly',
+        'filesystems_disks_s3_endpoint' => 'Filesystem settings moved out of admin UI - use config files directly',
+        
         // Add future deprecated keys here when needed
         // 'example_old_key' => 'Reason for deprecation',
     ],

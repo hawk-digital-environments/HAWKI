@@ -62,7 +62,7 @@ class RoomController extends Controller
                     'username' => $member->user->username,
                     'role' => $member->role,
                     'employeetype' => $member->user->employeetype,
-                    'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
+                    'avatar_url' => $member->user->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $member->user->avatar_id : null,
                 ];
             }),
         
@@ -318,7 +318,7 @@ class RoomController extends Controller
                     'username' => $member->user->username,
                     'name' => $member->user->name,
                     'isRemoved' => $member->isRemoved,
-                    'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
+                    'avatar_url' => $member->user->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $member->user->avatar_id : null,
                 ],
                 'model' => $message->model,
 
@@ -392,7 +392,7 @@ class RoomController extends Controller
             'author' => [
                 'username' => $member->user->username,
                 'name' => $member->user->name,
-                'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
+                'avatar_url' => $member->user->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $member->user->avatar_id : null,
             ],
             
             'content' => $message->content,

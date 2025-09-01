@@ -120,7 +120,7 @@ class StreamController extends Controller
             $this->handleGroupChatRequest($validatedData);
         } else {
             $user = User::find(1); // HAWKI user 
-            $avatar_url = $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null;
+            $avatar_url = $user->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $user->avatar_id : null;
             
             if ($validatedData['payload']['stream']) {
                 // Handle streaming response
