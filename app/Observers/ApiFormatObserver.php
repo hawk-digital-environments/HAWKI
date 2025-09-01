@@ -65,13 +65,6 @@ class ApiFormatObserver
             // Clear factory caches
             $factory = app(AIProviderFactory::class);
             $factory->clearAllCaches();
-
-            Log::info("AI caches cleared", [
-                'reason' => $reason,
-                'api_format_id' => $apiFormat->id,
-                'unique_name' => $apiFormat->unique_name,
-                'base_url' => $apiFormat->base_url
-            ]);
         } catch (\Exception $e) {
             Log::error("Failed to clear AI caches after API format change", [
                 'reason' => $reason,

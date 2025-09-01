@@ -62,13 +62,6 @@ class LanguageModelObserver
             // Get factory instance and clear caches
             $factory = app(AIProviderFactory::class);
             $factory->clearAllCaches();
-
-            Log::info("AI caches cleared", [
-                'reason' => $reason,
-                'model_id' => $model->model_id,
-                'provider_id' => $model->provider_id,
-                'is_active' => $model->is_active
-            ]);
         } catch (\Exception $e) {
             Log::error("Failed to clear AI caches after language model change", [
                 'reason' => $reason,

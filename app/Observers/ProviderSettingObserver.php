@@ -65,13 +65,6 @@ class ProviderSettingObserver
             // Clear factory caches
             $factory = app(AIProviderFactory::class);
             $factory->clearAllCaches();
-
-            Log::info("AI caches cleared", [
-                'reason' => $reason,
-                'provider_id' => $provider->id,
-                'provider_name' => $provider->provider_name,
-                'is_active' => $provider->is_active
-            ]);
         } catch (\Exception $e) {
             Log::error("Failed to clear AI caches after provider setting change", [
                 'reason' => $reason,

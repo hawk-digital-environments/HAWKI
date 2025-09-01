@@ -67,14 +67,6 @@ class ApiFormatEndpointObserver
                 $factory = app(AIProviderFactory::class);
                 $factory->clearAllCaches();
             }
-
-            Log::info("AI caches cleared", [
-                'reason' => $reason,
-                'endpoint_id' => $endpoint->id,
-                'endpoint_name' => $endpoint->name,
-                'endpoint_path' => $endpoint->path,
-                'is_active' => $endpoint->is_active
-            ]);
         } catch (\Exception $e) {
             Log::error("Failed to clear AI caches after endpoint change", [
                 'reason' => $reason,
