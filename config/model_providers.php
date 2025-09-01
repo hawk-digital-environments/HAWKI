@@ -74,7 +74,7 @@ return [
             'models' => require __DIR__ . '/model_lists/google_models.php',
         ],
         'ollama'=> [
-            'active' => true,
+            'active' => false,
             'id' => 'ollama',
             // 'api_url' => 'http://localhost:11434/api/generate',
             'api_url' => 'http://localhost:11434/api/chat',

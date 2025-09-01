@@ -23,6 +23,13 @@ class DocumentConverter
             } elseif ($file instanceof \SplFileInfo) {
                 $resource = fopen($file->getPathname(), 'r');
                 $filename = $file->getFilename();
+            } elseif (is_string($file)) {
+                // Assume string contains file contents (as returned from Storage::get())
+                // Write to a temp file
+                $tempFilePath = tempnam(sys_get_temp_dir(), 'upl_');
+                file_put_contents($tempFilePath, $file);
+                $resource = fopen($tempFilePath, 'r');
+                $filename = 'file.pdf'; // Or dynamically assign if you know the original name
             } else {
                 throw new \InvalidArgumentException("Invalid file input. Expected UploadedFile or SplFileInfo.");
             }

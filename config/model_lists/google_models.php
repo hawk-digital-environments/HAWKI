@@ -14,7 +14,7 @@ return [
         'tools' => [
             'stream' => true,
             'vision' => true,
-            'file_upload' => true,
+            'file_upload' => false,
             'web_search'=> true,
 
         ],
@@ -50,7 +50,7 @@ return [
         'tools' => [
             'stream' => true,
             'vision' => true,
-            'file_upload' => true,
+            'file_upload' => false,
             'web_search'=> true,
         ],
     ]

@@ -47,7 +47,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -63,7 +63,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -78,7 +78,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -95,7 +95,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
             'vision' => true,
 
         ],
@@ -113,7 +113,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
             'vision' => true,
 
         ],
@@ -131,7 +131,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -147,7 +147,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -163,7 +163,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -178,7 +178,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -193,7 +193,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -209,7 +209,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
             'vision' => true,
 
         ],
@@ -226,7 +226,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -241,7 +241,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -257,7 +257,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ],
     [
@@ -273,7 +273,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => false,
+            'file_upload' => true,
         ],
     ]
 ];

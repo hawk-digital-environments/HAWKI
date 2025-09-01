@@ -16,6 +16,7 @@ return new class extends Migration
             $table->boolean('is_forced')->default(false);
             $table->boolean('is_global')->default(true);
             $table->json('target_users')->nullable();
+            $table->string('anchor')->nullable();
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();

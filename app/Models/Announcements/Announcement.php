@@ -14,6 +14,7 @@ class Announcement extends Model
         'is_forced',
         'is_global',
         'target_users',
+        'anchor',
         'starts_at',
         'expires_at'
     ];

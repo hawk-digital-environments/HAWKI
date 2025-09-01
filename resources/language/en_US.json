@@ -21,6 +21,8 @@
 
     "Cnf_RemoveFile":"Are you sure you want to delete this file?",
 
+    "Logout_Warning":"To contninue using HAWKI you need to accept these conditions. <br><strong>Click on confirm to logout from HAWKI.</strong>",
+
     "Exp_Title":"SESSION TIMEOUT",
     "Exp_MSG":"Please login again!",
 

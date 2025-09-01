@@ -97,6 +97,7 @@
 
 	const aiHandle = "{{ config('app.aiHandle') }}";
 
+    const announcementList = @json($announcements);
 
 	window.addEventListener('DOMContentLoaded', async (event) => {
 		setSessionCheckerTimer(0);
@@ -130,7 +131,7 @@
 		initializeGUI();
 		checkWindowSize(800, 600);
 
-        initAnnouncements(@json($announcements));
+        initAnnouncements(announcementList);
 
 
 		setTimeout(() => {

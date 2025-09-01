@@ -6,7 +6,7 @@ use Illuminate\Console\Command;
 use App\Services\Announcements\AnnouncementService;
 
 
-class PublishAnnouncement extends Command
+class AnnouncementPublish extends Command
 {
     protected $signature = 'announcement:publish
                             {title? : Announcement Title}
@@ -15,6 +15,7 @@ class PublishAnnouncement extends Command
                             {--force= : User must accept the announcement before proceeding (true/false)}
                             {--global= : Make this a global announcement (true/false)}
                             {--users=* : Target user IDs (if not global)}
+                            {--anchor= : Anchor Announcement to an special Frontend Event}
                             {--start= : Start datetime (Y-m-d H:i:s)}
                             {--expire= : Expire datetime (Y-m-d H:i:s)}';
 
@@ -42,6 +43,11 @@ class PublishAnnouncement extends Command
             ? null
             : ($this->option('users') ?: explode(',', $this->ask('Enter target user IDs (comma-separated)', '')));
 
+        $anchor = $this->option('anchor') !== null
+            ? filter_var($this->option(('anchor')))
+            : ($this->ask('Enter anchors (optional)', null));
+
+
         $start = $this->option('start') ?: $this->ask('Enter start datetime (Y-m-d H:i:s)', now()->toDateTimeString());
         $expire = $this->option('expire') ?: $this->ask('Enter expire datetime (Y-m-d H:i:s)', null);
 
@@ -53,6 +59,7 @@ class PublishAnnouncement extends Command
             $force,
             $global,
             $users,
+            $anchor,
             $start,
             $expire
         );

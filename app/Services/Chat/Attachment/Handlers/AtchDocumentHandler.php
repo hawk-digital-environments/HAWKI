@@ -78,8 +78,10 @@ class AtchDocumentHandler implements AttachmentInterface
         }
 
         try{
+
             $file = $this->storageService->retrieveFile($uuid, $category);
             $results = $this->extractFileContent($file);
+
             if($results !== null){
                 foreach($results as $relativePath => $content){
                     $filename = 'output/' . basename($relativePath);

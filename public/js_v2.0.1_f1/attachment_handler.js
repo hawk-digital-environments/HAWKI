@@ -49,6 +49,8 @@ function initFileUploader(inputField) {
         dragCounter = 0;
         overlay.style.display = 'none';
         handleSelectedFiles(e.dataTransfer.files, input);
+        queueAnchoredAnnouncements('FileUpload');
+
     });
 
     // File input button handling

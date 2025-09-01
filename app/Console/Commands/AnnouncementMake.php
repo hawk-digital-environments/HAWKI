@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 
 use Carbon\Carbon;
 
-class MakeAnnouncement extends Command
+class AnnouncementMake extends Command
 {
     /**
      * The name and signature of the console command.

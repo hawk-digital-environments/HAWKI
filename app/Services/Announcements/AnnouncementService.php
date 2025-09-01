@@ -29,10 +29,10 @@ class AnnouncementService
         bool $isForced = false,
         bool $isGlobal = true,
         ?array $targetUsers = null,
+        ?string $anchor = null,
         ?string $startsAt = null,
         ?string $expiresAt = null
     ): Announcement {
-        Log::debug($isGlobal);
         return Announcement::create([
             'title' => $title,
             'view' => $view,
@@ -40,6 +40,7 @@ class AnnouncementService
             'is_forced' => $isForced,
             'is_global' => $isGlobal,
             'target_users' => $targetUsers,
+            'anchor'=>$anchor,
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
         ]);
@@ -47,12 +48,10 @@ class AnnouncementService
 
     public function getUserAnnouncements(){
         $announcements = Auth::user()->unreadAnnouncements();
-        Log::debug($announcements);
-
         // Collect force announcements
         $forceAnnouncements = [];
         foreach ($announcements as $announcement) {
-            if ($announcement->is_forced === true) {
+            if ($announcement->is_forced == true && $announcement->anchor == null) {
                 $forceAnnouncements[] = $announcement;
             }
         }
@@ -63,6 +62,7 @@ class AnnouncementService
                 'title'=>$ann->title,
                 'type'=>$ann->type,
                 'isForced'=>$ann->is_forced,
+                'anchor'=>$ann->anchor,
                 'expires_at'=>$ann->expires_at
             ];
         });
