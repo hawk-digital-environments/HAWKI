@@ -37,7 +37,6 @@ class LanguageModelListScreen extends Screen
                 ->whereHas('provider', function ($query) {
                     $query->where('provider_settings.is_active', true);
                 })
-                ->where('language_models.is_active', true)
                 ->filters(LanguageModelFiltersLayout::class)
                 ->defaultSort('label')
                 ->paginate(50)

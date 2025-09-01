@@ -45,7 +45,7 @@ class LanguageModelActiveFilter extends Filter
             return $builder;
         }
 
-        return $builder->where('is_active', $isActive === '1');
+        return $builder->where('language_models.is_active', $isActive === '1');
     }
 
     /**
