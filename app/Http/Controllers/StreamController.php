@@ -56,7 +56,6 @@ class StreamController extends Controller
                 'payload.messages.*.role' => 'required|string',
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'required|string',
-                'payload.messages.*.reasoning' => 'nullable|string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
