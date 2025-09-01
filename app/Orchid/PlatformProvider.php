@@ -81,7 +81,10 @@ class PlatformProvider extends OrchidServiceProvider
                         ->icon('bs.info-circle'),
                     Menu::make('Mail')
                         ->route('platform.settings.mail')
-                        ->icon('bs.envelope'),    
+                        ->icon('bs.envelope'),
+                    Menu::make('WebSockets')
+                        ->route('platform.settings.websockets')
+                        ->icon('bs.wifi'),    
                     ]),    
             
             Menu::make('Models')

@@ -29,9 +29,9 @@ return [
     'servers' => [
 
         'reverb' => [
-            'host' => env('REVERB_SERVER_HOST', '0.0.0.0'),
-            'port' => env('REVERB_SERVER_PORT', 8080),
-            'hostname' => env('REVERB_HOST'),
+            'host' => config('reverb.servers.reverb.host', env('REVERB_SERVER_HOST', '0.0.0.0')),
+            'port' => config('reverb.servers.reverb.port', env('REVERB_SERVER_PORT', 8080)),
+            'hostname' => config('reverb.servers.reverb.hostname', env('REVERB_HOST')),
             'options' => [
                 'tls' => [],
 
@@ -78,10 +78,10 @@ return [
                 'secret' => env('REVERB_APP_SECRET'),
                 'app_id' => env('REVERB_APP_ID'),
                 'options' => [
-                    'host' => env('REVERB_HOST'),
-                    'port' => env('REVERB_PORT', 443),
-                    'scheme' => env('REVERB_SCHEME', 'https'),
-                    'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
+                    'host' => config('reverb.client_host', env('REVERB_HOST')),
+                    'port' => config('reverb.client_port', env('REVERB_PORT', 443)),
+                    'scheme' => config('reverb.client_scheme', env('REVERB_SCHEME', 'https')),
+                    'useTLS' => config('reverb.client_scheme', env('REVERB_SCHEME', 'https')) === 'https',
                 ],
                 'allowed_origins' => ['*'],
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),

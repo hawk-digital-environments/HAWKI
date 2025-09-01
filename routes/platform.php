@@ -12,6 +12,7 @@ use App\Orchid\Screens\Settings\StorageSettingsScreen;
 use App\Orchid\Screens\Settings\StylingSettingsScreen;
 use App\Orchid\Screens\Settings\TextsSettingsScreen;
 use App\Orchid\Screens\Settings\MailSettingsScreen;
+use App\Orchid\Screens\Settings\WebSocketSettingsScreen;
 
 use App\Orchid\Screens\ModelSettings\ProviderSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
@@ -124,6 +125,13 @@ Route::screen('/settings/mail', MailSettingsScreen::class)
         return $trail
             ->parent('platform.index')
             ->push('Mail');
+    });
+Route::screen('/settings/websockets', WebSocketSettingsScreen::class)
+    ->name('platform.settings.websockets')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('WebSockets');
     });
 
 // Models - API Management - Providers
