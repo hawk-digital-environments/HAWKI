@@ -244,7 +244,6 @@ class AiConvController extends Controller
 
     public function updateMessage(Request $request, $slug) {
         
-        Log::info("!!!!", $request->all());
         $validatedData = $request->validate([
             'message_id' => 'required|string',
             'content' => 'required|string|max:10000',
@@ -278,14 +277,12 @@ class AiConvController extends Controller
 
         $auxiliaries = [];
         if (isset($validatedData['auxiliaries'])) {
+            // drop previous auxiliaries and recreate them
+            $message->auxiliaries()->delete();
             foreach($validatedData['auxiliaries'] as $auxiliary) {
-                if (!isset($auxiliary['id'])) {
-                    continue;
-                }
-                $aux = $message->auxilaries->where('id', $auxiliary['id'])->first();
-                $aux->update([
+                $aux = AiConvMsgAux::create([
                     'msg_id' => $message->id,
-                    'user_id' => $user->id,
+                    'user_id' => $message->user_id,
                     'iv' => $auxiliary['iv'],
                     'tag' => $auxiliary['tag'],
                     'type' => $auxiliary['type'],
@@ -299,6 +296,7 @@ class AiConvController extends Controller
         $messageData = $message->toArray();
         $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
         $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
+        $messageData['auxiliaries'] = $auxiliaries;
 
         return response()->json([
             'success' => true,
