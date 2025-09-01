@@ -147,7 +147,7 @@ class LdapService
 
             // Single comprehensive LDAP debug log entry (only if logging enabled)
             if ($loggingEnabled) {
-                Log::channel($logChannel)->log($logLevel, 'LDAP Authentication Debug Information', $ldapDebugInfo);
+                Log::channel($logChannel)->log($logLevel, 'LDAP Authentication Debug: ' . $userInfo['username'], $ldapDebugInfo);
             }
             return $userInfo;
         } catch (\Exception $e) {

@@ -21,26 +21,8 @@ class EmployeetypeMappingService
             // Find or create employeetype entry
             $employeetype = Employeetype::findOrCreateForAuth($rawValue, $authMethod);
             
-            // Log the mapping for debugging
-            Log::info('Employeetype mapping processed', [
-                'raw_value' => $rawValue,
-                'auth_method' => $authMethod,
-                'employeetype_id' => $employeetype->id,
-                'display_name' => $employeetype->display_name,
-                'was_created' => $employeetype->wasRecentlyCreated,
-            ]);
-            
             // Get the mapped role or fallback to guest
             $mappedRole = $employeetype->getMappedRoleSlug();
-            
-            // Additional logging for role assignment
-            if ($mappedRole === 'guest' && !$employeetype->primaryRoleAssignment()) {
-                Log::info('No role mapping found for employeetype, using guest fallback', [
-                    'employeetype_id' => $employeetype->id,
-                    'raw_value' => $rawValue,
-                    'auth_method' => $authMethod,
-                ]);
-            }
             
             return $mappedRole;
             
