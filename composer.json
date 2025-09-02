@@ -7,6 +7,8 @@
     "require": {
         "php": "^8.2",
         "ext-openssl": "*",
+        "ext-curl": "*",
+        "ext-zip": "*",
         "blade-ui-kit/blade-icons": "^1.8",
         "blade-ui-kit/blade-ui-kit": "^0.7.0",
         "hawk-hhg/hawki-crypto": "^0.5.2",
