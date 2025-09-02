@@ -99,11 +99,16 @@ class AppSettingsSeeder extends Seeder
             
             // Prüfen, ob der Schlüssel in der geflachten Konfiguration existiert
             if (!array_key_exists($realKey, $flattenedConfig)) {
-                $this->command->warn("Key '{$realKey}' not found in {$configName} configuration");
-                continue;
+                // Versuche mit data_get() für verschachtelte Keys (wie channels.stack.channels)
+                $value = data_get($configData, $realKey);
+                if ($value === null) {
+                    // Key existiert wirklich nicht - überspringen ohne Warnung
+                    // Dies ist normal für optionale oder nicht in allen Umgebungen verfügbare Keys
+                    continue;
+                }
+            } else {
+                $value = $flattenedConfig[$realKey];
             }
-            
-            $value = $flattenedConfig[$realKey];
             
             // Standardwert für authentication_method setzen, wenn null oder leer
             if ($realKey === 'authentication_method' && $configName === 'auth' && (is_null($value) || $value === '')) {
@@ -184,11 +189,9 @@ class AppSettingsSeeder extends Seeder
                 continue;
             }
             
-            if (is_array($value) && !$this->isAssociative($value)) {
-                // Indexierte Arrays als JSON behandeln
-                $result[$newKey] = $value;
-            } elseif (is_array($value) && !empty($value)) {
-                // Assoziative Arrays rekursiv abflachen
+            if (is_array($value) && !empty($value)) {
+                // Alle Arrays rekursiv abflachen, egal ob assoziativ oder indexiert
+                // Dies ermöglicht es, Keys wie "apps.0.options.host" zu verarbeiten
                 $result = array_merge($result, $this->flattenArray($value, $newKey));
             } else {
                 $result[$newKey] = $value;
