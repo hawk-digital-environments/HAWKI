@@ -4,19 +4,16 @@ namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppSetting;
 use App\Models\Log;
+use App\Orchid\Layouts\Settings\DatabaseLogsLayout;
+use App\Orchid\Layouts\Settings\LoggingSettingsLayout;
+use App\Orchid\Layouts\Settings\LogManagementTabMenu;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log as LaravelLog;
 use Orchid\Screen\Actions\Button;
-use Orchid\Screen\Actions\ModalToggle;
 use Orchid\Screen\Fields\Code;
-use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Fields\Label;
-use Orchid\Screen\Fields\TextArea;
-use Orchid\Screen\Layouts\Modal;
 use Orchid\Screen\Screen;
-use Orchid\Screen\TD;
-use Orchid\Support\Color;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
@@ -27,7 +24,7 @@ class LogScreen extends Screen
     /**
      * Fetch data to be displayed on the screen.
      */
-    public function query(Request $request = null): iterable
+    public function query(?Request $request = null): iterable
     {
         $query = Log::with('user');
         
@@ -121,15 +118,15 @@ class LogScreen extends Screen
      */
     public function name(): ?string
     {
-        return 'System Logs';
+        return 'Log Management';
     }
 
     /**
-     * The description is displayed on the user's screen under the heading
+     * Display header description.
      */
     public function description(): ?string
     {
-        return 'Configure logging settings and view system logs';
+        return 'Configure logging settings and view system logs.';
     }
 
     /**
@@ -138,7 +135,7 @@ class LogScreen extends Screen
     public function permission(): ?iterable
     {
         return [
-            //'systems.history'
+            'platform.settings.log',
         ];
     }
 
@@ -147,28 +144,27 @@ class LogScreen extends Screen
      */
     public function commandBar(): iterable
     {
+        $currentRoute = request()->route()->getName();
         $buttons = [];
 
-        // Database Log Actions
-        //Button::make('Test Log')
-        //    ->icon('database')
-        //    ->method('testDatabaseLog'),
+        if ($currentRoute === 'platform.settings.log.configuration') {
+            // Configuration tab buttons
+            $buttons[] = Button::make('Save')
+                ->icon('save')
+                ->method('saveSettings');
+        } else {
+            // System Log tab buttons
+            if (config('app.env') !== 'production') {
+                $buttons[] = Button::make('Clear')
+                    ->icon('trash')
+                    ->method('clearDatabaseLogs')
+                    ->confirm('Are you sure you want to delete all database logs? This action cannot be undone.');
+            }
 
-        // "Clear" Button nur anzeigen, wenn nicht production
-        if (config('app.env') !== 'production') {
-            $buttons[] = Button::make('Clear')
-                ->icon('trash')
-                ->method('clearDatabaseLogs')
-                ->confirm('Are you sure you want to delete all database logs? This action cannot be undone.');
+            $buttons[] = Button::make('Refresh')
+                ->icon('arrow-clockwise')
+                ->method('refreshLog');
         }
-
-        // General Actions
-        $buttons[] = Button::make('Refresh')
-            ->icon('arrow-clockwise')
-            ->method('refreshLog');
-        $buttons[] = Button::make('Save')
-            ->icon('save')
-            ->method('saveSettings');
 
         return $buttons;
     }
@@ -178,17 +174,21 @@ class LogScreen extends Screen
      */
     public function layout(): iterable
     {
-        $loggingConfigLayout = $this->buildLoggingSettingsLayout();
-        $databaseLogsLayout = $this->buildDatabaseLogsLayout();
-
-        return [
-            Layout::tabs([
-                'System Log' => $databaseLogsLayout,
-                'Configuration' => $loggingConfigLayout,
-            ]),
-
-            // Modal for showing context details
-            Layout::modal('showContext', [
+        $currentRoute = request()->route()->getName();
+        
+        $layouts = [
+            LogManagementTabMenu::class,
+        ];
+        
+        if ($currentRoute === 'platform.settings.log.configuration') {
+            $layouts[] = LoggingSettingsLayout::class;
+        } else {
+            $layouts[] = DatabaseLogsLayout::class;
+        }
+        
+        // Modal for showing context details (only for System Log tab)
+        if ($currentRoute !== 'platform.settings.log.configuration') {
+            $layouts[] = Layout::modal('showContext', [
                 // Content Details (full width)
                 Layout::rows([
                     Label::make('message')
@@ -243,103 +243,13 @@ class LogScreen extends Screen
 
             ])
                 ->title('Log Details')
-                ->size(Modal::SIZE_XL)
+                ->size(\Orchid\Screen\Layouts\Modal::SIZE_XL)
                 ->withoutApplyButton()
                 ->withoutCloseButton()
-                ->deferred('showContext'),
-        ];
-    }
-
-    /**
-     * Build layout for logging settings
-     */
-    private function buildLoggingSettingsLayout()
-    {
-        $fields = [];
-
-        foreach ($this->query()['logging_settings'] as $setting) {
-            $fields[] = $this->generateFieldForSetting($setting);
+                ->deferred('showContext');
         }
-
-        return Layout::rows($fields);
-    }
-
-    /**
-     * Build layout for database logs display
-     */
-    private function buildDatabaseLogsLayout()
-    {
-        return Layout::table('database_logs', [
-            TD::make('channel', 'Channel')
-                ->width('120px')
-                ->sort()
-                ->filter(TD::FILTER_TEXT)
-                ->render(function ($log) {
-                    $colors = [
-                        'single' => 'badge bg-primary',
-                        'daily' => 'badge bg-info',
-                        'stack' => 'badge bg-secondary',
-                        'database' => 'badge bg-success',
-                        'slack' => 'badge bg-dark',
-                        'stderr' => 'badge bg-warning',
-                        'errorlog' => 'badge bg-danger',
-                    ];
-                    $class = $colors[$log->channel] ?? 'badge bg-light text-dark';
-                    return "<span class='{$class}'>{$log->channel}</span>";
-                }),
-            TD::make('level', 'Level')
-                ->width('80px')
-                ->sort()
-                ->filter(TD::FILTER_SELECT, [
-                    'debug' => 'Debug',
-                    'info' => 'Info',
-                    'warning' => 'Warning',
-                    'error' => 'Error',
-                    'critical' => 'Critical',
-                ])
-                ->render(function ($log) {
-                    $colors = [
-                        'debug' => 'text-muted',
-                        'info' => 'text-info',
-                        'warning' => 'text-warning', 
-                        'error' => 'text-danger',
-                        'critical' => 'text-danger bg-danger-subtle'
-                    ];
-                    $class = $colors[$log->level] ?? 'text-dark';
-                    return "<span class='{$class}'>" . strtoupper($log->level) . "</span>";
-                }),
-            TD::make('message', 'Message')
-                ->width('400px')
-                ->sort()
-                ->filter(TD::FILTER_TEXT)
-                ->render(function ($log) {
-                    $messagePreview = \Str::limit($log->message, 100);
-                    
-                    return ModalToggle::make($messagePreview)
-                        ->modal('showContext')
-                        ->modalTitle('Log Details')
-                        ->method('showContext')
-                        ->asyncParameters([
-                            'log_id' => $log->id
-                        ])
-                        ->class('btn btn-link btn-sm p-0 text-start text-decoration-none')
-                        ->style('white-space: normal; word-wrap: break-word;');
-                }),
-            TD::make('logged_at', 'Time')
-                ->width('150px')
-                ->sort()
-                //->filter(TD::FILTER_DATE)
-                ->render(function ($log) {
-                    return "<small>" . $log->logged_at->format('Y-m-d H:i:s') . "</small>";
-                }),
-            TD::make('user.name', 'User')
-                ->width('120px')
-                ->sort()
-                ->filter(TD::FILTER_TEXT)
-                ->render(function ($log) {
-                    return $log->user ? "<small>{$log->user->name}</small>" : '<small class="text-muted">System</small>';
-                }),
-        ]);
+        
+        return $layouts;
     }
 
     /**

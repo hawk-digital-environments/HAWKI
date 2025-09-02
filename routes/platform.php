@@ -89,49 +89,70 @@ Route::screen('/settings/system', SystemSettingsScreen::class)
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('System');
+            ->push('Settings', '#')
+            ->push('System', route('platform.settings.system'));
     });
-Route::screen('/settings/log', LogScreen::class)
-    ->name('platform.settings.log')
+// Settings - Log Management
+Route::redirect('/settings/log', '/settings/log/system');
+
+Route::screen('/settings/log/system', LogScreen::class)
+    ->name('platform.settings.log.system')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Log');
+            ->push('Settings', '#')
+            ->push('Log Management', '#')
+            ->push('System Log', route('platform.settings.log.system'));
+    });
+
+Route::screen('/settings/log/configuration', LogScreen::class)
+    ->name('platform.settings.log.configuration')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Settings', '#')
+            ->push('Log Management', '#')
+            ->push('Configuration', route('platform.settings.log.configuration'));
     });
 Route::screen('/settings/storage', StorageSettingsScreen::class)
     ->name('platform.settings.storage')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Storage');
+            ->push('Settings', '#')
+            ->push('Storage', route('platform.settings.storage'));
     });
 Route::screen('/settings/styling', StylingSettingsScreen::class)
     ->name('platform.settings.styling')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Styling');
+            ->push('Settings', '#')
+            ->push('Styling', route('platform.settings.styling'));
     });
 Route::screen('/settings/texts', TextsSettingsScreen::class)
     ->name('platform.settings.texts')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Texts');
+            ->push('Settings', '#')
+            ->push('Texts', route('platform.settings.texts'));
     });
 Route::screen('/settings/mail', MailSettingsScreen::class)
     ->name('platform.settings.mail')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Mail');
+            ->push('Settings', '#')
+            ->push('Mail', route('platform.settings.mail'));
     });
 Route::screen('/settings/websockets', WebSocketSettingsScreen::class)
     ->name('platform.settings.websockets')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('WebSockets');
+            ->push('Settings', '#')
+            ->push('WebSockets', route('platform.settings.websockets'));
     });
 
 // Models - API Management - Providers

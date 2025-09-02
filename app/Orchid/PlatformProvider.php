@@ -63,28 +63,36 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('bs.house-gear')
                 ->permission('platform.systems.settings')
                 ->badge(fn () => $this->getHawkiCommitId(), Color::DARK)
+                ->active('platform.settings.*')
                 ->list([
                     Menu::make('Settings')
                         ->route('platform.settings.system')
-                        ->icon('bs.gear'),
-                    Menu::make('Log')
-                        ->route('platform.settings.log')
-                        ->icon('bs.journal-code'),    
+                        ->icon('bs.gear')
+                        ->active('platform.settings.system*'),
+                    Menu::make('Log Management')
+                        ->route('platform.settings.log.system')
+                        ->icon('bs.journal-code')
+                        ->active('platform.settings.log*'),    
                     //Menu::make('Storage')
                     //    ->route('platform.settings.storage')
-                    //    ->icon('bs.database'),     
+                    //    ->icon('bs.database')
+                    //    ->active('platform.settings.storage*'),     
                     Menu::make('Styling')
                         ->route('platform.settings.styling')
-                        ->icon('bs.paint-bucket'),       
+                        ->icon('bs.paint-bucket')
+                        ->active('platform.settings.styling*'),       
                     Menu::make('Texts')
                         ->route('platform.settings.texts')
-                        ->icon('bs.info-circle'),
+                        ->icon('bs.info-circle')
+                        ->active('platform.settings.texts*'),
                     Menu::make('Mail')
                         ->route('platform.settings.mail')
-                        ->icon('bs.envelope'),
+                        ->icon('bs.envelope')
+                        ->active('platform.settings.mail*'),
                     Menu::make('WebSockets')
                         ->route('platform.settings.websockets')
-                        ->icon('bs.wifi'),
+                        ->icon('bs.wifi')
+                        ->active('platform.settings.websockets*'),
                     ]),    
             
             Menu::make('Models')
@@ -180,6 +188,7 @@ class PlatformProvider extends OrchidServiceProvider
         return [
             ItemPermission::group(__('Main'))
                 ->addPermission('platform.systems.settings', __('System Settings'))
+                ->addPermission('platform.settings.log', __('Log Management'))
                 ->addPermission('platform.systems.models', __('Model Settings')),
                 
             ItemPermission::group(__('Model Settings'))
