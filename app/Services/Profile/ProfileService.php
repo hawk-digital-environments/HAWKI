@@ -19,9 +19,6 @@ use App\Services\Profile\Traits\ApiTokenHandler;
 
 class ProfileService{
 
-    use PasskeyHandler;
-    use ApiTokenHandler;
-
     public function __construct(
         private AvatarStorageService $avatarStorage
     ) {}

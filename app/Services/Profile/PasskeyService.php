@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Profile\Traits;
+namespace App\Services\Profile;
 
 use App\Models\PasskeyBackup;
 use Illuminate\Support\Facades\Auth;
@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
 
 
-trait PasskeyHandler
+class PasskeyService
 {
 
     public function backupPassKey(array $data){
