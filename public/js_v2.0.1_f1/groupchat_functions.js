@@ -105,7 +105,7 @@ async function onSendMessageToRoom(inputField) {
     // Send message to server and get response with message ID
     const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`)
     submittedObj.content.text = inputText;
-    submittedObj.filteredContent = detectMentioning(inputText),
+    submittedObj.filteredContent = detectMentioning(inputText);
 
     // empty input field
     inputField.value = "";
@@ -1017,11 +1017,11 @@ async function loadRoom(btn=null, slug=null){
     for (const msgData of roomData.messagesData) {
         const key = msgData.message_role === 'assistant' ? aiKey : roomKey;
         try {
-            msgData.content = await decryptWithSymKey(key, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
+            msgData.content.text = await decryptWithSymKey(key, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
         } catch (error) {
             if (msgData.message_role === 'assistant') {
                 // If decryption fails for AI messages, try legacy key
-                msgData.content = await decryptWithSymKey(legacyAiKey, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
+                msgData.content.text = await decryptWithSymKey(legacyAiKey, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
             } else {
                 throw error;
             }
