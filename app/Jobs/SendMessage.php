@@ -21,15 +21,15 @@ class SendMessage implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
 
-    private Message $message;
+    private array $data;
     private bool $isUpdate;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(Message $message, bool $isUpdate = false)
+    public function __construct(array $data, bool $isUpdate = false)
     {
-        $this->message = $message;
+        $this->data = $data;
         $this->isUpdate = $isUpdate;
 
     }
@@ -39,40 +39,15 @@ class SendMessage implements ShouldQueue
      */
     public function handle(): void
     {
-        $member = Member::findOrFail($this->message->member_id);
-
         $type = $this->isUpdate ? "messageUpdate" : "message";
-        $messageData = [
-            'room_id' => $this->message->room_id,
-            'member_id' => $this->message->member_id,
-            'author' => [
-                'username' => $member->user->username,
-                'name' => $member->user->name,
-                'isRemoved' => $member->isRemoved,
-                'avatar_url' => $member->user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $member->user->avatar_id) : null,
-            ],
-            'model' => $this->message->model,
-            'message_role' => $this->message->message_role,
-            'message_id' => $this->message->message_id,
-            'iv' => $this->message->iv,
-            'tag' => $this->message->tag,
-            'content' => [
-                'text'=>[
-                    'ciphertext' => $this->message->content,
-                    'iv' => $this->message->iv,
-                    'tag' => $this->message->tag,
-                ],
-            ],
-            'read_status'=> false,
-
-            'created_at' => $this->message->created_at->format('Y-m-d+H:i'),
-            'updated_at' => $this->message->updated_at->format('Y-m-d+H:i'),
-        ];
-        $boradcastObject = [
+        $boradcastPacket = [
             'type' => $type,
-            'messageData' => $messageData
+            'data' => [
+                'slug' => $this->data['slug'],
+                'message_id' => $this->data['message_id']
+            ]
         ];
 
-        broadcast(new RoomMessageEvent($boradcastObject));
+        broadcast(new RoomMessageEvent($boradcastPacket));
     }
 }

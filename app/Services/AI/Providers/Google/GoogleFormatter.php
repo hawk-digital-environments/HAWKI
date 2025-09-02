@@ -101,7 +101,6 @@ class GoogleFormatter implements FormatterInterface
                 ]
             ];
         }
-        Log::debug($payload);
         return $payload;
     }
 
