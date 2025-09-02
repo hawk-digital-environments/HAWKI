@@ -816,6 +816,24 @@ trait OrchidSettingsManagementTrait
             ->widthColumns('1fr 1fr');
         }
 
+        // Special handling for WebSocket scheme (HTTP/HTTPS)
+        if (str_contains($key, 'scheme') && str_contains($key, 'reverb')) {
+            return \Orchid\Screen\Fields\Group::make([
+                \Orchid\Screen\Fields\Label::make("label_{$key}")
+                    ->title($setting->description)
+                    ->help($displayKey)
+                    ->addclass('fw-bold'),
+                \Orchid\Screen\Fields\Select::make($inputName)
+                    ->options([
+                        'https' => 'HTTPS (Secure)',
+                        'http' => 'HTTP (Insecure)',
+                    ])
+                    ->value($setting->value),
+            ])
+            ->alignCenter()
+            ->widthColumns('1fr 1fr');
+        }
+
         // Special handling for transport type
         if (str_contains($key, 'transport')) {
             return \Orchid\Screen\Fields\Group::make([

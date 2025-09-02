@@ -5,14 +5,13 @@ namespace App\Orchid\Screens\Settings;
 use App\Models\AppSetting;
 use App\Services\SettingsService;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
+use App\Orchid\Layouts\System\ReverbClientLayout;
+use App\Orchid\Layouts\System\ReverbServerLayout;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
-use Orchid\Screen\Fields\Group;
-use Orchid\Screen\Fields\Input;
-use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Screen;
 
 use Orchid\Support\Facades\Layout;
@@ -42,8 +41,19 @@ class WebSocketSettingsScreen extends Screen
      */
     public function query(): iterable
     {
+        $settings = AppSetting::where('group', 'websockets')->get();
+        $settingsData = [];
+
+        // Convert database settings to flat input format for form fields
+        foreach ($settings as $setting) {
+            $flatKey = $this->convertDbKeyToFlatInputName($setting->key);
+            // Remove the 'settings.' prefix from the flat key for the array key
+            $arrayKey = str_replace('settings.', '', $flatKey);
+            $settingsData[$arrayKey] = $setting->value;
+        }
+
         return [
-            'settings' => AppSetting::where('group', 'websockets')->get(),
+            'settings' => $settingsData,
         ];
     }
 
@@ -75,8 +85,8 @@ class WebSocketSettingsScreen extends Screen
     public function commandBar(): iterable
     {
         return [
-            Button::make('Save Settings')
-                ->icon('check')
+            Button::make('Save')
+                ->icon('bs.check-circle')
                 ->method('saveSettings')
                 ->canSee($this->hasPermission()),
         ];
@@ -89,75 +99,19 @@ class WebSocketSettingsScreen extends Screen
      */
     public function layout(): iterable
     {
-        $settings = AppSetting::where('group', 'websockets')->get();
-        $fields = [];
+        return [
+            Layout::block([
+                ReverbClientLayout::class,
+            ])
+                ->title('Client Configuration')
+                ->description('Settings for WebSocket client connections from the frontend.'),
 
-        // Server Configuration Section
-        $fields[] = Layout::rows([
-            Group::make([
-                Input::make('settings.reverb_servers_reverb_host')
-                    ->title('Server Host')
-                    ->help('IP address the Reverb server should bind to (0.0.0.0 for all interfaces)')
-                    ->value($this->getSettingValue($settings, 'reverb_servers_reverb_host'))
-                    ->placeholder('0.0.0.0'),
-
-                Input::make('settings.reverb_servers_reverb_port')
-                    ->title('Server Port')
-                    ->type('number')
-                    ->help('Port the Reverb server should listen on')
-                    ->value($this->getSettingValue($settings, 'reverb_servers_reverb_port'))
-                    ->placeholder('8080'),
-            ]),
-
-            Input::make('settings.reverb_servers_reverb_hostname')
-                ->title('Server Hostname')
-                ->help('Hostname for internal server operations')
-                ->value($this->getSettingValue($settings, 'reverb_servers_reverb_hostname'))
-                ->placeholder('localhost'),
-        ])->title('Server Configuration');
-
-        // Client Configuration Section
-        $fields[] = Layout::rows([
-            Group::make([
-                Input::make('settings.reverb_apps_apps_0_options_host')
-                    ->title('Client Host')
-                    ->help('Hostname clients should connect to for WebSocket connections')
-                    ->value($this->getSettingValue($settings, 'reverb_apps_apps_0_options_host'))
-                    ->placeholder('your-domain.com'),
-
-                Input::make('settings.reverb_apps_apps_0_options_port')
-                    ->title('Client Port')
-                    ->type('number')
-                    ->help('Port clients should connect to (443 for HTTPS, 80 for HTTP)')
-                    ->value($this->getSettingValue($settings, 'reverb_apps_apps_0_options_port'))
-                    ->placeholder('443'),
-            ]),
-
-            Select::make('settings.reverb_apps_apps_0_options_scheme')
-                ->title('Protocol Scheme')
-                ->help('Protocol scheme for client connections')
-                ->options([
-                    'https' => 'HTTPS (Secure)',
-                    'http' => 'HTTP (Insecure)',
-                ])
-                ->value($this->getSettingValue($settings, 'reverb_apps_apps_0_options_scheme'))
-                ->empty('Select scheme'),
-        ])->title('Client Configuration');
-
-        return $fields;
-    }
-
-    /**
-     * Get the value of a setting by key
-     *
-     * @param \Illuminate\Support\Collection $settings
-     * @param string $key
-     * @return mixed
-     */
-    private function getSettingValue($settings, string $key)
-    {
-        $setting = $settings->firstWhere('key', $key);
-        return $setting ? $setting->value : null;
+            Layout::block([
+                ReverbServerLayout::class,
+            ])
+                ->title('Server Configuration')
+                ->description('Settings for the Reverb WebSocket server instance.'),
+        ];
     }
 
     /**
