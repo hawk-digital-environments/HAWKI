@@ -6,16 +6,16 @@ namespace App\Http\Controllers;
 use App\Events\PrivateUserDataCreateEvent;
 use App\Models\PrivateUserData;
 use App\Models\User;
+use App\Services\Announcements\AnnouncementService;
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
+use App\Services\System\SettingsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
-use App\Services\Announcements\AnnouncementService;
-use App\Services\System\SettingsService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 
 
@@ -254,10 +254,13 @@ class AuthenticationController extends Controller
                     'isRemoved' => false
                 ]
             );
-
-            $policy = $announcementService->fetchLatestPolicy();
-            $announcementService->markAnnouncementAsSeen($user, $policy->id);
-            $announcementService->markAnnouncementAsAccepted($user, $policy->id);
+            
+            try {
+                $policy = $announcementService->fetchLatestPolicy();
+                $announcementService->markAnnouncementAsSeen($user, $policy->id);
+                $announcementService->markAnnouncementAsAccepted($user, $policy->id);
+            } catch (\Throwable) {
+            }
 
             // Update or create the Private User Data
             $data = PrivateUserData::create(

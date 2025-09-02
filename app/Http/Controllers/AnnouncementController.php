@@ -3,12 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Services\Announcements\AnnouncementService;
-use Dotenv\Exception\ValidationException;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-
-use Illuminate\Support\Facades\Log;
 
 class AnnouncementController extends Controller
 {
@@ -67,15 +64,21 @@ class AnnouncementController extends Controller
 
 
     public function fetchLatestPolicy(){
-
-        $announcement = $this->announcementService->fetchLatestPolicy();
-        $view = $this->announcementService->renderAnnouncement($announcement);
-        return response()->json([
-            'success'=>true,
-            'announcement'=>$announcement,
-            'view'=>$view
-        ]);
-
+        
+        try {
+            $announcement = $this->announcementService->fetchLatestPolicy();
+            $view = $this->announcementService->renderAnnouncement($announcement);
+            return response()->json([
+                'success' => true,
+                'announcement' => $announcement,
+                'view' => $view
+            ]);
+        } catch (\Throwable) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch latest policy'
+            ], 404);
+        }
     }
 
 }

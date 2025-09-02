@@ -20,7 +20,14 @@
 <script>
 window.addEventListener('DOMContentLoaded', async () => {
     // Assume fetchLatestPolicy() returns an object {view, announcement}
-    const {view, announcement} = await fetchLatestPolicy();
+    const res = await fetchLatestPolicy();
+    if (res === null) {
+        console.error('Failed to fetch the latest policy.');
+        const el = document.querySelector('#confirmBtn');
+        el && modalClick(el);
+        return;
+    }
+    const {view, announcement} = res;
 
     // Render the HTML (MD rendered to HTML string)
     const renderedHtml = md.render(view, false);

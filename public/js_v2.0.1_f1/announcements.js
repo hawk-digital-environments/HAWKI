@@ -218,6 +218,9 @@ async function fetchLatestPolicy() {
                 'Content-Type': 'application/json'
             },
         });
+        if (!response.ok) {
+            return null;
+        }
         const data = await response.json();
         if (data.success) {
             return {
