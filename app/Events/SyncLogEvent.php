@@ -17,6 +17,11 @@ readonly class SyncLogEvent implements ShouldBroadcast
     public function __construct(protected SyncLogEntryResource $entry)
     {
     }
+    
+    public function broadcastQueue(): string
+    {
+        return 'sync';
+    }
 
     public function broadcastWith(): array
     {

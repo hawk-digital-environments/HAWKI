@@ -7,6 +7,8 @@ namespace App\Services\SyncLog\Handlers;
 
 use App\Models\Room;
 use App\Models\User;
+use App\Services\SyncLog\Transient\TransientDataModel;
+use App\Services\SyncLog\Transient\TransientDataResource;
 use App\Services\SyncLog\Value\SyncLogEntryActionEnum;
 use App\Services\SyncLog\Value\SyncLogEntryConstraints;
 use App\Services\SyncLog\Value\SyncLogPayload;
@@ -47,7 +49,7 @@ abstract class AbstractTransientSyncLogHandler implements SyncLogHandlerInterfac
     ): SyncLogPayload
     {
         return $this->createPayload(
-            $this->createDummyModel($payload),
+            new TransientDataModel($payload),
             SyncLogEntryActionEnum::SET,
             $audience,
             $room
@@ -75,7 +77,7 @@ abstract class AbstractTransientSyncLogHandler implements SyncLogHandlerInterfac
     ): SyncLogPayload
     {
         return $this->createPayload(
-            $this->createDummyModel($payload ?? []),
+            new TransientDataModel($payload ?? []),
             SyncLogEntryActionEnum::REMOVE,
             $audience,
             $room
@@ -87,15 +89,7 @@ abstract class AbstractTransientSyncLogHandler implements SyncLogHandlerInterfac
      */
     final public function convertModelToResource(Model $model): JsonResource
     {
-        /**
-         * @see AbstractTransientSyncLogHandler::createDummyModel() for the model structure
-         */
-        return new class($model) extends JsonResource {
-            public function toArray($request): array
-            {
-                return $this->resource->getPayload();
-            }
-        };
+        return new TransientDataResource($model);
     }
     
     /**
@@ -128,30 +122,5 @@ abstract class AbstractTransientSyncLogHandler implements SyncLogHandlerInterfac
     final public function findModelsForFullSync(SyncLogEntryConstraints $constraints): Collection
     {
         return collect(); // Not available for transient data
-    }
-    
-    /**
-     * Builds a dummy model that is used to pass the payload along to the {@see self::convertModelToResource()} method.
-     * Yes, this is a bit of a hack, go on, judge me 😎
-     * @param array $payload
-     * @return Model
-     */
-    private function createDummyModel(array $payload): Model
-    {
-        $model = new class() extends Model {
-            protected array $payload;
-            
-            public function getPayload(): array
-            {
-                return $this->payload;
-            }
-            
-            public function setPayload(array $payload): void
-            {
-                $this->payload = $payload;
-            }
-        };
-        $model->setPayload($payload);
-        return $model;
     }
 }

@@ -42,7 +42,7 @@ class ExtAppController extends Controller
         $externalId = $this->resolveExtUserIdOrFail($request);
         $appUser = $this->resolveAppUserOrFail($app, $externalId);
         
-        return $connectionFactory->create($app, $appUser);
+        return $connectionFactory->create($appUser);
     }
     
     public function createConnection(

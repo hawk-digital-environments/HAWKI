@@ -35,6 +35,7 @@ class MessageResource extends JsonResource
                 $this->resource->tag,
                 $this->resource->content
             ),
+            'attachments' => AttachmentResource::collection($this->resource->attachments),
             'created_at' => $this->resource->created_at,
             'updated_at' => $this->resource->updated_at,
         ];

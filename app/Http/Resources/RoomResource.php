@@ -3,8 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Room;
-use App\Services\File\PublicStoragePaths;
-use Illuminate\Container\Container;
+use App\Services\Storage\AvatarStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,11 +21,11 @@ class RoomResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $storagePaths = Container::getInstance()->get(PublicStoragePaths::class);
+        $avatarStorage = app(AvatarStorageService::class);
         return [
             'id' => $this->resource->id,
             'name' => $this->resource->room_name,
-            'room_icon' => $storagePaths->getRoomAvatarPath($this->resource),
+            'room_icon' => $avatarStorage->getFileUrl('room_avatars', $this->resource->slug, $this->resource->room_icon),
             'slug' => $this->resource->slug,
             'system_prompt' => $this->resource->system_prompt,
             'room_description' => $this->resource->room_description,

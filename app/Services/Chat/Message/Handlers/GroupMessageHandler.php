@@ -3,16 +3,11 @@
 
 namespace App\Services\Chat\Message\Handlers;
 
-use App\Models\AiConvMsg;
-use App\Models\Room;
-use App\Models\User;
-use App\Models\Member;
+use App\Events\MessageSentEvent;
+use App\Events\MessageUpdateEvent;
 use App\Models\Message;
-
-use App\Services\Chat\Attachment\AttachmentService;
-
+use App\Models\Room;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 
 class GroupMessageHandler extends BaseMessageHandler{
@@ -25,12 +20,14 @@ class GroupMessageHandler extends BaseMessageHandler{
 
         $messageRole = 'user';
         $nextMessageId = $this->assignID($room, $data['threadID']);
+        
         $message = Message::create([
             'room_id' => $room->id,
             'member_id' => $member->id,
             'user_id' => Auth::id(),
             'message_id' => $nextMessageId,
             'message_role' => $messageRole,
+            'thread_id' => 0, // @todo This must be fixed!
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
@@ -46,6 +43,8 @@ class GroupMessageHandler extends BaseMessageHandler{
                 }
             }
         }
+        
+        MessageSentEvent::dispatch($message);
 
         return $message;
     }
@@ -59,14 +58,16 @@ class GroupMessageHandler extends BaseMessageHandler{
         if(!$room || !$member){
             return null;
         }
-
-        $message = $room->messages->where('message_id', $data['message_id'])->first();
+        
+        $message = $room->messages->where('message_id', $data['message_id'])->firstOrFail();
 
         $message->update([
             'content' => $data['content'],
             'iv' => $data['iv'],
             'tag' => $data['tag']
         ]);
+        
+        MessageUpdateEvent::dispatch($message);
 
         return $message;
     }

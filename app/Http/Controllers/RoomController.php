@@ -3,18 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
-
+use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Chat\Message\MessageContentValidator;
+use App\Services\Chat\Room\RoomService;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
-use App\Services\Chat\Room\RoomService;
-
-use App\Services\Chat\Message\MessageContentValidator;
-use App\Services\Chat\Attachment\AttachmentService;
-
-use Exception;
-use Illuminate\Auth\Access\AuthorizationException;
 
 class RoomController extends Controller
 {
@@ -133,6 +129,7 @@ class RoomController extends Controller
         $validatedData = $request->validate([
             'content' => 'required|array',
             'threadID' => 'required|integer',
+            'thread_id_version' => 'nullable|int|in:1,2',
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
 
