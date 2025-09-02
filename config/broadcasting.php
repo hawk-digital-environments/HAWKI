@@ -43,6 +43,10 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                'curl' => [
+                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_0,
+                ],
+                'timeout' => 30,
                 'tls' => [
                     'local_cert' => env('SSL_CERTIFICATE'),
                     'local_pk' => env('SSL_CERTIFICATE_KEY'),
