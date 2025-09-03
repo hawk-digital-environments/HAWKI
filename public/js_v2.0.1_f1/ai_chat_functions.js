@@ -183,14 +183,31 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             formatMathFormulas(msgTxtElement);
             formatHljs(messageElement);
 
+            // If streaming is done, reprocess the complete message with formatMessage
+            if(data.isDone && messageElement.classList.contains('AI')){
+                const fullMessageText = msg; // Complete accumulated message
+                const fullFormattedContent = formatMessage(fullMessageText, metadata);
+                msgTxtElement.innerHTML = fullFormattedContent;
+                formatMathFormulas(msgTxtElement);
+                formatHljs(messageElement);
+                
+                // Activate citations for the complete message
+                if(typeof activateCitations === 'function'){
+                    activateCitations(messageElement);
+                }
+            }
+
             if (groundingMetadata && 
                 groundingMetadata != '' && 
                 groundingMetadata.searchEntryPoint && 
                 groundingMetadata.searchEntryPoint.renderedContent) {
     
                 addGoogleRenderedContent(messageElement, groundingMetadata);
-            }
-            else{
+                // Activate citations after Google content is added during streaming
+                if(typeof activateCitations === 'function'){
+                    activateCitations(messageElement);
+                }
+            } else {
                 if(messageElement.querySelector('.google-search')){
                     messageElement.querySelector('.google-search').remove();
                 }

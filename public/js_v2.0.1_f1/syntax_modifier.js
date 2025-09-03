@@ -349,16 +349,19 @@ function formatGoogleCitations(content, groundingMetadata = '') {
     let sourcesMarkdown = '';
 
     if (groundingMetadata?.groundingChunks?.length) {
-        sourcesMarkdown = `\n\n### Search Sources:\n`;
+        // Check if sources are already in the content to avoid duplication during streaming
+        if (!processedContent.includes('### Search Sources:')) {
+            sourcesMarkdown = `\n\n### Search Sources:\n`;
 
-        groundingMetadata.groundingChunks.forEach((chunk, index) => {
-            if (chunk.web?.uri && chunk.web?.title) {
-                sourcesMarkdown += `${index + 1}. <a href="${chunk.web.uri}" target="_blank" class="source-link" data-source-id="${index + 1}">${chunk.web.title}</a>\n`;
+            groundingMetadata.groundingChunks.forEach((chunk, index) => {
+                if (chunk.web?.uri && chunk.web?.title) {
+                    sourcesMarkdown += `${index + 1}. <a href="${chunk.web.uri}" target="_blank" class="source-link" data-source-id="${index + 1}">${chunk.web.title}</a>\n`;
+                }
+            });
+
+            if (sourcesMarkdown !== '\n\n### Search Sources:\n') {
+                processedContent += sourcesMarkdown;
             }
-        });
-
-        if (sourcesMarkdown !== '\n\n### Search Sources:\n') {
-            processedContent += sourcesMarkdown;
         }
     }
 

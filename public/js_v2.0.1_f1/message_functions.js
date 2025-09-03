@@ -147,6 +147,10 @@ function addMessageToChatlog(messageObj, isFromServer = false){
             groundingMetadata.searchEntryPoint.renderedContent) {
 
             addGoogleRenderedContent(messageElement, groundingMetadata);
+            // Activate citations after Google content is added
+            if(typeof activateCitations === 'function'){
+                activateCitations(messageElement);
+            }
         }
         else{
             if(messageElement.querySelector('.google-search')){
@@ -261,6 +265,10 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
                 groundingMetadata.searchEntryPoint.renderedContent) {
     
                 addGoogleRenderedContent(messageElement, groundingMetadata);
+                // Activate citations again after Google content is added
+                if(typeof activateCitations === 'function'){
+                    activateCitations(messageElement);
+                }
             }
             else{
                 if(messageElement.querySelector('.google-search')){
@@ -281,6 +289,26 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             }
         }
 
+    }
+
+    // For existing messages (updateContent = false), also check for Google content and activate citations
+    if(!updateContent && messageElement.classList.contains('AI')){
+        const {messageText, groundingMetadata} = deconstContent(messageObj.content);
+        
+        // Check if Google content should be added but isn't already there
+        if (groundingMetadata && 
+            groundingMetadata != '' && 
+            groundingMetadata.searchEntryPoint && 
+            groundingMetadata.searchEntryPoint.renderedContent &&
+            !messageElement.querySelector('.google-search')) {
+
+            addGoogleRenderedContent(messageElement, groundingMetadata);
+        }
+        
+        // Always activate citations for AI messages with existing content
+        if(typeof activateCitations === 'function'){
+            activateCitations(messageElement);
+        }
     }
 
 
