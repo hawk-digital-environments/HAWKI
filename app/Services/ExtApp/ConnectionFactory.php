@@ -43,8 +43,9 @@ readonly class ConnectionFactory
                 'email' => $user->user->email,
             ],
             userSecrets: [
-                'user_public_key' => (string)$user->user_public_key,
-                'api_token' => (string)$user->api_token,
+                'passkey' => $user->passkey,
+                'api_token' => $user->api_token,
+                'private_key' => $user->user_private_key,
                 'keychain' => $this->keychainDb->findByUser($user->user),
             ],
         );

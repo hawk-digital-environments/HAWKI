@@ -25,7 +25,7 @@ readonly class AppUserDb
     ): ExtAppUser
     {
         return ExtAppUser::create([
-            'app_id' => $appId,
+            'ext_app_id' => $appId,
             'user_id' => $userId,
             'passkey' => $passkey,
             'user_public_key' => $publicKey,
@@ -42,7 +42,7 @@ readonly class AppUserDb
     public function findByExternalId(ExtApp $app, string $externalId): ?ExtAppUser
     {
         return ExtAppUser::query()
-            ->where('app_id', $app->id)
+            ->where('ext_app_id', $app->id)
             ->where('ext_user_id', $externalId)
             ->first();
     }

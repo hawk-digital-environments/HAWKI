@@ -33,10 +33,10 @@ readonly class AppUserRequestDb
     ): ExtAppUserRequest
     {
         return ExtAppUserRequest::create([
-            'app_id' => $appId,
+            'ext_app_id' => $appId,
             'ext_user_id' => $extUserId,
-            'user_public_key' => (string)$publicKey,
-            'user_private_key' => (string)$privateKey,
+            'user_public_key' => $publicKey,
+            'user_private_key' => $privateKey,
             'request_id' => $requestId,
             'valid_until' => $validUntil
         ]);

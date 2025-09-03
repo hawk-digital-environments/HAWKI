@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\AiConvController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AuthenticationController;
@@ -11,14 +9,15 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
-use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
 
 
 Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
-
-    Route::get('/', [LoginController::class, 'index']);
+    
+    Route::get('/', [LoginController::class, 'index'])->name('login');
 
     Route::get('/login', [LoginController::class, 'index']);
     Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
@@ -55,33 +54,23 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
 
     //CHECKS USERS AUTH
     Route::middleware(['auth', 'expiry_check'])->group(function () {
-
         Route::get('/handshake', [AuthenticationController::class, 'handshake']);
         
-        Route::middleware(['handle_app_connect'])->group(function () {
-            // AI CONVERSATION ROUTES
-            Route::get('/chat', [HomeController::class, 'show']);
-            Route::get('/chat/{slug?}', [HomeController::class, 'show']);
-            
-            // GROUPCHAT ROUTES
-            Route::get('/groupchat', [HomeController::class, 'show']);
-            Route::get('/groupchat/{slug?}', [HomeController::class, 'show']);
-            
-            // Profile
-            Route::get('/profile', [HomeController::class, 'show']);
-        });
-        
         // AI CONVERSATION ROUTES
-        Route::get('/chat', [HomeController::class, 'index']);
-        Route::get('/groupchat', [HomeController::class, 'index']);
+        Route::get('/chat', [HomeController::class, 'index'])
+            ->middleware('handle_app_connect');
+        Route::get('/groupchat', [HomeController::class, 'index'])
+            ->middleware('handle_app_connect');
 
 
 
         Route::middleware('signature_check')->group(function(){
-
-            Route::get('/chat/{slug?}' , [HomeController::class, 'index']);
-
-            Route::get('/req/conv/{slug?}', [AiConvController::class, 'load']);
+            
+            Route::get('/chat/{slug?}', [HomeController::class, 'index'])
+                ->middleware('handle_app_connect');
+            
+            Route::get('/req/conv/{slug?}', [AiConvController::class, 'load'])
+                ->middleware('handle_app_connect');
             Route::post('/req/conv/createChat', [AiConvController::class, 'create']);
             Route::post('/req/conv/sendMessage/{slug}', [AiConvController::class, 'sendMessage']);
             Route::post('/req/conv/updateMessage/{slug}', [AiConvController::class, 'updateMessage']);
@@ -98,7 +87,8 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
 
 
             // GROUPCHAT ROUTES
-            Route::get('/groupchat/{slug?}', [HomeController::class, 'index']);
+            Route::get('/groupchat/{slug?}', [HomeController::class, 'index'])
+                ->middleware('handle_app_connect');
 
             Route::get('/req/room/{slug?}', [RoomController::class, 'load']);
             Route::post('/req/room/createRoom', [RoomController::class, 'create']);
@@ -146,7 +136,8 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
         });
 
         // Profile
-        Route::get('/profile', [HomeController::class, 'index']);
+        Route::get('/profile', [HomeController::class, 'index'])
+            ->middleware('handle_app_connect');
         Route::post('/req/profile/update', [ProfileController::class, 'update']);
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
 

@@ -5,6 +5,7 @@ use App\Http\Controllers\ExtAppController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
+use App\Http\Controllers\SyncLogController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +29,10 @@ Route::middleware(['external_access:enabled', 'auth:sanctum', 'app_access:declin
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
     
     Route::middleware(['external_access:chat'])->group(function () {
+        Route::group(['prefix' => 'sync'], static function () {
+            Route::get('/', [SyncLogController::class, 'index']);
+        });
+        
         Route::group(['prefix' => 'crypto'], static function () {
             Route::post('/keychain', [EncryptionController::class, 'backupKeychain']);
         });

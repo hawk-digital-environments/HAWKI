@@ -67,7 +67,7 @@ readonly class AppUserRequestSessionValue implements \Stringable
             $request->user_public_key,
             $request->user_private_key,
             $request->ext_user_id,
-            $request->app_id
+            $request->ext_app_id
         );
     }
 }

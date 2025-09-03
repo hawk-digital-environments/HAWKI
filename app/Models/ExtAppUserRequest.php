@@ -16,7 +16,7 @@ class ExtAppUserRequest extends Model
         'ext_user_id',
         'request_id',
         'valid_until',
-        'app_id',
+        'ext_app_id',
     ];
     
     public function app(): BelongsTo

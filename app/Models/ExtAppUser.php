@@ -16,7 +16,7 @@ class ExtAppUser extends Model
         'user_private_key',
         'ext_user_id',
         'passkey',
-        'app_id',
+        'ext_app_id',
         'user_id',
         'personal_access_token_id',
         'api_token'

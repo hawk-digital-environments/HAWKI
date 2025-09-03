@@ -28,7 +28,7 @@ class MessageResource extends JsonResource
             'room_id' => $this->resource->room_id,
             'member_id' => $this->resource->member->id,
             'thread_id' => $this->resource->thread_id,
-            'read_by' => json_decode($this->resource->reader_signs, true, 512, JSON_THROW_ON_ERROR) ?? [],
+            'read_by' => $this->resource->reader_signs === null ? [] : json_decode($this->resource->reader_signs, true, 512, JSON_THROW_ON_ERROR),
             'model' => $this->resource->model,
             'content' => (string)new SymmetricCryptoValue(
                 $this->resource->iv,

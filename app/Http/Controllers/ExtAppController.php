@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\ExtAppConnectionResource;
 use App\Models\ExtApp;
 use App\Models\ExtAppUser;
 use App\Models\ExtAppUserRequest;
@@ -36,13 +35,13 @@ class ExtAppController extends Controller
     public function getConnection(
         Request           $request,
         ConnectionFactory $connectionFactory
-    ): ExtAppConnectionResource
+    ): JsonResponse
     {
         $app = $this->resolveAppOrFail($request);
         $externalId = $this->resolveExtUserIdOrFail($request);
         $appUser = $this->resolveAppUserOrFail($app, $externalId);
         
-        return $connectionFactory->create($appUser);
+        return response()->json($connectionFactory->create($appUser));
     }
     
     public function createConnection(
