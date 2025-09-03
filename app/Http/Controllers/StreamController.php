@@ -28,7 +28,6 @@ class StreamController extends Controller
 
     protected $usageAnalyzer;
     protected $aiConnectionService;
-    private $jsonBuffer = '';
 
     public function __construct(
         UsageAnalyzerService $usageAnalyzer,
@@ -160,8 +159,8 @@ class StreamController extends Controller
      */
     private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
     {
-        // Reset buffer for new request
-        $this->jsonBuffer = '';
+        // Request-specific buffer for Google Provider
+        $requestBuffer = '';
         
         // Set headers for SSE
         header('Content-Type: text/event-stream');
@@ -171,15 +170,24 @@ class StreamController extends Controller
         
 
         // Create a callback function to process streaming chunks
-        $onData = function ($data) use ($user, $avatar_url, $payload) {
+        $onData = function ($data) use ($user, $avatar_url, $payload, &$requestBuffer) {
 
-          // Only use normaliseDataChunk if the content of $data does not begin with ‘data: ’.
-            if (strpos(trim($data), 'data: ') !== 0) {
-                $data = $this->normalizeDataChunk($data);
-                //Log::info('google chunk detected');
+            // Only use normalizeGoogleStreamChunk for Google Provider 
+            $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
+            $isGoogleProvider = $provider instanceof \App\Services\AI\Providers\GoogleProvider;
+            
+            if ($isGoogleProvider) {
+                // Google sends SSE data which might be split across multiple curl packets
+                // We need to normalize this before processing
+                $data = $this->normalizeGoogleStreamChunk($data, $requestBuffer);
+                Log::info('Google chunk normalization applied');
+                
+                // If no complete chunks were extracted, return early
+                if (empty(trim($data))) {
+                    return;
+                }
             }
 
-        
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
             // Log::info('Google Stream: Split into ' . count($chunks) . ' chunks');
@@ -282,82 +290,114 @@ class StreamController extends Controller
     }
     /*
      * Helper function to translate curl return object from google to openai format
-     * Uses request-specific buffer instead of instance variable
+     * Handles SSE format with "data: " prefixes and large objects split across packets
      */
     private function normalizeGoogleStreamChunk(string $data, string &$requestBuffer): string
     {
         // Log incoming raw data for debugging
         Log::info('Google Stream Raw Data: ' . substr($data, 0, 200) . (strlen($data) > 200 ? '...' : ''));
         
+        // Add incoming data to buffer
         $requestBuffer .= $data;
 
-        if(trim($requestBuffer) === "]") {
+        // Handle special case: end of stream marker
+        if(trim($requestBuffer) === "]" || trim($requestBuffer) === "data: ]") {
             $requestBuffer = "";
             return "";
         }
 
         $output = "";
-        while($extracted = $this->extractJsonObject($requestBuffer)) {
+        $extractedCount = 0;
+        $maxExtractions = 100; // Safety limit
+        
+        // Look for complete chunks in the buffer
+        while($extractedCount < $maxExtractions) {
+            $extracted = null;
+            
+            // First try to find SSE-formatted chunks (data: {JSON})
+            if (strpos($requestBuffer, 'data: ') !== false) {
+                $extracted = $this->extractSSEChunk($requestBuffer);
+            }
+            
+            // If no SSE chunk found, try to extract raw JSON (for continuation packets)
+            if (!$extracted) {
+                $extracted = $this->extractJsonObject($requestBuffer);
+            }
+            
+            if (!$extracted) {
+                break; // No more complete chunks
+            }
+            
             $jsonStr = $extracted['jsonStr'];
-            $output .= "data: " . $jsonStr . "\n";
+            
+            // Ensure SSE format for output
+            if (!str_starts_with($jsonStr, 'data: ')) {
+                $jsonStr = 'data: ' . $jsonStr;
+            }
+            
+            $output .= $jsonStr . "\n";
+            $extractedCount++;
             
             // Log what we're outputting
-            Log::info('Google Stream Normalized Chunk: ' . substr($jsonStr, 0, 100) . (strlen($jsonStr) > 100 ? '...' : ''));
+            Log::info('Google Stream Normalized Chunk ' . $extractedCount . ': ' . substr($jsonStr, 0, 100) . (strlen($jsonStr) > 100 ? '...' : ''));
         }
         
         // Log remaining buffer if any
-        if (!empty($requestBuffer)) {
-            Log::info('Google Stream Buffer Remaining: ' . substr($requestBuffer, 0, 100) . (strlen($requestBuffer) > 100 ? '...' : ''));
+        if (!empty(trim($requestBuffer))) {
+            Log::info('Google Stream Buffer Remaining (' . strlen($requestBuffer) . ' chars): ' . substr($requestBuffer, 0, 100) . (strlen($requestBuffer) > 100 ? '...' : ''));
+        }
+        
+        // Safety check for infinite loops
+        if ($extractedCount >= $maxExtractions) {
+            Log::error('Google Stream: Maximum extraction limit reached, clearing buffer to prevent infinite loop');
+            $requestBuffer = "";
         }
         
         return $output;
     }
     
-    /*
-     * Helper function to translate curl return object from google to openai format
+    /**
+     * Extract SSE-formatted chunk (data: {JSON})
      */
-    private function normalizeDataChunk(string $data): string
+    private function extractSSEChunk(string &$buffer): ?array
     {
-        // Log incoming raw data for debugging (uncomment for debugging)
-        Log::info('Google Stream Raw Data: ' . substr($data, 0, 200) . (strlen($data) > 200 ? '...' : ''));
-        
-        $this->jsonBuffer .= $data;
-
-        if(trim($this->jsonBuffer) === "]") {
-            $this->jsonBuffer = "";
-            return "";
+        $dataPos = strpos($buffer, 'data: ');
+        if ($dataPos === false) {
+            return null;
         }
-
-        $output = "";
-        $extractedCount = 0;
         
-        // Extract all complete JSON objects from buffer
-        while($extracted = $this->extractJsonObject($this->jsonBuffer)) {
-            $jsonStr = $extracted['jsonStr'];
-            $output .= "data: " . $jsonStr . "\n";
-            $extractedCount++;
-            
-            // Log what we're outputting (uncomment for debugging)
-            Log::info('Google Stream Normalized Chunk ' . $extractedCount . ': ' . substr($jsonStr, 0, 100) . (strlen($jsonStr) > 100 ? '...' : ''));
-            
-            // Prevent infinite loops (safety measure)
-            if ($extractedCount > 100) {
-                Log::error('Google Stream: Too many JSON objects extracted, breaking to prevent infinite loop');
-                break;
+        // Find the JSON part after "data: "
+        $jsonStart = $dataPos + 6; // length of "data: "
+        
+        // Look for the end of this line/chunk
+        $jsonEnd = strpos($buffer, "\n", $jsonStart);
+        
+        if ($jsonEnd === false) {
+            // No newline found, check if we have a complete JSON object
+            $possibleJson = substr($buffer, $jsonStart);
+            if (json_decode(trim($possibleJson), true) !== null) {
+                // We have a complete JSON object without newline
+                $jsonEnd = strlen($buffer);
+            } else {
+                return null; // Incomplete chunk
             }
         }
         
-        // Log remaining buffer if any (uncomment for debugging)
-        if (!empty($this->jsonBuffer)) {
-            Log::info('Google Stream Buffer Remaining: ' . substr($this->jsonBuffer, 0, 100) . (strlen($this->jsonBuffer) > 100 ? '...' : ''));
-        }
+        // Extract the complete SSE chunk including "data: " prefix
+        $fullChunk = substr($buffer, $dataPos, $jsonEnd - $dataPos);
         
-        return $output;
+        // Update buffer to remove processed chunk
+        $buffer = ltrim(substr($buffer, $jsonEnd), "\n\r ");
+        
+        return [
+            'jsonStr' => trim($fullChunk)
+        ];
     }
-
+    
     /**
      * Helper function to extract complete JSON objects from buffer
      * Handles strings properly to avoid false brace detection inside JSON strings
+     * Improved to handle Unicode escapes and complex Google responses
      */
     private function extractJsonObject(string &$buffer): ?array
     {
@@ -378,22 +418,26 @@ class StreamController extends Controller
         $inString = false;
         $escapeNext = false;
         $length = strlen($buffer);
+        $i = $start;
         
-        for ($i = $start; $i < $length; $i++) {
+        while ($i < $length) {
             $char = $buffer[$i];
             
             if ($escapeNext) {
                 $escapeNext = false;
+                $i++;
                 continue;
             }
             
             if ($char === '\\') {
                 $escapeNext = true;
+                $i++;
                 continue;
             }
             
             if ($char === '"') {
                 $inString = !$inString;
+                $i++;
                 continue;
             }
             
@@ -407,10 +451,19 @@ class StreamController extends Controller
                     if ($depth === 0) {
                         $end = $i + 1;
                         $jsonStr = substr($buffer, $start, $end - $start);
+                        
+                        // Verify that this is valid JSON before proceeding
+                        $testDecode = json_decode($jsonStr, true);
+                        if ($testDecode === null && json_last_error() !== JSON_ERROR_NONE) {
+                            // Invalid JSON, continue searching
+                            $i++;
+                            continue;
+                        }
+                        
                         $rest = substr($buffer, $end);
                         
                         // Update the buffer reference
-                        $buffer = $rest;
+                        $buffer = trim($rest);
                         
                         return [
                             'jsonStr' => $jsonStr,
@@ -419,6 +472,8 @@ class StreamController extends Controller
                     }
                 }
             }
+            
+            $i++;
         }
         
         // No complete JSON object found
