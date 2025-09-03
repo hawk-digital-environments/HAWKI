@@ -290,6 +290,7 @@ class StreamController extends Controller
     /*
      * Helper function to translate curl return object from google to openai format
      * Handles SSE format with "data: " prefixes and large objects split across packets
+     * Improved to handle very large groundingMetadata objects
      */
     private function normalizeGoogleStreamChunk(string $data, string &$requestBuffer): string
     {
@@ -304,7 +305,7 @@ class StreamController extends Controller
 
         $output = "";
         $extractedCount = 0;
-        $maxExtractions = 100; // Safety limit
+        $maxExtractions = 1000; // Increased for large groundingMetadata
         
         // Look for complete chunks in the buffer
         while($extractedCount < $maxExtractions) {
@@ -321,6 +322,11 @@ class StreamController extends Controller
             }
             
             if (!$extracted) {
+                // Check if buffer is getting too large (>10MB) and might be stuck
+                if (strlen($requestBuffer) > 10 * 1024 * 1024) {
+                    Log::warning('Google Stream: Buffer exceeds 10MB, potential incomplete packet. Clearing buffer.');
+                    $requestBuffer = "";
+                }
                 break; // No more complete chunks
             }
             
@@ -346,6 +352,7 @@ class StreamController extends Controller
     
     /**
      * Extract SSE-formatted chunk (data: {JSON})
+     * Improved to handle very large Google groundingMetadata objects
      */
     private function extractSSEChunk(string &$buffer): ?array
     {
@@ -357,12 +364,45 @@ class StreamController extends Controller
         // Find the JSON part after "data: "
         $jsonStart = $dataPos + 6; // length of "data: "
         
-        // Look for the end of this line/chunk
+        // For Google responses, we need to find the complete JSON object, not just the next newline
+        // because groundingMetadata can be very large and span multiple lines
+        $possibleJson = substr($buffer, $jsonStart);
+        
+        // First, try to find a complete JSON object using brace counting
+        // We need to create a copy since extractJsonObject modifies the buffer
+        $jsonCopy = $possibleJson;
+        $extracted = $this->extractJsonObject($jsonCopy);
+        
+        if ($extracted) {
+            // We found a complete JSON object
+            $jsonStr = $extracted['jsonStr'];
+            $jsonLength = strlen($jsonStr);
+            
+            // Calculate the end position in the original buffer
+            $jsonEnd = $jsonStart + $jsonLength;
+            
+            // Extract the complete SSE chunk including "data: " prefix
+            $fullChunk = 'data: ' . $jsonStr;
+            
+            // Update buffer to remove processed chunk
+            // Find the next "data: " or end of buffer
+            $nextDataPos = strpos($buffer, 'data: ', $jsonEnd);
+            if ($nextDataPos !== false) {
+                $buffer = substr($buffer, $nextDataPos);
+            } else {
+                $buffer = ltrim(substr($buffer, $jsonEnd), "\n\r ");
+            }
+            
+            return [
+                'jsonStr' => trim($fullChunk)
+            ];
+        }
+        
+        // Fallback: Look for newline-based chunks (for simple responses)
         $jsonEnd = strpos($buffer, "\n", $jsonStart);
         
         if ($jsonEnd === false) {
             // No newline found, check if we have a complete JSON object
-            $possibleJson = substr($buffer, $jsonStart);
             if (json_decode(trim($possibleJson), true) !== null) {
                 // We have a complete JSON object without newline
                 $jsonEnd = strlen($buffer);
@@ -385,7 +425,7 @@ class StreamController extends Controller
     /**
      * Helper function to extract complete JSON objects from buffer
      * Handles strings properly to avoid false brace detection inside JSON strings
-     * Improved to handle Unicode escapes and complex Google responses
+     * Improved to handle Unicode escapes and complex Google responses with large groundingMetadata
      */
     private function extractJsonObject(string &$buffer): ?array
     {
@@ -408,8 +448,13 @@ class StreamController extends Controller
         $length = strlen($buffer);
         $i = $start;
         
-        while ($i < $length) {
+        // Increased timeout for very large objects
+        $maxIterations = $length * 2; // Allow more iterations for large objects
+        $iterations = 0;
+        
+        while ($i < $length && $iterations < $maxIterations) {
             $char = $buffer[$i];
+            $iterations++;
             
             if ($escapeNext) {
                 $escapeNext = false;
@@ -441,9 +486,11 @@ class StreamController extends Controller
                         $jsonStr = substr($buffer, $start, $end - $start);
                         
                         // Verify that this is valid JSON before proceeding
-                        $testDecode = json_decode($jsonStr, true);
+                        // For large objects, use memory-efficient validation
+                        $testDecode = json_decode($jsonStr, true, 512, JSON_INVALID_UTF8_IGNORE);
                         if ($testDecode === null && json_last_error() !== JSON_ERROR_NONE) {
-                            // Invalid JSON, continue searching
+                            // Log the JSON error for debugging
+                            Log::warning('Google Stream: Invalid JSON detected - ' . json_last_error_msg() . ' - continuing search');
                             $i++;
                             continue;
                         }
@@ -462,6 +509,11 @@ class StreamController extends Controller
             }
             
             $i++;
+        }
+        
+        // Check if we hit the iteration limit
+        if ($iterations >= $maxIterations) {
+            Log::warning('Google Stream: Hit iteration limit while parsing JSON object, buffer length: ' . strlen($buffer));
         }
         
         // No complete JSON object found

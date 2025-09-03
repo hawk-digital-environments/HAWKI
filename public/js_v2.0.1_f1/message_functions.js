@@ -234,6 +234,11 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     messageElement.dataset.role = messageObj.message_role;
     const msgTxtElement = messageElement.querySelector(".message-text");
 
+    // Always activate citations for AI messages, even when not updating content
+    if(messageElement.classList.contains('AI') && !updateContent && typeof activateCitations === 'function'){
+        activateCitations(messageElement);
+    }
+
     if(updateContent){
         const {messageText, groundingMetadata} = deconstContent(messageObj.content);
         
@@ -249,6 +254,7 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             let markdownProcessed = formatMessage(messageText, groundingMetadata);
             msgTxtElement.innerHTML = markdownProcessed;
             formatMathFormulas(msgTxtElement);
+            formatHljs(messageElement); // Add this to ensure citations are activated
             if (groundingMetadata && 
                 groundingMetadata != '' && 
                 groundingMetadata.searchEntryPoint && 

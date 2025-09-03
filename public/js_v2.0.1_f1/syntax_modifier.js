@@ -92,6 +92,9 @@ function formatHljs(messageElement){
             }
         }
     });
+    
+    // Activate citation functionality
+    activateCitations(messageElement);
 }
 
 
@@ -308,7 +311,7 @@ const preservedHTML = [];
 function formatGoogleCitations(content, groundingMetadata = '') {
     // Hilfsarrays zum Zwischenspeichern
     const codeBlocks = [];
-    const preservedHTML = [];
+    const footnoteReplacements = [];
 
     // 1. Zuerst alle <pre> und <code>-Blöcke durch Platzhalter ersetzen und merken
     const codePattern = /(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>)/gi;
@@ -326,15 +329,17 @@ function formatGoogleCitations(content, groundingMetadata = '') {
             const indices = support.groundingChunkIndices;
 
             if (segmentText && Array.isArray(indices) && indices.length) {
-                // Generate footnote references inline
-                const footnotesRef = `<sup><span>` + indices.map(idx => 
-                    `${idx + 1}
-`
-                ).join(', ') + `</span></sup>`;
+                // Create a placeholder for the footnote
+                const footnoteId = footnoteReplacements.length;
+                const footnotePlaceholder = `%%FOOTNOTE_${footnoteId}%%`;
+                
+                // Store the actual HTML for later replacement
+                const footnoteHTML = `<sup><a href="#sources" class="citation-link" data-sources="${indices.join(',')}">${indices.map(idx => idx + 1).join(', ')}</a></sup>`;
+                footnoteReplacements.push(footnoteHTML);
 
                 processedContent = processedContent.replace(
                     new RegExp(escapeRegExp(segmentText), 'g'),
-                    match => match + footnotesRef
+                    match => match + footnotePlaceholder
                 );
             }
         });
@@ -348,7 +353,7 @@ function formatGoogleCitations(content, groundingMetadata = '') {
 
         groundingMetadata.groundingChunks.forEach((chunk, index) => {
             if (chunk.web?.uri && chunk.web?.title) {
-                sourcesMarkdown += `${index + 1}. ${chunk.web.title}\n`;
+                sourcesMarkdown += `${index + 1}. <a href="${chunk.web.uri}" target="_blank" class="source-link" data-source-id="${index + 1}">${chunk.web.title}</a>\n`;
             }
         });
 
@@ -357,19 +362,11 @@ function formatGoogleCitations(content, groundingMetadata = '') {
         }
     }
 
-    // 4. Nur die gewünschten HTML-Elemente im sonstigen Inhalt erhalten
-    const htmlPattern = /<sup>.*?<\/sup>|<a\s+.*?<\/a>/g;
-    processedContent = processedContent.replace(htmlPattern, (match) => {
-        const id = preservedHTML.length;
-        preservedHTML.push(match);
-        return `%%HTML_PRESERVED_${id}%%`;
-    });
-
-    // 5. Jetzt die Codeblöcke wieder zurückersetzen
+    // 4. Codeblöcke wieder zurückersetzen
     processedContent = processedContent.replace(/%%CODE_BLOCK_(\d+)%%/g, (_, idx) => codeBlocks[idx]);
 
-    // 6. Ggf. die preserved HTML-Elemente wieder zurückersetzen
-    processedContent = processedContent.replace(/%%HTML_PRESERVED_(\d+)%%/g, (_, idx) => preservedHTML[idx]);
+    // 5. Store footnote replacements globally for later use
+    window.footnoteReplacements = footnoteReplacements;
 
     return processedContent;
 }
@@ -380,17 +377,62 @@ function escapeRegExp(string) {
 }
 
 
-// // Restore the preserved HTML after markdown processing
+// Restore the preserved HTML after markdown processing
 function restoreGoogleCitations(content) {
     let result = content;
     
-    for (let i = 0; i < preservedHTML.length; i++) {
-        // Use a regex with \b (if applicable) or a flexible match
-        const placeholder = new RegExp(`%%HTML_PRESERVED_${i}%%`, 'g');
+    // Replace footnote placeholders with actual HTML
+    if (window.footnoteReplacements && window.footnoteReplacements.length > 0) {
+        for (let i = 0; i < window.footnoteReplacements.length; i++) {
+            const placeholder = new RegExp(`%%FOOTNOTE_${i}%%`, 'g');
+            result = result.replace(placeholder, window.footnoteReplacements[i]);
+        }
         
-        // Replace and ensure a new line is added
-        result = result.replace(placeholder, preservedHTML[i] + '\n');
+        // Clean up global variable
+        delete window.footnoteReplacements;
     }
     
     return result;
 }
+
+// Activate citation functionality after message is rendered
+function activateCitations(messageElement) {
+    // Add click handlers for citation links
+    const citationLinks = messageElement.querySelectorAll('.citation-link');
+    console.log('Activating citations for', citationLinks.length, 'links');
+    citationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Citation clicked:', this);
+            
+            // Get source IDs from data attribute
+            const sourceIds = this.getAttribute('data-sources').split(',');
+            console.log('Source IDs:', sourceIds);
+            
+            // Remove highlighting from all sources
+            const allSourceLinks = messageElement.querySelectorAll('.source-link');
+            allSourceLinks.forEach(sourceLink => {
+                sourceLink.classList.remove('highlighted');
+            });
+            
+            // Highlight corresponding sources
+            sourceIds.forEach(sourceId => {
+                const sourceLink = messageElement.querySelector(`.source-link[data-source-id="${parseInt(sourceId) + 1}"]`);
+                console.log('Looking for source with data-source-id:', parseInt(sourceId) + 1, 'Found:', sourceLink);
+                if (sourceLink) {
+                    sourceLink.classList.add('highlighted');
+                    
+                    // Scroll to sources section if not already visible
+                    setTimeout(() => {
+                        const sourcesSection = messageElement.querySelector('h3');
+                        if (sourcesSection && sourcesSection.textContent.includes('Search Sources')) {
+                            sourcesSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }, 100);
+                }
+            });
+        });
+    });
+}
+
+// Helper function to escape special characters in regular expressions

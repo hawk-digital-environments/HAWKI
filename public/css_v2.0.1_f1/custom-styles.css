@@ -103,3 +103,55 @@
     /* background-size: cover; */
     background-size: auto;
 }
+
+/* Google Citations Styling */
+.citation-link {
+    color: #007bff;
+    text-decoration: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.citation-link:hover {
+    text-decoration: underline;
+}
+
+.source-link {
+    color: #333;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.source-link:hover {
+    color: #007bff;
+    text-decoration: underline;
+}
+
+.source-link.highlighted {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-weight: 500;
+    border-left: 3px solid #ffc107;
+    padding-left: 8px;
+}
+
+/* Dark mode adaptations for citations */
+.darkMode .source-link {
+    color: #ccc;
+}
+
+.darkMode .source-link:hover {
+    color: #79c0ff;
+}
+
+.darkMode .source-link.highlighted {
+    background-color: #3d2f00;
+    color: #f9c513;
+    border-left: 3px solid #f9c513;
+}
+
+.darkMode .citation-link {
+    color: #79c0ff;
+}
