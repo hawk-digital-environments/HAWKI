@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     |   Default AI Models
@@ -9,12 +8,22 @@ return [
     |   These Models are used as predefined models for each task.
     |
     */
-
     'default_models' => [
         'default_model' => 'gpt-4.1',
         'default_web_search_model' => 'gemini-2.0-flash',
         'default_file_upload_model' => 'meta-llama-3.1-8b-instruct',
         'default_vision_model' => 'gemini-2.0-flash',
+    ],
+    
+    /*
+     * The default models to use when accessing HAWKI via an external application
+     * If null, the general default models are used above (can be useful to prevent high cost models being used by external apps)
+     */
+    'default_models.ext_app' => [
+//        'default_model' => null,
+//        'default_web_search_model' => null,
+//        'default_file_upload_model' => null,
+//        'default_vision_model' => null,
     ],
 
     /*
@@ -33,6 +42,16 @@ return [
         'prompt_improver' => 'gpt-4.1-nano',
         'summarizer' => 'gpt-4.1-nano',
     ],
+    
+    /*
+     * The system models to use when accessing HAWKI via an external application
+     * If null, the general system models are used above (can be useful to prevent high cost models being used by external apps)
+     */
+    'system_models.ext_app' => [
+//        'title_generator' => null,
+//        'prompt_improver' => null,
+//        'summarizer' => null,
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -46,26 +65,21 @@ return [
     |
     */
     'providers' =>[
-        'openai' => [
-            'id' => 'openai',
+        'openAi' => [
             'active' => true,
             'api_key' => env('OPENAI_API_KEY'),
             'api_url' => 'https://api.openai.com/v1/chat/completions',
             'ping_url' => 'https://api.openai.com/v1/models',
             'models' => require __DIR__ . '/model_lists/openai_models.php',
         ],
-
         'gwdg' => [
-            'id' => 'gwdg',
             'active' => true,
             'api_key' => env('GWDG_API_KEY'),
             'api_url' => 'https://chat-ai.academiccloud.de/v1/chat/completions',
             'ping_url' => 'https://chat-ai.academiccloud.de/v1/models',
             'models' => require __DIR__ . '/model_lists/gwdg_models.php',
         ],
-
         'google' => [
-            'id' => 'google',
             'active' => true,
             'api_key' => env('GOOGLE_API_KEY'),
             'api_url' => 'https://generativelanguage.googleapis.com/v1beta/models/',
@@ -75,14 +89,11 @@ return [
         ],
         'ollama'=> [
             'active' => false,
-            'id' => 'ollama',
             // 'api_url' => 'http://localhost:11434/api/generate',
             'api_url' => 'http://localhost:11434/api/chat',
             'models' => require __DIR__ . '/model_lists/ollama_models.php',
         ],
-
         'openWebUi' => [
-            'id' => 'openWebUi',
             'active' => false,
             'api_key' => env('OPEN_WEB_UI_API_KEY'),
             'api_url' => 'your_url/api/chat/completions',

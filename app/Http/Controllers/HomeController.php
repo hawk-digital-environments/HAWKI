@@ -2,43 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\LanguageController;
-
+use App\Models\User;
+use App\Services\AI\AiService;
+use App\Services\Announcements\AnnouncementService;
 use App\Services\Chat\AiConv\AiConvService;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\System\SettingsService;
-use App\Services\Announcements\AnnouncementService;
-
-use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-
-use App\Services\AI\AIConnectionService;
-use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+
+// use Illuminate\Support\Facades\View;
 
 class HomeController extends Controller
 {
-    protected $languageController;
-    protected $aiConnService;
-
     // Inject LanguageController instance
-    public function __construct(LanguageController $languageController,
-                                AIConnectionService $aiConnService)
+    public function __construct(
+        private LanguageController $languageController,
+        private AiService          $aiService
+    )
     {
-        $this->languageController = $languageController;
-        $this->aiConnService = $aiConnService;
     }
 
     /// Redirects user to Home Layout
     /// Home layout can be chat, groupchat, or any other main module
     /// Propper rendering attributes will be send accordingly to the front end
-    public function index(Request $request, AvatarStorageService $avatarStorage, $slug = null): View{
-
+    public function index(
+        Request              $request,
+        AvatarStorageService $avatarStorage,
+        AnnouncementService  $announcementService,
+                             $slug = null
+    ): View
+    {
         $user = Auth::user();
 
 
@@ -67,13 +65,9 @@ class HomeController extends Controller
             $activeOverlay = true;
         }
         Session::put('last-route', 'home');
-
-
-        $models = $this->aiConnService->getAvailableModels();
-
-        $announcementService = new AnnouncementService();
+        
+        $models = $this->aiService->getAvailableModels()->toArray();
         $announcements = $announcementService->getUserAnnouncements();
-
 
         // Pass translation, authenticationMethod, and authForms to the view
         return view('modules.' . $requestModule,
@@ -88,8 +82,9 @@ class HomeController extends Controller
                             'announcements'
                         ));
     }
-
-    public function print($module, $slug, AiConvService $aiConvService, RoomService $roomService, AvatarStorageService $avatarStorage){
+    
+    public function print($module, $slug, AiConvService $aiConvService, RoomService $roomService, AvatarStorageService $avatarStorage, SettingsService $settingsService)
+    {
 
         switch($module){
             case 'chat':
@@ -114,8 +109,8 @@ class HomeController extends Controller
 
 
         $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsService())->render();
-        $models = $this->aiConnService->getAvailableModels();
+        $settingsPanel = $settingsService->render();
+        $models = $this->aiService->getAvailableModels()->toArray();
 
         $activeModule = $module;
         return view('layouts.print_template',
@@ -150,4 +145,3 @@ class HomeController extends Controller
         return view('layouts.dataprotection', compact('translation'));
     }
 }
-

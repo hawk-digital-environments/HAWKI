@@ -2,30 +2,30 @@
 
 namespace App\Services\AI;
 
-use Carbon\Carbon;
-
-use App\Models\User;
-use App\Models\Room;
 use App\Models\Records\UsageRecord;
-
+use App\Services\AI\Value\TokenUsage;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class UsageAnalyzerService
 {
-
-    public function submitUsageRecord($usage, $type, $model, $roomId = null) {
-        $today = Carbon::today();
+    
+    public function submitUsageRecord(?TokenUsage $usage, $type, $roomId = null)
+    {
+        if ($usage === null) {
+            return;
+        }
+        
         $userId = Auth::user()->id;
 
         // Create a new record if none exists for today
         UsageRecord::create([
             'user_id' => $userId,
             'room_id' => $roomId,
-
-            'prompt_tokens' => $usage['prompt_tokens'],
-            'completion_tokens' => $usage['completion_tokens'],
-            'model' => $model,
+            
+            'prompt_tokens' => $usage->promptTokens,
+            'completion_tokens' => $usage->completionTokens,
+            'model' => $usage->model->getId(),
             'type' => $type,
         ]);
 

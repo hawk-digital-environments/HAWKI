@@ -5,11 +5,22 @@ declare(strict_types=1);
 namespace App\Services\AI\Value;
 
 
+use App\Services\AI\AiFactory;
+use App\Services\AI\Exception\NoContextBoundException;
+use App\Services\AI\Interfaces\ClientInterface;
+use App\Services\AI\Interfaces\ModelProviderInterface;
 use JsonSerializable;
 
-class AiModel implements \ArrayAccess, JsonSerializable
+class AiModel implements JsonSerializable
 {
-    public function __construct(private array $raw)
+    private ?AiMOdelContext $context = null;
+    
+    public function __construct(
+        /**
+         * The raw configuration array for the model.
+         */
+        private readonly array $raw
+    )
     {
     }
 
@@ -85,6 +96,17 @@ class AiModel implements \ArrayAccess, JsonSerializable
     {
         return $this->raw['input'] ?? ['text'];
     }
+    
+    /**
+     * Checks if the model supports a specific input method.
+     * @param string $input The input method to check for.
+     * @return bool
+     * @see AiModel::getInputMethods() to see the list of supported input methods by the model.
+     */
+    public function hasInputMethod(string $input): bool
+    {
+        return in_array($input, $this->getInputMethods());
+    }
 
     /**
      * Returns the output methods supported by the model.
@@ -94,6 +116,17 @@ class AiModel implements \ArrayAccess, JsonSerializable
     public function getOutputMethods(): array
     {
         return $this->raw['output'] ?? ['text'];
+    }
+    
+    /**
+     * Checks if the model supports a specific output method.
+     * @param string $output The output method to check for.
+     * @return bool
+     * @see AiModel::getOutputMethods() to see the list of supported output methods by the model.
+     */
+    public function hasOutputMethod(string $output): bool
+    {
+        return in_array($output, $this->getOutputMethods());
     }
 
     /**
@@ -106,6 +139,56 @@ class AiModel implements \ArrayAccess, JsonSerializable
     {
         return $this->raw['tools'] ?? [];
     }
+    
+    /**
+     * Checks if the model has a specific tool enabled.
+     * @param string $tool The tool to check for.
+     * @return bool
+     * @see AiModel::getTools() to see the list of supported tools by the model.
+     */
+    public function hasTool(string $tool): bool
+    {
+        $tools = $this->getTools();
+        return array_key_exists($tool, $tools) && $tools[$tool] === true;
+    }
+    
+    /**
+     * Checks if this model possesses all required tools to process a document.
+     * @return bool
+     */
+    public function canProcessDocument(): bool
+    {
+        return $this->hasTool('file_upload');
+    }
+    
+    /**
+     * Checks if this model possesses all required tools to process an image.
+     * @return bool
+     */
+    public function canProcessImage(): bool
+    {
+        return $this->hasInputMethod('image') && $this->hasTool('vision');
+    }
+    
+    /**
+     * Checks if the model is available for the given usage type.
+     * This is typically used to restrict certain models to specific usage contexts,
+     * like internal use only or external applications.
+     * @param ModelUsageType $usageType The usage type to check against.
+     * @return bool True if the model is available for the given usage type, false otherwise.
+     */
+    public function isAvailableInUsageType(ModelUsageType $usageType): bool
+    {
+        if ($usageType === ModelUsageType::DEFAULT) {
+            return true;
+        }
+        
+        if ($usageType === ModelUsageType::EXTERNAL_APP && $this->isAllowedInExternalApp()) {
+            return true;
+        }
+        
+        return false;
+    }
 
     /**
      * Checks if the model is allowed to be used in external applications.
@@ -116,43 +199,71 @@ class AiModel implements \ArrayAccess, JsonSerializable
     {
         return (isset($this->raw['external']) && $this->raw['external'] === true) || !array_key_exists('external', $this->raw);
     }
-
-    public function offsetExists(mixed $offset): bool
+    
+    /**
+     * Returns the provider instance that manages this model.
+     * This method will throw an exception if the model is not bound to a context.
+     * @return ModelProviderInterface
+     */
+    public function getProvider(): ModelProviderInterface
     {
-        return array_key_exists($offset, $this->raw);
+        $this->assertContextIsSet(__METHOD__);
+        return $this->context->getProvider();
     }
-
-    public function offsetGet(mixed $offset): mixed
+    
+    /**
+     * Returns the current online status of the model.
+     * This method will throw an exception if the model is not bound to a context.
+     * @return ModelOnlineStatus
+     */
+    public function getStatus(): ModelOnlineStatus
     {
-        if ($this->offsetExists($offset)) {
-            return $this->raw[$offset];
-        }
-        return null;
+        $this->assertContextIsSet(__METHOD__);
+        return $this->context->getStatus();
     }
-
-    public function offsetSet(mixed $offset, mixed $value): void
+    
+    /**
+     * Returns the client instance used to interact with the model's API.
+     * This method will throw an exception if the model is not bound to a context.
+     * @return ClientInterface
+     */
+    public function getClient(): ClientInterface
     {
-        if ($offset === null) {
-            $this->raw[] = $value;
-        } else {
-            $this->raw[$offset] = $value;
-        }
+        $this->assertContextIsSet(__METHOD__);
+        return $this->context->getClient();
     }
-
-    public function offsetUnset(mixed $offset): void
-    {
-        if ($this->offsetExists($offset)) {
-            unset($this->raw[$offset]);
-        }
-    }
-
-    public function jsonSerialize(): array
-    {
-        return $this->raw;
-    }
-
+    
     public function toArray(): array
     {
         return $this->raw;
+    }
+    
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
+    }
+    
+    private function assertContextIsSet(string $method): void
+    {
+        if ($this->context === null) {
+            throw new NoContextBoundException($this->getId(), $method);
+        }
+    }
+    
+    /**
+     * Binds the given context to the model.
+     * This method is intended for internal use only and will be called by {@see AiFactory::createModelWithContext()}
+     * @param AiModel $model
+     * @param AiModelContext $context
+     * @return AiModel
+     * @internal This method is intended for internal use only and will be called by {@see AiFactory::createModelWithContext()}
+     */
+    public static function bindContext(AiModel $model, AiModelContext $context): AiModel
+    {
+        $model->context = $context;
+        return $model;
     }
 }
