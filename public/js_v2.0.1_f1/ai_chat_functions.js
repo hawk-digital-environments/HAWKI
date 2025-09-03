@@ -207,6 +207,12 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
         if(done){
             setSendBtnStatus(SendBtnStatus.SENDABLE);
 
+            // Check if messageObj was initialized during the stream
+            if (!messageObj) {
+                console.warn('No messageObj available at stream completion');
+                return;
+            }
+
             const cryptoContent = JSON.stringify({
                 text: msg,
                 groundingMetadata : metadata
