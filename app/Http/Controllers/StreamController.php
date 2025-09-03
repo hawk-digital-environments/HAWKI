@@ -180,7 +180,6 @@ class StreamController extends Controller
                 // Google sends SSE data which might be split across multiple curl packets
                 // We need to normalize this before processing
                 $data = $this->normalizeGoogleStreamChunk($data, $requestBuffer);
-                Log::info('Google chunk normalization applied');
                 
                 // If no complete chunks were extracted, return early
                 if (empty(trim($data))) {
@@ -294,9 +293,6 @@ class StreamController extends Controller
      */
     private function normalizeGoogleStreamChunk(string $data, string &$requestBuffer): string
     {
-        // Log incoming raw data for debugging
-        Log::info('Google Stream Raw Data: ' . substr($data, 0, 200) . (strlen($data) > 200 ? '...' : ''));
-        
         // Add incoming data to buffer
         $requestBuffer .= $data;
 
@@ -337,14 +333,6 @@ class StreamController extends Controller
             
             $output .= $jsonStr . "\n";
             $extractedCount++;
-            
-            // Log what we're outputting
-            Log::info('Google Stream Normalized Chunk ' . $extractedCount . ': ' . substr($jsonStr, 0, 100) . (strlen($jsonStr) > 100 ? '...' : ''));
-        }
-        
-        // Log remaining buffer if any
-        if (!empty(trim($requestBuffer))) {
-            Log::info('Google Stream Buffer Remaining (' . strlen($requestBuffer) . ' chars): ' . substr($requestBuffer, 0, 100) . (strlen($requestBuffer) > 100 ? '...' : ''));
         }
         
         // Safety check for infinite loops
