@@ -7,19 +7,32 @@ use App\Events\MessageSentEvent;
 use App\Events\MessageUpdateEvent;
 use App\Models\Message;
 use App\Models\Room;
+use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Message\LegacyMessageHelper;
 use Illuminate\Support\Facades\Auth;
 
 
 class GroupMessageHandler extends BaseMessageHandler{
-
-
+    public function __construct(
+        AttachmentService           $attachmentService,
+        private LegacyMessageHelper $messageHelper
+    )
+    {
+        parent::__construct($attachmentService);
+    }
+    
     public function create(array $data, string $slug): ?Message {
 
         $room = $data['room'];
         $member = $data['member'];
-
+        
+        $threadInfo = $this->messageHelper->getThreadInfo(
+            $data['threadID'],
+            ($data['thread_id_version'] ?? 1) === 1
+        );
+        
         $messageRole = 'user';
-        $nextMessageId = $this->assignID($room, $data['threadID']);
+        $nextMessageId = $this->assignID($room, $threadInfo->legacyThreadId);
         
         $message = Message::create([
             'room_id' => $room->id,
@@ -27,7 +40,7 @@ class GroupMessageHandler extends BaseMessageHandler{
             'user_id' => Auth::id(),
             'message_id' => $nextMessageId,
             'message_role' => $messageRole,
-            'thread_id' => 0, // @todo This must be fixed!
+            'thread_id' => $threadInfo->threadId,
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
@@ -48,7 +61,6 @@ class GroupMessageHandler extends BaseMessageHandler{
 
         return $message;
     }
-
 
     public function update(array $data, string $slug): ?Message{
 
@@ -71,7 +83,6 @@ class GroupMessageHandler extends BaseMessageHandler{
 
         return $message;
     }
-
 
     public function markAsRead(string $message_id, string $slug): bool{
 
