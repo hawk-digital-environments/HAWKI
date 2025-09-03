@@ -6,9 +6,8 @@ namespace App\Services\ExtApp;
 
 
 use App\Http\Resources\ExtAppConnectionResource;
-use App\Models\ExtApp;
 use App\Models\ExtAppUser;
-use App\Services\AI\AIConnectionService;
+use App\Services\AI\AiService;
 use App\Services\SaltProvider;
 use App\Services\User\UserKeychainDb;
 use Illuminate\Config\Repository;
@@ -16,17 +15,15 @@ use Illuminate\Config\Repository;
 readonly class ConnectionFactory
 {
     public function __construct(
-        protected SaltProvider        $saltProvider,
-        protected UserKeychainDb      $keychainDb,
-        protected Repository          $config,
-        protected AIConnectionService $aiConnectionService
+        private SaltProvider   $saltProvider,
+        private UserKeychainDb $keychainDb,
+        private Repository     $config,
+        private AiService      $aiService,
     )
     {
-    
     }
     
     public function create(
-        ExtApp     $app,
         ExtAppUser $user
     ): ExtAppConnectionResource
     {
@@ -34,7 +31,7 @@ readonly class ConnectionFactory
             websocket: $this->config->get('reverb.frontend'),
             baseUrl: $this->config->get('app.url'),
             aiHandle: $this->config->get('app.aiHandle'),
-            aiModels: $this->aiConnectionService->getAvailableModels(true),
+            aiModels: $this->aiService->getAvailableModels(true)->toArray(),
             salt: [
                 'userdata' => $this->saltProvider->getSaltForUserDataEncryption(),
                 'passkey' => $this->saltProvider->getSaltForPasskey(),
