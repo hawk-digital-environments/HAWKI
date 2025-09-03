@@ -807,6 +807,19 @@ async function regenerateMessage(messageElement, Done = null){
     messageElement.dataset.rawMsg = '';
     initializeMessageFormating();
 
+    let inputContainer;
+    if(threadIndex == 0){
+        inputContainer = document.querySelector(`.input[id="0"`).closest('.input-container');
+    }
+    else{
+        inputContainer = messageElement.closest('.thread').querySelector('.input-container');
+    }
+    const webSearchActive = inputContainer.querySelector('#websearch-btn').classList.contains('active');
+
+    const tools = {
+        'web_search': webSearchActive
+    }
+
     let msgAttributes = {};
     switch(activeModule){
         case('chat'):
@@ -817,6 +830,7 @@ async function regenerateMessage(messageElement, Done = null){
                 'regenerationElement': messageElement,
                 'stream': activeModel.tools.stream ? true : false,
                 'model': activeModel.id,
+                'tools': tools
             }
 
             await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
@@ -840,6 +854,7 @@ async function regenerateMessage(messageElement, Done = null){
                 'regenerationElement': messageElement,
                 'stream': false,
                 'model': activeModel.id,
+                'tools': tools
             }
             buildRequestObject(msgAttributes,  async (updatedText, done) => {});
         break;

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\ExternalCommunicationCheck;
 use App\Http\Controllers\LanguageController;
 use App\Http\Middleware\AdminAccess;
 use App\Http\Middleware\AppAccessMiddleware;
@@ -49,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
         Route::aliasMiddleware('roomAdmin', AdminAccess::class);
         Route::aliasMiddleware('roomEditor', EditorAccess::class);
+        Route::aliasMiddleware('api_isActive', ExternalCommunicationCheck::class);
         Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
         Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
         Route::aliasMiddleware('token_creation', TokenCreationCheck::class);

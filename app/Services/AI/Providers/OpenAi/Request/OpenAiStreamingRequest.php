@@ -39,6 +39,10 @@ class OpenAiStreamingRequest extends AbstractRequest
     {
         $jsonChunk = json_decode($chunk, true, 512, JSON_THROW_ON_ERROR);
         
+        if (isset($jsonChunk['error'])) {
+            return $this->createErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
+        }
+        
         $content = '';
         $isDone = false;
         $usage = null;

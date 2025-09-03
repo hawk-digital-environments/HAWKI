@@ -7,6 +7,7 @@ namespace App\Services\AI\Providers\Google\Request;
 
 use App\Services\AI\Providers\AbstractRequest;
 use App\Services\AI\Value\AiModel;
+use App\Services\AI\Value\AiResponse;
 
 class GoogleStreamingRequest extends AbstractRequest
 {
@@ -33,7 +34,7 @@ class GoogleStreamingRequest extends AbstractRequest
         );
     }
     
-    public function chunkToResponse(AiModel $model, string $chunk): array
+    public function chunkToResponse(AiModel $model, string $chunk): AiResponse
     {
         $jsonChunk = json_decode($chunk, true, 512, JSON_THROW_ON_ERROR);
         $content = '';
@@ -56,13 +57,13 @@ class GoogleStreamingRequest extends AbstractRequest
             $isDone = true;
         }
         
-        return [
-            'content' => [
+        return new AiResponse(
+            content: [
                 'text' => $content,
                 'groundingMetadata' => $groundingMetadata,
             ],
-            'isDone' => $isDone,
-            'usage' => $this->extractUsage($model, $jsonChunk)
-        ];
+            usage: $this->extractUsage($model, $jsonChunk),
+            isDone: $isDone,
+        );
     }
 }

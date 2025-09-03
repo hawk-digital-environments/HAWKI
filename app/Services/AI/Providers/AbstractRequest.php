@@ -116,6 +116,7 @@ abstract class AbstractRequest
     {
         return new AiResponse(
             content: [
+                'text' => 'INTERNAL ERROR: ' . $error,
                 'error' => $error
             ],
             error: $error,

@@ -124,6 +124,10 @@ async function sendMessageConv(inputField) {
     messageElement.dataset.rawMsg = submissionData.content.text;
     scrollToLast(true, messageElement);
 
+    const webSearchActive = inputField.closest('.input-container').querySelector('#websearch-btn').classList.contains('active');
+    const tools = {
+        'web_search': webSearchActive
+    }
 
     const msgAttributes = {
         'threadIndex': activeThreadIndex,
@@ -131,6 +135,7 @@ async function sendMessageConv(inputField) {
         'slug': '',
         'stream': true,
         'model': activeModel.id,
+        'tools': tools
     }
 
     buildRequestObjectForAiConv(msgAttributes);

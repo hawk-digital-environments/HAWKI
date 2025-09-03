@@ -13,7 +13,7 @@ use JsonSerializable;
 
 class AiModel implements JsonSerializable
 {
-    private ?AiMOdelContext $context = null;
+    private ?AiModelContext $context = null;
     
     public function __construct(
         /**

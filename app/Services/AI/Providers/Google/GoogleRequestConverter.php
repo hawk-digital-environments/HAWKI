@@ -72,14 +72,34 @@ readonly class GoogleRequestConverter
 
         // Google Search only works with gemini >= 2.0
         // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
-        if ($model->hasTool('web_search')) {
-            $payload['tools'] = $rawPayload['tools'] ?? [
-                [
-                    "google_search" => new \stdClass()
-                ]
-            ];
+        $availableTools = $model->getTools();
+        
+        if (array_key_exists('web_search', $availableTools) && $availableTools['web_search'] == true){
+            // if frontend requested websearch tool
+            if(array_key_exists('tools', $rawPayload) &&
+                array_key_exists('web_search', $rawPayload['tools']) &&
+                $rawPayload['tools']['web_search'] == true){
+                
+                $payload['tools'] =
+                    [
+                        [
+                            "google_search" => new \stdClass()
+                        ]
+                    ];
+            }
+            else{
+                $payload['tools'] = [];
+            }
         }
-
+        else{
+            // Fallback: websearch always on
+            $payload['tools'] =
+                [
+                    [
+                        "google_search" => new \stdClass()
+                    ]
+                ];
+        }
         return $payload;
     }
     

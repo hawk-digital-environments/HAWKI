@@ -91,14 +91,19 @@ async function handleSelectedFiles(files, inputField) {
     Array.from(files).map(async file => {
         // File type validation
         if (!allowedTypes.includes(file.type)) {
-            showFeedbackMsg(inputField, 'error', `File type ${file.type} not supported.`);
+            showFeedbackMsg(inputField, 'error', `${translation.Input_Err_NotSupported} ${file.type}`);
             return null; // Early exit from this file's processing
         }
 
         // File size validation
         if (file.size > maxFileSize) {
-            showFeedbackMsg(inputField, 'error', `File size exceeds ${maxMB}MB limit.`);
+            showFeedbackMsg(inputField, 'error',  `${translation.Input_Err_MaxSize} ${maxMB}`);
             return null;
+        }
+
+        if(!checkFilterCombination(input_id, getFilterFromMime(file.type))){
+            showFeedbackMsg(inputField, 'error', `${translation.Input_Err_FilterConflict}`)
+            return;
         }
 
         // Prepare file for upload
@@ -117,29 +122,36 @@ async function handleSelectedFiles(files, inputField) {
         attachmentContainer.querySelector('.attachments-list').appendChild(atchThumb);
 
         uploadQueues.get(input_id).push({ fileData });
-        console.log(uploadQueues.get(input_id));
 
         setAttachmentsFilter(input_id);
 
-        // Return something useful if needed (optional)
-        return;
     });
 }
 
 function setAttachmentsFilter(input_id){
     const attachments = uploadQueues.get(input_id);
-    console.log(attachments);
+
+    let fileUploadFilterFlag = false;
+    let visionFilterFlag = false;
     attachments.forEach(attachment => {
         const type = checkFileFormat(attachment.fileData.mime);
         if(type === 'pdf' || type === 'docx' || type === 'image'){
-            addInputFilter(input_id, 'file_upload', );
+            fileUploadFilterFlag = true;
+            addInputFilter(input_id, 'file_upload');
         }
-        if(type === 'img'){
+        if(type === 'image'){
+            visionFilterFlag = true;
             addInputFilter(input_id, 'vision');
         }
     });
-}
 
+    if(!visionFilterFlag){
+        removeInputFilter(input_id, 'vision');
+    }
+    if(!fileUploadFilterFlag){
+        removeInputFilter(input_id, 'file_upload');
+    }
+}
 
 // Prepare file for upload by creating needed metadata
 function createFileStruct(file) {
@@ -171,7 +183,7 @@ function createAttachmentThumbnail(fileData) {
 
     const type = checkFileFormat(fileData.mime);
     switch(type){
-        case('img'):
+        case('image'):
         if(fileData.url){
             imgPreview = fileData.url;
         }
@@ -221,12 +233,13 @@ function removeAtchFromList(fileId, queueId){
             queue.splice(index, 1);
         }
     }
+    setAttachmentsFilter(queueId);
+
     // If no more attachments, remove container
     const input = document.querySelector(`.input[id="${queueId}"`);
     const list = input.querySelector('.attachments-list');
     if (list && list.children.length === 0) {
         list.closest('.file-attachments').classList.remove('active');
-        clearInputFilters(queueId);
     }
 }
 
@@ -289,7 +302,6 @@ function updateFileStatus(fileId, status) {
                 break;
             case 'error':
                 statusIndicator.querySelector('#error-stat').style.visibility = 'visible'
-                showFeedbackMsg('')
                 break;
         }
     }
@@ -326,6 +338,10 @@ async function uploadAttachmentQueue(queueId, category, slug = null) {
 
         const upload = uploadFileToServer(attachment.fileData, url, (tempId, status, percent, fileUrl = null) => {
             updateFileStatus(attachment.fileData.tempId, status, fileUrl);
+            if(status === 'error'){
+                const inputField = document.querySelector(`.input[id=${queueId}`);
+                showFeedbackMsg(inputField, 'error', translation.Input_Err_UploadFailed);
+            }
         });
 
         const removeBtn = document.querySelector(`.attachment[data-file-id="${attachment.fileData.tempId}"]`).querySelector('.remove-btn');

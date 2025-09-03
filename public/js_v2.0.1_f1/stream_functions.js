@@ -23,7 +23,8 @@ function buildRequestObject(msgAttributes, onData) {
         payload:{
             model: activeModel.id,
             stream: stream,
-            messages: msgs
+            messages: msgs,
+            tools: msgAttributes['tools'],
         }
     };
 

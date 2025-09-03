@@ -87,6 +87,7 @@ class StreamController extends Controller
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
+                'payload.tools' => 'nullable|array',
                 
                 'broadcast' => 'required|boolean',
                 'isUpdate' => 'nullable|boolean',
@@ -205,11 +206,6 @@ class StreamController extends Controller
                 $response->usage,
                 'private',
             );
-            
-            if ($response->error !== null) {
-                $flush();
-                return;
-            }
             
             $messageData = [
                 'author' => [

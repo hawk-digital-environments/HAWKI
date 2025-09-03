@@ -75,7 +75,7 @@ function refreshModelList(fieldId) {
         button.disabled = !allowedIds.has(button.dataset.modelId);
     });
 
-    selectFallbackModel(fieldId);
+    return selectFallbackModel(fieldId);
 
 }
 
@@ -84,7 +84,7 @@ function addInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.add(filterName);
     inputFilters.set(fieldId, Array.from(filters));
-    refreshModelList(fieldId);
+    return refreshModelList(fieldId);
 }
 
 /// === Remove Input Filter ===
@@ -92,13 +92,13 @@ function removeInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.delete(filterName);
     inputFilters.set(fieldId, Array.from(filters));
-    refreshModelList(fieldId);
+    return refreshModelList(fieldId);
 }
 
 /// === Clear Input Filters for Field ===
 function clearInputFilters(fieldId) {
     inputFilters.set(fieldId, []);
-    refreshModelList(fieldId);
+    return refreshModelList(fieldId);
 }
 
 /// === If the model is to capable, switch to default model ===
@@ -118,21 +118,52 @@ function selectFallbackModel(fieldId) {
     for (const { filter, fallbackKey } of priorityList) {
         // If the filter is present or we're at default, consider this fallback
         if (!filter || filters.includes(filter)) {
-
             if(availableModelIds.has(activeModel.id)){
-                return;
+                return true;
             }
-
             const fallbackModelId = defaultModels[fallbackKey];
+
             if (availableModelIds.has(fallbackModelId)) {
                 setModel(fallbackModelId);
+                return true;
             }
         }
     }
 
-    // If none of the fallbacks are available, throw an error
-    throw new Error(
-        `No available models for the selected filters: [${filters.join(', ')}].
-         Please adjust your filters to continue.`
-    );
+    const input = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
+    showFeedbackMsg(input,'error', `No available models for the selected filters: ${filters.join(',  ')}`);
+    return false;
+
 }
+
+
+function checkFilterCombination(fieldId, newFilter) {
+    if (!newFilter) return false;  // Not a supported file type
+
+    const filters = inputFilters.get(fieldId) || [];
+    if (filters.includes(newFilter)) {
+        // Already allowed, no new constraint
+        return filterModels(fieldId).length > 0;
+    }
+
+    // Simulate adding the new filter and get eligible models
+    const combinedFilters = [...filters, newFilter];
+    const candidateModels = modelsList.filter(model => isModelEligible(model, combinedFilters));
+
+    return candidateModels.length > 0;
+}
+
+
+function getFilterFromMime(mime){
+    const type = checkFileFormat(mime);
+    switch(type){
+        case('pdf'):
+        case('docx'):
+            return 'file_upload';
+        case('image'):
+            return 'vision';
+        default:
+            return null;
+    }
+}
+

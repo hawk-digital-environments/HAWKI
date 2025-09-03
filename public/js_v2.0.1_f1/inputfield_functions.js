@@ -169,6 +169,5 @@ function showFeedbackMsg(inputfield, type, message) {
     setTimeout(() => {
         feedbackEl.innerText = '';
         feedbackEl.dataset.type = null
-    }, 3000);
-    console.log(feedbackEl);
+    }, 5000);
 }

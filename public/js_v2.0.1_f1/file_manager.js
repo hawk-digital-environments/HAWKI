@@ -279,13 +279,13 @@ async function renderImage(blob){
 
 //#region Utils
 
-function checkFileFormat(type){
-    if (type.startsWith('image/')) {
-        return 'img';
-    } else if (type.includes('pdf')) {
+function checkFileFormat(mime){
+    if (mime.startsWith('image/')) {
+        return 'image';
+    } else if (mime.includes('pdf')) {
         return 'pdf';
-    } else if (type.includes('msword') ||
-               type.includes('wordprocessingml')) {
+    } else if (mime.includes('msword') ||
+               mime.includes('wordprocessingml')) {
         return 'docx';
     } else {
         return null;

@@ -28,7 +28,7 @@ class SendMessage implements ShouldQueue
      * Create a new job instance.
      */
     public function __construct(Message $message, bool $isUpdate = false)
-    {   
+    {
         $this->message = $message;
         $this->isUpdate = $isUpdate;
 
@@ -56,12 +56,18 @@ class SendMessage implements ShouldQueue
             'message_id' => $this->message->message_id,
             'iv' => $this->message->iv,
             'tag' => $this->message->tag,
-            'content' => $this->message->content,
+            'content' => [
+                'text'=>[
+                    'ciphertext' => $this->message->content,
+                    'iv' => $this->message->iv,
+                    'tag' => $this->message->tag,
+                ],
+            ],
             'read_status'=> false,
-            
+
             'created_at' => $this->message->created_at->format('Y-m-d+H:i'),
             'updated_at' => $this->message->updated_at->format('Y-m-d+H:i'),
-        ]; 
+        ];
         $boradcastObject = [
             'type' => $type,
             'messageData' => $messageData

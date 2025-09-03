@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class AiModelStatus extends Model
 {
+    protected $primaryKey = 'model_id';
+    
     protected $fillable = [
         'model_id',
         'status',

@@ -21,6 +21,12 @@
 
     "Cnf_RemoveFile":"Möchtest du diese Datei wirklich löschen?",
 
+    "Logout_Warning":"Um HAWKI weiterhin zu nutzen, müssen Sie diese Bedingungen akzeptieren.<strong>Klicken Sie auf „Bestätigen“, um sich von HAWKI abzumelden.</strong>",
+
+    "Input_Err_UploadFailed": "Fehler beim Hochladen der Datei!",
+    "Input_Err_NotSupported": "Dateityp wird nicht unterstützt:",
+    "Input_Err_MaxSize": "Dateigröße überschreitet das zulässige Maximum.",
+
     "Exp_Title":"SESSION-TIMEOUT",
     "Exp_MSG":"Bitte logg dich erneut ein!",
 
@@ -60,6 +66,7 @@
     "Description": "Beschreibung",
     "Download": "herunterladen",
     "Export": "Exportieren",
+    "WebSearch":"Web Suche",
     "ExtAccToken": "Externe Zugangstoken",
     "General": "Allgemein",
     "History": "Verlauf",
@@ -132,5 +139,6 @@
     "PH_ChooseDescription": "Beschreibung eingeben",
     "PH_SystemPrompt": "Gebe deine bevorzugte Systemprompt ein",
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
-    "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird."
+    "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
+    "UploadFile": "Datei hochladen"
 }

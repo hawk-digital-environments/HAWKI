@@ -39,6 +39,7 @@ function initializeChatlogFunctions(){
 
 function switchDyMainContent(contentID){
 
+
     const mainPanel = document.querySelector('.dy-main-panel');
 
     const contents = mainPanel.querySelectorAll('.dy-main-content');
@@ -158,6 +159,7 @@ function setSendBtnStatus(status) {
     });
 
     // Update the sendbtnstat variable
+    // Update the sendbtnstat variable
     sendbtnstat = status;
 }
 function getSendBtnStat(){
@@ -220,6 +222,7 @@ function loadMessagesOnGUI(messages) {
     messages.forEach(messageObj => {
         const addedMsg = addMessageToChatlog(messageObj, true);
         updateMessageElement(addedMsg, messageObj);
+
 
         // Observe unread messages
         if(addedMsg.dataset.read_stat === 'false'){
@@ -334,6 +337,7 @@ function setModel(modelID = null){
             model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
         }
         // if there is no defined model
+        // if there is no defined model
         // or the defined model is outdated or cruppted
         if(!model){
             model = modelsList.find(m => m.id === defaultModels.default_model);
@@ -345,16 +349,43 @@ function setModel(modelID = null){
     activeModel = model;
     localStorage.setItem("definedModel", activeModel.id);
 
+    // If the selected model is a web search model, enable the web search button
+
+
+
+    // if (activeModel.id === defaultModels.default_web_search_model) {
+    //             console.log('web search model');
+    //     websearchBtns.forEach(btn => {
+    //         webSearchButton.classList.add('active');
+    //     });
+
+    // } else {
+    //     console.log('not web search model');
+
+    //     const webSearchButton = document.querySelector('#websearch-btn').parentElement;
+    //     if (webSearchButton) {
+    //         webSearchButton.classList.remove('active');
+    //     }
+    // }
 
     //UI UPDATE...
     const selectors = document.querySelectorAll('.model-selector');
     selectors.forEach(selector => {
         //if this is our target model selector
+        //if this is our target model selector
         if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
             selector.classList.add('active');
 
             const labels = document.querySelectorAll('.model-selector-label');
+
             labels.forEach(label => {
+
+                if (activeModel.id === defaultModels.default_web_search_model){
+                    label.closest('.input-container').querySelector('#websearch-btn').classList.add('active');
+                }
+                else{
+                    label.closest('.input-container').querySelector('#websearch-btn').classList.remove('active');
+                }
                 label.innerHTML = activeModel.label;
             });
         }
@@ -363,6 +394,21 @@ function setModel(modelID = null){
         }
     });
 
+}
+
+// Change the Model to a websearch capable model (available models atm.: gemini-2.0-flash-exp)
+function selectWebSearchModel(button) {
+    const isActive = button.classList.contains('active');
+    const input = button.parentElement.closest('.input-container').querySelector('.input');
+
+    if (isActive) {
+        button.classList.remove('active');
+        removeInputFilter(input.id, 'web_search');
+
+    } else {
+        button.classList.add('active');
+        addInputFilter(input.id, 'web_search');
+    }
 }
 
 //#endregion
@@ -387,11 +433,13 @@ function scrollToLast(forceScroll, targetElement = null) {
         const thread = targetElement.closest('.thread');
         const isBranchMessage = thread && thread.classList.contains('branch');
 
+
         if (isBranchMessage) {
             // Ensure thread is visible
             if (!thread.classList.contains('visible')) {
                 thread.classList.add('visible');
             }
+
 
             const messageHeight = targetElement.offsetHeight;
             // Calculate position based on thread position and the message's position in thread
@@ -399,12 +447,15 @@ function scrollToLast(forceScroll, targetElement = null) {
 
             const threadTopOffset = thread.offsetTop;
 
+
             // Position should include parent message position plus the position within the thread
             scrollTargetPosition =  threadTopOffset + messageTopOffset;
+
 
             // Add some padding to ensure message is fully visible
             // scrollTargetPosition -= 100;
         } else {
+
 
             // Add some padding to ensure message is fully visible
             const messageHeight = targetElement.offsetHeight;

@@ -125,13 +125,19 @@ async function onSendMessageToRoom(inputField) {
         const aiKeyRaw = await exportSymmetricKey(aiKey);  // Export key for transmission
         const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw); // Convert to base64
 
+        const webSearchActive = inputField.closest('.input-container').querySelector('#websearch-btn').classList.contains('active');
+        const tools = {
+            'web_search': webSearchActive
+        }
+
         // Prepare message attributes for AI
         const msgAttributes = {
             'threadIndex': activeThreadIndex,
-            'broadcasting': true,        // Broadcast to all room members
+            'broadcasting': true,
             'slug': activeRoom.slug,
-            'key': aiKeyBase64,          // Encrypted key for AI to use
-            'stream': false,             // Not using streaming for this message
+            'key': aiKeyBase64,
+            'stream': false,
+            'tools': tools
         }
 
         buildRequestObject(msgAttributes,  async (updatedText, done) => {
@@ -141,35 +147,6 @@ async function onSendMessageToRoom(inputField) {
 }
 
 
-/**
- * Connect to WebSocket for real-time room messages
- * @param {string} roomSlug - Unique identifier for the room
- *
- * structure of receiving message data (only message case):
- *
- * $messageData = [
- *      'room_id'
- *      'member_id'
- *      'author'
- *      [
- *          'username'
- *          'name'
- *          'isRemoved'
- *          'avatar_url'
- *      ],
- *
- *      'model'
- *      'message_role'
- *      'message_id'
- *      'iv'
- *      'tag'
- *      'content'
- *      'read_status'=> false,
- *
- *      'created_at'
- *      'updated_at'
- * ];
- */
 const connectWebSocket = (roomSlug) => {
     const webSocketChannel = `Rooms.${roomSlug}`;
 
@@ -186,26 +163,22 @@ const connectWebSocket = (roomSlug) => {
 
                 // Handle different types of events
                 if(data.type === 'message'){
-                    // If this is the currently active room
-                    if(activeRoom && activeRoom.slug === roomSlug){
-                        // Process message based on sender type
-                        if(data.messageData.message_role !== 'assistant'){
-                            handleUserMessages(data.messageData, roomSlug)   // User message
-                        } else {
-                            handleAIMessage(data.messageData, roomSlug)      // AI assistant message
-                        }
 
-                        // Play notification sound for messages from others
+                    if(activeRoom && activeRoom.slug === roomSlug){
+                        if(data.messageData.message_role !== 'assistant'){
+                            handleUserMessages(data.messageData, roomSlug)
+                        }else{
+                            handleAIMessage(data.messageData, roomSlug)
+                        }
                         if(data.messageData.author.username != userInfo.username){
-                            playSound('in');  // From functions.js - play incoming message sound
+                            playSound('in');
                         }
                     }
-                    else {
-                        // This is a message in a non-active room
+                    else{
                         if(data.messageData.author.username != userInfo.username){
-                            playSound('out');  // From functions.js - play notification sound
+                            playSound('out');
                         }
-                        flagRoomUnreadMessages(roomSlug, true);  // From chatlog_functions.js - flag room with unread messages
+                        flagRoomUnreadMessages(roomSlug, true);
                     }
                 }
 
@@ -215,65 +188,61 @@ const connectWebSocket = (roomSlug) => {
 
                 if(data.type === "aiGenerationStatus"){
                     if (data.messageData.isGenerating) {
-                        // Show typing indicator when AI is generating
+                        // Display the typing indicator for the user
                         addUserToTypingList(data.messageData.model);
                     } else {
-                        // Hide typing indicator when AI stops generating
+                        // Hide the typing indicator for the user
                         removeUserFromTypingList(data.messageData.model);
                     }
                 }
+
+
+
             } catch (error) {
                 console.error("Failed to decompress message:", error);
             }
         });
 };
 
-/**
- * Handle user messages received from WebSocket
- * @param {Object} messageData - Message data from server
- * @param {string} slug - Room slug identifier
- */
 async function handleUserMessages(messageData, slug){
-    // Decrypt message content using room key
-    const roomKey = await keychainGet(slug);  // From encryption.js - get room key
-    messageData.content = await decryptWithSymKey(roomKey, messageData.content, messageData.iv, messageData.tag);
 
-    // Find or create message element in the DOM
+    const roomKey = await keychainGet(slug);
+    messageData.content.text = await decryptWithSymKey(roomKey,
+                                                        messageData.content.text.ciphertext,
+                                                        messageData.content.text.iv,
+                                                        messageData.content.text.tag);
+
     let element = document.getElementById(messageData.message_id);
     if (!element) {
         element = addMessageToChatlog(messageData, true);
         activateMessageControls(element);
     }
-    else {
-        // Update existing message
-        updateMessageElement(element, messageData);        // From chatlog_functions.js
+    else{
+        updateMessageElement(element, messageData);
     }
 
-    // Track read status with Intersection Observer
+    // Observe unread messages
     if(element.dataset.read_stat === 'false'){
-        observer.observe(element);  // From chatlog_functions.js - mark as read when viewed
+        observer.observe(element);
     }
-
-    // Check thread unread messages status
     if(!element.querySelector('.branch')){
         const thread = element.parentElement;
-        checkThreadUnreadMessages(thread);  // From chatlog_functions.js
+        checkThreadUnreadMessages(thread);
     }
 }
 
-/**
- * Handle AI assistant messages received from WebSocket
- * @param {Object} messageData - Message data from server
- * @param {string} slug - Room slug identifier
- */
-async function handleAIMessage(messageData, slug){
-    // Get AI-specific encryption key
-    const roomKey = await keychainGet(slug);  // From encryption.js
-    const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');  // From encryption.js
-    const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);  // From encryption.js
 
-    // Decrypt message using AI key
-    messageData.content = await decryptWithSymKey(aiKey, messageData.content, messageData.iv, messageData.tag);
+let rawMsg = "";
+async function handleAIMessage(messageData, slug){
+
+    const roomKey = await keychainGet(slug);
+    const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+    const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
+
+    messageData.content.text = await decryptWithSymKey(aiKey,
+                                                        messageData.content.text.ciphertext,
+                                                        messageData.content.text.iv,
+                                                        messageData.content.text.tag);
 
     // CREATE AND UPDATE MESSAGE
     let element = document.getElementById(messageData.message_id);
@@ -284,62 +253,50 @@ async function handleAIMessage(messageData, slug){
         updateMessageElement(element, messageData);
     }
 
-    // Track read status with Intersection Observer
+    // Observe unread messages
     if(element.dataset.read_stat === 'false'){
         observer.observe(element);
     }
-
-    // Check thread unread messages status
     if(!element.querySelector('.branch')){
         const thread = element.parentElement;
-        checkThreadUnreadMessages(thread);  // From chatlog_functions.js
+        checkThreadUnreadMessages(thread);
     }
-}
+};
 
-/**
- * Handle message updates (edits) received from WebSocket
- * @param {Object} messageData - Message data from server
- * @param {string} slug - Room slug identifier
- */
 async function handleUpdateMessage(messageData, slug){
-    // Determine which key to use based on message role
     let key;
-    const roomKey = await keychainGet(slug);  // From encryption.js
+    const roomKey = await keychainGet(slug);
 
     if(messageData.message_role === 'assistant'){
-        // AI messages use a derived key
         const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
-        key = await deriveKey(roomKey, slug, aiCryptoSalt);  // From encryption.js
-    } else {
-        // User messages use the room key directly
+        key = await deriveKey(roomKey, slug, aiCryptoSalt);
+    }else{
         key = roomKey;
     }
 
-    // Decrypt message content
-    messageData.content = await decryptWithSymKey(key, messageData.content, messageData.iv, messageData.tag);
+    messageData.content.text = await decryptWithSymKey(key,
+                                                    messageData.content.text.ciphertext,
+                                                    messageData.content.text.iv,
+                                                    messageData.content.text.tag);
 
-    // Update message in DOM
     let element = document.getElementById(messageData.message_id);
 
-    // Re-enable regenerate button if it exists and was disabled
     regenerateBtn = element.querySelector('#regenerate-btn');
     if(regenerateBtn && regenerateBtn.disabled){
         regenerateBtn.disabled = false;
         regenerateBtn.style.opacity = '1';
     }
 
-    // Update message content
-    updateMessageElement(element, messageData, true);  // From chatlog_functions.js
+    updateMessageElement(element, messageData, true);
 
-    // Track read status with Intersection Observer
+
+    // Observe unread messages
     if(element.dataset.read_stat === 'false'){
-        observer.observe(element);  // From chatlog_functions.js
+        observer.observe(element);
     }
-
-    // Check thread unread messages status
     if(!element.querySelector('.branch')){
         const thread = element.parentElement;
-        checkThreadUnreadMessages(thread);  // From chatlog_functions.js
+        checkThreadUnreadMessages(thread);
     }
 }
 
@@ -349,40 +306,31 @@ async function handleUpdateMessage(messageData, slug){
 
 
 
-//#region STATUS UPDATES - Typing indicators
+//#region STATUS UPDATES
 
-// Variables for managing typing indicators
-let typingTimer;                        // Timer to throttle typing events
-const typingInterval = 1000;            // Debounce interval (1 second)
-let isTyping = false;                   // Current user's typing state
-let typingUsers = {};                   // Object to track users who are typing
-const typingTimeout = 5000;             // Auto-remove typing indicator after 5 seconds
+let typingTimer;
+const typingInterval = 1000; // 1 second
+let isTyping = false;
+let typingUsers = {}; // Object to track users who are typing
+const typingTimeout = 5000; // 5 seconds timeout
 
-/**
- * Handle user typing in the input field - triggers typing indicators
- * Called from input field's onkeydown event
- */
+
 function onGroupchatType() {
-    // Reset debounce timer on each keystroke
+    // Start or reset the timer on keydown
     clearTimeout(typingTimer);
 
-    // If not already typing, send typing start event
     if (!isTyping) {
         isTyping = true;
         startTyping();
     }
 
-    // Set timer to stop typing after the interval (debouncing)
+    // Set the timer to stop typing after the interval
     typingTimer = setTimeout(stopTyping, typingInterval);
 }
 
-/**
- * Broadcast typing start event to all room members
- */
 function startTyping() {
     const webSocketChannel = `Rooms.${activeRoom.slug}`;
 
-    // Broadcast typing status through Laravel Echo websocket
     Echo.private(webSocketChannel)
         .whisper('typing', {
             user: userInfo.username,
@@ -390,14 +338,10 @@ function startTyping() {
         });
 }
 
-/**
- * Broadcast typing stop event to all room members
- */
 function stopTyping() {
     isTyping = false;
     const webSocketChannel = `Rooms.${activeRoom.slug}`;
 
-    // Broadcast typing status stopped through Laravel Echo websocket
     Echo.private(webSocketChannel)
         .whisper('typing', {
             user: userInfo.username,
@@ -405,53 +349,38 @@ function stopTyping() {
         });
 }
 
-/**
- * Connect to the typing indicator websocket channel for a room
- * @param {string} roomSlug - Room identifier
- */
 function connectWhisperSocket(roomSlug){
-    const webSocketChannel = `Rooms.${roomSlug}`;
 
-    // Listen for typing events using Laravel Echo
+    const webSocketChannel = `Rooms.${roomSlug}`;
     Echo.private(webSocketChannel)
     .listenForWhisper('typing', (e) => {
-        // Only process events for the active room
         if (activeRoom.slug !== roomSlug) return;
 
         if (e.typing) {
-            // Add user to typing indicator when they start typing
+            // Display the typing indicator for the user
             addUserToTypingList(e.user);
         } else {
-            // Remove user from typing indicator when they stop typing
+            // Hide the typing indicator for the user
             removeUserFromTypingList(e.user);
         }
         updateTypingStatus();
     });
 }
 
-/**
- * Add a user to the typing indicator list
- * @param {string} user - Username to add to typing list
- */
+
 function addUserToTypingList(user) {
-    // Clear existing timeout if user is already in typing list
     if (typingUsers[user]) {
         clearTimeout(typingUsers[user]);
     }
 
-    // Add/update user with auto-removal timeout
+    // Add/update the user with a timeout to remove them after the typingTimeout
     typingUsers[user] = setTimeout(() => {
         removeUserFromTypingList(user);
         updateTypingStatus();
     }, typingTimeout);
-
     updateTypingStatus();
 }
 
-/**
- * Remove a user from the typing indicator list
- * @param {string} user - Username to remove from typing list
- */
 function removeUserFromTypingList(user) {
     if (typingUsers[user]) {
         clearTimeout(typingUsers[user]);
@@ -460,26 +389,19 @@ function removeUserFromTypingList(user) {
     updateTypingStatus();
 }
 
-/**
- * Update the typing indicator display based on current users typing
- */
 function updateTypingStatus() {
     const users = Object.keys(typingUsers);
 
     if (users.length === 0) {
-        // No one is typing
         typingStatusDiv.textContent = '';
-        typingStatusDiv.style.display = 'none';
+        typingStatusDiv.style.display = 'none'; // Hide if no one is typing
     } else if (users.length === 1) {
-        // One user typing
         typingStatusDiv.textContent = `${users[0]} is typing...`;
         typingStatusDiv.style.display = 'block';
     } else if (users.length === 2) {
-        // Two users typing
         typingStatusDiv.textContent = `${users[0]} & ${users[1]} are typing...`;
         typingStatusDiv.style.display = 'block';
     } else {
-        // More than two users typing
         typingStatusDiv.textContent = `${users[0]} & others are typing...`;
         typingStatusDiv.style.display = 'block';
     }
@@ -489,24 +411,18 @@ function updateTypingStatus() {
 
 
 
-//#region ROOM CONTROLS - Room creation and management
+//#region ROOM CONTROLLS
 
-/**
- * Open the room creation panel and reset form fields
- */
 function openRoomCreatorPanel(){
-    // Reset active room and update URL
     activeRoom = null;
     history.replaceState(null, '', `/groupchat`);
-    switchDyMainContent('room-creation');  // From functions.js - switch main content
+    switchDyMainContent('room-creation');
 
-    // Deactivate any selected room in sidebar
     const lastActive = document.getElementById('rooms-list').querySelector('.selection-item.active');
     if(lastActive){
         lastActive.classList.remove('active')
     }
 
-    // Get reference to the creation panel
     const roomCreationPanel = document.getElementById('room-creation');
 
     defaultPromt = translation.Default_Prompt;
@@ -517,60 +433,48 @@ function openRoomCreatorPanel(){
     roomCreationPanel.querySelector('#room-creation-avatar').setAttribute('src', '');
     roomCreationPanel.querySelector('#room-creation-avatar').style.display = 'none';
 
-    // Set default system prompt
+
     roomCreationPanel.querySelector('#system-prompt-input').value = defaultPromt;
-    resizeInputField(roomCreationPanel.querySelector('#system-prompt-input'));  // From inputfield_functions.js
+    resizeInputField(roomCreationPanel.querySelector('#system-prompt-input'));
 }
 
-/**
- * Clean up after room creation process is complete
- */
 function finishRoomCreation(){
-    // Clear all textareas
     const textareas = document.querySelector('.inputs-list').querySelectorAll('textarea');
     textareas.forEach(txt => {
         txt.value = "";
     });
-
-    // Clear added members list
     const addedMembers = document.querySelector('.added-members-list');
     while (addedMembers.firstChild) {
         addedMembers.removeChild(addedMembers.lastChild);
     }
 
-    // Switch to appropriate view based on whether a room is active
     if(activeRoom){
-        switchDyMainContent('chat');  // From functions.js
+        switchDyMainContent('chat');
         history.replaceState(null, '', `/groupchat/${activeRoom.slug}`);
     }
     else{
-        switchDyMainContent('group-welcome-panel');  // From functions.js
+        switchDyMainContent('group-welcome-panel');
         history.replaceState(null, '', `/groupchat`);
     }
 }
 
-/**
- * Create a new room on the server
- */
+
 async function createNewRoom(){
-    // Get input values
+
     const inputs = document.querySelector('.inputs-list');
     const name = inputs.querySelector('#chat-name-input').value;
     const description = inputs.querySelector('#room-description-input').value;
 
-    // Validate required inputs
     if (!name || !description) {
         document.getElementById('room-creation').querySelector('#alert-message').innerText = 'Please Fill all the required inputs.';
         return;
     }
 
-    // Prepare request object
     requestObj = {
         'room_name': name,
     }
 
     try {
-        // Send request to create room on server
         fetch('/req/room/createRoom', {
             method: "POST",
             headers: {
@@ -606,22 +510,21 @@ async function onSuccessfullRoomCreation(roomData){
     //generate encryption key
     const roomKey = await generateKey();
 
-    // Save key in keychain
-    await keychainSet(roomData.slug, roomKey, true);  // From encryption.js
+    //save key in keychain (don't need to wait for it)
+    await keychainSet(roomData.slug, roomKey, true);
 
-    // Encrypt room description and system prompt
-    const cryptDescription = await encryptWithSymKey(roomKey, description, false);  // From encryption.js
+    //encrypt room description and system prompt
+    const cryptDescription = await encryptWithSymKey(roomKey, description, false);
     const descriptionStr = JSON.stringify({
-        'ciphertext': cryptDescription.ciphertext,
-        'iv': cryptDescription.iv,
-        'tag': cryptDescription.tag,
+        'ciphertext':cryptDescription.ciphertext,
+        'iv':cryptDescription.iv,
+        'tag':cryptDescription.tag,
     });
-
-    const cryptSystemPrompt = await encryptWithSymKey(roomKey, systemPrompt, false);  // From encryption.js
+    const cryptSystemPrompt = await encryptWithSymKey(roomKey, systemPrompt, false);
     const systemPromptStr = JSON.stringify({
-        'ciphertext': cryptSystemPrompt.ciphertext,
-        'iv': cryptSystemPrompt.iv,
-        'tag': cryptSystemPrompt.tag,
+        'ciphertext':cryptSystemPrompt.ciphertext,
+        'iv':cryptSystemPrompt.iv,
+        'tag':cryptSystemPrompt.tag,
     });
 
     attributes ={
@@ -630,12 +533,13 @@ async function onSuccessfullRoomCreation(roomData){
         'img':avatar_url
     }
 
-    // Update room info on server
     updateRoomInfo(roomData.slug, attributes)
     rooms.push(roomData);
 
-    // Process invitations for added members
+    //create invitation
+    // Loop through the invitees to handle the encryption
     const membersBtnList = document.querySelector('.inputs-list').querySelector('.added-members-list').querySelectorAll('.added-member');
+
     let usersList = [];
 
     membersBtnList.forEach(element => {
@@ -643,7 +547,6 @@ async function onSuccessfullRoomCreation(roomData){
         usersList.push(user);
     });
 
-    // Create and send invitations to members
     await createAndSendInvitations(usersList, roomData.slug);
 
     //close UI
@@ -658,16 +561,12 @@ async function onSuccessfullRoomCreation(roomData){
 
 //#endregion
 
-//#region INVITATION MANAGEMENT - Creating and handling room invitations
+//#region INVITATION MANAGEMENT
 
-/**
- * Send invitations to users selected in the invitation modal
- * @param {HTMLElement} btn - Button that triggered the invitation
- */
+
 async function sendInvitation(btn){
     const invModal = btn.closest('.modal-content');
 
-    // Collect all added users from the modal
     const addedList = invModal.querySelector('.added-members-list');
     listOfInvitees = [];
     addedList.childNodes.forEach(child => {
@@ -676,42 +575,33 @@ async function sendInvitation(btn){
             listOfInvitees.push(userObj);
         }
     });
-
-    // Create and send invitations to all users
     await createAndSendInvitations(listOfInvitees, activeRoom.slug);
-    closeModal(btn);  // From functions.js - close the modal
+    closeModal(btn);
 }
 
-/**
- * Create and send encrypted invitations to a list of users
- * @param {Array} usersList - List of user objects to invite
- * @param {string} roomSlug - Room slug to invite users to
- */
 async function createAndSendInvitations(usersList, roomSlug){
-    // Get the room encryption key
-    const roomKey = await keychainGet(roomSlug);  // From encryption.js
-    const invitations = [];
 
-    // Process each invitee
+    const roomKey = await keychainGet(roomSlug);
+    const invitations = [];
     for (const invitee of usersList) {
         let invitation;
-
-        // For users with a public key, use asymmetric encryption
         if (invitee.publicKey) {
+
             const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(invitee.publicKey));
 
             invitation = {
                 username: invitee.username,
-                encryptedRoomKey: encryptedRoomKey.ciphertext, // The encrypted room key
-                iv: '0',                                       // Not used for public key encryption
-                tag: '0',                                      // Not used for public key encryption
-                role: invitee.role                             // User's role in the room
+                encryptedRoomKey: encryptedRoomKey.ciphertext, // This should be just the encrypted data for public key
+                iv: '0',
+                tag: '0',
+                role: invitee.role
             };
+
         } else {
-            // For external users without a public key, use temp hash method
-            // Generate a temporary hash for email-based invitation
-            const tempHash = generateTempHash();                      // From encryption.js
-            const encryptedRoomKey = await encryptWithTempHash(roomKey, tempHash); // From encryption.js
+
+            // Generate a temporary hash for this invitee
+            const tempHash = generateTempHash(); // Generate a temporary hash
+            const encryptedRoomKey = await encryptWithTempHash(roomKey, tempHash);
 
             invitation = {
                 username: invitee.username,
@@ -721,7 +611,6 @@ async function createAndSendInvitations(usersList, roomSlug){
                 role: invitee.role
             };
 
-            // Send email with invitation link containing temp hash
             const mailContent = {
                 username: invitee.username,
                 hash: tempHash,
@@ -731,17 +620,14 @@ async function createAndSendInvitations(usersList, roomSlug){
         }
         invitations.push(invitation);
     }
-
-    // Store all invitations on the server
+    //store invitations on database
     requestStoreInvitationsOnServer(invitations, roomSlug);
 }
 
-/**
- * Store invitations on the server database
- * @param {Array} invitations - List of invitation objects
- * @param {string} slug - Room slug
- */
+
+
 async function requestStoreInvitationsOnServer(invitations, slug){
+    // Send the invitations to the server to store
     await fetch(`/req/inv/store-invitations/${slug}`, {
         method: 'POST',
         headers: {
@@ -752,11 +638,8 @@ async function requestStoreInvitationsOnServer(invitations, slug){
     });
 }
 
-/**
- * Send invitation email to users without public keys
- * @param {Object} mailContent - Email content with username, hash, and slug
- */
 async function sendInvitationEmail(mailContent){
+    // Send the invitations to the server to store
     await fetch(`/req/inv/sendExternInvitation`, {
         method: 'POST',
         headers: {
@@ -765,15 +648,12 @@ async function sendInvitationEmail(mailContent){
         },
         body: JSON.stringify(mailContent)
     });
+
 }
 
-/**
- * Handle invitations sent to the current user
- * Called during application initialization
- */
+
 async function handleUserInvitations() {
-    try {
-        // Request pending invitations from server
+    try{
         const response = await fetch('/req/inv/requestUserInvitations', {
             method: 'GET',
             headers: {
@@ -788,20 +668,19 @@ async function handleUserInvitations() {
 
         const data = await response.json();
         if(data.formattedInvitations){
-            // Process each invitation
+
             const invitations = data.formattedInvitations;
-            const privateKeyBase64 = await keychainGet('privateKey');  // From encryption.js
+            const privateKeyBase64 = await keychainGet('privateKey');
+            // Retrieve and convert private key
+            const privateKey = base64ToArrayBuffer(privateKeyBase64);
 
-            // Convert private key from Base64 to ArrayBuffer
-            const privateKey = base64ToArrayBuffer(privateKeyBase64);  // From encryption.js
-
-            // Process each invitation
             for (const inv of invitations) {
                 try {
-                    // Decrypt room key using user's private key
-                    const encryptedRoomKeyBuffer = base64ToArrayBuffer(inv.invitation);  // From encryption.js
-                    const roomKey = await decryptWithPrivateKey(encryptedRoomKeyBuffer, privateKey);  // From encryption.js
 
+                    // Convert the encryptedRoomKey from Base64 to ArrayBuffer
+                    const encryptedRoomKeyBuffer = base64ToArrayBuffer(inv.invitation);
+                    // Decrypt the roomKey using the user's private key
+                    const roomKey = await decryptWithPrivateKey(encryptedRoomKeyBuffer, privateKey);
                     if (roomKey) {
                         await finishInvitationHandling(inv.invitation_id, roomKey)
                     }
@@ -818,12 +697,7 @@ async function handleUserInvitations() {
     }
 }
 
-/**
- * Handle invitation received through a temporary link (email)
- * @param {string} tempLink - JSON string with temp hash and room slug
- */
 async function handleTempLinkInvitation(tempLink){
-    // Parse the link data
     const parsedLink = JSON.parse(tempLink);
     tempHash = parsedLink.tempHash;
     slug = parsedLink.slug;
@@ -843,8 +717,7 @@ async function handleTempLinkInvitation(tempLink){
         }
 
         const data = await response.json();
-        roomKey = await decryptWithTempHash(data.invitation, tempHash, data.iv, data.tag);  // From encryption.js
-
+        roomKey = await decryptWithTempHash(data.invitation, tempHash, data.iv, data.tag);
         if(roomKey){
             await finishInvitationHandling(data.invitation_id, roomKey);
         }
@@ -855,13 +728,8 @@ async function handleTempLinkInvitation(tempLink){
     }
 }
 
-/**
- * Complete the invitation acceptance process
- * @param {string} invitation_id - ID of the invitation
- * @param {CryptoKey} roomKey - Decrypted room key
- */
 async function finishInvitationHandling(invitation_id, roomKey){
-    // Notify server of successful invitation acceptance
+    // Send invitation_id to server to confirm successful decryption
     const response = await fetch('/req/inv/roomInvitationAccept', {
         method: 'POST',
         headers: {
@@ -873,32 +741,29 @@ async function finishInvitationHandling(invitation_id, roomKey){
 
     const data = await response.json();
     if(data.success){
-        // Store room key in keychain
-        await keychainSet(data.room.slug, roomKey, true);  // From encryption.js
 
-        // Set up room in UI
+        await keychainSet(data.room.slug, roomKey, true);
+
         createRoomItem(data.room);
         connectWebSocket(data.room.slug);
         connectWhisperSocket(data.room.slug);
     }
 }
 
-/**
- * Open the invitation panel to add new members to a room
- */
+NOTE:
 function openInvitationPanel(){
     const modal = document.querySelector('#add-member-modal');
-
-    // Reset all fields in the modal
     modal.querySelector('#user-search-bar').value = '';
     modal.querySelector('#searchResults').innerHTML = '';
     modal.querySelector('#searchResults').style.display = 'none';
     modal.querySelector('.added-members-list').innerHTML = '';
-    tempSearchResult = '';
-
-    // Display the modal
+    tempSearchResult='';
     modal.style.display = 'flex';
 }
+
+
+
+
 
 //#endregion
 
@@ -915,29 +780,7 @@ function createRoomItem(roomData){
     roomsList.insertBefore(roomElement, roomsList.firstChild);
 }
 
-/**
- *
- * @param {button} btn
- * @param {string} slug
- *
- * Load room on the GUI either from the sidepanel button or the slug
- *
- * PREP
- * 1- sync btn and slug
- * 2- deactivate last active room
- * 3- deactivate submodule if it wasn't the chat (creation, control panel)
- * 4- update the url
- *
- * LOAD
- * 1- Download room data
- * 2- Update Active Room Atrributes
- * 3- Load Members
- * 4- Decrypt Messages and room secrets
- * 5- Setup GUI for User Permissions
- * 6- Load messages on GUI -> See Chatlog_functions.js
- *
- *
- */
+
 async function loadRoom(btn=null, slug=null){
     if(rooms.length === 0){
         history.replaceState(null, '', `/groupchat`);
@@ -1033,6 +876,7 @@ async function loadRoom(btn=null, slug=null){
 }
 
 
+
 function loadRoomMembers(roomData) {
     const membersList = document.getElementById('room-control-panel').querySelector('.members-list');
     // Clear existing members
@@ -1057,7 +901,6 @@ function loadRoomMembers(roomData) {
             memberBtnInit.remove();
         } else {
             memberBtnIcon.remove();
-            console.log('MEMBER', member);
             memberBtnInit.textContent = member.name.slice(0, 2).toUpperCase();
         }
         // Set member object in the button attribute
@@ -1066,6 +909,8 @@ function loadRoomMembers(roomData) {
         membersList.insertBefore(memberBtnTemp, membersList.querySelector('#invite-btn'));
     });
 }
+
+
 
 async function RequestRoomContent(slug){
 
