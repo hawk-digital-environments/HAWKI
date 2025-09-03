@@ -95,12 +95,18 @@ class GoogleProvider extends BaseAIModelProvider
         // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
         $additionalSettings = $this->config['additional_settings'] ?? [];
         $allowSearch = $additionalSettings['allow_search'] ?? false;
-        if ($allowSearch && $this->getModelDetails($modelId)['search_tool'] ?? false){
-            $payload['tools'] = $rawPayload['tools'] ?? [
-                [
-                    "google_search" => new \stdClass()
-                ]
-            ];
+        
+        if ($allowSearch) {
+            // Check if model supports search based on model name and database information
+            $supportsSearch = $this->modelSupportsSearch($modelId);
+            
+            if ($supportsSearch) {
+                $payload['tools'] = $rawPayload['tools'] ?? [
+                    [
+                        "google_search" => new \stdClass()
+                    ]
+                ];
+            }
         }
         return $payload;
     }
@@ -398,5 +404,43 @@ class GoogleProvider extends BaseAIModelProvider
             ob_flush();
         }
         flush();
+    }
+    
+    /**
+     * Check if a model supports Google Search functionality
+     * 
+     * @param string $modelId
+     * @return bool
+     */
+    private function modelSupportsSearch(string $modelId): bool
+    {
+        // Primary: Check database model settings
+        try {
+            $modelDetails = $this->getModelDetails($modelId);
+            if (is_array($modelDetails)) {
+                // Check if search_tool is in the top level (from information field)
+                if (isset($modelDetails['search_tool'])) {
+                    return (bool) $modelDetails['search_tool'];
+                }
+                
+                // Check if search_tool is in the settings sub-array
+                if (isset($modelDetails['settings']['search_tool'])) {
+                    return (bool) $modelDetails['settings']['search_tool'];
+                }
+            }
+        } catch (\Exception $e) {
+            // If database check fails, fall back to model name analysis
+            Log::warning("Failed to get model details for search check: " . $e->getMessage());
+        }
+        
+        // Fallback: Model name analysis - only Pro models support search
+        // This is used when database settings are not available
+        $modelIdLower = strtolower($modelId);
+        
+        // Remove models/ prefix if present
+        $modelIdLower = str_replace('models/', '', $modelIdLower);
+        
+        // Check if it's a Pro model (Flash models don't support search)
+        return strpos($modelIdLower, 'pro') !== false && strpos($modelIdLower, 'flash') === false;
     }
 }

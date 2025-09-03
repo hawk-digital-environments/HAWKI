@@ -9,7 +9,6 @@ use App\Models\Room;
 use App\Models\Message;
 use App\Models\Member;
 
-
 use App\Services\AI\UsageAnalyzerService;
 use App\Services\AI\AIConnectionService;
 use App\Services\AI\AIProviderFactory;
@@ -161,6 +160,9 @@ class StreamController extends Controller
      */
     private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
     {
+        // Reset buffer for new request
+        $this->jsonBuffer = '';
+        
         // Set headers for SSE
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
@@ -180,16 +182,27 @@ class StreamController extends Controller
         
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
-            foreach ($chunks as $chunk) {
+            // Log::info('Google Stream: Split into ' . count($chunks) . ' chunks');
+            
+            foreach ($chunks as $chunkIndex => $chunk) {
                 if (connection_aborted()) break;
-                if (!json_decode($chunk, true) || empty($chunk)) continue;
+                if (empty(trim($chunk))) {
+                    // Log::info("Google Stream: Chunk $chunkIndex is empty, skipping");
+                    continue;
+                }
+                
+                $jsonData = json_decode(trim($chunk), true);
+                if (!$jsonData) {
+                    // Log::info("Google Stream: Chunk $chunkIndex is not valid JSON: " . substr($chunk, 0, 100));
+                    continue;
+                }
                 
                 // Get the provider for this model
                 $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
                 
                 // Format the chunk
-                $formatted = $provider->formatStreamChunk($chunk);
-                // Log::info('Formatted Chunk:' . json_encode($formatted));
+                $formatted = $provider->formatStreamChunk(trim($chunk));
+                // Log::info('Google Stream: Formatted chunk ' . $chunkIndex . ', content length: ' . strlen($formatted['content']['text']) . ', isDone: ' . ($formatted['isDone'] ? 'true' : 'false'));
 
                 // Record usage if available
                 if ($formatted['usage']) {
@@ -200,18 +213,63 @@ class StreamController extends Controller
                     );
                 }
                 
-                // Send the formatted response to the client
-                $messageData = [
-                    'author' => [
-                        'username' => $user->username,
-                        'name' => $user->name,
-                        'avatar_url' => $avatar_url,
-                    ],
-                    'model' => $payload['model'],
-                    'isDone' => $formatted['isDone'],
-                    'content' => json_encode($formatted['content']),
-                ];
-                echo json_encode($messageData) . "\n";
+                // Special handling for Google Provider: 
+                // If this is a final chunk with content, send content first, then completion
+                $isGoogleProvider = $provider instanceof \App\Services\AI\Providers\GoogleProvider;
+                if ($isGoogleProvider && $formatted['isDone'] && !empty($formatted['content']['text'])) {
+                    // Send content chunk first
+                    $contentMessage = [
+                        'author' => [
+                            'username' => $user->username,
+                            'name' => $user->name,
+                            'avatar_url' => $avatar_url,
+                        ],
+                        'model' => $payload['model'],
+                        'isDone' => false, // Not done yet
+                        'content' => json_encode($formatted['content']),
+                    ];
+                    
+                    echo json_encode($contentMessage) . "\n";
+                    if (ob_get_length()) ob_flush();
+                    flush();
+                    
+                    // Then send completion chunk
+                    $completionMessage = [
+                        'author' => [
+                            'username' => $user->username,
+                            'name' => $user->name,
+                            'avatar_url' => $avatar_url,
+                        ],
+                        'model' => $payload['model'],
+                        'isDone' => true, // Now we're done
+                        'content' => json_encode(['text' => '', 'groundingMetadata' => '']),
+                    ];
+                    
+                    echo json_encode($completionMessage) . "\n";
+                    if (ob_get_length()) ob_flush();
+                    flush();
+                } else {
+                    // Normal handling for all other providers
+                    $messageData = [
+                        'author' => [
+                            'username' => $user->username,
+                            'name' => $user->name,
+                            'avatar_url' => $avatar_url,
+                        ],
+                        'model' => $payload['model'],
+                        'isDone' => $formatted['isDone'],
+                        'content' => json_encode($formatted['content']),
+                    ];
+                    
+                    echo json_encode($messageData) . "\n";
+                    if (ob_get_length()) ob_flush();
+                    flush();
+                }
+                
+                // Debug logging for final chunks
+                if ($formatted['isDone']) {
+                    Log::info('StreamController: Final chunk detected - isDone=true, content: ' . substr($formatted['content']['text'], 0, 100));
+                }
             }
         };
         
@@ -224,9 +282,45 @@ class StreamController extends Controller
     }
     /*
      * Helper function to translate curl return object from google to openai format
+     * Uses request-specific buffer instead of instance variable
+     */
+    private function normalizeGoogleStreamChunk(string $data, string &$requestBuffer): string
+    {
+        // Log incoming raw data for debugging
+        Log::info('Google Stream Raw Data: ' . substr($data, 0, 200) . (strlen($data) > 200 ? '...' : ''));
+        
+        $requestBuffer .= $data;
+
+        if(trim($requestBuffer) === "]") {
+            $requestBuffer = "";
+            return "";
+        }
+
+        $output = "";
+        while($extracted = $this->extractJsonObject($requestBuffer)) {
+            $jsonStr = $extracted['jsonStr'];
+            $output .= "data: " . $jsonStr . "\n";
+            
+            // Log what we're outputting
+            Log::info('Google Stream Normalized Chunk: ' . substr($jsonStr, 0, 100) . (strlen($jsonStr) > 100 ? '...' : ''));
+        }
+        
+        // Log remaining buffer if any
+        if (!empty($requestBuffer)) {
+            Log::info('Google Stream Buffer Remaining: ' . substr($requestBuffer, 0, 100) . (strlen($requestBuffer) > 100 ? '...' : ''));
+        }
+        
+        return $output;
+    }
+    
+    /*
+     * Helper function to translate curl return object from google to openai format
      */
     private function normalizeDataChunk(string $data): string
     {
+        // Log incoming raw data for debugging (uncomment for debugging)
+        Log::info('Google Stream Raw Data: ' . substr($data, 0, 200) . (strlen($data) > 200 ? '...' : ''));
+        
         $this->jsonBuffer .= $data;
 
         if(trim($this->jsonBuffer) === "]") {
@@ -235,38 +329,99 @@ class StreamController extends Controller
         }
 
         $output = "";
+        $extractedCount = 0;
+        
+        // Extract all complete JSON objects from buffer
         while($extracted = $this->extractJsonObject($this->jsonBuffer)) {
             $jsonStr = $extracted['jsonStr'];
-            $this->jsonBuffer = $extracted['rest'];
             $output .= "data: " . $jsonStr . "\n";
+            $extractedCount++;
+            
+            // Log what we're outputting (uncomment for debugging)
+            Log::info('Google Stream Normalized Chunk ' . $extractedCount . ': ' . substr($jsonStr, 0, 100) . (strlen($jsonStr) > 100 ? '...' : ''));
+            
+            // Prevent infinite loops (safety measure)
+            if ($extractedCount > 100) {
+                Log::error('Google Stream: Too many JSON objects extracted, breaking to prevent infinite loop');
+                break;
+            }
         }
+        
+        // Log remaining buffer if any (uncomment for debugging)
+        if (!empty($this->jsonBuffer)) {
+            Log::info('Google Stream Buffer Remaining: ' . substr($this->jsonBuffer, 0, 100) . (strlen($this->jsonBuffer) > 100 ? '...' : ''));
+        }
+        
         return $output;
     }
 
-    // New helper function to extract only complete JSON objects from buffer
-    private function extractJsonObject(string $buffer): ?array
+    /**
+     * Helper function to extract complete JSON objects from buffer
+     * Handles strings properly to avoid false brace detection inside JSON strings
+     */
+    private function extractJsonObject(string &$buffer): ?array
     {
-        $openBraces = 0;
-        $startFound = false;
-        $startPos = 0;
-
-        for($i = 0; $i < strlen($buffer); $i++) {
+        $buffer = trim($buffer);
+        
+        if (empty($buffer)) {
+            return null;
+        }
+        
+        // Find the start of a JSON object
+        $start = strpos($buffer, '{');
+        if ($start === false) {
+            return null;
+        }
+        
+        // Track brace depth to find the complete JSON object
+        $depth = 0;
+        $inString = false;
+        $escapeNext = false;
+        $length = strlen($buffer);
+        
+        for ($i = $start; $i < $length; $i++) {
             $char = $buffer[$i];
-            if($char === '{') {
-                if(!$startFound) {
-                    $startFound = true;
-                    $startPos = $i;
-                }
-                $openBraces++;
-            } elseif($char === '}') {
-                $openBraces--;
-                if($openBraces === 0 && $startFound) {
-                    $jsonStr = substr($buffer, $startPos, $i - $startPos + 1);
-                    $rest = substr($buffer, $i + 1);
-                    return ['jsonStr' => $jsonStr, 'rest' => $rest];
+            
+            if ($escapeNext) {
+                $escapeNext = false;
+                continue;
+            }
+            
+            if ($char === '\\') {
+                $escapeNext = true;
+                continue;
+            }
+            
+            if ($char === '"') {
+                $inString = !$inString;
+                continue;
+            }
+            
+            if (!$inString) {
+                if ($char === '{') {
+                    $depth++;
+                } elseif ($char === '}') {
+                    $depth--;
+                    
+                    // Found complete JSON object
+                    if ($depth === 0) {
+                        $end = $i + 1;
+                        $jsonStr = substr($buffer, $start, $end - $start);
+                        $rest = substr($buffer, $end);
+                        
+                        // Update the buffer reference
+                        $buffer = $rest;
+                        
+                        return [
+                            'jsonStr' => $jsonStr,
+                            'rest' => $rest
+                        ];
+                    }
                 }
             }
         }
+        
+        // No complete JSON object found
         return null;
     }
     /**
