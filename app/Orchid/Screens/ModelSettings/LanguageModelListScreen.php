@@ -356,8 +356,24 @@ class LanguageModelListScreen extends Screen
                         $modelsFound = count($modelsList);
                         
                         foreach ($modelsList as $modelData) {
-                            $modelId = $modelData['id'] ?? $modelData['name'] ?? null;
-                            $modelLabel = $modelData['name'] ?? $modelData['id'] ?? 'Unknown Model';
+                            // Extract model ID based on provider type
+                            $modelId = null;
+                            $modelLabel = null;
+                            
+                            // Handle different API response formats
+                            if (isset($modelData['name']) && str_starts_with($modelData['name'], 'models/')) {
+                                // Google API format: name = "models/gemini-pro"
+                                $modelId = $modelData['name']; // Keep full name with models/ prefix
+                                $modelLabel = $modelData['displayName'] ?? str_replace('models/', '', $modelData['name']);
+                            } elseif (isset($modelData['id'])) {
+                                // OpenAI/Standard format: id = "gpt-4"
+                                $modelId = $modelData['id'];
+                                $modelLabel = $modelData['name'] ?? $modelData['id'];
+                            } elseif (isset($modelData['name'])) {
+                                // Ollama/Other format: name = "llama2"
+                                $modelId = $modelData['name'];
+                                $modelLabel = $modelData['displayName'] ?? $modelData['name'];
+                            }
                             
                             if (!$modelId) {
                                 continue; // Skip models without valid ID

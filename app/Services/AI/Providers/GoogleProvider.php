@@ -3,9 +3,32 @@
 namespace App\Services\AI\Providers;
 
 use Illuminate\Support\Facades\Log;
+use App\Models\ProviderSetting;
 
 class GoogleProvider extends BaseAIModelProvider
 {
+    /**
+     * Constructor for GoogleProvider
+     *
+     * @param array $config
+     */
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+        $this->providerId = 'Google'; // Muss mit Datenbank übereinstimmen (case-sensitive)
+    }
+    /**
+     * Get the provider settings from database
+     *
+     * @return ProviderSetting|null
+     */
+    protected function getProviderFromDatabase(): ?ProviderSetting
+    {
+        return ProviderSetting::where('provider_name', $this->providerId)
+            ->where('is_active', true)
+            ->first();
+    }
+
     /**
      * Format the raw payload for Google API
      *
@@ -43,10 +66,14 @@ class GoogleProvider extends BaseAIModelProvider
 
         $payload = [
             'model' => $modelId,
-            'system_instruction' => $systemInstruction,
             'contents' => $formattedMessages,
             'stream' => $rawPayload['stream'] && $this->supportsStreaming($modelId),
         ];
+        
+        // Only add system_instruction if it's not empty
+        if (!empty($systemInstruction)) {
+            $payload['system_instruction'] = $systemInstruction;
+        }
         
         // Set complete optional fields with content (default values if not present in $rawPayload)
         $payload['safetySettings'] = $rawPayload['safetySettings'] ?? [
@@ -66,7 +93,9 @@ class GoogleProvider extends BaseAIModelProvider
         
         // Google Search only works with gemini >= 2.0
         // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
-        if ($this->config['allow_search'] && $this->getModelDetails($modelId)['search_tool']){
+        $additionalSettings = $this->config['additional_settings'] ?? [];
+        $allowSearch = $additionalSettings['allow_search'] ?? false;
+        if ($allowSearch && $this->getModelDetails($modelId)['search_tool'] ?? false){
             $payload['tools'] = $rawPayload['tools'] ?? [
                 [
                     "google_search" => new \stdClass()
@@ -193,13 +222,48 @@ class GoogleProvider extends BaseAIModelProvider
         // Ensure stream is set to false
         $payload['stream'] = false;
         
-        // Construct the URL with API key
-        $url = $this->config['api_url'] . $payload['model'] . ':generateContent?key=' . $this->config['api_key'];
+        // Get the chat endpoint URL from database configuration
+        $provider = $this->getProviderFromDatabase();
+        if ($provider) {
+            $chatEndpoint = $provider->apiFormat?->getEndpoint('chat.create');
+            if ($chatEndpoint) {
+                $baseUrl = $provider->apiFormat->base_url;
+                
+                // Handle model ID - Google API expects models/model-name format
+                $modelId = $payload['model'];
+                
+                // If model ID already starts with "models/", use it as is
+                // Otherwise, prepend "models/" to it
+                if (!str_starts_with($modelId, 'models/')) {
+                    $modelId = 'models/' . $modelId;
+                }
+                
+                // For Google API, if the endpoint path contains "/models/{model}", 
+                // and our model ID already has "models/", we need to adjust
+                $path = $chatEndpoint->path;
+                if (str_contains($path, '/models/{model}') && str_starts_with($modelId, 'models/')) {
+                    // Remove the extra "models/" from the path since model ID already has it
+                    $path = str_replace('/models/{model}', '/{model}', $path);
+                }
+                
+                $path = str_replace('{model}', $modelId, $path);
+                $url = rtrim($baseUrl, '/') . $path . '?key=' . $this->config['api_key'];
+            } else {
+                throw new \Exception('Chat endpoint not found for Google provider');
+            }
+        } else {
+            throw new \Exception('Google provider configuration not found in database');
+        }
+        
         // Extract just the necessary parts for Google's API
         $requestPayload = [
-            'system_instruction' => $payload['system_instruction'],
             'contents' => $payload['contents']
         ];
+        
+        // Only add system_instruction if it exists
+        if (isset($payload['system_instruction'])) {
+            $requestPayload['system_instruction'] = $payload['system_instruction'];
+        }
 
         // Add aditional config parameters if present
         if (isset($payload['safetySettings'])) {
@@ -235,7 +299,7 @@ class GoogleProvider extends BaseAIModelProvider
     }
     
 /**
-     * Make a streaming request to the OpenAI API
+     * Make a streaming request to the Google API
      *
      * @param array $payload The formatted payload
      * @param callable $streamCallback Callback for streaming responses
@@ -243,14 +307,48 @@ class GoogleProvider extends BaseAIModelProvider
      */
      public function makeStreamingRequest(array $payload, callable $streamCallback)
     {
-        // Streaming endpoint for Google Gemini
-        $url = $this->config['streaming_url'] . $payload['model'] . ':streamGenerateContent?key=' . $this->config['api_key'];
+        // Get the streaming endpoint URL from database configuration
+        $provider = $this->getProviderFromDatabase();
+        if ($provider) {
+            $streamEndpoint = $provider->apiFormat?->getEndpoint('chat.stream');
+            if ($streamEndpoint) {
+                $baseUrl = $provider->apiFormat->base_url;
+                
+                // Handle model ID - Google API expects models/model-name format
+                $modelId = $payload['model'];
+                
+                // If model ID already starts with "models/", use it as is
+                // Otherwise, prepend "models/" to it
+                if (!str_starts_with($modelId, 'models/')) {
+                    $modelId = 'models/' . $modelId;
+                }
+                
+                // For Google API, if the endpoint path contains "/models/{model}", 
+                // and our model ID already has "models/", we need to adjust
+                $path = $streamEndpoint->path;
+                if (str_contains($path, '/models/{model}') && str_starts_with($modelId, 'models/')) {
+                    // Remove the extra "models/" from the path since model ID already has it
+                    $path = str_replace('/models/{model}', '/{model}', $path);
+                }
+                
+                $path = str_replace('{model}', $modelId, $path);
+                $url = rtrim($baseUrl, '/') . $path . '?alt=sse&key=' . $this->config['api_key'];
+            } else {
+                throw new \Exception('Stream endpoint not found for Google provider');
+            }
+        } else {
+            throw new \Exception('Google provider configuration not found in database');
+        }
 
         // Extract necessary parts for Google's API
         $requestPayload = [
-            'system_instruction' => $payload['system_instruction'],
             'contents' => $payload['contents']
         ];
+        
+        // Only add system_instruction if it exists
+        if (isset($payload['system_instruction'])) {
+            $requestPayload['system_instruction'] = $payload['system_instruction'];
+        }
         
         // Add aditional config parameters if present
         if (isset($payload['safetySettings'])) {
@@ -281,14 +379,6 @@ class GoogleProvider extends BaseAIModelProvider
         // Set streaming-specific options
         $this->setStreamingCurlOptions($ch, $streamCallback);
         
-            // Log the full curl command (simulated)
-            $httpHeaders = $this->getHttpHeaders(true);
-            $headerString = '';
-            foreach ($httpHeaders as $header) {
-                $headerString .= "-H '" . $header . "' ";
-            }
-            $command = "curl -X POST '" . $url . "' " . $headerString . "-d '" . json_encode($requestPayload) . "'";    
-
         // Execute the cURL session
         curl_exec($ch);
 

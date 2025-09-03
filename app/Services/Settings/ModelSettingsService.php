@@ -374,16 +374,19 @@ class ModelSettingsService
         $keyMask = $apiKey ? substr($apiKey, 0, 5).'...' : 'none';
 
         try {
-            // Google API uses x-goog-api-key header, not query parameter or Authorization
+            // Google API uses API key as query parameter, not header
             $headers = [
                 'Content-Type' => 'application/json',
             ];
 
+            // Add API key as query parameter
+            $urlWithKey = $pingUrl;
             if ($apiKey) {
-                $headers['x-goog-api-key'] = $apiKey;
+                $separator = strpos($pingUrl, '?') !== false ? '&' : '?';
+                $urlWithKey = $pingUrl . $separator . 'key=' . $apiKey;
             }
 
-            $response = Http::withHeaders($headers)->get($pingUrl);
+            $response = Http::withHeaders($headers)->get($urlWithKey);
 
             if (! $response->successful()) {
                 $logData = [
