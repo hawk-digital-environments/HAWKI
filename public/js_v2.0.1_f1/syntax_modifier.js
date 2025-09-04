@@ -322,7 +322,7 @@ function formatGoogleCitations(content, groundingMetadata = '') {
 
     let processedContent = tempContent;
 
-    // 2. Fußnoten einfügen (nur im nicht-Code-Teil)
+    // 2A. Google-style grounding supports processing (original logic)
     if (groundingMetadata?.groundingSupports?.length) {
         groundingMetadata.groundingSupports.forEach((support) => {
             const segmentText = support.segment?.text || '';
@@ -343,6 +343,32 @@ function formatGoogleCitations(content, groundingMetadata = '') {
                 );
             }
         });
+    }
+    // 2B. Anthropic-style inline citations processing (new logic for [1,2,3] patterns)
+    else if (groundingMetadata?.groundingChunks?.length) {
+        // Find inline citation patterns like [1], [2,3], etc.
+        const citationPattern = /\[(\d+(?:,\s*\d+)*)\]/g;
+        let match;
+        
+        while ((match = citationPattern.exec(processedContent)) !== null) {
+            const fullMatch = match[0]; // e.g., "[1,2]"
+            const citationNumbers = match[1]; // e.g., "1,2"
+            const indices = citationNumbers.split(',').map(num => parseInt(num.trim()) - 1); // Convert to 0-based indices
+            
+            // Create a placeholder for the footnote
+            const footnoteId = footnoteReplacements.length;
+            const footnotePlaceholder = `%%FOOTNOTE_${footnoteId}%%`;
+            
+            // Store the actual HTML for later replacement
+            const footnoteHTML = `<sup><a href="#sources" class="citation-link" data-sources="${indices.join(',')}">${citationNumbers}</a></sup>`;
+            footnoteReplacements.push(footnoteHTML);
+            
+            // Replace the [1,2] pattern with placeholder
+            processedContent = processedContent.replace(fullMatch, footnotePlaceholder);
+        }
+        
+        // Reset regex for next use
+        citationPattern.lastIndex = 0;
     }
 
     // 3. Literatur/Quellen anhängen (auch nur am Ende, nicht im Code)
@@ -402,15 +428,12 @@ function restoreGoogleCitations(content) {
 function activateCitations(messageElement) {
     // Add click handlers for citation links
     const citationLinks = messageElement.querySelectorAll('.citation-link');
-    console.log('Activating citations for', citationLinks.length, 'links');
     citationLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('Citation clicked:', this);
             
             // Get source IDs from data attribute
             const sourceIds = this.getAttribute('data-sources').split(',');
-            console.log('Source IDs:', sourceIds);
             
             // Remove highlighting from all sources
             const allSourceLinks = messageElement.querySelectorAll('.source-link');
@@ -421,7 +444,6 @@ function activateCitations(messageElement) {
             // Highlight corresponding sources
             sourceIds.forEach(sourceId => {
                 const sourceLink = messageElement.querySelector(`.source-link[data-source-id="${parseInt(sourceId) + 1}"]`);
-                console.log('Looking for source with data-source-id:', parseInt(sourceId) + 1, 'Found:', sourceLink);
                 if (sourceLink) {
                     sourceLink.classList.add('highlighted');
                     

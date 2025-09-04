@@ -396,8 +396,9 @@ function deconstContent(inputContent){
     
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
+        
         if(json.hasOwnProperty('groundingMetadata')){
-            groundingMetadata = json.groundingMetadata
+            groundingMetadata = json.groundingMetadata;
         }
         if(json.hasOwnProperty('text')){
             messageText = json.text;
@@ -623,7 +624,6 @@ async function confirmEditMessage(provider){
     const messageElement = provider.closest('.message');
 
     if(!messageElement.classList.contains('me')){
-        // console.log('Not Your Message!');
         return;
     }
 
@@ -661,7 +661,6 @@ async function confirmEditMessage(provider){
             if(messageElement.dataset.role === 'assistant'){
                 const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
                 key = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-                // console.log(key);
             }else{
                 key = roomKey;
             }
@@ -698,7 +697,6 @@ async function onRegenerateBtn(btn){
 
 async function regenerateMessage(messageElement, Done = null){
     if(!messageElement.classList.contains('AI')){
-        // console.log('Not AI Message!');
         return;
     }
     const threadIndex = messageElement.closest('.thread').id;
@@ -741,7 +739,6 @@ async function regenerateMessage(messageElement, Done = null){
                 'stream': false,
                 'model': activeModel.id,
             }
-            // console.log('buildRequestObject');
             buildRequestObject(msgAttributes,  async (updatedText, done) => {});
         break;
     }

@@ -11,6 +11,13 @@ class AnthropicProvider extends BaseAIModelProvider
      * Accumulated web search citations during stream processing
      */
     private array $webSearchCitations = [];
+    
+    /**
+     * Track current text block and associated citations
+     */
+    private int $currentBlockIndex = -1;
+    private array $blockCitations = [];
+    private bool $inTextBlock = false;
 
     /**
      * Constructor for AnthropicProvider
@@ -180,7 +187,7 @@ class AnthropicProvider extends BaseAIModelProvider
             $content = $result['content'];
             $isDone = $result['isDone'];
             $usage = $result['usage'];
-            $groundingMetadata = $result['groundingMetadata'];
+            $groundingMetadata = $result['groundingMetadata'] ?? null;
         } else {
             // Fallback: Try SSE format parsing (for chunks with multiple events)
             $lines = explode("
@@ -202,7 +209,9 @@ class AnthropicProvider extends BaseAIModelProvider
                         $content .= $result['content']; // Accumulate content from multiple events
                         if ($result['isDone']) $isDone = true;
                         if ($result['usage']) $usage = $result['usage'];
-                        if ($result['groundingMetadata']) $groundingMetadata = $result['groundingMetadata'];
+                        if (isset($result['groundingMetadata']) && $result['groundingMetadata']) {
+                            $groundingMetadata = $result['groundingMetadata'];
+                        }
                     }
                 }
             }
@@ -232,10 +241,15 @@ class AnthropicProvider extends BaseAIModelProvider
             case 'message_start':
                 // Message has started, reset citation cache
                 $this->webSearchCitations = [];
+                $this->currentBlockIndex = -1;
+                $this->blockCitations = [];
+                $this->inTextBlock = false;
                 break;
 
             case 'content_block_start':
                 // Content block has started
+                $this->currentBlockIndex = $data['index'] ?? $this->currentBlockIndex + 1;
+                
                 if (isset($data['content_block']['type'])) {
                     switch ($data['content_block']['type']) {
                         case 'web_search_tool_result':
@@ -246,12 +260,36 @@ class AnthropicProvider extends BaseAIModelProvider
                             break;
                             
                         case 'text':
-                            // Regular text block starting
+                            // Regular text block starting - check if it has citations
+                            $this->inTextBlock = true;
+                            $this->blockCitations[$this->currentBlockIndex] = [];
+                            
+                            // Check if this block has citations attached
+                            if (isset($data['content_block']['citations']) && is_array($data['content_block']['citations'])) {
+                                foreach ($data['content_block']['citations'] as $citation) {
+                                    $this->blockCitations[$this->currentBlockIndex][] = $citation;
+                                }
+                            }
                             break;
                             
                         default:
                             Log::debug('AnthropicProvider unknown content block type:', ['type' => $data['content_block']['type']]);
                             break;
+                    }
+                }
+                break;
+
+            case 'content_block_stop':
+                // Content block has ended
+                if ($this->inTextBlock) {
+                    $this->inTextBlock = false;
+                    
+                    // Add inline citations if we have any for this block
+                    if (isset($this->blockCitations[$this->currentBlockIndex]) && 
+                        !empty($this->blockCitations[$this->currentBlockIndex])) {
+                        
+                        // Generate the citation numbers for this block as separate content
+                        $content = $this->addInlineCitations('');
                     }
                 }
                 break;
@@ -265,6 +303,8 @@ class AnthropicProvider extends BaseAIModelProvider
                             if (isset($data['delta']['text'])) {
                                 $content = $data['delta']['text'];
                                 
+                                // Don't add inline citations here - they will be added at content_block_stop
+                                
                                 // If we have accumulated citations, include them
                                 if (!empty($this->webSearchCitations)) {
                                     $groundingMetadata = $this->convertToGoogleFormat($this->webSearchCitations);
@@ -272,12 +312,21 @@ class AnthropicProvider extends BaseAIModelProvider
                             }
                             break;
                             
-                        case 'input_json_delta':
-                            // Web Search tool input - return empty content (not user-visible)
+                        case 'citations_delta':
+                            // Web search citations - parse and store with text position
+                            if (isset($data['delta']['citation'])) {
+                                // Single citation in this delta
+                                $this->parseCitationDelta($data['delta']['citation']);
+                            } elseif (isset($data['delta']['citations']) && is_array($data['delta']['citations'])) {
+                                // Multiple citations in this delta (fallback)
+                                foreach ($data['delta']['citations'] as $citation) {
+                                    $this->parseCitationDelta($citation);
+                                }
+                            }
                             break;
                             
-                        case 'citations_delta':
-                            // Citations for web search results - return empty content (not user-visible)
+                        case 'input_json_delta':
+                            // Web Search tool input - return empty content (not user-visible)
                             break;
                             
                         default:
@@ -331,12 +380,10 @@ class AnthropicProvider extends BaseAIModelProvider
         }
 
         return [
-            'content' => [
-                'text' => $content,
-                'groundingMetadata' => $groundingMetadata,
-            ],
-            'isDone' => $isDone,
+            'content' => $content, 
+            'isDone' => $isDone, 
             'usage' => $usage,
+            'groundingMetadata' => $groundingMetadata
         ];
     }
 
@@ -347,11 +394,52 @@ class AnthropicProvider extends BaseAIModelProvider
     {
         foreach ($searchContent as $result) {
             if (isset($result['type']) && $result['type'] === 'web_search_result') {
-                $this->webSearchCitations[] = [
+                $citation = [
                     'title' => $result['title'] ?? '',
                     'url' => $result['url'] ?? '',
                     'content' => $result['encrypted_content'] ?? $result['content'] ?? ''
                 ];
+                $this->webSearchCitations[] = $citation;
+            }
+        }
+    }
+
+    /**
+     * Parse and store citations from Anthropic's citations_delta events
+     */
+    private function parseCitationDelta(array $citation): void
+    {
+        // Anthropic citations from citations_delta have type web_search_result_location
+        if (isset($citation['type']) && $citation['type'] === 'web_search_result_location') {
+            $title = $citation['title'] ?? '';
+            $url = $citation['url'] ?? '';
+            $citedText = $citation['cited_text'] ?? '';
+            
+            $citationData = [
+                'title' => $title,
+                'url' => $url,
+                'content' => $citedText
+            ];
+            
+            // Check if this citation already exists (avoid duplicates by URL)
+            $exists = false;
+            foreach ($this->webSearchCitations as $existingCitation) {
+                if ($existingCitation['url'] === $citationData['url']) {
+                    $exists = true;
+                    break;
+                }
+            }
+            
+            if (!$exists) {
+                $this->webSearchCitations[] = $citationData;
+                
+                // Add to current block citations if we're in a text block
+                if ($this->inTextBlock && $this->currentBlockIndex >= 0) {
+                    if (!isset($this->blockCitations[$this->currentBlockIndex])) {
+                        $this->blockCitations[$this->currentBlockIndex] = [];
+                    }
+                    $this->blockCitations[$this->currentBlockIndex][] = $citationData;
+                }
             }
         }
     }
@@ -362,7 +450,6 @@ class AnthropicProvider extends BaseAIModelProvider
     private function convertToGoogleFormat(array $citations): array
     {
         $groundingChunks = [];
-        $groundingSupports = [];
 
         foreach ($citations as $index => $citation) {
             // Create grounding chunk
@@ -372,21 +459,10 @@ class AnthropicProvider extends BaseAIModelProvider
                     'title' => $citation['title']
                 ]
             ];
-
-            // Create grounding support with segment reference
-            $groundingSupports[] = [
-                'segment' => [
-                    'startIndex' => 0,
-                    'endIndex' => 0
-                ],
-                'groundingChunkIndices' => [$index],
-                'confidenceScores' => [1.0] // Default confidence
-            ];
         }
 
         return [
-            'groundingChunks' => $groundingChunks,
-            'groundingSupports' => $groundingSupports
+            'groundingChunks' => $groundingChunks
         ];
     }
 
@@ -490,5 +566,48 @@ class AnthropicProvider extends BaseAIModelProvider
         }
 
         curl_close($ch);
+    }
+
+    /**
+     * Add inline citations to text content
+     * 
+     * @param string $content The text content to add citations to
+     * @return string The content with inline citation numbers
+     */
+    private function addInlineCitations(string $content): string
+    {
+        if (empty($this->blockCitations[$this->currentBlockIndex])) {
+            return $content;
+        }
+
+        // Get citations for this block and add them as footnotes
+        $citations = $this->blockCitations[$this->currentBlockIndex];
+        $citationNumbers = [];
+        
+        foreach ($citations as $citation) {
+            // Find the citation number based on its position in webSearchCitations
+            foreach ($this->webSearchCitations as $index => $webCitation) {
+                if ($webCitation['url'] === $citation['url']) {
+                    $citationNumbers[] = $index + 1; // 1-based indexing
+                    break;
+                }
+            }
+        }
+        
+        // Add citation numbers - if content is empty, just return the citations
+        if (!empty($citationNumbers)) {
+            $footnotes = implode(',', array_unique($citationNumbers));
+            if (empty($content)) {
+                // This is called from content_block_stop, just return the citation markers
+                $result = " [{$footnotes}]";
+            } else {
+                // This would be called from text_delta (currently disabled)
+                $result = $content . " [{$footnotes}]";
+            }
+            
+            return $result;
+        }
+        
+        return $content;
     }
 }
