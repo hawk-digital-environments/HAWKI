@@ -4,9 +4,15 @@ namespace App\Services\AI\Providers;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\Citations\CitationService;
 
 class AnthropicProvider extends BaseAIModelProvider
 {
+    /**
+     * Citation service for unified citation formatting
+     */
+    private CitationService $citationService;
+    
     /**
      * Accumulated web search citations during stream processing
      */
@@ -26,6 +32,7 @@ class AnthropicProvider extends BaseAIModelProvider
     {
         parent::__construct($config);
         $this->providerId = 'Anthropic'; // Must match database (case-sensitive)
+        $this->citationService = app(CitationService::class);
     }
 
     /**
@@ -145,10 +152,7 @@ class AnthropicProvider extends BaseAIModelProvider
                     $this->parseWebSearchResults($contentBlock['content']);
                 }
                 
-                // Convert to Google format
-                if (!empty($this->webSearchCitations)) {
-                    $groundingMetadata = $this->convertToGoogleFormat($this->webSearchCitations);
-                }
+                // Note: Citations will be formatted later when final message text is available
             }
         }
 
@@ -215,6 +219,11 @@ class AnthropicProvider extends BaseAIModelProvider
                     }
                 }
             }
+        }
+
+        // Format final citations if we have them and the message is complete
+        if ($isDone && !empty($this->webSearchCitations)) {
+            $groundingMetadata = $this->formatCitations($content);
         }
 
         return [
@@ -305,10 +314,7 @@ class AnthropicProvider extends BaseAIModelProvider
                                 
                                 // Don't add inline citations here - they will be added at content_block_stop
                                 
-                                // If we have accumulated citations, include them
-                                if (!empty($this->webSearchCitations)) {
-                                    $groundingMetadata = $this->convertToGoogleFormat($this->webSearchCitations);
-                                }
+                                // Note: Citations will be formatted later when final message text is available
                             }
                             break;
                             
@@ -363,10 +369,7 @@ class AnthropicProvider extends BaseAIModelProvider
                 // Message has completely finished
                 $isDone = true;
                 
-                // Include final citations if available
-                if (!empty($this->webSearchCitations)) {
-                    $groundingMetadata = $this->convertToGoogleFormat($this->webSearchCitations);
-                }
+                // Note: Final citations will be formatted in formatStreamChunk when complete text is available
                 break;
 
             case 'ping':
@@ -445,25 +448,33 @@ class AnthropicProvider extends BaseAIModelProvider
     }
 
     /**
-     * Convert Anthropic citation format to Google-compatible groundingMetadata format
+     * Format citations using the unified Citation Service
+     * 
+     * @param string $messageText The current message text with inline citations
+     * @return array|null Formatted citation data or null if no citations
      */
-    private function convertToGoogleFormat(array $citations): array
+    private function formatCitations(string $messageText): ?array
     {
-        $groundingChunks = [];
+        if (empty($this->webSearchCitations)) {
+            return null;
+        }
 
-        foreach ($citations as $index => $citation) {
-            // Create grounding chunk
-            $groundingChunks[] = [
+        // Prepare data in the format expected by AnthropicCitationFormatter
+        $providerData = [
+            'groundingChunks' => []
+        ];
+
+        foreach ($this->webSearchCitations as $citation) {
+            $providerData['groundingChunks'][] = [
                 'web' => [
-                    'uri' => $citation['url'],
-                    'title' => $citation['title']
+                    'title' => $citation['title'],
+                    'uri' => $citation['url']
                 ]
             ];
         }
 
-        return [
-            'groundingChunks' => $groundingChunks
-        ];
+        // Use the unified citation service
+        return $this->citationService->formatCitations('anthropic', $providerData, $messageText);
     }
 
     /**

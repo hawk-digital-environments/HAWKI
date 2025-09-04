@@ -57,7 +57,7 @@ function escapeHTML(text) {
 
 function formatMessage(rawContent, groundingMetadata = '') {
     // Process citations and preserve HTML elements in one step
-    let contentToProcess = formatGoogleCitations(rawContent, groundingMetadata);
+    let contentToProcess = formatCitations(rawContent, groundingMetadata);
     
     // Process content with placeholders for math and think blocks
     const { processedContent, mathReplacements, thinkReplacements } = preprocessContent(contentToProcess);
@@ -70,7 +70,7 @@ function formatMessage(rawContent, groundingMetadata = '') {
     finalContent = convertHyperlinksToLinks(finalContent);
     
     // Restore preserved HTML elements
-    finalContent = restoreGoogleCitations(finalContent);
+    finalContent = restoreCitations(finalContent);
 
     return finalContent;
 }
@@ -270,13 +270,13 @@ function formatMathFormulas(element) {
 }
 
 
-function addGoogleRenderedContent(messageElement, groundingMetadata){
-    // Handle search suggestions/rendered content
+function addSearchRenderedContent(messageElement, groundingMetadata){
+    // Handle search suggestions/rendered content from searchMetadata
     if (groundingMetadata && typeof groundingMetadata === 'object' &&
-        groundingMetadata.searchEntryPoint &&
-        groundingMetadata.searchEntryPoint.renderedContent) {
+        groundingMetadata.searchMetadata &&
+        groundingMetadata.searchMetadata.renderedContent) {
                 
-        const render = groundingMetadata.searchEntryPoint.renderedContent;
+        const render = groundingMetadata.searchMetadata.renderedContent;
         // Extract the HTML Tag (Styles already defined in CSS file)
         const parser = new DOMParser();
         const doc = parser.parseFromString(render, 'text/html');
@@ -299,16 +299,27 @@ function addGoogleRenderedContent(messageElement, groundingMetadata){
             }
 
             googleSpan.innerHTML = divElement.outerHTML; 
-            // Append the new span to the target element
-            messageElement.querySelector(".message-content").appendChild(googleSpan);
+            
+            // Check if message-content exists
+            const messageContent = messageElement.querySelector(".message-content");
+            
+            if (messageContent) {
+                messageContent.appendChild(googleSpan);
+            }
         }
     }
 }
 
+
 // Temporary storage for HTML elements to preserve
 const preservedHTML = [];
 
-function formatGoogleCitations(content, groundingMetadata = '') {
+function formatCitations(content, groundingMetadata = '') {
+    // Return early if no citation metadata
+    if (!groundingMetadata || typeof groundingMetadata !== 'object') {
+        return content;
+    }
+
     // Hilfsarrays zum Zwischenspeichern
     const codeBlocks = [];
     const footnoteReplacements = [];
@@ -322,66 +333,66 @@ function formatGoogleCitations(content, groundingMetadata = '') {
 
     let processedContent = tempContent;
 
-    // 2A. Google-style grounding supports processing (original logic)
-    if (groundingMetadata?.groundingSupports?.length) {
-        groundingMetadata.groundingSupports.forEach((support) => {
-            const segmentText = support.segment?.text || '';
-            const indices = support.groundingChunkIndices;
-
-            if (segmentText && Array.isArray(indices) && indices.length) {
+    // 2. HAWKI Unified Citation Format processing
+    if (groundingMetadata.textSegments && Array.isArray(groundingMetadata.textSegments)) {
+        // Check if this is Anthropic-style content with inline citations
+        const hasInlineCitations = /\[\d+/.test(processedContent);
+        
+        if (hasInlineCitations) {
+            // For Anthropic: replace inline citation brackets [1], [2], [1,2] with proper citation links
+            // Handle both single citations [1] and multiple citations [1,2,3]
+            processedContent = processedContent.replace(/\[(\d+(?:,\s*\d+)*)\]/g, (match, citationString) => {
+                // Parse citation IDs - handle both single numbers and comma-separated lists
+                const citationIds = citationString.includes(',') 
+                    ? citationString.split(',').map(id => parseInt(id.trim()))
+                    : [parseInt(citationString.trim())];
+                
                 // Create a placeholder for the footnote
                 const footnoteId = footnoteReplacements.length;
                 const footnotePlaceholder = `%%FOOTNOTE_${footnoteId}%%`;
                 
                 // Store the actual HTML for later replacement
-                const footnoteHTML = `<sup><a href="#sources" class="citation-link" data-sources="${indices.join(',')}">${indices.map(idx => idx + 1).join(', ')}</a></sup>`;
+                const footnoteHTML = `<sup><a href="#sources" class="citation-link" data-sources="${citationIds.map(id => id - 1).join(',')}">${citationIds.join(', ')}</a></sup>`;
                 footnoteReplacements.push(footnoteHTML);
+                
+                return footnotePlaceholder;
+            });
+        } else {
+            // For Google: process textSegments with separate text and citation IDs
+            groundingMetadata.textSegments.forEach((segment) => {
+                const segmentText = segment.text || '';
+                const citationIds = segment.citationIds;
 
-                processedContent = processedContent.replace(
-                    new RegExp(escapeRegExp(segmentText), 'g'),
-                    match => match + footnotePlaceholder
-                );
-            }
-        });
-    }
-    // 2B. Anthropic-style inline citations processing (new logic for [1,2,3] patterns)
-    else if (groundingMetadata?.groundingChunks?.length) {
-        // Find inline citation patterns like [1], [2,3], etc.
-        const citationPattern = /\[(\d+(?:,\s*\d+)*)\]/g;
-        let match;
-        
-        while ((match = citationPattern.exec(processedContent)) !== null) {
-            const fullMatch = match[0]; // e.g., "[1,2]"
-            const citationNumbers = match[1]; // e.g., "1,2"
-            const indices = citationNumbers.split(',').map(num => parseInt(num.trim()) - 1); // Convert to 0-based indices
-            
-            // Create a placeholder for the footnote
-            const footnoteId = footnoteReplacements.length;
-            const footnotePlaceholder = `%%FOOTNOTE_${footnoteId}%%`;
-            
-            // Store the actual HTML for later replacement
-            const footnoteHTML = `<sup><a href="#sources" class="citation-link" data-sources="${indices.join(',')}">${citationNumbers}</a></sup>`;
-            footnoteReplacements.push(footnoteHTML);
-            
-            // Replace the [1,2] pattern with placeholder
-            processedContent = processedContent.replace(fullMatch, footnotePlaceholder);
+                if (segmentText && Array.isArray(citationIds) && citationIds.length) {
+                    // Create a placeholder for the footnote
+                    const footnoteId = footnoteReplacements.length;
+                    const footnotePlaceholder = `%%FOOTNOTE_${footnoteId}%%`;
+                    
+                    // Store the actual HTML for later replacement
+                    const footnoteHTML = `<sup><a href="#sources" class="citation-link" data-sources="${citationIds.map(id => id - 1).join(',')}">${citationIds.join(', ')}</a></sup>`;
+                    footnoteReplacements.push(footnoteHTML);
+
+                    // Replace the segment text with itself plus footnote placeholder
+                    processedContent = processedContent.replace(
+                        new RegExp(escapeRegExp(segmentText), 'g'),
+                        match => match + footnotePlaceholder
+                    );
+                }
+            });
         }
-        
-        // Reset regex for next use
-        citationPattern.lastIndex = 0;
     }
 
-    // 3. Literatur/Quellen anhängen (auch nur am Ende, nicht im Code)
+    // 3. Literatur/Quellen anhängen
     let sourcesMarkdown = '';
 
-    if (groundingMetadata?.groundingChunks?.length) {
+    if (groundingMetadata.citations && Array.isArray(groundingMetadata.citations)) {
         // Check if sources are already in the content to avoid duplication during streaming
         if (!processedContent.includes('### Search Sources:')) {
             sourcesMarkdown = `\n\n### Search Sources:\n`;
 
-            groundingMetadata.groundingChunks.forEach((chunk, index) => {
-                if (chunk.web?.uri && chunk.web?.title) {
-                    sourcesMarkdown += `${index + 1}. <a href="${chunk.web.uri}" target="_blank" class="source-link" data-source-id="${index + 1}">${chunk.web.title}</a>\n`;
+            groundingMetadata.citations.forEach((citation) => {
+                if (citation.url && citation.title) {
+                    sourcesMarkdown += `${citation.id}. <a href="${citation.url}" target="_blank" class="source-link" data-source-id="${citation.id}">${citation.title}</a>\n`;
                 }
             });
 
@@ -407,7 +418,7 @@ function escapeRegExp(string) {
 
 
 // Restore the preserved HTML after markdown processing
-function restoreGoogleCitations(content) {
+function restoreCitations(content) {
     let result = content;
     
     // Replace footnote placeholders with actual HTML

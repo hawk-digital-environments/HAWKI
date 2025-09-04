@@ -199,10 +199,10 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
             if (groundingMetadata && 
                 groundingMetadata != '' && 
-                groundingMetadata.searchEntryPoint && 
-                groundingMetadata.searchEntryPoint.renderedContent) {
+                groundingMetadata.searchMetadata && 
+                groundingMetadata.searchMetadata.renderedContent) {
     
-                addGoogleRenderedContent(messageElement, groundingMetadata);
+                addSearchRenderedContent(messageElement, groundingMetadata);
                 // Activate citations after Google content is added during streaming
                 if(typeof activateCitations === 'function'){
                     activateCitations(messageElement);
@@ -265,7 +265,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 submittedObj.content = cryptoContent;
                 messageElement.dataset.rawMsg = msg;
                 // messageElement.dataset.groundingMetadata = metadata;
-                addGoogleRenderedContent(messageElement, metadata);
+                addSearchRenderedContent(messageElement, metadata);
                 updateMessageElement(messageElement, submittedObj);
                 activateMessageControls(messageElement);
             }

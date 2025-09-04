@@ -5,9 +5,15 @@ namespace App\Services\AI\Providers;
 use App\Models\ProviderSetting;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Services\Citations\CitationService;
 
 class GoogleProvider extends BaseAIModelProvider
 {
+    /**
+     * Citation service for unified citation formatting
+     */
+    private CitationService $citationService;
+
     /**
      * Constructor for GoogleProvider
      */
@@ -15,6 +21,7 @@ class GoogleProvider extends BaseAIModelProvider
     {
         parent::__construct($config);
         $this->providerId = 'Google'; // Muss mit Datenbank übereinstimmen (case-sensitive)
+        $this->citationService = app(CitationService::class);
     }
 
     /**
@@ -112,7 +119,14 @@ class GoogleProvider extends BaseAIModelProvider
         $jsonContent = json_decode($responseContent, true);
 
         $content = $jsonContent['candidates'][0]['content']['parts'][0]['text'] ?? '';
-        $groundingMetadata = $jsonContent['candidates'][0]['groundingMetadata'] ?? '';
+        $rawGroundingMetadata = $jsonContent['candidates'][0]['groundingMetadata'] ?? '';
+        
+        // Format citations using unified service
+        $groundingMetadata = '';
+        if (!empty($rawGroundingMetadata)) {
+            $formattedCitations = $this->citationService->formatCitations('google', $rawGroundingMetadata, $content);
+            $groundingMetadata = $formattedCitations;
+        }
 
         return [
             'content' => [
@@ -143,7 +157,11 @@ class GoogleProvider extends BaseAIModelProvider
 
         // Add search results
         if (isset($jsonChunk['candidates'][0]['groundingMetadata'])) {
-            $groundingMetadata = $jsonChunk['candidates'][0]['groundingMetadata'];
+            $rawGroundingMetadata = $jsonChunk['candidates'][0]['groundingMetadata'];
+            
+            // Format citations using unified service
+            $formattedCitations = $this->citationService->formatCitations('google', $rawGroundingMetadata, $content);
+            $groundingMetadata = $formattedCitations;
         }
 
         // Check for completion

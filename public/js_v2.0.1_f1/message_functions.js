@@ -143,10 +143,10 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         
         if (groundingMetadata && 
             groundingMetadata != '' && 
-            groundingMetadata.searchEntryPoint && 
-            groundingMetadata.searchEntryPoint.renderedContent) {
+            groundingMetadata.searchMetadata && 
+            groundingMetadata.searchMetadata.renderedContent) {
 
-            addGoogleRenderedContent(messageElement, groundingMetadata);
+            addSearchRenderedContent(messageElement, groundingMetadata);
             // Activate citations after Google content is added
             if(typeof activateCitations === 'function'){
                 activateCitations(messageElement);
@@ -261,10 +261,10 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             formatHljs(messageElement); // Add this to ensure citations are activated
             if (groundingMetadata && 
                 groundingMetadata != '' && 
-                groundingMetadata.searchEntryPoint && 
-                groundingMetadata.searchEntryPoint.renderedContent) {
+                groundingMetadata.searchMetadata && 
+                groundingMetadata.searchMetadata.renderedContent) {
     
-                addGoogleRenderedContent(messageElement, groundingMetadata);
+                addSearchRenderedContent(messageElement, groundingMetadata);
                 // Activate citations again after Google content is added
                 if(typeof activateCitations === 'function'){
                     activateCitations(messageElement);
@@ -298,11 +298,11 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
         // Check if Google content should be added but isn't already there
         if (groundingMetadata && 
             groundingMetadata != '' && 
-            groundingMetadata.searchEntryPoint && 
-            groundingMetadata.searchEntryPoint.renderedContent &&
+            groundingMetadata.searchMetadata && 
+            groundingMetadata.searchMetadata.renderedContent &&
             !messageElement.querySelector('.google-search')) {
 
-            addGoogleRenderedContent(messageElement, groundingMetadata);
+            addSearchRenderedContent(messageElement, groundingMetadata);
         }
         
         // Always activate citations for AI messages with existing content

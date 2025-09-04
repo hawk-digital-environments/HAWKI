@@ -17,6 +17,7 @@ use Dotenv\Dotenv;
 use App\Services\AI\AIProviderFactory;
 use App\Services\AI\AIConnectionService;
 use App\Services\ProviderSettingsService;
+use App\Services\Citations\CitationService;
 use App\Providers\ConfigServiceProvider;
 use App\Models\User;
 use App\Models\LanguageModel;
@@ -58,6 +59,11 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(ProviderSettingsService::class, function ($app) {
             return new ProviderSettingsService();
+        });
+
+        // Register Citation Service
+        $this->app->singleton(CitationService::class, function ($app) {
+            return new CitationService();
         });
 
         // Register the ConfigServiceProvider
