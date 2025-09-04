@@ -106,6 +106,11 @@ class ModelSettingsService
                     $result = $this->fetchGoogleModels($pingUrl, $apiKey);
                     break;
 
+                case 'anthropic':
+                case 'anthropic-api':
+                    $result = $this->fetchAnthropicModels($pingUrl, $apiKey);
+                    break;
+
                 default:
                     $result = $this->fetchGenericModels($pingUrl, $apiKey);
                     break;
@@ -383,7 +388,7 @@ class ModelSettingsService
             $urlWithKey = $pingUrl;
             if ($apiKey) {
                 $separator = strpos($pingUrl, '?') !== false ? '&' : '?';
-                $urlWithKey = $pingUrl . $separator . 'key=' . $apiKey;
+                $urlWithKey = $pingUrl.$separator.'key='.$apiKey;
             }
 
             $response = Http::withHeaders($headers)->get($urlWithKey);
@@ -429,6 +434,74 @@ class ModelSettingsService
                 'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
             ];
             Log::error('Google model fetch exception: '.json_encode($logData));
+            throw $e;
+        }
+    }
+
+    /**
+     * Fetch Anthropic models.
+     *
+     * @throws \Exception
+     */
+    private function fetchAnthropicModels(string $pingUrl, ?string $apiKey): array
+    {
+        $startTime = microtime(true);
+        $keyMask = $apiKey ? substr($apiKey, 0, 5).'...' : 'none';
+
+        try {
+            $headers = [
+                'Content-Type' => 'application/json',
+            ];
+
+            if ($apiKey) {
+                // Anthropic uses x-api-key header instead of Authorization Bearer
+                $headers['x-api-key'] = $apiKey;
+                $headers['anthropic-version'] = '2023-06-01'; // Required by Anthropic API
+            }
+
+            $response = Http::withHeaders($headers)->get($pingUrl);
+
+            if (! $response->successful()) {
+                $logData = [
+                    'provider' => 'anthropic',
+                    'url' => $pingUrl,
+                    'api_key' => $keyMask,
+                    'status' => 'error',
+                    'http_status' => $response->status(),
+                    'error' => 'HTTP request failed',
+                    'response_body' => substr($response->body(), 0, 200),
+                    'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+                ];
+                Log::error('Anthropic model fetch failed', $logData);
+                throw new \Exception("Failed to fetch Anthropic models: HTTP {$response->status()}");
+            }
+
+            $data = $response->json();
+
+            // Debug: Log the actual response structure from Anthropic API
+            Log::info('Anthropic API Response Debug', [
+                'provider' => 'anthropic',
+                'url' => $pingUrl,
+                'api_key' => $keyMask,
+                'response_structure' => [
+                    'type' => gettype($data),
+                    'keys' => is_array($data) ? array_keys($data) : 'not_array',
+                    'data_sample' => is_array($data) ? array_slice($data, 0, 2, true) : $data,
+                ],
+                'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+            ]);
+
+            return $data;
+        } catch (\Exception $e) {
+            $logData = [
+                'provider' => 'anthropic',
+                'url' => $pingUrl,
+                'api_key' => $keyMask,
+                'status' => 'error',
+                'error' => $e->getMessage(),
+                'duration_ms' => round((microtime(true) - $startTime) * 1000, 2),
+            ];
+            Log::error('Anthropic model fetch exception: '.json_encode($logData));
             throw $e;
         }
     }

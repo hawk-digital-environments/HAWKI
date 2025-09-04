@@ -5,16 +5,15 @@ declare(strict_types=1);
 namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\LanguageModel;
-use App\Orchid\Layouts\ModelSettings\LanguageModelListLayout;
+use App\Models\ProviderSetting;
 use App\Orchid\Layouts\ModelSettings\LanguageModelFiltersLayout;
+use App\Orchid\Layouts\ModelSettings\LanguageModelListLayout;
 use App\Orchid\Layouts\ModelSettings\LanguageModelTabMenu;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use App\Services\Settings\ModelSettingsService;
-use App\Models\ProviderSetting;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
-use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
@@ -39,14 +38,12 @@ class LanguageModelListScreen extends Screen
                 })
                 ->filters(LanguageModelFiltersLayout::class)
                 ->defaultSort('language_models.is_active', 'desc')
-                ->paginate(50)
+                ->paginate(50),
         ];
     }
 
     /**
      * The name of the screen displayed in the header.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -89,7 +86,6 @@ class LanguageModelListScreen extends Screen
                 ->icon('bs.arrow-clockwise')
                 ->method('refreshModels')
                 ->confirm('This will contact all active providers to check for new models. Continue?'),
-            
 
         ];
     }
@@ -116,15 +112,15 @@ class LanguageModelListScreen extends Screen
         try {
             $model = LanguageModel::findOrFail($request->get('id'));
             $originalStatus = $model->is_active;
-            
+
             // Use trait method for model save with change detection
             $this->saveModelWithChangeDetection(
                 $model,
-                ['is_active' => !$model->is_active],
+                ['is_active' => ! $model->is_active],
                 "Model '{$model->label}' active status",
                 ['is_active' => $originalStatus],
                 null,
-                function($savedModel) use ($originalStatus) {
+                function ($savedModel) use ($originalStatus) {
                     // After-save callback with structured logging
                     $this->logModelOperation(
                         'toggle_active',
@@ -139,7 +135,7 @@ class LanguageModelListScreen extends Screen
                     );
                 }
             );
-            
+
         } catch (\Exception $e) {
             $this->logModelOperation(
                 'toggle_active',
@@ -148,8 +144,8 @@ class LanguageModelListScreen extends Screen
                 'error',
                 ['error' => $e->getMessage()]
             );
-            
-            Toast::error('Error toggling model status: ' . $e->getMessage());
+
+            Toast::error('Error toggling model status: '.$e->getMessage());
         }
     }
 
@@ -161,15 +157,15 @@ class LanguageModelListScreen extends Screen
         try {
             $model = LanguageModel::findOrFail($request->get('id'));
             $originalVisibility = $model->is_visible;
-            
+
             // Use trait method for model save with change detection
             $this->saveModelWithChangeDetection(
                 $model,
-                ['is_visible' => !$model->is_visible],
+                ['is_visible' => ! $model->is_visible],
                 "Model '{$model->label}' visibility",
                 ['is_visible' => $originalVisibility],
                 null,
-                function($savedModel) use ($originalVisibility) {
+                function ($savedModel) use ($originalVisibility) {
                     // After-save callback with structured logging
                     $this->logModelOperation(
                         'toggle_visible',
@@ -184,7 +180,7 @@ class LanguageModelListScreen extends Screen
                     );
                 }
             );
-            
+
         } catch (\Exception $e) {
             $this->logModelOperation(
                 'toggle_visible',
@@ -193,8 +189,8 @@ class LanguageModelListScreen extends Screen
                 'error',
                 ['error' => $e->getMessage()]
             );
-            
-            Toast::error('Error toggling model visibility: ' . $e->getMessage());
+
+            Toast::error('Error toggling model visibility: '.$e->getMessage());
         }
     }
 
@@ -211,9 +207,9 @@ class LanguageModelListScreen extends Screen
                 'provider_id' => $model->provider_id,
                 'model_identifier' => $model->model_id,
             ];
-            
+
             $model->delete();
-            
+
             // Use trait method for structured logging
             $this->logModelOperation(
                 'delete',
@@ -222,9 +218,9 @@ class LanguageModelListScreen extends Screen
                 'success',
                 $modelData
             );
-            
+
             Toast::success("Model '{$modelData['model_label']}' has been deleted successfully.");
-            
+
         } catch (\Exception $e) {
             $this->logModelOperation(
                 'delete',
@@ -233,10 +229,10 @@ class LanguageModelListScreen extends Screen
                 'error',
                 ['error' => $e->getMessage()]
             );
-            
-            Toast::error('Error deleting model: ' . $e->getMessage());
+
+            Toast::error('Error deleting model: '.$e->getMessage());
         }
-        
+
         return redirect()->back();
     }
 
@@ -264,7 +260,7 @@ class LanguageModelListScreen extends Screen
                 ->where('is_active', true)
                 ->get();
 
-            $refreshResults['all_active_providers'] = $allActiveProviders->map(function($p) {
+            $refreshResults['all_active_providers'] = $allActiveProviders->map(function ($p) {
                 return [
                     'name' => $p->provider_name,
                     'id' => $p->id,
@@ -274,15 +270,15 @@ class LanguageModelListScreen extends Screen
             })->toArray();
 
             // Filter providers that have valid models endpoints
-            $validProviders = $allActiveProviders->filter(function($provider) {
-                if (!$provider->apiFormat) {
+            $validProviders = $allActiveProviders->filter(function ($provider) {
+                if (! $provider->apiFormat) {
                     return false;
                 }
-                
+
                 $modelsEndpoint = $provider->apiFormat->getModelsEndpoint();
                 $pingUrl = $provider->ping_url;
-                
-                return !empty($pingUrl) && $modelsEndpoint && $modelsEndpoint->is_active;
+
+                return ! empty($pingUrl) && $modelsEndpoint && $modelsEndpoint->is_active;
             });
 
             $refreshResults['total_providers'] = $validProviders->count();
@@ -296,6 +292,7 @@ class LanguageModelListScreen extends Screen
                     'warning'
                 );
                 Toast::warning('No active providers with models endpoints found to refresh models from.');
+
                 return redirect()->back();
             }
 
@@ -312,10 +309,10 @@ class LanguageModelListScreen extends Screen
 
                 try {
                     $providerStartTime = microtime(true);
-                    
+
                     // Fetch models from provider API
                     $modelsData = $modelSettingsService->getModelStatus($provider->provider_name);
-                    
+
                     $providerEndTime = microtime(true);
                     $providerDuration = round(($providerEndTime - $providerStartTime) * 1000, 2);
 
@@ -324,7 +321,7 @@ class LanguageModelListScreen extends Screen
                     $modelsUpdated = 0;
                     $modelsFound = 0;
                     $apiResponseStructure = [];
-                    
+
                     // Debug: Log the API response structure
                     if (is_array($modelsData)) {
                         $apiResponseStructure = [
@@ -332,10 +329,10 @@ class LanguageModelListScreen extends Screen
                             'has_models_key' => isset($modelsData['models']),
                             'has_data_key' => isset($modelsData['data']),
                             'total_keys' => count($modelsData),
-                            'sample_data' => array_slice($modelsData, 0, 2, true)
+                            'sample_data' => array_slice($modelsData, 0, 2, true),
                         ];
                     }
-                    
+
                     // Handle different API response formats
                     $modelsList = [];
                     if (isset($modelsData['models']) && is_array($modelsData['models'])) {
@@ -344,27 +341,31 @@ class LanguageModelListScreen extends Screen
                     } elseif (isset($modelsData['data']) && is_array($modelsData['data'])) {
                         // Format: { "data": [...] } - OpenAI style
                         $modelsList = $modelsData['data'];
-                    } elseif (is_array($modelsData) && !empty($modelsData)) {
+                    } elseif (is_array($modelsData) && ! empty($modelsData)) {
                         // Check if it's a direct array of models
                         $firstItem = reset($modelsData);
                         if (is_array($firstItem) && (isset($firstItem['id']) || isset($firstItem['name']))) {
                             $modelsList = $modelsData;
                         }
                     }
-                    
-                    if (!empty($modelsList)) {
+
+                    if (! empty($modelsList)) {
                         $modelsFound = count($modelsList);
-                        
+
                         foreach ($modelsList as $modelData) {
                             // Extract model ID based on provider type
                             $modelId = null;
                             $modelLabel = null;
-                            
+
                             // Handle different API response formats
                             if (isset($modelData['name']) && str_starts_with($modelData['name'], 'models/')) {
                                 // Google API format: name = "models/gemini-pro"
                                 $modelId = $modelData['name']; // Keep full name with models/ prefix
                                 $modelLabel = $modelData['displayName'] ?? str_replace('models/', '', $modelData['name']);
+                            } elseif (isset($modelData['id']) && isset($modelData['display_name'])) {
+                                // Anthropic API format: id = "claude-3-opus-20240229", display_name = "Claude Opus 3"
+                                $modelId = $modelData['id'];
+                                $modelLabel = $modelData['display_name'];
                             } elseif (isset($modelData['id'])) {
                                 // OpenAI/Standard format: id = "gpt-4"
                                 $modelId = $modelData['id'];
@@ -374,8 +375,8 @@ class LanguageModelListScreen extends Screen
                                 $modelId = $modelData['name'];
                                 $modelLabel = $modelData['displayName'] ?? $modelData['name'];
                             }
-                            
-                            if (!$modelId) {
+
+                            if (! $modelId) {
                                 continue; // Skip models without valid ID
                             }
 
@@ -429,10 +430,10 @@ class LanguageModelListScreen extends Screen
                 } catch (\Exception $e) {
                     $providerResult = array_merge($providerResult, [
                         'status' => 'error',
-                        'error' => $e->getMessage()
+                        'error' => $e->getMessage(),
                     ]);
-                    
-                    $refreshResults['errors'][] = "Provider '{$provider->provider_name}': " . $e->getMessage();
+
+                    $refreshResults['errors'][] = "Provider '{$provider->provider_name}': ".$e->getMessage();
                     $refreshResults['failed_providers']++;
                 }
 
@@ -457,11 +458,11 @@ class LanguageModelListScreen extends Screen
                 $message .= "created {$refreshResults['total_models_created']}, ";
                 $message .= "updated {$refreshResults['total_models_updated']}. ";
                 $message .= "(Duration: {$refreshResults['total_duration_ms']}ms)";
-                
+
                 if ($refreshResults['failed_providers'] === 0) {
                     Toast::success($message);
                 } else {
-                    Toast::warning($message . " Some providers failed - check logs for details.");
+                    Toast::warning($message.' Some providers failed - check logs for details.');
                 }
             } else {
                 Toast::error('Failed to refresh models from any provider. Check logs for details.');
@@ -471,7 +472,7 @@ class LanguageModelListScreen extends Screen
             $refreshResults['result'] = 'fatal_error';
             $refreshResults['fatal_error'] = $e->getMessage();
             $refreshResults['total_duration_ms'] = round((microtime(true) - $startTime) * 1000, 2);
-            
+
             // Use trait method for error logging
             $this->logScreenOperation(
                 'refresh_models',
@@ -479,8 +480,8 @@ class LanguageModelListScreen extends Screen
                 $refreshResults,
                 'error'
             );
-            
-            Toast::error('Failed to refresh models: ' . $e->getMessage());
+
+            Toast::error('Failed to refresh models: '.$e->getMessage());
         }
 
         return redirect()->back();
@@ -489,7 +490,6 @@ class LanguageModelListScreen extends Screen
     /**
      * Clear all language models from the database.
      *
-     * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function clearAllModels(Request $request)
