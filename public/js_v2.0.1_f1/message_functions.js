@@ -403,6 +403,12 @@ function deconstContent(inputContent){
         if(json.hasOwnProperty('text')){
             messageText = json.text;
         }
+        else if(json.hasOwnProperty('messageText')){
+            messageText = json.messageText;
+        }
+        else if(json.hasOwnProperty('content')){
+            messageText = json.content;
+        }
         else{
             messageText = inputContent;
         }
