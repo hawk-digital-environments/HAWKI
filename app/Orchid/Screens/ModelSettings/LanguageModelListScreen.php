@@ -38,7 +38,7 @@ class LanguageModelListScreen extends Screen
                     $query->where('provider_settings.is_active', true);
                 })
                 ->filters(LanguageModelFiltersLayout::class)
-                ->defaultSort('label')
+                ->defaultSort('language_models.is_active', 'desc')
                 ->paginate(50)
         ];
     }
