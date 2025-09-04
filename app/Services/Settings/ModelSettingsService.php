@@ -4,6 +4,7 @@ namespace App\Services\Settings;
 
 use App\Models\LanguageModel;
 use App\Models\ProviderSetting;
+use App\Services\AI\AIProviderFactory;
 use App\Services\ProviderSettingsService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -16,11 +17,17 @@ class ModelSettingsService
     protected $providerSettingsService;
 
     /**
+     * @var AIProviderFactory
+     */
+    protected $aiProviderFactory;
+
+    /**
      * Constructor.
      */
-    public function __construct(ProviderSettingsService $providerSettingsService)
+    public function __construct(ProviderSettingsService $providerSettingsService, AIProviderFactory $aiProviderFactory)
     {
         $this->providerSettingsService = $providerSettingsService;
+        $this->aiProviderFactory = $aiProviderFactory;
     }
 
     /**
@@ -49,8 +56,8 @@ class ModelSettingsService
         }
 
         try {
-            // The detailed logging is handled in the provider-specific fetch methods
-            return $this->fetchModelsFromProvider($provider);
+            // Use AI Provider Factory to get models from API
+            return $this->fetchModelsUsingAIProvider($provider);
         } catch (\Exception $e) {
             Log::error('Failed to retrieve models from provider', [
                 'provider_name' => $providerName,
@@ -65,11 +72,34 @@ class ModelSettingsService
     }
 
     /**
-     * Fetch models from a provider's API.
+     * Fetch models using the AI Provider Factory and providers
      *
      * @throws \Exception
      */
-    private function fetchModelsFromProvider(ProviderSetting $provider): array
+    private function fetchModelsUsingAIProvider(ProviderSetting $provider): array
+    {
+        try {
+            // Get the AI provider instance
+            $aiProvider = $this->aiProviderFactory->getProviderInterfaceById($provider->id);
+
+            // Use the provider's fetchAvailableModelsFromAPI method
+            return $aiProvider->fetchAvailableModelsFromAPI();
+
+        } catch (\Exception $e) {
+            // If AI Provider approach fails, fall back to direct HTTP approach
+            Log::warning('AI Provider approach failed, falling back to direct HTTP: '.$e->getMessage());
+
+            return $this->fetchModelsFromProviderDirect($provider);
+        }
+    }
+
+    /**
+     * Fallback method: Fetch models directly using HTTP
+     * Kept for backward compatibility and as fallback
+     *
+     * @throws \Exception
+     */
+    private function fetchModelsFromProviderDirect(ProviderSetting $provider): array
     {
         $apiFormatName = $provider->apiFormat?->unique_name ?? $provider->provider_name;
         $pingUrl = $provider->ping_url;

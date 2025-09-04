@@ -2,39 +2,38 @@
 
 namespace App\Services\AI\Providers;
 
-use App\Services\AI\Interfaces\AIModelProviderInterface;
 use App\Models\LanguageModel;
 use App\Models\ProviderSetting;
+use App\Services\AI\Interfaces\AIModelProviderInterface;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 abstract class BaseAIModelProvider implements AIModelProviderInterface
 {
     /**
      * Provider configuration
-     * 
+     *
      * @var array
      */
     protected $config;
-    
+
     /**
      * Provider identifier
-     * 
+     *
      * @var string
      */
     protected $providerId;
-    
+
     /**
      * Create a new provider instance
-     * 
-     * @param array $config
      */
     public function __construct(array $config)
     {
         $this->config = $config;
-        
+
         // Try to extract the provider identifier from the configuration
         // Use provider_name if available, otherwise fall back to other fields
-        if (!isset($this->providerId)) {
+        if (! isset($this->providerId)) {
             if (isset($config['provider_name'])) {
                 $this->providerId = $config['provider_name'];
             } elseif (isset($config['api_format'])) {
@@ -42,23 +41,20 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
             }
         }
     }
-    
+
     /**
      * Extract usage information from the response data
-     * 
-     * @param array $data Response data
+     *
+     * @param  array  $data  Response data
      * @return array|null Usage data or null if not available
      */
     protected function extractUsage(array $data): ?array
     {
         return null;
     }
-    
+
     /**
      * Get details for a specific model from the database
-     * 
-     * @param string $modelId
-     * @return array
      */
     public function getModelDetails(string $modelId): array
     {
@@ -70,82 +66,83 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 ->where('language_models.model_id', $modelId)
                 ->where('language_models.is_active', true)
                 ->first();
-            
-            if (!$model) {
+
+            if (! $model) {
                 Log::warning("Model not found in database: $modelId");
+
                 return [
                     'id' => $modelId,
                     'label' => $modelId, // Fallback: Use ID as label
                     'streamable' => false,
                     'api_format' => $this->getProviderId(),
-                    'provider_name' => $this->getProviderId()
+                    'provider_name' => $this->getProviderId(),
                 ];
             }
-            
+
             $details = [
                 'id' => $model->model_id,
                 'label' => $model->label,
                 'streamable' => $model->streamable,
                 'api_format' => $model->api_format_name ?? $model->provider_name,
-                'provider_name' => $model->provider_name
+                'provider_name' => $model->provider_name,
             ];
-            
+
             // Add additional model information if available
-            if (!empty($model->information)) {
-                $information = is_array($model->information) ? 
-                              $model->information : 
+            if (! empty($model->information)) {
+                $information = is_array($model->information) ?
+                              $model->information :
                               json_decode($model->information, true);
-                
+
                 if (is_array($information)) {
                     $details = array_merge($details, $information);
                 }
             }
-            
+
             // Add settings if available
-            if (!empty($model->settings)) {
-                $settings = is_array($model->settings) ? 
-                          $model->settings : 
+            if (! empty($model->settings)) {
+                $settings = is_array($model->settings) ?
+                          $model->settings :
                           json_decode($model->settings, true);
-                
+
                 if (is_array($settings)) {
                     $details['settings'] = $settings;
                 }
             }
-            
+
             return $details;
         } catch (\Exception $e) {
-            Log::error("Error getting model details: " . $e->getMessage());
+            Log::error('Error getting model details: '.$e->getMessage());
+
             // Simple fallback response
             return [
                 'id' => $modelId,
                 'label' => $modelId,
                 'streamable' => false,
                 'api_format' => $this->getProviderId(),
-                'provider_name' => $this->getProviderId()
+                'provider_name' => $this->getProviderId(),
             ];
         }
     }
-    
+
     /**
      * Get all available models for this provider from the database
-     * 
-     * @return array
      */
     public function getAvailableModels(): array
     {
         try {
             $providerId = $this->getProviderId();
-            
+
             // Get provider from the database by provider_name (since providerId is the name)
             $provider = ProviderSetting::where('provider_name', $providerId)
                 ->where('is_active', true)
                 ->first();
-                
-            if (!$provider) {
+
+            if (! $provider) {
                 Log::warning("Provider not found in database: $providerId");
+
                 return [];
             }
-            
+
             // Retrieve all active models for this provider with API format information
             $models = LanguageModel::select('language_models.*', 'api_formats.unique_name as api_format_name')
                 ->leftJoin('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
@@ -154,25 +151,25 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 ->where('language_models.is_active', true)
                 ->orderBy('display_order')
                 ->get();
-                
+
             $modelsList = [];
-            
+
             foreach ($models as $model) {
                 $modelData = [
                     'id' => $model->model_id,
                     'label' => $model->label,
                     'streamable' => $model->streamable,
                     'api_format' => $model->api_format_name ?? $provider->provider_name,
-                    'provider_name' => $provider->provider_name
+                    'provider_name' => $provider->provider_name,
                 ];
-                
+
                 // Extract status from the information field if available
-                if (!empty($model->information)) {
+                if (! empty($model->information)) {
                     try {
-                        $information = is_array($model->information) ? 
-                                      $model->information : 
+                        $information = is_array($model->information) ?
+                                      $model->information :
                                       json_decode($model->information, true);
-                        
+
                         if (is_array($information) && isset($information['status'])) {
                             $modelData['status'] = $information['status'];
                         }
@@ -180,49 +177,48 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                         // Ignore and continue without status
                     }
                 }
-                
+
                 $modelsList[] = $modelData;
             }
-            
+
             return $modelsList;
         } catch (\Exception $e) {
-            Log::error("Error getting available models: " . $e->getMessage());
+            Log::error('Error getting available models: '.$e->getMessage());
+
             return [];
         }
     }
-    
+
     /**
      * Get the provider ID
-     * 
-     * @return string
      */
     public function getProviderId(): string
     {
         return $this->providerId ?? 'unknown_provider';
     }
-    
+
     /**
      * Check if a model supports streaming
-     * 
-     * @param string $modelId Model identifier
+     *
+     * @param  string  $modelId  Model identifier
      * @return bool True if streaming is supported
      */
     public function supportsStreaming(string $modelId): bool
     {
         return $this->getModelDetails($modelId)['streamable'] ?? false;
     }
-    
+
     /**
      * Establish a connection to the AI provider's API
      *
-     * @param array $payload The formatted payload
-     * @param callable|null $streamCallback Callback for streaming responses
+     * @param  array  $payload  The formatted payload
+     * @param  callable|null  $streamCallback  Callback for streaming responses
      * @return mixed The response or void for streaming
      */
     public function connect(array $payload, ?callable $streamCallback = null)
     {
         $modelId = $payload['model'];
-        
+
         // Determine whether to use streaming or non-streaming
         if ($streamCallback && $this->supportsStreaming($modelId)) {
             return $this->makeStreamingRequest($payload, $streamCallback);
@@ -230,34 +226,96 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
             return $this->makeNonStreamingRequest($payload);
         }
     }
-    
+
+    /**
+     * Fetch available models from the provider's API
+     * Base implementation using HTTP client - providers can override this
+     *
+     * @return array Raw API response containing models
+     *
+     * @throws \Exception
+     */
+    public function fetchAvailableModelsFromAPI(): array
+    {
+        try {
+            $provider = $this->getProviderFromDatabase();
+            if (! $provider) {
+                throw new \Exception("Provider not found in database: {$this->getProviderId()}");
+            }
+
+            $pingUrl = $provider->ping_url;
+            if (! $pingUrl) {
+                throw new \Exception("No ping URL configured for provider: {$this->getProviderId()}");
+            }
+
+            $headers = $this->getModelsApiHeaders();
+
+            $response = Http::withHeaders($headers)->get($pingUrl);
+
+            if (! $response->successful()) {
+                throw new \Exception("Failed to fetch models: HTTP {$response->status()}");
+            }
+
+            return $response->json();
+        } catch (\Exception $e) {
+            Log::error("Error fetching models from API for provider {$this->getProviderId()}: ".$e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Get HTTP headers for models API requests
+     * Providers can override this for specific authentication methods
+     */
+    protected function getModelsApiHeaders(): array
+    {
+        $headers = [
+            'Content-Type' => 'application/json',
+        ];
+
+        if (! empty($this->config['api_key'])) {
+            $headers['Authorization'] = 'Bearer '.$this->config['api_key'];
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Get the provider settings from database
+     * Providers should implement this method
+     */
+    protected function getProviderFromDatabase(): ?ProviderSetting
+    {
+        return ProviderSetting::where('provider_name', $this->getProviderId())
+            ->where('is_active', true)
+            ->first();
+    }
+
     /**
      * Set up common HTTP headers for API requests
      *
-     * @param bool $isStreaming Whether this is a streaming request
-     * @return array
+     * @param  bool  $isStreaming  Whether this is a streaming request
      */
     protected function getHttpHeaders(bool $isStreaming = false): array
     {
         $headers = [
-            'Content-Type: application/json'
+            'Content-Type: application/json',
         ];
-        
+
         // Add authorization header if API key is present
-        if (!empty($this->config['api_key'])) {
-            $headers[] = 'Authorization: Bearer ' . $this->config['api_key'];
+        if (! empty($this->config['api_key'])) {
+            $headers[] = 'Authorization: Bearer '.$this->config['api_key'];
         }
-        
+
         return $headers;
     }
-    
+
     /**
      * Set common cURL options for all requests
      *
-     * @param resource $ch cURL resource
-     * @param array $payload Request payload
-     * @param array $headers HTTP headers
-     * @return void
+     * @param  resource  $ch  cURL resource
+     * @param  array  $payload  Request payload
+     * @param  array  $headers  HTTP headers
      */
     protected function setCommonCurlOptions($ch, array $payload, array $headers): void
     {
@@ -267,13 +325,12 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     }
-    
+
     /**
      * Set up streaming-specific cURL options
      *
-     * @param resource $ch cURL resource
-     * @param callable $streamCallback Callback for processing chunks
-     * @return void
+     * @param  resource  $ch  cURL resource
+     * @param  callable  $streamCallback  Callback for processing chunks
      */
     protected function setStreamingCurlOptions($ch, callable $streamCallback): void
     {
@@ -281,15 +338,15 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         curl_setopt($ch, CURLOPT_TIMEOUT, 0);
         curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
         curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 20);
-        
+
         // Process each chunk as it arrives
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($ch, $data) use ($streamCallback) {
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use ($streamCallback) {
             if (connection_aborted()) {
                 return 0;
             }
-            
+
             $streamCallback($data);
-            
+
             if (config('logging.triggers.return_object')) {
                 Log::info($data);
             }
@@ -297,7 +354,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
                 ob_flush();
             }
             flush();
-            
+
             return strlen($data);
         });
     }

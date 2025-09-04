@@ -4,29 +4,21 @@ namespace App\Services\AI;
 
 use App\Models\LanguageModel;
 use App\Models\ProviderSetting;
-use App\Services\AI\Interfaces\AIModelProviderInterface;
-use App\Services\AI\Providers\OpenAIProvider;
-use App\Services\AI\Providers\GWDGProvider;
-use App\Services\AI\Providers\GoogleProvider;
-use App\Services\AI\Providers\OllamaProvider;
-use App\Services\AI\Providers\OpenWebUIProvider;
-use App\Services\AI\Providers\HAWKIProvider;
-
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class AIProviderFactory
 {
     /**
      * Cache for provider instances
-     * 
+     *
      * @var array
      */
     private $providerInstances = [];
-    
+
     /**
      * Mapping of model IDs to provider IDs
-     * 
+     *
      * @var array
      */
     private $modelProviderIdMap = [];
@@ -40,7 +32,7 @@ class AIProviderFactory
      * Cache duration for provider instances (1 hour)
      */
     const INSTANCE_CACHE_TTL = 3600;
-    
+
     /**
      * Constructor - loads model-provider mappings from database with caching
      */
@@ -48,14 +40,14 @@ class AIProviderFactory
     {
         $this->loadModelProviderMappings();
     }
-    
+
     /**
      * Load model to provider mappings from the database with caching
      */
     private function loadModelProviderMappings()
     {
         $cacheKey = 'ai_model_provider_mappings';
-        
+
         $this->modelProviderIdMap = Cache::remember($cacheKey, self::MAPPING_CACHE_TTL, function () {
             try {
                 // Load all active models and their providers from the database
@@ -64,27 +56,28 @@ class AIProviderFactory
                     ->where('language_models.is_active', true)
                     ->where('provider_settings.is_active', true)
                     ->get();
-                
+
                 $mappings = [];
                 foreach ($models as $model) {
                     // Store the actual provider ID for each model
                     $mappings[$model->model_id] = $model->provider_id;
                 }
-                
+
                 return $mappings;
             } catch (\Exception $e) {
-                Log::error('Failed to load model-provider mappings: ' . $e->getMessage());
+                Log::error('Failed to load model-provider mappings: '.$e->getMessage());
+
                 // Fallback to an empty array if the database is not ready yet
                 return [];
             }
         });
     }
-    
+
     /**
      * Get the provider interface for a specific model
-     * 
-     * @param string $modelId
+     *
      * @return \App\Services\AI\Interfaces\AIModelProviderInterface
+     *
      * @throws \Exception
      */
     public function getProviderForModel(string $modelId)
@@ -93,22 +86,23 @@ class AIProviderFactory
             // If the map is empty (e.g. on first run), try loading again
             $this->loadModelProviderMappings();
         }
-        
+
         // Check if we know the provider ID for this model
-        if (!isset($this->modelProviderIdMap[$modelId])) {
+        if (! isset($this->modelProviderIdMap[$modelId])) {
             Log::error("Unknown model ID: $modelId");
             throw new \Exception("Unknown model ID: $modelId");
         }
-        
+
         $providerId = $this->modelProviderIdMap[$modelId];
+
         return $this->getProviderInterfaceById($providerId);
     }
-    
+
     /**
      * Get a provider interface by provider ID (database ID) with caching
-     * 
-     * @param int $providerId
+     *
      * @return \App\Services\AI\Interfaces\AIModelProviderInterface
+     *
      * @throws \Exception
      */
     public function getProviderInterfaceById(int $providerId)
@@ -117,10 +111,10 @@ class AIProviderFactory
         if (isset($this->providerInstances[$providerId])) {
             return $this->providerInstances[$providerId];
         }
-        
+
         // Try to get from cache first
         $cacheKey = "provider_instance_{$providerId}";
-        
+
         try {
             // Get the provider settings from the database with API format relationship
             $provider = Cache::remember("provider_data_{$providerId}", self::INSTANCE_CACHE_TTL, function () use ($providerId) {
@@ -129,21 +123,21 @@ class AIProviderFactory
                     ->where('is_active', true)
                     ->first();
             });
-            
-            if (!$provider) {
+
+            if (! $provider) {
                 throw new \Exception("Provider not found or not active with ID: $providerId");
             }
-            
+
             // Use the API format unique_name for class selection, fall back to provider_name
             $apiFormat = $provider->apiFormat ? $provider->apiFormat->unique_name : $provider->provider_name;
-            
+
             // Create the provider class based on the API format
             $providerClass = $this->getProviderClass($apiFormat);
-            
-            if (!class_exists($providerClass)) {
+
+            if (! class_exists($providerClass)) {
                 throw new \Exception("Provider class not found: $providerClass");
             }
-            
+
             // Create an instance of the provider with the settings from the database
             // Note: URLs are now generated dynamically by the ProviderSetting model using cached accessor methods
             $this->providerInstances[$providerId] = new $providerClass([
@@ -153,21 +147,21 @@ class AIProviderFactory
                 'provider_id' => $provider->id,
                 'additional_settings' => is_string($provider->additional_settings)
                     ? json_decode($provider->additional_settings, true)
-                    : ($provider->additional_settings ?? [])
+                    : ($provider->additional_settings ?? []),
             ]);
-            
+
             return $this->providerInstances[$providerId];
         } catch (\Exception $e) {
-            Log::error("Failed to create provider instance for provider ID $providerId: " . $e->getMessage());
-            throw new \Exception("Failed to create provider instance: " . $e->getMessage());
+            Log::error("Failed to create provider instance for provider ID $providerId: ".$e->getMessage());
+            throw new \Exception('Failed to create provider instance: '.$e->getMessage());
         }
     }
-    
+
     /**
      * Get a provider interface by API format (legacy method for backwards compatibility)
-     * 
-     * @param string $apiFormat
+     *
      * @return \App\Services\AI\Interfaces\AIModelProviderInterface
+     *
      * @throws \Exception
      */
     public function getProviderInterface(string $apiFormat)
@@ -175,34 +169,33 @@ class AIProviderFactory
         try {
             // Find the first active provider with this API format through the relationship
             $provider = ProviderSetting::with('apiFormat')
-                ->whereHas('apiFormat', function($query) use ($apiFormat) {
+                ->whereHas('apiFormat', function ($query) use ($apiFormat) {
                     $query->where('unique_name', $apiFormat);
                 })
                 ->where('is_active', true)
                 ->first();
-            
+
             // If no provider found with api_format relationship, fall back to provider_name search
-            if (!$provider) {
+            if (! $provider) {
                 $provider = ProviderSetting::where('provider_name', $apiFormat)
                     ->where('is_active', true)
                     ->first();
             }
-            
-            if (!$provider) {
+
+            if (! $provider) {
                 throw new \Exception("Provider not found or not active for API format: $apiFormat");
             }
-            
+
             return $this->getProviderInterfaceById($provider->id);
         } catch (\Exception $e) {
-            Log::error("Failed to create provider instance for API format $apiFormat: " . $e->getMessage());
-            throw new \Exception("Failed to create provider instance: " . $e->getMessage());
+            Log::error("Failed to create provider instance for API format $apiFormat: ".$e->getMessage());
+            throw new \Exception('Failed to create provider instance: '.$e->getMessage());
         }
     }
-    
+
     /**
      * Get the provider class name based on API format
-     * 
-     * @param string $apiFormat
+     *
      * @return string Fully qualified class name
      */
     private function getProviderClass(string $apiFormat)
@@ -216,23 +209,24 @@ class AIProviderFactory
             'google-vertex-ai-api' => 'App\Services\AI\Providers\GoogleProvider',
             'gwdg-api' => 'App\Services\AI\Providers\GWDGProvider',
             'openwebui-api' => 'App\Services\AI\Providers\OpenWebUIProvider',
-            'anthropic-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
+            'anthropic-api' => 'App\Services\AI\Providers\AnthropicProvider',
             'huggingface-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
             'cohere-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
-            
+
             // Legacy support for old provider names
             'openai' => 'App\Services\AI\Providers\OpenAIProvider',
             'gwdg' => 'App\Services\AI\Providers\GWDGProvider',
             'openWebUi' => 'App\Services\AI\Providers\OpenWebUIProvider',
             'google' => 'App\Services\AI\Providers\GoogleProvider',
             'ollama' => 'App\Services\AI\Providers\OllamaProvider',
+            'anthropic' => 'App\Services\AI\Providers\AnthropicProvider',
             'hawki' => 'App\Services\AI\Providers\HAWKIProvider',
         ];
-        
+
         // Fallback to OpenAI provider for unknown formats (most compatible)
         return $providerClasses[$apiFormat] ?? 'App\Services\AI\Providers\OpenAIProvider';
     }
-    
+
     /**
      * Refresh model-provider mappings from database
      */
@@ -241,12 +235,12 @@ class AIProviderFactory
         // Clear the cache and reload
         Cache::forget('ai_model_provider_mappings');
         $this->loadModelProviderMappings();
-        
+
         // Also clear provider data cache
         foreach (array_keys($this->providerInstances) as $providerId) {
             Cache::forget("provider_data_{$providerId}");
         }
-        
+
         // Clear local instances cache
         $this->providerInstances = [];
     }
@@ -258,16 +252,16 @@ class AIProviderFactory
     {
         // Clear mappings cache
         Cache::forget('ai_model_provider_mappings');
-        
+
         // Clear all provider data caches
         foreach (array_keys($this->providerInstances) as $providerId) {
             Cache::forget("provider_data_{$providerId}");
         }
-        
+
         // Clear local caches
         $this->modelProviderIdMap = [];
         $this->providerInstances = [];
-        
+
         // Reload fresh data
         $this->loadModelProviderMappings();
     }
