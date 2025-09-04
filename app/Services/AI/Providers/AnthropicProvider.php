@@ -124,81 +124,39 @@ class AnthropicProvider extends BaseAIModelProvider
         $isDone = false;
         $usage = null;
 
-        // Try to parse as direct JSON first (which is what we're actually receiving)
+        // First try to parse as direct JSON (most common case)
         $data = json_decode($chunk, true);
         if ($data && isset($data['type'])) {
             Log::info('AnthropicProvider processing direct JSON event:', ['type' => $data['type'], 'data' => $data]);
-
-            switch ($data['type']) {
-                case 'message_start':
-                    // Message has started, no content yet
-                    break;
-
-                case 'content_block_start':
-                    // Content block has started, no content yet
-                    break;
-
-                case 'content_block_delta':
-                    // This contains the actual text content
-                    if (isset($data['delta']['type']) && $data['delta']['type'] === 'text_delta') {
-                        if (isset($data['delta']['text'])) {
-                            $extractedText = $data['delta']['text'];
-                            $content .= $extractedText;
-                            Log::info('AnthropicProvider extracted text:', ['text' => $extractedText, 'totalContent' => $content]);
-                        }
-                    }
-                    break;
-
-                case 'content_block_stop':
-                    // Content block has ended
-                    break;
-
-                case 'message_delta':
-                    // Message metadata update, may contain usage info
-                    if (isset($data['usage'])) {
-                        $usage = [
-                            'prompt_tokens' => $data['usage']['input_tokens'] ?? 0,
-                            'completion_tokens' => $data['usage']['output_tokens'] ?? 0,
-                            'total_tokens' => ($data['usage']['input_tokens'] ?? 0) + ($data['usage']['output_tokens'] ?? 0),
-                        ];
-                    }
-                    break;
-
-                case 'message_stop':
-                    // Message has completely finished
-                    $isDone = true;
-                    break;
-
-                case 'ping':
-                    // Keep-alive ping, ignore
-                    break;
-
-                default:
-                    // Unknown event type, log for debugging
-                    Log::debug("Unknown Anthropic stream event type: {$data['type']}", ['data' => $data]);
-                    break;
-            }
+            
+            $result = $this->processAnthropicEvent($data);
+            $content = $result['content'];
+            $isDone = $result['isDone'];
+            $usage = $result['usage'];
         } else {
-            // Fallback: Try SSE format parsing for legacy compatibility
-            $lines = explode("\n", $chunk);
+            // Fallback: Try SSE format parsing (for chunks with multiple events)
+            Log::info('AnthropicProvider trying SSE format parsing');
+            $lines = explode("
+", $chunk);
 
             foreach ($lines as $line) {
                 $line = trim($line);
 
                 if (strpos($line, 'data: ') === 0) {
                     $jsonData = substr($line, 6);
-
+                    
                     if (empty($jsonData) || $jsonData === '{"type": "ping"}') {
                         continue;
                     }
 
                     $data = json_decode($jsonData, true);
-                    if ($data && isset($data['type']) && $data['type'] === 'content_block_delta') {
-                        if (isset($data['delta']['type']) && $data['delta']['type'] === 'text_delta' && isset($data['delta']['text'])) {
-                            $content .= $data['delta']['text'];
-                        }
-                    } elseif ($data && isset($data['type']) && $data['type'] === 'message_stop') {
-                        $isDone = true;
+                    if ($data && isset($data['type'])) {
+                        Log::info('AnthropicProvider processing SSE JSON event:', ['type' => $data['type'], 'data' => $data]);
+                        
+                        $result = $this->processAnthropicEvent($data);
+                        $content .= $result['content']; // Accumulate content from multiple events
+                        if ($result['isDone']) $isDone = true;
+                        if ($result['usage']) $usage = $result['usage'];
                     }
                 }
             }
@@ -211,12 +169,72 @@ class AnthropicProvider extends BaseAIModelProvider
             'isDone' => $isDone,
             'usage' => $usage,
         ];
+        
         Log::info('AnthropicProvider formatStreamChunk result:', $result);
 
         return $result;
     }
 
     /**
+     * Process a single Anthropic event (either from direct JSON or SSE)
+     */
+    private function processAnthropicEvent(array $data): array
+    {
+        $content = '';
+        $isDone = false;
+        $usage = null;
+
+        switch ($data['type']) {
+            case 'message_start':
+                // Message has started, no content yet
+                break;
+
+            case 'content_block_start':
+                // Content block has started, no content yet
+                break;
+
+            case 'content_block_delta':
+                // This contains the actual text content
+                if (isset($data['delta']['type']) && $data['delta']['type'] === 'text_delta') {
+                    if (isset($data['delta']['text'])) {
+                        $content = $data['delta']['text'];
+                        Log::info('AnthropicProvider extracted text:', ['text' => $content]);
+                    }
+                }
+                break;
+
+            case 'content_block_stop':
+                // Content block has ended
+                break;
+
+            case 'message_delta':
+                // Message metadata update, may contain usage info
+                if (isset($data['usage'])) {
+                    $usage = [
+                        'prompt_tokens' => $data['usage']['input_tokens'] ?? 0,
+                        'completion_tokens' => $data['usage']['output_tokens'] ?? 0,
+                        'total_tokens' => ($data['usage']['input_tokens'] ?? 0) + ($data['usage']['output_tokens'] ?? 0),
+                    ];
+                }
+                break;
+
+            case 'message_stop':
+                // Message has completely finished
+                $isDone = true;
+                break;
+
+            case 'ping':
+                // Keep-alive ping, ignore
+                break;
+
+            default:
+                // Unknown event type, log for debugging
+                Log::debug("Unknown Anthropic stream event type: {$data['type']}", ['data' => $data]);
+                break;
+        }
+
+        return ['content' => $content, 'isDone' => $isDone, 'usage' => $usage];
+    }    /**
      * Make a non-streaming request to Anthropic
      *
      * @return mixed

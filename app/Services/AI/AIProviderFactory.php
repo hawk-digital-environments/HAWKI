@@ -112,9 +112,6 @@ class AIProviderFactory
             return $this->providerInstances[$providerId];
         }
 
-        // Try to get from cache first
-        $cacheKey = "provider_instance_{$providerId}";
-
         try {
             // Get the provider settings from the database with API format relationship
             $provider = Cache::remember("provider_data_{$providerId}", self::INSTANCE_CACHE_TTL, function () use ($providerId) {
@@ -128,11 +125,8 @@ class AIProviderFactory
                 throw new \Exception("Provider not found or not active with ID: $providerId");
             }
 
-            // Use the API format unique_name for class selection, fall back to provider_name
-            $apiFormat = $provider->apiFormat ? $provider->apiFormat->unique_name : $provider->provider_name;
-
-            // Create the provider class based on the API format
-            $providerClass = $this->getProviderClass($apiFormat);
+            // Get the provider class dynamically based on API format metadata
+            $providerClass = $this->determineProviderClass($provider);
 
             if (! class_exists($providerClass)) {
                 throw new \Exception("Provider class not found: $providerClass");
@@ -143,7 +137,7 @@ class AIProviderFactory
             $this->providerInstances[$providerId] = new $providerClass([
                 'api_key' => $provider->api_key,
                 'provider_name' => $provider->provider_name,
-                'api_format' => $apiFormat,
+                'api_format' => $provider->apiFormat ? $provider->apiFormat->unique_name : $provider->provider_name,
                 'provider_id' => $provider->id,
                 'additional_settings' => is_string($provider->additional_settings)
                     ? json_decode($provider->additional_settings, true)
@@ -194,37 +188,60 @@ class AIProviderFactory
     }
 
     /**
-     * Get the provider class name based on API format
+     * Determine the appropriate provider class based on API format and metadata
      *
      * @return string Fully qualified class name
      */
-    private function getProviderClass(string $apiFormat)
+    private function determineProviderClass(ProviderSetting $provider): string
     {
-        // Map of API formats to provider classes
-        // Using unique_name values from the database
-        $providerClasses = [
-            'openai-api' => 'App\Services\AI\Providers\OpenAIProvider',
-            'ollama-api' => 'App\Services\AI\Providers\OllamaProvider',
-            'google-generative-language-api' => 'App\Services\AI\Providers\GoogleProvider',
-            'google-vertex-ai-api' => 'App\Services\AI\Providers\GoogleProvider',
-            'gwdg-api' => 'App\Services\AI\Providers\GWDGProvider',
-            'openwebui-api' => 'App\Services\AI\Providers\OpenWebUIProvider',
-            'anthropic-api' => 'App\Services\AI\Providers\AnthropicProvider',
-            'huggingface-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
-            'cohere-api' => 'App\Services\AI\Providers\OpenAIProvider', // Uses OpenAI-compatible interface
+        // If no API format is configured, fall back to OpenAI (most compatible)
+        if (! $provider->apiFormat) {
+            Log::warning("No API format configured for provider {$provider->provider_name}, falling back to OpenAI");
 
-            // Legacy support for old provider names
-            'openai' => 'App\Services\AI\Providers\OpenAIProvider',
-            'gwdg' => 'App\Services\AI\Providers\GWDGProvider',
-            'openWebUi' => 'App\Services\AI\Providers\OpenWebUIProvider',
-            'google' => 'App\Services\AI\Providers\GoogleProvider',
-            'ollama' => 'App\Services\AI\Providers\OllamaProvider',
-            'anthropic' => 'App\Services\AI\Providers\AnthropicProvider',
-            'hawki' => 'App\Services\AI\Providers\HAWKIProvider',
-        ];
+            return 'App\Services\AI\Providers\OpenAIProvider';
+        }
 
-        // Fallback to OpenAI provider for unknown formats (most compatible)
-        return $providerClasses[$apiFormat] ?? 'App\Services\AI\Providers\OpenAIProvider';
+        $apiFormat = $provider->apiFormat;
+        $metadata = is_string($apiFormat->metadata)
+            ? json_decode($apiFormat->metadata, true)
+            : ($apiFormat->metadata ?? []);
+
+        // Option 1: Check if there's a specific provider class mapping in metadata
+        if (isset($metadata['provider_class'])) {
+            $className = $metadata['provider_class'];
+            if (class_exists($className)) {
+                return $className;
+            }
+        }
+
+        // Option 2: Derive provider class from unique_name using naming convention
+        $providerClass = $this->deriveProviderClassFromApiFormat($apiFormat->unique_name);
+
+        // Validate that the class exists
+        if (! class_exists($providerClass)) {
+            Log::warning("Provider class {$providerClass} not found for API format {$apiFormat->unique_name}, falling back to OpenAI");
+
+            return 'App\Services\AI\Providers\OpenAIProvider';
+        }
+
+        return $providerClass;
+    }
+
+    /**
+     * Derive provider class from API format using naming convention
+     * Converts 'some-api-name' to 'SomeApiNameProvider'
+     * This is a pure fallback - the provider_class should be in metadata
+     *
+     * @return string Fully qualified class name
+     */
+    private function deriveProviderClassFromApiFormat(string $apiFormatName): string
+    {
+        // Pure naming convention: 'some-api' -> 'SomeProvider'
+        // Remove '-api' suffix and convert to PascalCase
+        $baseName = str_replace('-api', '', $apiFormatName);
+        $className = str_replace(' ', '', ucwords(str_replace('-', ' ', $baseName))).'Provider';
+
+        return 'App\Services\AI\Providers\\'.$className;
     }
 
     /**
