@@ -80,6 +80,25 @@ class AnthropicProvider extends BaseAIModelProvider
             $payload['top_p'] = $rawPayload['top_p'];
         }
 
+        // Add Web Search Tool if enabled
+        $additionalSettings = $this->config['additional_settings'] ?? [];
+        $allowSearch = $additionalSettings['allow_search'] ?? false;
+
+        if ($allowSearch) {
+            // Check if model supports search based on database information
+            $supportsSearch = $this->modelSupportsSearch($modelId);
+
+            if ($supportsSearch) {
+                $payload['tools'] = $rawPayload['tools'] ?? [
+                    [
+                        'type' => 'web_search_20250305',
+                        'name' => 'web_search',
+                        'max_uses' => 5,
+                    ],
+                ];
+            }
+        }
+
         return $payload;
     }
 
@@ -118,8 +137,6 @@ class AnthropicProvider extends BaseAIModelProvider
      */
     public function formatStreamChunk(string $chunk): array
     {
-        Log::info('AnthropicProvider formatStreamChunk input:', ['chunk' => $chunk]);
-
         $content = '';
         $isDone = false;
         $usage = null;
@@ -127,15 +144,12 @@ class AnthropicProvider extends BaseAIModelProvider
         // First try to parse as direct JSON (most common case)
         $data = json_decode($chunk, true);
         if ($data && isset($data['type'])) {
-            Log::info('AnthropicProvider processing direct JSON event:', ['type' => $data['type'], 'data' => $data]);
-            
             $result = $this->processAnthropicEvent($data);
             $content = $result['content'];
             $isDone = $result['isDone'];
             $usage = $result['usage'];
         } else {
             // Fallback: Try SSE format parsing (for chunks with multiple events)
-            Log::info('AnthropicProvider trying SSE format parsing');
             $lines = explode("
 ", $chunk);
 
@@ -151,8 +165,6 @@ class AnthropicProvider extends BaseAIModelProvider
 
                     $data = json_decode($jsonData, true);
                     if ($data && isset($data['type'])) {
-                        Log::info('AnthropicProvider processing SSE JSON event:', ['type' => $data['type'], 'data' => $data]);
-                        
                         $result = $this->processAnthropicEvent($data);
                         $content .= $result['content']; // Accumulate content from multiple events
                         if ($result['isDone']) $isDone = true;
@@ -162,17 +174,13 @@ class AnthropicProvider extends BaseAIModelProvider
             }
         }
 
-        $result = [
+        return [
             'content' => [
                 'text' => $content,
             ],
             'isDone' => $isDone,
             'usage' => $usage,
         ];
-        
-        Log::info('AnthropicProvider formatStreamChunk result:', $result);
-
-        return $result;
     }
 
     /**
@@ -190,21 +198,60 @@ class AnthropicProvider extends BaseAIModelProvider
                 break;
 
             case 'content_block_start':
-                // Content block has started, no content yet
+                // Content block has started
+                if (isset($data['content_block']['type'])) {
+                    switch ($data['content_block']['type']) {
+                        case 'web_search_tool_result':
+                            // Web search results block - return empty content (not user-visible)
+                            break;
+                            
+                        case 'text':
+                            // Regular text block starting
+                            break;
+                            
+                        default:
+                            Log::debug('AnthropicProvider unknown content block type:', ['type' => $data['content_block']['type']]);
+                            break;
+                    }
+                }
                 break;
 
             case 'content_block_delta':
-                // This contains the actual text content
-                if (isset($data['delta']['type']) && $data['delta']['type'] === 'text_delta') {
-                    if (isset($data['delta']['text'])) {
-                        $content = $data['delta']['text'];
-                        Log::info('AnthropicProvider extracted text:', ['text' => $content]);
+                // Handle different types of content block deltas
+                if (isset($data['delta']['type'])) {
+                    switch ($data['delta']['type']) {
+                        case 'text_delta':
+                            // Regular text content
+                            if (isset($data['delta']['text'])) {
+                                $content = $data['delta']['text'];
+                            }
+                            break;
+                            
+                        case 'input_json_delta':
+                            // Web Search tool input - return empty content (not user-visible)
+                            break;
+                            
+                        case 'citations_delta':
+                            // Citations for web search results - return empty content (not user-visible)
+                            break;
+                            
+                        default:
+                            Log::debug('AnthropicProvider unknown delta type:', ['type' => $data['delta']['type'], 'delta' => $data['delta']]);
+                            break;
                     }
                 }
                 break;
 
             case 'content_block_stop':
                 // Content block has ended
+                break;
+
+            case 'server_tool_use':
+                // Server tool use (like web search) - return empty content
+                break;
+
+            case 'web_search_tool_result':
+                // Web search results - return empty content  
                 break;
 
             case 'message_delta':
@@ -234,6 +281,42 @@ class AnthropicProvider extends BaseAIModelProvider
         }
 
         return ['content' => $content, 'isDone' => $isDone, 'usage' => $usage];
+    }
+
+    /**
+     * Check if a model supports Web Search functionality
+     */
+    public function modelSupportsSearch(string $modelId): bool
+    {
+        // Primary: Check database model settings
+        try {
+            $modelDetails = $this->getModelDetails($modelId);
+            
+            if (is_array($modelDetails)) {
+                // Check if search_tool is in the top level (from information field)
+                if (isset($modelDetails['search_tool'])) {
+                    return (bool) $modelDetails['search_tool'];
+                }
+
+                // Check if search_tool is in the settings sub-array
+                if (isset($modelDetails['settings']['search_tool'])) {
+                    return (bool) $modelDetails['settings']['search_tool'];
+                }
+            }
+        } catch (\Exception $e) {
+            // If database check fails, fall back to model name analysis
+            Log::warning('Failed to get model details for search check: '.$e->getMessage());
+        }
+
+        // Fallback: Only Claude Opus 4+ models support web search
+        $modelIdLower = strtolower($modelId);
+        
+        // Check if it's Claude Opus 4 or newer
+        return strpos($modelIdLower, 'claude-opus-4') !== false ||
+               strpos($modelIdLower, 'claude-sonnet-4') !== false ||
+               strpos($modelIdLower, 'claude-sonnet-3.7') !== false ||
+               strpos($modelIdLower, 'claude-3-5-sonnet') !== false ||
+               strpos($modelIdLower, 'claude-3-5-haiku') !== false;
     }    /**
      * Make a non-streaming request to Anthropic
      *
