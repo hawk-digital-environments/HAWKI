@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Log;
 class AnthropicProvider extends BaseAIModelProvider
 {
     /**
+     * Accumulated web search citations during stream processing
+     */
+    private array $webSearchCitations = [];
+
+    /**
      * Constructor for AnthropicProvider
      */
     public function __construct(array $config)
@@ -108,12 +113,36 @@ class AnthropicProvider extends BaseAIModelProvider
         $data = json_decode($response, true);
 
         if (! $data || ! isset($data['content'])) {
-            return ['content' => '', 'usage' => null];
+            return [
+                'content' => [
+                    'text' => '',
+                    'groundingMetadata' => null,
+                ],
+                'usage' => null
+            ];
         }
 
         $content = '';
+        $groundingMetadata = null;
+        
         if (isset($data['content'][0]['text'])) {
             $content = $data['content'][0]['text'];
+        }
+
+        // Check for web search results in the response
+        foreach ($data['content'] as $contentBlock) {
+            if (isset($contentBlock['type']) && $contentBlock['type'] === 'web_search_tool_result') {
+                // Reset citations and parse the web search results
+                $this->webSearchCitations = [];
+                if (isset($contentBlock['content'])) {
+                    $this->parseWebSearchResults($contentBlock['content']);
+                }
+                
+                // Convert to Google format
+                if (!empty($this->webSearchCitations)) {
+                    $groundingMetadata = $this->convertToGoogleFormat($this->webSearchCitations);
+                }
+            }
         }
 
         $usage = null;
@@ -125,7 +154,13 @@ class AnthropicProvider extends BaseAIModelProvider
             ];
         }
 
-        return ['content' => $content, 'usage' => $usage];
+        return [
+            'content' => [
+                'text' => $content,
+                'groundingMetadata' => $groundingMetadata,
+            ],
+            'usage' => $usage
+        ];
     }
 
     /**
@@ -136,6 +171,7 @@ class AnthropicProvider extends BaseAIModelProvider
         $content = '';
         $isDone = false;
         $usage = null;
+        $groundingMetadata = null;
 
         // First try to parse as direct JSON (most common case)
         $data = json_decode($chunk, true);
@@ -144,6 +180,7 @@ class AnthropicProvider extends BaseAIModelProvider
             $content = $result['content'];
             $isDone = $result['isDone'];
             $usage = $result['usage'];
+            $groundingMetadata = $result['groundingMetadata'];
         } else {
             // Fallback: Try SSE format parsing (for chunks with multiple events)
             $lines = explode("
@@ -165,6 +202,7 @@ class AnthropicProvider extends BaseAIModelProvider
                         $content .= $result['content']; // Accumulate content from multiple events
                         if ($result['isDone']) $isDone = true;
                         if ($result['usage']) $usage = $result['usage'];
+                        if ($result['groundingMetadata']) $groundingMetadata = $result['groundingMetadata'];
                     }
                 }
             }
@@ -173,6 +211,7 @@ class AnthropicProvider extends BaseAIModelProvider
         return [
             'content' => [
                 'text' => $content,
+                'groundingMetadata' => $groundingMetadata,
             ],
             'isDone' => $isDone,
             'usage' => $usage,
@@ -187,10 +226,12 @@ class AnthropicProvider extends BaseAIModelProvider
         $content = '';
         $isDone = false;
         $usage = null;
+        $groundingMetadata = null;
 
         switch ($data['type']) {
             case 'message_start':
-                // Message has started, no content yet
+                // Message has started, reset citation cache
+                $this->webSearchCitations = [];
                 break;
 
             case 'content_block_start':
@@ -198,7 +239,10 @@ class AnthropicProvider extends BaseAIModelProvider
                 if (isset($data['content_block']['type'])) {
                     switch ($data['content_block']['type']) {
                         case 'web_search_tool_result':
-                            // Web search results block - return empty content (not user-visible)
+                            // Web search results block - parse and store citations
+                            if (isset($data['content_block']['content'])) {
+                                $this->parseWebSearchResults($data['content_block']['content']);
+                            }
                             break;
                             
                         case 'text':
@@ -220,6 +264,11 @@ class AnthropicProvider extends BaseAIModelProvider
                             // Regular text content
                             if (isset($data['delta']['text'])) {
                                 $content = $data['delta']['text'];
+                                
+                                // If we have accumulated citations, include them
+                                if (!empty($this->webSearchCitations)) {
+                                    $groundingMetadata = $this->convertToGoogleFormat($this->webSearchCitations);
+                                }
                             }
                             break;
                             
@@ -264,6 +313,11 @@ class AnthropicProvider extends BaseAIModelProvider
             case 'message_stop':
                 // Message has completely finished
                 $isDone = true;
+                
+                // Include final citations if available
+                if (!empty($this->webSearchCitations)) {
+                    $groundingMetadata = $this->convertToGoogleFormat($this->webSearchCitations);
+                }
                 break;
 
             case 'ping':
@@ -276,7 +330,64 @@ class AnthropicProvider extends BaseAIModelProvider
                 break;
         }
 
-        return ['content' => $content, 'isDone' => $isDone, 'usage' => $usage];
+        return [
+            'content' => [
+                'text' => $content,
+                'groundingMetadata' => $groundingMetadata,
+            ],
+            'isDone' => $isDone,
+            'usage' => $usage,
+        ];
+    }
+
+    /**
+     * Parse and store web search results from Anthropic's content blocks
+     */
+    private function parseWebSearchResults(array $searchContent): void
+    {
+        foreach ($searchContent as $result) {
+            if (isset($result['type']) && $result['type'] === 'web_search_result') {
+                $this->webSearchCitations[] = [
+                    'title' => $result['title'] ?? '',
+                    'url' => $result['url'] ?? '',
+                    'content' => $result['encrypted_content'] ?? $result['content'] ?? ''
+                ];
+            }
+        }
+    }
+
+    /**
+     * Convert Anthropic citation format to Google-compatible groundingMetadata format
+     */
+    private function convertToGoogleFormat(array $citations): array
+    {
+        $groundingChunks = [];
+        $groundingSupports = [];
+
+        foreach ($citations as $index => $citation) {
+            // Create grounding chunk
+            $groundingChunks[] = [
+                'web' => [
+                    'uri' => $citation['url'],
+                    'title' => $citation['title']
+                ]
+            ];
+
+            // Create grounding support with segment reference
+            $groundingSupports[] = [
+                'segment' => [
+                    'startIndex' => 0,
+                    'endIndex' => 0
+                ],
+                'groundingChunkIndices' => [$index],
+                'confidenceScores' => [1.0] // Default confidence
+            ];
+        }
+
+        return [
+            'groundingChunks' => $groundingChunks,
+            'groundingSupports' => $groundingSupports
+        ];
     }
 
     /**

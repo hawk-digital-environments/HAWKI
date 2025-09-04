@@ -159,6 +159,9 @@ class StreamController extends Controller
      */
     private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
     {
+        // Increase execution time limit for streaming requests
+        set_time_limit(180); // 3 minutes for streaming
+        
         // Request-specific buffer for Google Provider
         $requestBuffer = '';
         
@@ -524,6 +527,9 @@ class StreamController extends Controller
      */
     private function handleGroupChatRequest(array $data)
     {
+        // Increase execution time limit for streaming requests
+        set_time_limit(180); // 3 minutes for streaming
+        
         $isUpdate = (bool) ($data['isUpdate'] ?? false);
         $room = Room::where('slug', $data['slug'])->firstOrFail();
         

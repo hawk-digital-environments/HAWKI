@@ -335,7 +335,7 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     protected function setStreamingCurlOptions($ch, callable $streamCallback): void
     {
         // Set timeout parameters for streaming
-        curl_setopt($ch, CURLOPT_TIMEOUT, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 120); // 2 minutes max execution time
         curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
         curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 20);
 
