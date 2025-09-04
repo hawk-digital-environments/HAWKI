@@ -86,22 +86,16 @@ class GoogleProvider extends BaseAIModelProvider
             'topK' => 10,
         ];
 
-        // Google Search only works with gemini >= 2.0
-        // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
-        $additionalSettings = $this->config['additional_settings'] ?? [];
-        $allowSearch = $additionalSettings['allow_search'] ?? false;
+        // Web Search Tool - controlled purely by model settings
+        // No provider-level check needed, only model-specific settings matter
+        $supportsSearch = $this->modelSupportsSearch($modelId);
 
-        if ($allowSearch) {
-            // Check if model supports search based on model name and database information
-            $supportsSearch = $this->modelSupportsSearch($modelId);
-
-            if ($supportsSearch) {
-                $payload['tools'] = $rawPayload['tools'] ?? [
-                    [
-                        'google_search' => new \stdClass,
-                    ],
-                ];
-            }
+        if ($supportsSearch) {
+            $payload['tools'] = $rawPayload['tools'] ?? [
+                [
+                    'google_search' => new \stdClass,
+                ],
+            ];
         }
 
         return $payload;
@@ -454,33 +448,26 @@ class GoogleProvider extends BaseAIModelProvider
      */
     private function modelSupportsSearch(string $modelId): bool
     {
-        // Primary: Check database model settings
+        // Check database model settings (same logic as Anthropic Provider)
         try {
             $modelDetails = $this->getModelDetails($modelId);
+            
             if (is_array($modelDetails)) {
-                // Check if search_tool is in the top level (from information field)
-                if (isset($modelDetails['search_tool'])) {
-                    return (bool) $modelDetails['search_tool'];
-                }
-
-                // Check if search_tool is in the settings sub-array
+                // Check if search_tool is in the settings sub-array (primary location)
                 if (isset($modelDetails['settings']['search_tool'])) {
                     return (bool) $modelDetails['settings']['search_tool'];
                 }
+
+                // Fallback: Check if search_tool is in the top level (from information field)
+                if (isset($modelDetails['search_tool'])) {
+                    return (bool) $modelDetails['search_tool'];
+                }
             }
         } catch (\Exception $e) {
-            // If database check fails, fall back to model name analysis
             Log::warning('Failed to get model details for search check: '.$e->getMessage());
         }
 
-        // Fallback: Model name analysis - only Pro models support search
-        // This is used when database settings are not available
-        $modelIdLower = strtolower($modelId);
-
-        // Remove models/ prefix if present
-        $modelIdLower = str_replace('models/', '', $modelIdLower);
-
-        // Check if it's a Pro model (Flash models don't support search)
-        return strpos($modelIdLower, 'pro') !== false && strpos($modelIdLower, 'flash') === false;
+        // No fallback - only use database settings
+        return false;
     }
 }

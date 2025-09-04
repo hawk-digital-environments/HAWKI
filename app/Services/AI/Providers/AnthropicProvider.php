@@ -82,21 +82,17 @@ class AnthropicProvider extends BaseAIModelProvider
 
         // Add Web Search Tool if enabled
         $additionalSettings = $this->config['additional_settings'] ?? [];
-        $allowSearch = $additionalSettings['allow_search'] ?? false;
+        // Check if model supports search based on database information
+        $supportsSearch = $this->modelSupportsSearch($modelId);
 
-        if ($allowSearch) {
-            // Check if model supports search based on database information
-            $supportsSearch = $this->modelSupportsSearch($modelId);
-
-            if ($supportsSearch) {
-                $payload['tools'] = $rawPayload['tools'] ?? [
-                    [
-                        'type' => 'web_search_20250305',
-                        'name' => 'web_search',
-                        'max_uses' => 5,
-                    ],
-                ];
-            }
+        if ($supportsSearch) {
+            $payload['tools'] = $rawPayload['tools'] ?? [
+                [
+                    'type' => 'web_search_20250305',
+                    'name' => 'web_search',
+                    'max_uses' => 5,
+                ],
+            ];
         }
 
         return $payload;
