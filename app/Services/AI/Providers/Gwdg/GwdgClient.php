@@ -6,6 +6,7 @@ namespace App\Services\AI\Providers\Gwdg;
 
 
 use App\Services\AI\Providers\AbstractClient;
+use App\Services\AI\Providers\Gwdg\Request\GwdgModelStatusRequest;
 use App\Services\AI\Providers\Gwdg\Request\GwdgNonStreamingRequest;
 use App\Services\AI\Providers\Gwdg\Request\GwdgStreamingRequest;
 use App\Services\AI\Value\AiModelStatusCollection;
@@ -46,7 +47,6 @@ class GwdgClient extends AbstractClient
      */
     protected function resolveStatusList(AiModelStatusCollection $statusCollection): void
     {
-        // @todo implement model status check for GWDG
-        $statusCollection->setAllOnline();
+        (new GwdgModelStatusRequest(($this->provider)))->execute($statusCollection);
     }
 }

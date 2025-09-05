@@ -23,10 +23,10 @@ abstract class BaseMessageHandler implements MessageInterface
         $this->attachmentService = $attachmentService;
     }
 
-    public function assignID(AiConv|Room $room, int $threadID): string {
+    public function assignID(AiConv|Room $room, int $threadId): string {
         $decimalPadding = 3; // Decide how much padding you need. 3 could pad up to 999.
 
-        if ($threadID == 0) {
+        if ($threadId == 0) {
             // Fetch all messages with whole number IDs (e.g., "0.0", "1.0", etc.)
             $allMessages = $room->messages()
                                 ->get()
@@ -48,9 +48,9 @@ abstract class BaseMessageHandler implements MessageInterface
                 $newMessageId = '1.000';
             }
         } else {
-            // Fetch all messages that belong to the specified threadID
+            // Fetch all messages that belong to the specified threadId
             $allMessages = $room->messages()
-                                ->where('message_id', 'like', "$threadID.%")
+                                ->where('message_id', 'like', "$threadId.%")
                                 ->get();
 
             if ($allMessages->isNotEmpty()) {
@@ -64,8 +64,8 @@ abstract class BaseMessageHandler implements MessageInterface
                 $newDecimal = intval($parts[1]) + 1;
                 $newMessageId = $parts[0] . '.' . str_pad($newDecimal, $decimalPadding, '0', STR_PAD_LEFT);
             } else {
-                // If no sub-messages exist, start from threadID.001
-                $newMessageId = $threadID . '.001';
+                // If no sub-messages exist, start from threadId.001
+                $newMessageId = $threadId . '.001';
             }
         }
 

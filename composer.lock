@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e55b9699c254b87570ba81061287f7e4",
+    "content-hash": "e490528b0aa5ea16dbb210d958628f99",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -1461,6 +1461,47 @@
                 }
             ],
             "time": "2025-08-22T14:27:06+00:00"
+        },
+        {
+            "name": "hawk-hhg/hawki-crypto",
+            "version": "0.5.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hawk-digital-environments/hawki-crypto.git",
+                "reference": "464c3edfdfe3f8c3985347076dfc13fbe83b94a5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hawk-digital-environments/hawki-crypto/zipball/464c3edfdfe3f8c3985347076dfc13fbe83b94a5",
+                "reference": "464c3edfdfe3f8c3985347076dfc13fbe83b94a5",
+                "shasum": ""
+            },
+            "require": {
+                "ext-openssl": "*",
+                "php": "^8.2",
+                "phpseclib/phpseclib": "^3.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^11.5.6",
+                "roave/security-advisories": "dev-latest"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Hawk\\HawkiCrypto\\": "src/",
+                    "Hawk\\HawkiCrypto\\Tests\\": "tests/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "The shared cryptographic module of HAWKI, providing secure encryption and decryption functionalities.",
+            "support": {
+                "issues": "https://github.com/hawk-digital-environments/hawki-crypto/issues",
+                "source": "https://github.com/hawk-digital-environments/hawki-crypto/tree/v0.5.3"
+            },
+            "time": "2025-07-09T16:02:20+00:00"
         },
         {
             "name": "jumbojett/openid-connect-php",

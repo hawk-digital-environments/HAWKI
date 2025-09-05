@@ -4,6 +4,7 @@
 namespace App\Services\Chat\Message\Handlers;
 
 use App\Models\AiConvMsg;
+use App\Models\AiConv;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\Member;
@@ -11,6 +12,7 @@ use App\Models\Message;
 
 use App\Services\Chat\Attachment\AttachmentService;
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -18,19 +20,16 @@ use Illuminate\Support\Facades\Log;
 class GroupMessageHandler extends BaseMessageHandler{
 
 
-    public function create(array $data, string $slug): ?Message {
-
-        $room = $data['room'];
+    public function create(AiConv|Room $room, array $data): Message
+    {
         $member = $data['member'];
 
-        $messageRole = 'user';
-        $nextMessageId = $this->assignID($room, $data['threadID']);
+        $nextMessageId = $this->assignID($room, $data['threadId']);
         $message = Message::create([
             'room_id' => $room->id,
             'member_id' => $member->id,
-            'user_id' => Auth::id(),
             'message_id' => $nextMessageId,
-            'message_role' => $messageRole,
+            'message_role' => $data['message_role'],
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
@@ -51,49 +50,34 @@ class GroupMessageHandler extends BaseMessageHandler{
     }
 
 
-    public function update(array $data, string $slug): ?Message{
+    public function update(AiConv|Room $room, array $data): Message
+    {
+        $message = $room->messages->where('message_id', $data['message_id'])->first();
+        if($message->member->user_id != 1 &&
+           $message->member->user_id != Auth::id()){
+            \Log::debug($message->member->user_id);
 
-        $room = Room::where('slug', $slug)->firstOrFail();
-        $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
-
-        if(!$room || !$member){
-            return null;
+            throw new AuthorizationException();
         }
 
-        $message = $room->messages->where('message_id', $data['message_id'])->first();
-
         $message->update([
-            'content' => $data['content'],
-            'iv' => $data['iv'],
-            'tag' => $data['tag']
+            'iv' => $data['content']['text']['iv'],
+            'tag' => $data['content']['text']['tag'],
+            'content' => $data['content']['text']['ciphertext'],
+            'model'=> $data['model'],
         ]);
 
         return $message;
+
+        $messageData = $message->toArray();
+        $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
+        $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
+        return $messageData;
     }
 
 
-    public function markAsRead(string $message_id, string $slug): bool{
-
-        try{
-            $room = Room::where('slug', $slug)->firstOrFail();
-            $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
-            $message = $room->messages->where('message_id', $message_id)->first();
-            $message->addReadSignature($member);
-            return true;
-        }
-        catch(\Exception $e){
-            return false;
-        }
-
-    }
-
-
-
-    public function delete(array $data, string $slug){
-
-
-
-
+    public function delete(AiConv|Room $room, array $data): bool{
+        return false;
     }
 
 

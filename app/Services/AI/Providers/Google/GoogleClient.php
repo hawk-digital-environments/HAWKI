@@ -6,6 +6,7 @@ namespace App\Services\AI\Providers\Google;
 
 
 use App\Services\AI\Providers\AbstractClient;
+use App\Services\AI\Providers\Google\Request\GoogleModelStatusRequest;
 use App\Services\AI\Providers\Google\Request\GoogleNonStreamingRequest;
 use App\Services\AI\Providers\Google\Request\GoogleStreamingRequest;
 use App\Services\AI\Value\AiModelStatusCollection;
@@ -46,7 +47,6 @@ class GoogleClient extends AbstractClient
      */
     protected function resolveStatusList(AiModelStatusCollection $statusCollection): void
     {
-        // @todo implement model status check for Google
-        $statusCollection->setAllOnline();
+        (new GoogleModelStatusRequest($this->provider))->execute($statusCollection);
     }
 }

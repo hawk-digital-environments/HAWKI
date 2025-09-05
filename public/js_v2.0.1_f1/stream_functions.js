@@ -6,9 +6,8 @@ function buildRequestObject(msgAttributes, onData) {
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
     const isUpdate = msgAttributes['regenerationElement'] ? true : false;
     const msgID = msgAttributes['regenerationElement'] ? msgAttributes['regenerationElement'].id : null;
-    const requestModel = activeModel;
 
-    const stream = requestModel.tools.stream ? msgAttributes['stream'] : false;
+    const stream = activeModel.tools.stream ? msgAttributes['stream'] : false;
 
     const requestObject = {
         broadcast: msgAttributes['broadcasting'],
@@ -202,22 +201,18 @@ function createMessageLogForAI(regenerationElement = null){
 function createMsgObject(msg){
     const role = msg.dataset.role === 'assistant' ? 'assistant' : 'user';
     const msgTxt = msg.querySelector(".message-text").textContent;
-    // ToDo: insert search results
-    // I'm not sure if the data from processStream() lands before getting plotted
     const filteredText = detectMentioning(msgTxt).filteredText;
 
     const attachmentEls = msg.querySelectorAll('.attachment');
     const attachments = Array.from(attachmentEls, att => att.dataset.fileId);
 
-
-    messageObject = {
+    return {
         role: role,
         content:{
             text: filteredText,
             attachments: attachments
         }
     }
-    return messageObject;
 }
 
 

@@ -72,6 +72,9 @@ function refreshModelList(fieldId) {
     const allowedIds = new Set(filteredModels.map(m => m.id));
     const inputCont = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
     inputCont.querySelectorAll('.model-selector').forEach(button => {
+        if(button.dataset.status ==='offline'){
+            return;
+        }
         button.disabled = !allowedIds.has(button.dataset.modelId);
     });
 

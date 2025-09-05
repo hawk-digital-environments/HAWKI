@@ -3,11 +3,16 @@
 
 namespace App\Services\Chat\Message\Handlers;
 
+use App\Models\Message;
 use App\Models\User;
 use App\Models\AiConv;
 use App\Models\AiConvMsg;
+use App\Models\Room;
 
 
+use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Chat\Message\MessageHandlerFactory;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -19,20 +24,15 @@ class PrivateMessageHandler extends BaseMessageHandler{
 
 
 
-    public function create(array $data, string $slug): array {
-
-        $conv = AiConv::where('slug', $slug)->firstOrFail();
+    public function create(AiConv|Room $conv, array $data): AiConvMsg {
         if ($conv->user_id !== Auth::id()) {
-            return [
-                        'success'=> false,
-                        'error' => 'Access denied'
-            ];
+            throw new AuthorizationException();
         }
 
         $user = $data['isAi'] ? User::find(1) : Auth::user();
         $messageRole = $data['isAi'] ? 'assistant' : 'user';
 
-        $nextMessageId = $this->assignID($conv, $data['threadID']);
+        $nextMessageId = $this->assignID($conv, $data['threadId']);
         $message = AiConvMsg::create([
             'conv_id' => $conv->id,
             'user_id' => $user->id,
@@ -55,21 +55,14 @@ class PrivateMessageHandler extends BaseMessageHandler{
                 }
             }
         }
-
-        $messageData = $message->createMessageObject();
-        return [
-            'success'=> true,
-            'messageData'=> $messageData
-        ];
+        return $message;
     }
 
 
 
-    public function update(array $data, string $slug){
-
-        $conv = AiConv::where('slug', $slug)->firstOrFail();
+    public function update(AiConv|Room $conv, array $data): AiConvMsg{
         if ($conv->user_id !== Auth::id()) {
-            return response()->json(['error' => 'Access denied'], 403);
+            throw new AuthorizationException();
         }
 
         //find the target message
@@ -83,27 +76,27 @@ class PrivateMessageHandler extends BaseMessageHandler{
             'completion' => $data['completion']
         ]);
 
-        $messageData = $message->toArray();
-        $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
-        $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
-
-        return $messageData;
-
+        return $message;
     }
 
 
-    public function delete(array $data, string $slug){
-
-        $conv = AiConv::where('slug', $slug)->firstOrFail();
+    public function delete(AiConv|Room $conv, array $data): bool{
         if ($conv->user_id !== Auth::id()) {
-            return response()->json([
-                'success'=> false,
-                'error' => 'Access denied'
-            ], 403);
+            throw new AuthorizationException();
         }
 
         $message = $conv->messages->where('message_id', $data['message_id'])->first();
-        $message->delete();
+        if (!$message->user->is(Auth::user())) {
+            throw new AuthorizationException();
+        }
 
+        $attachmentService = app(AttachmentService::class);
+        $attachments = $message->attachments;
+        foreach ($attachments as $attachment) {
+            $attachmentService->delete($attachment);
+        }
+
+        $message->delete();
+        return true;
     }
 }

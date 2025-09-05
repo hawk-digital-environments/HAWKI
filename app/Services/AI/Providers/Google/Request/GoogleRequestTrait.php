@@ -32,24 +32,29 @@ trait GoogleRequestTrait
         }
         return null;
     }
-    
-    protected function buildApiUrl(AiModel $model): string
+
+    protected function buildApiUrl(AiModel $model, bool $stream): string
     {
         $config = $model->getProvider()->getConfig();
         $apiUrl = $config->getApiUrl();
         $apiKey = $config->getApiKey();
-        return $apiUrl . $model->getId() . ':generateContent?key=' . $apiKey;
+        if($stream){
+            return $apiUrl . $model->getId() . ':streamGenerateContent?key=' . $apiKey;
+        }
+        else {
+            return $apiUrl . $model->getId() . ':generateContent?key=' . $apiKey;
+        }
     }
-    
+
     protected function preparePayload(array $payload): array
     {
-        
+
         // Extract just the necessary parts for Google's API
         $requestPayload = [
             'system_instruction' => $payload['system_instruction'],
             'contents' => $payload['contents']
         ];
-        
+
         // Add aditional config parameters if present
         if (isset($payload['safetySettings'])) {
             $requestPayload['safetySettings'] = $payload['safetySettings'];
@@ -60,7 +65,7 @@ trait GoogleRequestTrait
         if (isset($payload['tools'])) {
             $requestPayload['tools'] = $payload['tools'];
         }
-        
+
         return $requestPayload;
     }
 }

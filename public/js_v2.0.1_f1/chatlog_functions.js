@@ -199,8 +199,8 @@ function selectActiveThread(sender){
     activeThreadIndex = Number(thread.id);
 }
 
-function findThreadWithID(threadID){
-    return document.querySelector(`.thread#${CSS.escape(threadID)}`)
+function findThreadWithID(threadId){
+    return document.querySelector(`.thread#${CSS.escape(threadId)}`)
 }
 
 //#endregion

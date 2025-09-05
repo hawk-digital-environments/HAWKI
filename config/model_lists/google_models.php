@@ -1,7 +1,7 @@
 <?php
 return [
     [
-        'active'=> true,
+        'active'=> env('MODELS_GOOGLE_GEMINI_2_0_FLASH_ACTIVE', true),
         'id' => 'gemini-2.0-flash',
         'label' => 'Google Gemini 2.0 Flash',
         "input"=> [
@@ -13,14 +13,13 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'vision' => true,
-            'file_upload' => false,
-            'web_search'=> true,
-
+            'vision' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_VISION', true),
+            'file_upload' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_FILE_UPLOAD', false),
+            'web_search'=> env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_WEB_SEARCH', true),
         ],
     ],
     [
-        'active'=> true,
+        'active'=> env('MODELS_GOOGLE_GEMINI_2_0_FLASH_LITE_ACTIVE', true),
         'id' => 'gemini-2.0-flash-lite',
         'label' => 'Google Gemini 2.0 Flash Lite',
         "input"=> [
@@ -32,12 +31,12 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'vision' => false,
-            'file_upload' => false,
+            'vision' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_LITE_TOOLS_VISION', false),
+            'file_upload' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_LITE_TOOLS_FILE_UPLOAD', false),
         ],
     ],
     [
-        'active'=> true,
+        'active'=> env('MODELS_GOOGLE_GEMINI_2_5_PRO_ACTIVE', true),
         'id' => 'gemini-2.5-pro',
         'label' => 'Google Gemini 2.5 Pro',
         "input"=> [
@@ -49,9 +48,9 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'vision' => true,
-            'file_upload' => false,
-            'web_search'=> true,
+            'vision' => env('MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_VISION', true),
+            'file_upload' => env('MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_FILE_UPLOAD', false),
+            'web_search'=> env('MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_WEB_SEARCH', true),
         ],
     ]
 ];

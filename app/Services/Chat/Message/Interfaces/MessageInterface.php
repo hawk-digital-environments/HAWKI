@@ -9,10 +9,12 @@ use App\Models\Message;
 
 interface MessageInterface
 {
-    public function create(array $data, string $slug);
-    public function update(array $data, string $slug);
-    public function delete(array $data, string $slug);
+    public function create(AiConv|Room $room, array $data): AiConvMsg|Message;
 
-    public function assignID(AiConv|Room $room, int $threadID);
+    public function update(AiConv|Room $room, array $data): AiConvMsg|Message;
+
+    public function delete(AiConv|Room $room, array $data): bool;
+
+    public function assignID(AiConv|Room $room, int $threadId): string;
 }
 

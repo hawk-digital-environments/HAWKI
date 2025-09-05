@@ -29,10 +29,8 @@ trait RoomMessages{
         }
         $data['room'] = $room;
         $data['member']= $member;
-
-        $messageHandler = MessageHandlerFactory::create('group');
-        $message = $messageHandler->create($data, $slug);
-
+        $data['message_role'] = 'user';
+        $message = $this->messageHandler->create($room, $data);
         SendMessage::dispatch($message, false)->onQueue('message_broadcast');
 
         return $message->createMessageObject();
@@ -49,11 +47,7 @@ trait RoomMessages{
             throw new AuthorizationException();
         }
 
-        $message->update([
-            'content' => $data['content'],
-            'iv' => $data['iv'],
-            'tag' => $data['tag']
-        ]);
+        $message = $this->messageHandler->update($room, $data);
 
         SendMessage::dispatch($message, true)->onQueue('message_broadcast');
 
@@ -64,11 +58,19 @@ trait RoomMessages{
         return $messageData;
     }
 
-    public function markAsRead(array $validatedData, string $slug): void{
-        $room = Room::where('slug', $slug)->firstOrFail();
-        $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
-        $message = $room->messages->where('message_id', $validatedData['message_id'])->first();
-        $message->addReadSignature($member);
+    public function markAsRead(array $validatedData, string $slug): bool{
+        try{
+            $room = Room::where('slug', $slug)->firstOrFail();
+            $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
+            $message = $room->messages->where('message_id', $validatedData['message_id'])->first();
+            $message->addReadSignature($member);
+            return true;
+        }
+        catch(\Exception $e){
+            return false;
+        }
+
+
     }
 
 }

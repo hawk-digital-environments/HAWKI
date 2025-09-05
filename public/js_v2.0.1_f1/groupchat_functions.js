@@ -89,7 +89,7 @@ async function onSendMessageToRoom(inputField) {
             },
             "attachments": attachments
         },
-        'threadID' : activeThreadIndex,
+        'threadId' : activeThreadIndex,
     };
 
     const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`)
@@ -151,6 +151,7 @@ const connectWebSocket = (roomSlug) => {
                 if(data.type === 'message'){
 
                     if(activeRoom && activeRoom.slug === roomSlug){
+
                         if(data.messageData.message_role !== 'assistant'){
                             handleUserMessages(data.messageData, roomSlug)
                         }else{
@@ -224,7 +225,7 @@ async function handleAIMessage(messageData, slug){
     const roomKey = await keychainGet(slug);
     const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
     const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
-
+    console.log(messageData.content);
     messageData.content.text = await decryptWithSymKey(aiKey,
                                                         messageData.content.text.ciphertext,
                                                         messageData.content.text.iv,
@@ -264,7 +265,7 @@ async function handleUpdateMessage(messageData, slug){
                                                     messageData.content.text.ciphertext,
                                                     messageData.content.text.iv,
                                                     messageData.content.text.tag);
-
+    console.log(messageData.content.text);
     let element = document.getElementById(messageData.message_id);
 
     regenerateBtn = element.querySelector('#regenerate-btn');

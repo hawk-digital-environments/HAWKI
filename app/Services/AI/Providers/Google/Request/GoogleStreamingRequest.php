@@ -30,10 +30,10 @@ class GoogleStreamingRequest extends AbstractRequest
             getHttpHeaders: fn() => [
                 'Content-Type: application/json'
             ],
-            apiUrl: $this->buildApiUrl($model)
+            apiUrl: $this->buildApiUrl($model, true)
         );
     }
-    
+
     public function chunkToResponse(AiModel $model, string $chunk): AiResponse
     {
         $jsonChunk = json_decode($chunk, true, 512, JSON_THROW_ON_ERROR);

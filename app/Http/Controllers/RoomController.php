@@ -132,7 +132,7 @@ class RoomController extends Controller
 
         $validatedData = $request->validate([
             'content' => 'required|array',
-            'threadID' => 'required|integer',
+            'threadId' => 'required|integer',
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
 
@@ -153,7 +153,7 @@ class RoomController extends Controller
             'content' => 'required|array',
             'message_id' => 'required|string',
         ]);
-        $messageData = $this->roomService->update($validatedData, $slug);
+        $messageData = $this->roomService->updateMessage($validatedData, $slug);
         return response()->json([
             'success' => true,
             'messageData' => $messageData,

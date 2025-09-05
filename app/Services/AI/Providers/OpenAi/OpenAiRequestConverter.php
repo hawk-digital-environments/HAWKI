@@ -18,7 +18,7 @@ readonly class OpenAiRequestConverter
     )
     {
     }
-    
+
     public function convertRequestToPayload(AiRequest $request): array
     {
         $rawPayload = $request->payload;
@@ -61,9 +61,17 @@ readonly class OpenAiRequestConverter
         if (isset($rawPayload['presence_penalty'])) {
             $payload['presence_penalty'] = $rawPayload['presence_penalty'];
         }
+
+        if($modelId === 'gpt-5'){
+            \Log::debug('GPT 5');
+            $payload['verbosity'] = "low";
+            $payload["reasoning_effort"] = "minimal";
+
+        }
+
         return $payload;
     }
-    
+
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
         $formatted = [
@@ -88,7 +96,7 @@ readonly class OpenAiRequestConverter
 
         return $formatted;
     }
-    
+
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
     {
         $attachmentService = app(AttachmentService::class);
@@ -169,7 +177,7 @@ readonly class OpenAiRequestConverter
             ];
         }
     }
-    
+
     /**
      * Handle special formatting requirements for specific models
      *

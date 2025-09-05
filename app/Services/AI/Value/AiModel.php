@@ -232,12 +232,17 @@ class AiModel implements JsonSerializable
         $this->assertContextIsSet(__METHOD__);
         return $this->context->getClient();
     }
-    
+
     public function toArray(): array
     {
-        return $this->raw;
+        $out = $this->raw;
+        $out['status'] = ModelOnlineStatus::UNKNOWN->value;
+        if(isset($this->context)){
+            $out['status'] = $this->context->getStatus()->value;
+        }
+        return $out;
     }
-    
+
     /**
      * @inheritDoc
      */

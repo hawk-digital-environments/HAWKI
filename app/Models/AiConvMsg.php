@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\AvatarStorageService;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 
 class AiConvMsg extends Model
 {
@@ -24,12 +26,12 @@ class AiConvMsg extends Model
     ];
 
     // Define the relationship with AiConv
-    public function conversation()
+    public function conversation(): BelongsTo
     {
         return $this->belongsTo(AiConv::class, 'conv_id');
     }
 
-    public function user(){
+    public function user(): BelongsTo{
         return $this->belongsTo(User::class);
     }
 
@@ -40,7 +42,7 @@ class AiConvMsg extends Model
         //if AI is the author, then username and name are the same.
         //if User has created the message then fetch the name from model.
         $user =  $this->user;
-        $msgData = [
+        return [
             'message_role' => $this->message_role,
             'message_id' => $this->message_id,
             'author' => [
@@ -62,8 +64,6 @@ class AiConvMsg extends Model
             'created_at' => $this->created_at->format('Y-m-d+H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d+H:i'),
         ];
-
-        return $msgData;
     }
 
 

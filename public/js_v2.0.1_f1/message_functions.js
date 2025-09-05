@@ -319,7 +319,6 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
 
     }
 
-
     //SET MESSAGE TIME AND EDIT FLAG
     const time = messageObj.created_at.split('+')[1];
     const timeStamp = messageObj.created_at !== messageObj.updated_at ? `edited: ${time}` : `${time}`;
@@ -456,7 +455,7 @@ function detectMentioning(rawText){
         aiMention: "",
         userMentions: []
     };
-
+    console.log(rawText);
     const mentionRegex = /@\w+/g;
     const mentionMatches = rawText.match(mentionRegex);
 
@@ -699,7 +698,6 @@ function abortEditMessage(provider){
 }
 
 async function confirmEditMessage(provider){
-
     const msgControls = provider.closest('.message-controls');
     const messageElement = provider.closest('.message');
 
@@ -806,7 +804,7 @@ async function regenerateMessage(messageElement, Done = null){
 
     let inputContainer;
     if(threadIndex == 0){
-        inputContainer = document.querySelector(`.input[id="0"`).closest('.input-container');
+        inputContainer = document.querySelector(`.input[id="0"]`).closest('.input-container');
     }
     else{
         inputContainer = messageElement.closest('.thread').querySelector('.input-container');

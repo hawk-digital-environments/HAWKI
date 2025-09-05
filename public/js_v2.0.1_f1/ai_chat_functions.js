@@ -92,7 +92,7 @@ async function sendMessageConv(inputField) {
     /// Submit Message to server.
     const messageObj = {
         'isAi': false,
-        'threadID': activeThreadIndex,
+        'threadId': activeThreadIndex,
         'completion': true,
 
         'content': {
@@ -106,7 +106,7 @@ async function sendMessageConv(inputField) {
     }
 
     const submissionData = await submitMessageToServer(messageObj, `/req/conv/sendMessage/${activeConv.slug}`);
-
+    console.log(submissionData);
     // Replace the original text
     submissionData.content.text = inputText;
 
@@ -222,7 +222,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
             const requestObj = {
                 'isAi': true,
-                'threadID': activeThreadIndex,
+                'threadId': activeThreadIndex,
                 'content':{
                     'text': {
                         'ciphertext': messageObj.ciphertext,
