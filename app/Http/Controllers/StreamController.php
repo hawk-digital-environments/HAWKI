@@ -276,10 +276,7 @@ class StreamController extends Controller
                     flush();
                 }
                 
-                // Debug logging for final chunks
-                if ($formatted['isDone']) {
-                    Log::info('StreamController: Final chunk detected - isDone=true, content: ' . substr($formatted['content']['text'], 0, 100));
-                }
+                // Debug logging for final chunks removed for cleaner logs
             }
         };
         

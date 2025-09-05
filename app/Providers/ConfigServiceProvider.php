@@ -198,7 +198,6 @@ class ConfigServiceProvider extends ServiceProvider
     public static function clearConfigCache()
     {
         Cache::forget(self::CONFIG_CACHE_KEY);
-        Log::debug('Configuration override cache cleared');
     }
 
     /**

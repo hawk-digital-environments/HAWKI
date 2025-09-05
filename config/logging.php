@@ -160,5 +160,6 @@ return [
     'triggers' => [
         'return_object' => false,
         'default_model' => false,
+        'usage' => false,
     ],
 ];

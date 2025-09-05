@@ -171,16 +171,6 @@ class ProviderSettingsScreen extends Screen
             $environment = app()->environment();
             $filename = "provider_settings_export_{$environment}_{$timestamp}.json";
             
-            // Log export operation with security note
-            $this->logBatchOperation('provider_export', 'providers', [
-                'total' => $providers->count(),
-                'action' => 'Export provider settings to JSON (NON-PRODUCTION)',
-                'environment' => $environment,
-                'filename' => $filename,
-                'exported_providers' => array_keys($exportData),
-                'security_note' => 'Export contains API keys - only allowed in non-production'
-            ]);
-            
             // Create JSON response with download
             $jsonContent = json_encode($exportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             

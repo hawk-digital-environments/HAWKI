@@ -147,8 +147,11 @@ class OpenAIProvider extends BaseAIModelProvider
         // Extract usage data if available
         if (!empty($jsonChunk['usage'])) {
             $usage = $this->extractUsage($jsonChunk);
-            Log::info('OpenAI', ['model' => $jsonChunk['model'], 'usage' => $usage]);
-
+            
+            // Only log usage data if enabled in configuration
+            if (config('logging.triggers.usage', false)) {
+                Log::info('OpenAI Usage', ['model' => $jsonChunk['model'], 'usage' => $usage]);
+            }
         }
         
         // Extract content if available
