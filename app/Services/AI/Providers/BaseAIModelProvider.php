@@ -324,6 +324,34 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+        
+        // Apply proxy configuration if available
+        $this->setProxyCurlOptions($ch);
+    }
+
+    /**
+     * Set proxy options for cURL if configured in environment
+     *
+     * @param  resource  $ch  cURL resource
+     */
+    protected function setProxyCurlOptions($ch): void
+    {
+        // Check for proxy environment variables
+        if (getenv('HTTP_PROXY') || getenv('http_proxy')) {
+            $proxy = getenv('HTTP_PROXY') ?: getenv('http_proxy');
+            curl_setopt($ch, CURLOPT_PROXY, $proxy);
+        }
+        
+        if (getenv('HTTPS_PROXY') || getenv('https_proxy')) {
+            $httpsProxy = getenv('HTTPS_PROXY') ?: getenv('https_proxy');
+            curl_setopt($ch, CURLOPT_PROXY, $httpsProxy);
+        }
+        
+        // Check for no proxy configuration
+        if (getenv('NO_PROXY') || getenv('no_proxy')) {
+            $noProxy = getenv('NO_PROXY') ?: getenv('no_proxy');
+            curl_setopt($ch, CURLOPT_NOPROXY, $noProxy);
+        }
     }
 
     /**

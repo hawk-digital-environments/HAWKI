@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Traits;
 
 use App\Models\ProviderSetting;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Orchid\Support\Facades\Toast;
 
@@ -103,8 +104,24 @@ trait AiConnectionTrait
         try {
             $connectionStartTime = microtime(true);
             
-            // Simple connection test - this could be enhanced with actual API testing
-            $response = @get_headers($testUrl);
+            // Use Laravel HTTP Client for proper proxy support (same as provider:test command)
+            $headers = [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ];
+            
+            // Add authorization header if provider has API key
+            if (!empty($provider->api_key)) {
+                $headers['Authorization'] = 'Bearer ' . $provider->api_key;
+            }
+            
+            $logData['request_headers'] = array_keys($headers);
+            
+            // Make HTTP request with timeout
+            $response = Http::timeout(30)
+                ->connectTimeout(10)
+                ->withHeaders($headers)
+                ->get($testUrl);
             
             $connectionEndTime = microtime(true);
             $responseTime = round(($connectionEndTime - $connectionStartTime) * 1000, 2);
@@ -115,24 +132,34 @@ trait AiConnectionTrait
                 'total_time_ms' => $totalTime,
             ];
             
-            if ($response !== false) {
+            $statusCode = $response->status();
+            $isSuccess = $statusCode >= 200 && $statusCode < 400;
+            
+            $logData['response'] = [
+                'status_code' => $statusCode,
+                'status_text' => $response->reason(),
+                'has_body' => !empty($response->body()),
+            ];
+            
+            if ($isSuccess) {
+                // Successful connection
                 $logData['result'] = 'success';
-                $logData['response'] = [
-                    'headers_count' => count($response),
-                    'first_header' => $response[0] ?? null,
-                ];
                 
                 Log::info("Provider connection test successful - {$provider->provider_name}", $logData);
                 
-                Toast::success("Connection test successful for provider '{$provider->provider_name}' at {$testUrl} (Response time: {$responseTime}ms).");
+                Toast::success("Connection test successful for provider '{$provider->provider_name}' at {$testUrl} (HTTP {$statusCode}, Response time: {$responseTime}ms).");
             } else {
-                $logData['result'] = 'failed_no_response';
-                $logData['errors'][] = 'No response received from endpoint';
-                $logData['last_error'] = error_get_last();
+                // HTTP error
+                $logData['result'] = 'failed_http_error';
+                $errorBody = $response->body();
+                if (strlen($errorBody) > 200) {
+                    $errorBody = substr($errorBody, 0, 200) . '...';
+                }
+                $logData['errors'][] = "HTTP {$statusCode}: {$errorBody}";
                 
-                Log::warning("Provider connection test failed - {$provider->provider_name} no response", $logData);
+                Log::warning("Provider connection test failed - {$provider->provider_name} HTTP error", $logData);
                 
-                Toast::error("Connection test failed for provider '{$provider->provider_name}' at {$testUrl}.");
+                Toast::error("Connection test failed for provider '{$provider->provider_name}' at {$testUrl} (HTTP {$statusCode}).");
             }
         } catch (\Exception $e) {
             $endTime = microtime(true);
@@ -142,14 +169,20 @@ trait AiConnectionTrait
             $logData['exception'] = [
                 'message' => $e->getMessage(),
                 'code' => $e->getCode(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
+                'type' => get_class($e),
             ];
             
             Log::error("Provider connection test exception - {$provider->provider_name}", $logData);
             
-            Toast::error("Connection test error for provider '{$provider->provider_name}': " . $e->getMessage());
+            // More user-friendly error messages for common HTTP client exceptions
+            $errorMessage = $e->getMessage();
+            if (str_contains($errorMessage, 'Connection timed out')) {
+                $errorMessage = 'Connection timeout - please check if the provider URL is accessible';
+            } elseif (str_contains($errorMessage, 'Could not resolve host')) {
+                $errorMessage = 'Could not resolve hostname - please check the provider URL';
+            }
+            
+            Toast::error("Connection test error for provider '{$provider->provider_name}': " . $errorMessage);
         }
     }
 
