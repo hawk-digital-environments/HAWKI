@@ -41,7 +41,7 @@ function initializeGroupChatModule(roomsData){
 
 //#region INPUT EVENTS
 function onHandleKeydownRoom(event){
-    if(event.key == "Enter" && !event.shiftKey){
+    if(event.key === "Enter" && !event.shiftKey){
         event.preventDefault();
         selectActiveThread(event.target);
         onSendMessageToRoom(event.target);
@@ -66,7 +66,7 @@ function onSendClickRoom(btn){
 
 async function onSendMessageToRoom(inputField) {
 
-    if(inputField.value.trim() == "") {
+    if(inputField.value.trim() === "") {
         return;
     }
 
@@ -94,7 +94,7 @@ async function onSendMessageToRoom(inputField) {
 
     const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`)
     submittedObj.content.text = inputText;
-    submittedObj.filteredContent = detectMentioning(inputText),
+    submittedObj.filteredContent = detectMentioning(inputText);
 
     // empty input field
     inputField.value = "";
@@ -128,9 +128,7 @@ async function onSendMessageToRoom(inputField) {
             'tools': tools
         }
 
-        buildRequestObject(msgAttributes,  async (updatedText, done) => {
-
-        });
+        buildRequestObject(msgAttributes);
     }
 
 }
@@ -143,22 +141,23 @@ const connectWebSocket = (roomSlug) => {
         .listen('RoomMessageEvent', async (e) => {
             try {
                 const receivedPacket = e.data;
-
+                // console.log('Received Packet', receivedPacket);
                 if(receivedPacket.type === 'message'){
                     const messageData = await requestMessageContent(receivedPacket.data.message_id,
-                                                                    receivedPacket.data.slug);
+                                                                            receivedPacket.data.slug);
+
                     if(activeRoom && activeRoom.slug === roomSlug){
                         if(messageData.message_role !== 'assistant'){
-                            handleUserMessages(messageData, roomSlug)
+                            await handleUserMessages(messageData, roomSlug)
                         }else{
-                            handleAIMessage(messageData, roomSlug)
+                            await handleAIMessage(messageData, roomSlug)
                         }
-                        if(messageData.author.username != userInfo.username){
+                        if(messageData.author.username !== userInfo.username){
                             playSound('in');
                         }
                     }
                     else{
-                        if(messageData.author.username != userInfo.username){
+                        if(messageData.author.username !== userInfo.username){
                             playSound('out');
                         }
                         flagRoomUnreadMessages(roomSlug, true);
@@ -167,8 +166,8 @@ const connectWebSocket = (roomSlug) => {
 
                 if(receivedPacket.type === "messageUpdate"){
                     const messageData = await requestMessageContent(receivedPacket.data.message_id,
-                                                receivedPacket.data.slug);
-                    handleUpdateMessage(messageData, roomSlug)
+                                                                    receivedPacket.data.slug);
+                    await handleUpdateMessage(messageData, roomSlug)
                 }
 
                 if(receivedPacket.type === "status"){
@@ -198,10 +197,10 @@ async function requestMessageContent(messageId, slug){
         });
 
         if(!response.ok){
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.error(`HTTP error! status: ${response.status}`);
+            return null;
         }
-        const data = await response.json();
-        return data;
+        return await response.json();
     } catch (error) {
         console.error('There was a problem with the fetch operation:', error);
     }
@@ -210,7 +209,6 @@ async function requestMessageContent(messageId, slug){
 
 
 async function handleUserMessages(messageData, slug){
-
     const roomKey = await keychainGet(slug);
     messageData.content.text = await decryptWithSymKey(roomKey,
                                                         messageData.content.text.ciphertext,
@@ -237,13 +235,12 @@ async function handleUserMessages(messageData, slug){
 }
 
 
-let rawMsg = "";
 async function handleAIMessage(messageData, slug){
 
     const roomKey = await keychainGet(slug);
     const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
     const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
-    console.log(messageData.content);
+
     messageData.content.text = await decryptWithSymKey(aiKey,
                                                         messageData.content.text.ciphertext,
                                                         messageData.content.text.iv,
@@ -266,7 +263,7 @@ async function handleAIMessage(messageData, slug){
         const thread = element.parentElement;
         checkThreadUnreadMessages(thread);
     }
-};
+}
 
 async function handleUpdateMessage(messageData, slug){
     let key;
@@ -283,7 +280,7 @@ async function handleUpdateMessage(messageData, slug){
                                                     messageData.content.text.ciphertext,
                                                     messageData.content.text.iv,
                                                     messageData.content.text.tag);
-    console.log(messageData.content.text);
+
     let element = document.getElementById(messageData.message_id);
 
     regenerateBtn = element.querySelector('#regenerate-btn');
@@ -668,7 +665,8 @@ async function handleUserInvitations() {
         });
 
         if(!response.ok){
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.error(`HTTP error! status: ${response.status}`);
+            return null;
         }
 
         const data = await response.json();
@@ -718,9 +716,9 @@ async function handleTempLinkInvitation(tempLink){
         });
 
         if(!response.ok){
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.error(`HTTP error! status: ${response.status}`);
+            return null;
         }
-
         const data = await response.json();
         roomKey = await decryptWithTempHash(data.invitation, tempHash, data.iv, data.tag);
         if(roomKey){
@@ -755,7 +753,6 @@ async function finishInvitationHandling(invitation_id, roomKey){
     }
 }
 
-NOTE:
 function openInvitationPanel(){
     const modal = document.querySelector('#add-member-modal');
     modal.querySelector('#user-search-bar').value = '';
@@ -923,11 +920,11 @@ async function RequestRoomContent(slug){
         });
 
         if(!response.ok){
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.error(`HTTP error! status: ${response.status}`);
+            return null;
         }
 
-        const data = await response.json();
-        return data;
+        return await response.json();
     }
     catch (err){
         console.error('Error fetching data:', error);
@@ -1053,7 +1050,7 @@ async function searchUser(searchBar) {
 }
 
 function onHandleKeydownUserSearch(event, searchBar){
-    if(event.key == "Enter" && !event.shiftKey){
+    if(event.key === "Enter" && !event.shiftKey){
         event.preventDefault();
 
         const resultsPanel = searchBar.closest('.search-panel').querySelector('#searchResults');
@@ -1474,7 +1471,8 @@ async function updateRoomInfo(slug, attributes){
         });
 
         if(!response.ok){
-            throw new Error(`HTTP error! status: ${response.status}`);
+            console.error(`HTTP error! status: ${response.status}`);
+            return null;
         }
 
         const data = await response.json();

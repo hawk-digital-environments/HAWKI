@@ -64,7 +64,7 @@ class AnnouncementController extends Controller
 
 
     public function fetchLatestPolicy(){
-        
+        \Log::debug('fetchLatestPolicy');
         try {
             $announcement = $this->announcementService->fetchLatestPolicy();
             $view = $this->announcementService->renderAnnouncement($announcement);

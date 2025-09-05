@@ -5,6 +5,7 @@ namespace App\Models;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
@@ -29,13 +30,18 @@ class Room extends Model
         });
     }
 
-    public function messages()
+    public function messages(): HasMany
     {
         return $this->hasMany(Message::class)->orderBy('message_id');
     }
 
-    public function messageObjects(){
+    public function getMessageById($messageId): Message
+    {
+        return $this->messages()->where('message_id', $messageId)->firstOrFail();
+    }
 
+    public function messageObjects(): array
+    {
         $messages = $this->messages;
 
         $messagesData = array();
@@ -47,33 +53,33 @@ class Room extends Model
     }
 
 
-    public function membersAll()
+    public function membersAll(): HasMany
     {
         return $this->hasMany(Member::class);
     }
-    public function members()
+    public function members(): HasMany
     {
         return $this->hasMany(Member::class)->where('isRemoved', false);
     }
-    public function isMember($userId)
+    public function isMember($userId): bool
     {
         return $this->members()
                     ->where('user_id', $userId)
                     ->exists();
     }
 
-    public function oldMembers()
+    public function oldMembers(): HasMany
     {
         return $this->hasMany(Member::class)->where('isRemoved', true);
     }
-    public function isOldMember($userId)
+    public function isOldMember($userId): bool
     {
         return $this->oldMembers()
                     ->where('user_id', $userId)
                     ->exists();
     }
 
-    public function addMember($userId, $role)
+    public function addMember($userId, $role): void
     {
         if($this->isMember($userId)){
             $member = $this->members()->where('user_id', $userId)->first();
@@ -148,7 +154,7 @@ class Room extends Model
 
 
 
-    public function hasRole($userId, $role)
+    public function hasRole($userId, $role): bool
     {
         return $this->members()
                     ->where('user_id', $userId)
@@ -157,14 +163,15 @@ class Room extends Model
     }
 
 
-    public function changeName($newName)
+    public function changeName($newName): bool
     {
         $this->update(['room_name' => $newName]);
     }
 
 
 
-    public function hasUnreadMessagesFor($member){
+    public function hasUnreadMessagesFor($member): bool
+    {
         // get the last 100 messages.
         $msgs = $this->messages()
         ->orderBy('updated_at', 'desc')

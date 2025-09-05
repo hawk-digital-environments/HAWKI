@@ -266,24 +266,22 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     messageElement.dataset.role = messageObj.message_role;
     const msgTxtElement = messageElement.querySelector(".message-text");
 
-    if(messageElement.classList.contains('AI')){
+    if (messageElement.classList.contains('AI')) {
         const username = messageElement.dataset.author;
-        model = modelsList.find(m => m.id === messageObj.model);
+        const model = modelsList.find(m => m.id === messageObj.model);
         messageElement.querySelector('.message-author').innerHTML =
             model ?
-            `<span>${username} </span><span class="message-author-model">(${model.label})</span>`:
-            `<span>${username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+                `<span>${username} </span><span class="message-author-model">(${model.label})</span>` :
+                `<span>${username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
         messageElement.dataset.model = messageObj.model;
     }
 
     if(updateContent){
-        const {messageText, groundingMetadata} = deconstContent(messageObj.content);
+        const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
 
-        const filteredContent = detectMentioning(messageText);
         messageElement.dataset.rawMsg = messageText;
-        // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
-
-        if(!messageElement.classList.contains('AI')){
+        if(messageObj.message_role === "user"){
+            const filteredContent = detectMentioning(messageText);
             msgTxtElement.innerHTML = filteredContent.modifiedText;
         }
         else{
@@ -455,7 +453,7 @@ function detectMentioning(rawText){
         aiMention: "",
         userMentions: []
     };
-    console.log(rawText);
+
     const mentionRegex = /@\w+/g;
     const mentionMatches = rawText.match(mentionRegex);
 

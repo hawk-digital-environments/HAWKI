@@ -3,6 +3,7 @@
 namespace App\Services\Chat\Room\Traits;
 
 use App\Models\Room;
+use App\Models\Message;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -29,9 +30,9 @@ trait RoomMessages{
         }
         $data['room'] = $room;
         $data['member']= $member;
+        $data['message_role'] = 'user';
 
-        $messageHandler = MessageHandlerFactory::create('group');
-        $message = $messageHandler->create($data, $slug);
+        $message = $this->messageHandler->create($room, $data);
 
         $broadcastObject = [
             'slug' => $room->slug,
@@ -47,27 +48,20 @@ trait RoomMessages{
 
         $room = Room::where('slug', $slug)->firstOrFail();
         $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
-        $message = $room->messages->where('message_id', $data['message_id'])->firstOrFail();
+        $message = $room->getMessageById($data['message_id']);
 
         if($message->member->isNot($member)){
             throw new AuthorizationException();
         }
 
         $message = $this->messageHandler->update($room, $data);
-
-
         $broadcastObject = [
             'slug' => $room->slug,
             'message_id'=> $message->message_id,
         ];
-
         SendMessage::dispatch($broadcastObject, true)->onQueue('message_broadcast');
+        return $message->createMessageObject();
 
-        $messageData = $message->toArray();
-        $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
-        $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
-
-        return $messageData;
     }
 
 
@@ -76,87 +70,15 @@ trait RoomMessages{
         if(!$room->isMember(Auth::id())){
             throw new AuthorizationException();
         }
-        $message = $room->messages()->where('message_id', $message_id)->first();
-        $member = $message->member;
-
-        return [
-            'room_id' => $message->room_id,
-            'member_id' => $message->member_id,
-            'author' => [
-                'username' => $member->user->username,
-                'name' => $member->user->name,
-                'isRemoved' => $member->isRemoved,
-                'avatar_url' => $this->avatarStorage->getFileUrl('profile_avatars',
-                                                                                    $member->user->username,
-                                                                                    $member->user->avatar_id)
-            ],
-            'model' => $message->model,
-            'message_role' => $message->message_role,
-            'message_id' => $message->message_id,
-            'iv' => $message->iv,
-            'tag' => $message->tag,
-            'content' => [
-                'text'=>[
-                    'ciphertext' => $message->content,
-                    'iv' => $message->iv,
-                    'tag' => $message->tag,
-                ],
-            ],
-            'read_status'=> false,
-
-            'created_at' => $message->created_at->format('Y-m-d+H:i'),
-            'updated_at' => $message->updated_at->format('Y-m-d+H:i'),
-        ];
-
+        $message = $room->getMessageById($message_id);
+        return $message->createMessageObject();
     }
-
-
-
-    public function retrieveMessage(string $message_id, string $slug): array{
-        $room = Room::where('slug', $slug)->firstOrFail();
-        if(!$room->isMember(Auth::id())){
-            throw new AuthorizationException();
-        }
-        $message = $room->messages()->where('message_id', $message_id)->first();
-        $member = $message->member;
-
-        return [
-            'room_id' => $message->room_id,
-            'member_id' => $message->member_id,
-            'author' => [
-                'username' => $member->user->username,
-                'name' => $member->user->name,
-                'isRemoved' => $member->isRemoved,
-                'avatar_url' => $this->avatarStorage->getFileUrl('profile_avatars',
-                                                                                    $member->user->username,
-                                                                                    $member->user->avatar_id)
-            ],
-            'model' => $message->model,
-            'message_role' => $message->message_role,
-            'message_id' => $message->message_id,
-            'iv' => $message->iv,
-            'tag' => $message->tag,
-            'content' => [
-                'text'=>[
-                    'ciphertext' => $message->content,
-                    'iv' => $message->iv,
-                    'tag' => $message->tag,
-                ],
-            ],
-            'read_status'=> false,
-
-            'created_at' => $message->created_at->format('Y-m-d+H:i'),
-            'updated_at' => $message->updated_at->format('Y-m-d+H:i'),
-        ];
-
-    }
-
 
     public function markAsRead(array $validatedData, string $slug): bool{
         try{
             $room = Room::where('slug', $slug)->firstOrFail();
             $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
-            $message = $room->messages->where('message_id', $validatedData['message_id'])->first();
+            $message = $room->getMessageById($validatedData['message_id']);
             $message->addReadSignature($member);
             return true;
         }

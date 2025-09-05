@@ -52,11 +52,9 @@ class GroupMessageHandler extends BaseMessageHandler{
 
     public function update(AiConv|Room $room, array $data): Message
     {
-        $message = $room->messages->where('message_id', $data['message_id'])->first();
+        $message = $room->getMessageById($data['message_id']);
         if($message->member->user_id != 1 &&
            $message->member->user_id != Auth::id()){
-            \Log::debug($message->member->user_id);
-
             throw new AuthorizationException();
         }
 
@@ -64,15 +62,10 @@ class GroupMessageHandler extends BaseMessageHandler{
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
-            'model'=> $data['model'],
+            'model'=> $data['model'] ?? null,
         ]);
 
         return $message;
-
-        $messageData = $message->toArray();
-        $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
-        $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
-        return $messageData;
     }
 
 

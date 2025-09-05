@@ -701,7 +701,6 @@ function generateMessageElements(messageObj){
 
 
     if(messageObj.content.attachments && messageObj.content.attachments.length != 0){
-        console.log(messageElement);
         const attachmentContainer = messageElement.querySelector('.attachments');
 
         messageObj.content.attachments.forEach(attachment => {
