@@ -105,14 +105,15 @@
 }
 
 /* Google Citations Styling */
-.citation-link {
+.message-text .citation-link {
     color: #007bff;
     text-decoration: none;
     cursor: pointer;
     font-weight: 500;
+    padding: 0;
 }
 
-.citation-link:hover {
+.message-text .citation-link:hover {
     text-decoration: underline;
 }
 
@@ -152,6 +153,11 @@
     border-left: 3px solid #f9c513;
 }
 
-.darkMode .citation-link {
+.darkMode .message-text .citation-link {
     color: #79c0ff;
+}
+
+/* Override sup margin from chat_modules.css */
+sup {
+    margin: 0;
 }
