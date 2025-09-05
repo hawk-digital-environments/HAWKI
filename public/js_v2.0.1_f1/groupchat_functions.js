@@ -142,54 +142,72 @@ const connectWebSocket = (roomSlug) => {
     window.Echo.private(webSocketChannel)
         .listen('RoomMessageEvent', async (e) => {
             try {
-                const compressedData = atob(e.data); // Base64 decode
-                const binaryData = new Uint8Array(compressedData.split("").map(c => c.charCodeAt(0))); // Convert to Uint8Array
-                const jsonString = pako.ungzip(binaryData, { to: "string" }); // Decompress Gzip
-                const data = JSON.parse(jsonString); // Convert back to object
+                const receivedPacket = e.data;
 
-                console.log(`Message received in room ${roomSlug}:`, data);
-                if(data.type === 'message'){
-
+                if(receivedPacket.type === 'message'){
+                    const messageData = await requestMessageContent(receivedPacket.data.message_id,
+                                                                    receivedPacket.data.slug);
                     if(activeRoom && activeRoom.slug === roomSlug){
-
-                        if(data.messageData.message_role !== 'assistant'){
-                            handleUserMessages(data.messageData, roomSlug)
+                        if(messageData.message_role !== 'assistant'){
+                            handleUserMessages(messageData, roomSlug)
                         }else{
-                            handleAIMessage(data.messageData, roomSlug)
+                            handleAIMessage(messageData, roomSlug)
                         }
-                        if(data.messageData.author.username != userInfo.username){
+                        if(messageData.author.username != userInfo.username){
                             playSound('in');
                         }
                     }
                     else{
-                        if(data.messageData.author.username != userInfo.username){
+                        if(messageData.author.username != userInfo.username){
                             playSound('out');
                         }
                         flagRoomUnreadMessages(roomSlug, true);
                     }
                 }
 
-                if(data.type === "messageUpdate"){
-                    handleUpdateMessage(data.messageData, roomSlug)
+                if(receivedPacket.type === "messageUpdate"){
+                    const messageData = await requestMessageContent(receivedPacket.data.message_id,
+                                                receivedPacket.data.slug);
+                    handleUpdateMessage(messageData, roomSlug)
                 }
 
-                if(data.type === "aiGenerationStatus"){
-                    if (data.messageData.isGenerating) {
+                if(receivedPacket.type === "status"){
+                    if (receivedPacket.data.isGenerating) {
                         // Display the typing indicator for the user
-                        addUserToTypingList(data.messageData.model);
+                        addUserToTypingList(receivedPacket.data.model);
                     } else {
                         // Hide the typing indicator for the user
-                        removeUserFromTypingList(data.messageData.model);
+                        removeUserFromTypingList(receivedPacket.data.model);
                     }
                 }
-
-
 
             } catch (error) {
                 console.error("Failed to decompress message:", error);
             }
         });
 };
+
+async function requestMessageContent(messageId, slug){
+    try{
+        const response = await fetch(`/req/room/message/get/${slug}/${messageId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+        });
+
+        if(!response.ok){
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+    }
+
+}
+
 
 async function handleUserMessages(messageData, slug){
 

@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Services\Profile\ProfileService;
+use App\Services\Profile\ApiTokenService;
+use App\Services\Profile\PasskeyService;
+
+
 
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -14,14 +18,9 @@ use Illuminate\Support\Facades\Log;
 
 class ProfileController extends Controller
 {
-    protected $profileService;
-    public function __construct(ProfileService $profileService){
-        $this->profileService = $profileService;
-    }
-
 
     // SECTION: PROFILE INFORMATION
-    public function update(Request $request): JsonResponse{
+    public function update(Request $request, ProfileService $profileService): JsonResponse{
 
         $validatedData = $request->validate([
             'img' => 'string',
@@ -29,7 +28,7 @@ class ProfileController extends Controller
             'bio' => 'string|max:255',
         ]);
 
-        $this->profileService->update($validatedData);
+        $profileService->update($validatedData);
         return response()->json([
             'success' => true,
             'response' => 'User information updated'
@@ -37,15 +36,15 @@ class ProfileController extends Controller
     }
 
 
-    public function requestProfileReset(): JsonResponse|RedirectResponse{
-        $this->profileService->resetProfile();
+    public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse{
+        $profileService->resetProfile();
         return response()->redirectTo('/register');
     }
 
 
 
     // SECTION: PASSKEY BACKUP
-    public function backupPassKey(Request $request): JsonResponse{
+    public function backupPassKey(Request $request, PasskeyService $passkeyService): JsonResponse{
 
         $validatedData = $request->validate([
             'cipherText' => 'required|string',
@@ -53,7 +52,7 @@ class ProfileController extends Controller
             'iv' => 'required|string',
         ]);
 
-        $this->profileService->backupPassKey($validatedData);
+        $passkeyService->backupPassKey($validatedData);
 
         return response()->json([
             'success' => true,
@@ -63,9 +62,9 @@ class ProfileController extends Controller
 
     }
 
-    public function requestPasskeyBackup(): JsonResponse{
+    public function requestPasskeyBackup(PasskeyService $passkeyService): JsonResponse{
 
-        $response = $this->profileService->retrievePasskeyBackup();
+        $response = $passkeyService->retrievePasskeyBackup();
         return response()->json([
             'success' => true,
             'passkeyBackup' => $response,
@@ -75,13 +74,13 @@ class ProfileController extends Controller
 
     // SECTION: API TOKENS
 
-    public function requestApiToken(Request $request): JsonResponse
+    public function requestApiToken(Request $request, ApiTokenService $apiTokenService): JsonResponse
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:16',
         ]);
         try {
-            $token = $this->profileService->createApiToken($validatedData['name']);
+            $token = $apiTokenService->createApiToken($validatedData['name']);
             // Return a JSON response with the new token
             return response()->json([
                 'success' => true,
@@ -96,9 +95,9 @@ class ProfileController extends Controller
     }
 
 
-    public function fetchTokenList(): JsonResponse
+    public function fetchTokenList(ApiTokenService $apiTokenService): JsonResponse
     {
-        $tokenList = $this->profileService->fetchTokenList();
+        $tokenList = $apiTokenService->fetchTokenList();
         // Return a JSON response with the token data
         return response()->json([
             'success' => true,
@@ -108,22 +107,18 @@ class ProfileController extends Controller
 
 
 
-    public function revokeToken(Request $request): JsonResponse
+    public function revokeToken(Request $request, ApiTokenService $apiTokenService): JsonResponse
     {
         // Validate request data with appropriate rules
         $validatedData = $request->validate([
             'tokenId' => 'required|integer',
         ]);
 
-        $this->profileService->revokeToken($validatedData['tokenId']);
+        $apiTokenService->revokeToken($validatedData['tokenId']);
 
         return response()->json([
             'success' => true,
             'message' => 'Token revoked successfully.',
         ]);
     }
-
-
-
-
 }

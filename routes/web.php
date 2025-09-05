@@ -91,7 +91,7 @@ Route::middleware('prevent_back')->group(function () {
             Route::delete('/req/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom']);
             Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
             Route::get('/req/room/attachment/getLink/{uuid}', [RoomController::class, 'getAttachmentUrl']);
-
+            Route::get('/req/room/message/get/{slug}/{messageId}', [RoomController::class, 'retrieveMessage']);
 
             Route::middleware('roomEditor')->group(function () {
                 Route::post('/req/room/sendMessage/{slug}', [RoomController::class, 'sendMessage']);

@@ -201,9 +201,9 @@ class StreamController extends Controller
 
         // Broadcast initial generation status
         $generationStatus = [
-            'type' => 'aiGenerationStatus',
-            'messageData' => [
-                'room_id' => $room->id,
+            'type' => 'status',
+            'data' => [
+                'slug' => $room->slug,
                 'isGenerating' => true,
                 'model' => $data['payload']['model']
             ]
@@ -254,16 +254,20 @@ class StreamController extends Controller
                 ]
             ]);
         }
-        \Log::debug($message);
-        \Log::debug($isUpdate);
+
+
+        $broadcastObject = [
+            'slug' => $room->slug,
+            'message_id'=> $message->message_id,
+        ];
         // Queue message for broadcast
-        SendMessage::dispatch($message, $isUpdate)->onQueue('message_broadcast');
+        SendMessage::dispatch($broadcastObject, $isUpdate)->onQueue('message_broadcast');
 
         // Update and broadcast final generation status
         $generationStatus = [
-            'type' => 'aiGenerationStatus',
-            'messageData' => [
-                'room_id' => $room->id,
+            'type' => 'status',
+            'data' => [
+                'slug' => $room->slug,
                 'isGenerating' => false,
                 'model' => $data['payload']['model']
             ]

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 
+use Dotenv\Exception\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,8 @@ use App\Services\Chat\Attachment\AttachmentService;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 
+use Illuminate\Http\JsonResponse;
+
 class RoomController extends Controller
 {
     protected $roomService;
@@ -26,7 +29,7 @@ class RoomController extends Controller
     }
 
     // SECTION: ROOM CONTROLS
-    public function create(Request $request)
+    public function create(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
             'room_name' => 'required|string|max:255',
@@ -39,7 +42,7 @@ class RoomController extends Controller
     }
 
     /// Returns requested Room Data + Messages
-    public function load($slug)
+    public function load($slug): JsonResponse
     {
         $data = $this->roomService->load($slug);
         return response()->json($data);
@@ -47,7 +50,7 @@ class RoomController extends Controller
 
 
 
-    public function update(Request $request, $slug)
+    public function update(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
             'img' => 'string',
@@ -64,7 +67,7 @@ class RoomController extends Controller
     }
 
 
-    public function delete($slug){
+    public function delete($slug): JsonResponse{
         $this->roomService->delete($slug);
         return response()->json([
             'success' => true,
@@ -74,7 +77,7 @@ class RoomController extends Controller
 
 
     // SECTION: MEMBER
-    public function addMember(Request $request, $slug)
+    public function addMember(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
             'invitee' => 'string',
@@ -85,7 +88,7 @@ class RoomController extends Controller
     }
 
 
-    public function leaveRoom($slug){
+    public function leaveRoom($slug): JsonResponse{
         $success = $this->roomService->leave($slug);
 
         return response()->json([
@@ -94,7 +97,7 @@ class RoomController extends Controller
     }
 
 
-    public function kickMember(Request $request, $slug){
+    public function kickMember(Request $request, $slug): JsonResponse{
         $validatedData = $request->validate([
             'username' => 'string|max:16',
         ]);
@@ -105,7 +108,7 @@ class RoomController extends Controller
     }
 
 
-    public function searchUser(Request $request)
+    public function searchUser(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
             'query' => 'string'
@@ -128,7 +131,7 @@ class RoomController extends Controller
 
 
     // SECTION: MESSAGE
-    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator) {
+    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator): JsonResponse {
 
         $validatedData = $request->validate([
             'content' => 'required|array',
@@ -147,7 +150,7 @@ class RoomController extends Controller
 
 
 
-    public function updateMessage(Request $request, $slug) {
+    public function updateMessage(Request $request, $slug): JsonResponse {
 
         $validatedData = $request->validate([
             'content' => 'required|array',
@@ -163,6 +166,15 @@ class RoomController extends Controller
     }
 
 
+    public function retrieveMessage($slug, $message_id): JsonResponse{
+        if (!is_string($slug) || !is_string($message_id)) {
+            throw new ValidationException();
+        }
+        $messageData = $this->roomService->retrieveMessage($message_id, $slug);
+        return response()->json($messageData);
+    }
+
+
     public function markAsRead(Request $request, $slug){
         $validatedData = $request->validate([
             'message_id' => 'required|string',
@@ -175,7 +187,7 @@ class RoomController extends Controller
 
 
     // SECTION: ATTACHMENTS
-    public function storeAttachment(Request $request, AttachmentService $attachmentService) {
+    public function storeAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
         $validateData = $request->validate([
             'file' => 'required|file|max:20480'
         ]);
@@ -184,7 +196,7 @@ class RoomController extends Controller
 
     }
 
-    public function getAttachmentUrl(string $uuid, AttachmentService $attachmentService) {
+    public function getAttachmentUrl(string $uuid, AttachmentService $attachmentService): JsonResponse {
 
         try {
             $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
@@ -207,7 +219,7 @@ class RoomController extends Controller
     }
 
 
-    public function deleteAttachment(Request $request, AttachmentService $attachmentService) {
+    public function deleteAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
         $validateData = $request->validate([
             'fileId' => 'required|string',
         ]);

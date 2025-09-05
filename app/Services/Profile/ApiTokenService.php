@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\Profile\Traits;
+namespace App\Services\Profile;
 
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use laravel\Sanctum\NewAccessToken;
 
-trait ApiTokenHandler{
+class ApiTokenService{
 
     public function createApiToken(string $name): NewAccessToken{
         $user = Auth::user();
