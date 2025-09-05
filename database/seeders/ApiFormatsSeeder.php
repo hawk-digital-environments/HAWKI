@@ -19,6 +19,7 @@ class ApiFormatsSeeder extends Seeder
                 'unique_name' => 'openai-api',
                 'display_name' => 'OpenAI API',
                 'base_url' => 'https://api.openai.com/v1',
+                'provider_class' => 'App\\Services\\AI\\Providers\\OpenAIProvider',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -37,6 +38,7 @@ class ApiFormatsSeeder extends Seeder
                 'unique_name' => 'ollama-api',
                 'display_name' => 'Ollama API',
                 'base_url' => 'http://localhost:11434',
+                'provider_class' => 'App\\Services\\AI\\Providers\\OllamaProvider',
                 'metadata' => [
                     'auth_type' => 'none',
                     'content_type' => 'application/json',
@@ -55,6 +57,7 @@ class ApiFormatsSeeder extends Seeder
                 'unique_name' => 'google-generative-language-api',
                 'display_name' => 'Google Generative Language API',
                 'base_url' => 'https://generativelanguage.googleapis.com/v1beta',
+                'provider_class' => 'App\\Services\\AI\\Providers\\GoogleProvider',
                 'metadata' => [
                     'auth_type' => 'api_key',
                     'content_type' => 'application/json',
@@ -72,10 +75,13 @@ class ApiFormatsSeeder extends Seeder
                     ['name' => 'count_tokens', 'path' => '/models/{model}:countTokens', 'method' => 'POST'],
                 ]
             ],
+            // TODO: Temporarily disabled - will be re-enabled later
+            /*
             [
                 'unique_name' => 'google-vertex-ai-api',
                 'display_name' => 'Google Vertex AI API',
                 'base_url' => 'https://{region}-aiplatform.googleapis.com/v1',
+                'provider_class' => 'App\\Services\\AI\\Providers\\GoogleProvider',
                 'metadata' => [
                     'auth_type' => 'oauth2',
                     'content_type' => 'application/json',
@@ -95,10 +101,12 @@ class ApiFormatsSeeder extends Seeder
                     ['name' => 'count_tokens', 'path' => '/projects/{project}/locations/{region}/publishers/google/models/{model}:countTokens', 'method' => 'POST'],
                 ]
             ],
+            */
             [
                 'unique_name' => 'anthropic-api',
                 'display_name' => 'Anthropic Claude API',
                 'base_url' => 'https://api.anthropic.com/v1',
+                'provider_class' => 'App\\Services\\AI\\Providers\\AnthropicProvider',
                 'metadata' => [
                     'auth_type' => 'api_key',
                     'content_type' => 'application/json',
@@ -111,16 +119,20 @@ class ApiFormatsSeeder extends Seeder
                     ['name' => 'chat.create', 'path' => '/messages', 'method' => 'POST'],
                 ]
             ],
+            // TODO: Temporarily disabled - will be re-enabled later
+            /*
             [
                 'unique_name' => 'huggingface-api',
                 'display_name' => 'Hugging Face API',
                 'base_url' => 'https://api-inference.huggingface.co',
+                'provider_class' => 'App\\Services\\AI\\Providers\\OpenAIProvider',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
                     'supports_streaming' => false,
                     'supports_function_calling' => false,
                     'compatible_providers' => ['huggingface'],
+                    'description' => 'Uses OpenAI-compatible provider for Hugging Face API',
                 ],
                 'endpoints' => [
                     ['name' => 'models.list', 'path' => '/models', 'method' => 'GET'],
@@ -131,12 +143,14 @@ class ApiFormatsSeeder extends Seeder
                 'unique_name' => 'cohere-api',
                 'display_name' => 'Cohere API',
                 'base_url' => 'https://api.cohere.ai/v1',
+                'provider_class' => 'App\\Services\\AI\\Providers\\OpenAIProvider',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
                     'supports_streaming' => true,
                     'supports_function_calling' => false,
                     'compatible_providers' => ['cohere'],
+                    'description' => 'Uses OpenAI-compatible provider for Cohere API',
                 ],
                 'endpoints' => [
                     ['name' => 'models.list', 'path' => '/models', 'method' => 'GET'],
@@ -144,10 +158,12 @@ class ApiFormatsSeeder extends Seeder
                     ['name' => 'embeddings.create', 'path' => '/embed', 'method' => 'POST'],
                 ]
             ],
+            */
             [
                 'unique_name' => 'gwdg-api',
                 'display_name' => 'GWDG AI Service',
                 'base_url' => 'https://chat-ai.academiccloud.de/v1',
+                'provider_class' => 'App\\Services\\AI\\Providers\\GWDGProvider',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -167,6 +183,7 @@ class ApiFormatsSeeder extends Seeder
                 'unique_name' => 'openwebui-api',
                 'display_name' => 'Open WebUI API',
                 'base_url' => 'http://localhost:3000',
+                'provider_class' => 'App\\Services\\AI\\Providers\\OpenWebUIProvider',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -204,5 +221,40 @@ class ApiFormatsSeeder extends Seeder
                 );
             }
         }
+
+        // Clean up provider_class from metadata (migration step for existing data)
+        $this->cleanupProviderClassFromMetadata();
+    }
+
+    /**
+     * Clean up provider_class from metadata for existing records
+     */
+    private function cleanupProviderClassFromMetadata(): void
+    {
+        $this->command->info('Cleaning up provider_class from metadata for existing records...');
+        
+        ApiFormat::whereNotNull('metadata')->each(function ($apiFormat) {
+            $metadata = $apiFormat->metadata;
+            $hasChanges = false;
+            
+            if (is_array($metadata) && isset($metadata['provider_class'])) {
+                // If provider_class is not set in the column but exists in metadata, migrate it
+                if (empty($apiFormat->provider_class)) {
+                    $apiFormat->update(['provider_class' => $metadata['provider_class']]);
+                    $this->command->info("Migrated provider_class to column for: {$apiFormat->unique_name}");
+                }
+                
+                // Remove from metadata
+                unset($metadata['provider_class']);
+                $hasChanges = true;
+            }
+            
+            if ($hasChanges) {
+                $apiFormat->update(['metadata' => $metadata]);
+                $this->command->info("Cleaned provider_class from metadata: {$apiFormat->unique_name}");
+            }
+        });
+        
+        $this->command->info('✅ Provider class cleanup completed.');
     }
 }

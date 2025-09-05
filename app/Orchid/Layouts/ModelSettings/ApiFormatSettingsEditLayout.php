@@ -3,6 +3,7 @@
 namespace App\Orchid\Layouts\ModelSettings;
 
 use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Fields\TextArea;
 use Orchid\Screen\Layouts\Rows;
 
@@ -33,6 +34,20 @@ class ApiFormatSettingsEditLayout extends Rows
                 ->title('Base URL')
                 ->placeholder('https://api.example.com/v1')
                 ->help('Base URL for the API (can contain placeholders like {region})')
+                ->required(),
+
+            Select::make('apiFormat.provider_class')
+                ->title('Provider Class')
+                ->help('PHP class that handles this API format')
+                ->options([
+                    'App\\Services\\AI\\Providers\\OpenAIProvider' => 'OpenAI Provider',
+                    'App\\Services\\AI\\Providers\\GoogleProvider' => 'Google Provider',
+                    'App\\Services\\AI\\Providers\\AnthropicProvider' => 'Anthropic Provider', 
+                    'App\\Services\\AI\\Providers\\OllamaProvider' => 'Ollama Provider',
+                    'App\\Services\\AI\\Providers\\GWDGProvider' => 'GWDG Provider',
+                    'App\\Services\\AI\\Providers\\OpenWebUIProvider' => 'OpenWebUI Provider',
+                ])
+                ->empty('Select Provider Class', '')
                 ->required(),
 
             TextArea::make('apiFormat.metadata')
