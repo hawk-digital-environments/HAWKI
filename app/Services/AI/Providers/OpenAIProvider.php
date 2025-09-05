@@ -133,32 +133,95 @@ class OpenAIProvider extends BaseAIModelProvider
      */
     public function formatStreamChunk(string $chunk): array
     {
-        $jsonChunk = json_decode($chunk, true);
-        
         $content = '';
         $isDone = false;
         $usage = null;
-        
-        // Check for the finish_reason flag
-        if (isset($jsonChunk['choices'][0]['finish_reason']) && $jsonChunk['choices'][0]['finish_reason'] === 'stop') {
-            $isDone = true;
-        }
-        
-        // Extract usage data if available
-        if (!empty($jsonChunk['usage'])) {
-            $usage = $this->extractUsage($jsonChunk);
-            
-            // Only log usage data if enabled in configuration
-            if (config('logging.triggers.usage', false)) {
-                Log::info('OpenAI Usage', ['model' => $jsonChunk['model'], 'usage' => $usage]);
+
+        // First try to parse as direct JSON (most common case)
+        $data = json_decode($chunk, true);
+        if ($data && isset($data['object']) && $data['object'] === 'chat.completion.chunk') {
+            $result = $this->processOpenAIEvent($data);
+            return $result;
+        } else {
+            // Fallback: Try SSE format parsing (for chunks with multiple events)
+            $lines = explode("\n", $chunk);
+
+            foreach ($lines as $line) {
+                $line = trim($line);
+
+                if (strpos($line, 'data: ') === 0) {
+                    $jsonData = substr($line, 6);
+                    
+                    // Skip empty chunks or "[DONE]" markers
+                    if (empty($jsonData) || $jsonData === '[DONE]') {
+                        if ($jsonData === '[DONE]') {
+                            $isDone = true;
+                        }
+                        continue;
+                    }
+
+                    $data = json_decode($jsonData, true);
+                    if ($data && isset($data['object']) && $data['object'] === 'chat.completion.chunk') {
+                        $result = $this->processOpenAIEvent($data);
+                        $content .= $result['content']['text']; // Accumulate content from multiple events
+                        if ($result['isDone']) $isDone = true;
+                        if ($result['usage']) $usage = $result['usage'];
+                    } else {
+                        // Log unprocessable chunks for debugging
+                        Log::debug('OpenAI unparseable chunk', [
+                            'chunk' => substr($jsonData, 0, 200),
+                            'json_error' => json_last_error_msg()
+                        ]);
+                    }
+                }
             }
         }
-        
-        // Extract content if available
-        if (isset($jsonChunk['choices'][0]['delta']['content'])) {
-            $content = $jsonChunk['choices'][0]['delta']['content'];
+
+        return [
+            'content' => [
+                'text' => $content,
+            ],
+            'isDone' => $isDone,
+            'usage' => $usage
+        ];
+    }
+
+    /**
+     * Process a single OpenAI event (either from direct JSON or SSE)
+     *
+     * @param array $data
+     * @return array
+     */
+    private function processOpenAIEvent(array $data): array
+    {
+        $content = '';
+        $isDone = false;
+        $usage = null;
+
+        // Check for the finish_reason flag
+        if (isset($data['choices'][0]['finish_reason']) && $data['choices'][0]['finish_reason'] === 'stop') {
+            $isDone = true;
         }
-        
+
+        // Extract usage data if available
+        if (!empty($data['usage'])) {
+            $usage = $this->extractUsage($data);
+            
+            // Only log usage data if enabled in configuration (with fallback)
+            try {
+                if (function_exists('config') && config('logging.triggers.usage', false)) {
+                    Log::info('OpenAI Usage', ['model' => $data['model'], 'usage' => $usage]);
+                }
+            } catch (\Exception $e) {
+                // Ignore config errors in standalone testing
+            }
+        }
+
+        // Extract content if available
+        if (isset($data['choices'][0]['delta']['content'])) {
+            $content = $data['choices'][0]['delta']['content'];
+        }
+
         return [
             'content' => [
                 'text' => $content,

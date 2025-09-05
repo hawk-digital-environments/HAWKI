@@ -162,7 +162,7 @@ class StreamController extends Controller
         // Increase execution time limit for streaming requests
         set_time_limit(180); // 3 minutes for streaming
         
-        // Request-specific buffer for Google Provider
+        // Request-specific buffer for SSE Provider normalization
         $requestBuffer = '';
         
         // Set headers for SSE
@@ -175,14 +175,15 @@ class StreamController extends Controller
         // Create a callback function to process streaming chunks
         $onData = function ($data) use ($user, $avatar_url, $payload, &$requestBuffer) {
 
-            // Only use normalizeGoogleStreamChunk for Google Provider 
+            // Use stream normalization for providers that send SSE data split across cURL packets
             $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
             $isGoogleProvider = $provider instanceof \App\Services\AI\Providers\GoogleProvider;
+            $isOpenAIProvider = $provider instanceof \App\Services\AI\Providers\OpenAIProvider;
             
-            if ($isGoogleProvider) {
-                // Google sends SSE data which might be split across multiple curl packets
+            if ($isGoogleProvider || $isOpenAIProvider) {
+                // Google and OpenAI send SSE data which might be split across multiple curl packets
                 // We need to normalize this before processing
-                $data = $this->normalizeGoogleStreamChunk($data, $requestBuffer);
+                $data = $this->normalizeSSEStreamChunk($data, $requestBuffer);
                 
                 // If no complete chunks were extracted, return early
                 if (empty(trim($data))) {
@@ -292,7 +293,7 @@ class StreamController extends Controller
      * Handles SSE format with "data: " prefixes and large objects split across packets
      * Improved to handle very large groundingMetadata objects
      */
-    private function normalizeGoogleStreamChunk(string $data, string &$requestBuffer): string
+    private function normalizeSSEStreamChunk(string $data, string &$requestBuffer): string
     {
         // Add incoming data to buffer
         $requestBuffer .= $data;
@@ -305,7 +306,7 @@ class StreamController extends Controller
 
         $output = "";
         $extractedCount = 0;
-        $maxExtractions = 1000; // Increased for large groundingMetadata
+        $maxExtractions = 1000; // Increased for large response objects (e.g., Google groundingMetadata)
         
         // Look for complete chunks in the buffer
         while($extractedCount < $maxExtractions) {
@@ -324,7 +325,7 @@ class StreamController extends Controller
             if (!$extracted) {
                 // Check if buffer is getting too large (>10MB) and might be stuck
                 if (strlen($requestBuffer) > 10 * 1024 * 1024) {
-                    Log::warning('Google Stream: Buffer exceeds 10MB, potential incomplete packet. Clearing buffer.');
+                    Log::warning('SSE Stream: Buffer exceeds 10MB, potential incomplete packet. Clearing buffer.');
                     $requestBuffer = "";
                 }
                 break; // No more complete chunks
@@ -343,7 +344,7 @@ class StreamController extends Controller
         
         // Safety check for infinite loops
         if ($extractedCount >= $maxExtractions) {
-            Log::error('Google Stream: Maximum extraction limit reached, clearing buffer to prevent infinite loop');
+            Log::error('SSE Stream: Maximum extraction limit reached, clearing buffer to prevent infinite loop');
             $requestBuffer = "";
         }
         
@@ -490,7 +491,7 @@ class StreamController extends Controller
                         $testDecode = json_decode($jsonStr, true, 512, JSON_INVALID_UTF8_IGNORE);
                         if ($testDecode === null && json_last_error() !== JSON_ERROR_NONE) {
                             // Log the JSON error for debugging
-                            Log::warning('Google Stream: Invalid JSON detected - ' . json_last_error_msg() . ' - continuing search');
+                            Log::warning('SSE Stream: Invalid JSON detected - ' . json_last_error_msg() . ' - continuing search');
                             $i++;
                             continue;
                         }
@@ -513,7 +514,7 @@ class StreamController extends Controller
         
         // Check if we hit the iteration limit
         if ($iterations >= $maxIterations) {
-            Log::warning('Google Stream: Hit iteration limit while parsing JSON object, buffer length: ' . strlen($buffer));
+            Log::warning('SSE Stream: Hit iteration limit while parsing JSON object, buffer length: ' . strlen($buffer));
         }
         
         // No complete JSON object found
