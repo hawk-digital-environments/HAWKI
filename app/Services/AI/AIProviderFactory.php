@@ -206,16 +206,30 @@ class AIProviderFactory
             ? json_decode($apiFormat->metadata, true)
             : ($apiFormat->metadata ?? []);
 
+        Log::debug("Determining provider class for {$provider->provider_name}", [
+            'api_format' => $apiFormat->unique_name,
+            'metadata_has_provider_class' => isset($metadata['provider_class']),
+            'metadata_provider_class' => $metadata['provider_class'] ?? null,
+        ]);
+
         // Option 1: Check if there's a specific provider class mapping in metadata
         if (isset($metadata['provider_class'])) {
             $className = $metadata['provider_class'];
+            Log::debug("Found provider_class in metadata: {$className}");
+            
             if (class_exists($className)) {
+                Log::debug("Provider class exists, using: {$className}");
                 return $className;
+            } else {
+                Log::warning("Provider class from metadata does not exist: {$className}");
             }
+        } else {
+            Log::debug("No provider_class found in metadata, falling back to derivation");
         }
 
         // Option 2: Derive provider class from unique_name using naming convention
         $providerClass = $this->deriveProviderClassFromApiFormat($apiFormat->unique_name);
+        Log::debug("Derived provider class: {$providerClass}");
 
         // Validate that the class exists
         if (! class_exists($providerClass)) {
@@ -224,6 +238,7 @@ class AIProviderFactory
             return 'App\Services\AI\Providers\OpenAIProvider';
         }
 
+        Log::debug("Using derived provider class: {$providerClass}");
         return $providerClass;
     }
 
