@@ -83,7 +83,7 @@
     @foreach ($templates as $temp)
         @include('partials.home.templates.' . $viewName = str_replace('.blade', '',  $temp->getFilenameWithoutExtension()))
     @endforeach
-	@include('partials.home.modals.confirm-modal')
+    @include('partials.home.modals.confirm-modal')
 
 </body>
 </html>
@@ -105,16 +105,17 @@
 
 	const aiHandle = "{{ config('app.aiHandle') }}";
 
-	
+    const announcementList = @json($announcements);
 
 
 
-	window.addEventListener('DOMContentLoaded', async (event) => {
+
+    window.addEventListener('DOMContentLoaded', async (event) => {
 
 		const passkey = await getPassKey()
 		if(!passkey){
 			console.log('passkey not found!');
-			window.location.href = '/handshake'; 
+			window.location.href = '/handshake';
 		}
 
 		setSessionCheckerTimer(0);

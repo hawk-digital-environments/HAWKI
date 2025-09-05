@@ -220,7 +220,6 @@ class StreamController extends Controller
             $room->id
         );
 
-        \Log::debug($response->content['text']);
         $crypto = new SymmetricCrypto();
         $encryptedData = $crypto->encrypt($response->content['text'],
                                           base64_decode($data['key']));
@@ -228,7 +227,7 @@ class StreamController extends Controller
         // Store message
         $messageHandler = MessageHandlerFactory::create('group');
         $member = $room->members()->where('user_id', 1)->firstOrFail();
-        \Log::debug($data['messageId']);
+
         if ($isUpdate) {
             $message = $messageHandler->update($room, [
                 'model' => $data['payload']['model'],

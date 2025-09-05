@@ -63,7 +63,6 @@ readonly class OpenAiRequestConverter
         }
 
         if($modelId === 'gpt-5'){
-            \Log::debug('GPT 5');
             $payload['verbosity'] = "low";
             $payload["reasoning_effort"] = "minimal";
 
