@@ -75,16 +75,27 @@ class ProviderSettingsScreen extends Screen
      */
     public function commandBar(): iterable
     {
-        return [
-            ModalToggle::make('Import')
+        $buttons = [];
+        
+        // Only show export button in non-production environments
+        if (app()->environment() !== 'production') {
+            $buttons[] = Button::make('Export')
                 ->icon('bs.upload')
-                ->modal('importProvidersModal')
-                ->method('importProvidersFromJson'),
-                
-            Link::make('Add')
-                ->icon('bs.plus-circle')
-                ->route('platform.models.api.providers.create'),
-        ];
+                ->method('exportProvidersToJson')
+                ->rawClick()
+                ->confirm('Export all provider settings to JSON file? This will include API keys, so make sure your export data is secured accordingly. This feature is disabled for production environment!');
+        }
+        
+        $buttons[] = ModalToggle::make('Import')
+            ->icon('bs.download')
+            ->modal('importProvidersModal')
+            ->method('importProvidersFromJson');
+            
+        $buttons[] = Link::make('Add')
+            ->icon('bs.plus-circle')
+            ->route('platform.models.api.providers.create');
+        
+        return $buttons;
     }
 
     /**
@@ -122,6 +133,79 @@ class ProviderSettingsScreen extends Screen
     }
 
     /**
+     * Export all provider settings to JSON format.
+     * Only available in non-production environments for security.
+     */
+    public function exportProvidersToJson(): \Symfony\Component\HttpFoundation\Response
+    {
+        // Security check: Only allow in non-production environments
+        if (app()->environment() === 'production') {
+            Toast::error('Export function is disabled in production environment for security reasons.');
+            return redirect()->back();
+        }
+        
+        try {
+            // Get all providers with their API format information from database
+            $providers = ProviderSetting::with('apiFormat')->get();
+            
+            if ($providers->isEmpty()) {
+                Toast::warning('No providers found to export.');
+                return redirect()->back();
+            }
+            
+            $exportData = [];
+            
+            foreach ($providers as $provider) {
+                // Create unique name from provider name (lowercase, replace spaces with hyphens)
+                $uniqueName = strtolower(str_replace(' ', '-', $provider->provider_name));
+                
+                $exportData[$uniqueName] = [
+                    'provider_name' => $provider->provider_name,
+                    'api_format' => $provider->apiFormat ? $provider->apiFormat->unique_name : null,
+                    'api_key' => $provider->api_key
+                ];
+            }
+            
+            // Generate filename with timestamp and environment
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $environment = app()->environment();
+            $filename = "provider_settings_export_{$environment}_{$timestamp}.json";
+            
+            // Log export operation with security note
+            $this->logBatchOperation('provider_export', 'providers', [
+                'total' => $providers->count(),
+                'action' => 'Export provider settings to JSON (NON-PRODUCTION)',
+                'environment' => $environment,
+                'filename' => $filename,
+                'exported_providers' => array_keys($exportData),
+                'security_note' => 'Export contains API keys - only allowed in non-production'
+            ]);
+            
+            // Create JSON response with download
+            $jsonContent = json_encode($exportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+            
+            Toast::success("Successfully exported {$providers->count()} provider settings to {$filename}")
+                ->autoHide(false);
+            Toast::warning("⚠️ This export contains API keys! Handle with care.")
+                ->autoHide(false);
+            
+            return response($jsonContent)
+                ->header('Content-Type', 'application/json')
+                ->header('Content-Disposition', "attachment; filename=\"{$filename}\"");
+                
+        } catch (\Exception $e) {
+            $this->logError('provider_export', [
+                'action' => 'Failed to export provider settings',
+                'environment' => app()->environment(),
+                'error' => $e->getMessage()
+            ]);
+            
+            Toast::error("Error exporting provider settings: " . $e->getMessage());
+            return redirect()->back();
+        }
+    }
+
+    /**
      * Import providers from JSON or PHP config file.
      */
     public function importProvidersFromJson(Request $request): void
@@ -149,8 +233,16 @@ class ProviderSettingsScreen extends Screen
                     // Structure: {"providers": {...}}
                     $providersData = $this->convertJsonProvidersToArray($jsonData['providers']);
                 } elseif (is_array($jsonData) && !isset($jsonData['providers'])) {
-                    // Structure: Direct array of providers
-                    $providersData = $this->convertJsonProvidersToArray($jsonData);
+                    // Check if this is the new export format or legacy format
+                    $isNewFormat = $this->isNewExportFormat($jsonData);
+                    
+                    if ($isNewFormat) {
+                        // Structure: Direct object with unique_name keys and {provider_name, api_format, api_key} values
+                        $providersData = $this->convertJsonProvidersToArray($jsonData);
+                    } else {
+                        // Structure: Direct array of providers (legacy)
+                        $providersData = $this->convertJsonProvidersToArray($jsonData);
+                    }
                 } else {
                     Toast::error('Invalid JSON structure. Expected "providers" object or direct provider array.');
                     return;
@@ -307,6 +399,36 @@ class ProviderSettingsScreen extends Screen
     }
 
     /**
+     * Get API format ID by unique name.
+     */
+    private function getApiFormatIdByUniqueName(string $uniqueName): ?int
+    {
+        if (empty($uniqueName)) {
+            return null;
+        }
+        
+        $apiFormat = ApiFormat::where('unique_name', $uniqueName)->first();
+        return $apiFormat?->id;
+    }
+
+    /**
+     * Check if JSON data is in the new export format.
+     */
+    private function isNewExportFormat(array $data): bool
+    {
+        // Check if any entry has the new format structure
+        foreach ($data as $key => $value) {
+            if (is_array($value) && 
+                isset($value['provider_name']) && 
+                isset($value['api_format'])) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * Convert JSON providers object to array format expected by processProvidersImport.
      */
     private function convertJsonProvidersToArray(array $providers): array
@@ -318,7 +440,20 @@ class ProviderSettingsScreen extends Screen
                 continue; // Skip non-array entries
             }
 
-            // Extract data similar to PHP config conversion
+            // Check if this is the new export format
+            if (isset($providerData['provider_name']) && isset($providerData['api_format'])) {
+                // New export format: {unique_name: {provider_name, api_format, api_key}}
+                $convertedProvider = [
+                    'provider_name' => $providerData['provider_name'],
+                    'api_format_id' => $this->getApiFormatIdByUniqueName($providerData['api_format']),
+                    'api_key' => $providerData['api_key'] ?? null,
+                ];
+                
+                $convertedProviders[] = $convertedProvider;
+                continue;
+            }
+
+            // Legacy format: Extract data similar to PHP config conversion
             $extractedData = [];
             
             // ID: Use 'id' field if available, otherwise use array key
