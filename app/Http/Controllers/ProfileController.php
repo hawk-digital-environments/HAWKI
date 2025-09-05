@@ -41,6 +41,44 @@ class ProfileController extends Controller
         return response()->redirectTo('/register');
     }
 
+    public function validatePasskey(Request $request){
+        $passkey = $request->getContent();
+        
+        $request->validate([
+            'passkey' => 'string',
+        ]);
+
+
+        // Validate that passkey is not empty
+        if (empty($passkey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Passkey cannot be empty'
+            ]);
+        }
+        
+        // Validate passkey pattern using the same regex as frontend
+        if (!preg_match('/^[A-Za-z0-9!@#$%^&*()_+-]+$/', $passkey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Passkey contains invalid characters'
+            ]);
+        }
+        
+        // Additional validation checks could be added here
+        // For example, minimum length requirements
+        if (strlen($passkey) < 8) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Passkey must be at least 8 characters long'
+            ]);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Passkey is valid'
+        ]);
+    }
 
 
     // SECTION: PASSKEY BACKUP

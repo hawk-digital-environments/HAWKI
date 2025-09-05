@@ -23,8 +23,6 @@ async function logout(){
     window.location.href = '/logout';
 }
 
-
-
 document.addEventListener("DOMContentLoaded", function () {
     const tooltipParents = document.querySelectorAll(".tooltip-parent");
     tooltipParents.forEach(ttp => {

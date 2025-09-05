@@ -73,6 +73,22 @@ textarea::placeholder,
 }
 
 
+.password-input-wrapper{
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    outline: none;
+    border: var(--border-stroke-thin);
+    border-radius: var(--border-radius-tight);
+}
+.password-input-wrapper input{
+    padding: 0;
+    outline: none;
+    font-size: 1rem;
+    border: none;
+    border-radius: none;
+}
+
 .label{
     position: relative;
     text-overflow: ellipsis;

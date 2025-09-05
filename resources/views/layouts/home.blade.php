@@ -105,9 +105,18 @@
 
 	const aiHandle = "{{ config('app.aiHandle') }}";
 
-    const announcementList = @json($announcements);
+	
+
+
 
 	window.addEventListener('DOMContentLoaded', async (event) => {
+
+		const passkey = await getPassKey()
+		if(!passkey){
+			console.log('passkey not found!');
+			window.location.href = '/handshake'; 
+		}
+
 		setSessionCheckerTimer(0);
 		CheckModals()
 
