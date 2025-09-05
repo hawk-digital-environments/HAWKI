@@ -419,6 +419,19 @@ class GoogleProvider extends BaseAIModelProvider
     }
 
     /**
+     * Build URL for connection testing with API key as query parameter
+     */
+    public function buildConnectionTestUrl(string $baseUrl): string
+    {
+        if (! empty($this->config['api_key'])) {
+            $separator = strpos($baseUrl, '?') !== false ? '&' : '?';
+            return $baseUrl . $separator . 'key=' . $this->config['api_key'];
+        }
+        
+        return $baseUrl;
+    }
+
+    /**
      * Fetch available models from Google API
      * Overrides base implementation to handle API key as query parameter
      *

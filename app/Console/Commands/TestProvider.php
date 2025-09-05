@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ProviderSetting;
 use App\Services\Settings\ModelSettingsService;
+use App\Services\AI\AIProviderFactory;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
@@ -104,9 +105,9 @@ class TestProvider extends Command
             return;
         }
 
-        // Test ping endpoint
+        // Test ping endpoint (now uses models endpoint for better connection testing)
         if ($testPing) {
-            $this->testPingEndpoint($provider, $generateCurl, $timeout);
+            $this->testConnectionEndpoint($provider, $generateCurl, $timeout);
         }
 
         // Test models endpoint
@@ -121,31 +122,54 @@ class TestProvider extends Command
     }
 
     /**
-     * Test ping endpoint
+     * Test connection endpoint (uses models endpoint for reliable connection testing)
      */
-    private function testPingEndpoint(ProviderSetting $provider, bool $generateCurl, int $timeout)
+    private function testConnectionEndpoint(ProviderSetting $provider, bool $generateCurl, int $timeout)
     {
-        $this->line("\n   📡 <fg=blue>Testing Base URL</>");
+        $this->line("\n   📡 <fg=blue>Testing Connection</>");
         
-        $url = rtrim($provider->base_url, '/');
-        $headers = $this->buildHeaders($provider);
+        if (!$provider->apiFormat) {
+            $this->error("   ❌ No API format configured");
+            return;
+        }
+
+        $modelsEndpoint = $provider->apiFormat->getModelsEndpoint();
+        if (!$modelsEndpoint || !$modelsEndpoint->is_active) {
+            $this->warn("   ⚠️  No active models endpoint configured - testing base URL instead");
+            // Fallback to base URL test
+            $url = rtrim($provider->base_url, '/');
+            $headers = $this->buildHeaders($provider);
+            $finalUrl = $this->buildUrl($provider, $url);
+        } else {
+            // Use models endpoint for connection test
+            $baseUrl = rtrim($provider->base_url, '/');
+            $url = $baseUrl . '/' . ltrim($modelsEndpoint->path, '/');
+            
+            // Fix double v1 issue - if base_url ends with /v1 and endpoint starts with /v1, remove one
+            if (str_ends_with($provider->base_url, '/v1') && str_starts_with($modelsEndpoint->path, '/v1')) {
+                $url = rtrim($provider->base_url, '/') . substr($modelsEndpoint->path, 3); // Remove /v1 from endpoint
+            }
+            
+            $headers = $this->buildHeaders($provider);
+            $finalUrl = $this->buildUrl($provider, $url);
+        }
 
         if ($generateCurl) {
-            $curlCommand = $this->generateCurlCommand('GET', $url, $headers, null, $timeout);
+            $curlCommand = $this->generateCurlCommand('GET', $finalUrl, $headers, null, $timeout);
             $this->line("   <fg=green>CURL Command:</>");
             $this->line("   <fg=white>{$curlCommand}</>");
         } else {
             try {
                 $response = Http::timeout($timeout)
                     ->withHeaders($headers)
-                    ->get($url);
+                    ->get($finalUrl);
 
-                $this->displayResponse('Ping', $response, $url, $headers, $timeout);
+                $this->displayResponse('Connection', $response, $finalUrl, $headers, $timeout);
             } catch (\Exception $e) {
                 $this->error("   ❌ Request failed: " . $e->getMessage());
                 
                 // Still show CURL for debugging
-                $curlCommand = $this->generateCurlCommand('GET', $url, $headers, null, $timeout);
+                $curlCommand = $this->generateCurlCommand('GET', $finalUrl, $headers, null, $timeout);
                 $this->line("   <fg=yellow>Debug CURL:</>");
                 $this->line("   <fg=white>{$curlCommand}</>");
             }
@@ -179,23 +203,24 @@ class TestProvider extends Command
         }
         
         $headers = $this->buildHeaders($provider);
+        $finalUrl = $this->buildUrl($provider, $url);
 
         if ($generateCurl) {
-            $curlCommand = $this->generateCurlCommand('GET', $url, $headers, null, $timeout);
+            $curlCommand = $this->generateCurlCommand('GET', $finalUrl, $headers, null, $timeout);
             $this->line("   <fg=green>CURL Command:</>");
             $this->line("   <fg=white>{$curlCommand}</>");
         } else {
             try {
                 $response = Http::timeout($timeout)
                     ->withHeaders($headers)
-                    ->get($url);
+                    ->get($finalUrl);
 
-                $this->displayResponse('Models', $response, $url, $headers, $timeout);
+                $this->displayResponse('Models', $response, $finalUrl, $headers, $timeout);
             } catch (\Exception $e) {
                 $this->error("   ❌ Request failed: " . $e->getMessage());
                 
                 // Still show CURL for debugging
-                $curlCommand = $this->generateCurlCommand('GET', $url, $headers, null, $timeout);
+                $curlCommand = $this->generateCurlCommand('GET', $finalUrl, $headers, null, $timeout);
                 $this->line("   <fg=yellow>Debug CURL:</>");
                 $this->line("   <fg=white>{$curlCommand}</>");
             }
@@ -203,33 +228,49 @@ class TestProvider extends Command
     }
 
     /**
-     * Build headers for request
+     * Build headers for request using provider-specific authentication
      */
     private function buildHeaders(ProviderSetting $provider): array
     {
-        $headers = [
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-        ];
-
-        // Add API key if configured
-        if (!empty($provider->api_key)) {
-            // Different providers use different header formats
-            $apiFormat = $provider->apiFormat ? $provider->apiFormat->unique_name : '';
+        try {
+            // Use AI Provider Factory for provider-specific headers
+            $providerFactory = app(AIProviderFactory::class);
+            $aiProvider = $providerFactory->getProviderInterface($provider->apiFormat->unique_name);
             
-            switch (strtolower($apiFormat)) {
-                case 'openai':
-                case 'openai_compatible':
-                    $headers['Authorization'] = 'Bearer ' . $provider->api_key;
-                    break;
-                default:
-                    // Generic authorization header
-                    $headers['Authorization'] = 'Bearer ' . $provider->api_key;
-                    break;
-            }
-        }
+            return $aiProvider->getConnectionTestHeaders();
+        } catch (\Exception $e) {
+            $this->warn("Could not create provider instance, falling back to generic headers: " . $e->getMessage());
+            
+            // Fallback to generic headers
+            $headers = [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ];
 
-        return $headers;
+            // Add API key if configured (generic method)
+            if (!empty($provider->api_key)) {
+                $headers['Authorization'] = 'Bearer ' . $provider->api_key;
+            }
+
+            return $headers;
+        }
+    }
+
+    /**
+     * Build URL for request with provider-specific authentication
+     */
+    private function buildUrl(ProviderSetting $provider, string $baseUrl): string
+    {
+        try {
+            // Use AI Provider Factory for provider-specific URL building
+            $providerFactory = app(AIProviderFactory::class);
+            $aiProvider = $providerFactory->getProviderInterface($provider->apiFormat->unique_name);
+            
+            return $aiProvider->buildConnectionTestUrl($baseUrl);
+        } catch (\Exception $e) {
+            // Fallback to base URL
+            return $baseUrl;
+        }
     }
 
     /**
@@ -341,10 +382,11 @@ class TestProvider extends Command
         }
         
         $headers = $this->buildHeaders($provider);
+        $finalUrl = $this->buildUrl($provider, $url);
         $method = strtoupper($endpoint->method ?? 'GET');
 
         if ($generateCurl) {
-            $curlCommand = $this->generateCurlCommand($method, $url, $headers, null, $timeout);
+            $curlCommand = $this->generateCurlCommand($method, $finalUrl, $headers, null, $timeout);
             $this->line("      <fg=green>CURL:</> <fg=white>{$curlCommand}</>");
         } else {
             try {
@@ -352,19 +394,19 @@ class TestProvider extends Command
                 
                 // Only test GET endpoints to avoid side effects
                 if ($method === 'GET') {
-                    $response = $httpClient->get($url);
-                    $this->displayEndpointResponse($response, $url);
+                    $response = $httpClient->get($finalUrl);
+                    $this->displayEndpointResponse($response, $finalUrl);
                 } else {
                     $this->line("      <fg=yellow>⚠️  Skipping {$method} endpoint (only GET endpoints are tested)</>");
                     // Still show CURL for manual testing
-                    $curlCommand = $this->generateCurlCommand($method, $url, $headers, null, $timeout);
+                    $curlCommand = $this->generateCurlCommand($method, $finalUrl, $headers, null, $timeout);
                     $this->line("      <fg=gray>CURL:</> <fg=white>{$curlCommand}</>");
                 }
             } catch (\Exception $e) {
                 $this->line("      <fg=red>❌ Failed:</> " . $e->getMessage());
                 
                 // Show CURL for debugging
-                $curlCommand = $this->generateCurlCommand($method, $url, $headers, null, $timeout);
+                $curlCommand = $this->generateCurlCommand($method, $finalUrl, $headers, null, $timeout);
                 $this->line("      <fg=gray>Debug CURL:</> <fg=white>{$curlCommand}</>");
             }
         }

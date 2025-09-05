@@ -78,10 +78,17 @@ class ProviderSettingsListLayout extends Table
                             ->icon('bs.pencil'),
 
                         Button::make(__('Test Connection'))
-                            ->icon('bs.wifi')
+                            ->icon('bs.activity')
                             ->method('testProviderConnection', [
                                 'id' => $provider->id,
                             ]),
+
+                        Button::make(__('Fetch Models'))
+                            ->icon('bs.cloud-download')
+                            ->method('fetchProviderModels', [
+                                'id' => $provider->id,
+                            ])
+                            ->canSee($provider->is_active),
 
                         Button::make(__('Delete'))
                             ->icon('bs.trash3')

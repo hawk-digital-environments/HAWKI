@@ -281,6 +281,29 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
     }
 
     /**
+     * Build URL for connection testing with provider-specific authentication
+     * Base implementation just returns the URL, providers can override for query parameters
+     */
+    public function buildConnectionTestUrl(string $baseUrl): string
+    {
+        return $baseUrl;
+    }
+
+    /**
+     * Get headers for connection testing
+     * Uses the same logic as models API headers
+     */
+    public function getConnectionTestHeaders(): array
+    {
+        $headers = $this->getModelsApiHeaders();
+        
+        // Add Accept header for connection tests
+        $headers['Accept'] = 'application/json';
+        
+        return $headers;
+    }
+
+    /**
      * Get the provider settings from database
      * Providers should implement this method
      */

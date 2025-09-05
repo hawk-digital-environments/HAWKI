@@ -466,6 +466,86 @@ class ProviderSettingsScreen extends Screen
     }
 
     /**
+     * Fetch available models from a provider.
+     */
+    public function fetchProviderModels(Request $request): void
+    {
+        $providerId = $request->get('id');
+        $provider = ProviderSetting::with('apiFormat.endpoints')->find($providerId);
+        
+        if (!$provider) {
+            Toast::error('Provider not found.');
+            return;
+        }
+        
+        if (!$provider->is_active) {
+            Toast::warning("Provider '{$provider->provider_name}' is currently inactive.");
+            return;
+        }
+        
+        try {
+            // Use Artisan command to fetch models
+            $exitCode = \Artisan::call('provider:test', [
+                'provider' => $provider->id,
+                '--models' => true,
+                '--timeout' => 30
+            ]);
+            
+            if ($exitCode === 0) {
+                $output = \Artisan::output();
+                
+                // Parse the output to check if models were found
+                if (str_contains($output, 'Models found:')) {
+                    // Extract model count from output
+                    preg_match('/Models found: (\d+)/', $output, $matches);
+                    $modelCount = $matches[1] ?? 'unknown';
+                    
+                    Toast::success("Successfully fetched models from provider '{$provider->provider_name}'. Found {$modelCount} models. Check logs for details.");
+                } elseif (str_contains($output, 'Status: 200 OK') || str_contains($output, 'Status: 2')) {
+                    Toast::success("Successfully connected to provider '{$provider->provider_name}' models endpoint. Check logs for response details.");
+                } else {
+                    Toast::warning("Connected to provider '{$provider->provider_name}' but no models information extracted. Check logs for details.");
+                }
+                
+                // Log the full output for debugging
+                $this->logProviderOperation(
+                    'models_fetch', 
+                    $provider->provider_name, 
+                    $provider->id, 
+                    'success',
+                    [
+                        'action' => 'Fetch provider models via web interface',
+                        'exit_code' => $exitCode,
+                        'output' => $output
+                    ]
+                );
+            } else {
+                Toast::error("Failed to fetch models from provider '{$provider->provider_name}'. Check logs for details.");
+                
+                $this->logProviderOperation(
+                    'models_fetch', 
+                    $provider->provider_name, 
+                    $provider->id, 
+                    'failed',
+                    [
+                        'action' => 'Failed to fetch provider models',
+                        'exit_code' => $exitCode,
+                        'output' => \Artisan::output()
+                    ],
+                    'warning'
+                );
+            }
+        } catch (\Exception $e) {
+            $this->logError('provider_models_fetch', $e, [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->provider_name
+            ]);
+            
+            Toast::error("Error fetching models from provider '{$provider->provider_name}': " . $e->getMessage());
+        }
+    }
+
+    /**
      * Delete a provider.
      */
     public function deleteProvider(Request $request, ProviderSettingsService $settingsService)

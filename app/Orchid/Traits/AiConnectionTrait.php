@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Traits;
 
 use App\Models\ProviderSetting;
+use App\Services\AI\AIProviderFactory;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Orchid\Support\Facades\Toast;
@@ -104,24 +105,33 @@ trait AiConnectionTrait
         try {
             $connectionStartTime = microtime(true);
             
-            // Use Laravel HTTP Client for proper proxy support (same as provider:test command)
-            $headers = [
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ];
+            // Use AI Provider Factory to get provider-specific configuration
+            $providerFactory = app(AIProviderFactory::class);
             
-            // Add authorization header if provider has API key
-            if (!empty($provider->api_key)) {
-                $headers['Authorization'] = 'Bearer ' . $provider->api_key;
+            try {
+                $aiProvider = $providerFactory->getProviderInterface($provider->apiFormat->unique_name);
+            } catch (\Exception $e) {
+                $logData['result'] = 'failed_provider_creation';
+                $logData['errors'][] = 'Could not create AI provider: ' . $e->getMessage();
+                
+                Log::warning("Provider connection test failed - {$provider->provider_name} provider creation error", $logData);
+                
+                Toast::error("Could not create provider instance for '{$provider->provider_name}': " . $e->getMessage());
+                return;
             }
             
+            // Get provider-specific headers and URL
+            $headers = $aiProvider->getConnectionTestHeaders();
+            $requestUrl = $aiProvider->buildConnectionTestUrl($testUrl);
+            
             $logData['request_headers'] = array_keys($headers);
+            $logData['final_url'] = $requestUrl;
             
             // Make HTTP request with timeout
             $response = Http::timeout(30)
                 ->connectTimeout(10)
                 ->withHeaders($headers)
-                ->get($testUrl);
+                ->get($requestUrl);
             
             $connectionEndTime = microtime(true);
             $responseTime = round(($connectionEndTime - $connectionStartTime) * 1000, 2);
