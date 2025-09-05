@@ -16,45 +16,41 @@ class ProviderSettingsSeeder extends Seeder
         // Default provider configurations using the new database-driven API format system
         $defaultProviders = [
             [
+                'provider_name' => 'GWDG',
+                'api_key' => null,
+                'api_format_id' => $this->getApiFormatId('gwdg-api'),
+                'is_active' => false,
+                'additional_settings' => null
+            ],
+            [
                 'provider_name' => 'OpenAI',
                 'api_key' => null,
-                'api_format_id' => $this->getApiFormatId('openai'),
+                'api_format_id' => $this->getApiFormatId('openai-api'),
                 'is_active' => false,
-                'additional_settings' => json_encode([
-                    'description' => 'OpenAI GPT Models',
-                    'models' => ['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo']
-                ])
+                'additional_settings' => null
             ],
             [
                 'provider_name' => 'Google',
                 'api_key' => null,
-                'api_format_id' => $this->getApiFormatId('google'),
+                'api_format_id' => $this->getApiFormatId('google-generative-language-api'),
                 'is_active' => false,
-                'additional_settings' => json_encode([
-                    'description' => 'Google Gemini Models',
-                    'models' => ['gemini-pro', 'gemini-pro-vision']
-                ])
+                'additional_settings' => null
+            ],
+            [
+                'provider_name' => 'Anthropic',
+                'api_key' => null,
+                'api_format_id' => $this->getApiFormatId('anthropic-api'),
+                'is_active' => false,
+                'additional_settings' => null
             ],
             [
                 'provider_name' => 'Ollama',
                 'api_key' => null,
-                'api_format_id' => $this->getApiFormatId('ollama'),
+                'api_format_id' => $this->getApiFormatId('ollama-api'),
                 'is_active' => false,
-                'additional_settings' => json_encode([
-                    'description' => 'Local Ollama Installation',
-                    'models' => ['llama2', 'mistral', 'codellama']
-                ])
+                'additional_settings' => null
             ],
-            [
-                'provider_name' => 'GWDG',
-                'api_key' => null,
-                'api_format_id' => $this->getApiFormatId('openai'),
-                'is_active' => false,
-                'additional_settings' => json_encode([
-                    'description' => 'GWDG AI Service',
-                    'models' => ['gpt-3.5-turbo', 'gpt-4']
-                ])
-            ],
+            
         ];
         
         foreach ($defaultProviders as $providerData) {
