@@ -177,16 +177,22 @@ class StreamController extends Controller
 
             // Use stream normalization for ALL providers to handle SSE data split across cURL packets
             // This is safe for all providers as the function only processes actual SSE data
+            // normalization merges incomplete data{} packages
             $data = $this->normalizeSSEStreamChunk($data, $requestBuffer);
             
+
             // If no complete chunks were extracted, return early
             if (empty(trim($data))) {
                 return;
             }
 
+            // At this point the streamcontroller still outputs more than one data package per chunk
+            if (config('logging.triggers.normalized_return_object')) {
+                Log::info("[{$provider->getProviderId()}] normalized Return Object: " .$data);
+            }
+
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
-            // Log::info('Google Stream: Split into ' . count($chunks) . ' chunks');
             
             foreach ($chunks as $chunkIndex => $chunk) {
                 if (connection_aborted()) break;
@@ -200,72 +206,47 @@ class StreamController extends Controller
                     // Log::info("Google Stream: Chunk $chunkIndex is not valid JSON: " . substr($chunk, 0, 100));
                     continue;
                 }
-                
+
                 // Get the provider for this model
                 $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
                 
-                // Format the chunk
-                $formatted = $provider->formatStreamChunk(trim($chunk));
-                // Log::info('Google Stream: Formatted chunk ' . $chunkIndex . ', content length: ' . strlen($formatted['content']['text']) . ', isDone: ' . ($formatted['isDone'] ? 'true' : 'false'));
-
-                // Record usage if available
-                if ($formatted['usage']) {
-                    $this->usageAnalyzer->submitUsageRecord(
-                        $formatted['usage'], 
-                        'private', 
-                        $payload['model']
-                    );
+                // Create message context for provider
+                $messageContext = [
+                    'author' => [
+                        'username' => $user->username,
+                        'name' => $user->name,
+                        'avatar_url' => $avatar_url,
+                    ],
+                    'model' => $payload['model'],
+                ];
+                
+                // CENTRAL LOGGING: Log formatStreamChunk output for all providers
+                if (config('logging.triggers.formatted_stream_chunk')) {
+                    $chunkFormatted = $provider->formatStreamChunk(trim($chunk));
+                    Log::info("[{$provider->getProviderId()}] formatStreamChunk output: " . json_encode($chunkFormatted));
                 }
                 
-                // Special handling for Google Provider: 
-                // If this is a final chunk with content, send content first, then completion
-                $isGoogleProvider = $provider instanceof \App\Services\AI\Providers\GoogleProvider;
-                if ($isGoogleProvider && $formatted['isDone'] && !empty($formatted['content']['text'])) {
-                    // Send content chunk first
-                    $contentMessage = [
-                        'author' => [
-                            'username' => $user->username,
-                            'name' => $user->name,
-                            'avatar_url' => $avatar_url,
-                        ],
-                        'model' => $payload['model'],
-                        'isDone' => false, // Not done yet
-                        'content' => json_encode($formatted['content']),
-                    ];
+                // Let provider create ready-to-send messages
+                $messages = $provider->formatStreamMessages(trim($chunk), $messageContext);
+                
+  
+                
+                // Send all messages created by the provider
+                foreach ($messages as $message) {
+                    // Record usage if available
+                    if (isset($message['usage'])) {
+                        $this->usageAnalyzer->submitUsageRecord(
+                            $message['usage'], 
+                            'private', 
+                            $payload['model']
+                        );
+                    }
                     
-                    echo json_encode($contentMessage) . "\n";
-                    if (ob_get_length()) ob_flush();
-                    flush();
+                    // Remove usage from message before sending to frontend
+                    $sendMessage = $message;
+                    unset($sendMessage['usage']);
                     
-                    // Then send completion chunk
-                    $completionMessage = [
-                        'author' => [
-                            'username' => $user->username,
-                            'name' => $user->name,
-                            'avatar_url' => $avatar_url,
-                        ],
-                        'model' => $payload['model'],
-                        'isDone' => true, // Now we're done
-                        'content' => json_encode(['text' => '', 'groundingMetadata' => '']),
-                    ];
-                    
-                    echo json_encode($completionMessage) . "\n";
-                    if (ob_get_length()) ob_flush();
-                    flush();
-                } else {
-                    // Normal handling for all other providers
-                    $messageData = [
-                        'author' => [
-                            'username' => $user->username,
-                            'name' => $user->name,
-                            'avatar_url' => $avatar_url,
-                        ],
-                        'model' => $payload['model'],
-                        'isDone' => $formatted['isDone'],
-                        'content' => json_encode($formatted['content']),
-                    ];
-                    
-                    echo json_encode($messageData) . "\n";
+                    echo json_encode($sendMessage) . "\n";
                     if (ob_get_length()) ob_flush();
                     flush();
                 }

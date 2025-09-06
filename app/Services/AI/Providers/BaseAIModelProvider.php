@@ -398,8 +398,8 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
 
             $streamCallback($data);
 
-            if (config('logging.triggers.return_object')) {
-                Log::info($data);
+            if (config('logging.triggers.curl_return_object')) {
+                Log::debug($data);
             }
             if (ob_get_length()) {
                 ob_flush();
@@ -408,5 +408,37 @@ abstract class BaseAIModelProvider implements AIModelProviderInterface
 
             return strlen($data);
         });
+    }
+
+    /**
+     * Default implementation of formatStreamMessages for most providers
+     * 
+     * This is the STANDARD implementation that wraps formatStreamChunk() output
+     * into a complete frontend-ready message. Most providers can use this default.
+     * 
+     * Key differences from formatStreamChunk():
+     * - formatStreamChunk(): Returns RAW data extraction from SSE chunk
+     * - formatStreamMessages(): Returns COMPLETE messages ready for frontend
+     * 
+     * Override this method if your provider needs special streaming behavior:
+     * - Multiple messages per chunk (like Google's content+completion split)
+     * - Special message formatting
+     * - Provider-specific UI requirements
+     * 
+     * @param string $chunk Raw SSE chunk data
+     * @param array $messageContext UI context from StreamController (author, model, etc.)
+     * @return array Single message in array: [['author'=>..., 'model'=>..., 'isDone'=>..., 'content'=>..., 'usage'=>...]]
+     */
+    public function formatStreamMessages(string $chunk, array $messageContext): array
+    {
+        $formatted = $this->formatStreamChunk($chunk);
+        
+        return [[
+            'author' => $messageContext['author'],
+            'model' => $messageContext['model'],
+            'isDone' => $formatted['isDone'],
+            'content' => json_encode($formatted['content']),
+            'usage' => $formatted['usage'],
+        ]];
     }
 }

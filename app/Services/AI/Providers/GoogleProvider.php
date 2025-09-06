@@ -139,6 +139,15 @@ class GoogleProvider extends BaseAIModelProvider
 
     /**
      * Format a single chunk from a streaming response from Google
+     * 
+     * This method processes raw SSE chunk data and extracts structured content.
+     * It returns the raw formatted data but does NOT handle UI-specific formatting
+     * or provider-specific streaming behavior (like Google's content+completion splitting).
+     * 
+     * Use formatStreamMessages() instead for complete frontend-ready messages.
+     * 
+     * @param string $chunk Raw SSE chunk data (JSON string)
+     * @return array Raw formatted data: ['content' => array, 'isDone' => bool, 'usage' => ?array]
      */
     public function formatStreamChunk(string $chunk): array
     {
@@ -183,6 +192,62 @@ class GoogleProvider extends BaseAIModelProvider
             'isDone' => $isDone,
             'usage' => $usage,
         ];
+    }
+
+    /**
+     * Google-specific implementation: Split final chunks into content + completion messages
+     * 
+     * This method takes raw chunk data and creates COMPLETE, FRONTEND-READY messages.
+     * Unlike formatStreamChunk() which only extracts data, this method:
+     * 
+     * 1. Handles Google's specific streaming behavior (content first, then completion)
+     * 2. Creates fully-formed message objects with author, model, etc.
+     * 3. Returns an array of messages ready to be sent directly to the frontend
+     * 4. Eliminates the need for provider-specific logic in StreamController
+     * 
+     * For Google: When isDone=true AND has content, splits into 2 messages:
+     * - Message 1: Content with isDone=false 
+     * - Message 2: Empty completion signal with isDone=true + usage data
+     * 
+     * @param string $chunk Raw SSE chunk data (same input as formatStreamChunk)
+     * @param array $messageContext UI context (author, model info) from StreamController
+     * @return array Array of complete messages ready for frontend: [['author'=>..., 'model'=>..., 'isDone'=>..., 'content'=>..., 'usage'=>...], ...]
+     */
+    public function formatStreamMessages(string $chunk, array $messageContext): array
+    {
+        $formatted = $this->formatStreamChunk($chunk);
+        
+        // Special Google handling: If this is a final chunk with content, 
+        // send content first, then completion
+        if ($formatted['isDone'] && !empty($formatted['content']['text'])) {
+            return [
+                // Content message first
+                [
+                    'author' => $messageContext['author'],
+                    'model' => $messageContext['model'],
+                    'isDone' => false, // Not done yet
+                    'content' => json_encode($formatted['content']),
+                    'usage' => null,
+                ],
+                // Completion message second
+                [
+                    'author' => $messageContext['author'],
+                    'model' => $messageContext['model'],
+                    'isDone' => true, // Now we're done
+                    'content' => json_encode(['text' => '', 'groundingMetadata' => '']),
+                    'usage' => $formatted['usage'], // Usage only on final message
+                ]
+            ];
+        } else {
+            // Normal single message
+            return [[
+                'author' => $messageContext['author'],
+                'model' => $messageContext['model'],
+                'isDone' => $formatted['isDone'],
+                'content' => json_encode($formatted['content']),
+                'usage' => $formatted['usage'],
+            ]];
+        }
     }
 
     /**
