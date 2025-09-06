@@ -171,9 +171,12 @@ class StreamController extends Controller
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
+        // Get the provider for this model ONCE at the beginning (most efficient)
+        $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
+        $providerId = $provider->getProviderId(); // Extract provider ID once for logging
 
         // Create a callback function to process streaming chunks
-        $onData = function ($data) use ($user, $avatar_url, $payload, &$requestBuffer) {
+        $onData = function ($data) use ($user, $avatar_url, $payload, $provider, $providerId, &$requestBuffer) {
 
             // Use stream normalization for ALL providers to handle SSE data split across cURL packets
             // This is safe for all providers as the function only processes actual SSE data
@@ -188,7 +191,7 @@ class StreamController extends Controller
 
             // At this point the streamcontroller still outputs more than one data package per chunk
             if (config('logging.triggers.normalized_return_object')) {
-                Log::info("[{$provider->getProviderId()}] normalized Return Object: " .$data);
+                Log::info("[{$providerId}] normalizeSSEStreamChunk: " .$data);
             }
 
             // Skip non-JSON or empty chunks
@@ -207,8 +210,7 @@ class StreamController extends Controller
                     continue;
                 }
 
-                // Get the provider for this model
-                $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
+                // Provider is already available from closure - optimal performance
                 
                 // Create message context for provider
                 $messageContext = [
@@ -223,13 +225,24 @@ class StreamController extends Controller
                 // CENTRAL LOGGING: Log formatStreamChunk output for all providers
                 if (config('logging.triggers.formatted_stream_chunk')) {
                     $chunkFormatted = $provider->formatStreamChunk(trim($chunk));
-                    Log::info("[{$provider->getProviderId()}] formatStreamChunk output: " . json_encode($chunkFormatted));
+                    Log::info("[{$providerId}] formatStreamChunk: " . json_encode($chunkFormatted));
                 }
                 
                 // Let provider create ready-to-send messages
                 $messages = $provider->formatStreamMessages(trim($chunk), $messageContext);
                 
-  
+                if (config('logging.triggers.translated_return_object')) {
+                    // Log only essential message data without author info for cleaner debugging
+                    $debugMessages = array_map(function($message) {
+                        return [
+                            'model' => $message['model'] ?? null,
+                            'isDone' => $message['isDone'] ?? null,
+                            'content' => $message['content'] ?? null,
+                            'usage' => $message['usage'] ?? null,
+                        ];
+                    }, $messages);
+                    Log::info("formatStreamMessages: " . json_encode($debugMessages));
+                }
                 
                 // Send all messages created by the provider
                 foreach ($messages as $message) {
