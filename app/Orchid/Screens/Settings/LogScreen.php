@@ -181,7 +181,7 @@ class LogScreen extends Screen
         ];
         
         if ($currentRoute === 'platform.settings.log.configuration') {
-            $layouts[] = LoggingSettingsLayout::class;
+            $layouts = array_merge($layouts, LoggingSettingsLayout::build($this->query()['logging_settings']));
         } else {
             $layouts[] = DatabaseLogsLayout::class;
         }

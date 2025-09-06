@@ -92,9 +92,12 @@ return [
         'default' => 'Default log channel (stack, single, daily, database, stack_with_database, etc.)',
         'channels.stack.channels' => 'Comma-separated list of channels for stack driver',
         'channels.database.level' => 'Minimum log level for database logging (debug, info, warning, error, critical)',
-        'triggers.return_object' => 'Print return objects in log',
-        'triggers.default_model' => 'Print model defaults in log',
-        'triggers.usage' => 'Print usage data in log',
+        'triggers.curl_return_object' => '1. Log raw cURL response data from AI providers (BaseAIModelProvider level)',
+        'triggers.normalized_return_object' => '2. Log SSE stream data after normalization in StreamController',
+        'triggers.formatted_stream_chunk' => '3. Log AI provider formatted StreamChunk output',
+        'triggers.translated_return_object' => '4. Log final StreamMessages output (last point before frontend)',
+        'triggers.default_model' => 'Log default model selection and fallback behavior',
+        'triggers.usage' => 'Log token usage data from AI provider responses',
 
     ],
     'mail' => [
