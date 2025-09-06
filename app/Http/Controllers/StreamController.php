@@ -175,20 +175,13 @@ class StreamController extends Controller
         // Create a callback function to process streaming chunks
         $onData = function ($data) use ($user, $avatar_url, $payload, &$requestBuffer) {
 
-            // Use stream normalization for providers that send SSE data split across cURL packets
-            $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
-            $isGoogleProvider = $provider instanceof \App\Services\AI\Providers\GoogleProvider;
-            $isOpenAIProvider = $provider instanceof \App\Services\AI\Providers\OpenAIProvider;
+            // Use stream normalization for ALL providers to handle SSE data split across cURL packets
+            // This is safe for all providers as the function only processes actual SSE data
+            $data = $this->normalizeSSEStreamChunk($data, $requestBuffer);
             
-            if ($isGoogleProvider || $isOpenAIProvider) {
-                // Google and OpenAI send SSE data which might be split across multiple curl packets
-                // We need to normalize this before processing
-                $data = $this->normalizeSSEStreamChunk($data, $requestBuffer);
-                
-                // If no complete chunks were extracted, return early
-                if (empty(trim($data))) {
-                    return;
-                }
+            // If no complete chunks were extracted, return early
+            if (empty(trim($data))) {
+                return;
             }
 
             // Skip non-JSON or empty chunks
@@ -289,7 +282,7 @@ class StreamController extends Controller
         );
     }
     /*
-     * Helper function to translate curl return object from google to openai format
+     * Helper function to translate curl return object from various providers to openai format
      * Handles SSE format with "data: " prefixes and large objects split across packets
      * Improved to handle very large groundingMetadata objects
      */
