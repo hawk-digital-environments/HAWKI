@@ -35,6 +35,26 @@ class ApiFormatsSeeder extends Seeder
                 ]
             ],
             [
+                'unique_name' => 'openai-responses-api',
+                'display_name' => 'OpenAI Responses API',
+                'base_url' => 'https://api.openai.com/v1',
+                'provider_class' => 'App\\Services\\AI\\Providers\\OpenAIResponsesProvider',
+                'metadata' => [
+                    'auth_type' => 'bearer',
+                    'content_type' => 'application/json',
+                    'supports_streaming' => true,
+                    'supports_function_calling' => false,
+                    'supports_reasoning' => true,
+                    'description' => 'OpenAI Responses API for reasoning models (o1, o3 series) with enhanced reasoning capabilities',
+                    'compatible_providers' => ['openai'],
+                    'reasoning_models' => ['o1', 'o1-mini', 'o1-pro', 'o3', 'o3-mini', 'o3-pro', 'o3-deep-research'],
+                ],
+                'endpoints' => [
+                    ['name' => 'models.list', 'path' => '/models', 'method' => 'GET'],
+                    ['name' => 'responses.create', 'path' => '/responses', 'method' => 'POST'],
+                ]
+            ],
+            [
                 'unique_name' => 'ollama-api',
                 'display_name' => 'Ollama API',
                 'base_url' => 'http://localhost:11434',
@@ -255,6 +275,6 @@ class ApiFormatsSeeder extends Seeder
             }
         });
         
-        $this->command->info('✅ Provider class cleanup completed.');
+        $this->command->info('Provider class cleanup completed.');
     }
 }

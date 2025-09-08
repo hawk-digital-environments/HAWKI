@@ -191,7 +191,21 @@ class ApiFormat extends Model
      */
     public function getChatEndpoint(): ?ApiFormatEndpoint
     {
-        return $this->getEndpoint('chat.create');
+        // Handle different endpoint names for different API formats
+        $chatEndpointNames = [
+            'chat.create',      // Standard OpenAI API
+            'responses.create', // OpenAI Responses API
+            'completions.create', // Legacy completions
+        ];
+
+        foreach ($chatEndpointNames as $endpointName) {
+            $endpoint = $this->getEndpoint($endpointName);
+            if ($endpoint) {
+                return $endpoint;
+            }
+        }
+
+        return null;
     }
 
     /**

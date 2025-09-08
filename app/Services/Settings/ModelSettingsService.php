@@ -621,4 +621,185 @@ class ModelSettingsService
             return false;
         }
     }
+
+    /**
+     * Import models from API response into the database
+     *
+     * @param  int  $providerId  The provider ID
+     * @param  array  $apiResponse  The API response containing models
+     * @return array Import results with success status and statistics
+     */
+    public function importModelsFromApiResponse(int $providerId, array $apiResponse): array
+    {
+        try {
+            $totalModels = 0;
+            $importedModels = 0;
+            $updatedModels = 0;
+            $errors = [];
+
+            // Get the provider settings
+            $provider = ProviderSetting::find($providerId);
+            if (! $provider) {
+                return [
+                    'success' => false,
+                    'error' => "Provider with ID {$providerId} not found",
+                    'total' => 0,
+                    'imported' => 0,
+                    'updated' => 0,
+                ];
+            }
+
+            // Extract models from API response
+            $models = [];
+            if (isset($apiResponse['data']) && is_array($apiResponse['data'])) {
+                // OpenAI format: {"object": "list", "data": [...]}
+                $models = $apiResponse['data'];
+            } elseif (isset($apiResponse['models']) && is_array($apiResponse['models'])) {
+                // Alternative format: {"models": [...]}
+                $models = $apiResponse['models'];
+            } elseif (is_array($apiResponse) && ! empty($apiResponse)) {
+                // Direct array format: [...]
+                $models = $apiResponse;
+            }
+
+            $totalModels = count($models);
+
+            if (empty($models)) {
+                return [
+                    'success' => true,
+                    'total' => 0,
+                    'imported' => 0,
+                    'updated' => 0,
+                    'message' => 'No models found in API response',
+                ];
+            }
+
+            foreach ($models as $modelData) {
+                try {
+                    // Extract model information
+                    $modelId = $modelData['id'] ?? null;
+                    if (! $modelId) {
+                        $errors[] = 'Model missing ID field';
+
+                        continue;
+                    }
+
+                    // Determine if model should be streamable (default true unless specified)
+                    $streamable = true;
+
+                    // For OpenAI reasoning models (o1, o3 series), disable streaming
+                    if (str_contains($modelId, 'o1') || str_contains($modelId, 'o3')) {
+                        $streamable = false;
+                    }
+
+                    // Create a human-readable label
+                    $label = $this->generateModelLabel($modelId, $modelData);
+
+                    // Check if model already exists
+                    $existingModel = LanguageModel::where('model_id', $modelId)
+                        ->where('provider_id', $providerId)
+                        ->first();
+
+                    $modelAttributes = [
+                        'provider_id' => $providerId,
+                        'label' => $label,
+                        'streamable' => $streamable,
+                        'is_active' => true,
+                        'display_order' => 1000, // Default order, can be adjusted later
+                        'information' => json_encode($modelData),
+                        'settings' => json_encode([]),
+                    ];
+
+                    if ($existingModel) {
+                        // Update existing model
+                        $existingModel->update($modelAttributes);
+                        $updatedModels++;
+                        Log::info("Updated model: {$modelId} for provider {$provider->provider_name}");
+                    } else {
+                        // Create new model
+                        $modelAttributes['model_id'] = $modelId;
+                        LanguageModel::create($modelAttributes);
+                        $importedModels++;
+                        Log::info("Imported new model: {$modelId} for provider {$provider->provider_name}");
+                    }
+
+                } catch (\Exception $e) {
+                    $errors[] = "Error processing model {$modelId}: ".$e->getMessage();
+                    Log::error("Error importing model {$modelId}: ".$e->getMessage());
+                }
+            }
+
+            $success = $importedModels > 0 || $updatedModels > 0 || empty($errors);
+
+            return [
+                'success' => $success,
+                'total' => $totalModels,
+                'imported' => $importedModels,
+                'updated' => $updatedModels,
+                'errors' => $errors,
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error importing models from API response: '.$e->getMessage());
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'total' => 0,
+                'imported' => 0,
+                'updated' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Generate a human-readable label for a model
+     */
+    private function generateModelLabel(string $modelId, array $modelData): string
+    {
+        // Use display name if available
+        if (isset($modelData['display_name'])) {
+            return $modelData['display_name'];
+        }
+
+        // Use name if available
+        if (isset($modelData['name']) && $modelData['name'] !== $modelId) {
+            return $modelData['name'];
+        }
+
+        // For OpenAI models, create more readable labels
+        $label = $modelId;
+
+        // Handle common OpenAI model patterns
+        $patterns = [
+            '/^gpt-4o-mini/' => 'OpenAI GPT-4o Mini',
+            '/^gpt-4o/' => 'OpenAI GPT-4o',
+            '/^gpt-4-turbo/' => 'OpenAI GPT-4 Turbo',
+            '/^gpt-4/' => 'OpenAI GPT-4',
+            '/^gpt-3\.5-turbo/' => 'OpenAI GPT-3.5 Turbo',
+            '/^o1-mini/' => 'OpenAI o1-mini',
+            '/^o1-pro/' => 'OpenAI o1-pro',
+            '/^o1/' => 'OpenAI o1',
+            '/^o3-mini/' => 'OpenAI o3-mini',
+            '/^o3-pro/' => 'OpenAI o3-pro',
+            '/^o3-deep-research/' => 'OpenAI o3 Deep Research',
+            '/^o3/' => 'OpenAI o3',
+            '/^claude-/' => 'Anthropic Claude',
+            '/^gemini-/' => 'Google Gemini',
+        ];
+
+        foreach ($patterns as $pattern => $replacement) {
+            if (preg_match($pattern, $modelId)) {
+                $label = $replacement;
+
+                // Add date suffix if present
+                if (preg_match('/(\d{4}-\d{2}-\d{2})/', $modelId, $matches)) {
+                    $label .= ' ('.$matches[1].')';
+                }
+                break;
+            }
+        }
+
+        return $label;
+    }
 }
