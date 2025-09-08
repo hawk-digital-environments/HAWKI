@@ -205,11 +205,21 @@ function createMsgObject(msg){
     // I'm not sure if the data from processStream() lands before getting plotted
     const filteredText = detectMentioning(msgTxt).filteredText;
 
+    auxiliaries =  msg.dataset.auxiliaries ? JSON.parse(msg.dataset.auxiliaries) : [];
+    // strip off items we don't need.
+    filteredAux = [];
+    for (aux of auxiliaries) {
+        filteredAux.push({
+            type: aux.type,
+            content: aux.content,
+        });
+    }
     messageObject = {
         role: role,
-        content:{
+        content: {
             text: filteredText,
-        }
+        },
+        auxiliaries: filteredAux,
     }
     return messageObject;
 }

@@ -25,6 +25,14 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         messageElement.id = messageObj.message_id;
     }
 
+    // allows e.g. gpt-5 to keep track of previous reasoning
+    //console.log(messageObj.auxiliaries);
+    if(messageObj.auxiliaries) {
+        messageElement.dataset.auxiliaries = JSON.stringify(messageObj.auxiliaries);
+    } else {
+        messageElement.dataset.auxiliaries = '';
+    }
+
     /// CLASSES & AVATARS
     // add classes AI ME MEMBER to the element
     if(messageObj.message_role === "assistant"){
@@ -239,7 +247,9 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
 
         const filteredContent = detectMentioning(messageText);
         messageElement.dataset.rawMsg = messageText;
+        messageElement.dataset.auxiliaries = JSON.stringify(messageObj.auxiliaries);
         // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
+    
 
         if(!messageElement.classList.contains('AI')){
             msgTxtElement.innerHTML = filteredContent.modifiedText;
@@ -358,7 +368,7 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
 function deconstContent(inputContent){
     let messageText = '';
     let groundingMetadata = '';
-
+    
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
         if(json.hasOwnProperty('groundingMetadata')){
@@ -372,6 +382,7 @@ function deconstContent(inputContent){
         }
     }
     else{
+        
         if(inputContent.text){
             messageText = inputContent.text;
         }
@@ -382,7 +393,7 @@ function deconstContent(inputContent){
 
     return {
         messageText: messageText,
-        groundingMetadata: groundingMetadata
+        groundingMetadata: groundingMetadata,
     }
 
 }

@@ -8,7 +8,7 @@ class UpdateEnumTypeOnUsageRecordsTable extends Migration
 {
     public function up()
     {
-        // This updates the 'type' column to include 'api'.
+        /// This updates the 'type' column to include 'api'.
         DB::statement("
             ALTER TABLE `usage_records`
             MODIFY COLUMN `type` ENUM('private', 'group', 'api')
