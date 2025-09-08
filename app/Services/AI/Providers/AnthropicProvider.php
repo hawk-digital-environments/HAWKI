@@ -19,6 +19,11 @@ class AnthropicProvider extends BaseAIModelProvider
     private array $webSearchCitations = [];
     
     /**
+     * Accumulated web search sources (from web_search_tool_result)
+     */
+    private array $webSearchSources = [];
+    
+    /**
      * Track current text block and associated citations
      */
     private int $currentBlockIndex = -1;
@@ -146,10 +151,10 @@ class AnthropicProvider extends BaseAIModelProvider
         // Check for web search results in the response
         foreach ($data['content'] as $contentBlock) {
             if (isset($contentBlock['type']) && $contentBlock['type'] === 'web_search_tool_result') {
-                // Reset citations and parse the web search results
-                $this->webSearchCitations = [];
+                // Reset sources and parse the web search results
+                $this->webSearchSources = [];
                 if (isset($contentBlock['content'])) {
-                    $this->parseWebSearchResults($contentBlock['content']);
+                    $this->parseWebSearchSources($contentBlock['content']);
                 }
                 
                 // Note: Citations will be formatted later when final message text is available
@@ -221,9 +226,17 @@ class AnthropicProvider extends BaseAIModelProvider
             }
         }
 
-        // Format final citations if we have them and the message is complete
-        if ($isDone && !empty($this->webSearchCitations)) {
+        // Format final citations if we have sources and the message is complete
+        if ($isDone && !empty($this->webSearchSources)) {
+            Log::debug('AnthropicProvider: Formatting citations for completed message', [
+                'sources_count' => count($this->webSearchSources),
+                'citations_count' => count($this->webSearchCitations),
+                'message_length' => strlen($content)
+            ]);
             $groundingMetadata = $this->formatCitations($content);
+            Log::debug('AnthropicProvider: Citations formatted', [
+                'has_metadata' => !is_null($groundingMetadata)
+            ]);
         }
 
         return [
@@ -250,6 +263,7 @@ class AnthropicProvider extends BaseAIModelProvider
             case 'message_start':
                 // Message has started, reset citation cache
                 $this->webSearchCitations = [];
+                $this->webSearchSources = [];
                 $this->currentBlockIndex = -1;
                 $this->blockCitations = [];
                 $this->inTextBlock = false;
@@ -262,10 +276,20 @@ class AnthropicProvider extends BaseAIModelProvider
                 if (isset($data['content_block']['type'])) {
                     switch ($data['content_block']['type']) {
                         case 'web_search_tool_result':
-                            // Web search results block - parse and store citations
+                            // Web search sources block (Index 2) - parse and store search sources for Citations
+                            // Reset sources to avoid duplicates from multiple tool results
+                            $this->webSearchSources = [];
                             if (isset($data['content_block']['content'])) {
-                                $this->parseWebSearchResults($data['content_block']['content']);
+                                $this->parseWebSearchSources($data['content_block']['content']);
                             }
+                            break;
+                            
+                        case 'server_tool_use':
+                            // Server tool use (like web search) starting - no visible content
+                            //Log::debug('AnthropicProvider: Server tool use started (UPDATED CODE)', [
+                            //    'tool_name' => $data['content_block']['name'] ?? 'unknown',
+                            //    'tool_id' => $data['content_block']['id'] ?? 'unknown'
+                            //]);
                             break;
                             
                         case 'text':
@@ -332,7 +356,10 @@ class AnthropicProvider extends BaseAIModelProvider
                             break;
                             
                         case 'input_json_delta':
-                            // Web Search tool input - return empty content (not user-visible)
+                            // Web Search tool input being streamed - no visible content but log for debugging
+                            //Log::debug('AnthropicProvider: Web search tool input', [
+                            //    'partial_json' => $data['delta']['partial_json'] ?? ''
+                            //]);
                             break;
                             
                         default:
@@ -347,11 +374,9 @@ class AnthropicProvider extends BaseAIModelProvider
                 break;
 
             case 'server_tool_use':
-                // Server tool use (like web search) - return empty content
-                break;
-
             case 'web_search_tool_result':
-                // Web search results - return empty content  
+                // These events are passed through to processAnthropicEvent as data objects
+                // No special handling needed here
                 break;
 
             case 'message_delta':
@@ -391,24 +416,36 @@ class AnthropicProvider extends BaseAIModelProvider
     }
 
     /**
-     * Parse and store web search results from Anthropic's content blocks
+     * Parse and store web search sources from Anthropic's web_search_tool_result content blocks
+     * These become the "Search Sources" in the Citation UI
      */
-    private function parseWebSearchResults(array $searchContent): void
+    private function parseWebSearchSources(array $searchContent): void
     {
+        Log::debug('AnthropicProvider: Parsing web search sources', [
+            'incoming_results_count' => count($searchContent),
+            'current_sources_count' => count($this->webSearchSources)
+        ]);
+        
         foreach ($searchContent as $result) {
             if (isset($result['type']) && $result['type'] === 'web_search_result') {
-                $citation = [
+                $source = [
                     'title' => $result['title'] ?? '',
                     'url' => $result['url'] ?? '',
-                    'content' => $result['encrypted_content'] ?? $result['content'] ?? ''
+                    'content' => $result['encrypted_content'] ?? $result['content'] ?? '',
+                    'page_age' => $result['page_age'] ?? null
                 ];
-                $this->webSearchCitations[] = $citation;
+                $this->webSearchSources[] = $source;
             }
         }
+        
+        Log::debug('AnthropicProvider: Web search sources parsed', [
+            'total_sources_count' => count($this->webSearchSources)
+        ]);
     }
 
     /**
      * Parse and store citations from Anthropic's citations_delta events
+     * These are the actual citations with cited_text that reference the search sources
      */
     private function parseCitationDelta(array $citation): void
     {
@@ -421,13 +458,15 @@ class AnthropicProvider extends BaseAIModelProvider
             $citationData = [
                 'title' => $title,
                 'url' => $url,
-                'content' => $citedText
+                'content' => $citedText,  // This is the actual cited text
+                'cited_text' => $citedText  // Keep both for compatibility
             ];
             
-            // Check if this citation already exists (avoid duplicates by URL)
+            // Check if this citation already exists (avoid duplicates by URL + cited_text)
             $exists = false;
             foreach ($this->webSearchCitations as $existingCitation) {
-                if ($existingCitation['url'] === $citationData['url']) {
+                if ($existingCitation['url'] === $citationData['url'] && 
+                    $existingCitation['cited_text'] === $citationData['cited_text']) {
                     $exists = true;
                     break;
                 }
@@ -455,26 +494,48 @@ class AnthropicProvider extends BaseAIModelProvider
      */
     private function formatCitations(string $messageText): ?array
     {
-        if (empty($this->webSearchCitations)) {
+        // We need both search sources AND citations for proper formatting
+        if (empty($this->webSearchSources) && empty($this->webSearchCitations)) {
+            Log::debug('AnthropicProvider: No search sources or citations to format');
             return null;
         }
 
-        // Prepare data in the format expected by AnthropicCitationFormatter
+        Log::debug('AnthropicProvider: Preparing citation data', [
+            'sources_count' => count($this->webSearchSources),
+            'citations_count' => count($this->webSearchCitations),
+            'sources' => $this->webSearchSources,
+            'citations' => $this->webSearchCitations
+        ]);
+
+        // For Anthropic, we use the search sources as the primary data
+        // The citations (web_search_result_location) contain the cited_text but reference the same URLs
         $providerData = [
             'groundingChunks' => []
         ];
 
-        foreach ($this->webSearchCitations as $citation) {
+        // Use search sources as the primary data for Citation Service
+        foreach ($this->webSearchSources as $source) {
             $providerData['groundingChunks'][] = [
                 'web' => [
-                    'title' => $citation['title'],
-                    'uri' => $citation['url']
+                    'title' => $source['title'],
+                    'uri' => $source['url']
                 ]
             ];
         }
 
+        Log::debug('AnthropicProvider: Calling CitationService', [
+            'provider_data' => $providerData
+        ]);
+
         // Use the unified citation service
-        return $this->citationService->formatCitations('anthropic', $providerData, $messageText);
+        $result = $this->citationService->formatCitations('anthropic', $providerData, $messageText);
+        
+        Log::debug('AnthropicProvider: CitationService result', [
+            'has_result' => !is_null($result),
+            'result' => $result
+        ]);
+        
+        return $result;
     }
 
     /**
@@ -596,9 +657,10 @@ class AnthropicProvider extends BaseAIModelProvider
         $citationNumbers = [];
         
         foreach ($citations as $citation) {
-            // Find the citation number based on its position in webSearchCitations
-            foreach ($this->webSearchCitations as $index => $webCitation) {
-                if ($webCitation['url'] === $citation['url']) {
+            // Find the citation number based on its position in webSearchSources (not webSearchCitations)
+            // because webSearchSources are the actual sources that become numbered in the UI
+            foreach ($this->webSearchSources as $index => $webSource) {
+                if ($webSource['url'] === $citation['url']) {
                     $citationNumbers[] = $index + 1; // 1-based indexing
                     break;
                 }

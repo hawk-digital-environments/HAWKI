@@ -12,13 +12,11 @@ use App\Services\Citations\Contracts\CitationFormatterInterface;
 class AnthropicCitationFormatter implements CitationFormatterInterface
 {
     /**
-     * Format Anthropic citation data into HAWKI's unified format
+     * Format Anthropic citation data into HAWKI's unified format v1
      */
     public function format(array $providerData, string $messageText): array
     {
         $citations = [];
-        $textSegments = [];
-        $searchMetadata = [];
 
         // Extract citations from groundingChunks (Anthropic format)
         if (isset($providerData['groundingChunks'])) {
@@ -34,32 +32,23 @@ class AnthropicCitationFormatter implements CitationFormatterInterface
             }
         }
 
-        // For Anthropic inline citations, create a simple text segment structure
-        // The frontend will detect and replace [1], [2] patterns automatically
-        $textSegments = $this->extractTextSegmentsFromMessage($messageText, count($citations));
-
         return [
+            'format' => 'hawki_v1',
+            'processing_mode' => 'inline', 
             'citations' => $citations,
-            'textSegments' => $textSegments,
-            'searchMetadata' => $searchMetadata
-        ];
-    }    /**
-     * Extract text segments for Anthropic inline citations
-     * For Anthropic, we provide the full text and let the frontend handle [1], [2] replacement
-     */
-    private function extractTextSegmentsFromMessage(string $messageText, int $totalCitations): array
-    {
-        // For Anthropic inline citations, create a single segment with the full text
-        // The frontend will automatically detect and replace [1], [2] patterns
-        return [
-            [
+            'text_processing' => [
+                'mode' => 'inline',
+                'inline_markers' => true // Frontend will detect [1], [2] patterns
+            ],
+            'searchMetadata' => [],
+            
+            // Backwards compatibility - keep old format for transition
+            'textSegments' => [[
                 'text' => $messageText,
                 'citationIds' => [] // Not used for Anthropic pattern-based processing
-            ]
+            ]]
         ];
-    }
-
-    /**
+    }    /**
      * Check if Anthropic provider data contains citations
      */
     public function hasCitations(array $providerData): bool

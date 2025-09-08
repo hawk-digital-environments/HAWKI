@@ -36,8 +36,8 @@ function formatChunk(chunk, groundingMetadata) {
         formatText += '</think>';
     }
 
-    // Render the summedText using markdown processor
-    const markdownReplaced = formatMessage(formatText, groundingMetadata);
+    // Render the summedText using markdown processor WITHOUT sources during streaming
+    const markdownReplaced = formatMessage(formatText, groundingMetadata, true); // skipSources = true
     return markdownReplaced;
 }
 
@@ -55,9 +55,9 @@ function escapeHTML(text) {
 
 
 
-function formatMessage(rawContent, groundingMetadata = '') {
+function formatMessage(rawContent, groundingMetadata = '', skipSources = false) {
     // Process citations and preserve HTML elements in one step
-    let contentToProcess = formatCitations(rawContent, groundingMetadata);
+    let contentToProcess = formatCitations(rawContent, groundingMetadata, skipSources);
     
     // Process content with placeholders for math and think blocks
     const { processedContent, mathReplacements, thinkReplacements } = preprocessContent(contentToProcess);
@@ -314,12 +314,157 @@ function addSearchRenderedContent(messageElement, groundingMetadata){
 // Temporary storage for HTML elements to preserve
 const preservedHTML = [];
 
-function formatCitations(content, groundingMetadata = '') {
+function formatCitations(content, groundingMetadata = '', skipSources = false) {
     // Return early if no citation metadata
     if (!groundingMetadata || typeof groundingMetadata !== 'object') {
         return content;
     }
 
+    console.log('formatCitations called with:', groundingMetadata, 'skipSources:', skipSources); // Debug
+
+    // Check for new unified HAWKI citation format v1
+    if (groundingMetadata.format === 'hawki_v1') {
+        console.log('Using unified citation format v1'); // Debug
+        return processUnifiedCitations(content, groundingMetadata, skipSources);
+    }
+
+    console.log('Using legacy citation format'); // Debug
+    // Fallback to legacy citation processing
+    return processLegacyCitations(content, groundingMetadata, skipSources);
+}
+
+function processUnifiedCitations(content, citationData, skipSources = false) {
+    const codeBlocks = [];
+    const footnoteReplacements = [];
+
+    // 1. Preserve code blocks
+    const codePattern = /(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>)/gi;
+    let tempContent = content.replace(codePattern, (match) => {
+        codeBlocks.push(match);
+        return `%%CODE_BLOCK_${codeBlocks.length - 1}%%`;
+    });
+
+    let processedContent = tempContent;
+
+    // 2. Process citations based on mode
+    const processingMode = citationData.text_processing.mode;
+    
+    if (processingMode === 'inline') {
+        // Anthropic-style: Replace [1], [2] patterns
+        processedContent = processInlineCitations(processedContent, citationData, footnoteReplacements);
+    } else if (processingMode === 'segments') {
+        // Google-style: Process text segments
+        processedContent = processSegmentCitations(processedContent, citationData, footnoteReplacements);
+    }
+
+    // 3. Apply footnote replacements
+    footnoteReplacements.forEach((replacement, index) => {
+        processedContent = processedContent.replace(`%%FOOTNOTE_${index}%%`, replacement);
+    });
+
+    // 4. Add sources list (only if not skipping for streaming)
+    if (!skipSources) {
+        processedContent = addUnifiedSourcesList(processedContent, citationData);
+    }
+
+    // 5. Restore code blocks
+    codeBlocks.forEach((block, index) => {
+        processedContent = processedContent.replace(`%%CODE_BLOCK_${index}%%`, block);
+    });
+
+    return processedContent;
+}
+
+function addUnifiedSourcesList(content, citationData) {
+    let sourcesMarkdown = '';
+
+    console.log('Adding unified sources list:', citationData); // Debug
+
+    if (citationData.citations && Array.isArray(citationData.citations) && citationData.citations.length > 0) {
+        console.log('Found citations:', citationData.citations.length); // Debug
+        
+        // Check if sources are already in the content to avoid duplication during streaming
+        if (!content.includes('### Search Sources:')) {
+            sourcesMarkdown = `\n\n### Search Sources:\n`;
+
+            citationData.citations.forEach((citation) => {
+                if (citation.url && citation.title) {
+                    sourcesMarkdown += `${citation.id}. <a href="${citation.url}" target="_blank" class="source-link" data-source-id="${citation.id}">${citation.title}</a>\n`;
+                }
+            });
+
+            if (sourcesMarkdown !== '\n\n### Search Sources:\n') {
+                console.log('Adding sources markdown:', sourcesMarkdown); // Debug
+                content += sourcesMarkdown;
+            }
+        } else {
+            console.log('Sources already exist in content'); // Debug
+        }
+    } else {
+        console.log('No citations found in citationData'); // Debug
+    }
+
+    return content;
+}
+
+function processInlineCitations(content, citationData, footnoteReplacements) {
+    // Anthropic-style: replace inline citation brackets [1], [2], [1,2] with proper citation links
+    return content.replace(/\[(\d+(?:,\s*\d+)*)\]/g, (match, citationString) => {
+        const citationIds = citationString.includes(',') 
+            ? citationString.split(',').map(id => parseInt(id.trim()))
+            : [parseInt(citationString.trim())];
+        
+        // Create a placeholder for the footnote
+        const footnoteId = footnoteReplacements.length;
+        const footnotePlaceholder = `%%FOOTNOTE_${footnoteId}%%`;
+        
+        // Store the actual HTML for later replacement
+        const footnoteHTML = createCitationLink(citationIds, citationData.citations);
+        footnoteReplacements.push(footnoteHTML);
+        
+        return footnotePlaceholder;
+    });
+}
+
+function processSegmentCitations(content, citationData, footnoteReplacements) {
+    let processedContent = content;
+    
+    // Google-style: process textSegments with separate text and citation IDs
+    citationData.text_processing.text_segments.forEach((segment) => {
+        const segmentText = segment.text || '';
+        const citationIds = segment.citationIds;
+
+        if (segmentText && Array.isArray(citationIds) && citationIds.length) {
+            // Create a placeholder for the footnote
+            const footnoteId = footnoteReplacements.length;
+            const footnotePlaceholder = `%%FOOTNOTE_${footnoteId}%%`;
+            
+            // Store the actual HTML for later replacement
+            const footnoteHTML = createCitationLink(citationIds, citationData.citations);
+            footnoteReplacements.push(footnoteHTML);
+
+            // Replace the segment text with itself plus footnote placeholder
+            processedContent = processedContent.replace(
+                new RegExp(escapeRegExp(segmentText), 'g'),
+                match => match + footnotePlaceholder
+            );
+        }
+    });
+    
+    return processedContent;
+}
+
+function createCitationLink(citationIds, citationsData) {
+    const validCitations = citationIds.filter(id => citationsData[id-1]);
+    if (validCitations.length === 0) return '';
+    
+    return `<sup><a href="#sources" class="citation-link" 
+                data-sources="${validCitations.map(id => id-1).join(',')}"
+                data-citations='${JSON.stringify(validCitations.map(id => citationsData[id-1]))}'
+            >${validCitations.join(', ')}</a></sup>`;
+}
+
+function processLegacyCitations(content, groundingMetadata, skipSources = false) {
     // Hilfsarrays zum Zwischenspeichern
     const codeBlocks = [];
     const footnoteReplacements = [];
@@ -382,10 +527,10 @@ function formatCitations(content, groundingMetadata = '') {
         }
     }
 
-    // 3. Literatur/Quellen anhängen
+    // 3. Literatur/Quellen anhängen (only if not skipping for streaming)
     let sourcesMarkdown = '';
 
-    if (groundingMetadata.citations && Array.isArray(groundingMetadata.citations)) {
+    if (!skipSources && groundingMetadata.citations && Array.isArray(groundingMetadata.citations)) {
         // Check if sources are already in the content to avoid duplication during streaming
         if (!processedContent.includes('### Search Sources:')) {
             sourcesMarkdown = `\n\n### Search Sources:\n`;

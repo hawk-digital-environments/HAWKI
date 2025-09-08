@@ -215,6 +215,50 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     return  messageElement;
 }
 
+/**
+ * Handle search content for both unified and legacy citation formats
+ */
+function handleSearchContent(messageElement, groundingMetadata) {
+    if (!groundingMetadata || groundingMetadata === '') {
+        // Remove existing search content if no metadata
+        if(messageElement.querySelector('.google-search')){
+            messageElement.querySelector('.google-search').remove();
+        }
+        return;
+    }
+
+    // Check for unified format first
+    if (groundingMetadata.format === 'hawki_v1' && groundingMetadata.searchMetadata) {
+        // Unified format: use searchMetadata directly
+        if (groundingMetadata.searchMetadata.renderedContent) {
+            addSearchRenderedContent(messageElement, groundingMetadata);
+            if(typeof activateCitations === 'function'){
+                activateCitations(messageElement);
+            }
+        } else {
+            // Remove search content if no renderedContent
+            if(messageElement.querySelector('.google-search')){
+                messageElement.querySelector('.google-search').remove();
+            }
+        }
+    } else {
+        // Legacy format: check traditional structure
+        if (groundingMetadata.searchMetadata && 
+            groundingMetadata.searchMetadata.renderedContent) {
+            
+            addSearchRenderedContent(messageElement, groundingMetadata);
+            if(typeof activateCitations === 'function'){
+                activateCitations(messageElement);
+            }
+        } else {
+            // Remove search content if no renderedContent
+            if(messageElement.querySelector('.google-search')){
+                messageElement.querySelector('.google-search').remove();
+            }
+        }
+    }
+}
+
 
 function updateMessageElement(messageElement, messageObj, updateContent = false){
 
@@ -259,22 +303,9 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             msgTxtElement.innerHTML = markdownProcessed;
             formatMathFormulas(msgTxtElement);
             formatHljs(messageElement); // Add this to ensure citations are activated
-            if (groundingMetadata && 
-                groundingMetadata != '' && 
-                groundingMetadata.searchMetadata && 
-                groundingMetadata.searchMetadata.renderedContent) {
-    
-                addSearchRenderedContent(messageElement, groundingMetadata);
-                // Activate citations again after Google content is added
-                if(typeof activateCitations === 'function'){
-                    activateCitations(messageElement);
-                }
-            }
-            else{
-                if(messageElement.querySelector('.google-search')){
-                    messageElement.querySelector('.google-search').remove();
-                }
-            }
+            
+            // Handle search content for both legacy and unified formats
+            handleSearchContent(messageElement, groundingMetadata);
         }
 
         // if the read status exists in the data

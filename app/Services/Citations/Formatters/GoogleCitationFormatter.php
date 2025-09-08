@@ -12,7 +12,7 @@ use App\Services\Citations\Contracts\CitationFormatterInterface;
 class GoogleCitationFormatter implements CitationFormatterInterface
 {
     /**
-     * Format Google citation data into HAWKI's unified format
+     * Format Google citation data into HAWKI's unified format v1
      */
     public function format(array $providerData, string $messageText): array
     {
@@ -55,9 +55,17 @@ class GoogleCitationFormatter implements CitationFormatterInterface
         }
 
         return [
+            'format' => 'hawki_v1',
+            'processing_mode' => 'segments',
             'citations' => $citations,
-            'textSegments' => $textSegments,
-            'searchMetadata' => $searchMetadata
+            'text_processing' => [
+                'mode' => 'segments',
+                'text_segments' => $textSegments
+            ],
+            'searchMetadata' => $searchMetadata,
+            
+            // Backwards compatibility - keep old format for transition
+            'textSegments' => $textSegments // Legacy support
         ];
     }
 

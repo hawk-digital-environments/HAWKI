@@ -197,21 +197,8 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 }
             }
 
-            if (groundingMetadata && 
-                groundingMetadata != '' && 
-                groundingMetadata.searchMetadata && 
-                groundingMetadata.searchMetadata.renderedContent) {
-    
-                addSearchRenderedContent(messageElement, groundingMetadata);
-                // Activate citations after Google content is added during streaming
-                if(typeof activateCitations === 'function'){
-                    activateCitations(messageElement);
-                }
-            } else {
-                if(messageElement.querySelector('.google-search')){
-                    messageElement.querySelector('.google-search').remove();
-                }
-            }
+            // Handle search content for both unified and legacy formats
+            handleSearchContent(messageElement, groundingMetadata);
 
 
             if(messageElement.querySelector('.think')){
@@ -265,7 +252,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 submittedObj.content = cryptoContent;
                 messageElement.dataset.rawMsg = msg;
                 // messageElement.dataset.groundingMetadata = metadata;
-                addSearchRenderedContent(messageElement, metadata);
+                handleSearchContent(messageElement, metadata);
                 updateMessageElement(messageElement, submittedObj);
                 activateMessageControls(messageElement);
             }
