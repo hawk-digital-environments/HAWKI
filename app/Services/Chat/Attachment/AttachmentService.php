@@ -56,7 +56,7 @@ class AttachmentService{
         }
         else{
             try{
-                $file = $this->storageService->retrieveFile($uuid, $category);
+                $file = $this->storageService->retrieve($uuid, $category);
                 return $file;
             }
             catch(Exception $e){
@@ -78,7 +78,7 @@ class AttachmentService{
         }
         else{
             try{
-                $url = $this->storageService->getFileUrl($uuid, $category);
+                $url = $this->storageService->getUrl($uuid, $category);
                 return $url;
             }
             catch(Exception $e){
@@ -93,7 +93,7 @@ class AttachmentService{
     public function delete(Attachment $attachment): bool
     {
         try{
-            $deleted = $this->storageService->deleteFile($attachment->uuid, $attachment->category);
+            $deleted = $this->storageService->delete($attachment->uuid, $attachment->category);
             if(!$deleted){
                 return false;
             }
@@ -120,21 +120,24 @@ class AttachmentService{
     }
 
 
-    public function assignToMessage(AiConvMsg|Message $message, array $data): bool
+    public function assignToMessage(AiConvMsg|Message $message, array $data): ?string
     {
         try{
+            $category = $message instanceof AiConvMsg ? 'private' : 'group';
+            $this->storageService->moveFileToPersistentFolder($data['uuid'], $category);
+
             $type = $this->convertToAttachmentType($data['mime']);
             $message->attachments()->create([
                 'uuid' => $data['uuid'],
                 'name' => $data['name'],
-                'category' => $message instanceof AiConvMsg ? 'private' : 'group',
+                'category' => $category,
                 'mime'=> $data['mime'],
                 'type'=> $type,
                 'user_id'=> Auth::id()
             ]);
             return true;
         }
-        catch(e){
+        catch(Exception $e){
             return false;
         }
     }

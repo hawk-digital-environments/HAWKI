@@ -120,7 +120,7 @@ class StreamController extends Controller
         }
 
         $hawki = User::find(1); // HAWKI user
-        $avatar_url = $this->avatarStorage->getFileUrl('profile_avatars',
+        $avatar_url = $this->avatarStorage->getUrl('profile_avatars',
                                             $hawki->username,
                                             $hawki->avatar_id);
 

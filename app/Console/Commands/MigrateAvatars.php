@@ -73,7 +73,7 @@ class MigrateAvatars extends Command
         if ($type === 'profile' || $type === 'both') {
             $this->migrateProfileAvatars($isDryRun, $force, $cleanup, $specificUser);
         }
-
+        return 0;
         // Migrate room avatars
         if ($type === 'room' || $type === 'both') {
             $this->migrateRoomAvatars($isDryRun, $force, $cleanup, $specificRoom);
@@ -161,7 +161,7 @@ class MigrateAvatars extends Command
     {
         try {
             $avatarId = trim($user->avatar_id);
-            $username = $user->username ?? $user->email; // Fallback to email if no username
+            $username = $user->username;
 
             // Skip if avatar_id is empty after trimming
             if (empty($avatarId)) {
@@ -171,9 +171,6 @@ class MigrateAvatars extends Command
                 $this->profileSkippedCount++;
                 return;
             }
-
-            // Clean username for use as folder name (remove special characters)
-            $cleanUsername = preg_replace('/[^a-zA-Z0-9_-]/', '_', $username);
 
             // Check if old avatar file exists
             $oldAvatarPath = "public/profile_avatars/{$avatarId}";
@@ -186,7 +183,7 @@ class MigrateAvatars extends Command
 
             // Check if new avatar already exists (unless force is used)
             if (!$force) {
-                $existingFile = $this->avatarStorage->retrieveFile('profile_avatars', $cleanUsername, $avatarId);
+                $existingFile = $this->avatarStorage->retrieve($avatarId, 'profile_avatars');
                 if ($existingFile !== false) {
                     if ($this->output->isVerbose()) {
                         $this->line("Avatar already exists for user {$username}, skipping...");
@@ -197,7 +194,7 @@ class MigrateAvatars extends Command
             }
 
             if ($isDryRun) {
-                $this->line("Would migrate: User {$user->id} ({$username}) - {$oldAvatarPath} -> profile_avatars/{$cleanUsername}/{$avatarId}");
+                $this->line("Would migrate: User {$user->id} ({$username}) - {$oldAvatarPath} -> profile_avatars/{$username}/{$avatarId}");
                 $this->profileMigratedCount++;
                 return;
             }
@@ -219,11 +216,12 @@ class MigrateAvatars extends Command
             }
 
             // Store using AvatarStorageService
-            $stored = $this->avatarStorage->storeFile(
-                file: $fileContent,
-                category: 'profile_avatars',
-                name: $cleanUsername,
-                uuid: $avatarId
+            $stored = $this->avatarStorage->store(
+                $fileContent,
+                $avatarId,
+                $avatarId,
+                'profile_avatars',
+                false
             );
 
             if ($stored) {
@@ -315,7 +313,7 @@ class MigrateAvatars extends Command
             }
 
             // Store using AvatarStorageService
-            $stored = $this->avatarStorage->storeFile(
+            $stored = $this->avatarStorage->store(
                 file: $fileContent,
                 category: 'room_avatars',
                 name: $cleanRoomName,
@@ -379,7 +377,7 @@ class MigrateAvatars extends Command
         $action = $isDryRun ? 'Would be migrated' : 'Migrated';
 
         $this->info('Migration Summary:');
-        
+
         // Profile avatars summary
         if ($this->profileMigratedCount > 0 || $this->profileSkippedCount > 0 || $this->profileErrorCount > 0) {
             $this->comment('Profile Avatars:');

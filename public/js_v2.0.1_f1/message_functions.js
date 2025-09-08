@@ -69,6 +69,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
     /// Set Author Name
     if(messageObj.model && messageObj.message_role === 'assistant'){
+        console.log(messageObj);
         model = modelsList.find(m => m.id === messageObj.model);
         messageElement.querySelector('.message-author').innerHTML =
             model ?

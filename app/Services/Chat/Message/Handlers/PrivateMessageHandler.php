@@ -11,13 +11,9 @@ use App\Models\Room;
 
 
 use App\Services\Chat\Attachment\AttachmentService;
-use App\Services\Chat\Message\MessageHandlerFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-
-use Illuminate\Http\Request;
 
 
 class PrivateMessageHandler extends BaseMessageHandler{
@@ -52,6 +48,7 @@ class PrivateMessageHandler extends BaseMessageHandler{
             if($attachments){
                 foreach($attachments as $attach){
                     $this->attachmentService->assignToMessage($message, $attach);
+
                 }
             }
         }

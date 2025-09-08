@@ -1,0 +1,226 @@
+<?php
+
+namespace App\Services\Storage;
+
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
+
+abstract class AbstractFileStorage implements StorageServiceInterface
+{
+
+    public function store(
+        UploadedFile|string $file,
+        string $filename,
+        string $uuid,
+        string $category,
+        bool $temp = false,
+        string $subDir = ''
+    ): bool
+    {
+        try {
+            if($subDir === ''){
+                $path = $this->buildPath($category, $uuid, $filename, $temp);
+            }
+            else{
+                $path = $this->buildFolder($category, $uuid, $temp) . $subDir . '/' . $filename;
+            }
+
+            if ($file instanceof UploadedFile) {
+                return $this->disk->put($path, file_get_contents($file->getRealPath()));
+            } else {
+                return $this->disk->put($path, $file);
+            }
+        } catch (Throwable $e) {
+            Log::error("File storage error: " . $e->getMessage(), ['exception' => $e]);
+            return false;
+        }
+    }
+
+    public function moveFileToPersistentFolder(string $uuid, string $category): bool
+    {
+        try {
+            $tempFolder = $this->buildFolder($category, $uuid, true);
+            // Move all files in the main temp folder
+            $files = $this->disk->files($tempFolder);
+
+            foreach ($files as $file) {
+                $fileName = basename($file);
+
+                $tempPath = $this->buildPath($category, $uuid, $fileName, true);
+                $newPath  = $this->buildPath($category, $uuid, $fileName, false);
+
+                $this->disk->move($tempPath, $newPath);
+            }
+
+            // Move files in subdirectories too, while preserving folder structure
+            $subDirectories = $this->disk->allDirectories($tempFolder);
+
+            foreach ($subDirectories as $subDir) {
+                $subFiles = $this->disk->allFiles($subDir);
+
+                foreach ($subFiles as $subFile) {
+                    $fileName = basename($subFile);
+
+                    // Build relative path: preserve the subdirectory name
+                    $relativeSubDir = str_replace($tempFolder, '', $subDir);
+                    $tempPath = $subFile;
+                    $newPath  = str_replace('temp/', '', $subFile); // shift from temp/ to root
+
+                    $this->disk->move($tempPath, $newPath);
+                }
+            }
+
+            // Clean up old temp folder
+            $this->disk->deleteDirectory($tempFolder);
+
+            return true;
+        } catch (Throwable $e) {
+            Log::error("Failed to move file to storage: " . $e->getMessage(), [
+                'exception' => $e,
+                'uuid' => $uuid,
+                'category' => $category,
+            ]);
+            return false;
+        }
+    }
+
+
+    public function retrieve(string $uuid, string $category): ?string
+    {
+        try {
+            $folder = $this->buildFolder($category, $uuid);
+            $files = $this->disk->files($folder);
+
+            if (empty($files)) {
+                return null;
+            }
+
+            // Get the first file (excluding subdirectories like output/)
+            $directFiles = array_filter($files, function($file) use ($folder) {
+                $relativePath = str_replace($folder . '/', '', $file);
+                return !str_contains($relativePath, '/');
+            });
+
+            if (empty($directFiles)) {
+                return null;
+            }
+
+            $firstFile = array_values($directFiles)[0];
+            return $this->disk->get($firstFile);
+
+        } catch (Throwable $e) {
+            Log::error("File storage retrieve error: " . $e->getMessage(), ['exception' => $e]);
+            return null;
+        }
+    }
+
+    /**
+     * Retrieve all output files with the specified extension
+     */
+    public function retrieveOutputFilesByType(string $uuid, string $category, string $fileType): array
+    {
+        try {
+            $outputFolder = $this->buildFolder($category, $uuid) . '/output';
+            $files = $this->disk->files($outputFolder);
+            $matches = [];
+
+            foreach ($files as $file) {
+                if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) === strtolower($fileType)) {
+                    $matches[] = [
+                        'path' => $file,
+                        'contents' => $this->disk->get($file),
+                    ];
+                }
+            }
+
+            return $matches;
+        } catch (Throwable $e) {
+            Log::error("File storage retrieveOutputFilesByType error: " . $e->getMessage(), ['exception' => $e]);
+            return [];
+        }
+    }
+
+    public function delete(string $uuid, string $category): bool
+    {
+        try {
+            $folder = $this->buildFolder($category, $uuid);
+            return $this->disk->deleteDirectory($folder);
+        } catch (Throwable $e) {
+            Log::error("File storage delete error: " . $e->getMessage(), ['exception' => $e]);
+            return false;
+        }
+    }
+
+
+    public function getUrl(string $uuid, string $category): ?string
+    {
+        try {
+            $folder = $this->buildFolder($category, $uuid);
+            $files = $this->disk->files($folder);
+
+            if (empty($files)) {
+                return null;
+            }
+
+            // Get the first direct file (not in subdirectories)
+            $directFiles = array_filter($files, function($file) use ($folder) {
+                $relativePath = str_replace($folder . '/', '', $file);
+                return !str_contains($relativePath, '/');
+            });
+
+            if (empty($directFiles)) {
+                return null;
+            }
+
+            $firstFile = array_values($directFiles)[0];
+            return $this->generateUrl($firstFile);
+        } catch (Throwable $e) {
+            Log::error("File storage getFileUrl error: " . $e->getMessage(), ['exception' => $e]);
+            return null;
+        }
+    }
+
+    /**
+     * Generate appropriate URL based on disk type
+     */
+    protected function generateUrl(string $path): string
+    {
+        // Check if disk supports temporary URLs (S3, NextCloud, SFTP, etc.)
+        if (method_exists($this->disk, 'temporaryUrl')) {
+            try {
+                // Generate a temporary URL that expires in 24 hours for private disks
+                return $this->disk->temporaryUrl($path, now()->addHours(24));
+            } catch (Throwable $e) {
+                Log::warning("Failed to generate temporary URL, falling back to regular URL: " . $e->getMessage());
+                return $this->disk->url($path);
+            }
+        }
+
+        // For public disks (local public), return regular URL
+        return $this->disk->url($path);
+    }
+
+
+    protected function buildFolder(string $category, string $uuid, bool $temp = false): string
+    {
+        $subStr = str_split(substr($uuid, 0, 4), 1);
+        $dir = join('/', $subStr);
+        if($temp){
+            return 'temp/' . trim($category, '/',) . '/' . $dir . '/' . trim($uuid, '/');
+        }
+        else{
+            return trim($category, '/',) . '/' . $dir . '/' . trim($uuid, '/');
+        }
+    }
+
+    protected function buildPath(string $category, string $uuid, string $name, bool $temp = false): string
+    {
+        $folder = $this->buildFolder($category, $uuid, $temp);
+
+        $exName = explode('.', $name);
+        $format = $exName[count($exName) - 1];
+        return $folder . '/' . trim($uuid) . '.' . $format;
+    }
+}

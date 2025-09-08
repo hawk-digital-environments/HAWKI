@@ -71,7 +71,9 @@ class Message extends Model
                 'username' => $member->user->username,
                 'name' => $member->user->name,
                 'isRemoved' => $member->isRemoved,
-                'avatar_url' =>$avatarStorage->getFileUrl('profile_avatars', $member->user->username, $member->user->avatar_id),
+                'avatar_url' =>!empty($user->avatar_id)
+                                ? $avatarStorage->getUrl($member->user->avatar_id, 'profile_avatars')
+                                : null,
             ],
             'model' => $this->model,
 
@@ -130,7 +132,7 @@ class Message extends Model
                     'category' => $attach->category,
                     'type'     => $attach->type,
                     'mime'     => $attach->mime,
-                    'url'      => $storageService->getFileUrl(
+                    'url'      => $storageService->getUrl(
                         uuid: $attach->uuid,
                         category: $attach->category
                     ),

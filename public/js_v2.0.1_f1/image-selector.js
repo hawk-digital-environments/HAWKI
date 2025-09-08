@@ -28,9 +28,9 @@ function openImageSelection(currentImageUrl, callback) {
         imageField.style.display = 'none';
         placeholder.style.display = 'flex';
     }
-    
+
     // Initialize modal functionality
-    initImageModal();  
+    initImageModal();
 }
 
 
@@ -51,14 +51,14 @@ function initImageModal() {
     imageContainer.addEventListener('drop', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const file = e.dataTransfer.files[0];
         if (file && file.type.startsWith('image/')) {
             imageField.style.display = 'block';
             placeholder.style.display = 'none';
 
             handleFile(file);
-        } 
+        }
         // else {
         //     alert('Please upload a valid image.');
         // }
@@ -106,7 +106,7 @@ function handleFile(file) {
 
 function setupCropper() {
     const imageElement = document.getElementById('image-field');
-    
+
     // Destroy the previous cropper instance, if any
     if (cropper) {
         cropper.destroy();
@@ -148,24 +148,30 @@ function saveCroppedImage() {
 
     // Using CropperJS to get the resulting cropped canvas
     const croppedCanvas = cropper.getCroppedCanvas();
-    
+
     if (!croppedCanvas) {
         console.error('Failed to get cropped canvas');
         return;
     }
 
-    resizeImage(croppedCanvas, 1024).then((resizedCanvas) => {
-        const croppedImage = resizedCanvas.toDataURL('image/jpeg');
+    resizeImage(croppedCanvas, 1024)
+        .then((resizedCanvas) => {
+            // NEW: convert canvas to Blob instead of base64
+            resizedCanvas.toBlob(function(blob) {
+                if (!blob) {
+                    console.error('Failed to get cropped blob');
+                    return;
+                }
+                console.log(blob);
+                // If you want a File (with a name):
+                // let file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
 
-        if (!croppedImage || croppedImage === "data:,") {
-            console.error('Cropped image is empty');
-            return;
-        }
-
-        // Call the stored callback function with the cropped image
-        if (typeof currentImageCallback === 'function') {
-            currentImageCallback(croppedImage);
-        }
+                // Call the callback with the Blob (or File)
+                if (typeof currentImageCallback === 'function') {
+                    currentImageCallback(blob); // or file
+                }
+                closeImageSelector();
+            }, 'image/jpeg');
 
         closeImageSelector();
     }).catch((err) => {

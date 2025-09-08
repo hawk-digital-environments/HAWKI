@@ -53,10 +53,10 @@ class RoomController extends Controller
     public function update(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            'img' => 'string',
-            'system_prompt' => 'string',
-            'description' => 'string',
-            'name' => 'string'
+            'system_prompt' => 'nullable|string',
+            'description' => 'nullable|string',
+            'name' => 'nullable|string',
+            'image' => 'nullable|file',
         ]);
         $this->roomService->update($validatedData, $slug);
 
@@ -66,6 +66,21 @@ class RoomController extends Controller
         ]);
     }
 
+    function uploadAvatar(Request $request, $slug = null): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'image' => 'required|file|max:20480'
+        ]);
+
+        $response = $this->roomService->assignAvatar($validatedData['image'],
+                                        $slug);
+
+        return response()->json([
+            "success" => true,
+            "url" => $response['url'],
+            "uuid"=> $response['uuid'],
+        ]);
+    }
 
     public function delete($slug): JsonResponse{
         $this->roomService->delete($slug);

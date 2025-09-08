@@ -6,7 +6,7 @@ let roomItemTemplate;
 let rooms;
 let typingStatusDiv;
 let activeRoom = null;
-
+let roomCreationAvatarBlob = null;
 function initializeGroupChatModule(roomsData){
     rooms = roomsData;
     roomMsgTemp = document.getElementById('message-template');
@@ -488,7 +488,7 @@ async function createNewRoom(){
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                onSuccessfullRoomCreation(data.roomData);
+                onSuccessfulRoomCreation(data.roomData);
 
             } else {
                 // Handle unexpected response
@@ -502,12 +502,12 @@ async function createNewRoom(){
 }
 
 
-async function onSuccessfullRoomCreation(roomData){
+async function onSuccessfulRoomCreation(roomData){
 
     const inputs = document.querySelector('.inputs-list');
     const description = inputs.querySelector('#room-description-input').value;
     const systemPrompt = inputs.querySelector('#system-prompt-input').value;
-    const avatar_url = inputs.querySelector('#room-creation-avatar').getAttribute('src');
+    const image = roomCreationAvatarBlob;
 
     //generate encryption key
     const roomKey = await generateKey();
@@ -529,13 +529,13 @@ async function onSuccessfullRoomCreation(roomData){
         'tag':cryptSystemPrompt.tag,
     });
 
-    attributes ={
-        'systemPrompt':systemPromptStr,
-        'description':descriptionStr,
-        'img':avatar_url
-    }
 
-    updateRoomInfo(roomData.slug, attributes)
+    const formData = new FormData();
+    if(systemPromptStr) formData.append('system_prompt', systemPromptStr)
+    if(descriptionStr)formData.append('description', descriptionStr)
+    if(image) formData.append('image',  image)
+
+    updateRoomInfo(roomData.slug, formData)
     rooms.push(roomData);
 
     //create invitation
@@ -1271,12 +1271,12 @@ async function submitInfoField(){
         'tag':cryptSystemPrompt.tag,
     });
 
-    attributes ={
-        'name':chatName,
-        'systemPrompt':systemPromptStr,
-        'description':descriptionStr
-    }
-    updateRoomInfo(activeRoom.slug, attributes);
+    const formData = new FormData();
+    if(chatName) formData.append('name', chatName);
+    if(systemPromptStr) formData.append('system_prompt', systemPromptStr)
+    if(descriptionStr)formData.append('description', descriptionStr)
+
+    updateRoomInfo(activeRoom.slug, formData);
 
 }
 
@@ -1402,36 +1402,46 @@ function selectRoomAvatar(btn, upload = false){
 
     const imageElement = btn.parentElement.querySelector('.selectable-image');
     const initials = btn.parentElement.querySelector('#control-panel-chat-initials');
-    openImageSelection(imageElement.getAttribute('src'), function(croppedImage) {
+    openImageSelection(imageElement.getAttribute('src'), async function(croppedImage) {
+        let url;
+        if(upload){
+            url = await uploadRoomAvatar(croppedImage);
+        }
+        else{
+            url = URL.createObjectURL(croppedImage);
+        }
+
         imageElement.style.display = 'block';
         if(initials){
             initials.style.display = 'none';
         }
-
-        imageElement.setAttribute('src', croppedImage);
-        if(upload){
-            uploadRoomAvatar(croppedImage);
-        }
+        imageElement.setAttribute('src', url);
+        roomCreationAvatarBlob = croppedImage;
     });
 }
 
-async function uploadRoomAvatar(imgBase64){
-    const url = `/req/room/updateInfo/${activeRoom.slug}`;
+async function uploadRoomAvatar(image){
+    console.log("uploadRoomAvatar");
+    const url = `/req/room/uploadAvatar/${activeRoom.slug}`;
+
+    const temp = activeRoom ? 1 : 0;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const formData = new FormData();
+    formData.append('image', image);
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
-            body: JSON.stringify({'img':imgBase64})
+            body: formData
         });
         const data = await response.json();
 
         if (data.success) {
             // console.log('Image Uploaded Successfully');
+            return data.url;
 
         } else {
             console.error('Upload not successfull');
@@ -1442,7 +1452,7 @@ async function uploadRoomAvatar(imgBase64){
 }
 
 
-async function updateRoomInfo(slug, attributes){
+async function updateRoomInfo(slug, formData){
 
     if(!slug){
         slug = activeRoom.slug;
@@ -1454,35 +1464,33 @@ async function updateRoomInfo(slug, attributes){
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const url = `/req/room/updateInfo/${slug}`;
 
-    let requestObj = {};
-    if(attributes.systemPrompt) requestObj.system_prompt = attributes.systemPrompt;
-    if(attributes.description) requestObj.description = attributes.description;
-    if(attributes.name) requestObj.name = attributes.name;
-    if(attributes.img) requestObj.img = attributes.img;
-
     try{
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+
             },
-            body: JSON.stringify(requestObj)
+            body: formData
         });
 
         if(!response.ok){
+            console.log('response');
+            console.log(response);
             console.error(`HTTP error! status: ${response.status}`);
             return null;
         }
 
         const data = await response.json();
+
         if(data.success){
-            // console.log('Room Information updated successfully');
+            return data;
+            console.log('Room Information updated successfully');
         }
     }
-    catch (err){
+    catch (error){
         console.error('Error fetching data:', error);
-        throw err;
+        throw error;
     }
 }
 //#endregion

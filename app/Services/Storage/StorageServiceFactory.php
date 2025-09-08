@@ -14,12 +14,6 @@ class StorageServiceFactory
     {
     }
 
-    public function getDefaultStorage(): DefaultStorageService
-    {
-        $defaultDisk = $this->config->get('filesystems.default', 'local');
-        return new DefaultStorageService($this->filesystemManager->disk($defaultDisk));
-    }
-
     public function getFileStorage(): FileStorageService
     {
         $fileStorageDisk = $this->config->get('filesystems.file_storage', 'local_file_storage');

@@ -23,7 +23,6 @@ class ProfileController extends Controller
     public function update(Request $request, ProfileService $profileService): JsonResponse{
 
         $validatedData = $request->validate([
-            'img' => 'string',
             'displayName' => 'string|max:20',
             'bio' => 'string|max:255',
         ]);
@@ -35,6 +34,18 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function uploadAvatar(Request $request, ProfileService $profileService): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'image' => 'required|file|max:20480'
+        ]);
+        $url = $profileService->assignAvatar($validatedData['image']);
+        return response()->json([
+            'success' => true,
+            'url' => $url
+        ]);
+    }
+
 
     public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse{
         $profileService->resetProfile();
@@ -43,7 +54,7 @@ class ProfileController extends Controller
 
     public function validatePasskey(Request $request){
         $passkey = $request->getContent();
-        
+
         $request->validate([
             'passkey' => 'string',
         ]);
@@ -56,7 +67,7 @@ class ProfileController extends Controller
                 'message' => 'Passkey cannot be empty'
             ]);
         }
-        
+
         // Validate passkey pattern using the same regex as frontend
         if (!preg_match('/^[A-Za-z0-9!@#$%^&*()_+-]+$/', $passkey)) {
             return response()->json([
@@ -64,7 +75,7 @@ class ProfileController extends Controller
                 'message' => 'Passkey contains invalid characters'
             ]);
         }
-        
+
         // Additional validation checks could be added here
         // For example, minimum length requirements
         if (strlen($passkey) < 8) {
@@ -73,7 +84,7 @@ class ProfileController extends Controller
                 'message' => 'Passkey must be at least 8 characters long'
             ]);
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Passkey is valid'

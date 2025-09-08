@@ -48,7 +48,9 @@ class AiConvMsg extends Model
             'author' => [
                 'username' => $user->username,
                 'name' => $user->name,
-                'avatar_url' => $avatarStorage->getFileUrl('profile_avatars', $user->username, $user->avatar_id),
+                'avatar_url' => !empty($user->avatar_id)
+                                ? $avatarStorage->getUrl($user->avatar_id, 'profile_avatars')
+                                : null
             ],
             'model' => $this->model,
 
@@ -90,9 +92,8 @@ class AiConvMsg extends Model
                     'category' => $attach->category,
                     'type'     => $attach->type,
                     'mime'     => $attach->mime,
-                    'url'      => $storageService->getFileUrl(
-                        uuid: $attach->uuid,
-                        category: $attach->category
+                    'url'      => $storageService->getUrl(uuid: $attach->uuid,
+                                                          category: $attach->category
                     ),
                 ],
             ];

@@ -23,45 +23,52 @@ function initializeUserProfile(){
 }
 
 
-function selectProfileAvatar(btn, upload = false){
+async function selectProfileAvatar(btn){
 
     const imageElement = btn.querySelector('.selectable-image');
     const initials = btn.querySelector('.user-inits');
 
-    openImageSelection(imageElement.getAttribute('src'), function(croppedImage) {
+    openImageSelection(imageElement.getAttribute('src'), async function(croppedImage) {
+
+        const imageUrl = await uploadProfileAvatar(croppedImage);
+
+
         imageElement.style.display = 'block';
         if(initials){
             initials.style.display = 'none';
         }
 
-        imageElement.setAttribute('src', croppedImage);
-        if(upload){
-            uploadProfileAvatar(croppedImage);
-        }
+        imageElement.setAttribute('src', imageUrl);
+        document.querySelector('.sidebar')
+                .querySelector('.profile-icon')
+                .querySelector('img')
+                .setAttribute('src', imageUrl);
+
     });
 }
 
-async function uploadProfileAvatar(imgBase64){
-    
-    const url = `/req/profile/update`;
+async function uploadProfileAvatar(image){
+    const url = `/req/profile/uploadAvatar`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const formData = new FormData();
+    formData.append('image', image);
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken
             },
-            body: JSON.stringify({'img':imgBase64})
+            body: formData
         });
         const data = await response.json();
 
         if (data.success) {
             console.log('Image Uploaded Successfully');
-            
+            return data.url;
+
         } else {
-            console.error('Upload not successfull');
+            console.error('Upload not successful');
         }
     } catch (error) {
         console.error('Failed to upload image to server!');
@@ -88,10 +95,10 @@ async function updateUserInformation(){
     // Trim and retrieve the current values of bio and displayName
     const bio = profile.querySelector('#bio-input').value.trim();
     const disName = profile.querySelector('#profile-name').innerText.trim();
-    
+
     // Initialize an object to hold any updates
     const requestObject = {};
- 
+
     // Check and add updates to the requestObject if necessary
     if (bio && bio !== userInfo.bio) {
         requestObject.bio = bio;
@@ -119,7 +126,7 @@ async function updateUserInformation(){
 
         if (data.success) {
             console.log('User information Updated Successfully');
-            
+
         } else {
             console.error('User information Update not successfull');
         }

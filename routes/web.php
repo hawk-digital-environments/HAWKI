@@ -89,6 +89,7 @@ Route::middleware('prevent_back')->group(function () {
 
             Route::get('/req/room/{slug?}', [RoomController::class, 'load']);
             Route::post('/req/room/createRoom', [RoomController::class, 'create']);
+
             Route::delete('/req/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom']);
             Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
             Route::get('/req/room/attachment/getLink/{uuid}', [RoomController::class, 'getAttachmentUrl']);
@@ -105,6 +106,7 @@ Route::middleware('prevent_back')->group(function () {
 
             Route::middleware('roomAdmin')->group(function () {
                 Route::post('/req/room/updateInfo/{slug}', [RoomController::class, 'update']);
+                Route::post('/req/room/uploadAvatar/{slug}', [RoomController::class, 'uploadAvatar']);
                 Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'delete']);
                 Route::post('/req/room/addMember/{slug}', [RoomController::class, 'addMember']);
                 Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'kickMember']);
@@ -135,6 +137,7 @@ Route::middleware('prevent_back')->group(function () {
         // Profile
         Route::get('/profile', [HomeController::class, 'index']);
         Route::post('/req/profile/update', [ProfileController::class, 'update']);
+        Route::post('/req/profile/uploadAvatar', [ProfileController::class, 'uploadAvatar']);
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
 
         Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileRest']);
