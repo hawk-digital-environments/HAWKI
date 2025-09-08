@@ -2,32 +2,36 @@
 
 namespace App\Services\AI\Providers;
 
+use App\Services\Citations\CitationService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Services\Citations\CitationService;
 
 class AnthropicProvider extends BaseAIModelProvider
 {
+    use WebSearchTrait;
+
     /**
      * Citation service for unified citation formatting
      */
     private CitationService $citationService;
-    
+
     /**
      * Accumulated web search citations during stream processing
      */
     private array $webSearchCitations = [];
-    
+
     /**
      * Accumulated web search sources (from web_search_tool_result)
      */
     private array $webSearchSources = [];
-    
+
     /**
      * Track current text block and associated citations
      */
     private int $currentBlockIndex = -1;
+
     private array $blockCitations = [];
+
     private bool $inTextBlock = false;
 
     /**
@@ -107,17 +111,7 @@ class AnthropicProvider extends BaseAIModelProvider
         // Add Web Search Tool if enabled
         $additionalSettings = $this->config['additional_settings'] ?? [];
         // Check if model supports search based on database information
-        $supportsSearch = $this->modelSupportsSearch($modelId);
-
-        if ($supportsSearch) {
-            $payload['tools'] = $rawPayload['tools'] ?? [
-                [
-                    'type' => 'web_search_20250305',
-                    'name' => 'web_search',
-                    'max_uses' => 5,
-                ],
-            ];
-        }
+        $this->addWebSearchTools($payload, $modelId, $rawPayload);
 
         return $payload;
     }
@@ -137,13 +131,13 @@ class AnthropicProvider extends BaseAIModelProvider
                     'text' => '',
                     'groundingMetadata' => null,
                 ],
-                'usage' => null
+                'usage' => null,
             ];
         }
 
         $content = '';
         $groundingMetadata = null;
-        
+
         if (isset($data['content'][0]['text'])) {
             $content = $data['content'][0]['text'];
         }
@@ -156,7 +150,7 @@ class AnthropicProvider extends BaseAIModelProvider
                 if (isset($contentBlock['content'])) {
                     $this->parseWebSearchSources($contentBlock['content']);
                 }
-                
+
                 // Note: Citations will be formatted later when final message text is available
             }
         }
@@ -175,7 +169,7 @@ class AnthropicProvider extends BaseAIModelProvider
                 'text' => $content,
                 'groundingMetadata' => $groundingMetadata,
             ],
-            'usage' => $usage
+            'usage' => $usage,
         ];
     }
 
@@ -199,15 +193,15 @@ class AnthropicProvider extends BaseAIModelProvider
             $groundingMetadata = $result['groundingMetadata'] ?? null;
         } else {
             // Fallback: Try SSE format parsing (for chunks with multiple events)
-            $lines = explode("
-", $chunk);
+            $lines = explode('
+', $chunk);
 
             foreach ($lines as $line) {
                 $line = trim($line);
 
                 if (strpos($line, 'data: ') === 0) {
                     $jsonData = substr($line, 6);
-                    
+
                     if (empty($jsonData) || $jsonData === '{"type": "ping"}') {
                         continue;
                     }
@@ -216,8 +210,12 @@ class AnthropicProvider extends BaseAIModelProvider
                     if ($data && isset($data['type'])) {
                         $result = $this->processAnthropicEvent($data);
                         $content .= $result['content']; // Accumulate content from multiple events
-                        if ($result['isDone']) $isDone = true;
-                        if ($result['usage']) $usage = $result['usage'];
+                        if ($result['isDone']) {
+                            $isDone = true;
+                        }
+                        if ($result['usage']) {
+                            $usage = $result['usage'];
+                        }
                         if (isset($result['groundingMetadata']) && $result['groundingMetadata']) {
                             $groundingMetadata = $result['groundingMetadata'];
                         }
@@ -227,15 +225,15 @@ class AnthropicProvider extends BaseAIModelProvider
         }
 
         // Format final citations if we have sources and the message is complete
-        if ($isDone && !empty($this->webSearchSources)) {
+        if ($isDone && ! empty($this->webSearchSources)) {
             Log::debug('AnthropicProvider: Formatting citations for completed message', [
                 'sources_count' => count($this->webSearchSources),
                 'citations_count' => count($this->webSearchCitations),
-                'message_length' => strlen($content)
+                'message_length' => strlen($content),
             ]);
             $groundingMetadata = $this->formatCitations($content);
             Log::debug('AnthropicProvider: Citations formatted', [
-                'has_metadata' => !is_null($groundingMetadata)
+                'has_metadata' => ! is_null($groundingMetadata),
             ]);
         }
 
@@ -272,7 +270,7 @@ class AnthropicProvider extends BaseAIModelProvider
             case 'content_block_start':
                 // Content block has started
                 $this->currentBlockIndex = $data['index'] ?? $this->currentBlockIndex + 1;
-                
+
                 if (isset($data['content_block']['type'])) {
                     switch ($data['content_block']['type']) {
                         case 'web_search_tool_result':
@@ -283,20 +281,20 @@ class AnthropicProvider extends BaseAIModelProvider
                                 $this->parseWebSearchSources($data['content_block']['content']);
                             }
                             break;
-                            
+
                         case 'server_tool_use':
                             // Server tool use (like web search) starting - no visible content
-                            //Log::debug('AnthropicProvider: Server tool use started (UPDATED CODE)', [
+                            // Log::debug('AnthropicProvider: Server tool use started (UPDATED CODE)', [
                             //    'tool_name' => $data['content_block']['name'] ?? 'unknown',
                             //    'tool_id' => $data['content_block']['id'] ?? 'unknown'
-                            //]);
+                            // ]);
                             break;
-                            
+
                         case 'text':
                             // Regular text block starting - check if it has citations
                             $this->inTextBlock = true;
                             $this->blockCitations[$this->currentBlockIndex] = [];
-                            
+
                             // Check if this block has citations attached
                             if (isset($data['content_block']['citations']) && is_array($data['content_block']['citations'])) {
                                 foreach ($data['content_block']['citations'] as $citation) {
@@ -304,7 +302,7 @@ class AnthropicProvider extends BaseAIModelProvider
                                 }
                             }
                             break;
-                            
+
                         default:
                             Log::debug('AnthropicProvider unknown content block type:', ['type' => $data['content_block']['type']]);
                             break;
@@ -316,11 +314,11 @@ class AnthropicProvider extends BaseAIModelProvider
                 // Content block has ended
                 if ($this->inTextBlock) {
                     $this->inTextBlock = false;
-                    
+
                     // Add inline citations if we have any for this block
-                    if (isset($this->blockCitations[$this->currentBlockIndex]) && 
-                        !empty($this->blockCitations[$this->currentBlockIndex])) {
-                        
+                    if (isset($this->blockCitations[$this->currentBlockIndex]) &&
+                        ! empty($this->blockCitations[$this->currentBlockIndex])) {
+
                         // Generate the citation numbers for this block as separate content
                         $content = $this->addInlineCitations('');
                     }
@@ -335,13 +333,13 @@ class AnthropicProvider extends BaseAIModelProvider
                             // Regular text content
                             if (isset($data['delta']['text'])) {
                                 $content = $data['delta']['text'];
-                                
+
                                 // Don't add inline citations here - they will be added at content_block_stop
-                                
+
                                 // Note: Citations will be formatted later when final message text is available
                             }
                             break;
-                            
+
                         case 'citations_delta':
                             // Web search citations - parse and store with text position
                             if (isset($data['delta']['citation'])) {
@@ -354,14 +352,14 @@ class AnthropicProvider extends BaseAIModelProvider
                                 }
                             }
                             break;
-                            
+
                         case 'input_json_delta':
                             // Web Search tool input being streamed - no visible content but log for debugging
-                            //Log::debug('AnthropicProvider: Web search tool input', [
+                            // Log::debug('AnthropicProvider: Web search tool input', [
                             //    'partial_json' => $data['delta']['partial_json'] ?? ''
-                            //]);
+                            // ]);
                             break;
-                            
+
                         default:
                             Log::debug('AnthropicProvider unknown delta type:', ['type' => $data['delta']['type'], 'delta' => $data['delta']]);
                             break;
@@ -393,7 +391,7 @@ class AnthropicProvider extends BaseAIModelProvider
             case 'message_stop':
                 // Message has completely finished
                 $isDone = true;
-                
+
                 // Note: Final citations will be formatted in formatStreamChunk when complete text is available
                 break;
 
@@ -408,10 +406,10 @@ class AnthropicProvider extends BaseAIModelProvider
         }
 
         return [
-            'content' => $content, 
-            'isDone' => $isDone, 
+            'content' => $content,
+            'isDone' => $isDone,
             'usage' => $usage,
-            'groundingMetadata' => $groundingMetadata
+            'groundingMetadata' => $groundingMetadata,
         ];
     }
 
@@ -423,23 +421,23 @@ class AnthropicProvider extends BaseAIModelProvider
     {
         Log::debug('AnthropicProvider: Parsing web search sources', [
             'incoming_results_count' => count($searchContent),
-            'current_sources_count' => count($this->webSearchSources)
+            'current_sources_count' => count($this->webSearchSources),
         ]);
-        
+
         foreach ($searchContent as $result) {
             if (isset($result['type']) && $result['type'] === 'web_search_result') {
                 $source = [
                     'title' => $result['title'] ?? '',
                     'url' => $result['url'] ?? '',
                     'content' => $result['encrypted_content'] ?? $result['content'] ?? '',
-                    'page_age' => $result['page_age'] ?? null
+                    'page_age' => $result['page_age'] ?? null,
                 ];
                 $this->webSearchSources[] = $source;
             }
         }
-        
+
         Log::debug('AnthropicProvider: Web search sources parsed', [
-            'total_sources_count' => count($this->webSearchSources)
+            'total_sources_count' => count($this->webSearchSources),
         ]);
     }
 
@@ -454,30 +452,30 @@ class AnthropicProvider extends BaseAIModelProvider
             $title = $citation['title'] ?? '';
             $url = $citation['url'] ?? '';
             $citedText = $citation['cited_text'] ?? '';
-            
+
             $citationData = [
                 'title' => $title,
                 'url' => $url,
                 'content' => $citedText,  // This is the actual cited text
-                'cited_text' => $citedText  // Keep both for compatibility
+                'cited_text' => $citedText,  // Keep both for compatibility
             ];
-            
+
             // Check if this citation already exists (avoid duplicates by URL + cited_text)
             $exists = false;
             foreach ($this->webSearchCitations as $existingCitation) {
-                if ($existingCitation['url'] === $citationData['url'] && 
+                if ($existingCitation['url'] === $citationData['url'] &&
                     $existingCitation['cited_text'] === $citationData['cited_text']) {
                     $exists = true;
                     break;
                 }
             }
-            
-            if (!$exists) {
+
+            if (! $exists) {
                 $this->webSearchCitations[] = $citationData;
-                
+
                 // Add to current block citations if we're in a text block
                 if ($this->inTextBlock && $this->currentBlockIndex >= 0) {
-                    if (!isset($this->blockCitations[$this->currentBlockIndex])) {
+                    if (! isset($this->blockCitations[$this->currentBlockIndex])) {
                         $this->blockCitations[$this->currentBlockIndex] = [];
                     }
                     $this->blockCitations[$this->currentBlockIndex][] = $citationData;
@@ -488,8 +486,8 @@ class AnthropicProvider extends BaseAIModelProvider
 
     /**
      * Format citations using the unified Citation Service
-     * 
-     * @param string $messageText The current message text with inline citations
+     *
+     * @param  string  $messageText  The current message text with inline citations
      * @return array|null Formatted citation data or null if no citations
      */
     private function formatCitations(string $messageText): ?array
@@ -497,6 +495,7 @@ class AnthropicProvider extends BaseAIModelProvider
         // We need both search sources AND citations for proper formatting
         if (empty($this->webSearchSources) && empty($this->webSearchCitations)) {
             Log::debug('AnthropicProvider: No search sources or citations to format');
+
             return null;
         }
 
@@ -504,13 +503,13 @@ class AnthropicProvider extends BaseAIModelProvider
             'sources_count' => count($this->webSearchSources),
             'citations_count' => count($this->webSearchCitations),
             'sources' => $this->webSearchSources,
-            'citations' => $this->webSearchCitations
+            'citations' => $this->webSearchCitations,
         ]);
 
         // For Anthropic, we use the search sources as the primary data
         // The citations (web_search_result_location) contain the cited_text but reference the same URLs
         $providerData = [
-            'groundingChunks' => []
+            'groundingChunks' => [],
         ];
 
         // Use search sources as the primary data for Citation Service
@@ -518,61 +517,41 @@ class AnthropicProvider extends BaseAIModelProvider
             $providerData['groundingChunks'][] = [
                 'web' => [
                     'title' => $source['title'],
-                    'uri' => $source['url']
-                ]
+                    'uri' => $source['url'],
+                ],
             ];
         }
 
         Log::debug('AnthropicProvider: Calling CitationService', [
-            'provider_data' => $providerData
+            'provider_data' => $providerData,
         ]);
 
         // Use the unified citation service
         $result = $this->citationService->formatCitations('anthropic', $providerData, $messageText);
-        
+
         Log::debug('AnthropicProvider: CitationService result', [
-            'has_result' => !is_null($result),
-            'result' => $result
+            'has_result' => ! is_null($result),
+            'result' => $result,
         ]);
-        
+
         return $result;
     }
 
     /**
-     * Check if a model supports Web Search functionality
+     * Get Anthropic-specific web search tool configuration
      */
-    public function modelSupportsSearch(string $modelId): bool
+    public function getWebSearchToolConfig(): array
     {
-        // Primary: Check database model settings
-        try {
-            $modelDetails = $this->getModelDetails($modelId);
-            
-            if (is_array($modelDetails)) {
-                // Check if search_tool is in the top level (from information field)
-                if (isset($modelDetails['search_tool'])) {
-                    return (bool) $modelDetails['search_tool'];
-                }
+        return [
+            [
+                'type' => 'web_search_20250305',
+                'name' => 'web_search',
+                'max_uses' => 5,
+            ],
+        ];
+    }
 
-                // Check if search_tool is in the settings sub-array
-                if (isset($modelDetails['settings']['search_tool'])) {
-                    return (bool) $modelDetails['settings']['search_tool'];
-                }
-            }
-        } catch (\Exception $e) {
-            // If database check fails, fall back to model name analysis
-            Log::warning('Failed to get model details for search check: '.$e->getMessage());
-        }
-
-        // Fallback: Only Claude Opus 4+ models support web search
-        $modelIdLower = strtolower($modelId);
-        
-        // Check if it's Claude Opus 4 or newer
-        return strpos($modelIdLower, 'claude-opus-4') !== false ||
-               strpos($modelIdLower, 'claude-sonnet-4') !== false ||
-               strpos($modelIdLower, 'claude-sonnet-3.7') !== false ||
-               strpos($modelIdLower, 'claude-3-5-sonnet') !== false ||
-               strpos($modelIdLower, 'claude-3-5-haiku') !== false;
-    }    /**
+    /**
      * Make a non-streaming request to Anthropic
      *
      * @return mixed
@@ -642,8 +621,8 @@ class AnthropicProvider extends BaseAIModelProvider
 
     /**
      * Add inline citations to text content
-     * 
-     * @param string $content The text content to add citations to
+     *
+     * @param  string  $content  The text content to add citations to
      * @return string The content with inline citation numbers
      */
     private function addInlineCitations(string $content): string
@@ -655,7 +634,7 @@ class AnthropicProvider extends BaseAIModelProvider
         // Get citations for this block and add them as footnotes
         $citations = $this->blockCitations[$this->currentBlockIndex];
         $citationNumbers = [];
-        
+
         foreach ($citations as $citation) {
             // Find the citation number based on its position in webSearchSources (not webSearchCitations)
             // because webSearchSources are the actual sources that become numbered in the UI
@@ -666,21 +645,21 @@ class AnthropicProvider extends BaseAIModelProvider
                 }
             }
         }
-        
+
         // Add citation numbers - if content is empty, just return the citations
-        if (!empty($citationNumbers)) {
+        if (! empty($citationNumbers)) {
             $footnotes = implode(',', array_unique($citationNumbers));
             if (empty($content)) {
                 // This is called from content_block_stop, just return the citation markers
                 $result = " [{$footnotes}]";
             } else {
                 // This would be called from text_delta (currently disabled)
-                $result = $content . " [{$footnotes}]";
+                $result = $content." [{$footnotes}]";
             }
-            
+
             return $result;
         }
-        
+
         return $content;
     }
 }

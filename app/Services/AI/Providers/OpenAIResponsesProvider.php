@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
  */
 class OpenAIResponsesProvider extends BaseAIModelProvider
 {
+    use WebSearchTrait;
+
     /**
      * Citation service for unified citation formatting
      */
@@ -235,20 +237,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         }
 
         // Add tools support (including web search)
-        $supportsSearch = $this->modelSupportsSearch($modelId);
-        if ($supportsSearch) {
-            // Add web search tool if not explicitly provided
-            if (! isset($rawPayload['tools'])) {
-                $payload['tools'] = [
-                    ['type' => 'web_search'],
-                ];
-            } else {
-                $payload['tools'] = $rawPayload['tools'];
-            }
-        } elseif (isset($rawPayload['tools'])) {
-            // Only add tools if model supports them and they were explicitly provided
-            $payload['tools'] = $rawPayload['tools'];
-        }
+        $this->addWebSearchTools($payload, $modelId, $rawPayload);
 
         return $payload;
     }
@@ -393,13 +382,13 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                 if (isset($jsonChunk['part']['text'])) {
                     $this->fullMessageText = $jsonChunk['part']['text']; // Use complete text from content part
                 }
-                
+
                 // Process annotations from content part
                 if (isset($jsonChunk['part']['annotations'])) {
                     Log::info('[OpenAI Responses] Processing annotations from content part', [
-                        'count' => count($jsonChunk['part']['annotations'])
+                        'count' => count($jsonChunk['part']['annotations']),
                     ]);
-                    
+
                     foreach ($jsonChunk['part']['annotations'] as $annotation) {
                         if ($annotation['type'] === 'url_citation') {
                             $this->parseAnnotation($annotation);
@@ -440,16 +429,16 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                 if (isset($jsonChunk['item']['type']) && $jsonChunk['item']['type'] === 'web_search_call') {
                     $this->parseWebSearchCall($jsonChunk['item']);
                 }
-                
+
                 // Handle completed message items with annotations
                 if (isset($jsonChunk['item']['type']) && $jsonChunk['item']['type'] === 'message') {
                     if (isset($jsonChunk['item']['content'])) {
                         foreach ($jsonChunk['item']['content'] as $contentItem) {
                             if ($contentItem['type'] === 'output_text' && isset($contentItem['annotations'])) {
                                 Log::info('[OpenAI Responses] Processing annotations from message item', [
-                                    'count' => count($contentItem['annotations'])
+                                    'count' => count($contentItem['annotations']),
                                 ]);
-                                
+
                                 foreach ($contentItem['annotations'] as $annotation) {
                                     if ($annotation['type'] === 'url_citation') {
                                         $this->parseAnnotation($annotation);
@@ -524,9 +513,9 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                 'webSearchSources_count' => count($this->webSearchSources),
                 'searchQueries_count' => count($this->searchQueries),
                 'annotations_count' => count($this->annotations),
-                'fullMessageText_length' => strlen($this->fullMessageText)
+                'fullMessageText_length' => strlen($this->fullMessageText),
             ]);
-            
+
             $citationData = [
                 'webSearchSources' => $this->webSearchSources,
                 'searchQueries' => $this->searchQueries,
@@ -539,7 +528,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
             $formattedCitations = $this->citationService->formatCitations('openai_responses', $citationData, $messageText);
 
             Log::info('[OpenAI Responses] CitationService result', [
-                'formattedCitations' => $formattedCitations
+                'formattedCitations' => $formattedCitations,
             ]);
 
             if (! empty($formattedCitations)) {
@@ -624,46 +613,13 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
     }
 
     /**
-     * Check if a model supports Web Search functionality
+     * Get OpenAI Responses-specific web search tool configuration
      */
-    public function modelSupportsSearch(string $modelId): bool
+    public function getWebSearchToolConfig(): array
     {
-        // Primary: Check database model settings for web_search capability
-        try {
-            $modelDetails = $this->getModelDetails($modelId);
-
-            if (is_array($modelDetails)) {
-                // Check if web_search is in the settings array
-                if (isset($modelDetails['settings'])) {
-                    $settings = is_array($modelDetails['settings'])
-                        ? $modelDetails['settings']
-                        : json_decode($modelDetails['settings'], true);
-
-                    // Settings should be a direct array, not nested
-                    if (isset($settings['web_search']) && $settings['web_search'] === true) {
-                        return true;
-                    }
-                }
-
-                // Check if web_search is in the top level (from information field)
-                if (isset($modelDetails['web_search'])) {
-                    return (bool) $modelDetails['web_search'];
-                }
-            }
-        } catch (\Exception $e) {
-            // If database check fails, fall back to model name analysis
-            Log::warning('Failed to get model details for web search check: '.$e->getMessage());
-        }
-
-        // Fallback: Based on OpenAI documentation, web search is available for:
-        // gpt-4o-mini, gpt-4o, gpt-4.1-mini, gpt-4.1, o4-mini, o3, gpt-5
-        $modelIdLower = strtolower($modelId);
-
-        return strpos($modelIdLower, 'gpt-4o') === 0 ||
-               strpos($modelIdLower, 'gpt-4.1') === 0 ||
-               strpos($modelIdLower, 'o4-mini') === 0 ||
-               strpos($modelIdLower, 'o3') === 0 ||
-               strpos($modelIdLower, 'gpt-5') === 0;
+        return [
+            ['type' => 'web_search'],
+        ];
     }
 
     /**
@@ -813,7 +769,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
             // Also add to webSearchSources for unified source listing
             $url = $annotation['url'] ?? null;
             $title = $annotation['title'] ?? null;
-            
+
             if ($url && $title) {
                 // Check if this source is already in webSearchSources (avoid duplicates)
                 $sourceExists = false;
@@ -823,8 +779,8 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                         break;
                     }
                 }
-                
-                if (!$sourceExists) {
+
+                if (! $sourceExists) {
                     $this->webSearchSources[] = [
                         'url' => $url,
                         'title' => $title,

@@ -3,12 +3,14 @@
 namespace App\Services\AI\Providers;
 
 use App\Models\ProviderSetting;
+use App\Services\Citations\CitationService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use App\Services\Citations\CitationService;
 
 class GoogleProvider extends BaseAIModelProvider
 {
+    use WebSearchTrait;
+
     /**
      * Citation service for unified citation formatting
      */
@@ -88,22 +90,14 @@ class GoogleProvider extends BaseAIModelProvider
         $payload['generationConfig'] = $rawPayload['generationConfig'] ?? [
             // 'stopSequences' => ["Title"],
             'temperature' => 1.0,
-            //'maxOutputTokens' => 800,
+            // 'maxOutputTokens' => 800,
             'topP' => 0.8,
             'topK' => 10,
         ];
 
         // Web Search Tool - controlled purely by model settings
         // No provider-level check needed, only model-specific settings matter
-        $supportsSearch = $this->modelSupportsSearch($modelId);
-
-        if ($supportsSearch) {
-            $payload['tools'] = $rawPayload['tools'] ?? [
-                [
-                    'google_search' => new \stdClass,
-                ],
-            ];
-        }
+        $this->addWebSearchTools($payload, $modelId, $rawPayload);
 
         return $payload;
     }
@@ -120,10 +114,10 @@ class GoogleProvider extends BaseAIModelProvider
 
         $content = $jsonContent['candidates'][0]['content']['parts'][0]['text'] ?? '';
         $rawGroundingMetadata = $jsonContent['candidates'][0]['groundingMetadata'] ?? '';
-        
+
         // Format citations using unified service
         $groundingMetadata = '';
-        if (!empty($rawGroundingMetadata)) {
+        if (! empty($rawGroundingMetadata)) {
             $formattedCitations = $this->citationService->formatCitations('google', $rawGroundingMetadata, $content);
             $groundingMetadata = $formattedCitations;
         }
@@ -139,14 +133,14 @@ class GoogleProvider extends BaseAIModelProvider
 
     /**
      * Format a single chunk from a streaming response from Google
-     * 
+     *
      * This method processes raw SSE chunk data and extracts structured content.
      * It returns the raw formatted data but does NOT handle UI-specific formatting
      * or provider-specific streaming behavior (like Google's content+completion splitting).
-     * 
+     *
      * Use formatStreamMessages() instead for complete frontend-ready messages.
-     * 
-     * @param string $chunk Raw SSE chunk data (JSON string)
+     *
+     * @param  string  $chunk  Raw SSE chunk data (JSON string)
      * @return array Raw formatted data: ['content' => array, 'isDone' => bool, 'usage' => ?array]
      */
     public function formatStreamChunk(string $chunk): array
@@ -167,7 +161,7 @@ class GoogleProvider extends BaseAIModelProvider
         // Add search results
         if (isset($jsonChunk['candidates'][0]['groundingMetadata'])) {
             $rawGroundingMetadata = $jsonChunk['candidates'][0]['groundingMetadata'];
-            
+
             // Format citations using unified service
             $formattedCitations = $this->citationService->formatCitations('google', $rawGroundingMetadata, $content);
             $groundingMetadata = $formattedCitations;
@@ -196,30 +190,30 @@ class GoogleProvider extends BaseAIModelProvider
 
     /**
      * Google-specific implementation: Split final chunks into content + completion messages
-     * 
+     *
      * This method takes raw chunk data and creates COMPLETE, FRONTEND-READY messages.
      * Unlike formatStreamChunk() which only extracts data, this method:
-     * 
+     *
      * 1. Handles Google's specific streaming behavior (content first, then completion)
      * 2. Creates fully-formed message objects with author, model, etc.
      * 3. Returns an array of messages ready to be sent directly to the frontend
      * 4. Eliminates the need for provider-specific logic in StreamController
-     * 
+     *
      * For Google: When isDone=true AND has content, splits into 2 messages:
-     * - Message 1: Content with isDone=false 
+     * - Message 1: Content with isDone=false
      * - Message 2: Empty completion signal with isDone=true + usage data
-     * 
-     * @param string $chunk Raw SSE chunk data (same input as formatStreamChunk)
-     * @param array $messageContext UI context (author, model info) from StreamController
+     *
+     * @param  string  $chunk  Raw SSE chunk data (same input as formatStreamChunk)
+     * @param  array  $messageContext  UI context (author, model info) from StreamController
      * @return array Array of complete messages ready for frontend: [['author'=>..., 'model'=>..., 'isDone'=>..., 'content'=>..., 'usage'=>...], ...]
      */
     public function formatStreamMessages(string $chunk, array $messageContext): array
     {
         $formatted = $this->formatStreamChunk($chunk);
-        
-        // Special Google handling: If this is a final chunk with content, 
+
+        // Special Google handling: If this is a final chunk with content,
         // send content first, then completion
-        if ($formatted['isDone'] && !empty($formatted['content']['text'])) {
+        if ($formatted['isDone'] && ! empty($formatted['content']['text'])) {
             return [
                 // Content message first
                 [
@@ -236,9 +230,9 @@ class GoogleProvider extends BaseAIModelProvider
                     'isDone' => true, // Now we're done
                     'content' => json_encode(['text' => '', 'groundingMetadata' => '']),
                     'usage' => $formatted['usage'], // Usage only on final message
-                ]
+                ],
             ];
-        } else if ($formatted['isDone']) {
+        } elseif ($formatted['isDone']) {
             // Final chunk with no content (e.g., MAX_TOKENS finish reason)
             // Send only completion message
             return [[
@@ -500,9 +494,10 @@ class GoogleProvider extends BaseAIModelProvider
     {
         if (! empty($this->config['api_key'])) {
             $separator = strpos($baseUrl, '?') !== false ? '&' : '?';
-            return $baseUrl . $separator . 'key=' . $this->config['api_key'];
+
+            return $baseUrl.$separator.'key='.$this->config['api_key'];
         }
-        
+
         return $baseUrl;
     }
 
@@ -550,45 +545,14 @@ class GoogleProvider extends BaseAIModelProvider
     }
 
     /**
-     * Check if a model supports Google Search functionality
+     * Get Google-specific web search tool configuration
      */
-    private function modelSupportsSearch(string $modelId): bool
+    public function getWebSearchToolConfig(): array
     {
-        // Check database model settings
-        try {
-            // First try to find model by system_id (UUID), then by model_id
-            $model = \App\Models\LanguageModel::where('system_id', $modelId)
-                ->orWhere('model_id', $modelId)
-                ->where('is_active', true)
-                ->first();
-            
-            if (!$model) {
-                Log::warning("Model not found for search check: $modelId");
-                return false;
-            }
-            
-            // Parse settings
-            $settings = is_array($model->settings) ? 
-                       $model->settings : 
-                       json_decode($model->settings, true);
-            
-            if (is_array($settings)) {
-                // Check for web_search in settings (Google-specific)
-                if (isset($settings[0]['web_search'])) {
-                    return (bool) $settings[0]['web_search'];
-                }
-                
-                // Also check for search_tool (general fallback)
-                if (isset($settings[0]['search_tool'])) {
-                    return (bool) $settings[0]['search_tool'];
-                }
-            }
-            
-        } catch (\Exception $e) {
-            Log::warning('Failed to get model details for search check: '.$e->getMessage());
-        }
-
-        // No fallback - only use database settings
-        return false;
+        return [
+            [
+                'google_search' => new \stdClass,
+            ],
+        ];
     }
 }
