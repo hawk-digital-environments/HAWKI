@@ -88,7 +88,7 @@ class GoogleProvider extends BaseAIModelProvider
         $payload['generationConfig'] = $rawPayload['generationConfig'] ?? [
             // 'stopSequences' => ["Title"],
             'temperature' => 1.0,
-            'maxOutputTokens' => 800,
+            //'maxOutputTokens' => 800,
             'topP' => 0.8,
             'topK' => 10,
         ];
@@ -238,6 +238,16 @@ class GoogleProvider extends BaseAIModelProvider
                     'usage' => $formatted['usage'], // Usage only on final message
                 ]
             ];
+        } else if ($formatted['isDone']) {
+            // Final chunk with no content (e.g., MAX_TOKENS finish reason)
+            // Send only completion message
+            return [[
+                'author' => $messageContext['author'],
+                'model' => $messageContext['model'],
+                'isDone' => true,
+                'content' => json_encode(['text' => '', 'groundingMetadata' => '']),
+                'usage' => $formatted['usage'],
+            ]];
         } else {
             // Normal single message
             return [[
@@ -544,21 +554,36 @@ class GoogleProvider extends BaseAIModelProvider
      */
     private function modelSupportsSearch(string $modelId): bool
     {
-        // Check database model settings (same logic as Anthropic Provider)
+        // Check database model settings
         try {
-            $modelDetails = $this->getModelDetails($modelId);
+            // First try to find model by system_id (UUID), then by model_id
+            $model = \App\Models\LanguageModel::where('system_id', $modelId)
+                ->orWhere('model_id', $modelId)
+                ->where('is_active', true)
+                ->first();
             
-            if (is_array($modelDetails)) {
-                // Check if search_tool is in the settings sub-array (primary location)
-                if (isset($modelDetails['settings']['search_tool'])) {
-                    return (bool) $modelDetails['settings']['search_tool'];
+            if (!$model) {
+                Log::warning("Model not found for search check: $modelId");
+                return false;
+            }
+            
+            // Parse settings
+            $settings = is_array($model->settings) ? 
+                       $model->settings : 
+                       json_decode($model->settings, true);
+            
+            if (is_array($settings)) {
+                // Check for web_search in settings (Google-specific)
+                if (isset($settings[0]['web_search'])) {
+                    return (bool) $settings[0]['web_search'];
                 }
-
-                // Fallback: Check if search_tool is in the top level (from information field)
-                if (isset($modelDetails['search_tool'])) {
-                    return (bool) $modelDetails['search_tool'];
+                
+                // Also check for search_tool (general fallback)
+                if (isset($settings[0]['search_tool'])) {
+                    return (bool) $settings[0]['search_tool'];
                 }
             }
+            
         } catch (\Exception $e) {
             Log::warning('Failed to get model details for search check: '.$e->getMessage());
         }

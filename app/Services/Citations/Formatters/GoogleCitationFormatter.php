@@ -6,7 +6,7 @@ use App\Services\Citations\Contracts\CitationFormatterInterface;
 
 /**
  * Google Citation Formatter
- * 
+ *
  * Converts Google's grounding metadata format to HAWKI's unified citation format
  */
 class GoogleCitationFormatter implements CitationFormatterInterface
@@ -28,7 +28,7 @@ class GoogleCitationFormatter implements CitationFormatterInterface
                         'id' => $index + 1, // 1-based indexing
                         'title' => $chunk['web']['title'] ?? '',
                         'url' => $chunk['web']['uri'] ?? '',
-                        'snippet' => $chunk['web']['snippet'] ?? ''
+                        'snippet' => $chunk['web']['snippet'] ?? '',
                     ];
                 }
             }
@@ -40,7 +40,7 @@ class GoogleCitationFormatter implements CitationFormatterInterface
                 if (isset($support['segment']['text']) && isset($support['groundingChunkIndices'])) {
                     $textSegments[] = [
                         'text' => $support['segment']['text'],
-                        'citationIds' => array_map(fn($idx) => $idx + 1, $support['groundingChunkIndices']) // Convert to 1-based
+                        'citationIds' => array_map(fn ($idx) => $idx + 1, $support['groundingChunkIndices']), // Convert to 1-based
                     ];
                 }
             }
@@ -50,7 +50,7 @@ class GoogleCitationFormatter implements CitationFormatterInterface
         if (isset($providerData['searchEntryPoint'])) {
             $searchMetadata = [
                 'query' => $providerData['searchEntryPoint']['searchQuery'] ?? '',
-                'renderedContent' => $providerData['searchEntryPoint']['renderedContent'] ?? ''
+                'renderedContent' => $providerData['searchEntryPoint']['renderedContent'] ?? '',
             ];
         }
 
@@ -60,12 +60,12 @@ class GoogleCitationFormatter implements CitationFormatterInterface
             'citations' => $citations,
             'text_processing' => [
                 'mode' => 'segments',
-                'text_segments' => $textSegments
+                'text_segments' => $textSegments,
             ],
             'searchMetadata' => $searchMetadata,
-            
+
             // Backwards compatibility - keep old format for transition
-            'textSegments' => $textSegments // Legacy support
+            'textSegments' => $textSegments, // Legacy support
         ];
     }
 
@@ -74,9 +74,9 @@ class GoogleCitationFormatter implements CitationFormatterInterface
      */
     public function hasCitations(array $providerData): bool
     {
-        return !empty($providerData['groundingChunks']) || 
-               !empty($providerData['groundingSupports']) ||
-               !empty($providerData['searchEntryPoint']);
+        return ! empty($providerData['groundingChunks']) ||
+               ! empty($providerData['groundingSupports']) ||
+               ! empty($providerData['searchEntryPoint']);
     }
 
     /**

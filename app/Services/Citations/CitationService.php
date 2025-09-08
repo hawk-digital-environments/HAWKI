@@ -3,12 +3,13 @@
 namespace App\Services\Citations;
 
 use App\Services\Citations\Contracts\CitationFormatterInterface;
-use App\Services\Citations\Formatters\GoogleCitationFormatter;
 use App\Services\Citations\Formatters\AnthropicCitationFormatter;
+use App\Services\Citations\Formatters\GoogleCitationFormatter;
+use App\Services\Citations\Formatters\OpenAIResponsesCitationFormatter;
 
 /**
  * Unified Citation Service for HAWKI
- * 
+ *
  * Converts provider-specific citation formats into a standardized HAWKI format
  */
 class CitationService
@@ -26,16 +27,16 @@ class CitationService
     /**
      * Format provider-specific citation data into HAWKI's unified format
      *
-     * @param string $provider Provider name (e.g., 'google', 'anthropic')
-     * @param array $providerData Raw citation data from the provider
-     * @param string $messageText The AI-generated message text
+     * @param  string  $provider  Provider name (e.g., 'google', 'anthropic')
+     * @param  array  $providerData  Raw citation data from the provider
+     * @param  string  $messageText  The AI-generated message text
      * @return array|null Formatted citation data or null if no citations
      */
     public function formatCitations(string $provider, array $providerData, string $messageText): ?array
     {
         $formatter = $this->getFormatter($provider);
-        
-        if (!$formatter || !$formatter->hasCitations($providerData)) {
+
+        if (! $formatter || ! $formatter->hasCitations($providerData)) {
             return null;
         }
 
@@ -63,13 +64,14 @@ class CitationService
      */
     private function registerDefaultFormatters(): void
     {
-        $this->registerFormatter(new GoogleCitationFormatter());
-        $this->registerFormatter(new AnthropicCitationFormatter());
+        $this->registerFormatter(new GoogleCitationFormatter);
+        $this->registerFormatter(new AnthropicCitationFormatter);
+        $this->registerFormatter(new OpenAIResponsesCitationFormatter);
     }
 
     /**
      * Get HAWKI Citation Format Schema for documentation
-     * 
+     *
      * @return array The standard format structure
      */
     public static function getStandardFormat(): array
@@ -80,19 +82,19 @@ class CitationService
                     'id' => 'int - Unique citation ID (1-based)',
                     'title' => 'string - Source title',
                     'url' => 'string - Source URL',
-                    'snippet' => 'string - Relevant text snippet (optional)'
-                ]
+                    'snippet' => 'string - Relevant text snippet (optional)',
+                ],
             ],
             'textSegments' => [
                 [
                     'text' => 'string - Text segment that needs citations',
-                    'citationIds' => 'array - Array of citation IDs that apply to this text'
-                ]
+                    'citationIds' => 'array - Array of citation IDs that apply to this text',
+                ],
             ],
             'searchMetadata' => [
                 'query' => 'string - Original search query (optional)',
-                'renderedContent' => 'string - Provider-specific rendered content (optional)'
-            ]
+                'renderedContent' => 'string - Provider-specific rendered content (optional)',
+            ],
         ];
     }
 }

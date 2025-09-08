@@ -274,6 +274,18 @@ class StreamController extends Controller
             true, 
             $onData
         );
+        
+        // Safety measure: Ensure stream ends with a completion message
+        // This prevents "No messageObj available at stream completion" errors
+        $finalMessage = [
+            'author' => 'assistant',
+            'model' => $payload['model'],
+            'content' => json_encode(['text' => '', 'groundingMetadata' => null]),
+            'isDone' => true,
+        ];
+        echo json_encode($finalMessage) . "\n";
+        if (ob_get_length()) ob_flush();
+        flush();
     }
     /*
      * Helper function to translate curl return object from various providers to openai format

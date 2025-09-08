@@ -30,11 +30,11 @@ GoogleProvider.formatStreamChunk() / formatResponse()
            ↓
 CitationService.formatCitations('google', rawGroundingMetadata, content)
            ↓
-GoogleCitationFormatter.format() (provider-spezifisch / aktuell nur durchreichen der Daten)
+GoogleCitationFormatter.format() (provider-spezifisch)
            ↓
-Standardisierte HAWKI Citation Format (noch nicht umgesetzt! Google Daten werden durchgereicht)
+Standardisierte HAWKI Citation Format
            ↓
-Frontend (als Teil von content.groundingMetadata -> JS verarbeitet nur Google Format korrekt!)
+Frontend (als Teil von content.groundingMetadata -> JS)
 ```
 
 ## 📊 **CitationService Architektur**:
