@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\Log;
 class OpenAIResponsesProvider extends BaseAIModelProvider
 {
     /**
+     * Accumulated web search sources (from web_search_call output)
+     */
+    protected array $webSearchSources = [];
+
+    /**
      * Constructor for OpenAIResponsesProvider
      */
     public function __construct(array $config)
@@ -204,8 +209,19 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
             ];
         }
 
-        // Add tools support
-        if (isset($rawPayload['tools'])) {
+        // Add tools support (including web search)
+        $supportsSearch = $this->modelSupportsSearch($modelId);
+        if ($supportsSearch) {
+            // Add web search tool if not explicitly provided
+            if (!isset($rawPayload['tools'])) {
+                $payload['tools'] = [
+                    ['type' => 'web_search']
+                ];
+            } else {
+                $payload['tools'] = $rawPayload['tools'];
+            }
+        } elseif (isset($rawPayload['tools'])) {
+            // Only add tools if model supports them and they were explicitly provided
             $payload['tools'] = $rawPayload['tools'];
         }
 
@@ -219,11 +235,15 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
      */
     public function formatResponse($response): array
     {
-        $responseContent = $response->getContent();
+        $responseContent = $response->body();
         $jsonContent = json_decode($responseContent, true);
 
         $texts = [];
         $reasoning = [];
+        $citations = [];
+
+        // Reset web search sources for this response
+        $this->webSearchSources = [];
 
         // Responses API returns an 'output' array with different item types
         if (! empty($jsonContent['output']) && is_array($jsonContent['output'])) {
@@ -235,8 +255,24 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                             foreach ($outputItem['content'] as $contentItem) {
                                 if ($contentItem['type'] === 'output_text') {
                                     $texts[] = $contentItem['text'];
+                                    
+                                    // Extract citations from annotations
+                                    if (isset($contentItem['annotations'])) {
+                                        foreach ($contentItem['annotations'] as $annotation) {
+                                            if ($annotation['type'] === 'url_citation') {
+                                                $citations[] = $annotation;
+                                            }
+                                        }
+                                    }
                                 }
                             }
+                        }
+                        break;
+
+                    case 'web_search_call':
+                        // Handle web search call results
+                        if (isset($outputItem['status']) && $outputItem['status'] === 'completed') {
+                            $this->parseWebSearchCall($outputItem);
                         }
                         break;
 
@@ -264,6 +300,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         $result = [
             'content' => [
                 'text' => $contentText,
+                'groundingMetadata' => $this->formatGroundingMetadata($citations),
             ],
             'usage' => $this->extractUsage($jsonContent),
         ];
@@ -291,6 +328,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         $isDone = false;
         $usage = null;
         $reasoning = [];
+        $citations = [];
 
         if (empty($jsonChunk) || ! is_array($jsonChunk)) {
             return [
@@ -315,8 +353,31 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
                     foreach ($jsonChunk['delta']['content'] as $contentItem) {
                         if ($contentItem['type'] === 'output_text') {
                             $content = $contentItem['text'] ?? '';
+                            
+                            // Extract citations from annotations in streaming
+                            if (isset($contentItem['annotations'])) {
+                                foreach ($contentItem['annotations'] as $annotation) {
+                                    if ($annotation['type'] === 'url_citation') {
+                                        $citations[] = $annotation;
+                                    }
+                                }
+                            }
                         }
                     }
+                }
+                break;
+
+            case 'response.output_item.added':
+                // Handle web search calls being added
+                if (isset($jsonChunk['item']['type']) && $jsonChunk['item']['type'] === 'web_search_call') {
+                    // Web search call started - no content yet
+                }
+                break;
+
+            case 'response.output_item.done':
+                // Handle completed web search calls
+                if (isset($jsonChunk['item']['type']) && $jsonChunk['item']['type'] === 'web_search_call') {
+                    $this->parseWebSearchCall($jsonChunk['item']);
                 }
                 break;
 
@@ -361,6 +422,7 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         $response = [
             'content' => [
                 'text' => $content,
+                'groundingMetadata' => !empty($citations) ? $this->formatGroundingMetadata($citations) : null,
             ],
             'isDone' => $isDone,
             'usage' => $usage,
@@ -443,6 +505,49 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         }
 
         return false;
+    }
+
+    /**
+     * Check if a model supports Web Search functionality
+     */
+    public function modelSupportsSearch(string $modelId): bool
+    {
+        // Primary: Check database model settings for web_search capability
+        try {
+            $modelDetails = $this->getModelDetails($modelId);
+            
+            if (is_array($modelDetails)) {
+                // Check if web_search is in the settings array
+                if (isset($modelDetails['settings'])) {
+                    $settings = is_array($modelDetails['settings']) 
+                        ? $modelDetails['settings'] 
+                        : json_decode($modelDetails['settings'], true);
+                    
+                    // Settings should be a direct array, not nested
+                    if (isset($settings['web_search']) && $settings['web_search'] === true) {
+                        return true;
+                    }
+                }
+                
+                // Check if web_search is in the top level (from information field)
+                if (isset($modelDetails['web_search'])) {
+                    return (bool) $modelDetails['web_search'];
+                }
+            }
+        } catch (\Exception $e) {
+            // If database check fails, fall back to model name analysis
+            Log::warning('Failed to get model details for web search check: '.$e->getMessage());
+        }
+
+        // Fallback: Based on OpenAI documentation, web search is available for:
+        // gpt-4o-mini, gpt-4o, gpt-4.1-mini, gpt-4.1, o4-mini, o3, gpt-5
+        $modelIdLower = strtolower($modelId);
+        
+        return strpos($modelIdLower, 'gpt-4o') === 0 ||
+               strpos($modelIdLower, 'gpt-4.1') === 0 ||
+               strpos($modelIdLower, 'o4-mini') === 0 ||
+               strpos($modelIdLower, 'o3') === 0 ||
+               strpos($modelIdLower, 'gpt-5') === 0;
     }
 
     /**
@@ -540,6 +645,92 @@ class OpenAIResponsesProvider extends BaseAIModelProvider
         }
 
         return null;
+    }
+
+    /**
+     * Parse and store web search sources from OpenAI Responses API web_search_call output
+     */
+    protected function parseWebSearchCall(array $webSearchCall): void
+    {
+        // OpenAI web_search_call includes action information
+        if (isset($webSearchCall['action'])) {
+            $action = $webSearchCall['action'];
+            
+            // Extract sources from the action
+            if (isset($action['sources']) && is_array($action['sources'])) {
+                foreach ($action['sources'] as $source) {
+                    if (isset($source['url'], $source['title'])) {
+                        $this->webSearchSources[] = [
+                            'url' => $source['url'],
+                            'title' => $source['title'],
+                            'snippet' => $source['snippet'] ?? null,
+                        ];
+                    }
+                }
+            }
+            
+            // Store query information if available
+            if (isset($action['query'])) {
+                Log::info('[OpenAI Responses] Web search query: ' . $action['query']);
+            }
+        }
+    }
+
+    /**
+     * Format grounding metadata from citations and web search sources
+     */
+    protected function formatGroundingMetadata(?array $citations): ?array
+    {
+        if (empty($citations) && empty($this->webSearchSources)) {
+            return null;
+        }
+
+        $groundingSupports = [];
+        $webSearchQueries = [];
+
+        // Process OpenAI url_citation annotations
+        if (!empty($citations)) {
+            foreach ($citations as $citation) {
+                if (isset($citation['url'], $citation['title'])) {
+                    $groundingSupports[] = [
+                        'startIndex' => $citation['start_index'] ?? null,
+                        'endIndex' => $citation['end_index'] ?? null,
+                        'url' => $citation['url'],
+                        'title' => $citation['title'],
+                    ];
+                }
+            }
+        }
+
+        // Add sources from web search calls
+        foreach ($this->webSearchSources as $source) {
+            // Avoid duplicates by checking if URL already exists
+            $exists = false;
+            foreach ($groundingSupports as $support) {
+                if ($support['url'] === $source['url']) {
+                    $exists = true;
+                    break;
+                }
+            }
+            
+            if (!$exists) {
+                $groundingSupports[] = [
+                    'startIndex' => null,
+                    'endIndex' => null,
+                    'url' => $source['url'],
+                    'title' => $source['title'],
+                ];
+            }
+        }
+
+        if (empty($groundingSupports)) {
+            return null;
+        }
+
+        return [
+            'webSearchQueries' => $webSearchQueries,
+            'groundingSupports' => $groundingSupports,
+        ];
     }
 
     /**
