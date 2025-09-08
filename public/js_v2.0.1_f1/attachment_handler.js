@@ -73,17 +73,17 @@ async function handleSelectedFiles(files, inputField) {
     const allowedTypes = [
         // Images
         'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
-        // Documents
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        // 'application/vnd.ms-excel',
-        // 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        // 'application/vnd.ms-powerpoint',
-        // 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        // // Text
-        // 'text/plain', 'text/csv', 'application/json',
     ];
+    if(converterActive){
+        allowedTypes.push(
+            // Documents
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        );
+    }
+
+
     const maxMB = 10;
     const maxFileSize = maxMB * 1024 * 1024; // 10MB limit
 

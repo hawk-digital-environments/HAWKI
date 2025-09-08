@@ -30,10 +30,7 @@ function initializeAiChatModule(chatsObject){
     const input = document.getElementById('input-container');
     initFileUploader(input);
 
-
-
     initializeChatlogFunctions();
-
 }
 
 
@@ -106,7 +103,7 @@ async function sendMessageConv(inputField) {
     }
 
     const submissionData = await submitMessageToServer(messageObj, `/req/conv/sendMessage/${activeConv.slug}`);
-    console.log(submissionData);
+
     // Replace the original text
     submissionData.content.text = inputText;
 

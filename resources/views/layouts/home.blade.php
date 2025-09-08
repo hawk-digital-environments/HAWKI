@@ -107,10 +107,11 @@
 
     const announcementList = @json($announcements);
 
-
+    const converterActive = @json($converterActive);
 
 
     window.addEventListener('DOMContentLoaded', async (event) => {
+        setModel();
 
 		const passkey = await getPassKey()
 		if(!passkey){
@@ -145,7 +146,6 @@
 			sidebarBtn.querySelector('.user-inits').innerText = userInitials
 		}
 
-		setModel(null);
 
 		initializeGUI();
 		checkWindowSize(800, 600);

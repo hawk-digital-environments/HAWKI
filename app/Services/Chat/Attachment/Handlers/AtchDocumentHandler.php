@@ -1,11 +1,11 @@
 <?php
 namespace App\Services\Chat\Attachment\Handlers;
 
+use App\Services\FileConverter\FileConverterFactory;
 use Illuminate\Support\Str;
 
 use App\Services\Storage\FileStorageService;
 use App\Services\Chat\Attachment\Interfaces\AttachmentInterface;
-use App\Toolkit\FileConverter\DocumentConverter;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -34,6 +34,7 @@ class AtchDocumentHandler implements AttachmentInterface
         }
 //        $url = $this->storageService->getUrl($uuid, $category);
         $results = $this->extractFileContent($file);
+
         if (!$results) {
             return [
                 'success' => false,
@@ -56,9 +57,8 @@ class AtchDocumentHandler implements AttachmentInterface
 
     public function extractFileContent($file): ?array{
         try{
-            $fileConverter = new DocumentConverter();
-            $results = $fileConverter->requestDocumentToMarkdown($file);
-            return $results;
+            $converter = FileConverterFactory::create();
+            return $converter->convert($file);
         }
         catch(Exception $e){
             return null;

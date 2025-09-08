@@ -52,7 +52,7 @@ class AttachmentService{
 
         if($outputType){
             $attachmentHandler = AttachmentFactory::create($attachment->type);
-            return $file = $attachmentHandler->retrieveContext($uuid, $category, $outputType);
+            return $attachmentHandler->retrieveContext($uuid, $category, $outputType);
         }
         else{
             try{
