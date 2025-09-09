@@ -23,31 +23,6 @@ return new class extends Migration
             $table->string('bio')->nullable();
             $table->timestamps();
         });
-
-        // Ensure HAWKI user exists and has ID = 1
-        DB::table('users')->updateOrInsert(
-            ['id' => 1], // Force ID 1
-            [
-                'name'        => config('hawki.migration.name'),
-                'username'    => config('hawki.migration.username'),
-                'email'       => config('hawki.migration.email'),
-                'employeetype'=> config('hawki.migration.employeetype'),
-                'publicKey'   => '0',
-                'avatar_id'   => config('hawki.migration.avatar_id'),
-                'created_at'  => now(),
-                'updated_at'  => now(),
-            ]
-        );
-
-        //ADD HAWKI AVATAR TO STORAGE FOLDER:
-        if(public_path(config('hawki.migration.avatar_id'))){
-            $file = file_get_contents(public_path(config('hawki.migration.avatar_id')));
-            $fileStorage = app(FileStorageService::class);
-            $fileStorage->store($file,
-                                config('hawki.migration.avatar_id'),
-                                config('hawki.migration.avatar_id'),
-                                'profile_avatars');
-        }
     }
 
     /**
