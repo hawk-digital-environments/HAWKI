@@ -125,16 +125,6 @@ return [
     ],
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | AI Mention Handle
-    |--------------------------------------------------------------------------
-    |
-    | The handle which allows users to mention AI in groupchats.
-    |
-    |
-    */
-    'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
 
 
 

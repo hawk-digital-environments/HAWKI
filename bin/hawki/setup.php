@@ -85,13 +85,13 @@ function initialize() {
 
     // Create storage symlink
     echo YELLOW . "Creating storage link..." . RESET . PHP_EOL;
-    passthru('php artisan storage:link');
+    passthru('php artisan storage:link --ansi');
 
     // Generate app key if not present
     $env = getEnvContent();
     if (strpos($env, 'APP_KEY=') === false || strpos($env, 'APP_KEY=base64:') === false) {
         echo YELLOW . "Generating application key..." . RESET . PHP_EOL;
-        passthru('php artisan key:generate');
+        passthru('php artisan key:generate --ansi');
         $env = getEnvContent(); // Reload env content after key generation
     }
 

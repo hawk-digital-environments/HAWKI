@@ -103,7 +103,7 @@
 	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
 
-	const aiHandle = "{{ config('app.aiHandle') }}";
+	const aiHandle = "{{ config('hawki.aiHandle') }}";
 
     const announcementList = @json($announcements);
 

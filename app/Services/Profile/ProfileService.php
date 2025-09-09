@@ -34,6 +34,9 @@ class ProfileService{
         return true;
     }
 
+    /**
+     * @throws Exception
+     */
     public function assignAvatar($image): string{
         $uuid = Str::uuid();
         $user = Auth::user();
@@ -53,8 +56,7 @@ class ProfileService{
                                         false);
         if ($response) {
             $user->update(['avatar_id' => $uuid]);
-            $url = $avatarStorage->getUrl($uuid, 'profile_avatars');
-            return $url;
+            return $avatarStorage->getUrl($uuid, 'profile_avatars');
         } else {
             throw new Exception('Failed to store image');
         }
