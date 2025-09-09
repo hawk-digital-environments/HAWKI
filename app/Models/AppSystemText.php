@@ -45,4 +45,20 @@ class AppSystemText extends Model
             ]
         );
     }
+    
+    /**
+     * Set system text by key and language (only creates, no updates) - for seeders.
+     */
+    public static function setTextIfNotExists(string $contentKey, string $language, string $content): self
+    {
+        return self::firstOrCreate(
+            [
+                'content_key' => $contentKey,
+                'language' => $language,
+            ],
+            [
+                'content' => $content
+            ]
+        );
+    }
 }

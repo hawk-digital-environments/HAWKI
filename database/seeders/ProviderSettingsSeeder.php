@@ -56,8 +56,8 @@ class ProviderSettingsSeeder extends Seeder
         foreach ($defaultProviders as $providerData) {
             $this->command->info("Erstelle Standard-Provider: {$providerData['provider_name']}");
 
-            // Create or update the provider in the database
-            ProviderSetting::updateOrCreate(
+            // Create provider only if it doesn't exist (no updates)
+            ProviderSetting::firstOrCreate(
                 ['provider_name' => $providerData['provider_name']],
                 $providerData
             );

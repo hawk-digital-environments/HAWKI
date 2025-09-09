@@ -30,8 +30,8 @@ class AppSystemImageSeeder extends Seeder
                 $originalName = basename($path);
                 $mimeType = File::mimeType($fullPath);
                 
-                // Create or update the database entry
-                AppSystemImage::updateOrCreate(
+                // Create database entry only if it doesn't exist
+                AppSystemImage::firstOrCreate(
                     ['name' => $name],
                     [
                         'file_path' => $path,

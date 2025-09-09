@@ -30,7 +30,7 @@ class AppCssSeeder extends Seeder
                 $name = $file->getFilenameWithoutExtension();
                 $content = File::get($file->getPathname());
                 
-                AppCss::updateOrCreate(
+                AppCss::firstOrCreate(
                     ['name' => $name],
                     ['content' => $content]
                 );

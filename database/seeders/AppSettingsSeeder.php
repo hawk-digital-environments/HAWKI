@@ -241,7 +241,7 @@ class AppSettingsSeeder extends Seeder
     }
     
     /**
-    * Creates or updates a setting
+    * Creates a setting only if it doesn't exist (no updates)
      *
      * @param string $key
      * @param mixed $value
@@ -254,6 +254,11 @@ class AppSettingsSeeder extends Seeder
      */
     private function createOrUpdateSetting($key, $value, $group, $type, $description = null, $isPrivate = false, $source = null)
     {
+        // Check if setting already exists - if so, skip it
+        if (AppSetting::where('key', $key)->exists()) {
+            return;
+        }
+        
         // Convert value for storage
         if ($type === 'json' && is_array($value)) {
             $value = json_encode($value);
@@ -263,16 +268,14 @@ class AppSettingsSeeder extends Seeder
             $value = (string) $value;
         }
         
-        AppSetting::updateOrCreate(
-            ['key' => $key],
-            [
-                'value' => $value,
-                'source' => $source,
-                'group' => $group,
-                'type' => $type,
-                'description' => $description,
-                'is_private' => $isPrivate,
-            ]
-        );
+        AppSetting::create([
+            'key' => $key,
+            'value' => $value,
+            'source' => $source,
+            'group' => $group,
+            'type' => $type,
+            'description' => $description,
+            'is_private' => $isPrivate,
+        ]);
     }
 }

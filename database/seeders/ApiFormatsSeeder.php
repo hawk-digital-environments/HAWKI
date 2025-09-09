@@ -225,14 +225,14 @@ class ApiFormatsSeeder extends Seeder
             $endpoints = $formatData['endpoints'];
             unset($formatData['endpoints']);
             
-            $apiFormat = ApiFormat::updateOrCreate(
+            $apiFormat = ApiFormat::firstOrCreate(
                 ['unique_name' => $formatData['unique_name']],
                 $formatData
             );
             
-            // Create endpoints for this API format
+            // Create endpoints for this API format (only if they don't exist)
             foreach ($endpoints as $endpointData) {
-                ApiFormatEndpoint::updateOrCreate(
+                ApiFormatEndpoint::firstOrCreate(
                     [
                         'api_format_id' => $apiFormat->id,
                         'name' => $endpointData['name']

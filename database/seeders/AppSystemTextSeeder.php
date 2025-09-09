@@ -39,9 +39,12 @@ class AppSystemTextSeeder extends Seeder
                                 continue;
                             }
                             
-                            // Store the text in the database using updated column names
-                            AppSystemText::setText($key, $language, $value);
-                            $count++;
+                            // Store the text in the database using seeder-specific method
+                            $result = AppSystemText::setTextIfNotExists($key, $language, $value);
+                            // Only count if it was actually created (not if it already existed)
+                            if ($result->wasRecentlyCreated) {
+                                $count++;
+                            }
                         }
                         
                         Log::info("Successfully processed {$language} language file");
@@ -56,7 +59,7 @@ class AppSystemTextSeeder extends Seeder
             }
         }
         
-        Log::info("AppSystemText seeder completed: {$count} texts created or updated");
-        $this->command->info("AppSystemText seeder completed: {$count} texts created or updated");
+        Log::info("AppSystemText seeder completed: {$count} texts created (no updates)");
+        $this->command->info("AppSystemText seeder completed: {$count} texts created (no updates)");
     }
 }

@@ -68,10 +68,10 @@ class AppSystemPromptSeeder extends Seeder
             ],
         ];
         
-        // Einfügen der Prompts in die Datenbank
+        // Einfügen der Prompts in die Datenbank (nur wenn sie noch nicht existieren)
         $count = 0;
         foreach ($systemPrompts as $promptData) {
-            AppSystemPrompt::updateOrCreate(
+            AppSystemPrompt::firstOrCreate(
                 [
                     'prompt_type' => $promptData['prompt_type'],
                     'language' => $promptData['language'],

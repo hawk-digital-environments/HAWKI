@@ -42,9 +42,12 @@ class AppLocalizedTextSeeder extends Seeder
                         $content = File::get($filePath);
                         
                         if (!empty($content)) {
-                            // Saving the content in the database
-                            AppLocalizedText::setContent($contentKey, $language, $content);
-                            $count++;
+                            // Saving the content in the database using seeder-specific method
+                            $result = AppLocalizedText::setContentIfNotExists($contentKey, $language, $content);
+                            // Only count if it was actually created (not if it already existed)
+                            if ($result->wasRecentlyCreated) {
+                                $count++;
+                            }
                             Log::info("Imported {$filePrefix} content for {$language}");
                         } else {
                             Log::warning("File {$filePath} is empty.");
@@ -58,8 +61,8 @@ class AppLocalizedTextSeeder extends Seeder
             }
         }
         
-        Log::info("AppLocalizedText seeder completed: {$count} contents created or updated");
-        $this->command->info("AppLocalizedText seeder completed: {$count} contents created or updated");
+        Log::info("AppLocalizedText seeder completed: {$count} contents created (no updates)");
+        $this->command->info("AppLocalizedText seeder completed: {$count} contents created (no updates)");
     }
 
     /**

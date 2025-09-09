@@ -45,4 +45,20 @@ class AppLocalizedText extends Model
             ]
         );
     }
+    
+    /**
+     * Set localized content by key and language (only creates, no updates) - for seeders.
+     */
+    public static function setContentIfNotExists(string $contentKey, string $language, string $content): self
+    {
+        return self::firstOrCreate(
+            [
+                'content_key' => $contentKey,
+                'language' => $language,
+            ],
+            [
+                'content' => $content
+            ]
+        );
+    }
 }
