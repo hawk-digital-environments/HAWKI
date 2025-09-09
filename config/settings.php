@@ -39,7 +39,7 @@ return [
         'local_authentication' => 'Activate login form for local users ',
         'local_selfservice' => 'Activate registration form for local user account creation',
         'local_needapproval' => 'New local users need admin approval before given access',
-        'authentication_method' => 'Authentication method (LDAP, OIDC, Shibboleth)',
+        'authentication_method' => 'Authentication method (LOCAL_ONLY, LDAP, OIDC, Shibboleth)',
         'passkey_method' => 'Method for generating the PassKey (cannot be changed later)',
         'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)',
         'passkey_otp' => 'Send Log-in codes when user tries to login with new device',

@@ -23,12 +23,38 @@
             @csrf
             <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="submit" name="submit">{{ $translation['Login'] }}</button >
         </form>
+    @elseif($authenticationMethod === 'LOCAL_ONLY')
+        {{-- Local Only Authentication - Show local login form on main level --}}
+        <form class="form-column" id="loginForm-LOCAL-MAIN">
+            @csrf
+            <h1 class="login-form-title">{{ $translation['login_title'] ?? $translation['Login'] ?? 'Login' }}</h1>
+            <label for="main-local-account">{{ $translation["username"] ?? "Username" }}</label>
+            <input type="text" name="account" id="main-local-account" onkeypress="onLocalMainLoginKeydown(event)">
+            <label for="main-local-password">{{ $translation["password"] ?? "Password" }}</label>
+            <input type="password" name="password" id="main-local-password" onkeypress="onLocalMainLoginKeydown(event)">
+        </form>
+        
+        <div id="main-local-login-Button-panel">
+            <div id="main-local-login-message"></div>
+            <button id="mainLocalLoginButton" class="btn-lg-fill align-end top-gap-1" type="button" onclick="LoginLocalMain()">
+                {{ $translation['Login'] }}
+            </button>
+        </div>
+        
+        {{-- Guest Access Request Link (if enabled) --}}
+        @if($localSelfserviceActive ?? false)
+        <div class="guest-access-request">
+            <button class="btn-link" onclick="switchToGuestRequestForm()">
+                {{ $translation['request_guest_access'] ?? 'Request Guest Access' }}
+            </button>
+        </div>
+        @endif
     @else
         No authentication method defined
     @endif
 
-    {{-- Local Users Link (only show link when enabled) --}}
-    @if($localUsersActive ?? false)
+    {{-- Local Users Link (only show when NOT in LOCAL_ONLY mode and local users are active) --}}
+    @if(($localUsersActive ?? false) && $authenticationMethod !== 'LOCAL_ONLY')
         <div class="local-users-link">
             <button class="btn-link" onclick="switchToLocalUsersLogin()">
                 {{ $translation['local_users_login'] ?? 'Local Users Login' }}

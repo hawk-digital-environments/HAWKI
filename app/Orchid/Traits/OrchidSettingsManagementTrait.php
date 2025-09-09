@@ -676,6 +676,7 @@ trait OrchidSettingsManagementTrait
                     ->addclass('fw-bold'),
                 \Orchid\Screen\Fields\Select::make($inputName)
                     ->options([
+                        'LOCAL_ONLY' => 'Local Only (Database Authentication)',
                         'LDAP' => 'LDAP',
                         'OIDC' => 'OpenID Connect',
                         'Shibboleth' => 'Shibboleth',
