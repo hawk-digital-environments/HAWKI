@@ -82,7 +82,7 @@ trait RoomMembers{
                 'name'      => $user->name,
                 'username'  => $user->username,
                 'email'     => $user->email,
-                'public_key'=> $user->publicKey
+                'publicKey'=> $user->publicKey
             ];
         });
         return $results;
