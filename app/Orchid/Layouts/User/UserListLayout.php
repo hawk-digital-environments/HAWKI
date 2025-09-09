@@ -11,9 +11,11 @@ use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Actions\ModalToggle;
 use Orchid\Screen\Components\Cells\DateTimeSplit;
 use Orchid\Screen\Fields\Input;
+use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Layouts\Persona;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
+use Orchid\Support\Color;
 
 class UserListLayout extends Table
 {
@@ -45,6 +47,23 @@ class UserListLayout extends Table
                     ->asyncParameters([
                         'user' => $user->id,
                     ])),
+
+            TD::make('approval', __('Approval'))
+                ->sort()
+                ->filter(Select::make()->options([
+                    1 => 'Approved',
+                    0 => 'Pending',
+                ])->empty('All Status'))
+                ->render(function (User $user) {
+                    $badgeText = $user->approval ? 'Approved' : 'Pending';
+                    $badgeClass = $user->approval ? 'bg-success' : 'bg-secondary';
+                    
+                    return Button::make($badgeText)
+                        ->method('toggleApproval', [
+                            'id' => $user->id,
+                        ])
+                        ->class("badge {$badgeClass} border-0");
+                }),
 
             TD::make('created_at', __('Created'))
                 ->usingComponent(DateTimeSplit::class)

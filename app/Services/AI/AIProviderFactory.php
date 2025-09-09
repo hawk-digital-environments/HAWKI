@@ -10,6 +10,8 @@ use App\Services\AI\Providers\GWDGProvider;
 use App\Services\AI\Providers\GoogleProvider;
 use App\Services\AI\Providers\OllamaProvider;
 use App\Services\AI\Providers\OpenWebUIProvider;
+use App\Services\AI\Providers\HAWKIProvider;
+
 use Illuminate\Support\Facades\Log;
 
 class AIProviderFactory
@@ -22,11 +24,11 @@ class AIProviderFactory
     private $providerInstances = [];
     
     /**
-     * Mapping of model IDs to provider names
+     * Mapping of model IDs to provider IDs
      * 
      * @var array
      */
-    private $modelProviderMap = [];
+    private $modelProviderIdMap = [];
     
     /**
      * Constructor - loads model-provider mappings from database
@@ -43,19 +45,20 @@ class AIProviderFactory
     {
         try {
             // Load all active models and their providers from the database
-            $models = LanguageModel::select('language_models.model_id', 'provider_settings.provider_name')
+            $models = LanguageModel::select('language_models.model_id', 'language_models.provider_id')
                 ->join('provider_settings', 'language_models.provider_id', '=', 'provider_settings.id')
                 ->where('language_models.is_active', true)
                 ->where('provider_settings.is_active', true)
                 ->get();
             
             foreach ($models as $model) {
-                $this->modelProviderMap[$model->model_id] = $model->provider_name;
+                // Store the actual provider ID for each model
+                $this->modelProviderIdMap[$model->model_id] = $model->provider_id;
             }
         } catch (\Exception $e) {
             Log::error('Failed to load model-provider mappings: ' . $e->getMessage());
             // Fallback to an empty array if the database is not ready yet
-            $this->modelProviderMap = [];
+            $this->modelProviderIdMap = [];
         }
     }
     
@@ -68,77 +71,114 @@ class AIProviderFactory
      */
     public function getProviderForModel(string $modelId)
     {
-        if (empty($this->modelProviderMap)) {
+        if (empty($this->modelProviderIdMap)) {
             // If the map is empty (e.g. on first run), try loading again
             $this->loadModelProviderMappings();
         }
         
-        // Check if we know the provider for this model
-        if (!isset($this->modelProviderMap[$modelId])) {
+        // Check if we know the provider ID for this model
+        if (!isset($this->modelProviderIdMap[$modelId])) {
             Log::error("Unknown model ID: $modelId");
             throw new \Exception("Unknown model ID: $modelId");
         }
         
-        $providerName = $this->modelProviderMap[$modelId];
-        return $this->getProviderInterface($providerName);
+        $providerId = $this->modelProviderIdMap[$modelId];
+        return $this->getProviderInterfaceById($providerId);
     }
     
     /**
-     * Get a provider interface by provider name
+     * Get a provider interface by provider ID (database ID)
      * 
-     * @param string $providerName
+     * @param int $providerId
      * @return \App\Services\AI\Interfaces\AIModelProviderInterface
      * @throws \Exception
      */
-    public function getProviderInterface(string $providerName)
+    public function getProviderInterfaceById(int $providerId)
     {
         // If we already have an instance, return it
-        if (isset($this->providerInstances[$providerName])) {
-            return $this->providerInstances[$providerName];
+        if (isset($this->providerInstances[$providerId])) {
+            return $this->providerInstances[$providerId];
         }
         
         try {
             // Get the provider settings from the database
-            $provider = ProviderSetting::where('provider_name', $providerName)
+            $provider = ProviderSetting::where('id', $providerId)
                 ->where('is_active', true)
                 ->first();
             
             if (!$provider) {
-                throw new \Exception("Provider not found or not active: $providerName");
+                throw new \Exception("Provider not found or not active with ID: $providerId");
             }
             
-            // Create the provider class based on the provider name
-            $providerClass = $this->getProviderClass($providerName);
+            // Use api_format for class selection, fall back to provider_name
+            $apiFormat = $provider->api_format ?? $provider->provider_name;
+            
+            // Create the provider class based on the API format
+            $providerClass = $this->getProviderClass($apiFormat);
             
             if (!class_exists($providerClass)) {
                 throw new \Exception("Provider class not found: $providerClass");
             }
             
             // Create an instance of the provider with the settings from the database
-            $this->providerInstances[$providerName] = new $providerClass([
+            $this->providerInstances[$providerId] = new $providerClass([
                 'api_key' => $provider->api_key,
                 'base_url' => $provider->base_url,
                 'ping_url' => $provider->ping_url,
                 'api_format' => $provider->api_format,
+                'provider_name' => $provider->provider_name,
                 'additional_settings' => $provider->additional_settings ? json_decode($provider->additional_settings, true) : []
             ]);
             
-            return $this->providerInstances[$providerName];
+            return $this->providerInstances[$providerId];
         } catch (\Exception $e) {
-            Log::error("Failed to create provider instance for $providerName: " . $e->getMessage());
+            Log::error("Failed to create provider instance for provider ID $providerId: " . $e->getMessage());
             throw new \Exception("Failed to create provider instance: " . $e->getMessage());
         }
     }
     
     /**
-     * Get the provider class name based on provider ID
+     * Get a provider interface by API format (legacy method for backwards compatibility)
      * 
-     * @param string $providerName
+     * @param string $apiFormat
+     * @return \App\Services\AI\Interfaces\AIModelProviderInterface
+     * @throws \Exception
+     */
+    public function getProviderInterface(string $apiFormat)
+    {
+        try {
+            // Find the first active provider with this API format
+            $provider = ProviderSetting::where('api_format', $apiFormat)
+                ->where('is_active', true)
+                ->first();
+            
+            // If no provider found with api_format, fall back to provider_name search
+            if (!$provider) {
+                $provider = ProviderSetting::where('provider_name', $apiFormat)
+                    ->where('is_active', true)
+                    ->first();
+            }
+            
+            if (!$provider) {
+                throw new \Exception("Provider not found or not active for API format: $apiFormat");
+            }
+            
+            return $this->getProviderInterfaceById($provider->id);
+        } catch (\Exception $e) {
+            Log::error("Failed to create provider instance for API format $apiFormat: " . $e->getMessage());
+            throw new \Exception("Failed to create provider instance: " . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Get the provider class name based on API format
+     * 
+     * @param string $apiFormat
      * @return string Fully qualified class name
      */
-    private function getProviderClass(string $providerName)
+    private function getProviderClass(string $apiFormat)
     {
-        // Map of provider names to provider classes
+        // Map of API formats to provider classes
         // This could be moved to the database in the future
         $providerClasses = [
             'openai' => 'App\Services\AI\Providers\OpenAIProvider',
@@ -146,12 +186,13 @@ class AIProviderFactory
             'openWebUi' => 'App\Services\AI\Providers\OpenWebUIProvider',
             'google' => 'App\Services\AI\Providers\GoogleProvider',
             'ollama' => 'App\Services\AI\Providers\OllamaProvider',
+            'hawki' => 'App\Services\AI\Providers\HAWKIProvider',
 
-            // Add more providers here
+            // Add more API formats here
         ];
         
         // Fallback to the generic implementation
-        return $providerClasses[$providerName] ?? 'App\Services\AI\Providers\GenericProvider';
+        return $providerClasses[$apiFormat] ?? 'App\Services\AI\Providers\GenericProvider';
     }
     
     /**

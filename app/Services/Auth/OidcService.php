@@ -15,7 +15,7 @@ class OidcService
 
     public function __construct()
     {
-        if(env('AUTHENTICATION_METHOD') !== 'OIDC'){
+        if(config('auth.authentication_method') !== 'OIDC'){
             return;
         }
         // Retrieve configuration settings

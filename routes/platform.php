@@ -11,6 +11,7 @@ use App\Orchid\Screens\Settings\LogScreen;
 use App\Orchid\Screens\Settings\StorageSettingsScreen;
 use App\Orchid\Screens\Settings\StylingSettingsScreen;
 use App\Orchid\Screens\Settings\TextsSettingsScreen;
+use App\Orchid\Screens\Settings\MailSettingsScreen;
 
 use App\Orchid\Screens\ModelSettings\ProviderSettingsScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
@@ -110,6 +111,13 @@ Route::screen('/settings/texts', TextsSettingsScreen::class)
         return $trail
             ->parent('platform.index')
             ->push('Texts');
+    });
+Route::screen('/settings/mail', MailSettingsScreen::class)
+    ->name('platform.settings.mail')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Mail');
     });
 
 // Models

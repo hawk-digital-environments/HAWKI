@@ -11,14 +11,14 @@ use Illuminate\Support\Facades\Cache;
 class ConfigServiceProvider extends ServiceProvider
 {
     /**
-     * Cache-Schlüssel für die Konfigurationsüberschreibungen
+     * Cache key for configuration overrides
      */
     const CONFIG_CACHE_KEY = 'app_settings_overrides';
     
     /**
-     * Zeit in Sekunden, wie lange die Konfigurationseinstellungen gecached werden sollen
+     * Time in seconds for how long the configuration settings should be cached
      */
-    const CACHE_TTL = 3600; // 1 Stunde
+    const CACHE_TTL = 3600; // 1 hour
     
     /**
      * Register services.
@@ -35,17 +35,23 @@ class ConfigServiceProvider extends ServiceProvider
     {
         // Only run after application is fully booted
         try {
-            // Versuche zuerst, die überschriebenen Konfigurationen aus dem Cache zu laden
+            // Check if required tables exist before proceeding
+            if (!$this->requiredTablesExist()) {
+                Log::info('Required tables do not exist yet. Skipping configuration override.');
+                return;
+            }
+            
+            // First, try to load the overridden configurations from cache
             $cachedOverrides = $this->getCachedOverrides();
             
             if ($cachedOverrides !== null) {
-                // Cache-Hit: Verwende die gecachten Überschreibungen
+                // Cache hit: Use the cached overrides
                 //Log::debug('Using cached configuration overrides');
                 $this->applyOverrides($cachedOverrides);
                 return;
             }
             
-            // Cache-Miss: Lade die Konfigurationseinstellungen aus settings.php
+            // Cache miss: Load the configuration settings from settings.php
             $configSettings = config('settings');
             
             if (empty($configSettings)) {
@@ -53,31 +59,31 @@ class ConfigServiceProvider extends ServiceProvider
                 return;
             }
             
-            // Erzeuge eine flache Liste aller überschreibbaren Keys
+            // Create a flat list of all overridable keys
             $overridableKeys = [];
             $dbKeysToLoad = [];
             
             foreach ($configSettings as $configFile => $keys) {
-                // Überspringe das Gruppen-Mapping
+                // Skip the group mapping
                 if ($configFile === 'group_mapping') {
                     continue;
                 }
                 
-                // Prüfe, ob der Eintrag ein Array ist (ein valider Key)
+                // Check if the entry is an array (a valid key)
                 if (!is_array($keys)) continue;
                 
                 foreach ($keys as $key => $value) {
-                    // Wenn der Schlüssel numerisch ist, verwenden wir den Wert als Schlüssel und keine Beschreibung
+                    // If the key is numeric, use the value as the key and no description
                     if (is_int($key)) {
                         $realKey = $value;
                     } else {
-                        // Ansonsten ist der Key der Schlüssel und der Wert die Beschreibung
+                        // Otherwise, the key is the key and the value is the description
                         $realKey = $key;
                     }
                     
-                    // DB-Key erstellen (mit Unterstrich): app_name
+                    // Create DB key (with underscore): app_name
                     $dbKey = "{$configFile}_{$realKey}";
-                    // Config-Key erstellen (mit Punkt): app.name
+                    // Create config key (with dot): app.name
                     $configKey = "{$configFile}.{$realKey}";
                     
                     $overridableKeys[$dbKey] = $configKey;
@@ -90,9 +96,9 @@ class ConfigServiceProvider extends ServiceProvider
                 return;
             }
 
-            Log::debug("Loading settings from database for keys: " . implode(', ', $dbKeysToLoad));
+            //Log::debug("Loading settings from database for keys: " . implode(', ', $dbKeysToLoad));
             
-            // Lade alle relevanten Einstellungen aus der Datenbank
+            // Load all relevant settings from the database
             $settings = DB::table('app_settings')
                 ->whereIn('key', $dbKeysToLoad)
                 ->get();
@@ -102,13 +108,13 @@ class ConfigServiceProvider extends ServiceProvider
                 return;
             }
             
-            // Erstelle ein Array mit den Überschreibungen für den Cache
+            // Create an array with the overrides for the cache
             $overrides = [];
             
             foreach ($settings as $setting) {
-                // Prüfen, ob der Schlüssel in der Liste der überschreibbaren Schlüssel ist
+                // Check if the key is in the list of overridable keys
                 if (isset($overridableKeys[$setting->key])) {
-                    // Den entsprechenden Config-Schlüssel abrufen
+                    // Get the corresponding config key
                     $configKey = $overridableKeys[$setting->key];
                     $value = $setting->value;
                     
@@ -127,16 +133,16 @@ class ConfigServiceProvider extends ServiceProvider
                         }
                     }
                     
-                    // Speichere die Überschreibung für den Cache
+                    // Store the override for the cache
                     $overrides[$configKey] = $value;
                     
-                    // Überschreibe den Konfigurationswert direkt
+                    // Override the configuration value directly
                     Config::set($configKey, $value);
                     //Log::debug("Overriding config key {$configKey} with value from database");
                 }
             }
             
-            // Cache die Überschreibungen für zukünftige Anfragen
+            // Cache the overrides for future requests
             if (!empty($overrides)) {
                 $this->cacheOverrides($overrides);
             }
@@ -149,9 +155,9 @@ class ConfigServiceProvider extends ServiceProvider
     }
     
     /**
-     * Holt die gecachten Konfigurationsüberschreibungen
+     * Gets the cached configuration overrides
      *
-     * @return array|null Die gecachten Überschreibungen oder null, wenn keine im Cache
+     * @return array|null The cached overrides or null if none in cache
      */
     private function getCachedOverrides()
     {
@@ -159,21 +165,21 @@ class ConfigServiceProvider extends ServiceProvider
     }
     
     /**
-     * Speichert die Konfigurationsüberschreibungen im Cache
+     * Stores the configuration overrides in cache
      *
-     * @param array $overrides Die zu cachenden Überschreibungen
+     * @param array $overrides The overrides to cache
      * @return void
      */
     private function cacheOverrides(array $overrides)
     {
         Cache::put(self::CONFIG_CACHE_KEY, $overrides, self::CACHE_TTL);
-        Log::debug('Cached ' . count($overrides) . ' configuration overrides for ' . self::CACHE_TTL . ' seconds');
+        //Log::debug('Cached ' . count($overrides) . ' configuration overrides for ' . self::CACHE_TTL . ' ms');
     }
     
     /**
-     * Wendet die gecachten Überschreibungen auf die Konfiguration an
+     * Applies the cached overrides to the configuration
      *
-     * @param array $overrides Die anzuwendenden Überschreibungen
+     * @param array $overrides The overrides to apply
      * @return void
      */
     private function applyOverrides(array $overrides)
@@ -185,7 +191,7 @@ class ConfigServiceProvider extends ServiceProvider
     }
     
     /**
-     * Löscht den Konfigurationscache
+     * Clears the configuration cache
      *
      * @return void
      */
@@ -194,4 +200,28 @@ class ConfigServiceProvider extends ServiceProvider
         Cache::forget(self::CONFIG_CACHE_KEY);
         Log::debug('Configuration override cache cleared');
     }
+
+    /**
+     * Checks if the required database tables exist
+     *
+     * @return bool True if all required tables exist, false otherwise
+     */
+    private function requiredTablesExist(): bool
+    {
+        try {
+            // Check if app_settings table exists
+            DB::select("SELECT 1 FROM app_settings LIMIT 1");
+            
+            // Check if cache table exists (if using database cache driver)
+            if (config('cache.default') === 'database') {
+                DB::select("SELECT 1 FROM cache LIMIT 1");
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            // Tables don't exist or database connection failed
+            return false;
+        }
+    }
 }
+

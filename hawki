@@ -301,17 +301,17 @@ function initialize() {
     }
     
     // Check for test_users.json
-    if (!file_exists('storage/app/test_users.json')) {
-        if (file_exists('storage/app/test_users.json.example')) {
-            echo "Creating test_users.json from example..." . PHP_EOL;
-            copy('storage/app/test_users.json.example', 'storage/app/test_users.json');
-            echo GREEN . "✓ Created test_users.json" . RESET . PHP_EOL;
-        } else {
-            echo YELLOW . "! test_users.json.example not found" . RESET . PHP_EOL;
-        }
-    } else {
-        echo GREEN . "✓ test_users.json already exists" . RESET . PHP_EOL;
-    }
+    //if (!file_exists('storage/app/test_users.json')) {
+    //    if (file_exists('storage/app/test_users.json.example')) {
+    //        echo "Creating test_users.json from example..." . PHP_EOL;
+    //        copy('storage/app/test_users.json.example', 'storage/app/test_users.json');
+    //        echo GREEN . "✓ Created test_users.json" . RESET . PHP_EOL;
+    //    } else {
+    //        echo YELLOW . "! test_users.json.example not found" . RESET . PHP_EOL;
+    //    }
+    //} else {
+    //    echo GREEN . "✓ test_users.json already exists" . RESET . PHP_EOL;
+    //}
     
     // Check for model_providers.php
     if (!file_exists('config/model_providers.php')) {
@@ -567,10 +567,10 @@ function setupLdapEnv(&$env) {
     $ldapAttributes = promptWithDefault("LDAP_ATTRIBUTES", $current ?: 'cn,mail,displayname');
     $env = setEnvValue('LDAP_ATTRIBUTES', $ldapAttributes, $env);
     
-    // TEST_USER_LOGIN
-    $current = getEnvValue('TEST_USER_LOGIN', $env);
-    $testUserLogin = promptWithDefault("TEST_USER_LOGIN (true/false)", $current ?: 'false');
-    $env = setEnvValue('TEST_USER_LOGIN', $testUserLogin, $env);
+    echo "";
+    echo "All authentication settings are now configured via the admin interface.";
+    echo "Navigate to System Settings > Authentication after installation.";
+    echo "";
     
     saveEnv($env);
     echo GREEN . "✓ LDAP environment variables updated" . RESET . PHP_EOL;

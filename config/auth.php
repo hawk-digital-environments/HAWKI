@@ -2,7 +2,7 @@
 
 return [
 
-    'authentication_method' => env('APP_AUTHENTICATION_METHOD'),
+    'authentication_method' => env('AUTHENTICATION_METHOD', 'LDAP'),
 
     /*
     |--------------------------------------------------------------------------
@@ -113,5 +113,32 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Passkey Method
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define the method used for passkey generation.
+    | Options: user, auto
+    |
+    */
+    'passkey_method' => 'auto',
+    'passkey_secret' => 'default',
+    'passkey_otp' => false,
+    'passkey_otp_timeout' => 300,
+    
+    /*
+    |--------------------------------------------------------------------------
+    | Local User Accounts
+    |--------------------------------------------------------------------------
+    |
+    | Here you may define options local User creation.
+    |
+    */
+    'local_authentication' => true,
+    'local_selfservice' => true,
+    'local_needapproval' => true,
+
 
 ];

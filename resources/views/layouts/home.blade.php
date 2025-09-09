@@ -92,7 +92,7 @@
 	const defaultModel = @json($models).defaultModel;
 	const systemModels = @json($models).systemModels;
 
-	const aiHandle = "{{ config('app.aiHandle') }}";
+	const aiHandle = "{{ config('app.ai_handle') }}";
 
 	
 	window.addEventListener('DOMContentLoaded', async (event) => {

@@ -10,6 +10,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\MailController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SearchController;
@@ -32,6 +33,8 @@ Route::middleware('prevent_back')->group(function () {
     Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
     Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
     Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
+    Route::post('/req/login-local', [AuthenticationController::class, 'localLogin']);
+    Route::post('/req/submit-guest-request', [AuthenticationController::class, 'submitGuestRequest']);
     
     
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
@@ -50,7 +53,10 @@ Route::middleware('prevent_back')->group(function () {
     
     });
     
-
+    // OTP Routes (accessible without full authentication)
+    Route::post('/req/send-otp', [MailController::class, 'sendOTP']);
+    Route::post('/req/verify-otp', [AuthenticationController::class, 'verifyOTP']);
+    
     Route::get('/check-session', [HomeController::class, 'CheckSessionTimeout']);
 
     //CHECKS USERS AUTH
@@ -58,40 +64,41 @@ Route::middleware('prevent_back')->group(function () {
     
         Route::get('/handshake', [AuthenticationController::class, 'handshake']);
     
-        // AI CONVERSATION ROUTES
-        Route::get('/chat', [HomeController::class, 'show']);
-        Route::get('/chat/{slug?}' , [HomeController::class, 'show']);
-    
-        
-        Route::get('/req/conv/{slug?}', [AiConvController::class, 'loadConv']);
-        Route::post('/req/conv/createChat', [AiConvController::class, 'createConv']);
-        Route::post('/req/conv/sendMessage/{slug}', [AiConvController::class, 'sendMessage']);
-        Route::post('/req/conv/updateMessage/{slug}', [AiConvController::class, 'updateMessage']);
-        Route::post('/req/conv/updateInfo/{slug}', [AiConvController::class, 'updateInfo']);
-        Route::delete('/req/conv/removeConv/{slug}', [AiConvController::class, 'removeConv']);
-    
-    
-        // GROUPCHAT ROUTES
-        Route::get('/groupchat', [HomeController::class, 'show']);
-        Route::get('/groupchat/{slug?}', [HomeController::class, 'show']);
-    
-        Route::get('/req/room/{slug?}', [RoomController::class, 'loadRoom']);
-        Route::post('/req/room/createRoom', [RoomController::class, 'createRoom']);
-        Route::delete('/req/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom']);
-        Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
-    
-    
-        Route::middleware('roomEditor')->group(function () {
-            Route::post('/req/room/sendMessage/{slug}', [RoomController::class, 'sendMessage']);
-            Route::post('/req/room/updateMessage/{slug}', [RoomController::class, 'updateMessage']);
-            Route::post('/req/room/streamAI/{slug}', [StreamController::class, 'handleAiConnectionRequest']);
+        // AI CONVERSATION ROUTES - Protected by chat.access permission
+        Route::middleware(['chat.access:chat'])->group(function () {
+            Route::get('/chat', [HomeController::class, 'show']);
+            Route::get('/chat/{slug?}' , [HomeController::class, 'show']);
+            
+            Route::get('/req/conv/{slug?}', [AiConvController::class, 'loadConv']);
+            Route::post('/req/conv/createChat', [AiConvController::class, 'createConv']);
+            Route::post('/req/conv/sendMessage/{slug}', [AiConvController::class, 'sendMessage']);
+            Route::post('/req/conv/updateMessage/{slug}', [AiConvController::class, 'updateMessage']);
+            Route::post('/req/conv/updateInfo/{slug}', [AiConvController::class, 'updateInfo']);
+            Route::delete('/req/conv/removeConv/{slug}', [AiConvController::class, 'removeConv']);
         });
-    
-        Route::middleware('roomAdmin')->group(function () {
-            Route::post('/req/room/addMember', [RoomController::class, 'addMember']);
-            Route::post('/req/room/updateInfo/{slug}', [RoomController::class, 'updateInfo']);
-            Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'removeRoom']);
-            Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'removeMember']);
+
+        // GROUPCHAT ROUTES - Protected by groupchat.access permission
+        Route::middleware(['chat.access:groupchat'])->group(function () {
+            Route::get('/groupchat', [HomeController::class, 'show']);
+            Route::get('/groupchat/{slug?}', [HomeController::class, 'show']);
+        
+            Route::get('/req/room/{slug?}', [RoomController::class, 'loadRoom']);
+            Route::post('/req/room/createRoom', [RoomController::class, 'createRoom']);
+            Route::delete('/req/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom']);
+            Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
+
+            Route::middleware('roomEditor')->group(function () {
+                Route::post('/req/room/sendMessage/{slug}', [RoomController::class, 'sendMessage']);
+                Route::post('/req/room/updateMessage/{slug}', [RoomController::class, 'updateMessage']);
+                Route::post('/req/room/streamAI/{slug}', [StreamController::class, 'handleAiConnectionRequest']);
+            });
+
+            Route::middleware('roomAdmin')->group(function () {
+                Route::post('/req/room/addMember', [RoomController::class, 'addMember']);
+                Route::post('/req/room/updateInfo/{slug}', [RoomController::class, 'updateInfo']);
+                Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'removeRoom']);
+                Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'removeMember']);
+            });
         });
     
         
@@ -134,8 +141,10 @@ Route::middleware('prevent_back')->group(function () {
     
     
     });
-      // NAVIGATION ROUTES
-      Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
+
+
+    // NAVIGATION ROUTES
+    Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
 
 
 

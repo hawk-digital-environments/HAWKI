@@ -1,15 +1,17 @@
 <div class="sidebar">
         <div class="sidebar-content">
             <div class="upper-panel">
-                <button id="chat-sb-btn" onclick="onSidebarButtonDown('chat')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
-                    <x-icon name="chat-icon"/>
+                @if(Auth::user()->hasAccess('chat.access'))
+                    <button id="chat-sb-btn" onclick="onSidebarButtonDown('chat')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
+                        <x-icon name="chat-icon"/>
 
-                    <div class="label tooltip tt-abs-left">
-                        {{ $translation["Chat"] }}
-                    </div>
-                </button>
+                        <div class="label tooltip tt-abs-left">
+                            {{ $translation["Chat"] }}
+                        </div>
+                    </button>
+                @endif
 
-                @if(config('app.groupchat_active'))
+                @if(config('app.groupchat_active') && Auth::user()->hasAccess('groupchat.access'))
                     <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent">
                         <x-icon name="assistant-icon"/>
 

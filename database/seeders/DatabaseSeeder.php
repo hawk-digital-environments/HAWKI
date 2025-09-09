@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
         // Ensure you call the correct seeder class here
         $this->call([
             AppSettingsSeeder::class,
-            UserSeeder::class,
+            RoleSeeder::class,           // ← Create roles first
+            UserSeeder::class,           // ← Then users (can reference roles)
             AppSystemTextSeeder::class,
             AppLocalizedTextSeeder::class,
             AppCssSeeder::class,
