@@ -25,11 +25,12 @@
                 <p>{{ $translation["Reg_SL1_T"] }}</p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(2)">{{ $translation["Reg_SL1_B"] }}</button>
+                <button class="btn-lg-fill" onclick="navigateToSlide(2)">{{ $translation["Reg_SL1_B"] }}</button>
             </div>
         </div>
 
-        <div class="slide" data-index="2">
+        <div class="slide" data-index="2" @if(!config('app.groupchat_active', true)) style="display: none;" @endif>
+            <!-- Groupchat Slide -->
             <h1>{{ $translation["Reg_SL2_H"] }}</h1>
             <div class="slide-content">
                 <p>
@@ -37,7 +38,7 @@
                 </p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
+                <button class="btn-lg-fill" onclick="navigateToSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
             </div>
         </div>
 
@@ -122,8 +123,43 @@
     let passkeySecret = @json($passkeySecret);
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
     let needsPasswordReset = @json($needsPasswordReset ?? false);
+    let groupchatActive = @json(config('app.groupchat_active', true));
     
     initializeRegistration();
+    
+    // Helper function to navigate slides while respecting groupchat settings
+    function navigateToSlide(targetSlide) {
+        // If trying to navigate to slide 2 (groupchat) and groupchat is disabled, skip to slide 3
+        if (targetSlide === 2 && !groupchatActive) {
+            switchSlide(3);
+        }
+        // If navigating from slide 1 to slide 2 and groupchat is disabled, go to slide 3 instead
+        else if (targetSlide === 2 && !groupchatActive) {
+            switchSlide(3);
+        }
+        // If navigating backwards from slide 3 and groupchat is disabled, go to slide 1 instead of slide 2
+        else if (targetSlide === 2 && currentSlideIndex === 3 && !groupchatActive) {
+            switchSlide(1);
+        }
+        else {
+            switchSlide(targetSlide);
+        }
+    }
+    
+    // Override the switchBackSlide function to handle groupchat skipping
+    function switchBackSlideWithGroupchatCheck(){
+        let targetIndex = currentSlideIndex - 1;
+        
+        // If we're going back to slide 2 and groupchat is disabled, go to slide 1 instead
+        if (targetIndex === 2 && !groupchatActive) {
+            targetIndex = 1;
+        }
+        
+        switchSlide(targetIndex);
+    }
+    
+    // Override the global switchBackSlide function
+    window.switchBackSlide = switchBackSlideWithGroupchatCheck;
     
     // For local users who need password reset, start with password change
     // For other users (including self-service local users), start with normal flow
