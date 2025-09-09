@@ -16,50 +16,14 @@ class AppSystemTextSeeder extends Seeder
      */
     public function run()
     {
-        Log::info('Running AppSystemText seeder...');
+        // Default to safe mode for regular seeders (Docker deployment)
+        $forceUpdate = false;
         
-        $languagePath = resource_path('language/');
-        $supportedLanguages = ['de_DE', 'en_US'];
-        $count = 0;
+        $textImportService = new \App\Services\TextImport\TextImportService();
+        $count = $textImportService->importSystemTexts($forceUpdate);
         
-        // Process each language file
-        foreach ($supportedLanguages as $language) {
-            $jsonFile = $languagePath . $language . '.json';
-            
-            if (File::exists($jsonFile)) {
-                try {
-                    Log::info("Processing {$language} JSON file: {$jsonFile}");
-                    $jsonContent = File::get($jsonFile);
-                    $textData = json_decode($jsonContent, true);
-                    
-                    if ($textData && is_array($textData)) {
-                        foreach ($textData as $key => $value) {
-                            // Skip entries that are not strings or are empty
-                            if (!is_string($value) || empty($value)) {
-                                continue;
-                            }
-                            
-                            // Store the text in the database using seeder-specific method
-                            $result = AppSystemText::setTextIfNotExists($key, $language, $value);
-                            // Only count if it was actually created (not if it already existed)
-                            if ($result->wasRecentlyCreated) {
-                                $count++;
-                            }
-                        }
-                        
-                        Log::info("Successfully processed {$language} language file");
-                    } else {
-                        Log::error("Invalid JSON format in {$jsonFile}");
-                    }
-                } catch (\Exception $e) {
-                    Log::error("Error processing {$jsonFile}: " . $e->getMessage());
-                }
-            } else {
-                Log::warning("Language file not found: {$jsonFile}");
-            }
-        }
-        
-        Log::info("AppSystemText seeder completed: {$count} texts created (no updates)");
-        $this->command->info("AppSystemText seeder completed: {$count} texts created (no updates)");
+        $action = $forceUpdate ? 'updated' : 'created (no updates)';
+        Log::info("AppSystemText seeder completed: {$count} texts {$action}");
+        $this->command->info("AppSystemText seeder completed: {$count} texts {$action}");
     }
 }
