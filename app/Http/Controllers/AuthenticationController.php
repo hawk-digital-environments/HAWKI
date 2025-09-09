@@ -260,7 +260,7 @@ class AuthenticationController extends Controller
                     'isRemoved' => false
                 ]
             );
-            
+
             try {
                 $policy = $announcementService->fetchLatestPolicy();
                 $announcementService->markAnnouncementAsSeen($user, $policy->id);
@@ -294,22 +294,17 @@ class AuthenticationController extends Controller
 
     public function logout(Request $request)
     {
-        // Unset all session variables
-        Session::flush();
+        // Log out the user
+        Auth::logout();
 
-        // Regenerate session ID
-        Session::regenerate();
+        // Invalidate the session (flushes + regenerates token)
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        // Remove PHPSESSID cookie
-        if ($request->hasCookie('PHPSESSID')) {
-            $cookie = cookie('PHPSESSID', '', time() - 3600);
-            Cookie::queue($cookie);
-        }
+        // Clear PHPSESSID cookie (optional, Laravel doesn’t use PHPSESSID by default)
+        Cookie::queue(Cookie::forget('PHPSESSID'));
 
-        // Destroy the session
-        Session::invalidate();
-
-        // Determine the logout redirect URI based on the authentication method
+        // Redirect depending on authentication method
         $authMethod = env('AUTHENTICATION_METHOD');
         if ($authMethod === 'Shibboleth') {
             $redirectUri = config('shibboleth.logout_path');
@@ -319,7 +314,6 @@ class AuthenticationController extends Controller
             $redirectUri = '/login';
         }
 
-        // Redirect to the appropriate logout URI
         return redirect($redirectUri);
     }
 
