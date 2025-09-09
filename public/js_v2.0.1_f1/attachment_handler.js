@@ -247,7 +247,7 @@ function removeAtchFromList(fileId, queueId){
 
 
 async function requestAtchDelete(fileId, category){
-    const url = `/req/${category}/attachmnet/delete`;
+    const url = `/req/${category}/attachment/delete`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     try{
         const response = await fetch(url, {
@@ -321,10 +321,10 @@ async function uploadAttachmentQueue(queueId, category, slug = null) {
     console.log('uploading FIle ', queueId, category, slug);
     let url = '';
     if(slug){
-        url = `/req/${category}/attachmnet/upload/${slug}`;
+        url = `/req/${category}/attachment/upload/${slug}`;
     }
     else{
-        url = `/req/${category}/attachmnet/upload`;
+        url = `/req/${category}/attachment/upload`;
     }
     const attachments = uploadQueues.get(queueId);
     console.log('queue');

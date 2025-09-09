@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Storage\AvatarStorageService;
 use Illuminate\Console\Command;
 
 use App\Services\Storage\FileStorageService;
@@ -23,7 +24,7 @@ class CleanupFileStorage extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Cleanup expired files from the storage.';
 
     /**
      * Execute the console command.
@@ -31,13 +32,13 @@ class CleanupFileStorage extends Command
     public function handle(AttachmentService $attachmentService,
                            FileStorageService $fileStorageService)
     {
-        $deleteInterval = env('DELETE_FILES_AFTER_MONTHS');
-        if(empty($deleteInterval)){
-            $this->info('File Storage cleanup schedule not set.');
+        $deleteInterval = config('filesystems.garbage_collections.remove_files_after_months');
+        if($deleteInterval == 0){
+            $this->info('File Storage cleanup is disabled.');
             return;
         }
 
-        $timeLimit = Carbon::now()->subMinutes(1);
+        $timeLimit = Carbon::now()->subMonths($deleteInterval);
 
         //DELETE ATTACHMENTS
         $attachments = Attachment::where('created_at', '<', $timeLimit)->get();
@@ -67,6 +68,17 @@ class CleanupFileStorage extends Command
         }
         else{
             $this->info("No expired Attachment found");
+        }
+
+        $this->line('Cleaning up temp files...');
+
+        $fileStorage = app(FileStorageService::class);
+        $success = $fileStorage->deleteTempExpiredFiles();
+        if($success){
+            $this->info("Temp files deleted from File Storage.");
+        }
+        else{
+            $this->error("Could not delete temp files, or no expired files were found.");
         }
 
     }

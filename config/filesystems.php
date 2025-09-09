@@ -107,4 +107,9 @@ return [
         public_path('storage') => storage_path('app/public'),
     ],
 
+
+    'garbage_collections' => [
+        'remove_files_after_months' => env('REMOVE_FILES_AFTER_MONTHS', 6),
+    ]
+
 ];

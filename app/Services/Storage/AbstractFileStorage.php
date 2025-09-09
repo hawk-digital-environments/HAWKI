@@ -4,7 +4,6 @@ namespace App\Services\Storage;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 abstract class AbstractFileStorage implements StorageServiceInterface
@@ -153,6 +152,41 @@ abstract class AbstractFileStorage implements StorageServiceInterface
         }
     }
 
+
+
+    public function deleteTempExpiredFiles(): bool
+    {
+        $tempFolder = 'temp';
+        // 5 Minutes buffer time to prevent accidentally deleting temp files that were in upload process.
+        $ttl = 5 * 60;
+        $now = time();
+        $deleted = false;
+
+        $directories = $this->disk->allDirectories($tempFolder);
+
+        foreach (array_reverse($directories) as $directory) {
+            // Get all files recursively in the temp folder
+            $files = $this->disk->files($directory);
+            foreach ($files as $file) {
+                $lastModified = $this->disk->lastModified($file);
+
+                if (($now - $lastModified) > $ttl) {
+                    try {
+                        $this->disk->delete($file);
+                        $deleted = true;
+                    } catch (Throwable $e) {
+                        Log::warning("Failed to delete temp file: {$file}", ['error' => $e->getMessage()]);
+                    }
+                }
+            }
+            //Cleanup empty directories.
+            if (empty($this->disk->files($directory)) && empty($this->disk->directories($directory))) {
+                $this->disk->deleteDirectory($directory);
+            }
+        }
+        Log::info("Scheduled: File Storage cleanup done successfully: " . ($deleted ? 'true' : 'false, or no expired files found!'));
+        return $deleted;
+    }
 
     public function getUrl(string $uuid, string $category): ?string
     {

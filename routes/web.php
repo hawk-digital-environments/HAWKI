@@ -77,10 +77,10 @@ Route::middleware('prevent_back')->group(function () {
 
             Route::delete('/req/conv/message/delete/{slug}', [AiConvController::class, 'deleteMessage']);
 
-            Route::post('/req/conv/attachmnet/upload', [AiConvController::class, 'storeAttachment']);
+            Route::post('/req/conv/attachment/upload', [AiConvController::class, 'storeAttachment']);
             Route::get('/req/conv/attachment/getLink/{uuid}', [AiConvController::class, 'getAttachmentUrl']);
 
-            Route::delete('/req/conv/attachmnet/delete', [AiConvController::class, 'deleteAttachment']);
+            Route::delete('/req/conv/attachment/delete', [AiConvController::class, 'deleteAttachment']);
             Route::post('/req/streamAI', [StreamController::class, 'handleAiConnectionRequest']);
 
 
@@ -100,8 +100,8 @@ Route::middleware('prevent_back')->group(function () {
                 Route::post('/req/room/updateMessage/{slug}', [RoomController::class, 'updateMessage']);
                 Route::post('/req/room/streamAI/{slug}', [StreamController::class, 'handleAiConnectionRequest']);
 
-                Route::post('/req/room/attachmnet/upload/{slug}', [RoomController::class, 'storeAttachment']);
-                Route::delete('/req/room/attachmnet/delete/{slug}', [RoomController::class, 'deleteAttachment']);
+                Route::post('/req/room/attachment/upload/{slug}', [RoomController::class, 'storeAttachment']);
+                Route::delete('/req/room/attachment/delete/{slug}', [RoomController::class, 'deleteAttachment']);
             });
 
             Route::middleware('roomAdmin')->group(function () {
