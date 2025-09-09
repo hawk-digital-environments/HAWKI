@@ -78,7 +78,8 @@ async function submitMessageToServer(requestObj, url){
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
             },
             body: JSON.stringify(requestObj)
         });
@@ -103,7 +104,8 @@ async function requestMsgUpdate(messageObj, messageElement, url){
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrf
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json',
             },
             body: JSON.stringify(messageObj)
         });
@@ -307,7 +309,8 @@ async function sendReadStatToServer(message_id){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: JSON.stringify({'message_id': message_id,})
         });

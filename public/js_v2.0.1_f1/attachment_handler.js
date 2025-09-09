@@ -254,7 +254,8 @@ async function requestAtchDelete(fileId, category){
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: JSON.stringify({
                 'fileId': fileId,

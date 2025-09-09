@@ -52,7 +52,7 @@ function generatePasskeyBackupHash(){
 async function deriveKey(passkey, label, serverSalt) {
 
     const enc = new TextEncoder();
-    
+
     const keyMaterial = await window.crypto.subtle.importKey(
         "raw",
         enc.encode(passkey),
@@ -63,7 +63,7 @@ async function deriveKey(passkey, label, serverSalt) {
 
     // Combine label and serverSalt to create a unique salt for this derived key
     const combinedSalt = new Uint8Array([
-        ...new TextEncoder().encode(label), 
+        ...new TextEncoder().encode(label),
         ...new Uint8Array(serverSalt)
     ]);
 
@@ -480,6 +480,7 @@ async function backupKeychainOnServer(encKeychainData){
             headers: {
                 'Content-Type': 'application/json',
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
             },
             body: JSON.stringify(requestObject)
         });
@@ -607,7 +608,7 @@ async function fetchServerSalt(saltLabel) {
         return serverSalt;
     }
 
-    
+
     try {
         // Make a GET request to the server with saltlabel in the headers
         const response = await fetch('/req/crypto/getServerSalt', {
@@ -616,6 +617,7 @@ async function fetchServerSalt(saltLabel) {
                 'Content-Type': 'application/json',  // Optional for GET, but useful to include
                 'saltlabel': saltLabel,              // Pass saltlabel as a custom header
                 "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
             },
         });
 
@@ -710,7 +712,7 @@ async function importSymmetricKey(decryptedRoomKey) {
 async function getPassKey(){
 
     if(passKey){
-       return passKey; 
+       return passKey;
     }
     else{
         try{
@@ -718,9 +720,9 @@ async function getPassKey(){
             const keyJson = JSON.parse(keyData);
             const salt = await fetchServerSalt('PASSKEY_SALT');
             const key = await deriveKey(userInfo.email, userInfo.username, salt);
-        
+
             passKey = await decryptWithSymKey(key, keyJson.ciphertext, keyJson.iv, keyJson.tag, false);
-            
+
             if(await testPassKey()){
                 return passKey;
             }
@@ -754,7 +756,7 @@ async function testPassKey(passKey){
 
     if( await keychainGet('username') === userInfo.username){
         return true;
-    }    
+    }
     else{
         return false;
     }

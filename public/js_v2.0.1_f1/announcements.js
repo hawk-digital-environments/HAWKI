@@ -42,7 +42,8 @@ async function renderAnnouncement(announcement, show = true){
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
             }
         })
         const data = await response.json();
@@ -182,7 +183,8 @@ function markAnnouncementAsSeen(announcementId) {
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
         }
     })
     .catch(error => console.error('Error marking announcement as seen:', error));
@@ -195,7 +197,8 @@ function reportAnnouncementFeedback(announcementId){
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
         }
     })
     .then(response => response.json())
@@ -215,7 +218,8 @@ async function fetchLatestPolicy() {
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
         });
         if (!response.ok) {

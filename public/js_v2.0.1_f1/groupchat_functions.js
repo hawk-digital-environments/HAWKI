@@ -192,7 +192,8 @@ async function requestMessageContent(messageId, slug){
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
             },
         });
 
@@ -481,7 +482,8 @@ async function createNewRoom(){
             method: "POST",
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
             },
             body: JSON.stringify(requestObj)
         })
@@ -634,7 +636,8 @@ async function requestStoreInvitationsOnServer(invitations, slug){
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
         },
         body: JSON.stringify({invitations})
     });
@@ -646,7 +649,8 @@ async function sendInvitationEmail(mailContent){
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
         },
         body: JSON.stringify(mailContent)
     });
@@ -660,7 +664,8 @@ async function handleUserInvitations() {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
             },
         });
 
@@ -711,7 +716,8 @@ async function handleTempLinkInvitation(tempLink){
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
             },
         });
 
@@ -737,7 +743,8 @@ async function finishInvitationHandling(invitation_id, roomKey){
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
         },
         body: JSON.stringify({ invitation_id: invitation_id })
     });
@@ -915,7 +922,8 @@ async function RequestRoomContent(slug){
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
         });
 
@@ -982,7 +990,8 @@ async function searchUser(searchBar) {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
                 },
                 body: JSON.stringify({
                     "query": encodeURIComponent(query)
@@ -1296,7 +1305,8 @@ async function requestDeleteRoom() {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
         });
         const data = await response.json();
@@ -1327,7 +1337,8 @@ async function leaveRoom(){
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
         });
         const data = await response.json();
@@ -1377,7 +1388,8 @@ async function removeMemberFromRoom(username){
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: JSON.stringify({'username': username})
         });
@@ -1433,7 +1445,8 @@ async function uploadRoomAvatar(image){
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: formData
         });
@@ -1469,6 +1482,7 @@ async function updateRoomInfo(slug, formData){
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
 
             },
             body: formData

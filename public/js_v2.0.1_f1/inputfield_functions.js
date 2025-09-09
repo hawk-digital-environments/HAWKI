@@ -139,7 +139,8 @@ async function updateAiChatSystemPrompt(inputPrompt){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: JSON.stringify({
                 'system_prompt': systemPromptStr

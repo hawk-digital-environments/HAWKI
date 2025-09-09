@@ -57,7 +57,8 @@ async function uploadProfileAvatar(image){
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: formData
         });
@@ -118,7 +119,8 @@ async function updateUserInformation(){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: JSON.stringify(requestObject)
         });

@@ -103,7 +103,8 @@
             const response = await fetch('/req/login-ldap', {
                 method: "POST",
                 headers: {
-                    "X-CSRF-TOKEN": csrfToken
+                    "X-CSRF-TOKEN": csrfToken,
+                    'Accept': 'application/json',
                 },
                 body: formData
             });

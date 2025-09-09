@@ -1,5 +1,5 @@
 async function toggleAccessTokensPanel(active){
-    
+
     const panel = document.querySelector('#access-token-modal');
     const newTokenField = panel.querySelector('#newAccessTokenName');
     const chart = panel.querySelector('#access-token-chart');
@@ -8,13 +8,13 @@ async function toggleAccessTokensPanel(active){
         newTokenField.style.display = 'none';
         chart.innerHTML = '';
         const tokens = await fetchUserTokens();
-        
+
         // console.log(tokens);
         for(let i = 0; i < tokens.length; i++){
             const t = tokens[i];
             addTokenToList(t);
         };
-        
+
         panel.style.display = "flex";
 
     }
@@ -30,7 +30,8 @@ async function fetchUserTokens(){
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
         });
         const data = await response.json();
@@ -47,10 +48,10 @@ async function fetchUserTokens(){
 async function addNewToken(){
     const panel = document.querySelector('#access-token-modal');
     const newTokenField = panel.querySelector('#newAccessTokenName');
-    
+
     if(newTokenField.style.display === "block"){
         const name = newTokenField.value;
-        
+
         if(name === ''){
             return;
         }
@@ -73,7 +74,7 @@ async function addNewToken(){
             `,
             `<h3>${translation.Cnf_tokenMsgSuccess}</h3>`
         )
-        
+
         return;
     }
     newTokenField.style.display="block";
@@ -87,7 +88,8 @@ async function requestNewToken(name){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: JSON.stringify({
                 'name': name
@@ -134,7 +136,8 @@ async function requestTokenRevoke(btn){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
             },
             body: JSON.stringify({
                 'tokenId': tokenId

@@ -254,7 +254,8 @@ function changeLanguage(lang) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken, // Add CSRF token header
+            'X-CSRF-Token': csrfToken,
+            'Accept': 'application/json',
         },
         body: JSON.stringify({inputLang: lang}),
     })
