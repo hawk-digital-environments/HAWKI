@@ -122,10 +122,15 @@ class ManageUser extends Command
     /**
      * Create a single test user with incremental naming
      */
-    private function createTestUser(string $employeeType, string $authType, bool $hasApproval = true): User
+    private function createTestUser(string $employeeType, string $authType, bool $hasApproval = null): User
     {
         // Ensure employeeType is lowercase for Orchid role compatibility
         $employeeType = strtolower($employeeType);
+        
+        // If approval not explicitly set, use local_needapproval config for local users
+        if ($hasApproval === null) {
+            $hasApproval = true; // Test users created by admin command are always approved
+        }
         
         // Create user with temporary data first
         $userData = [
@@ -137,7 +142,7 @@ class ManageUser extends Command
             'password' => 'password', // Will be auto-hashed by User model
             'publicKey' => '', // Always empty string
             'avatar_id' => null,
-            'reset_pw' => ($authType === 'Local'), // Local users need password reset
+            'reset_pw' => ($authType === 'local'), // Local users need password reset
             'approval' => $hasApproval, // Set approval status
             'isRemoved' => false,
             'permissions' => null, // Always NULL

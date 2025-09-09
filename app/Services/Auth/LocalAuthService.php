@@ -81,7 +81,7 @@ class LocalAuthService
             $needsApproval = config('auth.local_needapproval') === true;
             $approval = array_key_exists('approval', $userData)
                 ? (bool)$userData['approval']
-                : !$needsApproval; // Wenn approval nicht gesetzt und Approval benötigt: false, sonst true
+                : !$needsApproval; // Wenn Approval benötigt: false, sonst true
 
             $user = User::create([
                 'username' => $userData['username'],

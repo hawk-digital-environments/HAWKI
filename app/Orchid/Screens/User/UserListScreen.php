@@ -256,7 +256,7 @@ class UserListScreen extends Screen
                         'avatar_id' => $userData['avatar_id'] ?? null,
                         'auth_type' => 'local',
                         'reset_pw' => true,
-                        'approval' => $hasValidRole, // Only approve if employeetype maps to valid role
+                        'approval' => true, // Admin-created users are automatically approved
                         'publicKey' => '',
                         'bio' => null,
                         'isRemoved' => false,
@@ -264,11 +264,8 @@ class UserListScreen extends Screen
                     ]);
 
                     $importedCount++;
-                    if ($hasValidRole) {
-                        $approvedCount++;
-                    } else {
-                        $pendingApprovalCount++;
-                    }
+                    // Admin-created users are always approved
+                    $approvedCount++;
 
                 } catch (\Exception $e) {
                     $errors[] = "User at index {$index}: " . $e->getMessage();

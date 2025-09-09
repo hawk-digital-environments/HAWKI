@@ -226,11 +226,22 @@ class AuthenticationController extends Controller
         $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
         $isFirstLoginLocalUser = Session::get('first_login_local_user', false);
         
-        // Check if local user needs password reset
+        // Check if local user needs password reset and approval
         $needsPasswordReset = false;
+        $needsApproval = false;
+        
         if ($isFirstLoginLocalUser && isset($userInfo['username'])) {
             $user = User::where('username', $userInfo['username'])->first();
-            $needsPasswordReset = $user && $user->reset_pw;
+            
+            if ($user) {
+                $needsPasswordReset = $user->reset_pw;
+                
+                // Calculate approval logic for local users
+                if ($user->auth_type === 'local') {
+                    $localNeedsApproval = config('auth.local_needapproval', true);
+                    $needsApproval = !$user->approval && $localNeedsApproval;
+                }
+            }
         }
 
 
@@ -253,7 +264,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret', 'isFirstLoginLocalUser', 'needsPasswordReset'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret', 'isFirstLoginLocalUser', 'needsPasswordReset', 'needsApproval'));
     }
 
 
@@ -305,6 +316,10 @@ class AuthenticationController extends Controller
     
             $avatarId = $validatedData['avatar_id'] ?? '';
 
+            // Check if this is a new user or existing user
+            $existingUser = User::where('username', $username)->first();
+            $isNewUser = !$existingUser;
+
             // Prepare data for update/create
             $userData = [
                 'name' => $name,
@@ -314,11 +329,14 @@ class AuthenticationController extends Controller
                 'avatar_id' => $avatarId,
                 'isRemoved' => false,
                 'permissions' => $permissions,
-                // Approval logic based on auth method
-                'approval' => $this->authMethod === 'local' 
-                    ? !config('auth.local_needapproval', false)  // Local users: depends on config
-                    : true,  // External auth users: always auto-approved
             ];
+
+            // Only set approval for NEW users, don't override existing approval status
+            if ($isNewUser) {
+                $userData['approval'] = $this->authMethod === 'local' 
+                    ? !config('auth.local_needapproval', false)  // Local users: depends on config
+                    : true;  // External auth users: always auto-approved
+            }
 
             // Only set auth_type for new users or when it's not a local user completing registration
             if (!$isFirstLoginLocalUser) {
@@ -368,7 +386,7 @@ class AuthenticationController extends Controller
                 'username' => $username,
                 'email' => $email,
                 'auth_method' => $this->authMethod,
-                'approval_status' => $userData['approval'] ? 'approved' : 'pending',
+                'approval_status' => ($userData['approval'] ?? $user->approval) ? 'approved' : 'pending',
                 'role_mapping' => $roleMappingInfo,
                 'password_reset' => $passwordResetInfo,
                 'is_local_user' => $isFirstLoginLocalUser,
@@ -530,6 +548,8 @@ class AuthenticationController extends Controller
                 if($user->auth_type === 'local' && empty($user->publicKey)) {
                     // Local user who needs to complete registration process
                     // This includes both admin-created users and self-service users
+                    
+                    // DON'T login yet - save user data in session instead
                     Session::put('registration_access', true);
                     Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
                     Session::put('first_login_local_user', true);

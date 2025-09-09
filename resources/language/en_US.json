@@ -105,6 +105,10 @@
     "Reg_SL0_B": "Let's go!",
     "Reg_SL0_T": "<strong>Important:</strong> Your chats are encrypted before they are stored on our server. Only the devices you have registered for :system can decrypt these chats. 💻📲 <br>If you want to log in on a new device, you must confirm your identity with an activation code that you will receive by email. 📫",
 
+    "Reg_SL7_H": "Access Under Review ⏰",
+    "Reg_SL7_T": "Your request is being reviewed. You will receive an email notification about the status of your request.",
+    "Reg_SL7_Contact": "Have questions? Contact us at:",
+
 
     "Reg_SL5_PH1": "Enter your Datakey",
     "Reg_SL5_PH2": "Repeat the Datakey",

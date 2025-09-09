@@ -107,6 +107,30 @@
             </div>
         </div>
 
+        {{-- Admin Approval Required Slide for Self-Registered Users --}}
+                    <!-- Slide 7: Approval Required -->
+            <div class="slide" id="slide-7" data-index="7" style="display: none;">
+                <h1>{{ $translation["Reg_SL7_H"] }}</h1>
+                <div class="slide-content">
+                    <p>{{ $translation["Reg_SL7_T"] }}</p>
+                    <p>
+                        {{ $translation["Reg_SL7_Contact"] }}
+                        <strong>
+                            <a href="mailto:{{ config('mail.from.address') }}" id="contact-email">
+                                {{ config('mail.from.address') }}
+                            </a>
+                        </strong>
+                        <br>
+                    </p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="redirectToLogin()">
+                        {{ $translation["Logout"] ?? "Logout" }}
+                    </button>
+                </div>
+                </div>
+            </div>
+
     </div>
   
 </div>
@@ -115,15 +139,13 @@
 </div>
 @include('partials.home.modals.confirm-modal')
 
-
-
-
 <script>
     let userInfo = @json($userInfo);
     let passkeySecret = @json($passkeySecret);
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
     let needsPasswordReset = @json($needsPasswordReset ?? false);
     let groupchatActive = @json(config('app.groupchat_active', true));
+    let needsApproval = @json($needsApproval ?? false);
     
     initializeRegistration();
     
@@ -161,15 +183,26 @@
     // Override the global switchBackSlide function
     window.switchBackSlide = switchBackSlideWithGroupchatCheck;
     
-    // For local users who need password reset, start with password change
-    // For other users (including self-service local users), start with normal flow
-    if (isFirstLoginLocalUser && needsPasswordReset) {
+    // Determine initial slide based on user status - priority order matters!
+    if (needsApproval) {
+        // HIGHEST PRIORITY: Users who need admin approval - show approval slide immediately
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('slide-7').style.display = 'block';
+            // Hide back button on approval slide since there's no previous slide
+            document.querySelector('.slide-back-btn').style.display = 'none';
+            switchSlide(7);
+        });
+    } else if (isFirstLoginLocalUser && needsPasswordReset) {
+        // SECOND PRIORITY: Admin-created users who need password reset
         window.addEventListener('DOMContentLoaded', function() {
             document.getElementById('password-change-slide').style.display = 'block';
             switchSlide(5.5);
         });
     } else {
-        window.addEventListener('DOMContentLoaded', switchSlide(1));
+        // NORMAL FLOW: Users who can proceed with registration (including approved self-service users)
+        window.addEventListener('DOMContentLoaded', function() {
+            switchSlide(1);
+        });
     }
 
     setTimeout(() => {
@@ -204,6 +237,11 @@
         // After password is set, continue with normal registration flow
         // Start with slide 1 (welcome/intro) then proceed to passkey generation
         switchSlide(1);
+    }
+
+    // Function to redirect back to login page
+    function redirectToLogin() {
+        window.location.href = '/login';
     }
 
     // For local users, override completeRegistration to include new password
