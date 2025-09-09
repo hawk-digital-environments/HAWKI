@@ -35,7 +35,7 @@ readonly class OllamaRequestConverter
         // Format messages for Ollama
         $formattedMessages = [];
         foreach ($messages as $message) {
-            $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $modelId);
+            $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $model);
         }
         
         // Build payload with common parameters

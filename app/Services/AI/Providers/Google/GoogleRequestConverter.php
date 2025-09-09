@@ -43,7 +43,7 @@ readonly class GoogleRequestConverter
         // Format messages for Google
         $formattedMessages = [];
         foreach ($messages as $message) {
-            $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $modelId);
+            $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $model);
         }
 
 

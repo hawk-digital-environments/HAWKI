@@ -32,7 +32,7 @@ readonly class GwdgRequestConverter
         // Format messages for GWDG
         $formattedMessages = [];
         foreach ($messages as $message) {
-            $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $modelId);
+            $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $model);
         }
 
         // Build payload with common parameters
