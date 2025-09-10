@@ -39,11 +39,12 @@ async function selectProfileAvatar(btn){
         }
 
         imageElement.setAttribute('src', imageUrl);
-        document.querySelector('.sidebar')
-                .querySelector('.profile-icon')
-                .querySelector('img')
-                .setAttribute('src', imageUrl);
-
+        const sidebarBtn =document.querySelector('.sidebar');
+        sidebarBtn.querySelector('.profile-icon')
+                    .querySelector('img')
+                    .setAttribute('src', imageUrl);
+        sidebarBtn.querySelector('.user-inits').style.display = 'none';
+        sidebarBtn.querySelector('.icon-img').style.display = 'flex';
     });
 }
 

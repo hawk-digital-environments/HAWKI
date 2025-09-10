@@ -147,15 +147,24 @@
 }
 /* SECTION: IMAG#image-selection-modalE SELECTOR */
 
+#image-selection-modal .modal-panel{
+    aspect-ratio: 3/4;
+
+}
 #image-selection-modal .modal-content{
     height: 75vh;
+    max-height: 100%;
+}
+#image-selection-modal .modal-content-wrapper{
+    overflow: hidden;
 }
 .image-container {
     position: relative;
     display: flex;
     justify-content: center;
-    width: 100%; /* Adjust based on your design */
-    height: 40vh;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1/1;
 }
 
 #image-field {
@@ -168,7 +177,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%;
+    height: auto;
+    max-width: 100%;
+    width: 100%;
     aspect-ratio: 1 / 1;
     border-radius: 50%;
     background-color: var(--background-secondary);
