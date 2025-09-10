@@ -172,14 +172,17 @@ class MigrateAvatars extends Command
                 return;
             }
 
-            // Check if old avatar file exists
-            $oldAvatarPath = "public/profile_avatars/{$avatarId}";
+            // Find avatar file with any extension
+            $avatarFile = $this->findAvatarFile($avatarId, 'public/profile_avatars');
 
-            if (!Storage::disk('local')->exists($oldAvatarPath)) {
-                $this->error("Avatar file not found for user {$user->id} (username: {$username}): {$oldAvatarPath}");
+            if (!$avatarFile) {
+                $this->error("Avatar file not found for user {$user->id} (username: {$username}): public/profile_avatars/{$avatarId}.*");
                 $this->profileSkippedCount++;
                 return;
             }
+
+            $oldAvatarPath = $avatarFile['path'];
+            $extension = $avatarFile['extension'];
 
             // Check if new avatar already exists (unless force is used)
             if (!$force) {
@@ -194,7 +197,7 @@ class MigrateAvatars extends Command
             }
 
             if ($isDryRun) {
-                $this->line("Would migrate: User {$user->id} ({$username}) - {$oldAvatarPath} -> profile_avatars/{$username}/{$avatarId}");
+                $this->line("Would migrate: User {$user->id} ({$username}) - {$oldAvatarPath} -> profile_avatars/{$avatarId}.{$extension}");
                 $this->profileMigratedCount++;
                 return;
             }
@@ -206,13 +209,6 @@ class MigrateAvatars extends Command
                 $this->error("Could not read avatar file for user {$username}: {$oldAvatarPath}");
                 $this->profileErrorCount++;
                 return;
-            }
-
-            // Determine file extension from original file or detect from content
-            $extension = $this->getFileExtension($oldAvatarPath);
-            if (!$extension) {
-                // Try to detect from file content
-                $extension = $this->detectFileExtension($fileContent) ?? 'jpg';
             }
 
             // Store using AvatarStorageService
@@ -269,19 +265,22 @@ class MigrateAvatars extends Command
             // Clean room name for use as folder name (remove special characters)
             $cleanRoomName = preg_replace('/[^a-zA-Z0-9_-]/', '_', $roomName);
 
-            // Check if old room avatar file exists
-            $oldAvatarPath = "public/room_avatars/{$roomIcon}";
+            // Find room avatar file with any extension
+            $avatarFile = $this->findAvatarFile($roomIcon, 'public/room_avatars');
 
-            if (!Storage::disk('local')->exists($oldAvatarPath)) {
-                $this->error("Room avatar file not found for room {$room->id} (name: {$roomName}): {$oldAvatarPath}");
+            if (!$avatarFile) {
+                $this->error("Room avatar file not found for room {$room->id} (name: {$roomName}): public/room_avatars/{$roomIcon}.*");
                 $this->roomSkippedCount++;
                 return;
             }
 
+            $oldAvatarPath = $avatarFile['path'];
+            $extension = $avatarFile['extension'];
+
             // Check if new avatar already exists (unless force is used)
             if (!$force) {
-                $existingFile = $this->avatarStorage->retrieveFile('room_avatars', $cleanRoomName, $roomIcon);
-                if ($existingFile !== false) {
+                $existingFile = $this->avatarStorage->retrieve($roomIcon, 'room_avatars');
+                if ($existingFile !== null) {
                     if ($this->output->isVerbose()) {
                         $this->line("Avatar already exists for room {$roomName}, skipping...");
                     }
@@ -291,7 +290,7 @@ class MigrateAvatars extends Command
             }
 
             if ($isDryRun) {
-                $this->line("Would migrate: Room {$room->id} ({$roomName}) - {$oldAvatarPath} -> room_avatars/{$cleanRoomName}/{$roomIcon}");
+                $this->line("Would migrate: Room {$room->id} ({$roomName}) - {$oldAvatarPath} -> room_avatars/{$roomIcon}.{$extension}");
                 $this->roomMigratedCount++;
                 return;
             }
@@ -305,19 +304,13 @@ class MigrateAvatars extends Command
                 return;
             }
 
-            // Determine file extension from original file or detect from content
-            $extension = $this->getFileExtension($oldAvatarPath);
-            if (!$extension) {
-                // Try to detect from file content
-                $extension = $this->detectFileExtension($fileContent) ?? 'jpg';
-            }
-
             // Store using AvatarStorageService
             $stored = $this->avatarStorage->store(
                 file: $fileContent,
+                filename: $roomIcon . '.' . $extension,
+                uuid: $roomIcon,
                 category: 'room_avatars',
-                name: $cleanRoomName,
-                uuid: $roomIcon
+                temp: false
             );
 
             if ($stored) {
@@ -370,6 +363,23 @@ class MigrateAvatars extends Command
         ];
 
         return $extensions[$mimeType] ?? null;
+    }
+
+    protected function findAvatarFile(string $avatarId, string $folder): ?array
+    {
+        $commonExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'];
+        
+        foreach ($commonExtensions as $ext) {
+            $path = "{$folder}/{$avatarId}.{$ext}";
+            if (Storage::disk('local')->exists($path)) {
+                return [
+                    'path' => $path,
+                    'extension' => $ext
+                ];
+            }
+        }
+        
+        return null;
     }
 
     protected function displaySummary(bool $isDryRun): void
@@ -435,6 +445,76 @@ class MigrateAvatars extends Command
 
         if ($isDryRun) {
             $this->info('Run without --dry-run to perform the actual migration.');
+        } else if ($totalMigrated > 0) {
+            // Ask user if they want to remove old files
+            $this->promptForOldFileCleanup();
+        }
+    }
+
+    protected function promptForOldFileCleanup(): void
+    {
+        if ($this->confirm('Do you want to remove all old avatar files from the original directories?', false)) {
+            $this->cleanupOldAvatarFiles();
+        } else {
+            $this->info('Old avatar files have been left in place.');
+        }
+    }
+
+    protected function cleanupOldAvatarFiles(): void
+    {
+        $this->info('Cleaning up old avatar files...');
+        
+        $profileDeleted = 0;
+        $roomDeleted = 0;
+        $errors = 0;
+
+        // Clean up profile avatars
+        try {
+            $profileAvatarFiles = Storage::disk('local')->files('public/profile_avatars');
+            foreach ($profileAvatarFiles as $file) {
+                if (Storage::disk('local')->delete($file)) {
+                    $profileDeleted++;
+                } else {
+                    $errors++;
+                    $this->warn("Failed to delete: {$file}");
+                }
+            }
+        } catch (Throwable $e) {
+            $this->error("Error cleaning profile avatars: " . $e->getMessage());
+            $errors++;
+        }
+
+        // Clean up room avatars
+        try {
+            $roomAvatarFiles = Storage::disk('local')->files('public/room_avatars');
+            foreach ($roomAvatarFiles as $file) {
+                if (Storage::disk('local')->delete($file)) {
+                    $roomDeleted++;
+                } else {
+                    $errors++;
+                    $this->warn("Failed to delete: {$file}");
+                }
+            }
+        } catch (Throwable $e) {
+            $this->error("Error cleaning room avatars: " . $e->getMessage());
+            $errors++;
+        }
+
+        // Display cleanup summary
+        $this->info('Cleanup Summary:');
+        $this->table(
+            ['Directory', 'Files Deleted'],
+            [
+                ['Profile Avatars', $profileDeleted],
+                ['Room Avatars', $roomDeleted],
+                ['Total', $profileDeleted + $roomDeleted]
+            ]
+        );
+
+        if ($errors > 0) {
+            $this->warn("There were {$errors} errors during cleanup. Some files may still remain.");
+        } else {
+            $this->info('All old avatar files have been successfully removed.');
         }
     }
 }

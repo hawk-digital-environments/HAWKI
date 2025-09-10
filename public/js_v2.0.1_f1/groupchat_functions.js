@@ -890,7 +890,7 @@ function loadRoomMembers(roomData) {
         </button>`;
 
     roomData.members.forEach(member => {
-        if (member.name === 'AI') return;
+        if (member.employeetype === 'system') return;
 
         const memberBtnTemp = document.getElementById('member-listBtn-template').content.cloneNode(true);
         const memberBtnIcon = memberBtnTemp.querySelector('#member-icon');
