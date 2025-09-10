@@ -230,8 +230,8 @@ class StreamController extends Controller
 
         if ($isUpdate) {
             $message = $messageHandler->update($room, [
-                'model' => $data['payload']['model'],
                 'message_id' => $data['messageId'],
+                'model' => $data['payload']['model'],
                 'content' => [
                     'text' => [
                         'ciphertext' => base64_encode($encryptedData->ciphertext),
@@ -245,6 +245,7 @@ class StreamController extends Controller
                 'threadId' => $data['threadIndex'],
                 'member' => $member,
                 'message_role'=> 'assistant',
+                'model'=> $data['payload']['model'],
                 'content' => [
                     'text' => [
                         'ciphertext' => base64_encode($encryptedData->ciphertext),

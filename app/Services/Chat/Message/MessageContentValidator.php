@@ -34,8 +34,7 @@ class MessageContentValidator
                 }
             });
 
-            $validated = $validator->validate();
-            return $validated;
+            return $validator->validate();
         }
         catch (ValidationException $e) {
             Log::error($e->getMessage());

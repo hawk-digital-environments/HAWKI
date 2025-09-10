@@ -68,6 +68,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     }
 
     /// Set Author Name
+    console.log(messageObj);
     if(messageObj.model && messageObj.message_role === 'assistant'){
         console.log(messageObj);
         model = modelsList.find(m => m.id === messageObj.model);
@@ -134,20 +135,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
         messageObj.content.attachments.forEach(attachment => {
 
-            const thumbnail = createAttachmentThumbnail(attachment.fileData);
-            thumbnail.querySelector('.content').addEventListener('click', ()=> {
-                if(activeModule === 'chat'){
-                    previewFile(thumbnail, attachment.fileData, 'conv');
-                }
-                if(activeModule === 'groupchat'){
-                    previewFile(thumbnail, attachment.fileData, 'room');
-                }
-            })
-            const rmBtn = thumbnail.querySelector('.remove-btn');
-            rmBtn.removeAttribute('onclick');
-            rmBtn.disabled = true;
-            rmBtn.style.display = 'none';
-
+            const thumbnail = createAttachmentThumbnail(attachment.fileData, 'message');
             // Add to file preview container
             attachmentContainer.appendChild(thumbnail);
         });

@@ -81,7 +81,7 @@ function uploadFileToServer(fileData, url, progressCallback) {
 }
 
 
-async function requestFileUrl(uuid, category, filename){
+async function requestFileUrl(uuid, category){
     try {
         const response = await fetch(`/req/${category}/attachment/getLink/${uuid}`, {
             method: 'GET',
@@ -100,49 +100,51 @@ async function requestFileUrl(uuid, category, filename){
         return data.url;
 
         } else {
-        alert('Failed to get download link');
+        console.error('Failed to get download link');
         }
     } catch (err) {
         console.error('Download error:', err);
-        alert('An error occurred while requesting the file.');
+        console.error('An error occurred while requesting the file.');
     }
 }
 
-// async function downloadAttachment(uuid, category){
+async function downloadFile(uuid, category, filename) {
+    try {
+        // Get signed file URL from your backend
+        const url = await requestFileUrl(uuid, category);
 
-//     const requestObj = json.stringify({
-//         'category': category,
-//         'uuid': uuid
-//     });
+        // Fetch the file as blob
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Download failed: ${response.statusText}`);
+        }
 
-//     try {
-//         // Send request to server
-//         const response = await fetch('/req/download-file', {
-//             method: 'POST',
-//             headers: {
-//                 'Content-Type': 'application/json',
-//                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-//             },
-//             body: requestObj
-//         });
+        const blob = await response.blob();
 
-//         if (!response.ok) {
-//             throw new Error('Network response was not ok');
-//         }
-//         const data = await response.json();
-//         console.log(data)
-//         updateFileStatus(data.requestId, 'complete', data.fileUrl);
-//         return data;
-//     } catch (error) {
-//         console.error('Upload error:', error);
-//         updateFileStatus(fileData.tempId, 'error');
-//         showFeedbackMsg(`Failed to upload file ${fileData.name}. Please try again.`);
-//         throw error; // Re-throw to allow Promise.allSettled to catch it
-//     }
+        // Create a temporary object URL for the blob
+        const objectUrl = URL.createObjectURL(blob);
 
+        // Create a hidden link
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = filename || "download";
 
+        // Trigger the download
+        document.body.appendChild(link);
+        link.click();
 
-// }
+        // Cleanup
+        document.body.removeChild(link);
+        URL.revokeObjectURL(objectUrl);
+        return true;
+
+    } catch (err) {
+        console.error("Download error:", err);
+        alert("Failed to download file.");
+        return false;
+    }
+}
+
 
 //#endregion
 
@@ -150,35 +152,54 @@ async function requestFileUrl(uuid, category, filename){
 //#region PREVIEW
 
 async function previewFile(provider, fileData, category) {
-
     const indicator = provider.querySelector('.status-indicator');
 
+    try {
+        const url = await requestFileUrl(fileData.uuid, category);
+        if (!url) {
+            console.log('No download link');
+            return Promise.reject(new Error('No download link'));
+        }
 
+        const response = await fetch(url);
+        const blob = await response.blob();
 
+        const type = checkFileFormat(fileData.mime);
 
-    const url = await requestFileUrl(fileData.uuid, category, fileData.filename)
-    const response = await fetch(url);
-    const blob = await response.blob();
+        switch (type) {
+            case 'img':
+                await renderImage(blob);
+                break;
+            case 'pdf':
+                await renderPdf(blob);
+                break;
+            case 'docx':
+                await renderDocx(blob);
+                break;
+            default:
+                console.warn('Unsupported file type');
+        }
 
-    const type = checkFileFormat(fileData.mime);
+        const modal = document.querySelector('#file-viewer-modal');
 
-    switch(type){
-        case('img'):
-            await renderImage(blob)
-        break;
-        case('pdf'):
-            await renderPdf(blob);
-        break;
-        case('docx'):
-            await renderDocx(blob);
+        modal.style.display = "flex";
+        const scrollContainer = modal.querySelector('#file-scroll-container');
+        scrollContainer.scrollTop = 0;
 
-        break;
+        // ✅ return something meaningful to the caller
+        return { success: true, type, blob };
+
+    } catch (err) {
+        console.error('Error in previewFile:', err);
+        return Promise.reject(err);
     }
-    document.querySelector('#file-viewer-modal').style.display = "flex";
 }
 
-
-
+function scrollToTop(){
+    const modal = document.querySelector('#file-viewer-modal');
+    const scrollContainer = modal.querySelector('#file-scroll-container');
+    scrollContainer.scrollTop = 0;
+}
 
 async function renderPdf(blob) {
 

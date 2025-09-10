@@ -4,10 +4,14 @@ namespace App\Services\Storage;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use Throwable;
+use App\Services\Storage\UrlGenerator;
+use \Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 abstract class AbstractFileStorage implements StorageServiceInterface
 {
+    use UrlGenerator;
 
     public function store(
         UploadedFile|string $file,
@@ -116,6 +120,34 @@ abstract class AbstractFileStorage implements StorageServiceInterface
     }
 
     /**
+     * @throws FileNotFoundException
+     */
+    public function retrieveFromSignedPath(string $path): string
+    {
+        // Decode if needed (or keep decoded in controller)
+        $decodedPath = base64_decode($path);
+
+        if (!$this->disk->exists($decodedPath)) {
+            throw new FileNotFoundException("File not found: $decodedPath");
+        }
+
+        // Return the file contents as string
+        return $this->disk->get($decodedPath);
+    }
+
+    /**
+     * @throws FileNotFoundException
+     */
+    public function streamFromSignedPath(string $path)
+    {
+        $decodedPath = base64_decode($path);
+        if (!$this->disk->exists($decodedPath)) {
+            throw new FileNotFoundException("File not found: $decodedPath");
+        }
+        return $this->disk->readStream($decodedPath);
+    }
+
+    /**
      * Retrieve all output files with the specified extension
      */
     public function retrieveOutputFilesByType(string $uuid, string $category, string $fileType): array
@@ -209,33 +241,12 @@ abstract class AbstractFileStorage implements StorageServiceInterface
             }
 
             $firstFile = array_values($directFiles)[0];
-            return $this->generateUrl($firstFile);
+            return $this->generateUrl($firstFile, $uuid, $category);
         } catch (Throwable $e) {
             Log::error("File storage getFileUrl error: " . $e->getMessage(), ['exception' => $e]);
             return null;
         }
     }
-
-    /**
-     * Generate appropriate URL based on disk type
-     */
-    protected function generateUrl(string $path): string
-    {
-        // Check if disk supports temporary URLs (S3, NextCloud, SFTP, etc.)
-        if (method_exists($this->disk, 'temporaryUrl')) {
-            try {
-                // Generate a temporary URL that expires in 24 hours for private disks
-                return $this->disk->temporaryUrl($path, now()->addHours(24));
-            } catch (Throwable $e) {
-                Log::warning("Failed to generate temporary URL, falling back to regular URL: " . $e->getMessage());
-                return $this->disk->url($path);
-            }
-        }
-
-        // For public disks (local public), return regular URL
-        return $this->disk->url($path);
-    }
-
 
     protected function buildFolder(string $category, string $uuid, bool $temp = false): string
     {

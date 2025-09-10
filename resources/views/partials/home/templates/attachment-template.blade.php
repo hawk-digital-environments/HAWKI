@@ -30,5 +30,8 @@
                 <x-icon name="trash"/>
             </button>
         </div>
+        <button class="burger-btn btn-xs">
+            <x-icon name="more-horizontal"/>
+        </button>
 	</div>
 </template>

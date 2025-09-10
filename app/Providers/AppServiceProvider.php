@@ -13,7 +13,6 @@ use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
 use App\Http\Middleware\MandatorySignatureCheck;
 use App\Services\Storage\StorageServiceFactory;
-use App\Services\Storage\DefaultStorageService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\AvatarStorageService;
 use Illuminate\Support\Facades\Route;
@@ -43,11 +42,6 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
 
         $this->app->singleton(
-            DefaultStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getDefaultStorage()
-        );
-
-        $this->app->singleton(
             AvatarStorageService::class,
             fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
         );
@@ -56,7 +50,7 @@ class AppServiceProvider extends ServiceProvider
             FileStorageService::class,
             fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
         );
-        
+
         $this->registerStorageServices();
     }
 
@@ -67,25 +61,20 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->bootWebdavStorage();
     }
-    
+
     protected function registerStorageServices(): void
     {
-        $this->app->singleton(
-            DefaultStorageService::class,
-            fn(\Illuminate\Foundation\Application $app) => $app->make(StorageServiceFactory::class)->getDefaultStorage()
-        );
-        
         $this->app->singleton(
             AvatarStorageService::class,
             fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
         );
-        
+
         $this->app->singleton(
             FileStorageService::class,
             fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
         );
     }
-    
+
     protected function bootWebdavStorage(): void
     {
         // Register WebDAV driver for NextCloud support
@@ -95,9 +84,9 @@ class AppServiceProvider extends ServiceProvider
                 'userName' => $config['username'],
                 'password' => $config['password'],
             ]);
-            
+
             $adapter = new WebDAVAdapter($client, $config['prefix'] ?? '');
-            
+
             return new FilesystemAdapter(
                 new Filesystem($adapter),
                 $adapter,

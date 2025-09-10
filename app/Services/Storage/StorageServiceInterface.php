@@ -24,7 +24,7 @@ interface StorageServiceInterface
      *
      * @param string $uuid The uuid of the file to retrieve
      * @param string $category Optional category the file is stored in
-     * @return string|null The file contents or null if not found
+     * @return bool The file contents or null if not found
      */
     public function moveFileToPersistentFolder(string $uuid, string $category): bool;
 

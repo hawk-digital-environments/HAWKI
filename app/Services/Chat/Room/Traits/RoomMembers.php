@@ -6,51 +6,58 @@ namespace App\Services\Chat\Room\Traits;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\Member;
-
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-
 use Exception;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 
 trait RoomMembers{
-        public function add(string $slug, string $data){
+    /**
+     * @throws Exception
+     */
+    public function add(string $slug, string $data): array
+    {
+        try{
+            $room = Room::where('slug', $slug)->firstOrFail();
+            if(!$room->isMember(Auth::id())){
+                throw new AuthorizationException();
+            }
 
-        $room = Room::where('slug', $slug)->firstOrFail();
-        if(!$room->isMember(Auth::id())){
-            throw new AuthorizationException();
+            $user = User::where('username', $data['username'])->firstOrFail();
+            $room->addMember($user->id, $data['role']);
+            return $room->members;
         }
-
-        $user = User::where('username', $data['username'])->firstOrFail();
-        $room->addMember($user->id, $data['role']);
-        return response()->json($room->members);
+        catch (Exception $e){
+            throw new Exception('Failed to add new member:' . $e->getMessage());
+        }
 
     }
 
 
-    public function leave($slug){
+    public function leave($slug): bool{
         $room = Room::where('slug', $slug)->firstOrFail();
         $user = Auth::user();
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
         return $this->removeMember($member, $room);
     }
 
-    public function kick($slug, $username){
+    /**
+     * @throws Exception
+     */
+    public function kick($slug, $username): bool{
 
         $room = Room::where('slug', $slug)->firstOrFail();
         $user = User::where('username', $username)->firstOrFail();
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
 
         if($member->user_id === '1'){
-            return response()->json(['success' => false, 'message' => "You can't remove the AI agent from a room!"]);
+            throw new Exception('You can\'t kick AI Agent.');
         }
 
         return $this->removeMember($member, $room);
     }
 
-    public function removeMember(Member $member, Room $room)
+    public function removeMember(Member $member, Room $room): bool
     {
         // Remove the member from the room
         $room->removeMember($member->user_id);
@@ -65,7 +72,8 @@ trait RoomMembers{
 
 
 
-    public function searchUser(string $query){
+    public function searchUser(string $query): array
+    {
         // Search in the database for users matching the query and is not removed
         $users = User::where('isRemoved', false)
             ->where(function($queryBuilder) use ($query) {
@@ -76,8 +84,8 @@ trait RoomMembers{
             ->take(5)
             ->get();
 
-            // REF->SEARCH_FILTER
-        $results = $users->map(function($user){
+            // REF-> SEARCH_FILTER
+        return $users->map(function($user){
             return [
                 'name'      => $user->name,
                 'username'  => $user->username,
@@ -85,6 +93,5 @@ trait RoomMembers{
                 'publicKey'=> $user->publicKey
             ];
         });
-        return $results;
     }
 }

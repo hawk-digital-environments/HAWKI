@@ -92,9 +92,9 @@ class AiConvMsg extends Model
                     'category' => $attach->category,
                     'type'     => $attach->type,
                     'mime'     => $attach->mime,
-                    'url'      => $storageService->getUrl(uuid: $attach->uuid,
-                                                          category: $attach->category
-                    ),
+//                    'url'      => $storageService->getUrl(uuid: $attach->uuid,
+//                                                          category: $attach->category
+//                    ),
                 ],
             ];
         })->toArray();

@@ -17,12 +17,14 @@ class StorageServiceFactory
     public function getFileStorage(): FileStorageService
     {
         $fileStorageDisk = $this->config->get('filesystems.file_storage', 'local_file_storage');
-        return new FileStorageService($this->filesystemManager->disk($fileStorageDisk));
+        return new FileStorageService(config('filesystems.disks.' . $fileStorageDisk),
+                                      $this->filesystemManager->disk($fileStorageDisk));
     }
 
     public function getAvatarStorage(): AvatarStorageService
     {
         $avatarDisk = $this->config->get('filesystems.avatar_storage', 'public');
-        return new AvatarStorageService($this->filesystemManager->disk($avatarDisk));
+        return new AvatarStorageService(config('filesystems.disks.' . $avatarDisk),
+                                        $this->filesystemManager->disk($avatarDisk));
     }
 }

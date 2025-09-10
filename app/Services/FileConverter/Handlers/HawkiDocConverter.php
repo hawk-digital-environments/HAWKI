@@ -3,6 +3,7 @@
 namespace App\Services\FileConverter\Handlers;
 
 use App\Services\FileConverter\Handlers\Interfaces\FileConverterInterface;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Symfony\Component\Finder\SplFileInfo;
@@ -19,6 +20,10 @@ class HawkiDocConverter implements FileConverterInterface
         $this->config = $config;
     }
 
+    /**
+     * @throws ConnectionException
+     * @throws Exception
+     */
     public function convert(UploadedFile|SplFileInfo|string $file): array
     {
         if ($file instanceof UploadedFile) {

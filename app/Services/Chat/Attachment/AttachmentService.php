@@ -78,8 +78,7 @@ class AttachmentService{
         }
         else{
             try{
-                $url = $this->storageService->getUrl($uuid, $category);
-                return $url;
+                return $this->storageService->getUrl($uuid, $category);
             }
             catch(Exception $e){
                 Log::error("Error retrieving file", ["UUID"=> $uuid, "category"=> $category]);

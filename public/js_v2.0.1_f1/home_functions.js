@@ -43,7 +43,7 @@ function setActiveSidebarButton(activeModule){
     const sidebarButtons = document.querySelectorAll('.sidebar-btn');
     const targetId = `${activeModule}-sb-btn`;
 		// console.log(targetId);
-    
+
     sidebarButtons.forEach(sbb => {
         if(sbb.classList.contains('active')){
             sbb.classList.remove('active');
@@ -92,7 +92,7 @@ function toggleRelativePanelClass(targetID, sender, className, activation = null
     while (currentElement) {
         if (currentElement.id === targetID) {
             currentElement.classList.toggle(className);
-            return; 
+            return;
         }
 
         let parentElement = currentElement.parentElement;
@@ -111,7 +111,7 @@ function toggleRelativePanelClass(targetID, sender, className, activation = null
                             sibling.classList.toggle(className);
                         break;
                     }
-                    return; 
+                    return;
                 }
             }
         }
@@ -167,7 +167,7 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
 
     //reset style to fit content
     menu.style.width = 'fit-content';
-    
+
     if(alignToElement){
         const btnRect = sender.getBoundingClientRect();
         menu.style.top = `${btnRect.bottom}px`;
@@ -177,9 +177,9 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
     if(sender && sender.querySelector('.icon')){
         sender.querySelector('.icon').classList.add('active');
     }
+    sender.classList.add('active');
 
-
-    if(toggleOnSenderClick && menu.style.display != 'none'){
+    if(toggleOnSenderClick && menu.style.display !== 'none'){
         closeBurgerMenus(null);
     }
     else{
@@ -198,18 +198,22 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
 
 function closeBurgerMenus(clickedBurgerMenu){
     const menus = document.querySelectorAll('.burger-dropdown');
-    
+
     menus.forEach(menu => {
         if(clickedBurgerMenu && menu.id === clickedBurgerMenu.id){
             return;
         }
-        else if(menu.style.opacity != '0'){
+        else if(menu.style.opacity !== '0'){
             const icon = menu.parentElement.querySelector('.icon');
             if(icon && icon.classList.contains('active')){
                 icon.classList.remove('active')
             }
 
             menu.style.opacity = "0";
+            document.querySelectorAll('.burger-btn').forEach(btn => {
+                btn.classList.remove('active');
+            })
+
             setTimeout(() => {
                 menu.style.display = "none";
             }, 300);
@@ -286,7 +290,7 @@ function playSound(type){
             console.error('Unknown notification type:', type);
             return;
     }
-    
+
     const audio = new Audio(audioFile);
     audio.volume = vol;
 
@@ -309,7 +313,7 @@ function reactionMouseDown(button){
 function reactionMouseUp(button){
     // Reset scale on mouse up
     button.style.transform = 'scale(1.0)';
-    
+
     // Handle reaction display
     const reaction = button.querySelector('.reaction');
     if (reaction) {
@@ -329,7 +333,7 @@ function reactionMouseUp(button){
         }, 3000); // Time before fading starts
     }
 }
-  
+
 //#endregion
 
 

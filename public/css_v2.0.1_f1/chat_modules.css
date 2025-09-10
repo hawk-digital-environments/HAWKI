@@ -212,15 +212,6 @@
 #welcome-content li{
     margin: 1rem 0;
 }
-#welcome-bg{
-    width: 100%;
-    max-width: 30vw;
-    overflow: hidden;
-    background-image: url(../img/welcomeBG.png);
-    background-size: cover;
-}
-
-
 
 .inputs-list{
     display: flex;
@@ -450,6 +441,14 @@
     padding-right: calc(4rem - 13px);
     margin: 0 auto;
 }
+@media (max-width: 950px){
+
+    .thread.trunk{
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+
 
 .thread.branch{
     position: relative;
@@ -898,12 +897,23 @@
     position: relative;
     display: block;
     box-sizing: border-box;
+    min-width: 35rem;
+
     margin-left:4rem;
     margin-right:4rem;
     margin-top:0;
     margin-bottom:.5rem;
 }
+@media(max-width: 950px){
+    .input-container {
+        margin-left:1rem;
+        margin-right:1rem;
+    }
+}
 
+.message .input-container {
+    min-width: 15rem;
+}
 .thread.branch .input-container{
     padding-right: 1rem;
     padding-left: 1rem;
@@ -914,6 +924,7 @@
 .input {
     position: relative;
     min-height: calc(var(--font-sm) + 4rem);
+
     width: 100%;
     box-sizing: border-box;
     /* box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.1); */
@@ -1184,12 +1195,33 @@
     overflow: hidden;
 }
 
-.attachment .controls{
-    min-width: 1rem;
-    display: none;
+.attachment .burger-btn{
+    display: flex;
+    align-items: center;
+    width: 0;
+    padding: 0 .2rem;
+    overflow: hidden;
+    transition: width var(--transition-fast);
+    border-left: var(--border-stroke-hairline);
 }
-.attachment.edit-mode .controls{
-    display: block;
+.attachment:hover .burger-btn{
+    width: 1.2rem;
+}
+.attachment .burger-btn.active{
+    width: 1.2rem;
+}
+.attachment .burger-btn svg{
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+
+.attachment #attachment-menu{
+    position: absolute;
+    display: none;
+    opacity: 0;
+    width: 5rem;
+    height: fit-content;
 }
 
 .attachment-icon {
@@ -1416,6 +1448,11 @@
     padding-left: 7.5rem;
     /* padding-right: 1rem; */
 }
+@media (max-width: 950px){
+    .input-controls .minimized-content{
+        padding-left: 4rem;
+    }
+}
 .branch .input-controls .minimized-content{
     padding-left: 2rem;
 }
@@ -1573,7 +1610,9 @@
     max-height: 60vh;
     overflow-y: auto;
 }
-
+.model-selector-label{
+    text-overflow: ellipsis;
+}
 
 
 

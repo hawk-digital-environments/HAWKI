@@ -7,6 +7,8 @@ use App\Models\AiConvMsg;
 use App\Models\User;
 use App\Models\Attachment;
 
+use App\Services\Storage\FileStorageService;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +25,8 @@ use Illuminate\Support\Facades\Log;
 
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 
 class AiConvController extends Controller
@@ -169,24 +173,50 @@ class AiConvController extends Controller
         return response()->json($result);
     }
 
-    public function getAttachmentUrl(Request $request, string $uuid) {
+    /**
+     * @throws Exception
+     */
+    public function getAttachmentUrl(Request $request, string $uuid): JsonResponse
+    {
 
-        try {
-            $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
-            if($attachment->user->isNot(Auth::user())){
-                throw new AuthorizationException();
-            }
-            $url = $this->attachmentService->getFileUrl($attachment, null);
+        $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
+        if($attachment->user->isNot(Auth::user())){
+            throw new AuthorizationException();
         }
-        catch (Exception $e) {
-            throw $e;
-        }
-
+        $url = $this->attachmentService->getFileUrl($attachment, null);
+        Log::debug('Generated Url ', [$url]);
         return response()->json([
             'success' => true,
             'url' => $url
         ]);
     }
+
+
+    public function downloadAttachment(string $uuid, string $path)
+    {
+        try {
+            $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
+            if($attachment->user->isNot(Auth::user())){
+                throw new AuthorizationException();
+            }
+
+            $storageService = app(FileStorageService::class);
+            $stream = $storageService->streamFromSignedPath($path); // returns a resource
+            Log::debug('Download Url ', [$stream]);
+            return response()->streamDownload(function () use ($stream)
+            {
+                fpassthru($stream); // send stream directly to browser
+            },
+                $attachment->filename,
+                [
+                    'Content-Type' => $attachment->mime,
+                ]
+            );
+        } catch (FileNotFoundException $e) {
+            abort(404, 'File not found');
+        }
+    }
+
 
     public function deleteAttachment(Request $request): JsonResponse {
         $validateData = $request->validate([

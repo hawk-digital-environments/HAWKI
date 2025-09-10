@@ -4,11 +4,14 @@ namespace App\Services\Storage;
 
 
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class AvatarStorageService extends AbstractFileStorage
 {
 
     public function __construct(
+        protected array $config,
         protected Filesystem $disk
     )
     {

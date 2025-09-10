@@ -40,6 +40,7 @@ return [
             'driver' => 'local',
             'root' => storage_path('app'),
             'throw' => false,
+            'visibility' => 'private',
         ],
 
         'public' => [
@@ -77,6 +78,7 @@ return [
             'password' => env('NEXTCLOUD_PASSWORD'),
             'prefix' => env('NEXTCLOUD_BASE_PATH', ''),
             'timeout' => 60,
+            'visibility' => 'private',
 
         ],
 
@@ -88,6 +90,8 @@ return [
             'password' => env('SFTP_PASSWORD'),
             'root' => env('SFTP_BASE_PATH', '/'),
             'timeout' => 30,
+            'visibility' => 'private',
+
         ],
 
     ],

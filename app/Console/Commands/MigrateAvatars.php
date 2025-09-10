@@ -73,7 +73,7 @@ class MigrateAvatars extends Command
         if ($type === 'profile' || $type === 'both') {
             $this->migrateProfileAvatars($isDryRun, $force, $cleanup, $specificUser);
         }
-        return 0;
+
         // Migrate room avatars
         if ($type === 'room' || $type === 'both') {
             $this->migrateRoomAvatars($isDryRun, $force, $cleanup, $specificRoom);
@@ -184,7 +184,7 @@ class MigrateAvatars extends Command
             // Check if new avatar already exists (unless force is used)
             if (!$force) {
                 $existingFile = $this->avatarStorage->retrieve($avatarId, 'profile_avatars');
-                if ($existingFile !== false) {
+                if ($existingFile !== null) {
                     if ($this->output->isVerbose()) {
                         $this->line("Avatar already exists for user {$username}, skipping...");
                     }
@@ -217,11 +217,11 @@ class MigrateAvatars extends Command
 
             // Store using AvatarStorageService
             $stored = $this->avatarStorage->store(
-                $fileContent,
-                $avatarId,
-                $avatarId,
-                'profile_avatars',
-                false
+                file: $fileContent,
+                filename: $avatarId . '.' . $extension,
+                uuid: $avatarId,
+                category: 'profile_avatars',
+                temp: false
             );
 
             if ($stored) {

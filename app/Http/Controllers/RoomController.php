@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 
+use App\Models\Message;
+use App\Services\Storage\FileStorageService;
 use Dotenv\Exception\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -98,8 +100,8 @@ class RoomController extends Controller
             'invitee' => 'string',
             'role'=>'string'
         ]);
-        $this->roomService->add($slug, $validatedData);
-        return response()->json('failed to add member');
+        $members = $this->roomService->add($slug, $validatedData);
+        return response()->json($members);
     }
 
 
@@ -232,24 +234,55 @@ class RoomController extends Controller
             'url' => $url
         ]);
     }
-
-
-    public function deleteAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
-        $validateData = $request->validate([
-            'fileId' => 'required|string',
-        ]);
-
-        try{
-            $attachment = Attachment::where('uuid', $validateData['fileId'])->firstOrFail();
-
-            if ($attachment->user && !$attachment->user->is(Auth::user())) {
+    public function downloadAttachment(string $uuid, string $path)
+    {
+        try {
+            $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
+            if(!$attachment->attachable->room->isMember(Auth::id())){
                 throw new AuthorizationException();
             }
 
+            $storageService = app(FileStorageService::class);
+            $stream = $storageService->streamFromSignedPath($path); // returns a resource
+
+            return response()->streamDownload(function () use ($stream)
+            {
+                fpassthru($stream); // send stream directly to browser
+            },
+                $attachment->filename,
+                [
+                    'Content-Type' => $attachment->mime,
+                ]
+            );
+        } catch (\Illuminate\Contracts\Filesystem\FileNotFoundException $e) {
+            abort(404, 'File not found');
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function deleteAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
+        Log::debug('attachment Delete');
+
+        $validateData = $request->validate([
+            'fileId' => 'required|string',
+        ]);
+        try{
+            $attachment = Attachment::where('uuid', $validateData['fileId'])->firstOrFail();
+
+            $room = $attachment->attachable->room;
+            if(!$room->isMember(Auth::id())){
+                throw new AuthorizationException();
+            }
+            $membership = $room->members->where('user_id', Auth::id())->firstOrFail();
+            if(!$membership->hasRole('admin') || !$attachment->user->is(Auth::user())) {
+                throw new AuthorizationException();
+            }
             if (!$attachment->attachable instanceof Message) {
                 return response()->json([
                     'success'=> false,
-                    'error'=> 'File Id does not match the properties!'
+                    'error'=> 'File Category does not match the properties!'
                 ], 500);
             }
 

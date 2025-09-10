@@ -52,8 +52,6 @@ class FileConverterFactory
 
     public static function converterActive(): bool
     {
-        $converters = config('file_converter.converters');
-
         $default = config('file_converter.default');
         $fallback = config('file_converter.fallback');
 

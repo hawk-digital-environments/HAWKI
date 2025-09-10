@@ -9,6 +9,8 @@
     "Upload": "Upload",
 
     "Cnf_deleteConv":"Do you really want to delete this Conversation?",
+    "Cnf_deleteFile": "Do you really want to delete this Conversation? This action is not reversible!",
+
     "Cnf_deleteRoom":"Do you really want to delete this Room?",
     "Cnf_leaveRoom":"Do you really want to leave this Room?",
     "Cnf_removeMember":"Do you really want to remove this member?",

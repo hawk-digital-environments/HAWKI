@@ -108,7 +108,7 @@ async function handleSelectedFiles(files, inputField) {
 
         // Prepare file for upload
         const fileData = createFileStruct(file);
-        const atchThumb = createAttachmentThumbnail(fileData);
+        const atchThumb = createAttachmentThumbnail(fileData, 'input');
 
         // Add to file preview container
         if(!attachmentContainer.classList.contains('active')){
@@ -169,7 +169,7 @@ function createFileStruct(file) {
 
 
 // Add file to the UI for display
-function createAttachmentThumbnail(fileData) {
+function createAttachmentThumbnail(fileData, thumbType) {
 
     const attachTemp = document.getElementById('attachment-thumbnail-template')
     const attachClone = attachTemp.content.cloneNode(true);
@@ -180,7 +180,6 @@ function createAttachmentThumbnail(fileData) {
 
     const iconImg = attachment.querySelector('img');
     let imgPreview = '';
-
     const type = checkFileFormat(fileData.mime);
     switch(type){
         case('image'):
@@ -201,10 +200,90 @@ function createAttachmentThumbnail(fileData) {
         break;
     }
 
-    attachment.querySelector('.controls').style.display = "block";
 
+    if(thumbType === 'message'){
+        attachment.querySelector('.controls').remove();
+        const burgerBtn = attachment.querySelector('.burger-btn')
+        burgerBtn.addEventListener('click', ()=> {
+            openAttachmentDropDown(burgerBtn, attachment, fileData);
+        })
+
+    }
+    if(thumbType === 'input'){
+        attachment.querySelector('.burger-btn').remove();
+
+    }
     iconImg.setAttribute('src', imgPreview);
     return attachment;
+}
+
+async function openAttachmentDropDown(burgerBtn, attachment, fileData) {
+    const burgerMenu = document.querySelector('#attachment-menu');
+
+    const openBtn = burgerMenu.querySelector('#open-btn');
+    const downloadBtn = burgerMenu.querySelector('#download-btn');
+    const removeBtn = burgerMenu.querySelector('#remove-btn');
+
+
+    // Define handlers
+    async function openHandler() {
+        updateFileStatus(fileData.uuid, 'uploading');
+        if (activeModule === 'chat') {
+            await previewFile(attachment, fileData, 'conv');
+        }
+        if (activeModule === 'groupchat') {
+            await previewFile(attachment, fileData, 'room');
+        }
+        updateFileStatus(fileData.uuid, 'finished');
+
+    }
+
+    async function downloadHandler() {
+        if (activeModule === 'chat') {
+            await downloadFile(fileData.uuid, 'conv', fileData.name);
+        }
+        if (activeModule === 'groupchat') {
+            await downloadFile(fileData.uuid, 'room', fileData.name);
+        }
+    }
+
+    function removeHandler() {
+        onDeleteClicked(fileData, attachment);
+    }
+
+    // First remove old ones
+    openBtn.removeEventListener('click', openBtn._handler);
+    downloadBtn.removeEventListener('click', downloadBtn._handler);
+    removeBtn.removeEventListener('click', removeBtn._handler);
+
+    // Then assign and store the new ones
+    openBtn.addEventListener('click', openHandler);
+    openBtn._handler = openHandler;
+
+    downloadBtn.addEventListener('click', downloadHandler);
+    downloadBtn._handler = downloadHandler;
+
+    removeBtn.addEventListener('click', removeHandler);
+    removeBtn._handler = removeHandler;
+
+    openBurgerMenu("attachment-menu", burgerBtn, true, false, true);
+}
+
+async function onDeleteClicked(fileData, attachment){
+    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteFile);
+    if (!confirmed) {
+        return;
+    }
+    let success;
+    if(activeModule === 'chat'){
+        success = requestAtchDelete(fileData.uuid, 'conv');
+    }
+    if(activeModule === 'groupchat'){
+        success = requestAtchDelete(fileData.uuid, 'room');
+    }
+    if(success){
+        attachment.remove();
+    }
 }
 
 // Remove file attachment from UI and storage
@@ -244,8 +323,6 @@ function removeAtchFromList(fileId, queueId){
 }
 
 
-
-
 async function requestAtchDelete(fileId, category){
     const url = `/req/${category}/attachment/delete`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -276,14 +353,17 @@ async function requestAtchDelete(fileId, category){
 }
 
 
+
+
 // Update file status in UI
 function updateFileStatus(fileId, status) {
+    console.log(fileId);
     const fileElement = document.querySelector(`.attachment[data-file-id="${fileId}"]`);
 
     if (!fileElement) return;
 
     // Remove existing status classes
-    fileElement.classList.remove('status-pending', 'status-uploading', 'status-complete', 'status-error');
+    fileElement.classList.remove('status-pending', 'status-uploading', 'status-complete', 'status-error', 'status-finished');
     fileElement.classList.add(`status-${status}`);
 
     // Update any status indicators in the UI
@@ -292,6 +372,10 @@ function updateFileStatus(fileId, status) {
     stats.forEach(stat => {
         stat.style.visibility = "hidden";
     });
+
+    if(status ==='finished'){
+        return;
+    }
 
     if (statusIndicator) {
         switch (status) {
@@ -304,6 +388,7 @@ function updateFileStatus(fileId, status) {
             case 'error':
                 statusIndicator.querySelector('#error-stat').style.visibility = 'visible'
                 break;
+
         }
     }
 }

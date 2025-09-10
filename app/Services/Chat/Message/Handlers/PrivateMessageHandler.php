@@ -3,18 +3,13 @@
 
 namespace App\Services\Chat\Message\Handlers;
 
-use App\Models\Message;
 use App\Models\User;
 use App\Models\AiConv;
 use App\Models\AiConvMsg;
 use App\Models\Room;
-
-
 use App\Services\Chat\Attachment\AttachmentService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-
 
 class PrivateMessageHandler extends BaseMessageHandler{
 

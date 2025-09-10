@@ -9,6 +9,7 @@
 
 
     "Cnf_deleteConv": "Möchtest du dieses Gespräch wirklich löschen?",
+    "Cnf_deleteFile": "Möchtest du diese Datei wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!",
     "Cnf_deleteRoom": "Möchtest du diesen Raum wirklich löschen?",
     "Cnf_leaveRoom": "Möchtest du diesen Raum wirklich verlassen?",
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
@@ -70,14 +71,14 @@
     "ExtAccToken": "Externe Zugangstoken",
     "General": "Allgemein",
     "History": "Verlauf",
-    
+
     "HS_EnterBackupMsg": "Bitte gib deinen Wiederherstellungscode ein.",
     "HS_EnterPasskeyMsg": "Bitte gib deinen Datakey ein.",
     "HS_ForgottenPasskey": "Datakey vergessen?",
     "HS_ForgottenBackup": "Wiederherstellungscode verloren?",
     "HS_PasskeyIs": "Dein Datakey ist:",
     "HS_ResetProfile": "Profil zurücksetzen",
-    
+
     "HS_RepeatPassKey": "Bitte wiederhole das Datakey.",
     "HS_DifferentEntries": "Die Eingaben sind nicht gleich!",
 
