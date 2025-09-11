@@ -42,7 +42,7 @@ return [
     'system_models' => [
         'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
         'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-        'summarizer' => env('SUMMERIZER_MODEL', 'gpt-4.1-nano'),
+        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
     ],
 
     /*
@@ -90,7 +90,7 @@ return [
             'models' => require __DIR__ . env('GOOGLE_MODEL_LIST_DIR', '/model_lists/google_models.php'),
         ],
         'ollama' => [
-            'active' => env('OLLAMA_ACTIVE', true),
+            'active' => env('OLLAMA_ACTIVE', false),
             'api_url' => env('OLLAMA_API_URL', 'http://localhost:11434/api/chat'),
             'ping_url' => env('OLLAMA_API_URL', 'http://localhost:11434/api/tags'),
             'models' => require __DIR__ . env('OLLAMA_MODEL_LIST_DIR', '/model_lists/ollama_models.php'),

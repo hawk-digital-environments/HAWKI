@@ -2,6 +2,7 @@
 
 namespace App\Services\Storage;
 
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
@@ -11,7 +12,13 @@ use \Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 abstract class AbstractFileStorage implements StorageServiceInterface
 {
-    use UrlGenerator;
+    public function __construct(
+        protected array $config,
+        protected Filesystem $disk,
+        protected UrlGenerator $urlGenerator
+    )
+    {
+    }
 
     public function store(
         UploadedFile|string $file,
@@ -241,7 +248,8 @@ abstract class AbstractFileStorage implements StorageServiceInterface
             }
 
             $firstFile = array_values($directFiles)[0];
-            return $this->generateUrl($firstFile, $uuid, $category);
+            return $this->urlGenerator->generate($firstFile, $uuid, $category);
+
         } catch (Throwable $e) {
             Log::error("File storage getFileUrl error: " . $e->getMessage(), ['exception' => $e]);
             return null;

@@ -31,26 +31,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register middleware aliases
-        Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
-        Route::aliasMiddleware('roomAdmin', AdminAccess::class);
-        Route::aliasMiddleware('roomEditor', EditorAccess::class);
-        Route::aliasMiddleware('api_isActive', ExternalCommunicationCheck::class);
-        Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
-        Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
-        Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
-        Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
-
-        $this->app->singleton(
-            AvatarStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
-        );
-
-        $this->app->singleton(
-            FileStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
-        );
-
+        $this->registerMiddlewareAliases();
         $this->registerStorageServices();
     }
 
@@ -93,5 +74,18 @@ class AppServiceProvider extends ServiceProvider
                 $config
             );
         });
+    }
+
+    private function registerMiddlewareAliases(): void
+    {
+        // Register middleware aliases
+        Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
+        Route::aliasMiddleware('roomAdmin', AdminAccess::class);
+        Route::aliasMiddleware('roomEditor', EditorAccess::class);
+        Route::aliasMiddleware('api_isActive', ExternalCommunicationCheck::class);
+        Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
+        Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
+        Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
+        Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
     }
 }

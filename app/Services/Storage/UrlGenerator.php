@@ -2,76 +2,97 @@
 
 namespace App\Services\Storage;
 
-use Illuminate\Support\Facades\Log;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\URL;
 
-trait UrlGenerator
+class UrlGenerator
 {
+    private string $path;
+    private string $uuid;
+    private string $category;
+    private string $visibility;
 
-    protected function generateUrl(string $path, string $uuid, string $category): string
+
+    public function __construct(
+        protected array $config,
+        protected Filesystem $disk
+    )
     {
-//        $driver = config("filesystems.disks.{$this->disk}.driver");
-//        $visibility = config("filesystems.disks.{$this->disk}.visibility", 'private');
-        $driver = $this->config['driver'];
-        $visibility = $this->config['visibility'];
+    }
 
-        switch ($driver) {
-            case 's3':
-            case 'webdav': // Nextcloud (if you extend it with temp URL support)
-                // Prefer native temporaryUrl if supported
-                if (method_exists($this->disk, 'temporaryUrl')) {
-                    return $this->disk->temporaryUrl($path, now()->addHours(24));
-                }
-                break;
+    public function generate(string $path, string $uuid, string $category): string
+    {
+        $this->uuid = $uuid;
+        $this->path = $path;
+        $this->category = $category;
+        $this->visibility = $this->config['visibility'];
 
-            case 'local':
-                // Local "public" disk can return direct URLs
-                if ($visibility === 'public' && $this->disk->url($path)) {
-                    return $this->disk->url($path);
-                }
 
-                // Local private disk → fallback to signed route
-                return URL::temporarySignedRoute(
-                    "files.download.{$category}",
-                    now()->addHours(24),
-                    [
-                        'uuid'     => $uuid,
-                        'category' => $category,
-                        'path'     => base64_encode($path),
-                        'disk'     => $this->disk, // pass disk explicitly
-                    ]
-                );
+        return match ($this->config['driver']) {
+            's3', 'webdav' => $this->generateTemporaryUrl(),
+            'local' => $this->generateLocalUrl(),
+            'sftp' => $this->generateSftpUrl(),
+            default => $this->generateDefaultUrl(),
+        };
+    }
 
-            case 'sftp':
-                // No direct URL, always proxy through Laravel
-                return URL::temporarySignedRoute(
-                    "files.download.{$category}",
-                    now()->addHours(24),
-                    [
-                        'uuid'     => $uuid,
-                        'category' => $category,
-                        'path'     => base64_encode($path),
-                        'disk'     => $this->disk,
-                    ]
-                );
-
-            default:
-                // Fallback: try native url() if available
-                if (method_exists($this->disk, 'url')) {
-                    return $this->disk->url($path);
-                }
-
-                // As a last resort → proxy route
-                return URL::temporarySignedRoute(
-                    "files.download.{$category}",
-                    now()->addHours(24),
-                    [
-                        'uuid'     => $uuid,
-                        'category' => $category,
-                        'path'     => base64_encode($path),
-                        'disk'     => $this->disk,
-                    ]
-                );
+    private function generateLocalUrl(): string{
+        // Local "public" disk can return direct URLs
+        if ($this->visibility === 'public' && $this->disk->url($this->path)) {
+            return $this->disk->url($this->path);
         }
+
+        // Local private disk → fallback to signed route
+        return URL::temporarySignedRoute(
+            "files.download.{$this->category}",
+            now()->addHours(24),
+            [
+                'uuid'     => $this->uuid,
+                'category' => $this->category,
+                'path'     => base64_encode($this->path),
+                'disk'     => $this->disk, // pass disk explicitly
+            ]
+        );
+    }
+
+    private function generateSftpUrl(): string{
+        // No direct URL, always proxy through Laravel
+        return URL::temporarySignedRoute(
+            "files.download.{$this->category}",
+            now()->addHours(24),
+            [
+                'uuid'     => $this->uuid,
+                'category' => $this->category,
+                'path'     => base64_encode($this->path),
+                'disk'     => $this->disk,
+            ]
+        );
+    }
+
+    private function generateTemporaryUrl(): string{
+        // Prefer native temporaryUrl if supported
+        if (method_exists($this->disk, 'temporaryUrl')) {
+            return $this->disk->temporaryUrl($this->path, now()->addHours(24));
+        }
+        return $this->generateDefaultUrl();
+    }
+
+    private function generateDefaultUrl(): string{
+        // Fallback: try native url() if available
+        if (method_exists($this->disk, 'url')) {
+            return $this->disk->url($this->path);
+        }
+
+        // As a last resort → proxy route
+        return URL::temporarySignedRoute(
+            "files.download.{$this->category}",
+            now()->addHours(24),
+            [
+                'uuid'     => $this->uuid,
+                'category' => $this->category,
+                'path'     => base64_encode($this->path),
+                'disk'     => $this->disk,
+            ]
+        );
     }
 }

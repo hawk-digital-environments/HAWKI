@@ -9,10 +9,4 @@ use Throwable;
 
 class FileStorageService extends AbstractFileStorage
 {
-    public function __construct(
-        protected array $config,
-        protected Filesystem $disk
-    )
-    {
-    }
 }
