@@ -20,6 +20,7 @@ use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\LocalAuthService;
+use App\Services\EmployeetypeMappingService;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -32,17 +33,19 @@ class AuthenticationController extends Controller
     protected $shibbolethService;
     protected $oidcService;
     protected $localAuthService;
+    protected $employeetypeMappingService;
 
     protected $languageController;
 
 
-    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, LocalAuthService $localAuthService, LanguageController $languageController)
+    public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, LocalAuthService $localAuthService, EmployeetypeMappingService $employeetypeMappingService, LanguageController $languageController)
     {
         $this->authMethod = config('auth.authentication_method', 'LDAP');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
         $this->localAuthService = $localAuthService;
+        $this->employeetypeMappingService = $employeetypeMappingService;
 
         $this->languageController = $languageController;
     }
@@ -76,7 +79,13 @@ class AuthenticationController extends Controller
             ]);
         }
 
-        Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+        // Log successful login (LDAP debugging is handled in LdapService)
+        Log::info('LDAP Login Successful: ' . $authenticatedUserInfo['username'], [
+            'username' => $authenticatedUserInfo['username'],
+            'auth_method' => 'LDAP',
+            'user_info' => array_diff_key($authenticatedUserInfo, array_flip(['password', 'userpassword', 'pwd']))
+        ]);
+        
         $username = $authenticatedUserInfo['username'];
         $user = User::where('username', $username)->first();
 
@@ -114,7 +123,11 @@ class AuthenticationController extends Controller
                 return response()->json(['error' => 'Login Failed!'], 401);
             }
     
-            Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+            Log::info('Successful Shibboleth Login', [
+                'username' => $authenticatedUserInfo['username'],
+                'auth_method' => 'Shibboleth',
+                'user_info' => array_diff_key($authenticatedUserInfo, array_flip(['password', 'userpassword', 'pwd']))
+            ]);
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
@@ -145,7 +158,11 @@ class AuthenticationController extends Controller
                 return response()->json(['error' => 'Login Failed!'], 401);
             }
     
-            Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
+            Log::info('Successful OpenID Connect Login', [
+                'username' => $authenticatedUserInfo['username'],
+                'auth_method' => 'OpenID Connect',
+                'user_info' => array_diff_key($authenticatedUserInfo, array_flip(['password', 'userpassword', 'pwd']))
+            ]);
     
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
     
@@ -209,11 +226,22 @@ class AuthenticationController extends Controller
         $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
         $isFirstLoginLocalUser = Session::get('first_login_local_user', false);
         
-        // Check if local user needs password reset
+        // Check if local user needs password reset and approval
         $needsPasswordReset = false;
+        $needsApproval = false;
+        
         if ($isFirstLoginLocalUser && isset($userInfo['username'])) {
             $user = User::where('username', $userInfo['username'])->first();
-            $needsPasswordReset = $user && $user->reset_pw;
+            
+            if ($user) {
+                $needsPasswordReset = $user->reset_pw;
+                
+                // Calculate approval logic for local users
+                if ($user->auth_type === 'local') {
+                    $localNeedsApproval = config('auth.local_needapproval', true);
+                    $needsApproval = !$user->approval && $localNeedsApproval;
+                }
+            }
         }
 
 
@@ -236,22 +264,14 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret', 'isFirstLoginLocalUser', 'needsPasswordReset'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'localizedTexts', 'passkeySecret', 'isFirstLoginLocalUser', 'needsPasswordReset', 'needsApproval'));
     }
 
 
 
-    /// Setup User
-    /// Create backup for userkeychain on the DB
     public function completeRegistration(Request $request)
     {
         try {
-            // Log incoming data for debugging
-            Log::info('completeRegistration called', [
-                'request_data' => $request->all(),
-                'session_first_login_local_user' => Session::get('first_login_local_user', false)
-            ]);
-            
             // Validate input data
             $validatedData = $request->validate([
                 'publicKey' => 'required|string',
@@ -269,11 +289,36 @@ class AuthenticationController extends Controller
             $username = $userInfo['username'] ?? null;
             $name = $userInfo['name'] ?? null;
             $email = $userInfo['email'] ?? null;
-            $employeetype = $userInfo['employeetype'] ?? null;
+            $rawEmployeetype = $userInfo['employeetype'] ?? null;
             $permissions = $userInfo['permissions'] ?? null;
+
+            // Map employeetype using the mapping service (only for external auth)
+            $employeetype = $rawEmployeetype;
+            $roleMappingInfo = [];
+            
+            if (!$isFirstLoginLocalUser && $rawEmployeetype && $this->authMethod !== 'local') {
+                $mappedRole = $this->employeetypeMappingService->mapEmployeetypeToRole($rawEmployeetype, $this->authMethod);
+                $employeetype = $mappedRole;
+                
+                $roleMappingInfo = [
+                    'raw_employeetype' => $rawEmployeetype,
+                    'mapped_employeetype' => $mappedRole,
+                    'mapping_applied' => true
+                ];
+            } else {
+                $roleMappingInfo = [
+                    'employeetype' => $employeetype,
+                    'mapping_applied' => false,
+                    'reason' => $isFirstLoginLocalUser ? 'local_user' : 'no_mapping_needed'
+                ];
+            }
 
     
             $avatarId = $validatedData['avatar_id'] ?? '';
+
+            // Check if this is a new user or existing user
+            $existingUser = User::where('username', $username)->first();
+            $isNewUser = !$existingUser;
 
             // Prepare data for update/create
             $userData = [
@@ -286,21 +331,35 @@ class AuthenticationController extends Controller
                 'permissions' => $permissions,
             ];
 
-            // For local users on first login, update password if provided and needed
+            // Only set approval for NEW users, don't override existing approval status
+            if ($isNewUser) {
+                $userData['approval'] = $this->authMethod === 'local' 
+                    ? !config('auth.local_needapproval', false)  // Local users: depends on config
+                    : true;  // External auth users: always auto-approved
+            }
+
+            // Only set auth_type for new users or when it's not a local user completing registration
+            if (!$isFirstLoginLocalUser) {
+                $userData['auth_type'] = $this->authMethod;
+            }
+
+            // Handle password reset for local users
+            $passwordResetInfo = [];
             if ($isFirstLoginLocalUser && !empty($validatedData['newPassword'])) {
                 // Check if user needs password reset
                 $currentUser = User::where('username', $username)->first();
                 if ($currentUser && $currentUser->reset_pw) {
-                    Log::info('Setting new password for local user who needs reset', [
-                        'username' => $username,
-                        'newPassword_length' => strlen($validatedData['newPassword'])
-                    ]);
                     $userData['password'] = $validatedData['newPassword']; // Will be auto-hashed
                     $userData['reset_pw'] = false; // Password has been reset
+                    $passwordResetInfo = [
+                        'password_reset_required' => true,
+                        'password_reset_completed' => true
+                    ];
                 } else {
-                    Log::info('Password change skipped - user does not need reset', [
-                        'username' => $username
-                    ]);
+                    $passwordResetInfo = [
+                        'password_reset_required' => false,
+                        'password_reset_completed' => false
+                    ];
                 }
                 Session::forget('first_login_local_user'); // Clear the flag
             }
@@ -320,6 +379,20 @@ class AuthenticationController extends Controller
                     'keychain' => $validatedData['keychain']
                 ]
             );
+
+            // Single comprehensive registration log
+            Log::info("User Registration Completed: {$username}", [
+                'user_id' => $user->id,
+                'username' => $username,
+                'email' => $email,
+                'auth_method' => $this->authMethod,
+                'approval_status' => ($userData['approval'] ?? $user->approval) ? 'approved' : 'pending',
+                'role_mapping' => $roleMappingInfo,
+                'password_reset' => $passwordResetInfo,
+                'is_local_user' => $isFirstLoginLocalUser,
+                'keychain_stored' => true
+            ]);
+
             // Log the user in
             Session::put('registration_access', false);
             Auth::login($user);
@@ -331,8 +404,6 @@ class AuthenticationController extends Controller
             ]);
     
         } catch (ValidationException $e) {
-            // error_log('Validation Error: ' . json_encode($e->errors()));
-    
             return response()->json([
                 'success' => false,
                 'errors' => $e->errors()
@@ -477,6 +548,8 @@ class AuthenticationController extends Controller
                 if($user->auth_type === 'local' && empty($user->publicKey)) {
                     // Local user who needs to complete registration process
                     // This includes both admin-created users and self-service users
+                    
+                    // DON'T login yet - save user data in session instead
                     Session::put('registration_access', true);
                     Session::put('authenticatedUserInfo', json_encode($authenticatedUserInfo));
                     Session::put('first_login_local_user', true);

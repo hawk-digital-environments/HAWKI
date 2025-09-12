@@ -4,6 +4,8 @@ namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppLocalizedText;
 use App\Models\AppSystemText;
+use App\Orchid\Traits\OrchidSettingsManagementTrait;
+use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
@@ -26,6 +28,7 @@ use Orchid\Support\Facades\Toast;
 
 class TextsSettingsScreen extends Screen
 {
+    use OrchidSettingsManagementTrait, OrchidLoggingTrait;
     /**
      * Fetch data to be displayed on the screen.
      *
@@ -109,22 +112,14 @@ class TextsSettingsScreen extends Screen
     {
         return [
             Button::make('Load Defaults')
-                ->icon('arrow-repeat')
                 ->method('loadDefaults')
-                ->confirm('Are you sure? This will execute the AppLocalizedTextSeeder and load the default texts.'),
-                
-            Button::make('Clear Cache')
-                ->icon('trash')
-                ->method('clearTextCache')
-                ->confirm('This will clear the text cache. The cache will be rebuilt on the next page load.'),
+                ->icon('bs.arrow-repeat'),
 
             Button::make('Save')
-                ->icon('save')
-                ->method('saveChanges'),
+                ->method('saveChanges')
+                ->icon('bs.check-circle')
         ];
-    }
-
-    /**
+    }    /**
      * The screen's layout elements.
      *
      * @return \Orchid\Screen\Layout[]|string[]
@@ -316,387 +311,127 @@ class TextsSettingsScreen extends Screen
     }
 
     /**
-     * Save changes to localized texts.
-     */
-    public function saveLocalizedTexts(Request $request)
-    {
-        $texts = $request->get('texts', []);
-        $count = 0;
-        
-        if ($texts) {
-            // Collect only entries that have actually changed
-            $changedEntries = [];
-            
-            foreach ($texts as $key => $languages) {
-                foreach ($languages as $language => $content) {
-                    if (!empty($content)) {
-                        // Check if the content has really changed
-                        $existingText = AppLocalizedText::where('content_key', $key)
-                            ->where('language', $language)
-                            ->first();
-                        
-                        // Normalize texts for a reliable comparison
-                        $normalizedNewContent = $this->normalizeContent($content);
-                        $normalizedExistingContent = $existingText ? $this->normalizeContent($existingText->content) : null;
-                        
-                        if (!$existingText || $normalizedExistingContent !== $normalizedNewContent) {
-                            // Store for later update
-                            $changedEntries[] = [
-                                'key' => $key,
-                                'language' => $language,
-                                'content' => $content,
-                                'exists' => (bool)$existingText
-                            ];
-                        }
-                    }
-                }
-            }
-            
-            // Perform updates only for entries that have changed
-            foreach ($changedEntries as $entry) {
-                AppLocalizedText::updateOrCreate(
-                    [
-                        'content_key' => $entry['key'],
-                        'language' => $entry['language']
-                    ],
-                    [
-                        'content' => $entry['content']
-                    ]
-                );
-                $count++;
-                
-                Log::info(
-                    'Updated localized text', 
-                    [
-                        'key' => $entry['key'], 
-                        'language' => $entry['language'],
-                        'action' => $entry['exists'] ? 'update' : 'create'
-                    ]
-                );
-            }
-            
-            if ($count > 0) {
-                Toast::info("$count localized text entries have been updated");
-            } else {
-                Toast::info("No changes detected");
-            }
-        }
-        
-        return;
-    }
-
-    /**
-     * Save system text changes.
-     */
-    public function saveSystemTexts(Request $request)
-    {
-        $texts = $request->get('system_texts', []);
-        $count = 0;
-        
-        if ($texts) {
-            // Collect only entries that have actually changed
-            $changedEntries = [];
-            
-            foreach ($texts as $key => $languages) {
-                foreach ($languages as $language => $content) {
-                    if (!empty($content)) {
-                        $existingText = AppSystemText::where('content_key', $key)
-                            ->where('language', $language)
-                            ->first();
-                        
-                        // Normalize texts for a reliable comparison
-                        $normalizedNewContent = $this->normalizeContent($content);
-                        $normalizedExistingContent = $existingText ? $this->normalizeContent($existingText->content) : null;
-                        
-                        if (!$existingText || $normalizedExistingContent !== $normalizedNewContent) {
-                            // Store for later update
-                            $changedEntries[] = [
-                                'key' => $key,
-                                'language' => $language,
-                                'content' => $content,
-                                'exists' => (bool)$existingText
-                            ];
-                        }
-                    }
-                }
-            }
-            
-            // Perform updates only for entries that have changed
-            foreach ($changedEntries as $entry) {
-                AppSystemText::updateOrCreate(
-                    [
-                        'content_key' => $entry['key'],
-                        'language' => $entry['language']
-                    ],
-                    [
-                        'content' => $entry['content']
-                    ]
-                );
-                $count++;
-                
-                Log::info(
-                    'Updated system text', 
-                    [
-                        'key' => $entry['key'], 
-                        'language' => $entry['language'],
-                        'action' => $entry['exists'] ? 'update' : 'create'
-                    ]
-                );
-            }
-            
-            if ($count > 0) {
-                Toast::info("$count system text entries have been updated");
-            } else {
-                Toast::info("No changes detected");
-            }
-        }
-        
-        return;
-    }
-    
-    /**
-     * Normalize content for reliable comparison
-     * 
-     * @param string $content
-     * @return string
-     */
-    protected function normalizeContent(string $content): string
-    {
-        // Trim whitespace and normalize line endings
-        $normalized = trim($content);
-        $normalized = str_replace(["\r\n", "\r"], "\n", $normalized);
-        
-        // Normalize common HTML entities
-        $normalized = html_entity_decode($normalized, ENT_QUOTES | ENT_HTML5);
-        
-        return $normalized;
-    }
-
-    /**
-     * Add a new localized text for all supported languages.
-     */
-    public function addNewLocalizedText(Request $request)
-    {
-        $key = $request->get('new_key');
-        $deContent = $request->get('new_content_de_DE');
-        $enContent = $request->get('new_content_en_US');
-        
-        if (empty($key) || empty($deContent) || empty($enContent)) {
-            Toast::error('Content key and both language contents are required');
-            return redirect()->route('platform.settings.texts');
-        }
-        
-        // Standardize key (snake_case)
-        $key = Str::snake($key);
-        
-        // Create entries for both languages
-        AppLocalizedText::updateOrCreate(
-            ['content_key' => $key, 'language' => 'de_DE'],
-            ['content' => $deContent]
-        );
-        
-        AppLocalizedText::updateOrCreate(
-            ['content_key' => $key, 'language' => 'en_US'],
-            ['content' => $enContent]
-        );
-        
-        Toast::info("Content key '$key' has been created with both language versions.");
-        
-        return redirect()->route('platform.settings.texts');
-    }
-
-    /**
-     * Add a new system text.
-     */
-    public function addNewSystemText(Request $request)
-    {
-        $key = $request->get('new_system_key');
-        $deText = $request->get('new_system_de_DE');
-        $enText = $request->get('new_system_en_US');
-        
-        if (empty($key) || empty($deText) || empty($enText)) {
-            Toast::error('Key and both language texts are required');
-            return redirect()->route('platform.settings.texts');
-        }
-        
-        // Create entries for both languages
-        AppSystemText::setText($key, 'de_DE', $deText);
-        AppSystemText::setText($key, 'en_US', $enText);
-        
-        Toast::info("System text '$key' has been created with both language versions.");
-        
-        return redirect()->route('platform.settings.texts');
-    }
-
-    /**
-     * Reset a localized text to its default value from the HTML file.
-     */
-    public function resetLocalizedText(Request $request)
-    {
-        $key = $request->get('key');
-        
-        if (!$key) {
-            Toast::error("No key provided");
-            return redirect()->route('platform.settings.texts');
-        }
-        
-        try {
-            // Convert the key to the expected file prefix format (snake_case to StudlyCase)
-            $filePrefix = Str::studly($key);
-            
-            // Supported languages
-            $supportedLanguages = ['de_DE', 'en_US'];
-            $count = 0;
-            
-            // For each language, try to read the original HTML file
-            foreach ($supportedLanguages as $language) {
-                $filePath = resource_path("language/{$filePrefix}_{$language}.html");
-                
-                if (File::exists($filePath)) {
-                    // Read the content from the original file
-                    $content = File::get($filePath);
-                    
-                    if (!empty($content)) {
-                        // Update the database with the original content
-                        AppLocalizedText::updateOrCreate(
-                            ['content_key' => $key, 'language' => $language],
-                            ['content' => $content]
-                        );
-                        $count++;
-                        Log::info("Reset {$key} content for {$language} to default value");
-                    } else {
-                        Log::warning("Original file {$filePath} is empty");
-                    }
-                } else {
-                    Log::warning("Original file {$filePath} not found. Cannot reset to default.");
-                }
-            }
-            
-            if ($count > 0) {
-                Toast::success("Localized text '{$key}' was successfully reset to default value");
-            } else {
-                Toast::error("Could not find default values for '{$key}'");
-            }
-        } catch (\Exception $e) {
-            Log::error("Error resetting content for key {$key}: " . $e->getMessage());
-            Toast::error("Error resetting content: " . $e->getMessage());
-        }
-        
-        return;
-    }
-    
-    /**
-     * Reset a system text to its default value from the JSON file.
-     */
-    public function resetSystemText(Request $request)
-    {
-        $key = $request->get('key');
-        
-        if (!$key) {
-            Toast::error("No key provided");
-            return;
-        }
-        
-        try {
-            // Supported languages
-            $supportedLanguages = ['de_DE', 'en_US'];
-            $count = 0;
-            
-            // For each language, try to read the original JSON file
-            foreach ($supportedLanguages as $language) {
-                $jsonFile = resource_path("language/{$language}.json");
-                
-                if (File::exists($jsonFile)) {
-                    // Read the content from the JSON file
-                    $jsonContent = File::get($jsonFile);
-                    $textData = json_decode($jsonContent, true);
-                    
-                    // Find the key in the JSON data
-                    if (isset($textData[$key])) {
-                        $content = $textData[$key];
-                        
-                        if (!empty($content)) {
-                            // Update the database with the original content
-                            AppSystemText::updateOrCreate(
-                                ['content_key' => $key, 'language' => $language],
-                                ['content' => $content]
-                            );
-                            $count++;
-                            Log::info("Reset {$key} system text for {$language} to default value");
-                        } else {
-                            Log::warning("Value for key '{$key}' in {$jsonFile} is empty");
-                        }
-                    } else {
-                        Log::warning("Key '{$key}' not found in {$jsonFile}");
-                    }
-                } else {
-                    Log::warning("JSON file {$jsonFile} not found. Cannot reset system text.");
-                }
-            }
-            
-            if ($count > 0) {
-                Toast::success("System text '{$key}' was successfully reset to default value");
-            } else {
-                Toast::error("Could not find default values for '{$key}'");
-            }
-        } catch (\Exception $e) {
-            Log::error("Error resetting system text for key {$key}: " . $e->getMessage());
-            Toast::error("Error resetting system text: " . $e->getMessage());
-        }
-        
-        return;
-    }
-
-    /**
-     * Run the AppLocalizedTextSeeder to populate the database with default values.
-     */
-    public function runLocalizedTextSeeder()
-    {
-        try {
-            \Artisan::call('db:seed', [
-                '--class' => 'AppLocalizedTextSeeder'
-            ]);
-            
-            Toast::success('Localized texts were successfully imported from the resource files.');
-        } catch (\Exception $e) {
-            Log::error('Error running AppLocalizedTextSeeder: ' . $e->getMessage());
-            Toast::error('Error importing: ' . $e->getMessage());
-        }
-        
-        // Change: Remove the unnecessary "language" parameter
-        return;
-    }
-
-    /**
-     * Run the AppSystemTextSeeder to populate the database with values from JSON files.
-     */
-    public function runSystemTextSeeder()
-    {
-        try {
-            \Artisan::call('db:seed', [
-                '--class' => 'AppSystemTextSeeder'
-            ]);
-            
-            Toast::success('System texts were successfully imported from resource files.');
-        } catch (\Exception $e) {
-            Log::error('Error running AppSystemTextSeeder: ' . $e->getMessage());
-            Toast::error('Error importing: ' . $e->getMessage());
-        }
-        
-        return;
-    }
-
-    /**
-     * Save all text changes (both localized and system texts).
+     * Save all changes (both localized and system texts).
      */
     public function saveChanges(Request $request)
     {
-        // Save localized texts (HTML content)
-        $this->saveLocalizedTexts($request);
+        $localizedCreated = 0;
+        $localizedUpdated = 0;
+        $localizedUnchanged = 0;
+        $systemCreated = 0;
+        $systemUpdated = 0;
+        $systemUnchanged = 0;
+        $localizedCreatedKeys = [];
+        $localizedUpdatedKeys = [];
+        $systemCreatedKeys = [];
+        $systemUpdatedKeys = [];
         
-        // Save system texts (JSON content)
-        $this->saveSystemTexts($request);
+        // Save localized texts
+        $texts = $request->get('texts', []);
+        if ($texts) {
+            foreach ($texts as $key => $languages) {
+                foreach ($languages as $language => $content) {
+                    if (!empty($content)) {
+                        $model = AppLocalizedText::firstOrNew([
+                            'content_key' => $key,
+                            'language' => $language
+                        ]);
+                        
+                        $isNew = !$model->exists;
+                        $originalContent = $model->content ?? '';
+                        
+                        $normalizedNewContent = $this->normalizeContent($content);
+                        $normalizedExistingContent = $originalContent ? $this->normalizeContent($originalContent) : '';
+                        
+                        if ($normalizedNewContent !== $normalizedExistingContent) {
+                            $model->content = $content;
+                            $model->save();
+                            
+                            $keyInfo = "{$key} ({$language})";
+                            if ($isNew) {
+                                $localizedCreated++;
+                                $localizedCreatedKeys[] = $keyInfo;
+                            } else {
+                                $localizedUpdated++;
+                                $localizedUpdatedKeys[] = $keyInfo;
+                            }
+                        } else {
+                            $localizedUnchanged++;
+                        }
+                    }
+                }
+            }
+        }
         
+        // Save system texts
+        $systemTexts = $request->get('system_texts', []);
+        if ($systemTexts) {
+            foreach ($systemTexts as $key => $languages) {
+                foreach ($languages as $language => $content) {
+                    if (!empty($content)) {
+                        $model = AppSystemText::firstOrNew([
+                            'content_key' => $key,
+                            'language' => $language
+                        ]);
+                        
+                        $isNew = !$model->exists;
+                        $originalContent = $model->content ?? '';
+                        
+                        $normalizedNewContent = $this->normalizeContent($content);
+                        $normalizedExistingContent = $originalContent ? $this->normalizeContent($originalContent) : '';
+                        
+                        if ($normalizedNewContent !== $normalizedExistingContent) {
+                            $model->content = $content;
+                            $model->save();
+                            
+                            $keyInfo = "{$key} ({$language})";
+                            if ($isNew) {
+                                $systemCreated++;
+                                $systemCreatedKeys[] = $keyInfo;
+                            } else {
+                                $systemUpdated++;
+                                $systemUpdatedKeys[] = $keyInfo;
+                            }
+                        } else {
+                            $systemUnchanged++;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Log batch operation
+        $totalChanges = $localizedCreated + $localizedUpdated + $systemCreated + $systemUpdated;
+        if ($totalChanges > 0) {
+            $this->logBatchOperation(
+                'save_all_texts',
+                'all_texts',
+                [
+                    'localized_created' => $localizedCreated,
+                    'localized_updated' => $localizedUpdated,
+                    'localized_unchanged' => $localizedUnchanged,
+                    'system_created' => $systemCreated,
+                    'system_updated' => $systemUpdated,
+                    'system_unchanged' => $systemUnchanged,
+                    'localized_created_keys' => $localizedCreatedKeys,
+                    'localized_updated_keys' => $localizedUpdatedKeys,
+                    'system_created_keys' => $systemCreatedKeys,
+                    'system_updated_keys' => $systemUpdatedKeys
+                ]
+            );
+        }
+        
+        if ($totalChanges > 0) {
+            $localizedTotal = $localizedCreated + $localizedUpdated;
+            $systemTotal = $systemCreated + $systemUpdated;
+            Toast::success("$totalChanges text entries have been updated ($localizedTotal localized, $systemTotal system)");
+            
+            // Clear text caches to ensure changes are immediately visible
+            $this->clearTextCache();
+        } else {
+            Toast::info("No changes detected");
+        }
+
         return;
     }
 
@@ -705,33 +440,34 @@ class TextsSettingsScreen extends Screen
      */
     public function loadDefaults()
     {
-        // Load localized texts (HTML content) from the seeder
-        $this->runLocalizedTextSeeder();
-        
-        // Load system texts (JSON content) from the seeder
-        $this->runSystemTextSeeder();
-        
-        Toast::success('All localized and system texts have been successfully imported from resource files.');
-        
-        return;
-    }
-
-    /**
-     * Clear the text cache.
-     */
-    public function clearTextCache()
-    {
-        try {            
-            // Clear system texts cache in LanguageController
-            LanguageController::clearCaches();
+        try {
+            $textImportService = new \App\Services\TextImport\TextImportService();
             
-            // Clear localized texts cache in LocalizationController
-            LocalizationController::clearCaches();
+            // Load localized texts (HTML content) and system texts (JSON content)
+            $localizedCount = $textImportService->importLocalizedTexts(true);
+            $systemCount = $textImportService->importSystemTexts(true);
             
-            Toast::success("Translation cache has been cleared successfully.");
+            $totalCount = $localizedCount + $systemCount;
+            
+            // Log batch operation instead of individual text imports
+            $this->logBatchOperation(
+                'load_default_texts',
+                'default_texts',
+                [
+                    'localized_texts_imported' => $localizedCount,
+                    'system_texts_imported' => $systemCount,
+                    'total_texts_imported' => $totalCount
+                ]
+            );
+            
+            Toast::success("All default texts have been successfully imported from resource files. ($totalCount texts processed: $localizedCount localized, $systemCount system)");
+            
+            // Clear text caches to ensure changes are immediately visible
+            $this->clearTextCache();
+            
         } catch (\Exception $e) {
-            Log::error('Error clearing translation cache: ' . $e->getMessage());
-            Toast::error('Error clearing cache: ' . $e->getMessage());
+            Log::error('Error loading default texts: ' . $e->getMessage());
+            Toast::error('Error loading defaults: ' . $e->getMessage());
         }
         
         return;

@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Orchid\Screens\ModelSettings;
 
 use App\Models\ProviderSetting;
+use App\Orchid\Layouts\ModelSettings\ProviderBasicInfoLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderAuthenticationLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderStatusLayout;
+use App\Orchid\Layouts\ModelSettings\ProviderAdvancedSettingsLayout;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
-use Orchid\Screen\Fields\CheckBox;
-use Orchid\Screen\Fields\Input;
-use Orchid\Screen\Fields\Select;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
@@ -22,7 +25,9 @@ class ProviderCreateScreen extends Screen
      */
     public function query(): iterable
     {
-        return [];
+        return [
+            'provider' => new ProviderSetting(),
+        ];
     }
 
     /**
@@ -36,6 +41,24 @@ class ProviderCreateScreen extends Screen
     }
 
     /**
+     * Display header description.
+     */
+    public function description(): ?string
+    {
+        return 'Add a new API provider to the system.';
+    }
+
+    /**
+     * Permission required to access this screen.
+     */
+    public function permission(): ?iterable
+    {
+        return [
+            'platform.modelsettings.providers',
+        ];
+    }
+
+    /**
      * The screen's action buttons.
      *
      * @return \Orchid\Screen\Action[]
@@ -43,13 +66,13 @@ class ProviderCreateScreen extends Screen
     public function commandBar(): iterable
     {
         return [
-            Button::make('Create')
+            Button::make('Create Provider')
                 ->icon('save')
                 ->method('create'),
 
             Link::make('Cancel')
                 ->icon('x-circle')
-                ->route('platform.modelsettings.providers'),
+                ->route('platform.models.api.providers'),
         ];
     }
 
@@ -61,100 +84,56 @@ class ProviderCreateScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::rows([
-                Input::make('provider_name')
-                    ->title('Provider Name')
-                    ->placeholder('e.g. openai')
-                    ->required()
-                    ->help('The name of the provider (alphanumeric characters only)'),
-                
-                Select::make('api_interface')
-                    ->title('API Interface')
-                    ->options($this->getProviderInterface())
-                    ->autofocus(false)
-                    ->help('The API interface to use for this provider'),
-                
-                CheckBox::make('is_active')
-                    ->title('Active')
-                    ->value(false)
-                    ->help('Activate this provider for use in the application'),
-                
-                Input::make('api_key')
-                    ->title('API Key')
-                    ->type('password')
-                    ->help('The API key for authentication'),
-                
-                Input::make('base_url')
-                    ->title('API URL')
-                    ->placeholder('https://api.example.com/v1/chat/completions')
-                    ->help('The URL for API requests'),
-                
-                Input::make('ping_url')
-                    ->title('Models URL')
-                    ->placeholder('https://api.example.com/v1/models')
-                    ->help('The URL to retrieve the available models'),
-            ])
+            Layout::block(ProviderBasicInfoLayout::class)
+                ->title('Basic Information')
+                ->description('Configure the provider name and API format.'),
+
+            Layout::block(ProviderAuthenticationLayout::class)
+                ->title('Authentication')
+                ->description('Set up authentication credentials for this provider.'),
+
+            Layout::block(ProviderStatusLayout::class)
+                ->title('Provider Status')
+                ->description('Control whether this provider is active and available for use.'),
+
+            Layout::block(ProviderAdvancedSettingsLayout::class)
+                ->title('Advanced Settings')
+                ->description('Additional configuration options in JSON format.'),
         ];
     }
 
     /**
-     * Get available provider schemas from config.
-     *
-     * @return array
-     */
-    private function getProviderInterface(): array
-    {
-        $config = config('model_providers', []);
-        
-        // Wenn die Datei einen providers-Schlüssel enthält, nehmen wir die Kindelemente davon
-        $providers = $config['providers'] ?? [];
-        
-        $options = [];
-        foreach ($providers as $key => $provider) {
-            // Verwende den Namen des Providers oder den Schlüssel als Anzeigename
-            $options[$key] = $provider['name'] ?? ucfirst($key);
-        }
-        
-        return $options;
-    }
-
-    /**
      * Create a new provider.
-     *
-     * @param Request $request
-     *
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function create(Request $request)
     {
         $request->validate([
-            'provider_name' => 'required|string',
+            'provider.provider_name' => 'required|string|max:255|unique:provider_settings,provider_name',
+            'provider.api_format_id' => 'required|exists:api_formats,id',
+            'provider.api_key' => 'nullable|string|max:500',
+            'provider.is_active' => 'boolean',
+            'provider.additional_settings' => 'nullable|string',
         ]);
         
-        $providerName = $request->input('provider_name');
+        $providerData = $request->input('provider');
+        $providerName = $providerData['provider_name'];
         
-        if (empty($providerName)) {
-            Toast::warning('Der Provider-Name muss alphanumerische Zeichen enthalten.');
-            return back()->withInput();
+        // Convert JSON string to array for storage
+        if (!empty($providerData['additional_settings'])) {
+            $decoded = json_decode($providerData['additional_settings'], true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                Toast::error('Additional settings must be valid JSON format.');
+                return back()->withInput();
+            }
+            $providerData['additional_settings'] = $decoded;
+        } else {
+            $providerData['additional_settings'] = null;
         }
         
-        // Überprüfe, ob der Provider bereits existiert
-        if (ProviderSetting::where('provider_name', $providerName)->exists()) {
-            Toast::error("Ein Provider mit dem Namen '{$providerName}' existiert bereits.");
-            return back()->withInput();
-        }
+        // Create the new provider
+        ProviderSetting::create($providerData);
         
-        // Erstelle einen neuen Provider
-        ProviderSetting::create([
-            'provider_name' => $providerName,
-            'api_format' => $request->input('api_schema'),
-            'is_active' => $request->boolean('is_active'),
-            'api_key' => $request->input('api_key'),
-            'base_url' => $request->input('base_url'),
-            'ping_url' => $request->input('ping_url'),
-        ]);
-        
-        Toast::success("Neuer Provider '{$providerName}' wurde erfolgreich erstellt.");
-        return redirect()->route('platform.modelsettings.providers');
+        Toast::success("New provider '{$providerName}' was successfully created.");
+        return redirect()->route('platform.models.api.providers');
     }
 }

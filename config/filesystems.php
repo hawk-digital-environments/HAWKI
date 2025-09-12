@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DISK', 'local'),
+    'default' => config('filesystems.default', env('FILESYSTEM_DISK', 'local')),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,20 +39,20 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => config('app.url').'/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
 
         's3' => [
             'driver' => 's3',
-            'key' => env('AWS_ACCESS_KEY_ID'),
-            'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
-            'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
-            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'key' => config('filesystems.disks.s3.key', env('AWS_ACCESS_KEY_ID')),
+            'secret' => config('filesystems.disks.s3.secret', env('AWS_SECRET_ACCESS_KEY')),
+            'region' => config('filesystems.disks.s3.region', env('AWS_DEFAULT_REGION')),
+            'bucket' => config('filesystems.disks.s3.bucket', env('AWS_BUCKET')),
+            'url' => config('filesystems.disks.s3.url', env('AWS_URL')),
+            'endpoint' => config('filesystems.disks.s3.endpoint', env('AWS_ENDPOINT')),
+            'use_path_style_endpoint' => config('filesystems.disks.s3.use_path_style_endpoint', env('AWS_USE_PATH_STYLE_ENDPOINT', false)),
             'throw' => false,
         ],
 

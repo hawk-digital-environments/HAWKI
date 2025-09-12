@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'default' => env('LOG_CHANNEL', 'stack'),
+    'default' => env('LOG_CHANNEL', config('logging.default', 'stack')),
 
     /*
     |--------------------------------------------------------------------------
@@ -54,7 +54,13 @@ return [
 
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', env('LOG_STACK', 'single')),
+            'channels' => ['single', 'database'], // File + Database logging
+            'ignore_exceptions' => false,
+        ],
+
+        'stack_with_database' => [
+            'driver' => 'stack',
+            'channels' => ['single', 'database'], // File + Database logging
             'ignore_exceptions' => false,
         ],
 
@@ -127,6 +133,14 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        'database' => [
+            'driver' => 'custom',
+            'via' => \App\Logging\DatabaseLogger::class,
+            'name' => 'database',
+            'level' => env('LOG_LEVEL', config('logging.channels.database.level', 'debug')),
+            'bubble' => true, // Allow bubbling to other handlers
+        ],
+
     ],
 
 
@@ -144,7 +158,11 @@ return [
      */
 
     'triggers' => [
-        'return_object' => false,
+        'curl_return_object' => false,
+        'normalized_return_object' => false,
+        'formatted_stream_chunk' => false,
+        'translated_return_object' => false,
         'default_model' => false,
+        'usage' => false,
     ],
 ];

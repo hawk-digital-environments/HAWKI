@@ -143,10 +143,14 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         
         if (groundingMetadata && 
             groundingMetadata != '' && 
-            groundingMetadata.searchEntryPoint && 
-            groundingMetadata.searchEntryPoint.renderedContent) {
+            groundingMetadata.searchMetadata && 
+            groundingMetadata.searchMetadata.renderedContent) {
 
-            addGoogleRenderedContent(messageElement, groundingMetadata);
+            addSearchRenderedContent(messageElement, groundingMetadata);
+            // Activate citations after Google content is added
+            if(typeof activateCitations === 'function'){
+                activateCitations(messageElement);
+            }
         }
         else{
             if(messageElement.querySelector('.google-search')){
@@ -211,6 +215,50 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     return  messageElement;
 }
 
+/**
+ * Handle search content for both unified and legacy citation formats
+ */
+function handleSearchContent(messageElement, groundingMetadata) {
+    if (!groundingMetadata || groundingMetadata === '') {
+        // Remove existing search content if no metadata
+        if(messageElement.querySelector('.google-search')){
+            messageElement.querySelector('.google-search').remove();
+        }
+        return;
+    }
+
+    // Check for unified format first
+    if (groundingMetadata.format === 'hawki_v1' && groundingMetadata.searchMetadata) {
+        // Unified format: use searchMetadata directly
+        if (groundingMetadata.searchMetadata.renderedContent) {
+            addSearchRenderedContent(messageElement, groundingMetadata);
+            if(typeof activateCitations === 'function'){
+                activateCitations(messageElement);
+            }
+        } else {
+            // Remove search content if no renderedContent
+            if(messageElement.querySelector('.google-search')){
+                messageElement.querySelector('.google-search').remove();
+            }
+        }
+    } else {
+        // Legacy format: check traditional structure
+        if (groundingMetadata.searchMetadata && 
+            groundingMetadata.searchMetadata.renderedContent) {
+            
+            addSearchRenderedContent(messageElement, groundingMetadata);
+            if(typeof activateCitations === 'function'){
+                activateCitations(messageElement);
+            }
+        } else {
+            // Remove search content if no renderedContent
+            if(messageElement.querySelector('.google-search')){
+                messageElement.querySelector('.google-search').remove();
+            }
+        }
+    }
+}
+
 
 function updateMessageElement(messageElement, messageObj, updateContent = false){
 
@@ -234,6 +282,11 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     messageElement.dataset.role = messageObj.message_role;
     const msgTxtElement = messageElement.querySelector(".message-text");
 
+    // Always activate citations for AI messages, even when not updating content
+    if(messageElement.classList.contains('AI') && !updateContent && typeof activateCitations === 'function'){
+        activateCitations(messageElement);
+    }
+
     if(updateContent){
         const {messageText, groundingMetadata} = deconstContent(messageObj.content);
         
@@ -249,18 +302,10 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             let markdownProcessed = formatMessage(messageText, groundingMetadata);
             msgTxtElement.innerHTML = markdownProcessed;
             formatMathFormulas(msgTxtElement);
-            if (groundingMetadata && 
-                groundingMetadata != '' && 
-                groundingMetadata.searchEntryPoint && 
-                groundingMetadata.searchEntryPoint.renderedContent) {
-    
-                addGoogleRenderedContent(messageElement, groundingMetadata);
-            }
-            else{
-                if(messageElement.querySelector('.google-search')){
-                    messageElement.querySelector('.google-search').remove();
-                }
-            }
+            formatHljs(messageElement); // Add this to ensure citations are activated
+            
+            // Handle search content for both legacy and unified formats
+            handleSearchContent(messageElement, groundingMetadata);
         }
 
         // if the read status exists in the data
@@ -275,6 +320,26 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             }
         }
 
+    }
+
+    // For existing messages (updateContent = false), also check for Google content and activate citations
+    if(!updateContent && messageElement.classList.contains('AI')){
+        const {messageText, groundingMetadata} = deconstContent(messageObj.content);
+        
+        // Check if Google content should be added but isn't already there
+        if (groundingMetadata && 
+            groundingMetadata != '' && 
+            groundingMetadata.searchMetadata && 
+            groundingMetadata.searchMetadata.renderedContent &&
+            !messageElement.querySelector('.google-search')) {
+
+            addSearchRenderedContent(messageElement, groundingMetadata);
+        }
+        
+        // Always activate citations for AI messages with existing content
+        if(typeof activateCitations === 'function'){
+            activateCitations(messageElement);
+        }
     }
 
 
@@ -362,11 +427,18 @@ function deconstContent(inputContent){
     
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
+        
         if(json.hasOwnProperty('groundingMetadata')){
-            groundingMetadata = json.groundingMetadata
+            groundingMetadata = json.groundingMetadata;
         }
         if(json.hasOwnProperty('text')){
             messageText = json.text;
+        }
+        else if(json.hasOwnProperty('messageText')){
+            messageText = json.messageText;
+        }
+        else if(json.hasOwnProperty('content')){
+            messageText = json.content;
         }
         else{
             messageText = inputContent;
@@ -589,7 +661,6 @@ async function confirmEditMessage(provider){
     const messageElement = provider.closest('.message');
 
     if(!messageElement.classList.contains('me')){
-        // console.log('Not Your Message!');
         return;
     }
 
@@ -627,7 +698,6 @@ async function confirmEditMessage(provider){
             if(messageElement.dataset.role === 'assistant'){
                 const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
                 key = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-                // console.log(key);
             }else{
                 key = roomKey;
             }
@@ -664,7 +734,6 @@ async function onRegenerateBtn(btn){
 
 async function regenerateMessage(messageElement, Done = null){
     if(!messageElement.classList.contains('AI')){
-        // console.log('Not AI Message!');
         return;
     }
     const threadIndex = messageElement.closest('.thread').id;
@@ -707,7 +776,6 @@ async function regenerateMessage(messageElement, Done = null){
                 'stream': false,
                 'model': activeModel.id,
             }
-            // console.log('buildRequestObject');
             buildRequestObject(msgAttributes,  async (updatedText, done) => {});
         break;
     }

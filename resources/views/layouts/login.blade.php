@@ -186,6 +186,58 @@
         }
     }
 
+    async function LoginLocalMain() {
+        try {
+            var formData = new FormData();
+            formData.append("account", document.getElementById("main-local-account").value);
+            formData.append("password", document.getElementById("main-local-password").value);
+            const csrfToken = document.getElementById('loginForm-LOCAL-MAIN').querySelector('input[name="_token"]').value;
+
+            const response = await fetch('/req/login-local', {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error("Local login request failed");
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                await setOverlay(true, true)
+                window.location.href = data.redirectUri;
+
+            } else {
+                // console.log('local login failed');
+                document.getElementById("main-local-login-message").textContent = data.message || 'Login Failed!';
+            }
+        } catch (error) {
+            console.error(error);
+            document.getElementById("main-local-login-message").textContent = 'Login Error!';
+        }
+    }
+
+    function onLocalMainLoginKeydown(event){
+        if(event.key == "Enter"){
+            const username = document.getElementById('main-local-account');
+            if(!username.value){
+                return;
+            }
+            const password = document.getElementById('main-local-password');
+            if(document.activeElement != password){
+                password.focus();
+                return;
+            }
+            if(username.value && password.value){
+                LoginLocalMain();
+            }
+        }
+    }
+
     function switchToLocalUsersLogin() {
         // Use the guest request function if available, otherwise fall back to manual handling
         if (typeof resetAllAuthPanels === 'function') {

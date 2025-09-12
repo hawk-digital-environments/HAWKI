@@ -21,6 +21,40 @@ class OpenAIProvider extends BaseAIModelProvider
     }
     
     /**
+     * Get the chat endpoint URL from the provider's API format configuration
+     *
+     * @return string
+     */
+    protected function getChatEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->chat_url : $this->config['base_url'] ?? '';
+    }
+    
+    /**
+     * Get the models endpoint URL from the provider's API format configuration  
+     *
+     * @return string
+     */
+    protected function getModelsEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->ping_url : $this->config['ping_url'] ?? '';
+    }
+    
+    /**
+     * Get the provider settings from database
+     *
+     * @return ProviderSetting|null
+     */
+    protected function getProviderFromDatabase(): ?ProviderSetting
+    {
+        return ProviderSetting::where('provider_name', $this->providerId)
+            ->where('is_active', true)
+            ->first();
+    }
+    
+    /**
      * Format the raw payload for OpenAI API
      *
      * @param array $rawPayload
@@ -99,29 +133,95 @@ class OpenAIProvider extends BaseAIModelProvider
      */
     public function formatStreamChunk(string $chunk): array
     {
-        $jsonChunk = json_decode($chunk, true);
-        
         $content = '';
         $isDone = false;
         $usage = null;
-        
+
+        // First try to parse as direct JSON (most common case)
+        $data = json_decode($chunk, true);
+        if ($data && isset($data['object']) && $data['object'] === 'chat.completion.chunk') {
+            $result = $this->processOpenAIEvent($data);
+            return $result;
+        } else {
+            // Fallback: Try SSE format parsing (for chunks with multiple events)
+            $lines = explode("\n", $chunk);
+
+            foreach ($lines as $line) {
+                $line = trim($line);
+
+                if (strpos($line, 'data: ') === 0) {
+                    $jsonData = substr($line, 6);
+                    
+                    // Skip empty chunks or "[DONE]" markers
+                    if (empty($jsonData) || $jsonData === '[DONE]') {
+                        if ($jsonData === '[DONE]') {
+                            $isDone = true;
+                        }
+                        continue;
+                    }
+
+                    $data = json_decode($jsonData, true);
+                    if ($data && isset($data['object']) && $data['object'] === 'chat.completion.chunk') {
+                        $result = $this->processOpenAIEvent($data);
+                        $content .= $result['content']['text']; // Accumulate content from multiple events
+                        if ($result['isDone']) $isDone = true;
+                        if ($result['usage']) $usage = $result['usage'];
+                    } else {
+                        // Log unprocessable chunks for debugging
+                        Log::debug('OpenAI unparseable chunk', [
+                            'chunk' => substr($jsonData, 0, 200),
+                            'json_error' => json_last_error_msg()
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return [
+            'content' => [
+                'text' => $content,
+            ],
+            'isDone' => $isDone,
+            'usage' => $usage
+        ];
+    }
+
+    /**
+     * Process a single OpenAI event (either from direct JSON or SSE)
+     *
+     * @param array $data
+     * @return array
+     */
+    private function processOpenAIEvent(array $data): array
+    {
+        $content = '';
+        $isDone = false;
+        $usage = null;
+
         // Check for the finish_reason flag
-        if (isset($jsonChunk['choices'][0]['finish_reason']) && $jsonChunk['choices'][0]['finish_reason'] === 'stop') {
+        if (isset($data['choices'][0]['finish_reason']) && $data['choices'][0]['finish_reason'] === 'stop') {
             $isDone = true;
         }
-        
-        // Extract usage data if available
-        if (!empty($jsonChunk['usage'])) {
-            $usage = $this->extractUsage($jsonChunk);
-            Log::info('OpenAI', ['model' => $jsonChunk['model'], 'usage' => $usage]);
 
+        // Extract usage data if available
+        if (!empty($data['usage'])) {
+            $usage = $this->extractUsage($data);
+            
+            // Only log usage data if enabled in configuration (with fallback)
+            try {
+                if (function_exists('config') && config('logging.triggers.usage', false)) {
+                    Log::info('OpenAI Usage', ['model' => $data['model'], 'usage' => $usage]);
+                }
+            } catch (\Exception $e) {
+                // Ignore config errors in standalone testing
+            }
         }
-        
+
         // Extract content if available
-        if (isset($jsonChunk['choices'][0]['delta']['content'])) {
-            $content = $jsonChunk['choices'][0]['delta']['content'];
+        if (isset($data['choices'][0]['delta']['content'])) {
+            $content = $data['choices'][0]['delta']['content'];
         }
-        
+
         return [
             'content' => [
                 'text' => $content,
@@ -160,9 +260,12 @@ class OpenAIProvider extends BaseAIModelProvider
         // Ensure stream is set to false
         $payload['stream'] = false;
         
-        // Initialize cURL with the base_url from database config
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
+        // Initialize cURL with the database-configured URL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -206,9 +309,12 @@ class OpenAIProvider extends BaseAIModelProvider
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
-        // Initialize cURL with the base_url from database config
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
+        // Initialize cURL with the database-configured URL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));

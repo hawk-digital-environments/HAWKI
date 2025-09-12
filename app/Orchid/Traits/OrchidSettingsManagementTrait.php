@@ -3,10 +3,16 @@
 namespace App\Orchid\Traits;
 
 use App\Models\AppSetting;
+use App\Models\AppLocalizedText;
+use App\Models\AppSystemText;
+use App\Http\Controllers\LocalizationController;
+use App\Http\Controllers\LanguageController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 use Orchid\Support\Facades\Toast;
 
 /**
@@ -21,11 +27,266 @@ use Orchid\Support\Facades\Toast;
  * - Settings persistence with change detection
  * - Nested settings processing (LDAP, OIDC, Mail configurations)
  * - Cache invalidation and configuration clearing
+ * - Text management operations (localized and system texts)
+ * - Content normalization and batch operations with detailed logging
  * 
  * @package App\Orchid\Traits
  */
 trait OrchidSettingsManagementTrait
 {
+    // ========================================================================================
+    // MODEL MANAGEMENT METHODS
+    // ========================================================================================
+
+    /**
+     * Save a model with comprehensive change detection, logging, and user feedback
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array $data Validated data to fill the model
+     * @param string $modelDisplayName Display name for logging and messages
+     * @param array $originalValues Original values for change tracking
+     * @param callable|null $beforeSave Optional callback before saving
+     * @param callable|null $afterSave Optional callback after saving
+     * @return array ['hasChanges' => bool, 'changes' => array]
+     */
+    protected function saveModelWithChangeDetection($model, array $data, string $modelDisplayName, array $originalValues = [], ?callable $beforeSave = null, ?callable $afterSave = null): array
+    {
+        // Store original values if not provided
+        if (empty($originalValues)) {
+            $originalValues = $model->getOriginal();
+        }
+
+        // Fill model with new data
+        $model->fill($data);
+
+        // Execute before save callback if provided
+        if ($beforeSave) {
+            $beforeSave($model, $data);
+        }
+
+        // Save the model
+        $model->save();
+
+        // Execute after save callback if provided
+        if ($afterSave) {
+            $afterSave($model, $data);
+        }
+
+        // Detect changes
+        $changes = $this->detectModelChanges($model, $originalValues);
+        $hasChanges = !empty($changes);
+
+        // Log and provide feedback
+        $this->logModelChanges($model, $modelDisplayName, $changes, $hasChanges);
+        $this->provideSaveFeedback($modelDisplayName, $hasChanges);
+
+        return [
+            'hasChanges' => $hasChanges,
+            'changes' => $changes
+        ];
+    }
+
+    /**
+     * Detect changes in a model by comparing original and current values
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param array $originalValues
+     * @return array
+     */
+    protected function detectModelChanges($model, array $originalValues): array
+    {
+        $changes = [];
+        $currentValues = $model->getAttributes();
+
+        foreach ($currentValues as $key => $newValue) {
+            $originalValue = $originalValues[$key] ?? null;
+
+            // Special handling for JSON fields
+            if ($this->isJsonField($model, $key)) {
+                $originalValue = is_string($originalValue) ? json_decode($originalValue, true) : $originalValue;
+                $newValue = is_string($newValue) ? json_decode($newValue, true) : $newValue;
+            }
+
+            // Compare values
+            if ($originalValue !== $newValue) {
+                $changes[$key] = [
+                    'from' => $originalValue,
+                    'to' => $newValue
+                ];
+            }
+        }
+
+        return $changes;
+    }
+
+    /**
+     * Log model changes with structured format
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param string $modelDisplayName
+     * @param array $changes
+     * @param bool $hasChanges
+     */
+    protected function logModelChanges($model, string $modelDisplayName, array $changes, bool $hasChanges): void
+    {
+        $logData = [
+            'model_type' => get_class($model),
+            'model_id' => $model->getKey(),
+            'model_name' => $modelDisplayName,
+            'changes' => $changes,
+            'updated_by' => auth()->id(),
+        ];
+
+        if ($hasChanges) {
+            Log::info("{$this->getModelTypeName($model)} updated successfully - {$modelDisplayName}", $logData);
+        } else {
+            Log::debug("{$this->getModelTypeName($model)} saved without changes - {$modelDisplayName}", $logData);
+        }
+    }
+
+    /**
+     * Provide user feedback based on whether changes were made
+     *
+     * @param string $modelDisplayName
+     * @param bool $hasChanges
+     */
+    protected function provideSaveFeedback(string $modelDisplayName, bool $hasChanges): void
+    {
+        if ($hasChanges) {
+            Toast::success("'{$modelDisplayName}' has been updated successfully.");
+        } else {
+            Toast::info("No changes detected for '{$modelDisplayName}'.");
+        }
+    }
+
+    /**
+     * Validate and process JSON field with proper error handling
+     *
+     * @param string $jsonString
+     * @param string $fieldName
+     * @param int|null $modelId
+     * @return array|null Returns decoded array on success, null on failure
+     */
+    protected function validateAndProcessJsonField(string $jsonString, string $fieldName, ?int $modelId = null): ?array
+    {
+        if (empty($jsonString)) {
+            return null;
+        }
+
+        $decoded = json_decode($jsonString, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::warning("Invalid JSON in {$fieldName}", [
+                'model_id' => $modelId,
+                'field_name' => $fieldName,
+                'json_error' => json_last_error_msg(),
+                'input' => $jsonString,
+            ]);
+            
+            Toast::error("{$fieldName} must be valid JSON format.");
+            return false; // Return false to indicate validation error
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Get a user-friendly model type name for logging
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @return string
+     */
+    protected function getModelTypeName($model): string
+    {
+        $className = class_basename($model);
+        
+        // Convert CamelCase to human-readable format
+        return preg_replace('/(?<!^)[A-Z]/', ' $0', $className);
+    }
+
+    /**
+     * Check if a model field should be treated as JSON
+     *
+     * @param \Illuminate\Database\Eloquent\Model $model
+     * @param string $field
+     * @return bool
+     */
+    protected function isJsonField($model, string $field): bool
+    {
+        // Check if model has casts defined for this field
+        $casts = $model->getCasts();
+        
+        return isset($casts[$field]) && in_array($casts[$field], ['array', 'json', 'object', 'collection']);
+    }
+
+    /**
+     * Clear all records from a specified model class.
+     * Provides standardized logging and user feedback for bulk delete operations.
+     *
+     * @param string $modelClass The fully qualified model class name
+     * @param string $modelDisplayName Human-readable name for user feedback
+     * @param array $whereConditions Optional where conditions for selective deletion
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function clearAllModelsOfType(string $modelClass, string $modelDisplayName, array $whereConditions = [])
+    {
+        try {
+            // Build query
+            $query = $modelClass::query();
+            
+            // Apply where conditions if provided
+            if (!empty($whereConditions)) {
+                foreach ($whereConditions as $field => $value) {
+                    $query->where($field, $value);
+                }
+            }
+            
+            // Get count before deletion for logging
+            $totalModels = $query->count();
+            
+            if ($totalModels === 0) {
+                Toast::info("No {$modelDisplayName} found to clear.");
+                return redirect()->back();
+            }
+
+            // Delete records
+            $query->delete();
+
+            // Use trait method for structured logging
+            $this->logScreenOperation(
+                'clear_all_models',
+                'success',
+                [
+                    'model_class' => $modelClass,
+                    'model_display_name' => $modelDisplayName,
+                    'models_deleted' => $totalModels,
+                    'where_conditions' => $whereConditions,
+                    'action_type' => 'bulk_delete_all'
+                ]
+            );
+
+            Toast::success("Successfully cleared all {$totalModels} {$modelDisplayName} from the database.");
+
+        } catch (\Exception $e) {
+            $this->logScreenOperation(
+                'clear_all_models',
+                'error',
+                [
+                    'model_class' => $modelClass,
+                    'model_display_name' => $modelDisplayName,
+                    'where_conditions' => $whereConditions,
+                    'error' => $e->getMessage(),
+                    'action_type' => 'bulk_delete_all'
+                ],
+                'error'
+            );
+            
+            Toast::error("Failed to clear {$modelDisplayName}: " . $e->getMessage());
+        }
+
+        return redirect()->back();
+    }
+
     // ========================================================================================
     // SETTINGS PERSISTENCE METHODS
     // ========================================================================================
@@ -41,25 +302,16 @@ trait OrchidSettingsManagementTrait
         $settings = $request->input('settings', []);
         $count = 0;
         
-        // Debug: Log all received settings for troubleshooting
-        Log::info('Received settings in saveSettings:', $settings);
-        
         if ($settings) {
             // Collect only entries that have actually changed
             $changedSettings = [];
             
             foreach ($settings as $key => $value) {
-                // Debug: Log each setting being processed
-                Log::info("Processing setting: {$key} = " . json_encode($value));
-                
                 // Convert flat input names back to database keys (e.g., mail_from__address -> mail_from.address)
                 $dbKey = $this->convertFlatInputToDbKey($key);
-                Log::info("Converted input key '{$key}' to DB key '{$dbKey}'");
                 
                 // Special handling for nested LDAP, OIDC and Mail settings that come as JSON objects
                 if (is_array($value) && (str_starts_with($dbKey, 'ldap_') || str_starts_with($dbKey, 'open_id_connect_') || str_starts_with($dbKey, 'mail_'))) {
-                    Log::info("Processing nested setting: {$dbKey}");
-                    
                     // Handle nested settings - flatten them with dot notation
                     $this->processNestedSettings($dbKey, $value, $changedSettings);
                     continue; // Skip the main key processing since we handled the nested ones
@@ -86,13 +338,11 @@ trait OrchidSettingsManagementTrait
                             'type' => $setting->type,
                             'model' => $setting
                         ];
-                        Log::info("Change detected for: {$dbKey}");
-                    } else {
-                        Log::info("No change detected for: {$dbKey}");
+                        Log::info("Setting changed: {$dbKey} from '" . json_encode($normalizedExistingValue) . "' to '" . json_encode($normalizedNewValue) . "'");
                     }
                 } else {
-                    Log::warning("Setting nicht gefunden: {$dbKey}");
-                    Toast::warning("Setting nicht gefunden: {$dbKey}");
+                    Log::warning("Setting not found: {$dbKey}");
+                    Toast::warning("Setting not found: {$dbKey}");
                 }
             }
             
@@ -151,8 +401,6 @@ trait OrchidSettingsManagementTrait
             // Create the dot notation key
             $dotNotationKey = $parentKey . '.' . $nestedKey;
             
-            Log::info("Looking for nested setting: {$dotNotationKey} = " . json_encode($nestedValue));
-            
             // Handle deeply nested arrays (like attribute_map)
             if (is_array($nestedValue)) {
                 $this->processNestedSettings($dotNotationKey, $nestedValue, $changedSettings);
@@ -161,7 +409,6 @@ trait OrchidSettingsManagementTrait
             
             // Skip empty password fields
             if ((str_contains($dotNotationKey, 'bind_pw') || str_contains($dotNotationKey, 'password') || str_contains($dotNotationKey, 'secret')) && empty($nestedValue)) {
-                Log::info("Skipping empty password field: {$dotNotationKey}");
                 continue;
             }
             
@@ -169,13 +416,9 @@ trait OrchidSettingsManagementTrait
             $setting = AppSetting::where('key', $dotNotationKey)->first();
             
             if ($setting) {
-                Log::info("Found nested setting in DB: {$dotNotationKey}");
-                
                 // Process this nested setting
                 $normalizedNewValue = $this->normalizeValueForComparison($nestedValue, $setting->type);
                 $normalizedExistingValue = $this->normalizeValueForComparison($setting->value, $setting->type);
-                
-                Log::info("Comparing nested {$dotNotationKey}: old='" . json_encode($normalizedExistingValue) . "' new='" . json_encode($normalizedNewValue) . "'");
                 
                 if ($normalizedExistingValue !== $normalizedNewValue) {
                     $changedSettings[] = [
@@ -184,13 +427,11 @@ trait OrchidSettingsManagementTrait
                         'type' => $setting->type,
                         'model' => $setting
                     ];
-                    Log::info("Change detected for nested: {$dotNotationKey}");
-                } else {
-                    Log::info("No change detected for nested: {$dotNotationKey}");
+                    Log::info("Nested setting changed: {$dotNotationKey} from '" . json_encode($normalizedExistingValue) . "' to '" . json_encode($normalizedNewValue) . "'");
                 }
             } else {
-                Log::warning("Nested setting not found in DB: {$dotNotationKey}");
-                Toast::warning("Nested setting not found in DB: {$dotNotationKey}");
+                Log::warning("Nested setting not found: {$dotNotationKey}");
+                Toast::warning("Nested setting not found: {$dotNotationKey}");
             }
         }
     }
@@ -443,6 +684,7 @@ trait OrchidSettingsManagementTrait
                     ->addclass('fw-bold'),
                 \Orchid\Screen\Fields\Select::make($inputName)
                     ->options([
+                        'LOCAL_ONLY' => 'Local Only (Database Authentication)',
                         'LDAP' => 'LDAP',
                         'OIDC' => 'OpenID Connect',
                         'Shibboleth' => 'Shibboleth',
@@ -515,6 +757,54 @@ trait OrchidSettingsManagementTrait
             ->widthColumns('1fr 1fr');
         }
 
+        // Special handling for logging default channel
+        if ($key === 'logging_default') {
+            return \Orchid\Screen\Fields\Group::make([
+                \Orchid\Screen\Fields\Label::make("label_{$key}")
+                    ->title($setting->description)
+                    ->help($displayKey)
+                    ->addclass('fw-bold'),
+                \Orchid\Screen\Fields\Select::make($inputName)
+                    ->options([
+                        'stack' => 'Stack (Multiple channels)',
+                        'single' => 'Single File',
+                        'daily' => 'Daily Rotating Files',
+                        'syslog' => 'System Log',
+                        'database' => 'Database',
+                        'errorlog' => 'PHP Error Log',
+                        'null' => 'Null (Disable logging)',
+                        'emergency' => 'Emergency (Write to error log)',
+                    ])
+                    ->value($setting->value),
+            ])
+            ->alignCenter()
+            ->widthColumns('1fr 1fr');
+        }
+
+        // Special handling for log levels
+        if (str_contains($key, '_level') && (str_contains($key, 'logging_') || str_contains($key, 'log_'))) {
+            return \Orchid\Screen\Fields\Group::make([
+                \Orchid\Screen\Fields\Label::make("label_{$key}")
+                    ->title($setting->description)
+                    ->help($displayKey)
+                    ->addclass('fw-bold'),
+                \Orchid\Screen\Fields\Select::make($inputName)
+                    ->options([
+                        'debug' => 'Debug',
+                        'info' => 'Info',
+                        'notice' => 'Notice',
+                        'warning' => 'Warning',
+                        'error' => 'Error',
+                        'critical' => 'Critical',
+                        'alert' => 'Alert',
+                        'emergency' => 'Emergency',
+                    ])
+                    ->value($setting->value),
+            ])
+            ->alignCenter()
+            ->widthColumns('1fr 1fr');
+        }
+
         // Special handling for encryption
         if (str_contains($key, 'encryption')) {
             return \Orchid\Screen\Fields\Group::make([
@@ -530,6 +820,24 @@ trait OrchidSettingsManagementTrait
                     ])
                     ->value($setting->value)
                     ->empty('None'),
+            ])
+            ->alignCenter()
+            ->widthColumns('1fr 1fr');
+        }
+
+        // Special handling for WebSocket scheme (HTTP/HTTPS)
+        if (str_contains($key, 'scheme') && str_contains($key, 'reverb')) {
+            return \Orchid\Screen\Fields\Group::make([
+                \Orchid\Screen\Fields\Label::make("label_{$key}")
+                    ->title($setting->description)
+                    ->help($displayKey)
+                    ->addclass('fw-bold'),
+                \Orchid\Screen\Fields\Select::make($inputName)
+                    ->options([
+                        'https' => 'HTTPS (Secure)',
+                        'http' => 'HTTP (Insecure)',
+                    ])
+                    ->value($setting->value),
             ])
             ->alignCenter()
             ->widthColumns('1fr 1fr');
@@ -581,5 +889,454 @@ trait OrchidSettingsManagementTrait
         ])
         ->alignCenter()
         ->widthColumns('1fr 1fr');
+    }
+
+    // ========================================================================================
+    // TEXT MANAGEMENT METHODS
+    // ========================================================================================
+
+    /**
+     * Save changes to localized texts with detailed batch logging.
+     */
+    public function saveLocalizedTexts(Request $request)
+    {
+        $texts = $request->get('texts', []);
+        $created = 0;
+        $updated = 0;
+        $unchanged = 0;
+        $createdKeys = [];
+        $updatedKeys = [];
+        
+        if ($texts) {
+            foreach ($texts as $key => $languages) {
+                foreach ($languages as $language => $content) {
+                    if (!empty($content)) {
+                        // Find or create the localized text model
+                        $model = AppLocalizedText::firstOrNew([
+                            'content_key' => $key,
+                            'language' => $language
+                        ]);
+                        
+                        $isNew = !$model->exists;
+                        $originalContent = $model->content ?? '';
+                        
+                        // Normalize content for comparison
+                        $normalizedNewContent = $this->normalizeContent($content);
+                        $normalizedExistingContent = $originalContent ? $this->normalizeContent($originalContent) : '';
+                        
+                        // Check if content has changed
+                        if ($normalizedNewContent !== $normalizedExistingContent) {
+                            $model->content = $content;
+                            $model->save();
+                            
+                            $keyInfo = "{$key} ({$language})";
+                            if ($isNew) {
+                                $created++;
+                                $createdKeys[] = $keyInfo;
+                            } else {
+                                $updated++;
+                                $updatedKeys[] = $keyInfo;
+                            }
+                        } else {
+                            $unchanged++;
+                        }
+                    }
+                }
+            }
+            
+            // Log batch operation
+            if ($created > 0 || $updated > 0) {
+                $this->logBatchOperation(
+                    'save_localized_texts',
+                    'localized_texts',
+                    [
+                        'created' => $created,
+                        'updated' => $updated,
+                        'unchanged' => $unchanged,
+                        'created_keys' => $createdKeys,
+                        'updated_keys' => $updatedKeys
+                    ]
+                );
+            }
+            
+            // Provide consolidated feedback
+            $totalChanges = $created + $updated;
+            if ($totalChanges > 0) {
+                Toast::success("$totalChanges localized text entries have been updated ($created created, $updated updated)");
+                
+                // Clear text caches to ensure changes are immediately visible
+                $this->clearTextCache();
+            } else {
+                Toast::info("No changes detected in localized texts");
+            }
+        }
+
+        return;
+    }
+
+    /**
+     * Save system text changes with detailed batch logging.
+     */
+    public function saveSystemTexts(Request $request)
+    {
+        $texts = $request->get('system_texts', []);
+        $created = 0;
+        $updated = 0;
+        $unchanged = 0;
+        $createdKeys = [];
+        $updatedKeys = [];
+        
+        if ($texts) {
+            foreach ($texts as $key => $languages) {
+                foreach ($languages as $language => $content) {
+                    if (!empty($content)) {
+                        // Find or create the system text model
+                        $model = AppSystemText::firstOrNew([
+                            'content_key' => $key,
+                            'language' => $language
+                        ]);
+                        
+                        $isNew = !$model->exists;
+                        $originalContent = $model->content ?? '';
+                        
+                        // Normalize content for comparison
+                        $normalizedNewContent = $this->normalizeContent($content);
+                        $normalizedExistingContent = $originalContent ? $this->normalizeContent($originalContent) : '';
+                        
+                        // Check if content has changed
+                        if ($normalizedNewContent !== $normalizedExistingContent) {
+                            $model->content = $content;
+                            $model->save();
+                            
+                            $keyInfo = "{$key} ({$language})";
+                            if ($isNew) {
+                                $created++;
+                                $createdKeys[] = $keyInfo;
+                            } else {
+                                $updated++;
+                                $updatedKeys[] = $keyInfo;
+                            }
+                        } else {
+                            $unchanged++;
+                        }
+                    }
+                }
+            }
+            
+            // Log batch operation
+            if ($created > 0 || $updated > 0) {
+                $this->logBatchOperation(
+                    'save_system_texts',
+                    'system_texts',
+                    [
+                        'created' => $created,
+                        'updated' => $updated,
+                        'unchanged' => $unchanged,
+                        'created_keys' => $createdKeys,
+                        'updated_keys' => $updatedKeys
+                    ]
+                );
+            }
+            
+            // Provide consolidated feedback
+            $totalChanges = $created + $updated;
+            if ($totalChanges > 0) {
+                Toast::success("$totalChanges system text entries have been updated ($created created, $updated updated)");
+                
+                // Clear text caches to ensure changes are immediately visible
+                $this->clearTextCache();
+            } else {
+                Toast::info("No changes detected in system texts");
+            }
+        }
+
+        return;
+    }
+
+    /**
+     * Add a new system text with validation and logging.
+     */
+    public function addNewSystemText(Request $request)
+    {
+        $key = $request->get('new_system_key');
+        $deText = $request->get('new_system_de_DE');
+        $enText = $request->get('new_system_en_US');
+        
+        if (empty($key) || empty($deText) || empty($enText)) {
+            Toast::error('Key and both language texts are required');
+            return redirect()->route('platform.settings.texts');
+        }
+        
+        $totalChanges = 0;
+        
+        // Create entries for both languages using trait method
+        foreach (['de_DE' => $deText, 'en_US' => $enText] as $language => $content) {
+            $model = AppSystemText::firstOrNew([
+                'content_key' => $key,
+                'language' => $language
+            ]);
+            
+            $originalValues = $model->getOriginal();
+            
+            $result = $this->saveModelWithChangeDetection(
+                $model,
+                ['content' => $content],
+                "New System Text: {$key} ({$language})",
+                $originalValues
+            );
+            
+            if ($result['hasChanges']) {
+                $totalChanges++;
+            }
+        }
+        
+        if ($totalChanges > 0) {
+            Toast::success("System text '$key' has been created with both language versions.");
+            
+            // Clear text caches to ensure changes are immediately visible
+            $this->clearTextCache();
+        } else {
+            Toast::info("System text '$key' already exists with the same values.");
+        }
+        
+        return redirect()->route('platform.settings.texts');
+    }
+
+    /**
+     * Add a new localized text for all supported languages.
+     */
+    public function addNewLocalizedText(Request $request)
+    {
+        $key = $request->get('new_key');
+        $deContent = $request->get('new_content_de_DE');
+        $enContent = $request->get('new_content_en_US');
+        
+        if (empty($key) || empty($deContent) || empty($enContent)) {
+            Toast::error('Content key and both language contents are required');
+            return redirect()->route('platform.settings.texts');
+        }
+        
+        // Standardize key (snake_case)
+        $key = Str::snake($key);
+        
+        $totalChanges = 0;
+        
+        // Create entries for both languages using trait method
+        foreach (['de_DE' => $deContent, 'en_US' => $enContent] as $language => $content) {
+            $model = AppLocalizedText::firstOrNew([
+                'content_key' => $key,
+                'language' => $language
+            ]);
+            
+            $originalValues = $model->getOriginal();
+            
+            $result = $this->saveModelWithChangeDetection(
+                $model,
+                ['content' => $content],
+                "New Localized Text: {$key} ({$language})",
+                $originalValues
+            );
+            
+            if ($result['hasChanges']) {
+                $totalChanges++;
+            }
+        }
+        
+        if ($totalChanges > 0) {
+            Toast::success("Content key '$key' has been created with both language versions.");
+            
+            // Clear text caches to ensure changes are immediately visible
+            $this->clearTextCache();
+        } else {
+            Toast::info("Content key '$key' already exists with the same values.");
+        }
+        
+        return redirect()->route('platform.settings.texts');
+    }
+
+    /**
+     * Reset a localized text to its default value from the HTML file.
+     */
+    public function resetLocalizedText(Request $request)
+    {
+        $key = $request->get('key');
+        
+        if (!$key) {
+            Toast::error("No key provided");
+            return redirect()->route('platform.settings.texts');
+        }
+        
+        try {
+            // Convert the key to the expected file prefix format (snake_case to StudlyCase)
+            $filePrefix = Str::studly($key);
+            
+            // Supported languages
+            $supportedLanguages = ['de_DE', 'en_US'];
+            $count = 0;
+            $resetKeys = [];
+            
+            // For each language, try to read the original HTML file
+            foreach ($supportedLanguages as $language) {
+                $filePath = resource_path("language/{$filePrefix}_{$language}.html");
+                
+                if (File::exists($filePath)) {
+                    // Read the content from the original file
+                    $content = File::get($filePath);
+                    
+                    if (!empty($content)) {
+                        // Update the database with the original content
+                        AppLocalizedText::setContent($key, $language, $content);
+                        $count++;
+                        $resetKeys[] = "{$key} ({$language})";
+                    } else {
+                        Log::warning("Original file {$filePath} is empty");
+                    }
+                } else {
+                    Log::warning("Original file {$filePath} not found. Cannot reset to default.");
+                }
+            }
+            
+            // Log batch operation if any resets occurred
+            if ($count > 0) {
+                $this->logBatchOperation(
+                    'reset_localized_text',
+                    'localized_texts',
+                    [
+                        'reset_count' => $count,
+                        'reset_keys' => $resetKeys,
+                        'reset_key' => $key
+                    ]
+                );
+                
+                Toast::success("Localized text '{$key}' was successfully reset to default value");
+                
+                // Clear text caches to ensure changes are immediately visible
+                $this->clearTextCache();
+            } else {
+                Toast::error("Could not find default values for '{$key}'");
+            }
+        } catch (\Exception $e) {
+            Log::error("Error resetting content for key {$key}: " . $e->getMessage());
+            Toast::error("Error resetting content: " . $e->getMessage());
+        }
+        
+        return;
+    }
+
+    /**
+     * Reset a system text to its default value from the JSON file.
+     */
+    public function resetSystemText(Request $request)
+    {
+        $key = $request->get('key');
+        
+        if (!$key) {
+            Toast::error("No key provided");
+            return;
+        }
+        
+        try {
+            // Supported languages
+            $supportedLanguages = ['de_DE', 'en_US'];
+            $count = 0;
+            $resetKeys = [];
+            
+            // For each language, try to read the original JSON file
+            foreach ($supportedLanguages as $language) {
+                $jsonFile = resource_path("language/{$language}.json");
+                
+                if (File::exists($jsonFile)) {
+                    // Read the content from the JSON file
+                    $jsonContent = File::get($jsonFile);
+                    $textData = json_decode($jsonContent, true);
+                    
+                    // Find the key in the JSON data
+                    if (isset($textData[$key])) {
+                        $content = $textData[$key];
+                        
+                        if (!empty($content)) {
+                            // Update the database with the original content
+                            AppSystemText::setText($key, $language, $content);
+                            $count++;
+                            $resetKeys[] = "{$key} ({$language})";
+                        } else {
+                            Log::warning("Value for key '{$key}' in {$jsonFile} is empty");
+                        }
+                    } else {
+                        Log::warning("Key '{$key}' not found in {$jsonFile}");
+                    }
+                } else {
+                    Log::warning("JSON file {$jsonFile} not found. Cannot reset system text.");
+                }
+            }
+            
+            // Log batch operation if any resets occurred
+            if ($count > 0) {
+                $this->logBatchOperation(
+                    'reset_system_text',
+                    'system_texts',
+                    [
+                        'reset_count' => $count,
+                        'reset_keys' => $resetKeys,
+                        'reset_key' => $key
+                    ]
+                );
+                
+                Toast::success("System text '{$key}' was successfully reset to default value");
+                
+                // Clear text caches to ensure changes are immediately visible
+                $this->clearTextCache();
+            } else {
+                Toast::error("Could not find default values for '{$key}'");
+            }
+        } catch (\Exception $e) {
+            Log::error("Error resetting system text for key {$key}: " . $e->getMessage());
+            Toast::error("Error resetting system text: " . $e->getMessage());
+        }
+        
+        return;
+    }
+
+    // ========================================================================================
+    // TEXT UTILITY METHODS
+    // ========================================================================================
+
+    /**
+     * Normalize content for reliable comparison
+     * 
+     * @param string $content
+     * @return string
+     */
+    protected function normalizeContent(string $content): string
+    {
+        // Trim whitespace and normalize line endings
+        $normalized = trim($content);
+        $normalized = str_replace(["\r\n", "\r"], "\n", $normalized);
+        
+        // Normalize common HTML entities
+        $normalized = html_entity_decode($normalized, ENT_QUOTES | ENT_HTML5);
+        
+        return $normalized;
+    }
+
+    /**
+     * Clear the text cache.
+     */
+    public function clearTextCache()
+    {
+        try {            
+            // Clear system texts cache in LanguageController
+            LanguageController::clearCaches();
+            
+            // Clear localized texts cache in LocalizationController
+            LocalizationController::clearCaches();
+            
+            Toast::success("Translation cache has been cleared successfully.");
+        } catch (\Exception $e) {
+            Log::error('Error clearing translation cache: ' . $e->getMessage());
+            Toast::error('Error clearing cache: ' . $e->getMessage());
+        }
+        
+        return;
     }
 }

@@ -24,6 +24,7 @@
     @vite('resources/js/app.js')
 	
 	<script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
+	<script src="{{ asset('js_v2.0.1_f1/syntax_modifier.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/home_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/stream_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/ai_chat_functions.js') }}"></script>
@@ -31,7 +32,6 @@
 	<script src="{{ asset('js_v2.0.1_f1/inputfield_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/message_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.0.1_f1/groupchat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/syntax_modifier.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/settings_functions.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
     <script src="{{ asset('js_v2.0.1_f1/image-selector.js') }}"></script>

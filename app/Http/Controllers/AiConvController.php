@@ -143,7 +143,7 @@ class AiConvController extends Controller
                 'author' => [
                     'username' => $user->username,
                     'name' => $user->name,
-                    'avatar_url' => $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null,
+                    'avatar_url' => $user->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $user->avatar_id : null,
                 ],
                 'model' => $message->model,
                 'iv' => $message->iv,
@@ -207,7 +207,7 @@ class AiConvController extends Controller
         $messageData['author'] = [
             'username' => $user->username,
             'name' => $user->name,
-            'avatar_url' => $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null,
+            'avatar_url' => $user->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $user->avatar_id : null,
         ];
         $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
         $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');

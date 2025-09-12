@@ -168,6 +168,9 @@ class ImportTestUsers extends Command
                 'email' => $userData['email'] ?? $userData['username'] . '@local.hawki',
                 'password' => $userData['password'], // Auto-hashed by model
                 'employeetype' => $userData['employeetype'] ?? 'local',
+                'auth_type' => 'local', // Explicitly set as local user
+                'reset_pw' => true, // Local imported users need password reset
+                'approval' => config('auth.local_needapproval', true) ? false : true, // Respect local_needapproval config
                 'publicKey' => $userData['publicKey'] ?? '',
                 'avatar_id' => $userData['avatar_id'] ?? null,
                 'bio' => $userData['bio'] ?? null,

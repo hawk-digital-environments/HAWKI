@@ -136,6 +136,10 @@
     "Reg_SL0_B": "Los geht's!",
     "Reg_SL0_T": "<strong>Wichtig:</strong> Deine Chats werden verschlüsselt, bevor sie auf unserem Server gespeichert werden. Nur die von dir für :system registrierten Geräte können diese Chats entschlüsseln. 💻📲 <br>Wenn du dich auf einem neuen Gerät anmelden möchtest, musst du deine Identität mit einem Freischaltcode bestätigen, den du per E-Mail erhältst. 📫",
 
+    "Reg_SL7_H": "Zugang wird geprüft ⏰",
+    "Reg_SL7_T": "Ihr Antrag wird überprüft. Sie erhalten eine E-Mail-Benachrichtigung über den Status Ihres Antrags.",
+    "Reg_SL7_Contact": "Haben Sie Fragen? Kontaktieren Sie uns unter:",
+
     "Reg_SL5_PH1": "Erstelle hier einen Datakey",
     "Reg_SL5_PH2": "Wiederhole hier einen Datakey",
     

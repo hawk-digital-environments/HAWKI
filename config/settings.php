@@ -39,7 +39,7 @@ return [
         'local_authentication' => 'Activate login form for local users ',
         'local_selfservice' => 'Activate registration form for local user account creation',
         'local_needapproval' => 'New local users need admin approval before given access',
-        'authentication_method' => 'Authentication method (LDAP, OIDC, Shibboleth)',
+        'authentication_method' => 'Authentication method (LOCAL_ONLY, LDAP, OIDC, Shibboleth)',
         'passkey_method' => 'Method for generating the PassKey (cannot be changed later)',
         'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)',
         'passkey_otp' => 'Send Log-in codes when user tries to login with new device',
@@ -56,7 +56,7 @@ return [
         //'connections.default.use_ssl' => 'Use SSL to connect to the LDAP server (not recommended)',
         //'connections.default.use_tls' => 'Use TLS to connect to the LDAP server (recommended)',
         //'connections.default.use_sasl' => 'Use SASL to connect to the LDAP server',
-        'logging.enabled' => 'Lgging of LDAP queries',
+        'logging.enabled' => 'Logging of LDAP queries',
         'cache.enabled' => 'Caching of LDAP queries',
         'custom_connection.ldap_host' => 'Hostname of the LDAP server',
         'custom_connection.ldap_port' => 'Port number of the LDAP server',
@@ -66,7 +66,7 @@ return [
         'custom_connection.ldap_filter' => 'Filter required for authentication based on Username',
         'custom_connection.attribute_map.username' => 'Username Key Name Override',
         'custom_connection.attribute_map.email' => 'Email Key Name Override',
-        'custom_connection.attribute_map.employeetype' => 'Employeetype Key Name Overridebut',
+        'custom_connection.attribute_map.employeetype' => 'Employeetype Key Name Override',
         'custom_connection.attribute_map.name' => 'Displayname Key Name Override',
     ],
     'open_id_connect' => [
@@ -89,8 +89,15 @@ return [
         'attribute_map.name' => 'Displayname Key Name Override,',
     ],
     'logging' => [
-        'triggers.return_object' => 'Print return objects in laravel.log',
-        'triggers.default_model' => 'Print model defaults in laravel.log',
+        'default' => 'Default log channel (stack, single, daily, database, stack_with_database, etc.)',
+        'channels.stack.channels' => 'Comma-separated list of channels for stack driver',
+        'channels.database.level' => 'Minimum log level for database logging (debug, info, warning, error, critical)',
+        'triggers.curl_return_object' => '1. Log raw cURL response data from AI providers (BaseAIModelProvider level)',
+        'triggers.normalized_return_object' => '2. Log SSE stream data after normalization in StreamController',
+        'triggers.formatted_stream_chunk' => '3. Log AI provider formatted StreamChunk output',
+        'triggers.translated_return_object' => '4. Log final StreamMessages output (last point before frontend)',
+        'triggers.default_model' => 'Log default model selection and fallback behavior',
+        'triggers.usage' => 'Log token usage data from AI provider responses',
 
     ],
     'mail' => [
@@ -110,25 +117,33 @@ return [
         
         // Herd Mailer Configuration (Laravel Herd local development)
         'mailers.herd.transport' => 'Herd transport type (smtp)',
-        'mailers.herd.url' => 'Herd URL (alternative to individual settings)',
+        //'mailers.herd.url' => 'Herd URL (alternative to individual settings)',
         'mailers.herd.host' => 'Herd SMTP hostname (usually localhost)',
         'mailers.herd.port' => 'Herd SMTP port (usually 2525)',
         'mailers.herd.encryption' => 'Herd encryption method (usually tls)',
-        'mailers.herd.username' => 'Herd username (usually empty for local)',
-        'mailers.herd.password' => 'Herd password (usually empty for local)',
-        'mailers.herd.timeout' => 'Herd connection timeout in seconds',
+        //'mailers.herd.username' => 'Herd username (usually empty for local)',
+        //'mailers.herd.password' => 'Herd password (usually empty for local)',
+        //'mailers.herd.timeout' => 'Herd connection timeout in seconds',
         
         // Sendmail Configuration
-        'mailers.sendmail.transport' => 'Sendmail transport type (sendmail)',
-        'mailers.sendmail.url' => 'Sendmail URL (usually not used)',
-        'mailers.sendmail.host' => 'Sendmail host (usually not applicable)',
-        'mailers.sendmail.port' => 'Sendmail port (usually not applicable)',
-        'mailers.sendmail.encryption' => 'Sendmail encryption (usually not applicable)',
-        'mailers.sendmail.username' => 'Sendmail username (usually not applicable)',
-        'mailers.sendmail.password' => 'Sendmail password (usually not applicable)',
-        'mailers.sendmail.timeout' => 'Sendmail timeout in seconds',
-        'mailers.sendmail.path' => 'Path to sendmail binary (e.g., /usr/sbin/sendmail -bs -i)',
+        //'mailers.sendmail.transport' => 'Sendmail transport type (sendmail)',
+        //'mailers.sendmail.url' => 'Sendmail URL (usually not used)',
+        //'mailers.sendmail.host' => 'Sendmail host (usually not applicable)',
+        //'mailers.sendmail.port' => 'Sendmail port (usually not applicable)',
+        //'mailers.sendmail.encryption' => 'Sendmail encryption (usually not applicable)',
+        //'mailers.sendmail.username' => 'Sendmail username (usually not applicable)',
+        //'mailers.sendmail.password' => 'Sendmail password (usually not applicable)',
+        //'mailers.sendmail.timeout' => 'Sendmail timeout in seconds',
+        //'mailers.sendmail.path' => 'Path to sendmail binary (e.g., /usr/sbin/sendmail -bs -i)',
         
+    ],
+    'reverb' => [
+        'servers.reverb.host' => 'Reverb server host (usually 0.0.0.0 for all interfaces)',
+        'servers.reverb.port' => 'Reverb server port (default: 8080)',
+        'servers.reverb.hostname' => 'Reverb hostname for client connections',
+        'apps.apps.0.options.host' => 'Reverb client host (for WebSocket connections)',
+        'apps.apps.0.options.port' => 'Reverb client port (default: 443 for HTTPS)',
+        'apps.apps.0.options.scheme' => 'Reverb scheme (http or https)',
     ],
 
         /*
@@ -152,5 +167,6 @@ return [
         'session' => 'authentication',
         'logging' => 'logging',
         'mail' => 'mail',
+        'reverb' => 'websockets',
     ],
 ];

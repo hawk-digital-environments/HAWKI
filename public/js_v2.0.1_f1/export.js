@@ -17,8 +17,23 @@ function convertChatlogToJson(){
         msgObj.role = messageElement.dataset.role;
         msgObj.content = messageElement.dataset.rawMsg;
         msgObj.timestamp = messageElement.dataset.created_at;
-        msgObj.model = messageElement.dataset.model ? messageElement.dataset.model : null,
-
+        msgObj.model = messageElement.dataset.model ? messageElement.dataset.model : null;
+        
+        // Extract search sources if they exist
+        const messageTextElement = messageElement.querySelector('.message-text');
+        if (messageTextElement) {
+            // Check if there are search sources in the message
+            const sourcesSection = messageTextElement.querySelector('h3');
+            if (sourcesSection && sourcesSection.textContent.includes('Search Sources')) {
+                // Extract search sources from the DOM
+                let searchSources = '\n\n### Search Sources:\n';
+                const sourceLinks = messageTextElement.querySelectorAll('a.source-link');
+                sourceLinks.forEach((link, index) => {
+                    searchSources += `${index + 1}. [${link.textContent}](${link.href})\n`;
+                });
+                msgObj.searchSources = searchSources;
+            }
+        }
 
         messagesList.push(msgObj);
     });
@@ -103,7 +118,29 @@ async function exportAsPDF() {
 
     // summery
     const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    const summeryResponse = await requestChatlogSummery(summeryMsg);
+    
+    // Ensure summery is a string, not an object
+    let summery;
+    if (typeof summeryResponse === 'object' && summeryResponse !== null) {
+        // Try to extract text from various possible object structures
+        summery = summeryResponse.messageText || 
+                  summeryResponse.content || 
+                  summeryResponse.text ||
+                  (summeryResponse.content && summeryResponse.content.text) ||
+                  JSON.stringify(summeryResponse);
+    } else if (typeof summeryResponse === 'string') {
+        // If it's a string, try to parse it as JSON to extract text
+        try {
+            const parsed = JSON.parse(summeryResponse);
+            summery = parsed.text || parsed.messageText || parsed.content || summeryResponse;
+        } catch (e) {
+            // If parsing fails, use the string as is
+            summery = summeryResponse;
+        }
+    } else {
+        summery = 'Zusammenfassung nicht verfügbar';
+    }
 
 
 
@@ -195,9 +232,15 @@ async function exportAsPDF() {
     yOffset += 10;
 
     messages.forEach((msg, index) => {
+        // Use original content and append search sources if available
+        let contentToUse = msg.content;
+        if (msg.searchSources) {
+            contentToUse += msg.searchSources;
+        }
+        
         // Calculate the height required for the full message
         const metadataHeight = lineHeight * 3; // Header (Message #, Author, Role, etc.)
-        const wrappedContent = doc.splitTextToSize(msg.content, maxWidth); // Split text into lines
+        const wrappedContent = doc.splitTextToSize(contentToUse, maxWidth); // Split text into lines
         const contentHeight = wrappedContent.length * lineHeight;
         const totalMessageHeight = metadataHeight + contentHeight;
 
@@ -328,7 +371,29 @@ async function exportAsWord() {
     }
 
     const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    const summeryResponse = await requestChatlogSummery(summeryMsg);
+    
+    // Ensure summery is a string, not an object
+    let summery;
+    if (typeof summeryResponse === 'object' && summeryResponse !== null) {
+        // Try to extract text from various possible object structures
+        summery = summeryResponse.messageText || 
+                  summeryResponse.content || 
+                  summeryResponse.text ||
+                  (summeryResponse.content && summeryResponse.content.text) ||
+                  JSON.stringify(summeryResponse);
+    } else if (typeof summeryResponse === 'string') {
+        // If it's a string, try to parse it as JSON to extract text
+        try {
+            const parsed = JSON.parse(summeryResponse);
+            summery = parsed.text || parsed.messageText || parsed.content || summeryResponse;
+        } catch (e) {
+            // If parsing fails, use the string as is
+            summery = summeryResponse;
+        }
+    } else {
+        summery = 'Zusammenfassung nicht verfügbar';
+    }
 
     const chatLogChildren = [];
     const date = new Date();
@@ -424,7 +489,12 @@ async function exportAsWord() {
             })
         );
 
-        chatLogChildren.push(...transformMarkdownToDocxContent(message.content));
+        // Use original content and append search sources if available
+        let contentToUse = message.content;
+        if (message.searchSources) {
+            contentToUse += message.searchSources;
+        }
+        chatLogChildren.push(...transformMarkdownToDocxContent(contentToUse));
     });
 
     const doc = new docx.Document({
@@ -500,6 +570,11 @@ async function preparePrintPage(){
         for (const msg of messages) {
             const decryptedContent =  await decryptWithSymKey(key, msg.content, msg.iv, msg.tag);
             msg.content = decryptedContent;
+            
+            // Extract grounding metadata for search sources
+            const {messageText, groundingMetadata} = deconstContent(decryptedContent);
+            msg.messageText = messageText;
+            msg.groundingMetadata = groundingMetadata;
         };
 
     }
@@ -521,6 +596,11 @@ async function preparePrintPage(){
             msgKey = msg.message_role === 'assistant' ? aiKey : key;
             const decryptedContent =  await decryptWithSymKey(msgKey, msg.content, msg.iv, msg.tag);
             msg.content = decryptedContent;
+            
+            // Extract grounding metadata for search sources
+            const {messageText, groundingMetadata} = deconstContent(decryptedContent);
+            msg.messageText = messageText;
+            msg.groundingMetadata = groundingMetadata;
         };
     }
 
@@ -529,7 +609,29 @@ async function preparePrintPage(){
     const formattedDate = `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()}`
     
     const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    const summeryResponse = await requestChatlogSummery(summeryMsg);
+    
+    // Ensure summery is a string, not an object
+    let summery;
+    if (typeof summeryResponse === 'object' && summeryResponse !== null) {
+        // Try to extract text from various possible object structures
+        summery = summeryResponse.messageText || 
+                  summeryResponse.content || 
+                  summeryResponse.text ||
+                  (summeryResponse.content && summeryResponse.content.text) ||
+                  JSON.stringify(summeryResponse);
+    } else if (typeof summeryResponse === 'string') {
+        // If it's a string, try to parse it as JSON to extract text
+        try {
+            const parsed = JSON.parse(summeryResponse);
+            summery = parsed.text || parsed.messageText || parsed.content || summeryResponse;
+        } catch (e) {
+            // If parsing fails, use the string as is
+            summery = summeryResponse;
+        }
+    } else {
+        summery = 'Zusammenfassung nicht verfügbar';
+    }
 
     scrollPanel.innerHTML = 
     `
@@ -604,7 +706,11 @@ function generateMessageElements(messageObj){
         msgTxtElement.innerHTML = detectMentioning(messageObj.content).modifiedText;
     }
     else{
-        let markdownProcessed = formatMessage(messageObj.content);
+        // Use the original content with grounding metadata for proper search sources formatting
+        const contentToUse = messageObj.messageText || messageObj.content;
+        const groundingData = messageObj.groundingMetadata || '';
+        
+        let markdownProcessed = formatMessage(contentToUse, groundingData);
         msgTxtElement.innerHTML = markdownProcessed;
         formatMathFormulas(msgTxtElement);
     }

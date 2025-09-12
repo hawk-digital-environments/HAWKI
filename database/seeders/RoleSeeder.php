@@ -13,7 +13,7 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         // Admin role with all permissions
-        $adminRole = Role::updateOrCreate([
+        $adminRole = Role::firstOrCreate([
             'slug' => 'admin',
         ], [
             'name' => 'Administrator',
@@ -21,8 +21,13 @@ class RoleSeeder extends Seeder
                 'platform.index' => true,
                 'platform.access.roles' => true,
                 'platform.access.users' => true,
+                'platform.role-assignments' => true,
                 'platform.systems.settings' => true,
                 'platform.systems.models' => true,
+                'platform.modelsettings.providers' => true,
+                'systems.modelsettings' => true,
+                'platform.modelsettings.models' => true,
+                'platform.modelsettings.utilitymodels' => true,
                 'platform.dashboard' => true,
                 'chat.access' => true,
                 'groupchat.access' => true,
@@ -31,7 +36,7 @@ class RoleSeeder extends Seeder
         ]);
 
         // Standard university roles
-        Role::updateOrCreate(['slug' => 'student'], [
+        Role::firstOrCreate(['slug' => 'student'], [
             'name' => 'Studierende',
             'permissions' => [
                 'chat.access' => true,
@@ -40,7 +45,7 @@ class RoleSeeder extends Seeder
             'selfassign' => true,
         ]);
 
-        Role::updateOrCreate(['slug' => 'lecturer'], [
+        Role::firstOrCreate(['slug' => 'lecturer'], [
             'name' => 'Lehrende', 
             'permissions' => [
                 'chat.access' => true,
@@ -49,7 +54,7 @@ class RoleSeeder extends Seeder
             'selfassign' => true,
         ]);
 
-        Role::updateOrCreate(['slug' => 'staff'], [
+        Role::firstOrCreate(['slug' => 'staff'], [
             'name' => 'Mitarbeiter',
             'permissions' => [
                 'chat.access' => true,
@@ -58,7 +63,7 @@ class RoleSeeder extends Seeder
             'selfassign' => true,
         ]);
 
-        Role::updateOrCreate(['slug' => 'guest'], [
+        Role::firstOrCreate(['slug' => 'guest'], [
             'name' => 'Gast',
             'permissions' => [
                 'chat.access' => true,
@@ -67,7 +72,7 @@ class RoleSeeder extends Seeder
             'selfassign' => true,
         ]);
 
-        Role::updateOrCreate(['slug' => 'mod'], [
+        Role::firstOrCreate(['slug' => 'mod'], [
             'name' => 'Moderator',
             'permissions' => [
                 'platform.index' => true, // Moderators also get admin panel access

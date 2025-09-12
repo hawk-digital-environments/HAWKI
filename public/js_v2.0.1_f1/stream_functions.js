@@ -307,7 +307,21 @@ async function requestChatlogSummery(msgs = null) {
         return new Promise((resolve, reject) => {
             const onData = (data, done) => {
                 if (done) {
-                    resolve(deconstContent(data.content).messageText);
+                    // Try to extract content from different possible response structures
+                    let content;
+                    if (data && data.content) {
+                        content = data.content;
+                    } else if (data && data.messageData && data.messageData.content) {
+                        content = data.messageData.content;
+                    } else if (data && typeof data === 'string') {
+                        content = data;
+                    } else {
+                        // Fallback: try to find any text content in the object
+                        content = data;
+                    }
+                    
+                    const result = deconstContent(content);
+                    resolve(result.messageText);
                 }
             };
             processResponse(response, onData);

@@ -83,7 +83,7 @@ class UserObserver
             // Add the required role if not already present (never remove any roles)
             if (!$user->roles()->where('roles.id', $requiredRole->id)->exists()) {
                 $user->roles()->attach($requiredRole->id);
-                Log::info("Added required Orchid role for approved user {$user->id}: employeetype '{$user->employeetype}' → role '{$requiredRole->name}' (slug: {$requiredRole->slug})");
+                // Note: Role assignment is logged in AuthenticationController during registration
             }
 
         } catch (\Exception $e) {

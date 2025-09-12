@@ -9,7 +9,6 @@ use App\Models\Room;
 use App\Models\Message;
 use App\Models\Member;
 
-
 use App\Services\AI\UsageAnalyzerService;
 use App\Services\AI\AIConnectionService;
 use App\Services\AI\AIProviderFactory;
@@ -29,7 +28,6 @@ class StreamController extends Controller
 
     protected $usageAnalyzer;
     protected $aiConnectionService;
-    private $jsonBuffer = '';
 
     public function __construct(
         UsageAnalyzerService $usageAnalyzer,
@@ -120,7 +118,7 @@ class StreamController extends Controller
             $this->handleGroupChatRequest($validatedData);
         } else {
             $user = User::find(1); // HAWKI user 
-            $avatar_url = $user->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $user->avatar_id) : null;
+            $avatar_url = $user->avatar_id !== '' ? config('app.url') . '/storage/profile_avatars/' . $user->avatar_id : null;
             
             if ($validatedData['payload']['stream']) {
                 // Handle streaming response
@@ -161,57 +159,112 @@ class StreamController extends Controller
      */
     private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
     {
+        // Increase execution time limit for streaming requests
+        set_time_limit(180); // 3 minutes for streaming
+        
+        // Request-specific buffer for SSE Provider normalization
+        $requestBuffer = '';
+        
         // Set headers for SSE
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
+        // Get the provider for this model ONCE at the beginning (most efficient)
+        $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
+        $providerId = $provider->getProviderId(); // Extract provider ID once for logging
 
         // Create a callback function to process streaming chunks
-        $onData = function ($data) use ($user, $avatar_url, $payload) {
+        $onData = function ($data) use ($user, $avatar_url, $payload, $provider, $providerId, &$requestBuffer) {
 
-          // Only use normaliseDataChunk if the content of $data does not begin with ‘data: ’.
-            if (strpos(trim($data), 'data: ') !== 0) {
-                $data = $this->normalizeDataChunk($data);
-                //Log::info('google chunk detected');
+            // Use stream normalization for ALL providers to handle SSE data split across cURL packets
+            // This is safe for all providers as the function only processes actual SSE data
+            // normalization merges incomplete data{} packages
+            $data = $this->normalizeSSEStreamChunk($data, $requestBuffer);
+            
+
+            // If no complete chunks were extracted, return early
+            if (empty(trim($data))) {
+                return;
             }
 
-        
+            // At this point the streamcontroller still outputs more than one data package per chunk
+            if (config('logging.triggers.normalized_return_object')) {
+                Log::info("[{$providerId}] normalizeSSEStreamChunk: " .$data);
+            }
+
             // Skip non-JSON or empty chunks
             $chunks = explode("data: ", $data);
-            foreach ($chunks as $chunk) {
+            
+            foreach ($chunks as $chunkIndex => $chunk) {
                 if (connection_aborted()) break;
-                if (!json_decode($chunk, true) || empty($chunk)) continue;
-                
-                // Get the provider for this model
-                $provider = $this->aiConnectionService->getProviderForModel($payload['model']);
-                
-                // Format the chunk
-                $formatted = $provider->formatStreamChunk($chunk);
-                // Log::info('Formatted Chunk:' . json_encode($formatted));
-
-                // Record usage if available
-                if ($formatted['usage']) {
-                    $this->usageAnalyzer->submitUsageRecord(
-                        $formatted['usage'], 
-                        'private', 
-                        $payload['model']
-                    );
+                if (empty(trim($chunk))) {
+                    // Log::info("Google Stream: Chunk $chunkIndex is empty, skipping");
+                    continue;
                 }
                 
-                // Send the formatted response to the client
-                $messageData = [
+                $jsonData = json_decode(trim($chunk), true);
+                if (!$jsonData) {
+                    // Log::info("Google Stream: Chunk $chunkIndex is not valid JSON: " . substr($chunk, 0, 100));
+                    continue;
+                }
+
+                // Provider is already available from closure - optimal performance
+                
+                // Create message context for provider
+                $messageContext = [
                     'author' => [
                         'username' => $user->username,
                         'name' => $user->name,
                         'avatar_url' => $avatar_url,
                     ],
                     'model' => $payload['model'],
-                    'isDone' => $formatted['isDone'],
-                    'content' => json_encode($formatted['content']),
                 ];
-                echo json_encode($messageData) . "\n";
+                
+                // CENTRAL LOGGING: Log formatStreamChunk output for all providers
+                if (config('logging.triggers.formatted_stream_chunk')) {
+                    $chunkFormatted = $provider->formatStreamChunk(trim($chunk));
+                    Log::info("[{$providerId}] formatStreamChunk: " . json_encode($chunkFormatted));
+                }
+                
+                // Let provider create ready-to-send messages
+                $messages = $provider->formatStreamMessages(trim($chunk), $messageContext);
+                
+                if (config('logging.triggers.translated_return_object')) {
+                    // Log only essential message data without author info for cleaner debugging
+                    $debugMessages = array_map(function($message) {
+                        return [
+                            'model' => $message['model'] ?? null,
+                            'isDone' => $message['isDone'] ?? null,
+                            'content' => $message['content'] ?? null,
+                            'usage' => $message['usage'] ?? null,
+                        ];
+                    }, $messages);
+                    Log::info("formatStreamMessages: " . json_encode($debugMessages));
+                }
+                
+                // Send all messages created by the provider
+                foreach ($messages as $message) {
+                    // Record usage if available
+                    if (isset($message['usage'])) {
+                        $this->usageAnalyzer->submitUsageRecord(
+                            $message['usage'], 
+                            'private', 
+                            $payload['model']
+                        );
+                    }
+                    
+                    // Remove usage from message before sending to frontend
+                    $sendMessage = $message;
+                    unset($sendMessage['usage']);
+                    
+                    echo json_encode($sendMessage) . "\n";
+                    if (ob_get_length()) ob_flush();
+                    flush();
+                }
+                
+                // Debug logging for final chunks removed for cleaner logs
             }
         };
         
@@ -221,52 +274,249 @@ class StreamController extends Controller
             true, 
             $onData
         );
+        
+        // Safety measure: Ensure stream ends with a completion message
+        // This prevents "No messageObj available at stream completion" errors
+        $finalMessage = [
+            'author' => 'assistant',
+            'model' => $payload['model'],
+            'content' => json_encode(['text' => '', 'groundingMetadata' => null]),
+            'isDone' => true,
+        ];
+        echo json_encode($finalMessage) . "\n";
+        if (ob_get_length()) ob_flush();
+        flush();
     }
     /*
-     * Helper function to translate curl return object from google to openai format
+     * Helper function to translate curl return object from various providers to openai format
+     * Handles SSE format with "data: " prefixes and large objects split across packets
+     * Improved to handle very large groundingMetadata objects
      */
-    private function normalizeDataChunk(string $data): string
+    private function normalizeSSEStreamChunk(string $data, string &$requestBuffer): string
     {
-        $this->jsonBuffer .= $data;
+        // Add incoming data to buffer
+        $requestBuffer .= $data;
 
-        if(trim($this->jsonBuffer) === "]") {
-            $this->jsonBuffer = "";
+        // Handle special case: end of stream marker
+        if(trim($requestBuffer) === "]" || trim($requestBuffer) === "data: ]") {
+            $requestBuffer = "";
             return "";
         }
 
         $output = "";
-        while($extracted = $this->extractJsonObject($this->jsonBuffer)) {
+        $extractedCount = 0;
+        $maxExtractions = 1000; // Increased for large response objects (e.g., Google groundingMetadata)
+        
+        // Look for complete chunks in the buffer
+        while($extractedCount < $maxExtractions) {
+            $extracted = null;
+            
+            // First try to find SSE-formatted chunks (data: {JSON})
+            if (strpos($requestBuffer, 'data: ') !== false) {
+                $extracted = $this->extractSSEChunk($requestBuffer);
+            }
+            
+            // If no SSE chunk found, try to extract raw JSON (for continuation packets)
+            if (!$extracted) {
+                $extracted = $this->extractJsonObject($requestBuffer);
+            }
+            
+            if (!$extracted) {
+                // Check if buffer is getting too large (>10MB) and might be stuck
+                if (strlen($requestBuffer) > 10 * 1024 * 1024) {
+                    Log::warning('SSE Stream: Buffer exceeds 10MB, potential incomplete packet. Clearing buffer.');
+                    $requestBuffer = "";
+                }
+                break; // No more complete chunks
+            }
+            
             $jsonStr = $extracted['jsonStr'];
-            $this->jsonBuffer = $extracted['rest'];
-            $output .= "data: " . $jsonStr . "\n";
+            
+            // Ensure SSE format for output
+            if (!str_starts_with($jsonStr, 'data: ')) {
+                $jsonStr = 'data: ' . $jsonStr;
+            }
+            
+            $output .= $jsonStr . "\n";
+            $extractedCount++;
         }
+        
+        // Safety check for infinite loops
+        if ($extractedCount >= $maxExtractions) {
+            Log::error('SSE Stream: Maximum extraction limit reached, clearing buffer to prevent infinite loop');
+            $requestBuffer = "";
+        }
+        
         return $output;
     }
-
-    // New helper function to extract only complete JSON objects from buffer
-    private function extractJsonObject(string $buffer): ?array
+    
+    /**
+     * Extract SSE-formatted chunk (data: {JSON})
+     * Improved to handle very large Google groundingMetadata objects
+     */
+    private function extractSSEChunk(string &$buffer): ?array
     {
-        $openBraces = 0;
-        $startFound = false;
-        $startPos = 0;
-
-        for($i = 0; $i < strlen($buffer); $i++) {
-            $char = $buffer[$i];
-            if($char === '{') {
-                if(!$startFound) {
-                    $startFound = true;
-                    $startPos = $i;
-                }
-                $openBraces++;
-            } elseif($char === '}') {
-                $openBraces--;
-                if($openBraces === 0 && $startFound) {
-                    $jsonStr = substr($buffer, $startPos, $i - $startPos + 1);
-                    $rest = substr($buffer, $i + 1);
-                    return ['jsonStr' => $jsonStr, 'rest' => $rest];
-                }
+        $dataPos = strpos($buffer, 'data: ');
+        if ($dataPos === false) {
+            return null;
+        }
+        
+        // Find the JSON part after "data: "
+        $jsonStart = $dataPos + 6; // length of "data: "
+        
+        // For Google responses, we need to find the complete JSON object, not just the next newline
+        // because groundingMetadata can be very large and span multiple lines
+        $possibleJson = substr($buffer, $jsonStart);
+        
+        // First, try to find a complete JSON object using brace counting
+        // We need to create a copy since extractJsonObject modifies the buffer
+        $jsonCopy = $possibleJson;
+        $extracted = $this->extractJsonObject($jsonCopy);
+        
+        if ($extracted) {
+            // We found a complete JSON object
+            $jsonStr = $extracted['jsonStr'];
+            $jsonLength = strlen($jsonStr);
+            
+            // Calculate the end position in the original buffer
+            $jsonEnd = $jsonStart + $jsonLength;
+            
+            // Extract the complete SSE chunk including "data: " prefix
+            $fullChunk = 'data: ' . $jsonStr;
+            
+            // Update buffer to remove processed chunk
+            // Find the next "data: " or end of buffer
+            $nextDataPos = strpos($buffer, 'data: ', $jsonEnd);
+            if ($nextDataPos !== false) {
+                $buffer = substr($buffer, $nextDataPos);
+            } else {
+                $buffer = ltrim(substr($buffer, $jsonEnd), "\n\r ");
+            }
+            
+            return [
+                'jsonStr' => trim($fullChunk)
+            ];
+        }
+        
+        // Fallback: Look for newline-based chunks (for simple responses)
+        $jsonEnd = strpos($buffer, "\n", $jsonStart);
+        
+        if ($jsonEnd === false) {
+            // No newline found, check if we have a complete JSON object
+            if (json_decode(trim($possibleJson), true) !== null) {
+                // We have a complete JSON object without newline
+                $jsonEnd = strlen($buffer);
+            } else {
+                return null; // Incomplete chunk
             }
         }
+        
+        // Extract the complete SSE chunk including "data: " prefix
+        $fullChunk = substr($buffer, $dataPos, $jsonEnd - $dataPos);
+        
+        // Update buffer to remove processed chunk
+        $buffer = ltrim(substr($buffer, $jsonEnd), "\n\r ");
+        
+        return [
+            'jsonStr' => trim($fullChunk)
+        ];
+    }
+    
+    /**
+     * Helper function to extract complete JSON objects from buffer
+     * Handles strings properly to avoid false brace detection inside JSON strings
+     * Improved to handle Unicode escapes and complex Google responses with large groundingMetadata
+     */
+    private function extractJsonObject(string &$buffer): ?array
+    {
+        $buffer = trim($buffer);
+        
+        if (empty($buffer)) {
+            return null;
+        }
+        
+        // Find the start of a JSON object
+        $start = strpos($buffer, '{');
+        if ($start === false) {
+            return null;
+        }
+        
+        // Track brace depth to find the complete JSON object
+        $depth = 0;
+        $inString = false;
+        $escapeNext = false;
+        $length = strlen($buffer);
+        $i = $start;
+        
+        // Increased timeout for very large objects
+        $maxIterations = $length * 2; // Allow more iterations for large objects
+        $iterations = 0;
+        
+        while ($i < $length && $iterations < $maxIterations) {
+            $char = $buffer[$i];
+            $iterations++;
+            
+            if ($escapeNext) {
+                $escapeNext = false;
+                $i++;
+                continue;
+            }
+            
+            if ($char === '\\') {
+                $escapeNext = true;
+                $i++;
+                continue;
+            }
+            
+            if ($char === '"') {
+                $inString = !$inString;
+                $i++;
+                continue;
+            }
+            
+            if (!$inString) {
+                if ($char === '{') {
+                    $depth++;
+                } elseif ($char === '}') {
+                    $depth--;
+                    
+                    // Found complete JSON object
+                    if ($depth === 0) {
+                        $end = $i + 1;
+                        $jsonStr = substr($buffer, $start, $end - $start);
+                        
+                        // Verify that this is valid JSON before proceeding
+                        // For large objects, use memory-efficient validation
+                        $testDecode = json_decode($jsonStr, true, 512, JSON_INVALID_UTF8_IGNORE);
+                        if ($testDecode === null && json_last_error() !== JSON_ERROR_NONE) {
+                            // Log the JSON error for debugging
+                            Log::warning('SSE Stream: Invalid JSON detected - ' . json_last_error_msg() . ' - continuing search');
+                            $i++;
+                            continue;
+                        }
+                        
+                        $rest = substr($buffer, $end);
+                        
+                        // Update the buffer reference
+                        $buffer = trim($rest);
+                        
+                        return [
+                            'jsonStr' => $jsonStr,
+                            'rest' => $rest
+                        ];
+                    }
+                }
+            }
+            
+            $i++;
+        }
+        
+        // Check if we hit the iteration limit
+        if ($iterations >= $maxIterations) {
+            Log::warning('SSE Stream: Hit iteration limit while parsing JSON object, buffer length: ' . strlen($buffer));
+        }
+        
+        // No complete JSON object found
         return null;
     }
     /**
@@ -274,6 +524,9 @@ class StreamController extends Controller
      */
     private function handleGroupChatRequest(array $data)
     {
+        // Increase execution time limit for streaming requests
+        set_time_limit(180); // 3 minutes for streaming
+        
         $isUpdate = (bool) ($data['isUpdate'] ?? false);
         $room = Room::where('slug', $data['slug'])->firstOrFail();
         

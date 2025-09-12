@@ -25,11 +25,12 @@
                 <p>{{ $translation["Reg_SL1_T"] }}</p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(2)">{{ $translation["Reg_SL1_B"] }}</button>
+                <button class="btn-lg-fill" onclick="navigateToSlide(2)">{{ $translation["Reg_SL1_B"] }}</button>
             </div>
         </div>
 
-        <div class="slide" data-index="2">
+        <div class="slide" data-index="2" @if(!config('app.groupchat_active', true)) style="display: none;" @endif>
+            <!-- Groupchat Slide -->
             <h1>{{ $translation["Reg_SL2_H"] }}</h1>
             <div class="slide-content">
                 <p>
@@ -37,7 +38,7 @@
                 </p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
+                <button class="btn-lg-fill" onclick="navigateToSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
             </div>
         </div>
 
@@ -106,6 +107,30 @@
             </div>
         </div>
 
+        {{-- Admin Approval Required Slide for Self-Registered Users --}}
+                    <!-- Slide 7: Approval Required -->
+            <div class="slide" id="slide-7" data-index="7" style="display: none;">
+                <h1>{{ $translation["Reg_SL7_H"] }}</h1>
+                <div class="slide-content">
+                    <p>{{ $translation["Reg_SL7_T"] }}</p>
+                    <p>
+                        {{ $translation["Reg_SL7_Contact"] }}
+                        <strong>
+                            <a href="mailto:{{ config('mail.from.address') }}" id="contact-email">
+                                {{ config('mail.from.address') }}
+                            </a>
+                        </strong>
+                        <br>
+                    </p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="redirectToLogin()">
+                        {{ $translation["Logout"] ?? "Logout" }}
+                    </button>
+                </div>
+                </div>
+            </div>
+
     </div>
   
 </div>
@@ -114,26 +139,70 @@
 </div>
 @include('partials.home.modals.confirm-modal')
 
-
-
-
 <script>
     let userInfo = @json($userInfo);
     let passkeySecret = @json($passkeySecret);
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
     let needsPasswordReset = @json($needsPasswordReset ?? false);
+    let groupchatActive = @json(config('app.groupchat_active', true));
+    let needsApproval = @json($needsApproval ?? false);
     
     initializeRegistration();
     
-    // For local users who need password reset, start with password change
-    // For other users (including self-service local users), start with normal flow
-    if (isFirstLoginLocalUser && needsPasswordReset) {
+    // Helper function to navigate slides while respecting groupchat settings
+    function navigateToSlide(targetSlide) {
+        // If trying to navigate to slide 2 (groupchat) and groupchat is disabled, skip to slide 3
+        if (targetSlide === 2 && !groupchatActive) {
+            switchSlide(3);
+        }
+        // If navigating from slide 1 to slide 2 and groupchat is disabled, go to slide 3 instead
+        else if (targetSlide === 2 && !groupchatActive) {
+            switchSlide(3);
+        }
+        // If navigating backwards from slide 3 and groupchat is disabled, go to slide 1 instead of slide 2
+        else if (targetSlide === 2 && currentSlideIndex === 3 && !groupchatActive) {
+            switchSlide(1);
+        }
+        else {
+            switchSlide(targetSlide);
+        }
+    }
+    
+    // Override the switchBackSlide function to handle groupchat skipping
+    function switchBackSlideWithGroupchatCheck(){
+        let targetIndex = currentSlideIndex - 1;
+        
+        // If we're going back to slide 2 and groupchat is disabled, go to slide 1 instead
+        if (targetIndex === 2 && !groupchatActive) {
+            targetIndex = 1;
+        }
+        
+        switchSlide(targetIndex);
+    }
+    
+    // Override the global switchBackSlide function
+    window.switchBackSlide = switchBackSlideWithGroupchatCheck;
+    
+    // Determine initial slide based on user status - priority order matters!
+    if (needsApproval) {
+        // HIGHEST PRIORITY: Users who need admin approval - show approval slide immediately
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('slide-7').style.display = 'block';
+            // Hide back button on approval slide since there's no previous slide
+            document.querySelector('.slide-back-btn').style.display = 'none';
+            switchSlide(7);
+        });
+    } else if (isFirstLoginLocalUser && needsPasswordReset) {
+        // SECOND PRIORITY: Admin-created users who need password reset
         window.addEventListener('DOMContentLoaded', function() {
             document.getElementById('password-change-slide').style.display = 'block';
             switchSlide(5.5);
         });
     } else {
-        window.addEventListener('DOMContentLoaded', switchSlide(1));
+        // NORMAL FLOW: Users who can proceed with registration (including approved self-service users)
+        window.addEventListener('DOMContentLoaded', function() {
+            switchSlide(1);
+        });
     }
 
     setTimeout(() => {
@@ -168,6 +237,11 @@
         // After password is set, continue with normal registration flow
         // Start with slide 1 (welcome/intro) then proceed to passkey generation
         switchSlide(1);
+    }
+
+    // Function to redirect back to login page
+    function redirectToLogin() {
+        window.location.href = '/login';
     }
 
     // For local users, override completeRegistration to include new password

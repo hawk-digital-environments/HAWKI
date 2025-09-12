@@ -298,7 +298,7 @@ class UtilityModelsSettingsScreen extends Screen
         }
         
         Toast::success('Utility model settings have been saved.');
-        return redirect()->route('platform.modelsettings.utilitymodels');
+        return redirect()->route('platform.models.utility');
     }
     
     public function importFromConfig()
@@ -398,7 +398,7 @@ class UtilityModelsSettingsScreen extends Screen
             Toast::error("No prompts found in configuration files or they couldn't be imported.");
         }
         
-        return redirect()->route('platform.modelsettings.utilitymodels');
+        return redirect()->route('platform.models.utility');
     }
 
     public function runSystemPromptSeeder()
@@ -417,6 +417,6 @@ class UtilityModelsSettingsScreen extends Screen
             Toast::error('Fehler beim Ausführen des Seeders: ' . $e->getMessage());
         }
 
-        return redirect()->route('platform.modelsettings.utilitymodels');
+        return redirect()->route('platform.models.utility');
     }
 }

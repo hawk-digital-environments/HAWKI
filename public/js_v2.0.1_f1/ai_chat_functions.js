@@ -183,18 +183,22 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             formatMathFormulas(msgTxtElement);
             formatHljs(messageElement);
 
-            if (groundingMetadata && 
-                groundingMetadata != '' && 
-                groundingMetadata.searchEntryPoint && 
-                groundingMetadata.searchEntryPoint.renderedContent) {
-    
-                addGoogleRenderedContent(messageElement, groundingMetadata);
-            }
-            else{
-                if(messageElement.querySelector('.google-search')){
-                    messageElement.querySelector('.google-search').remove();
+            // If streaming is done, reprocess the complete message with formatMessage
+            if(data.isDone && messageElement.classList.contains('AI')){
+                const fullMessageText = msg; // Complete accumulated message
+                const fullFormattedContent = formatMessage(fullMessageText, metadata);
+                msgTxtElement.innerHTML = fullFormattedContent;
+                formatMathFormulas(msgTxtElement);
+                formatHljs(messageElement);
+                
+                // Activate citations for the complete message
+                if(typeof activateCitations === 'function'){
+                    activateCitations(messageElement);
                 }
             }
+
+            // Handle search content for both unified and legacy formats
+            handleSearchContent(messageElement, groundingMetadata);
 
 
             if(messageElement.querySelector('.think')){
@@ -206,6 +210,12 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
         if(done){
             setSendBtnStatus(SendBtnStatus.SENDABLE);
+
+            // Check if messageObj was initialized during the stream
+            if (!messageObj) {
+                console.warn('No messageObj available at stream completion');
+                return;
+            }
 
             const cryptoContent = JSON.stringify({
                 text: msg,
@@ -242,7 +252,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 submittedObj.content = cryptoContent;
                 messageElement.dataset.rawMsg = msg;
                 // messageElement.dataset.groundingMetadata = metadata;
-                addGoogleRenderedContent(messageElement, metadata);
+                handleSearchContent(messageElement, metadata);
                 updateMessageElement(messageElement, submittedObj);
                 activateMessageControls(messageElement);
             }

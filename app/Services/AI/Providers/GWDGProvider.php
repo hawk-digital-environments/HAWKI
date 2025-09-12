@@ -16,8 +16,44 @@ class GWDGProvider extends OpenAIProvider
      */
     public function __construct(array $config)
     {
+        // Call parent constructor first
         parent::__construct($config);
+        // Override the providerId after parent sets it
         $this->providerId = 'gwdg'; // Explizites Setzen der providerId
+    }
+    
+    /**
+     * Get the provider settings from database
+     *
+     * @return ProviderSetting|null
+     */
+    protected function getProviderFromDatabase(): ?ProviderSetting
+    {
+        return ProviderSetting::where('provider_name', $this->providerId)
+            ->where('is_active', true)
+            ->first();
+    }
+    
+    /**
+     * Get the chat endpoint URL from the provider's API format configuration
+     *
+     * @return string
+     */
+    protected function getChatEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->chat_url : $this->config['base_url'] ?? '';
+    }
+    
+    /**
+     * Get the models endpoint URL from the provider's API format configuration  
+     *
+     * @return string
+     */
+    protected function getModelsEndpointUrl(): string
+    {
+        $provider = $this->getProviderFromDatabase();
+        return $provider ? $provider->ping_url : $this->config['ping_url'] ?? '';
     }
     
     /**
@@ -119,9 +155,12 @@ class GWDGProvider extends OpenAIProvider
         // Use the OpenAI implementation, but with GWDG API URL
         $payload['stream'] = false;
         
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders());
@@ -161,9 +200,12 @@ class GWDGProvider extends OpenAIProvider
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
         
+        // Get the chat endpoint URL from database configuration
+        $chatUrl = $this->getChatEndpointUrl();
+        
         // Initialize cURL
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->config['base_url']);
+        curl_setopt($ch, CURLOPT_URL, $chatUrl);
         
         // Set common cURL options
         $this->setCommonCurlOptions($ch, $payload, $this->getHttpHeaders(true));
@@ -245,7 +287,8 @@ class GWDGProvider extends OpenAIProvider
      */
     protected function pingProvider(): string
     {        
-        $url = $this->config['ping_url'];
+        // Get the models endpoint URL from database configuration
+        $url = $this->getModelsEndpointUrl();
         $apiKey = $this->config['api_key'];
 
         try {

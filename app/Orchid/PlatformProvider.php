@@ -63,39 +63,55 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('bs.house-gear')
                 ->permission('platform.systems.settings')
                 ->badge(fn () => $this->getHawkiCommitId(), Color::DARK)
+                ->active('platform.settings.*')
                 ->list([
                     Menu::make('Settings')
                         ->route('platform.settings.system')
-                        ->icon('bs.gear'),
-                    Menu::make('Log')
-                        ->route('platform.settings.log')
-                        ->icon('bs.journal-code'),    
+                        ->icon('bs.gear')
+                        ->active('platform.settings.system*'),
+                    Menu::make('Log Management')
+                        ->route('platform.settings.log.system')
+                        ->icon('bs.journal-code')
+                        ->active('platform.settings.log*'),    
                     //Menu::make('Storage')
                     //    ->route('platform.settings.storage')
-                    //    ->icon('bs.database'),     
+                    //    ->icon('bs.database')
+                    //    ->active('platform.settings.storage*'),     
                     Menu::make('Styling')
                         ->route('platform.settings.styling')
-                        ->icon('bs.paint-bucket'),       
+                        ->icon('bs.paint-bucket')
+                        ->active('platform.settings.styling*'),       
                     Menu::make('Texts')
                         ->route('platform.settings.texts')
-                        ->icon('bs.info-circle'),
+                        ->icon('bs.info-circle')
+                        ->active('platform.settings.texts*'),
                     Menu::make('Mail')
                         ->route('platform.settings.mail')
-                        ->icon('bs.envelope'),    
+                        ->icon('bs.envelope')
+                        ->active('platform.settings.mail*'),
+                    Menu::make('WebSockets')
+                        ->route('platform.settings.websockets')
+                        ->icon('bs.wifi')
+                        ->active('platform.settings.websockets*'),
                     ]),    
             
             Menu::make('Models')
                 ->icon('bs.stars')
                 ->permission('platform.systems.models')
+                ->active('platform.models.*')
                 ->list([        
-                    Menu::make('API Providers')
-                        ->route('platform.modelsettings.providers')
-                        ->icon('bs.plug'),
-                    Menu::make('Model Settings')
-                        ->route('platform.modelsettings.models')
+                    Menu::make('API Management')
+                        ->route('platform.models.api.providers')
+                        ->permission('platform.modelsettings.providers')
+                        ->icon('bs.cloud-upload')
+                        ->active('platform.models.api*'),
+                    Menu::make('Language Models')
+                        ->route('platform.models.language')
+                        ->permission('platform.modelsettings.models')
                         ->icon('bs.toggles'),
                     Menu::make('Utility Models')
-                        ->route('platform.modelsettings.utilitymodels')
+                        ->route('platform.models.utility')
+                        ->permission('platform.modelsettings.utilitymodels')
                         ->icon('bs.tools'),                  
                     ]),
 
@@ -112,6 +128,11 @@ class PlatformProvider extends OrchidServiceProvider
                 ->icon('bs.shield')
                 ->route('platform.systems.roles')
                 ->permission('platform.access.roles'),
+
+            Menu::make('Role Assignments')
+                ->icon('bs.diagram-3')
+                ->route('platform.role-assignments')
+                ->permission('platform.role-assignments'),
             
             Menu::make('')
                 ->divider(),
@@ -167,12 +188,23 @@ class PlatformProvider extends OrchidServiceProvider
         return [
             ItemPermission::group(__('Main'))
                 ->addPermission('platform.systems.settings', __('System Settings'))
+                ->addPermission('platform.settings.log', __('Log Management'))
                 ->addPermission('platform.systems.models', __('Model Settings')),
+                
+            ItemPermission::group(__('Model Settings'))
+                ->addPermission('platform.modelsettings.providers', __('API Providers'))
+                ->addPermission('systems.modelsettings', __('API Formats'))
+                ->addPermission('platform.modelsettings.models', __('Language Models'))
+                ->addPermission('platform.modelsettings.utilitymodels', __('Utility Models')),
+                
             ItemPermission::group(__('Access Controls'))
                 ->addPermission('platform.access.roles', __('Roles'))
-                ->addPermission('platform.access.users', __('Users')),
+                ->addPermission('platform.access.users', __('Users'))
+                ->addPermission('platform.role-assignments', __('Role Assignments')),
+                
             ItemPermission::group(__('Reporting'))
                 ->addPermission('platform.dashboard', __('Dashboard')),
+                
             ItemPermission::group(__('Chat Access'))
                 ->addPermission('chat.access', __('Chat Access'))
                 ->addPermission('groupchat.access', __('Group Chat Access')),
