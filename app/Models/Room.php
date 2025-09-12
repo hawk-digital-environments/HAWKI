@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
-use Exception;
 use App\Events\MemberAddToRoomEvent;
+use App\Events\MemberRemoveFromRoomEvent;
 use App\Events\MemberUpdateEvent;
+use App\Events\RoomRemoveEvent;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Laravel\Reverb\Loggers\Log;
 
 class Room extends Model
 {
@@ -77,18 +80,18 @@ class Room extends Model
     public function addMember($userId, $role): Member
     {
         if($this->isMember($userId)){
-            $member = $this->members()->where('user_id', $userId)->first();
+            $member = $this->members()->where('user_id', $userId)->firstOrFail();
             if(!$member->hasRole($role)){
                 $member->updateRole($role);
+                MemberUpdateEvent::dispatch($member);
             }
-            MemberUpdateEvent::dispatch($member);
             return $member;
         }
         
         if ($this->isOldMember($userId)) {
             // if an old membership exists for the user
             // reactivate the old membership.
-            $member = $this->membersAll()->where('user_id', $userId)->first();
+            $member = $this->membersAll()->where('user_id', $userId)->firstOrFail();
             $member->recreateMembership();
             
             if (!$member->hasRole($role)) {
@@ -116,11 +119,11 @@ class Room extends Model
         if($this->isMember($userId)){
             try{
                 // Attempt to delete the member from the room based on user ID
-                $this->members()
-                    ->where('user_id', $userId)
-                    ->firstOrFail()
-                    ->revokeMembership();
-
+                $member = $this->members()->where('user_id', $userId)->firstOrFail();
+                $member->revokeMembership();
+                
+                MemberRemoveFromRoomEvent::dispatch($member);
+                
                 //Check if All the members have left the room.
                 if ($this->members()->count() === 1) {
                     $this->deleteRoom();
@@ -138,6 +141,7 @@ class Room extends Model
 
     public function deleteRoom(): bool{
         try{
+            RoomRemoveEvent::dispatch($this);
             // Delete related messages and members
             $this->messages()->delete();
             $this->members()->delete();

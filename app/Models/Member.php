@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Events\MemberAddToRoomEvent;
-use App\Events\MemberRemoveFromRoomEvent;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
@@ -46,12 +44,10 @@ class Member extends Model
     }
 
     public function revokeMembership(){
-        MemberRemoveFromRoomEvent::dispatch($this);
         $this->update(['isRemoved'=> 1]);
     }
 
     public function recreateMembership(){
-        MemberAddToRoomEvent::dispatch($this);
         $this->update(['isRemoved'=> 0]);
     }
 }

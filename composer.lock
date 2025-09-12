@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a71fbfd220edabcc3e98d216dd182fc0",
+    "content-hash": "ae05a0e739b3f27106c9418663a1bb3c",
     "packages": [
         {
             "name": "0.0.0/composer-include-files",
@@ -291,85 +291,6 @@
                 }
             ],
             "time": "2025-02-13T20:35:06+00:00"
-        },
-        {
-            "name": "blade-ui-kit/blade-ui-kit",
-            "version": "0.7.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/blade-ui-kit/blade-ui-kit.git",
-                "reference": "3d6034f5425ea41e54a75130555befd1dfec7690"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/blade-ui-kit/blade-ui-kit/zipball/3d6034f5425ea41e54a75130555befd1dfec7690",
-                "reference": "3d6034f5425ea41e54a75130555befd1dfec7690",
-                "shasum": ""
-            },
-            "require": {
-                "ext-json": "*",
-                "illuminate/filesystem": "^10.0|^11.0|^12.0",
-                "illuminate/support": "^10.0|^11.0|^12.0",
-                "illuminate/view": "^10.0|^11.0|^12.0",
-                "nesbot/carbon": "^2.38|^3.0",
-                "php": "^8.1"
-            },
-            "require-dev": {
-                "guzzlehttp/guzzle": "^7.4",
-                "league/commonmark": "^1.4|^2.0",
-                "livewire/livewire": "^3.0",
-                "lorisleiva/cron-translator": "^0.1.1|^0.4",
-                "orchestra/testbench": "^8.0|^9.0|^10.0",
-                "orchestra/testbench-dusk": "^8.0|^9.0|^10.0",
-                "pestphp/pest": "^2.34|^3.0",
-                "phpunit/phpunit": "^10.5|^11.0"
-            },
-            "suggest": {
-                "league/commonmark": "Required to use the markdown component (^1.4).",
-                "lorisleiva/cron-translator": "Required to use the cron component (^0.1.1)."
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "BladeUIKit\\BladeUIKitServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "BladeUIKit\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Dries Vints",
-                    "homepage": "https://driesvints.com"
-                }
-            ],
-            "description": "A set of renderless components to utilise in your Laravel Blade views.",
-            "homepage": "https://github.com/blade-ui-kit/blade-ui-kit",
-            "keywords": [
-                "blade",
-                "laravel",
-                "ui"
-            ],
-            "support": {
-                "issues": "https://github.com/blade-ui-kit/blade-ui-kit/issues",
-                "source": "https://github.com/blade-ui-kit/blade-ui-kit"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/sponsors/driesvints",
-                    "type": "github"
-                }
-            ],
-            "abandoned": true,
-            "time": "2025-02-19T08:32:44+00:00"
         },
         {
             "name": "brick/math",
@@ -3420,16 +3341,16 @@
         },
         {
             "name": "neunerlei/dbg",
-            "version": "3.0.4",
+            "version": "3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Neunerlei/dbg.git",
-                "reference": "b9c52c19d40fdcf494095343e2b756ff436c06ec"
+                "reference": "baa335772c4d1e90f7dbbfb9ffcd40cb1d4c48b8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Neunerlei/dbg/zipball/b9c52c19d40fdcf494095343e2b756ff436c06ec",
-                "reference": "b9c52c19d40fdcf494095343e2b756ff436c06ec",
+                "url": "https://api.github.com/repos/Neunerlei/dbg/zipball/baa335772c4d1e90f7dbbfb9ffcd40cb1d4c48b8",
+                "reference": "baa335772c4d1e90f7dbbfb9ffcd40cb1d4c48b8",
                 "shasum": ""
             },
             "require": {
@@ -3469,7 +3390,7 @@
                 "issues": "https://github.com/neunerlei/dbg/issues",
                 "source": "https://github.com/neunerlei/dbg"
             },
-            "time": "2025-03-19T21:51:44+00:00"
+            "time": "2025-09-10T07:05:25+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -11620,7 +11541,9 @@
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2",
-        "ext-openssl": "*"
+        "ext-openssl": "*",
+        "ext-curl": "*",
+        "ext-zip": "*"
     },
     "platform-dev": {},
     "plugin-api-version": "2.6.0"

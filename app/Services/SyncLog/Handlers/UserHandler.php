@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\SyncLog\Handlers;
 
 
+use App\Events\MemberAddToRoomEvent;
 use App\Events\UserResetEvent;
 use App\Events\UserUpdateEvent;
 use App\Http\Resources\UserResource;
@@ -44,7 +45,7 @@ class UserHandler extends AbstractSyncLogHandler
 
                 return $this->createSetPayload(
                     $event->user,
-                    $audience->unique(fn($user) => $user->id)
+                    $audience
                 );
             },
             UserResetEvent::class => function (UserResetEvent $event) {
@@ -53,6 +54,14 @@ class UserHandler extends AbstractSyncLogHandler
                     $event->user
                 );
             },
+            MemberAddToRoomEvent::class => function (MemberAddToRoomEvent $event) {
+                // When a member is added to a room, we need to push the new user's data to all existing members of the room.
+                return $this->createSetPayload(
+                    $event->member->user,
+                    $event->member->room->members->map(fn($member) => $member->user),
+                    $event->member->room
+                );
+            }
         ];
     }
 
@@ -100,6 +109,7 @@ class UserHandler extends AbstractSyncLogHandler
         $users = collect();
         $currentOffset = $constraints->offset;
         $remaining = $constraints->limit;
+        $containsCurrentUser = false;
 
         User::query()
             ->whereIn('id',
@@ -111,7 +121,7 @@ class UserHandler extends AbstractSyncLogHandler
                     ->pluck('m.user_id')
                     ->toArray()
             )
-            ->chunk(200, function ($chunk) use (&$users, &$currentOffset, &$remaining) {
+            ->chunk(200, function ($chunk) use (&$users, &$currentOffset, &$remaining, &$containsCurrentUser, $constraints) {
                 foreach ($chunk as $user) {
                     if ($remaining <= 0) {
                         break;
@@ -121,9 +131,17 @@ class UserHandler extends AbstractSyncLogHandler
                         continue;
                     }
                     $users->push($user);
+                    if ($user->id === $constraints->user->id) {
+                        $containsCurrentUser = true;
+                    }
                     $remaining--;
                 }
             });
+        
+        // The currently authenticated user must always be included in the full sync.
+        if (!$containsCurrentUser) {
+            $users->push($constraints->user);
+        }
 
         return $users;
     }

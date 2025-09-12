@@ -22,9 +22,9 @@ return new class extends Migration {
             $table->integer('room_id')->nullable()->index();
             $table->string('transient_id')->nullable()->index();
             $table->text('transient_data')->nullable();
-            $table->dateTime('updated_at')->index();
+            $table->dateTime('updated_at', 6)->index();
             
-            $table->unique(['type', 'target_id', 'user_id']);
+            $table->unique(['type', 'target_id', 'user_id', 'room_id']);
         });
     }
     

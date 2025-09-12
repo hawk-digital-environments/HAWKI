@@ -38,9 +38,11 @@ Route::middleware(['external_access:enabled', 'auth:sanctum', 'app_access:declin
         });
         
         Route::group(['prefix' => 'rooms'], static function () {
-            Route::post('/', [RoomController::class, 'createRoom']);
+            Route::post('/', [RoomController::class, 'create']);
             Route::post('/{slug}/messages/mark-read', [RoomController::class, 'markAsRead']);
             Route::delete('/{slug}/membership', [RoomController::class, 'leaveRoom']);
+            
+            Route::post('/invitation/accept', [InvitationController::class, 'onAcceptInvitation']);
             
             Route::middleware('roomEditor')->group(function () {
                 Route::post('/{slug}/messages', [RoomController::class, 'sendMessage']);
@@ -50,10 +52,11 @@ Route::middleware(['external_access:enabled', 'auth:sanctum', 'app_access:declin
             });
             
             Route::middleware('roomAdmin')->group(function () {
-                Route::put('/{slug}', [RoomController::class, 'updateInfo']);
-                Route::delete('/{slug}', [RoomController::class, 'removeRoom']);
-                Route::post('/members', [RoomController::class, 'addMember']);
-                Route::delete('/{slug}/members', [RoomController::class, 'removeMember']);
+                Route::put('/{slug}', [RoomController::class, 'update']);
+                Route::delete('/{slug}', [RoomController::class, 'delete']);
+                Route::delete('/{slug}/leave', [RoomController::class, 'leaveRoom']);
+                Route::post('/{slug}/members', [RoomController::class, 'addMember']);
+                Route::delete('/{slug}/members', [RoomController::class, 'kickMember']);
             });
         });
         

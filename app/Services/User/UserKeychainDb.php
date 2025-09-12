@@ -7,6 +7,7 @@ namespace App\Services\User;
 
 use App\Models\PrivateUserData;
 use App\Models\User;
+use App\Services\Encryption\EncryptionUtils;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 
 readonly class UserKeychainDb
@@ -19,7 +20,7 @@ readonly class UserKeychainDb
     public function findByUser(User $user): SymmetricCryptoValue
     {
         $prvUserData = PrivateUserData::where('user_id', $user->id)->firstOrFail();
-        return new SymmetricCryptoValue(
+        return EncryptionUtils::symmetricCryptoValueFromStrings(
             $prvUserData->KCIV,
             $prvUserData->KCTAG,
             $prvUserData->keychain

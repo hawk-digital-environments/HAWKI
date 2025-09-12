@@ -58,11 +58,14 @@ readonly class SyncLogResourceFactory
             $resource = $handler->convertModelToResource($reference);
         }
         
+        // If the resource is null, it means the record is for a deleted resource
+        // In this case we set resource to true, which is a hack to indicate that the resource is not available,
+        // See SyncLogEntryResource::__construct for details
         return new SyncLogEntryResource(
-            resource: $resource,
+            resource: $resource ?? true,
             resourceId: (int)$record->target_id,
             type: $handler->getType(),
-            action: $record->action,
+            action: $resource === null ? SyncLogEntryActionEnum::REMOVE : $record->action,
             timestamp: $record->updated_at,
             userId: $record->user_id
         );

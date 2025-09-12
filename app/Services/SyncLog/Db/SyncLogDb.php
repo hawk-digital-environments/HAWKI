@@ -14,8 +14,13 @@ readonly class SyncLogDb
     public function upsert(SyncLog $record): void
     {
         SyncLog::upsert(
-            $record->getAttributes(),
-            ['type', 'target_id', 'user_id'],
+            array_merge(
+                $record->getAttributes(),
+                [
+                    'updated_at' => $record->updated_at->toDateTimeString('microsecond')
+                ]
+            ),
+            ['type', 'target_id', 'user_id', 'room_id'],
             ['action', 'updated_at']
         );
     }
@@ -47,9 +52,7 @@ readonly class SyncLogDb
             if ($oldestRecord && $oldestRecord->updated_at > $constraints->lastSync) {
                 return null;
             }
-            // I use >= here, to make sure there is no overlap that might have happened in the same second.
-            // Yes, this leads to syncing one record more than necessary, but this is a trade-off.
-            $recordQuery->where('updated_at', '>=', $constraints->lastSync);
+            $recordQuery->where('updated_at', '>', $constraints->lastSync->toDateTimeString('microsecond'));
         } else {
             return null;
         }

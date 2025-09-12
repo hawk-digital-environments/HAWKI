@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Room;
+use App\Services\Encryption\EncryptionUtils;
 use App\Services\Storage\AvatarStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -27,8 +28,8 @@ class RoomResource extends JsonResource
             'name' => $this->resource->room_name,
             'room_icon' => $avatarStorage->getFileUrl('room_avatars', $this->resource->slug, $this->resource->room_icon),
             'slug' => $this->resource->slug,
-            'system_prompt' => $this->resource->system_prompt,
-            'room_description' => $this->resource->room_description,
+            'system_prompt' => EncryptionUtils::symmetricCryptoValueFromJson($this->resource->system_prompt),
+            'room_description' => EncryptionUtils::symmetricCryptoValueFromJson($this->resource->room_description),
             'created_at' => $this->resource->created_at,
             'updated_at' => $this->resource->updated_at,
         ];

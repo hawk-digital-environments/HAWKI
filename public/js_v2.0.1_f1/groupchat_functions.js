@@ -585,9 +585,10 @@ async function createAndSendInvitations(usersList, roomSlug){
     const invitations = [];
     for (const invitee of usersList) {
         let invitation;
-        if (invitee.publicKey) {
+        const publicKey = invitee.publicKey ?? invitee.public_key;
+        if (publicKey) {
 
-            const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(invitee.publicKey));
+            const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(publicKey));
 
             invitation = {
                 username: invitee.username,
@@ -750,7 +751,6 @@ async function finishInvitationHandling(invitation_id, roomKey){
     }
 }
 
-NOTE:
 function openInvitationPanel(){
     const modal = document.querySelector('#add-member-modal');
     modal.querySelector('#user-search-bar').value = '';

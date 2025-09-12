@@ -9,6 +9,10 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
             help: 'Laravel Encryption key: 32 random characters',
             default: createDeterministicRandomString(32, 'APP_KEY')
         })
+        .define('APP_TIMEZONE', {
+            help: 'The timezone of your application. This is used for displaying dates and times.',
+            default: 'Europe/Berlin'
+        })
         .define('AUTHENTICATION_METHOD', {
             help: 'The authentication method to use. For a simple test setup simply keep "LDAP", as we enable the test user login.',
             default: 'LDAP',

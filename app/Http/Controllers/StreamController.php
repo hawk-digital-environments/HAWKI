@@ -14,8 +14,9 @@ use App\Models\User;
 use App\Services\AI\AiService;
 use App\Services\AI\UsageAnalyzerService;
 use App\Services\AI\Value\AiResponse;
+use App\Services\Api\ApiRequestMigrator;
 use App\Services\Chat\Message\MessageHandlerFactory;
-use App\Services\Message\LegacyMessageHelper;
+use App\Services\Message\ThreadIdHelper;
 use App\Services\Storage\AvatarStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,7 +27,7 @@ class StreamController extends Controller
     public function __construct(
         private readonly UsageAnalyzerService $usageAnalyzer,
         private readonly AiService            $aiService,
-        private readonly LegacyMessageHelper  $messageHelper,
+        private readonly ThreadIdHelper $messageHelper,
         private readonly AvatarStorageService $avatarStorage
     ){
     }
@@ -75,8 +76,10 @@ class StreamController extends Controller
     /**
      * Handle AI connection requests using the new architecture
      */
-    public function handleAiConnectionRequest(Request $request)
+    public function handleAiConnectionRequest(Request $request, ApiRequestMigrator $requestMigrator)
     {
+        $request = $requestMigrator->migrate($request);
+        
         //validate payload
         try {
             $validatedData = $request->validate([
@@ -91,13 +94,8 @@ class StreamController extends Controller
                 
                 'broadcast' => 'required|boolean',
                 'isUpdate' => 'nullable|boolean',
-                'messageId' => ['nullable', function ($_, $value, $fail) {
-                    if ($value !== null && !is_string($value) && !is_int($value)) {
-                        $fail('The messageId must be a valid numeric string (e.g., "192.000" or "12").');
-                    }
-                }],
+                'messageId' => 'nullable|string',
                 'threadIndex' => 'nullable|int',
-                'thread_id_version' => 'nullable|int|in:1,2', // 1 for legacy message (192.000) ID, 2 for new message ID (12), defaults to 1
                 'slug' => 'nullable|string',
                 'key' => 'nullable|string',
             ]);
@@ -252,14 +250,8 @@ class StreamController extends Controller
         $messageHandler = MessageHandlerFactory::create('group');
         $member = $room->members()->where('user_id', 1)->firstOrFail();
         
-        $threadInfo = $this->messageHelper->getThreadInfo(
-            $data['threadIndex'],
-            ($data['thread_id_version'] ?? 1) === 1
-        );
-        
         if ($isUpdate) {
-            $messageId = $this->messageHelper->getMessageIdInfo($data['messageId']);
-            $message = Message::findOrFail($messageId->id);
+            $message = Message::findOrFail($data['messageId']);
             $message->update([
                 'iv' => $encryptedData['iv'],
                 'tag' => $encryptedData['tag'],
@@ -268,13 +260,14 @@ class StreamController extends Controller
             ]);
             MessageUpdateEvent::dispatch($message);
         } else {
-            $nextMessageId = $messageHandler->assignID($room, $threadInfo->legacyThreadId);
+            $nextMessageId = $messageHandler->assignID($room, $data['threadIndex']);
             $message = Message::create([
                 'room_id' => $room->id,
                 'member_id' => $member->id,
                 'message_id' => $nextMessageId,
                 'message_role' => 'assistant',
                 'model' => $data['payload']['model'],
+                'thread_id' => $this->messageHelper->getThreadIdForRoomAndThreadIndex($room, $data['threadIndex']),
                 'iv' => $encryptedData['iv'],
                 'tag' => $encryptedData['tag'],
                 'content' => $encryptedData['ciphertext'],

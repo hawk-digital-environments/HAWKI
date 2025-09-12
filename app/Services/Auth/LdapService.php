@@ -2,12 +2,8 @@
 
 namespace App\Services\Auth;
 
-use LdapRecord\Models\ActiveDirectory\User as LdapUser;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
-use Exception;
 use Illuminate\Support\Facades\Log;
+use LdapRecord\Models\ActiveDirectory\User as LdapUser;
 
 class LdapService
 {
@@ -43,11 +39,15 @@ class LdapService
         
             // Bind to LDAP server
             if (!@ldap_bind($ldapConn, $ldap_binddn, $ldap_bindpw)) {
+                
+                Log::error('LDAP BIND FAILED', [$ldap_binddn, $ldap_bindpw, ldap_error($ldapConn)]);
                 return false;
             }
 
             // Search LDAP for user
             $filter = str_replace("username", $username, $ldap_filter);
+            Log::error('LDAP FIND', [$ldap_base, $filter]);
+            
             $sr = ldap_search($ldapConn, $ldap_base, $filter);
             if (!$sr) {
                 return false;
@@ -64,6 +64,7 @@ class LdapService
             if (!$userDn) {
                 return false;
             }
+            Log::error('LDAP FOUND', [$userDn]);
             
             // Bind with user DN and password
             $passValid = ldap_bind($ldapConn, $userDn, $password); 

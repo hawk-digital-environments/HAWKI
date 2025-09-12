@@ -9,6 +9,6 @@ enum SyncLogEntryTypeEnum: string
     case ROOM = 'room';
     case ROOM_INVITATION = 'room_invitation';
     case ROOM_AI_WRITING = 'room_ai_writing';
-    case MESSAGE = 'message';
+    case ROOM_MESSAGE = 'room_message';
     case PRIVATE_USER_DATA = 'private_user_data';
 }

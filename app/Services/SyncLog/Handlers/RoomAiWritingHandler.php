@@ -28,7 +28,11 @@ class RoomAiWritingHandler extends AbstractTransientSyncLogHandler
         return [
             RoomAiWritingStartedEvent::class => function (RoomAiWritingStartedEvent $event) {
                 return $this->createSetPayload(
-                    ['model' => $event->model->getId()],
+                    [
+                        'id' => $event->room->id,
+                        'model_id' => $event->model->getId(),
+                        'label' => $event->model->getLabel()
+                    ],
                     $event->room->members->map(static fn(Member $member) => $member->user),
                     $event->room
                 );
@@ -36,7 +40,11 @@ class RoomAiWritingHandler extends AbstractTransientSyncLogHandler
             RoomAiWritingEndedEvent::class => function (RoomAiWritingEndedEvent $event) {
                 return $this->createRemovePayload(
                     $event->room->members->map(static fn(Member $member) => $member->user),
-                    ['model' => $event->model->getId()],
+                    [
+                        'id' => $event->room->id,
+                        'model_id' => $event->model->getId(),
+                        'label' => $event->model->getLabel()
+                    ],
                     $event->room,
                 );
             },

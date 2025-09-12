@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class SyncLog extends Model
 {
     public $timestamps = false;
+    protected $dateFormat = 'Y-m-d H:i:s.u';
     
     protected $fillable = [
         'type',
@@ -22,6 +23,6 @@ class SyncLog extends Model
     protected $casts = [
         'type' => SyncLogEntryTypeEnum::class,
         'action' => SyncLogEntryActionEnum::class,
-        'updated_at' => 'datetime',
+        'updated_at' => 'datetime:Y-m-d H:i:s.u',
     ];
 }

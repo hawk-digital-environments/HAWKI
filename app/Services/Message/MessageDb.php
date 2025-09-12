@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Message;
 
 
+use App\Events\MessageUpdateEvent;
 use App\Models\Message;
+use App\Models\Room;
 
 class MessageDb
 {
@@ -21,12 +23,13 @@ class MessageDb
     
     /**
      * Finds a single message by its message ID.
+     * @param Room $room
      * @param string $messageId
      * @return Message|null
      */
-    public function findOneByMessageId(string $messageId): ?Message
+    public function findOneByMessageId(Room $room, string $messageId): ?Message
     {
-        return Message::query()->where('message_id', $messageId)->first();
+        return $room->messages->where('message_id', $messageId)->first();
     }
     
     /**
@@ -41,5 +44,25 @@ class MessageDb
     {
         $message_id = $id . '.000';
         return Message::query()->where('message_id', $message_id)->first();
+    }
+    
+    /**
+     * Sets the has_thread flag on the parent message of a thread.
+     * @param Message $message The message that is part of a thread.
+     * @return void
+     */
+    public function setHasThreadOnParentMessage(Message $message): void
+    {
+        if ($message->thread_id === null) {
+            return;
+        }
+        $parentMessage = Message::query()->find($message->thread_id);
+        if ($parentMessage === null) {
+            return;
+        }
+        
+        $parentMessage->has_thread = true;
+        $parentMessage->save();
+        MessageUpdateEvent::dispatch($parentMessage);
     }
 }

@@ -26,10 +26,10 @@ class SyncLogController extends Controller
         
         try {
             $reqConstraints = $request->validate([
-                'last-sync' => 'sometimes|datetime',
+                'last-sync' => 'sometimes|date',
                 'room-id' => 'sometimes|integer|exists:rooms,id',
                 'offset' => 'sometimes|integer|min:0',
-                'limit' => 'sometimes|integer|min:1|max:100',
+                'limit' => 'sometimes|integer|min:1|max:10000',
             ]);
         } catch (ValidationException $e) {
             return response()->json(['error' => 'Invalid parameters', 'details' => $e->errors()], 400);
@@ -37,10 +37,12 @@ class SyncLogController extends Controller
         
         $syncLog = $logProvider->getLog(new SyncLogEntryConstraints(
             user: $user,
-            lastSync: !empty($reqConstraints['last-sync']) ? new Carbon($reqConstraints['last-sync']) : null,
-            offset: $reqConstraints['offset'] ?? 0,
-            limit: $reqConstraints['limit'] ?? null,
-            roomId: $reqConstraints['room-id'] ?? null,
+            lastSync: !empty($reqConstraints['last-sync'])
+                ? Carbon::parse($reqConstraints['last-sync'], 'UTC')->setTimezone(config('app.timezone'))
+                : null,
+            offset: !empty($reqConstraints['offset']) ? (int)$reqConstraints['offset'] : null,
+            limit: !empty($reqConstraints['limit']) ? (int)$reqConstraints['limit'] : null,
+            roomId: !empty($reqConstraints['room-id']) ? (int)$reqConstraints['room-id'] : null,
         ));
         
         return response()->json($syncLog);

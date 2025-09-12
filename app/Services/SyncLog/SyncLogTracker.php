@@ -59,10 +59,15 @@ class SyncLogTracker
     {
         $this->removeOldEntries();
         
+        $i = 0;
         foreach ($this->createRecordsForPayload($payload, $handler) as $record) {
             if (!$handler instanceof AbstractTransientSyncLogHandler) {
                 $this->syncLogDb->upsert($record);
             }
+            
+            $attr = $record->getAttributes();
+            unset($attr['updated_at']);
+            logFile('DISPATCHING SYNC LOG EVENT', $i++, $attr);
             
             $this->events->dispatch(
                 new SyncLogEvent(
@@ -95,10 +100,15 @@ class SyncLogTracker
             'action' => $payload->action->value,
             'target_id' => $handler->getIdOfModel($payload->model),
             'room_id' => $payload->room?->id ?? null,
-            'updated_at' => now(),
+            'updated_at' => now()
         ];
         
-        return $payload->audience->map(static fn(User $user) => new SyncLog(
+        // Deduplicate the users in the audience (user.id !== user.id)
+        // Also filter out the user.id === 1, because we do not want to push changes for the ai user.
+        return $payload->audience
+            ->unique('id')
+            ->filter(static fn(User $user) => $user->id !== 1)
+            ->map(static fn(User $user) => new SyncLog(
             [
                 ...$data,
                 'user_id' => $user->id

@@ -14,12 +14,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class SyncLogEntryResource extends JsonResource
 {
     /**
-     * @var JsonResource
+     * @var JsonResource|true
      */
     public $resource;
 
     public function __construct(
-        ?JsonResource                    $resource,
+        // The "true" hack is used to indicate that the resource is not available (e.g. deleted)
+        // This is required, because if we use null, laravel will simply dump this entry as null
+        // instead of calling toArray() method
+        JsonResource|true $resource,
         protected int                    $resourceId,
         protected SyncLogEntryTypeEnum   $type,
         protected SyncLogEntryActionEnum $action,
@@ -36,7 +39,7 @@ class SyncLogEntryResource extends JsonResource
             'type' => $this->type->value,
             'action' => $this->action->value,
             'timestamp' => $this->timestamp,
-            'resource' => $this->resource,
+            'resource' => $this->resource === true ? null : $this->resource,
             'resource_id' => $this->resourceId,
         ];
     }

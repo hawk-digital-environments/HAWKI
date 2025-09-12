@@ -7,7 +7,7 @@ namespace App\Services\SyncLog\Handlers;
 
 use App\Events\MessageSentEvent;
 use App\Events\MessageUpdateEvent;
-use App\Http\Resources\MessageResource;
+use App\Http\Resources\RoomMessageResource;
 use App\Models\Member;
 use App\Models\Message;
 use App\Models\Room;
@@ -17,14 +17,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
 
-class MessageHandler extends AbstractSyncLogHandler
+class RoomMessageHandler extends AbstractSyncLogHandler
 {
     /**
      * @inheritDoc
      */
     public function getType(): SyncLogEntryTypeEnum
     {
-        return SyncLogEntryTypeEnum::MESSAGE;
+        return SyncLogEntryTypeEnum::ROOM_MESSAGE;
     }
 
     /**
@@ -52,7 +52,7 @@ class MessageHandler extends AbstractSyncLogHandler
     public function convertModelToResource(Model $model): JsonResource
     {
         /** @var Message $model */
-        return new MessageResource($model);
+        return new RoomMessageResource($model);
     }
 
     /**

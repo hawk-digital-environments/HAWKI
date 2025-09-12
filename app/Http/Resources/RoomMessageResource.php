@@ -3,12 +3,12 @@
 namespace App\Http\Resources;
 
 use App\Models\Message;
-use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
+use App\Services\Encryption\EncryptionUtils;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use JsonException;
 
-class MessageResource extends JsonResource
+class RoomMessageResource extends JsonResource
 {
     /**
      * @var Message
@@ -27,10 +27,11 @@ class MessageResource extends JsonResource
             'id' => $this->resource->id,
             'room_id' => $this->resource->room_id,
             'member_id' => $this->resource->member->id,
+            'has_thread' => $this->resource->has_thread,
             'thread_id' => $this->resource->thread_id,
             'read_by' => $this->resource->reader_signs === null ? [] : json_decode($this->resource->reader_signs, true, 512, JSON_THROW_ON_ERROR),
             'model' => $this->resource->model,
-            'content' => (string)new SymmetricCryptoValue(
+            'content' => EncryptionUtils::symmetricCryptoValueFromStrings(
                 $this->resource->iv,
                 $this->resource->tag,
                 $this->resource->content

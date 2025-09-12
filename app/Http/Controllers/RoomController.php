@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
+use App\Models\Message;
+use App\Services\Api\ApiRequestMigrator;
 use App\Services\Chat\Attachment\AttachmentService;
 use App\Services\Chat\Message\MessageContentValidator;
 use App\Services\Chat\Room\RoomService;
@@ -124,13 +126,15 @@ class RoomController extends Controller
 
 
     // SECTION: MESSAGE
-    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator) {
-
+    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator, ApiRequestMigrator $requestMigrator)
+    {
+        $request = $requestMigrator->migrate($request);
         $validatedData = $request->validate([
             'content' => 'required|array',
             'threadID' => 'required|integer',
-            'thread_id_version' => 'nullable|int|in:1,2',
         ]);
+        header('Access-Control-Allow-Origin: *');
+        
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
 
         $messageData = $this->roomService->sendMessage($validatedData, $slug);
@@ -141,11 +145,11 @@ class RoomController extends Controller
             'response' => "Message created and boradcasted.",
         ]);
     }
-
-
-
-    public function updateMessage(Request $request, $slug) {
-
+    
+    
+    public function updateMessage(Request $request, $slug, ApiRequestMigrator $requestMigrator)
+    {
+        $request = $requestMigrator->migrate($request);
         $validatedData = $request->validate([
             'content' => 'required|array',
             'message_id' => 'required|string',
@@ -158,9 +162,11 @@ class RoomController extends Controller
         ]);
 
     }
-
-
-    public function markAsRead(Request $request, $slug){
+    
+    
+    public function markAsRead(Request $request, $slug, ApiRequestMigrator $migrator)
+    {
+        $request = $migrator->migrate($request);
         $validatedData = $request->validate([
             'message_id' => 'required|string',
         ]);

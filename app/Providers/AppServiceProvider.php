@@ -20,10 +20,10 @@ use App\Services\Storage\FileStorageService;
 use App\Services\Storage\StorageServiceFactory;
 use App\Services\SyncLog\Handlers\InvitationHandler;
 use App\Services\SyncLog\Handlers\MemberHandler;
-use App\Services\SyncLog\Handlers\MessageHandler;
 use App\Services\SyncLog\Handlers\PrivateUserDataHandler;
 use App\Services\SyncLog\Handlers\RoomAiWritingHandler;
 use App\Services\SyncLog\Handlers\RoomHandler;
+use App\Services\SyncLog\Handlers\RoomMessageHandler;
 use App\Services\SyncLog\Handlers\UserHandler;
 use App\Services\SyncLog\SyncLogTracker;
 use App\Services\Translation\HawkiTranslationLoader;
@@ -116,7 +116,7 @@ class AppServiceProvider extends ServiceProvider
             MemberHandler::class,
             InvitationHandler::class,
             PrivateUserDataHandler::class,
-            MessageHandler::class,
+            RoomMessageHandler::class,
             RoomAiWritingHandler::class,
         ], 'syncLog.handler');
     }

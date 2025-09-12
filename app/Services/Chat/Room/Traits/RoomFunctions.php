@@ -2,15 +2,15 @@
 
 namespace App\Services\Chat\Room\Traits;
 
-use App\Models\Room;
+use App\Events\RoomCreateEvent;
+use App\Events\RoomUpdateEvent;
 use App\Models\Member;
-
+use App\Models\Room;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-
-use Exception;
-use Illuminate\Auth\Access\AuthorizationException;
 
 trait RoomFunctions{
 
@@ -20,6 +20,7 @@ trait RoomFunctions{
         $room = Room::create([
             'room_name' => $data['room_name'],
         ]);
+        RoomCreateEvent::dispatch($room);
         // Add AI as assistant
         $room->addMember(1, Member::ROLE_ASSISTANT);
         // Add the creator as admin
@@ -87,6 +88,7 @@ trait RoomFunctions{
             if(!empty($data['name'])){
                 $room->update(['room_name' => $data['name']]);
             }
+            RoomUpdateEvent::dispatch($room);
             return true;
         }
         catch(Exception $e){

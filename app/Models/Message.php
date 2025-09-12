@@ -3,11 +3,10 @@
 namespace App\Models;
 
 use App\Events\MessageUpdateEvent;
-use Illuminate\Database\Eloquent\Model;
-use App\Services\Storage\FileStorageService;
-use Illuminate\Support\Facades\Auth;
 use App\Services\Storage\AvatarStorageService;
-
+use App\Services\Storage\FileStorageService;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 
 class Message extends Model
@@ -17,6 +16,7 @@ class Message extends Model
     protected $fillable = [
         'room_id',
         'thread_id',
+        'has_thread',
         'message_id',
         'message_role',
         'member_id',
@@ -42,7 +42,6 @@ class Message extends Model
     {
         return $this->member->user();
     }
-
 
     public function createMessageObject(): array
     {

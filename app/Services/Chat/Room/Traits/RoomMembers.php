@@ -3,17 +3,12 @@
 
 namespace App\Services\Chat\Room\Traits;
 
+use App\Models\ExtApp;
+use App\Models\Member;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Member;
-
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-
-use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
 
 trait RoomMembers{
         public function add(string $slug, string $data){
@@ -73,6 +68,7 @@ trait RoomMembers{
                             ->orWhere('username', 'like', "%{$query}%")
                             ->orWhere('email', 'like', "%{$query}%");
             })
+            ->where('users.employeetype', '!=', ExtApp::EMPLOYEE_TYPE_APP)
             ->take(5)
             ->get();
 

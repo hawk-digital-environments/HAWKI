@@ -2,19 +2,12 @@
 
 namespace App\Services\Chat\Room\Traits;
 
-use App\Models\Room;
-
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-
-use App\Services\Chat\Message\MessageHandlerFactory;
 use App\Jobs\SendMessage;
-
-
-use Exception;
+use App\Models\Room;
+use App\Services\Chat\Message\MessageHandlerFactory;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
+
 
 trait RoomMessages{
 

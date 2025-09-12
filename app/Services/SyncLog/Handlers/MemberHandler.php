@@ -47,7 +47,7 @@ class MemberHandler extends AbstractSyncLogHandler
         return [
             MemberUpdateEvent::class => $handleSetEvent,
             MemberAddToRoomEvent::class => $handleSetEvent,
-            MemberRemoveFromRoomEvent::class => function (MemberUpdateEvent $event) use ($getAudience) {
+            MemberRemoveFromRoomEvent::class => function (MemberRemoveFromRoomEvent $event) use ($getAudience) {
                 return $this->createRemovePayload(
                     $event->member,
                     $getAudience($event->member),

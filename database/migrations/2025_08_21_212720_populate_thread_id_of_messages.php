@@ -39,7 +39,8 @@ return new class extends Migration {
                     ));
                     continue;
                 }
-
+                
+                $roomId = $message->room_id;
                 $threadId = (int)$parts[0];
                 $threadMessageId = (int)$parts[1];
 
@@ -48,7 +49,9 @@ return new class extends Migration {
                     $message->thread_id = null;
                 } else {
                     // Find the parent message by its ID
-                    $parentMessage = Message::where('message_id', $threadId . '.000')->first();
+                    $parentMessage = Message::where('message_id', $threadId . '.000')
+                        ->where('room_id', $roomId)
+                        ->first();
                     if ($parentMessage) {
                         $message->thread_id = $parentMessage->id;
                     } else {

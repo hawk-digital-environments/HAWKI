@@ -21,7 +21,7 @@ class SyncLogEntryCollection extends ResourceCollection
     {
         return [
             'type' => $this->type->value,
-            'log' => $this->collection,
+            'log' => array_values($this->collection->toArray()),
         ];
     }
 }

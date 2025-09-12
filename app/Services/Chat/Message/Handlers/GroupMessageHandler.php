@@ -8,14 +8,14 @@ use App\Events\MessageUpdateEvent;
 use App\Models\Message;
 use App\Models\Room;
 use App\Services\Chat\Attachment\AttachmentService;
-use App\Services\Message\LegacyMessageHelper;
+use App\Services\Message\ThreadIdHelper;
 use Illuminate\Support\Facades\Auth;
 
 
 class GroupMessageHandler extends BaseMessageHandler{
     public function __construct(
         AttachmentService           $attachmentService,
-        private LegacyMessageHelper $messageHelper
+        private ThreadIdHelper $messageHelper
     )
     {
         parent::__construct($attachmentService);
@@ -26,13 +26,8 @@ class GroupMessageHandler extends BaseMessageHandler{
         $room = $data['room'];
         $member = $data['member'];
         
-        $threadInfo = $this->messageHelper->getThreadInfo(
-            $data['threadID'],
-            ($data['thread_id_version'] ?? 1) === 1
-        );
-        
         $messageRole = 'user';
-        $nextMessageId = $this->assignID($room, $threadInfo->legacyThreadId);
+        $nextMessageId = $this->assignID($room, $data['threadID']);
         
         $message = Message::create([
             'room_id' => $room->id,
@@ -40,7 +35,7 @@ class GroupMessageHandler extends BaseMessageHandler{
             'user_id' => Auth::id(),
             'message_id' => $nextMessageId,
             'message_role' => $messageRole,
-            'thread_id' => $threadInfo->threadId,
+            'thread_id' => $this->messageHelper->getThreadIdForRoomAndThreadIndex($room, $data['threadID']),
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
