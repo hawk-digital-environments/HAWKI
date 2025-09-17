@@ -439,7 +439,7 @@ function formatGoogleCitations(content, groundingMetadata = '') {
             indices
               .map(
                 (idx) =>
-                  `<a class="inline-citation" href="#source${randomId}:${idx + 1}">${idx + 1}</a>`
+                  `<a class="inline-citation" href="${groundingMetadata.groundingChunks[support.groundingChunkIndices[0]].web?.uri}" target="_blank">${idx + 1}<span class="inline-tooltip">${groundingMetadata.groundingChunks[support.groundingChunkIndices[0]].web?.title}</span> </a>`
               )
               .join(', ') +
             `</span></sup>\n`;
