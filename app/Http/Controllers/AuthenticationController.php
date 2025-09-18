@@ -7,15 +7,20 @@ use App\Events\PrivateUserDataCreateEvent;
 use App\Models\PrivateUserData;
 use App\Models\User;
 use App\Services\Announcements\AnnouncementService;
+use App\Services\System\SettingsService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
+use App\Services\Profile\ProfileService;
+
+use App\Http\Controllers\Controller;
+use App\Http\Controllers\LanguageController;
+
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
-use App\Services\System\SettingsService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 
 
@@ -174,8 +179,8 @@ class AuthenticationController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService())->render();
 
-        $cryptoController = new EncryptionController();
-        $keychainData = $cryptoController->fetchUserKeychain();
+        $profileService = new ProfileService();
+        $keychainData = $profileService->fetchUserKeychain();
 
         $activeOverlay = false;
         if(Session::get('last-route') && Session::get('last-route') != 'handshake'){
@@ -254,7 +259,7 @@ class AuthenticationController extends Controller
                     'isRemoved' => false
                 ]
             );
-            
+
             try {
                 $policy = $announcementService->fetchLatestPolicy();
                 $announcementService->markAnnouncementAsSeen($user, $policy->id);
@@ -289,22 +294,17 @@ class AuthenticationController extends Controller
 
     public function logout(Request $request)
     {
-        // Unset all session variables
-        Session::flush();
+        // Log out the user
+        Auth::logout();
 
-        // Regenerate session ID
-        Session::regenerate();
+        // Invalidate the session (flushes + regenerates token)
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        // Remove PHPSESSID cookie
-        if ($request->hasCookie('PHPSESSID')) {
-            $cookie = cookie('PHPSESSID', '', time() - 3600);
-            Cookie::queue($cookie);
-        }
+        // Clear PHPSESSID cookie (optional, Laravel doesn’t use PHPSESSID by default)
+        Cookie::queue(Cookie::forget('PHPSESSID'));
 
-        // Destroy the session
-        Session::invalidate();
-
-        // Determine the logout redirect URI based on the authentication method
+        // Redirect depending on authentication method
         $authMethod = env('AUTHENTICATION_METHOD');
         if ($authMethod === 'Shibboleth') {
             $redirectUri = config('shibboleth.logout_path');
@@ -314,7 +314,6 @@ class AuthenticationController extends Controller
             $redirectUri = '/login';
         }
 
-        // Redirect to the appropriate logout URI
         return redirect($redirectUri);
     }
 

@@ -37,19 +37,15 @@ function migrate($flags) {
         }
 
         echo YELLOW . "Running migrate:fresh..." . RESET . PHP_EOL;
-        passthru('php artisan migrate:fresh');
+        passthru('php artisan migrate:fresh --ansi');
     } else {
         echo YELLOW . "Running migrate..." . RESET . PHP_EOL;
-        passthru('php artisan migrate');
+        passthru('php artisan migrate --ansi');
     }
-
-    // Run seeders
-    echo YELLOW . "Running db:seed..." . RESET . PHP_EOL;
-    passthru('php artisan db:seed');
 
     // Clear cache to ensure fresh database reflection
     echo YELLOW . "Clearing cache to refresh database schema..." . RESET . PHP_EOL;
-    passthru('php artisan cache:clear');
+    passthru('php artisan cache:clear --ansi');
 
     echo GREEN . "✓ Database migration completed!" . RESET . PHP_EOL;
 }

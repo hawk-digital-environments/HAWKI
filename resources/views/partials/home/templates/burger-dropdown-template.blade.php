@@ -14,7 +14,5 @@
 		@elseif($activeModule === 'groupchat')
 			<button class="burger-item red-text" onclick="leaveRoom()">{{ $translation["LeaveRoom"] }}</button>
 		@endif
-
-
 	</div>
 </div>

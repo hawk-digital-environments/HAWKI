@@ -52,11 +52,11 @@ class AttachmentService{
 
         if($outputType){
             $attachmentHandler = AttachmentFactory::create($attachment->type);
-            return $file = $attachmentHandler->retrieveContext($uuid, $category, $outputType);
+            return $attachmentHandler->retrieveContext($uuid, $category, $outputType);
         }
         else{
             try{
-                $file = $this->storageService->retrieveFile($uuid, $category);
+                $file = $this->storageService->retrieve($uuid, $category);
                 return $file;
             }
             catch(Exception $e){
@@ -78,8 +78,7 @@ class AttachmentService{
         }
         else{
             try{
-                $url = $this->storageService->getFileUrl($uuid, $category);
-                return $url;
+                return $this->storageService->getUrl($uuid, $category);
             }
             catch(Exception $e){
                 Log::error("Error retrieving file", ["UUID"=> $uuid, "category"=> $category]);
@@ -93,7 +92,7 @@ class AttachmentService{
     public function delete(Attachment $attachment): bool
     {
         try{
-            $deleted = $this->storageService->deleteFile($attachment->uuid, $attachment->category);
+            $deleted = $this->storageService->delete($attachment->uuid, $attachment->category);
             if(!$deleted){
                 return false;
             }
@@ -120,21 +119,24 @@ class AttachmentService{
     }
 
 
-    public function assignToMessage(AiConvMsg|Message $message, array $data): bool
+    public function assignToMessage(AiConvMsg|Message $message, array $data): ?string
     {
         try{
+            $category = $message instanceof AiConvMsg ? 'private' : 'group';
+            $this->storageService->moveFileToPersistentFolder($data['uuid'], $category);
+
             $type = $this->convertToAttachmentType($data['mime']);
             $message->attachments()->create([
                 'uuid' => $data['uuid'],
                 'name' => $data['name'],
-                'category' => $message instanceof AiConvMsg ? 'private' : 'group',
+                'category' => $category,
                 'mime'=> $data['mime'],
                 'type'=> $type,
                 'user_id'=> Auth::id()
             ]);
             return true;
         }
-        catch(e){
+        catch(Exception $e){
             return false;
         }
     }

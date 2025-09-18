@@ -18,6 +18,7 @@ function runDev() {
                 php artisan queue:work &
                 php artisan queue:work --queue=mails &
                 php artisan queue:work --queue=message_broadcast &
+                php artisan schedule:work &
 
                 # Print process info
                 echo \"All services started. Press Ctrl+C to stop all.\"
@@ -71,6 +72,7 @@ function stopProcesses() {
     pkill -f 'php artisan serve' 2>/dev/null
     pkill -f 'php artisan queue:work' 2>/dev/null
     pkill -f 'php artisan reverb:start' 2>/dev/null
+    pkill -f 'php artisan schedule:work' 2>/dev/null
     ";
 
     // Find and kill any Node processes related to Vite

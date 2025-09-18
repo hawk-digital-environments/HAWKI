@@ -3,17 +3,15 @@
 namespace App\Services\Chat\AiConv;
 
 use App\Models\AiConv;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-
+use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Chat\Message\MessageContentValidator;
+use App\Services\Chat\Message\MessageHandlerFactory;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-
-use App\Services\Chat\Message\MessageHandlerFactory;
-use App\Services\Chat\Message\MessageContentValidator;
-use App\Services\Chat\Attachment\AttachmentService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 
 class AiConvService{
@@ -37,15 +35,12 @@ class AiConvService{
             $validatedData['conv_name'] = 'New Chat';
         }
 
-        $user = Auth::user();
-
-        $conv = AiConv::create([
+        return AiConv::create([
             'conv_name' => $validatedData['conv_name'],
-            'user_id' => $user->id, // Associate the conversation with the user
+            'user_id' => Auth::id(), // Associate the conversation with the user
             'slug' => Str::slug(Str::random(16)), // Create a unique slug
             'system_prompt'=> $validatedData['system_prompt'],
         ]);
-        return $conv;
     }
 
     public function load(string $slug): array
@@ -68,7 +63,7 @@ class AiConvService{
     }
 
 
-    public function update($requestData, $slug){
+    public function update($requestData, $slug): bool{
         $user = Auth::user();
         $conv = AiConv::where('slug', $slug)->firstOrFail();
 
@@ -84,8 +79,6 @@ class AiConvService{
             Log::error("Failed to update Conv. Error: $e");
             return false;
         }
-
-
     }
 
 

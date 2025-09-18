@@ -21,3 +21,4 @@ yarn-error.log
 /.idea
 /.vscode
 docker-compose.override.yml
+.DS_Store

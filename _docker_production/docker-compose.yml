@@ -5,7 +5,8 @@ services:
         restart: no
         volumes:
             - ./storage/:/var/www/html/storage
-            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./config/model_lists:/var/www/html/config/model_lists:ro
             - /var/www/html/public
         healthcheck:
             test: cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
@@ -48,6 +49,31 @@ services:
         depends_on:
             mysql:
                 condition: service_healthy
+    scheduler:
+        container_name: ${PROJECT_NAME}-scheduler
+        image: ${PROJECT_HAWKI_IMAGE}
+        restart: always
+        volumes:
+            - ./storage/:/var/www/html/storage
+            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+        env_file:
+            - .env
+        command: [ 'php artisan schedule:work' ]
+        depends_on:
+            mysql:
+                condition: service_healthy
+    file-converter:
+        image: digitalenvironments/hawki-toolkit-file-converter:1.0.0
+        container_name: ${PROJECT_NAME}-file-converter
+        restart: always
+        environment:
+            - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://localhost:8001/" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
     redis:
         container_name: ${PROJECT_NAME}-redis
         image: redis:latest

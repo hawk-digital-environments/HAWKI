@@ -1,4 +1,4 @@
-<div class="sidebar">
+<div class="main-sidebar">
         <div class="sidebar-content">
             <div class="upper-panel">
                 <button id="chat-sb-btn" onclick="onSidebarButtonDown('chat')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
@@ -20,7 +20,7 @@
                     <div class="profile-icon round-icon">
                         <span class="user-inits" style="display:none"></span>
                         <img class="icon-img"   alt="">
-                    </div> 
+                    </div>
                     <div class="label tooltip tt-abs-left">
                         {{ $translation["Profile"] }}
                     </div>

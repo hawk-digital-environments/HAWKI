@@ -8,7 +8,7 @@
             <h1 class="zero-b-margin">{{ $translation["Profile"] }}</h1>
             <h3 class="label-header">{{ $translation["General"] }}</h3>
             <div class="userinfo-row">
-                <div class="avatar-editable" onclick="selectProfileAvatar(this, true)">
+                <div class="avatar-editable" onclick="selectProfileAvatar(this)">
                     <img class="icon-img selectable-image" alt="">
                     <div class="user-inits" style="display: none"></div>
                     <div class="edit">

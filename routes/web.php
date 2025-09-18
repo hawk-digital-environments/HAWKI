@@ -20,6 +20,8 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
     Route::get('/', [LoginController::class, 'index'])->name('login');
 
     Route::get('/login', [LoginController::class, 'index']);
+
+
     Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
     Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
     Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
@@ -35,8 +37,9 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
     Route::middleware('registrationAccess')->group(function () {
 
         Route::get('/register', [AuthenticationController::class, 'register']);
+        Route::post('/req/profile/validatePasskey', [ProfileController::class, 'validatePasskey']);
         Route::post('/req/profile/backupPassKey', [ProfileController::class, 'backupPassKey']);
-        Route::get('/req/crypto/getServerSalt', [EncryptionController::class, 'getServerSalt']);
+        Route::get('/req/crypto/getServerSalt', [ProfileController::class, 'getServerSalt']);
         Route::post('/req/complete_registration', [AuthenticationController::class, 'completeRegistration']);
 
     });
@@ -79,10 +82,16 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
 
             Route::delete('/req/conv/message/delete/{slug}', [AiConvController::class, 'deleteMessage']);
 
-            Route::post('/req/conv/attachmnet/upload', [AiConvController::class, 'storeAttachment']);
+            Route::post('/req/conv/attachment/upload', [AiConvController::class, 'storeAttachment']);
             Route::get('/req/conv/attachment/getLink/{uuid}', [AiConvController::class, 'getAttachmentUrl']);
 
-            Route::delete('/req/conv/attachmnet/delete', [AiConvController::class, 'deleteAttachment']);
+            Route::get('/files/{uuid}/private/{path}', [AiConvController::class, 'downloadAttachment'])
+                ->where([
+                    'path' => '.*'
+                ])->name('files.download.private')->middleware('signed');
+
+
+            Route::delete('/req/conv/attachment/delete', [AiConvController::class, 'deleteAttachment']);
             Route::post('/req/streamAI', [StreamController::class, 'handleAiConnectionRequest']);
 
 
@@ -92,26 +101,32 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
 
             Route::get('/req/room/{slug?}', [RoomController::class, 'load']);
             Route::post('/req/room/createRoom', [RoomController::class, 'create']);
+
             Route::delete('/req/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom']);
             Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
+            Route::get('/req/room/message/get/{slug}/{messageId}', [RoomController::class, 'retrieveMessage']);
             Route::get('/req/room/attachment/getLink/{uuid}', [RoomController::class, 'getAttachmentUrl']);
-
+            Route::get('/files/{uuid}/group/{path}', [RoomController::class, 'downloadAttachment'])
+                ->where([
+                    'path' => '.*'
+                ])->name('files.download.group')->middleware('signed');
 
             Route::middleware('roomEditor')->group(function () {
                 Route::post('/req/room/sendMessage/{slug}', [RoomController::class, 'sendMessage']);
                 Route::post('/req/room/updateMessage/{slug}', [RoomController::class, 'updateMessage']);
                 Route::post('/req/room/streamAI/{slug}', [StreamController::class, 'handleAiConnectionRequest']);
 
-                Route::post('/req/room/attachmnet/upload/{slug}', [RoomController::class, 'storeAttachment']);
-                Route::delete('/req/room/attachmnet/delete/{slug}', [RoomController::class, 'deleteAttachment']);
+                Route::post('/req/room/attachment/upload/{slug}', [RoomController::class, 'storeAttachment']);
             });
 
             Route::middleware('roomAdmin')->group(function () {
                 Route::post('/req/room/updateInfo/{slug}', [RoomController::class, 'update']);
+                Route::post('/req/room/uploadAvatar/{slug}', [RoomController::class, 'uploadAvatar']);
                 Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'delete']);
                 Route::post('/req/room/addMember/{slug}', [RoomController::class, 'addMember']);
                 Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'kickMember']);
             });
+            Route::delete('/req/room/attachment/delete', [RoomController::class, 'deleteAttachment']);
 
             Route::post('/req/room/search', [RoomController::class, 'searchUser']);
 
@@ -139,12 +154,11 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
         Route::get('/profile', [HomeController::class, 'index'])
             ->middleware('handle_app_connect');
         Route::post('/req/profile/update', [ProfileController::class, 'update']);
+        Route::post('/req/profile/uploadAvatar', [ProfileController::class, 'uploadAvatar']);
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
 
         Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileRest']);
-
-        Route::post('/req/downloadKeychain',  [EncryptionController::class, 'downloadKeychain']);
-        Route::post('/req/backupKeychain',  [EncryptionController::class, 'backupKeychain']);
+        Route::post('/req/backupKeychain',  [ProfileController::class, 'backupKeychain']);
 
 
         // AI RELATED ROUTES

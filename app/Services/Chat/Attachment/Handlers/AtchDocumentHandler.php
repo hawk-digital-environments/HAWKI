@@ -1,11 +1,11 @@
 <?php
 namespace App\Services\Chat\Attachment\Handlers;
 
+use App\Services\FileConverter\FileConverterFactory;
 use Illuminate\Support\Str;
 
 use App\Services\Storage\FileStorageService;
 use App\Services\Chat\Attachment\Interfaces\AttachmentInterface;
-use App\Toolkit\FileConverter\DocumentConverter;
 
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -23,7 +23,8 @@ class AtchDocumentHandler implements AttachmentInterface
         $uuid = Str::uuid();
         $originalName = $file->getClientOriginalName();
 
-        $stored = $this->storageService->storeFile($file, $originalName, $uuid, $category);
+//        $stored = $this->storageService->store($file, $originalName, $uuid, $category, true);
+        $stored = $this->storageService->store($file, $originalName, $uuid, $category, true);
         if (!$stored) {
             return [
                 'success' => false,
@@ -31,8 +32,9 @@ class AtchDocumentHandler implements AttachmentInterface
             ];
             // throw new \Exception('Failed to store file.');
         }
-        $url = $this->storageService->getFileUrl($uuid, $category);
+//        $url = $this->storageService->getUrl($uuid, $category);
         $results = $this->extractFileContent($file);
+
         if (!$results) {
             return [
                 'success' => false,
@@ -43,29 +45,27 @@ class AtchDocumentHandler implements AttachmentInterface
         }
 
         foreach($results as $relativePath => $content){
-            $filename = 'output/' . basename($relativePath);
-            $stored = $this->storageService->storeFile($content, $filename, $uuid, $category);
+            $this->storageService->store($content, basename($relativePath), $uuid, $category, true, '/output');
         }
 
         return [
             'success' => true,
             'uuid' => $uuid,
-            'url'=> $url
+//            'url'=> $url
         ];
     }
 
     public function extractFileContent($file): ?array{
         try{
-            $fileConverter = new DocumentConverter();
-            $results = $fileConverter->requestDocumentToMarkdown($file);
-            return $results;
+            $converter = FileConverterFactory::create();
+            return $converter->convert($file);
         }
         catch(Exception $e){
             return null;
         }
     }
 
-    public function retrieveContext(string $uuid, string $category, $fileType = 'md'): ?string{
+    public function retrieveContext(string $uuid, string $category, $fileType = 'md'): string{
         $files = $this->storageService->retrieveOutputFilesByType($uuid, $category, $fileType);
         if($files || count($files) > 0){
             $results = [];
@@ -79,13 +79,12 @@ class AtchDocumentHandler implements AttachmentInterface
 
         try{
 
-            $file = $this->storageService->retrieveFile($uuid, $category);
+            $file = $this->storageService->retrieve($uuid, $category);
             $results = $this->extractFileContent($file);
 
             if($results !== null){
                 foreach($results as $relativePath => $content){
-                    $filename = 'output/' . basename($relativePath);
-                    $this->storageService->storeFile($content, $filename, $uuid, $category);
+                    $this->storageService->store($content, basename($relativePath), $uuid, $category, true, '/output');
                 }
                 return $this->retrieveContext($uuid, $category);
             }

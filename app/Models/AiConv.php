@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Services\Chat\Message\MessageHandlerFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\Chat\Message\MessageHandlerFactory;
 
 class AiConv extends Model
 {

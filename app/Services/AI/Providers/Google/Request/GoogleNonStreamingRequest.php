@@ -12,13 +12,13 @@ use App\Services\AI\Value\AiResponse;
 class GoogleNonStreamingRequest extends AbstractRequest
 {
     use GoogleRequestTrait;
-    
+
     public function __construct(
         private array $payload
     )
     {
     }
-    
+
     public function execute(AiModel $model): AiResponse
     {
         $this->payload['stream'] = false;
@@ -35,7 +35,7 @@ class GoogleNonStreamingRequest extends AbstractRequest
             getHttpHeaders: fn() => [
                 'Content-Type: application/json'
             ],
-            apiUrl: $this->buildApiUrl($model)
+            apiUrl: $this->buildApiUrl($model, false)
         );
     }
 }

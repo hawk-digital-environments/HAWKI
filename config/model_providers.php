@@ -16,7 +16,7 @@ return [
         'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'meta-llama-3.1-8b-instruct'),
         'default_vision_model' =>  env('DEFAULT_VISION_MODEL', 'qwen2.5-vl-72b-instruct'),
     ],
-    
+
     /*
      * The default models to use when accessing HAWKI via an external application
      * If null, the general default models are used above (can be useful to prevent high cost models being used by external apps)
@@ -42,9 +42,9 @@ return [
     'system_models' => [
         'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
         'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-        'summarizer' => env('SUMMERIZER_MODEL', 'gpt-4.1-nano'),
+        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
     ],
-    
+
     /*
      * The system models to use when accessing HAWKI via an external application
      * If null, the general system models are used above (can be useful to prevent high cost models being used by external apps)
@@ -86,12 +86,13 @@ return [
             'api_key' => env('GOOGLE_API_KEY'),
             'api_url' => env('GOOGLE_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/'),
             'stream_url' => env('GOOGLE_STREAM_URL', 'https://generativelanguage.googleapis.com/v1beta/models/'),
-            'ping_url' => env('GOOGLE_PING_URL', ''),
+            'ping_url' => env('GOOGLE_PING_URL', 'https://generativelanguage.googleapis.com/v1beta/models'),
             'models' => require __DIR__ . env('GOOGLE_MODEL_LIST_DIR', '/model_lists/google_models.php'),
         ],
         'ollama' => [
             'active' => env('OLLAMA_ACTIVE', false),
             'api_url' => env('OLLAMA_API_URL', 'http://localhost:11434/api/chat'),
+            'ping_url' => env('OLLAMA_API_URL', 'http://localhost:11434/api/tags'),
             'models' => require __DIR__ . env('OLLAMA_MODEL_LIST_DIR', '/model_lists/ollama_models.php'),
         ],
         'openWebUi' => [

@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Services\Announcements\AnnouncementService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Throwable;
 
 class AnnouncementController extends Controller
 {
-    protected $announcementService;
+    protected AnnouncementService $announcementService;
 
     public function __construct(AnnouncementService $announcementService)
     {
@@ -19,7 +19,7 @@ class AnnouncementController extends Controller
     /**
      * Render announcement content for display
      */
-    public function render(Request $request, int $id)
+    public function render(int $id)
     {
         $user = Auth::user();
         $announcement = $this->announcementService->getAnnouncementForUser($user, $id);
@@ -31,17 +31,15 @@ class AnnouncementController extends Controller
         return response()->json([
             'success' => true,
             'view'=> $view
-        ], 200);
+        ]);
     }
 
     /**
      * Mark announcement as seen
      */
-    public function markSeen(Request $request, int $id): JsonResponse
+    public function markSeen(int $id): JsonResponse
     {
-        $user = Auth::user();
-        $success = $this->announcementService->markAnnouncementAsSeen($user, $id);
-
+        $success = $this->announcementService->markAnnouncementAsSeen(Auth::user(), $id);
         return response()->json([
             'success' => $success,
             'message' => $success ? 'Announcement marked as seen' : 'Failed to mark announcement as seen'
@@ -64,7 +62,6 @@ class AnnouncementController extends Controller
 
 
     public function fetchLatestPolicy(){
-        
         try {
             $announcement = $this->announcementService->fetchLatestPolicy();
             $view = $this->announcementService->renderAnnouncement($announcement);
@@ -73,7 +70,7 @@ class AnnouncementController extends Controller
                 'announcement' => $announcement,
                 'view' => $view
             ]);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to fetch latest policy'

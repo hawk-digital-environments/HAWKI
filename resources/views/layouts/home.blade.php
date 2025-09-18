@@ -11,35 +11,36 @@
 
 	<link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/home-style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/settings_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.1_f1/hljs_custom.css') }}">
+
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/home-style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/hljs_custom.css') }}">
 
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
 
-	<script src="{{ asset('js_v2.0.1_f1/functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/home_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/stream_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/ai_chat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/chatlog_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/inputfield_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/message_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/groupchat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.0.1_f1/syntax_modifier.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/image-selector.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/export.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/user_profile.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/file_manager.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/attachment_handler.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/model_list_filtering.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/announcements.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/home_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/stream_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/ai_chat_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/chatlog_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/inputfield_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/message_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/groupchat_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/syntax_modifier.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/image-selector.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/export.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/user_profile.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/file_manager.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/attachment_handler.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/model_list_filtering.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
 
     @if(config('external_access.enabled'))
-		<script src="{{ asset('js_v2.0.1_f1/sanctum_functions.js') }}"></script>
+        <script src="{{ asset('js_v2.1.0/sanctum_functions.js') }}"></script>
     @endif
 
 
@@ -76,7 +77,7 @@
     @foreach ($templates as $temp)
         @include('partials.home.templates.' . $viewName = str_replace('.blade', '',  $temp->getFilenameWithoutExtension()))
     @endforeach
-	@include('partials.home.modals.confirm-modal')
+    @include('partials.home.modals.confirm-modal')
 
 </body>
 </html>
@@ -87,6 +88,7 @@
 	const userAvatarUrl = @json($userData['avatar_url']);
 	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
 	const activeModule = @json($activeModule);
+    const hawkiUsername = @json($userData['hawki_username'])
 
     const activeLocale = {!! json_encode(Session::get('language')) !!};
 	const translation = @json($translation);
@@ -95,11 +97,22 @@
 	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
 
-	const aiHandle = "{{ config('app.aiHandle') }}";
+	const aiHandle = "{{ config('hawki.aiHandle') }}";
 
     const announcementList = @json($announcements);
 
-	window.addEventListener('DOMContentLoaded', async (event) => {
+    const converterActive = @json($converterActive);
+
+
+    window.addEventListener('DOMContentLoaded', async (event) => {
+        setModel();
+
+		const passkey = await getPassKey()
+		if(!passkey){
+			console.log('passkey not found!');
+			window.location.href = '/handshake';
+		}
+
 		setSessionCheckerTimer(0);
 		CheckModals()
 
@@ -126,10 +139,9 @@
 			sidebarBtn.querySelector('.user-inits').innerText = userInitials
 		}
 
-		setModel(null);
 
 		initializeGUI();
-		checkWindowSize(800, 600);
+		checkWindowSize(800, 200);
 
         initAnnouncements(announcementList);
 

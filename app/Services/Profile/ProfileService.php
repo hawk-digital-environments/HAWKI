@@ -19,26 +19,9 @@ use App\Services\Profile\Traits\ApiTokenHandler;
 
 class ProfileService{
 
-    use PasskeyHandler;
-    use ApiTokenHandler;
-
-    public function __construct(
-        private AvatarStorageService $avatarStorage
-    ) {}
 
     public function update(array $data): bool{
         $user = Auth::user();
-
-        if(!empty($data['img'])){
-            $uuid = Str::uuid();
-            $response = $this->avatarStorage->storeFile($data['img'], 'profile_avatars', Auth::user()->username, $uuid);
-
-            if ($response) {
-                $user->update(['avatar_id' => $uuid]);
-            } else {
-                throw new Exception('Failed to store image');
-            }
-        }
 
         if(!empty($data['displayName'])){
             $user->update(['name' => $data['displayName']]);
@@ -49,6 +32,34 @@ class ProfileService{
         }
 
         return true;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function assignAvatar($image): string{
+        $uuid = Str::uuid();
+        $user = Auth::user();
+        $extension = $image->getClientOriginalExtension(); // returns 'png', 'jpg', etc.
+        if (!$extension) {
+            // Fall back on MIME type if extension missing
+            $mime = $image->getMimeType(); // e.g. 'image/png'
+            $extension = \Illuminate\Support\Arr::last(explode('/', $mime));
+        }
+        $filename = $uuid . '.' . $extension;
+
+        $avatarStorage = app(AvatarStorageService::class);
+        $response = $avatarStorage->store($image,
+                                        $filename,
+                                        $uuid,
+                                        'profile_avatars',
+                                        false);
+        if ($response) {
+            $user->update(['avatar_id' => $uuid]);
+            return $avatarStorage->getUrl($uuid, 'profile_avatars');
+        } else {
+            throw new Exception('Failed to store image');
+        }
     }
 
 
@@ -121,6 +132,22 @@ class ProfileService{
         catch(Exception $e){
             throw $e;
         }
+    }
+
+
+
+    /// Sends back user's encrypted keychain
+    public function fetchUserKeychain(){
+
+        $user = Auth::user();
+        $prvUserData = PrivateUserData::where('user_id', $user->id)->first();
+        $keychainData = json_encode([
+            'keychain'=> $prvUserData->keychain,
+            'KCIV'=> $prvUserData->KCIV,
+            'KCTAG'=> $prvUserData->KCTAG,
+        ]);
+
+        return $keychainData;
     }
 
 }

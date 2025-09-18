@@ -76,8 +76,25 @@ switch ($command) {
     case 'announcement':
         handleAnnouncementCommand($flags);
         break;
+//    case 'update':
+//        updateSystem();
     case 'update':
-        updateSystem();
+        if (isset($flags[0])) {
+            switch ($flags[0]) {
+                case '-hawki-avatar':
+                    if(count($flags) > 1 && $flags[1]){
+                        updateHawkiAvatar($flags[1]);
+                    }
+                    else{
+                        echo RED . "Invalid or missing path:" . RESET . PHP_EOL;
+                        echo YELLOW . " php hawki update hawki-avatar {path}" . RESET . PHP_EOL;
+                    }
+                    break;
+                default:
+                    echo RED . "Invalid flag for run command: {$flags[0]}" . RESET . PHP_EOL;
+                    showHelp();
+            }
+        }
         break;
     case 'help':
         showHelp();

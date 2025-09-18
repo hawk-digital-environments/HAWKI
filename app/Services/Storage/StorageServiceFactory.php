@@ -9,26 +9,28 @@ class StorageServiceFactory
 {
     public function __construct(
         protected FilesystemManager $filesystemManager,
-        protected Repository $config
+        protected Repository $config,
     )
     {
-    }
-
-    public function getDefaultStorage(): DefaultStorageService
-    {
-        $defaultDisk = $this->config->get('filesystems.default', 'local');
-        return new DefaultStorageService($this->filesystemManager->disk($defaultDisk));
     }
 
     public function getFileStorage(): FileStorageService
     {
         $fileStorageDisk = $this->config->get('filesystems.file_storage', 'local_file_storage');
-        return new FileStorageService($this->filesystemManager->disk($fileStorageDisk));
+        $diskConfig = $this->config->get('filesystems.disks.' . $fileStorageDisk);
+        $disk = $this->filesystemManager->disk($fileStorageDisk);
+
+        return new FileStorageService($diskConfig, $disk,
+                                      new UrlGenerator($diskConfig,$disk,));
     }
 
     public function getAvatarStorage(): AvatarStorageService
     {
         $avatarDisk = $this->config->get('filesystems.avatar_storage', 'public');
-        return new AvatarStorageService($this->filesystemManager->disk($avatarDisk));
+        $diskConfig = $this->config->get('filesystems.disks.' . $avatarDisk);
+        $disk = $this->filesystemManager->disk($avatarDisk);
+
+        return new AvatarStorageService($diskConfig, $disk,
+                                        new UrlGenerator($diskConfig,$disk,));
     }
 }

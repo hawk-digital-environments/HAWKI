@@ -10,7 +10,7 @@
         "ext-curl": "*",
         "ext-zip": "*",
         "blade-ui-kit/blade-icons": "^1.8",
-        "hawk-hhg/hawki-crypto": "^0.5.2",
+        "hawk-hhg/hawki-crypto": "^0.5.3",
         "jumbojett/openid-connect-php": "^1.0",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.1",

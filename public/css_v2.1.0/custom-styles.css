@@ -1,0 +1,103 @@
+:root {
+    --shadow:1px 3px 5px rgba(0.1, 0.1, 0.1, 0.4) !important;
+
+    --border-radius-tight: 5px !important;
+    --border-radius-normal: 10px !important;
+    --border-radius-large: 30px !important;
+
+    --font-sm: 1rem !important;
+    --font-xxs: calc(var(--font-sm) * .7) !important;
+    --font-xs: calc(var(--font-sm) * .85) !important;
+    --font-md: calc(var(--font-sm) * 1.10) !important;
+    --font-lg: calc(var(--font-sm) * 1.25) !important;
+    --font-xl: calc(var(--font-sm) * 1.80) !important;
+    --font-xxl: calc(var(--font-sm) * 2.5) !important;
+
+    --color-transition-duration: 0 !important;
+    --transition-extra-slow: 3000ms !important;
+    --transition-slow: 1000ms !important;
+    /* Initial value is zero to prevent flickering
+        check out:
+        home_functions / checkWindowSize called from home.blade.php */
+    --transition-medium: 500ms !important;
+    --transition-fast: 300ms !important;
+    --transition-extra-fast: 200ms !important;
+
+}
+.lightMode{
+
+    --background-main: #ffffff !important;
+    --background-secondary: #F4F6FB !important;
+
+    --panel-main: #f0f0f0 !important;
+    --panel-secondary: #ffffff !important;
+    --panel-invert:rgb(40,40,40) !important;
+
+    --message-me-bg: #EBEFFF !important;
+    --message-ai-bg: #ffffff !important;
+    --message-member-bg: #ffffff !important;
+
+    --highlight-color: #EBEFFF !important;
+    --accent-color: #2F2ABF !important;
+
+    --text-color:rgb(40,40,40) !important;
+    --text-faded-color:#8A8787 !important;
+    --invert-Text-color:#f6f9fc !important;
+
+    --border-stroke-hairline: .25px solid lightgray !important;
+    --border-stroke-thin: 1px solid lightgray !important;
+    --border-stroke-bold: 1.5px solid rgb(79, 79, 79) !important;
+    --border-stroke-fat: 3px solid rgb(79, 79, 79) !important;
+
+    --stroke-color: rgb(40,40,40) !important;
+
+    --button-color: rgb(35, 48, 176) !important;
+    --button-secondary-color: #ffffff !important;
+
+    --link-color: #000 !important;
+}
+
+.darkMode{
+    --background-main: rgb(30,30,30) !important;
+    --background-secondary: rgb(25, 25, 25) !important;
+
+    --panel-main: rgb(44, 53, 72) !important;
+    --panel-secondary: #2c2c2c !important;
+    --panel-invert:rgb(40,40,40) !important;
+
+    --message-me-bg: rgb(44, 53, 72) !important;
+    --message-ai-bg: rgb(33, 34, 36) !important;
+    --message-member-bg: rgb(33, 34, 36) !important;
+
+    --highlight-color: #353741 !important;
+    --accent-color: rgb(121, 147, 198) !important;
+
+    --text-color:rgb(237, 237, 237) !important;
+    --text-faded-color:rgba(237, 237, 237, 0.8) !important;
+    --invert-Text-color:#363636 !important;
+
+    --border-stroke-hairline: .5px solid rgb(61, 61, 61) !important;
+    --border-stroke-thin: .5px solid rgb(61, 61, 61) !important;
+    --border-stroke-bold: 1px solid rgb(183, 183, 183) !important;
+    --border-stroke-fat: 1px solid rgb(100, 100, 100) !important;
+
+    --stroke-color: rgb(255, 255, 255) !important;
+
+    --button-color: #ffffff !important;
+    --button-text-color: #ffffff !important;
+
+    --link-color: #ffffff !important;
+}
+
+
+.logo{
+    /* adjust width and aspect ratio as needed */
+    width: 8rem !important;
+    /* Aaspect ration of HAWK logo */
+    aspect-ratio: 2.226/1 !important;
+
+    background-image: url("/img/logo.png") !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    /* background-size: auto !important; */
+}

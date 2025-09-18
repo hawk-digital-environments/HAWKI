@@ -40,6 +40,7 @@ return [
             'driver' => 'local',
             'root' => storage_path('app'),
             'throw' => false,
+            'visibility' => 'private',
         ],
 
         'public' => [
@@ -77,17 +78,20 @@ return [
             'password' => env('NEXTCLOUD_PASSWORD'),
             'prefix' => env('NEXTCLOUD_BASE_PATH', ''),
             'timeout' => 60,
+            'visibility' => 'private',
 
         ],
 
         'sftp' => [
             'driver' => 'sftp',
             'host' => env('SFTP_HOST'),
-            'port' => env('SFTP_PORT', 22),
+            'port' => (int) env('SFTP_PORT', 22),
             'username' => env('SFTP_USERNAME'),
             'password' => env('SFTP_PASSWORD'),
             'root' => env('SFTP_BASE_PATH', '/'),
             'timeout' => 30,
+            'visibility' => 'private',
+
         ],
 
     ],
@@ -106,5 +110,10 @@ return [
     'links' => [
         public_path('storage') => storage_path('app/public'),
     ],
+
+
+    'garbage_collections' => [
+        'remove_files_after_months' => env('REMOVE_FILES_AFTER_MONTHS', 6),
+    ]
 
 ];

@@ -121,5 +121,18 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
         .define('BACKUP_SALT', {
             help: 'The salt to use for the backup encryption. This is used to encrypt the backups.',
             default: base64Encode(createDeterministicRandomString(128, 'BACKUP_SALT'))
+        })
+        // @todo store this as json
+        .define('FILE_CONVERTER', {
+            help: 'The file converter to use. By default, we use the built-in HAWKI file converter service.',
+            default: 'hawki_converter'
+        })
+        .define('HAWKI_FILE_CONVERTER_API_URL', {
+            help: 'The URL to use for the HAWKI file converter service.',
+            default: 'http://file-converter:8001/extract'
+        })
+        .define('HAWKI_FILE_CONVERTER_API_KEY', {
+            help: 'The API key to use for the HAWKI file converter service.',
+            default: createDeterministicRandomString(32, 'HAWKI_FILE_CONVERTER_API_KEY')
         });
 };

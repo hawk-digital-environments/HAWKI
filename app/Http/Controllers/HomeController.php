@@ -7,7 +7,9 @@ use App\Services\AI\AiService;
 use App\Services\Announcements\AnnouncementService;
 use App\Services\Chat\AiConv\AiConvService;
 use App\Services\Chat\Room\RoomService;
+use App\Services\FileConverter\FileConverterFactory;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\FileStorageService;
 use App\Services\System\SettingsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -19,6 +21,7 @@ use Illuminate\Support\Facades\Session;
 
 class HomeController extends Controller
 {
+
     // Inject LanguageController instance
     public function __construct(
         private LanguageController $languageController,
@@ -48,14 +51,17 @@ class HomeController extends Controller
         // get the first part of the path if there's a slug.
         $requestModule = explode('/', $request->path())[0];
 
-        $avatarUrl = $user->avatar_id !== '' ? $avatarStorage->getFileUrl('profile_avatars', $user->username, $user->avatar_id) : null;
-        $hawkiAvatarUrl = $avatarStorage->getFileUrl('profile_avatars', User::find(1)->username, User::find(1)->avatar_id);
+        $avatarUrl = !empty($user->avatar_id)
+            ? $avatarStorage->getUrl($user->avatar_id, 'profile_avatars')
+            : null;
+        $hawkiAvatarUrl = $avatarStorage->getUrl(User::find(1)->avatar_id, 'profile_avatars');
 
         $userData = [
             'avatar_url'=> $avatarUrl,
             'hawki_avatar_url'=>$hawkiAvatarUrl,
             'convs' => $user->conversations()->with('messages')->get(),
             'rooms' => $user->rooms()->with('messages')->get(),
+            'hawki_username' => User::find(1)->username,
         ];
 
         $activeModule = $requestModule;
@@ -65,9 +71,12 @@ class HomeController extends Controller
             $activeOverlay = true;
         }
         Session::put('last-route', 'home');
-        
+
         $models = $this->aiService->getAvailableModels()->toArray();
         $announcements = $announcementService->getUserAnnouncements();
+
+        $converterActive = FileConverterFactory::converterActive();
+
 
         // Pass translation, authenticationMethod, and authForms to the view
         return view('modules.' . $requestModule,
@@ -79,10 +88,11 @@ class HomeController extends Controller
                             'activeModule',
                             'activeOverlay',
                             'models',
-                            'announcements'
+                            'announcements',
+                            'converterActive',
                         ));
     }
-    
+
     public function print($module, $slug, AiConvService $aiConvService, RoomService $roomService, AvatarStorageService $avatarStorage, SettingsService $settingsService)
     {
 
@@ -99,8 +109,10 @@ class HomeController extends Controller
         }
 
         $user = Auth::user();
-        $avatarUrl = $user->avatar_id !== '' ? $avatarStorage->getFileUrl('profile_avatars', $user->username, $user->avatar_id) : null;
-        $hawkiAvatarUrl = $avatarStorage->getFileUrl('profile_avatars', User::find(1)->username, User::find(1)->avatar_id);
+        $avatarUrl = !empty($user->avatar_id)
+                    ? $avatarStorage->getUrl($user->avatar_id, 'profile_avatars')
+                    : null;
+        $hawkiAvatarUrl = $avatarStorage->getUrl(User::find(1)->avatar_id, 'profile_avatars');
 
         $userData = [
             'avatar_url'=> $avatarUrl,

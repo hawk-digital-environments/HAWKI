@@ -18,7 +18,7 @@ readonly class GwdgRequestConverter
     )
     {
     }
-    
+
     public function convertRequestToPayload(AiRequest $request): array
     {
         $rawPayload = $request->payload;
@@ -35,16 +35,18 @@ readonly class GwdgRequestConverter
             $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $model);
         }
 
+        $mergedMessages = $this->mergeConsecutiveMessagesWithSameRole($formattedMessages);
+
         // Build payload with common parameters
         $payload = [
             'model' => $modelId,
-            'messages' => $formattedMessages,
+            'messages' => $mergedMessages,
             'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
 
         return $payload;
     }
-    
+
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
         $formatted = [
@@ -69,7 +71,25 @@ readonly class GwdgRequestConverter
 
         return $formatted;
     }
-    
+
+    private function mergeConsecutiveMessagesWithSameRole(array $messages): array
+    {
+        $merged = [];
+        foreach ($messages as $msg) {
+            if (
+                !empty($merged)
+                && $merged[count($merged)-1]['role'] === $msg['role']
+            ) {
+                $prevMsg = $merged[count($merged)-1];
+                $prevContent = $prevMsg['content'];
+                $merged[count($merged)-1]['content'] = array_merge($prevContent, $msg['content']);
+            } else {
+                $merged[] = $msg;
+            }
+        }
+        return $merged;
+    }
+
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
     {
         $attachmentService = app(AttachmentService::class);

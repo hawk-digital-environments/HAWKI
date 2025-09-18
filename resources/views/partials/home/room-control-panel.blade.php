@@ -2,16 +2,16 @@
     <div class="panel-container">
 
         <div class="closeButton" onclick="closeRoomCP()">
-            <x-icon name="x"/>        
+            <x-icon name="x"/>
         </div>
-    
+
         <div class="scroll-container chat-info-panel">
             <div class="scroll-panel">
 
 
                 <div class="row">
                     <div class="prop-panel-grid">
-                        
+
                             <div class="avatar-editable">
                                 <img class="icon-img selectable-image" id="info-panel-chat-icon" alt="">
                                 <div id="control-panel-chat-initials"></div>
@@ -23,7 +23,7 @@
                         <div class="prop-panel-titles">
                             <div class="chat-name-panel text-cont">
                                 <h1 class="text-field chat-name zero-v-margin" id="chat-name"></h1>
-                                
+
                                 @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction'=>'submitInfoField'])
                             </div>
 
@@ -31,7 +31,7 @@
                             <p class="zero-v-margin" id="chat-slug"></p>
 
                         </div>
-                        
+
                     </div>
                 </div>
 
@@ -70,7 +70,7 @@
 
             </div>
         </div>
-       
+
 
     </div>
 </div>

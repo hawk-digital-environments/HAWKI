@@ -2,5 +2,7 @@
 
 use Illuminate\Support\Facades\Schedule;
 
-$interval = env('DB_BACKUP_INTERVAL');
-if(!empty($interval))   Schedule::command('backup:run --only-db')->$interval();
+$backupInterval = config('backup.backup.schedule_interval');
+Schedule::command('backup:run --only-db')->$backupInterval();
+Schedule::command('check:model-status')->everyFifteenMinutes();
+Schedule::command('filestorage:cleanup')->daily();

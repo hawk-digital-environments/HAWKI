@@ -9,6 +9,7 @@
 
 
     "Cnf_deleteConv": "Möchtest du dieses Gespräch wirklich löschen?",
+    "Cnf_deleteFile": "Möchtest du diese Datei wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!",
     "Cnf_deleteRoom": "Möchtest du diesen Raum wirklich löschen?",
     "Cnf_leaveRoom": "Möchtest du diesen Raum wirklich verlassen?",
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
@@ -71,15 +72,18 @@
     "General": "Allgemein",
     "History": "Verlauf",
 
-    "HS-EnterBackupMsg": "Bitte gib deinen Wiederherstellungscode ein.",
-    "HS-EnterPasskeyMsg": "Bitte gib deinen Datakey ein.",
-    "HS-ForgottenPasskey": "Datakey vergessen?",
-    "HS-ForgottenBackup": "Wiederherstellungscode verloren?",
-    "HS-PasskeyIs": "Dein Datakey ist:",
-    "HS-ResetProfile": "Profil zurücksetzen",
+    "HS_EnterBackupMsg": "Bitte gib deinen Wiederherstellungscode ein.",
+    "HS_EnterPasskeyMsg": "Bitte gib deinen Datakey ein.",
+    "HS_ForgottenPasskey": "Datakey vergessen?",
+    "HS_ForgottenBackup": "Wiederherstellungscode verloren?",
+    "HS_PasskeyIs": "Dein Datakey ist:",
+    "HS_ResetProfile": "Profil zurücksetzen",
 
-    "HS-LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
-    "HS-LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
+    "HS_RepeatPassKey": "Bitte wiederhole das Datakey.",
+    "HS_DifferentEntries": "Die Eingaben sind nicht gleich!",
+
+    "HS_LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
+    "HS_LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
 
 
     "ImgUpload": "Bild hochladen",

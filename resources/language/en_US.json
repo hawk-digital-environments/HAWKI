@@ -9,6 +9,8 @@
     "Upload": "Upload",
 
     "Cnf_deleteConv":"Do you really want to delete this Conversation?",
+    "Cnf_deleteFile": "Do you really want to delete this Conversation? This action is not reversible!",
+
     "Cnf_deleteRoom":"Do you really want to delete this Room?",
     "Cnf_leaveRoom":"Do you really want to leave this Room?",
     "Cnf_removeMember":"Do you really want to remove this member?",
@@ -72,15 +74,18 @@
     "ExtAccToken": "External Access Tokens",
     "General": "General",
     "History": "History",
-    "HS-EnterBackupMsg": "Please enter your Recovery Code.",
-    "HS-EnterPasskeyMsg": "Please enter your Datakey.",
-    "HS-ForgottenPasskey": "Forgotten Datakey?",
-    "HS-ForgottenBackup": "Lost Recovery Code?",
-    "HS-PasskeyIs": "Your Datakey is:",
-    "HS-ResetProfile": "Reset Profile",
+    "HS_EnterBackupMsg": "Please enter your Recovery Code.",
+    "HS_EnterPasskeyMsg": "Please enter your Datakey.",
+    "HS_ForgottenPasskey": "Forgotten Datakey?",
+    "HS_ForgottenBackup": "Lost Recovery Code?",
+    "HS_PasskeyIs": "Your Datakey is:",
+    "HS_ResetProfile": "Reset Profile",
 
-    "HS-LostBothT": "Did you lose both your Datakey and Recovery Code?",
-    "HS-LostBothB": "Unfortuately if you've lost both your Datakey and Recovery Code, we can't recover your profile data. To continue we need to reset your profile and give you a new access. This will remove all your previous data including all your chats and rooms. Do you want to continue?",
+    "HS_RepeatPassKey": "Please repeat the Datakey.",
+    "HS_DifferentEntries": "The entries are not the same!",
+
+    "HS_LostBothT": "Did you lose both your Datakey and Recovery Code?",
+    "HS_LostBothB": "Unfortuately if you've lost both your Datakey and Recovery Code, we can't recover your profile data. To continue we need to reset your profile and give you a new access. This will remove all your previous data including all your chats and rooms. Do you want to continue?",
 
     "ImgUpload": "Upload Image",
     "ImgUploadDesc": "Select an image or drag it here.<br>Double-click to enter edit mode.",

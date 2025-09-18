@@ -14,10 +14,8 @@ use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
-use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\DefaultStorageService;
-use App\Services\Storage\FileStorageService;
 use App\Services\Storage\StorageServiceFactory;
+use App\Services\Storage\FileStorageService;
 use App\Services\SyncLog\Handlers\InvitationHandler;
 use App\Services\SyncLog\Handlers\MemberHandler;
 use App\Services\SyncLog\Handlers\PrivateUserDataHandler;
@@ -45,34 +43,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Register middleware aliases
-        Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
-        Route::aliasMiddleware('roomAdmin', AdminAccess::class);
-        Route::aliasMiddleware('roomEditor', EditorAccess::class);
-        Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
-        Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
-        Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
-        Route::aliasMiddleware('external_access', ExternalAccessMiddleware::class);
-        Route::aliasMiddleware('app_access', AppAccessMiddleware::class);
-        Route::aliasMiddleware('handle_app_connect', HandleAppConnectMiddleware::class);
-        Route::aliasMiddleware('app_user_request_required', AppUserRequestRequiredMiddleware::class);
-        Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
-
-        $this->app->singleton(
-            DefaultStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getDefaultStorage()
-        );
-
-        $this->app->singleton(
-            AvatarStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
-        );
-
-        $this->app->singleton(
-            FileStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
-        );
-        
+        $this->registerMiddlewareAliases();
         $this->registerHawkiTranslationLoader();
         $this->registerSyncLogServices();
         $this->registerStorageServices();
@@ -86,6 +57,7 @@ class AppServiceProvider extends ServiceProvider
         $this->bootSyncLogTracker();
         $this->bootWebdavStorage();
     }
+
     
     /**
      * Injects a custom translation loader, which uses the LanguageController to fetch translations,
@@ -124,15 +96,10 @@ class AppServiceProvider extends ServiceProvider
     protected function registerStorageServices(): void
     {
         $this->app->singleton(
-            DefaultStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getDefaultStorage()
-        );
-        
-        $this->app->singleton(
             AvatarStorageService::class,
             fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
         );
-        
+
         $this->app->singleton(
             FileStorageService::class,
             fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
@@ -153,14 +120,27 @@ class AppServiceProvider extends ServiceProvider
                 'userName' => $config['username'],
                 'password' => $config['password'],
             ]);
-            
+
             $adapter = new WebDAVAdapter($client, $config['prefix'] ?? '');
-            
+
             return new FilesystemAdapter(
                 new Filesystem($adapter),
                 $adapter,
                 $config
             );
         });
+    }
+
+    private function registerMiddlewareAliases(): void
+    {
+        // Register middleware aliases
+        Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
+        Route::aliasMiddleware('roomAdmin', AdminAccess::class);
+        Route::aliasMiddleware('roomEditor', EditorAccess::class);
+        Route::aliasMiddleware('api_isActive', ExternalCommunicationCheck::class);
+        Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
+        Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
+        Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
+        Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
     }
 }

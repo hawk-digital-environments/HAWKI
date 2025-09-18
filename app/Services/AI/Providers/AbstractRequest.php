@@ -35,31 +35,32 @@ abstract class AbstractRequest
     ): void
     {
         set_time_limit($timeout ?? 120);
-        
+
         // Initialize cURL
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $apiUrl ?? $model->getProvider()->getConfig()->getStreamUrl());
-        
+
         // Set common cURL options
         $headers = is_callable($getHttpHeaders) ? $getHttpHeaders($model) : $this->getHttpHeaders($model);
         $this->setCommonCurlOptions($ch, $payload, $headers);
-        
+
         // Set streaming-specific options
         $this->setStreamingCurlOptions($ch, function (string $chunk) use ($model, $onData, $chunkToResponse) {
+//            \Log::debug($chunk);
             $onData($chunkToResponse($model, $chunk));
         });
-        
+
         // Execute the cURL session
         curl_exec($ch);
-        
+
         // Handle errors
         if (curl_errno($ch)) {
             $onData($this->createErrorResponse(curl_error($ch)));
         }
-        
+
         curl_close($ch);
     }
-    
+
     /**
      * Executes a non-streaming request to the AI model.
      *
@@ -82,31 +83,31 @@ abstract class AbstractRequest
     ): AiResponse
     {
         set_time_limit($timeout ?? 120);
-        
+
         // Initialize cURL
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $apiUrl ?? $model->getProvider()->getConfig()->getApiUrl());
         // Set common cURL options
         $headers = is_callable($getHttpHeaders) ? $getHttpHeaders($model) : $this->getHttpHeaders($model);
         $this->setCommonCurlOptions($ch, $payload, $headers);
-        
+
         // Execute the request
         $response = curl_exec($ch);
-        
+
         // Handle errors
         if (curl_errno($ch)) {
             $error = 'Error: ' . curl_error($ch);
             curl_close($ch);
             return $this->createErrorResponse($error);
         }
-        
+
         curl_close($ch);
-        
+
         $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
-        
+
         return $dataToResponse($data);
     }
-    
+
     /**
      * Create a standardized error response
      * @param string $error
@@ -122,7 +123,7 @@ abstract class AbstractRequest
             error: $error,
         );
     }
-    
+
     /**
      * Set up common HTTP headers for API requests
      *
@@ -134,16 +135,16 @@ abstract class AbstractRequest
         $headers = [
             'Content-Type: application/json'
         ];
-        
+
         $apiKey = $model->getProvider()->getConfig()->getApiKey();
         // Add authorization header if API key is present
         if ($apiKey !== null) {
             $headers[] = 'Authorization: Bearer ' . $apiKey;
         }
-        
+
         return $headers;
     }
-    
+
     /**
      * Set common cURL options for all requests
      *
@@ -160,7 +161,7 @@ abstract class AbstractRequest
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     }
-    
+
     /**
      * Set up streaming-specific cURL options
      *
@@ -174,17 +175,17 @@ abstract class AbstractRequest
         curl_setopt($ch, CURLOPT_TIMEOUT, 0);
         curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
         curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 20);
-        
+
         $chunkHandler = new StreamChunkHandler($onData);
-        
+
         // Process each chunk as it arrives
         curl_setopt($ch, CURLOPT_WRITEFUNCTION, static function ($ch, $data) use ($chunkHandler) {
             if (connection_aborted()) {
                 return 0;
             }
-            
+
             $chunkHandler->handle($data);
-            
+
             return strlen($data);
         });
     }

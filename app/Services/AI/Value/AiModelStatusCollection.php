@@ -21,13 +21,13 @@ use Traversable;
 final class AiModelStatusCollection implements \IteratorAggregate
 {
     private array $statuses = [];
-    
+
     public function __construct(
         private readonly AiModelCollection $models
     )
     {
     }
-    
+
     /**
      * Set the status of a model.
      * @param AiModel $model
@@ -39,10 +39,10 @@ final class AiModelStatusCollection implements \IteratorAggregate
         if ($this->models->getModel($model->getId()) === null) {
             return;
         }
-        
+
         $this->statuses[$model->getId()] = $status;
     }
-    
+
     /**
      * The same as {@see self::setStatus} but accepts a model ID instead of a model instance.
      * If the model ID is not in the collection, nothing happens.
@@ -57,10 +57,10 @@ final class AiModelStatusCollection implements \IteratorAggregate
         if ($model === null) {
             return;
         }
-        
+
         $this->setStatus($model, $status);
     }
-    
+
     /**
      * Get the status of a model.
      * If the model is not in the collection, ModelOnlineStatus::UNKNOWN is returned.
@@ -71,7 +71,7 @@ final class AiModelStatusCollection implements \IteratorAggregate
     {
         return $this->statuses[$model->getId()] ?? ModelOnlineStatus::UNKNOWN;
     }
-    
+
     /**
      * Set all models to online.
      * @return void
@@ -82,7 +82,7 @@ final class AiModelStatusCollection implements \IteratorAggregate
             $this->setStatus($model, ModelOnlineStatus::ONLINE);
         }
     }
-    
+
     /**
      * Set all models to offline.
      * @return void
@@ -93,7 +93,7 @@ final class AiModelStatusCollection implements \IteratorAggregate
             $this->setStatus($model, ModelOnlineStatus::OFFLINE);
         }
     }
-    
+
     /**
      * Get all model IDs in the collection.
      * @return iterable<string>
@@ -104,7 +104,7 @@ final class AiModelStatusCollection implements \IteratorAggregate
             yield $model->getId();
         }
     }
-    
+
     /**
      * @inheritDoc
      * @return Traversable<AiModel>
