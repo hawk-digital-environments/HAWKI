@@ -49,12 +49,33 @@ class UserPresenter extends Presenter implements Personable, Searchable
     }
 
     /**
-     * Returns the URL for the user's Gravatar image, or a default image if one is not found.
+     * Returns the URL for the user's avatar image.
+     * Uses HAWKI's avatar storage system, then falls back to direct files and Gravatar.
      */
     public function image(): ?string
     {
-        $hash = md5(strtolower(trim($this->entity->email)));
+        // Check if user has a local avatar_id
+        if (! empty($this->entity->avatar_id)) {
+            // First, try HAWKI's structured avatar storage system
+            try {
+                $avatarStorage = app(\App\Services\Storage\AvatarStorageService::class);
+                $avatarUrl = $avatarStorage->getUrl($this->entity->avatar_id, 'profile_avatars');
+                if ($avatarUrl) {
+                    return $avatarUrl;
+                }
+            } catch (\Exception $e) {
+                // Continue to fallback options if avatar storage fails
+            }
 
+            // Fallback: Check if it's a direct filename in public/img/
+            $imagePath = public_path('img/'.$this->entity->avatar_id);
+            if (file_exists($imagePath)) {
+                return asset('img/'.$this->entity->avatar_id);
+            }
+        }
+
+        // Final fallback to Gravatar
+        $hash = md5(strtolower(trim($this->entity->email)));
         $default = urlencode('https://raw.githubusercontent.com/orchidsoftware/.github/main/web/avatars/gravatar.png');
 
         return "https://www.gravatar.com/avatar/$hash?d=$default";

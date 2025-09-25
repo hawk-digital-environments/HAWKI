@@ -20,8 +20,6 @@ class ExampleGridScreen extends Screen
 
     /**
      * The name of the screen displayed in the header.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -30,8 +28,6 @@ class ExampleGridScreen extends Screen
 
     /**
      * Display header description.
-     *
-     * @return string|null
      */
     public function description(): ?string
     {
@@ -51,9 +47,10 @@ class ExampleGridScreen extends Screen
     /**
      * The screen's layout elements.
      *
-     * @throws \Throwable
      *
      * @return array
+     *
+     * @throws \Throwable
      */
     public function layout(): iterable
     {

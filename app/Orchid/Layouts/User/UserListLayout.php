@@ -10,7 +10,6 @@ use Orchid\Screen\Actions\DropDown;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Actions\ModalToggle;
 use Orchid\Screen\Components\Cells\DateTimeSplit;
-use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Layouts\Persona;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
@@ -31,13 +30,11 @@ class UserListLayout extends Table
             TD::make('name', __('Name'))
                 ->sort()
                 ->cantHide()
-                ->filter(Input::make())
                 ->render(fn (User $user) => new Persona($user->presenter())),
 
             TD::make('email', __('Email'))
                 ->sort()
                 ->cantHide()
-                ->filter(Input::make())
                 ->render(fn (User $user) => ModalToggle::make($user->email)
                     ->modal('editUserModal')
                     ->modalTitle($user->presenter()->title())
@@ -45,6 +42,37 @@ class UserListLayout extends Table
                     ->asyncParameters([
                         'user' => $user->id,
                     ])),
+
+            TD::make('approval', __('Approval'))
+                ->sort()
+                ->render(function (User $user) {
+                    $badgeText = $user->approval ? 'Approved' : 'Pending';
+                    $badgeClass = $user->approval ? 'bg-success' : 'bg-secondary';
+
+                    // Prevent current user from changing their own approval status
+                    $currentUserId = auth()->id();
+                    if ($user->id === $currentUserId) {
+                        $dimmedBadgeClass = $user->approval ? 'bg-success bg-opacity-50' : 'bg-secondary bg-opacity-50';
+
+                        return "<span class=\"badge {$dimmedBadgeClass} border-0\" title=\"Cannot change your own approval status\">{$badgeText}</span>";
+                    }
+
+                    return Button::make($badgeText)
+                        ->method('toggleApproval', [
+                            'id' => $user->id,
+                        ])
+                        ->class("badge {$badgeClass} border-0");
+                }),
+
+            TD::make('auth_type', __('Auth Type'))
+                ->sort()
+                ->render(function (User $user) {
+                    $authType = $user->auth_type ?? 'unknown';
+                    $badgeClass = $authType === 'local' ? 'bg-primary' : 'bg-info';
+                    $displayText = ucfirst($authType);
+
+                    return "<span class=\"badge {$badgeClass} border-0\">{$displayText}</span>";
+                }),
 
             TD::make('created_at', __('Created'))
                 ->usingComponent(DateTimeSplit::class)

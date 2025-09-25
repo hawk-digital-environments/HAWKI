@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Orchid\Layouts\Role;
 
-use Illuminate\Support\Collection;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Orchid\Screen\Field;
 use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Fields\Group;
@@ -22,9 +22,10 @@ class RolePermissionLayout extends Rows
     /**
      * The screen's layout elements.
      *
-     * @throws Throwable
      *
      * @return Field[]
+     *
+     * @throws Throwable
      */
     public function fields(): array
     {

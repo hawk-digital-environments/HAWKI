@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Orchid\Screens;
 
+use App\Models\AppSystemImage;
+use Illuminate\Support\Facades\Cache;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
@@ -16,7 +18,16 @@ class PlatformScreen extends Screen
      */
     public function query(): iterable
     {
-        return [];
+        // Get the logo_svg from the database with caching
+        $logoSvg = Cache::remember('system_image_logo_svg', 3600, function () {
+            $systemImage = AppSystemImage::where('name', 'logo_svg')->where('active', true)->first();
+
+            return $systemImage ? $systemImage->file_path : null;
+        });
+
+        return [
+            'logoSvg' => $logoSvg,
+        ];
     }
 
     /**
@@ -32,7 +43,7 @@ class PlatformScreen extends Screen
      */
     public function description(): ?string
     {
-        return 'Welcome to your Orchid application.';
+        return 'Welcome to your HAWKI admin panel.';
     }
 
     /**
@@ -54,7 +65,7 @@ class PlatformScreen extends Screen
     {
         return [
             Layout::view('platform::partials.update-assets'),
-            Layout::view('platform::partials.welcome'),
+            Layout::view('orchid.partials.welcome'), // Use our custom welcome view in orchid directory
         ];
     }
 }

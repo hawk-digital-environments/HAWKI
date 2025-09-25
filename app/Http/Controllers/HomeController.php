@@ -22,10 +22,11 @@ use Illuminate\Support\Facades\Session;
 class HomeController extends Controller
 {
 
-    // Inject LanguageController instance
+    // Inject LanguageController and LocalizationController instances
     public function __construct(
-        private LanguageController $languageController,
-        private AiService          $aiService
+        private LanguageController    $languageController,
+        private LocalizationController $localizationController,
+        private AiService              $aiService
     )
     {
     }
@@ -43,8 +44,10 @@ class HomeController extends Controller
         $user = Auth::user();
 
 
-        // Call getTranslation method from LanguageController
+        // Call getTranslation method from LanguageController and merge with localized content
         $translation = $this->languageController->getTranslation();
+        $localizedContent = $this->localizationController->getAllLocalizedContent();
+        $translation = array_merge($translation, $localizedContent);
         $settingsPanel = (new SettingsService())->render();
 
 
@@ -121,6 +124,8 @@ class HomeController extends Controller
 
 
         $translation = $this->languageController->getTranslation();
+        $localizedContent = $this->localizationController->getAllLocalizedContent();
+        $translation = array_merge($translation, $localizedContent);
         $settingsPanel = $settingsService->render();
         $models = $this->aiService->getAvailableModels()->toArray();
 

@@ -21,9 +21,9 @@ class ExampleTextEditorsScreen extends Screen
     public function query(): iterable
     {
         return [
-            'quill'     => 'Hello! We collected all the fields in one place',
+            'quill' => 'Hello! We collected all the fields in one place',
             'simplemde' => '# Big header',
-            'code'      => Str::limit(file_get_contents(__FILE__), 500),
+            'code' => Str::limit(file_get_contents(__FILE__), 500),
         ];
     }
 
@@ -56,9 +56,10 @@ class ExampleTextEditorsScreen extends Screen
     /**
      * The screen's layout elements.
      *
-     * @throws \Throwable
      *
      * @return \Orchid\Screen\Layout[]
+     *
+     * @throws \Throwable
      */
     public function layout(): iterable
     {

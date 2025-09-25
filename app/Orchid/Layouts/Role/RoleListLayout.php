@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Orchid\Layouts\Role;
 
-use Orchid\Platform\Models\Role;
+use App\Models\Role;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Components\Cells\DateTimeSplit;
-use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
 
@@ -24,25 +23,30 @@ class RoleListLayout extends Table
     public function columns(): array
     {
         return [
-            TD::make('name', __('Name'))
+            TD::make('name', 'Name')
                 ->sort()
                 ->cantHide()
-                ->filter(Input::make())
                 ->render(fn (Role $role) => Link::make($role->name)
                     ->route('platform.systems.roles.edit', $role->id)),
 
-            TD::make('slug', __('Slug'))
+            TD::make('slug', 'Slug')
                 ->sort()
-                ->cantHide()
-                ->filter(Input::make()),
+                ->cantHide(),
 
-            TD::make('created_at', __('Created'))
+            TD::make('selfassign', 'Self-assignable')
+                ->sort()
+                ->render(fn (Role $role) => $role->selfassign
+                    ? '<span class="badge bg-success">true</span>'
+                    : '<span class="badge bg-secondary">false</span>'
+                ),
+
+            TD::make('created_at', 'Created')
                 ->usingComponent(DateTimeSplit::class)
                 ->align(TD::ALIGN_RIGHT)
                 ->defaultHidden()
                 ->sort(),
 
-            TD::make('updated_at', __('Last edit'))
+            TD::make('updated_at', 'Last edit')
                 ->usingComponent(DateTimeSplit::class)
                 ->align(TD::ALIGN_RIGHT)
                 ->sort(),

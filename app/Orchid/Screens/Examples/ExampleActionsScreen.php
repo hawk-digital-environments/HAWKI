@@ -26,17 +26,12 @@ class ExampleActionsScreen extends Screen
 
     /**
      * The name of the screen displayed in the header.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
         return 'Actions Form Controls';
     }
 
-    /**
-     * @return string|null
-     */
     public function description(): ?string
     {
         return 'Examples for creating a wide variety of forms.';
@@ -148,9 +143,6 @@ class ExampleActionsScreen extends Screen
         ];
     }
 
-    /**
-     * @return void
-     */
     public function buttonClickProcessing(): void
     {
         Toast::warning('Click Processing');

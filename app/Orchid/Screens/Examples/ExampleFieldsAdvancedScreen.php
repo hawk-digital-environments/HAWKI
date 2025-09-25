@@ -2,8 +2,8 @@
 
 namespace App\Orchid\Screens\Examples;
 
-use App\Orchid\Layouts\Examples\ExampleElements;
 use App\Models\User;
+use App\Orchid\Layouts\Examples\ExampleElements;
 use Orchid\Screen\Action;
 use Orchid\Screen\Fields\Attach;
 use Orchid\Screen\Fields\CheckBox;
@@ -34,7 +34,7 @@ class ExampleFieldsAdvancedScreen extends Screen
     public function query(): iterable
     {
         return [
-            'name'  => 'Hello! We collected all the fields in one place',
+            'name' => 'Hello! We collected all the fields in one place',
             'place' => [
                 'lat' => 37.181244855427394,
                 'lng' => -3.6021993309259415,
@@ -71,9 +71,10 @@ class ExampleFieldsAdvancedScreen extends Screen
     /**
      * The screen's layout elements.
      *
-     * @throws \Throwable
      *
      * @return \Orchid\Screen\Layout[]
+     *
+     * @throws \Throwable
      */
     public function layout(): iterable
     {
@@ -140,7 +141,7 @@ class ExampleFieldsAdvancedScreen extends Screen
                     Input::make('currency')
                         ->title('Currency euro:')
                         ->mask([
-                            'mask'         => '€ 999.999.999,99',
+                            'mask' => '€ 999.999.999,99',
                             'numericInput' => true,
                         ]),
                 ]),
@@ -205,7 +206,7 @@ class ExampleFieldsAdvancedScreen extends Screen
                 Layout::rows([
                     Select::make('robot.')
                         ->options([
-                            'index'   => 'Index',
+                            'index' => 'Index',
                             'noindex' => 'No index',
                         ])
                         ->multiple()

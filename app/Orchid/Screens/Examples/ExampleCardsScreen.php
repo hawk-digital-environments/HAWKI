@@ -2,8 +2,8 @@
 
 namespace App\Orchid\Screens\Examples;
 
-use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Orchid\Screen\Action;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Screen;
@@ -55,9 +55,10 @@ class ExampleCardsScreen extends Screen
     /**
      * The screen's layout elements.
      *
-     * @throws \Throwable
      *
      * @return array
+     *
+     * @throws \Throwable
      */
     public function layout(): iterable
     {

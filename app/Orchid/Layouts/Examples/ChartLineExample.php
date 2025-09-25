@@ -21,12 +21,12 @@ class ChartLineExample extends Chart
      * @var array
      */
     protected $lineOptions = [
-        'spline'     => 1,
+        'spline' => 1,
         'regionFill' => 1,
-        'hideDots'   => 0,
-        'hideLine'   => 0,
-        'heatline'   => 0,
-        'dotSize'    => 3,
+        'hideDots' => 0,
+        'hideLine' => 0,
+        'heatline' => 0,
+        'dotSize' => 3,
     ];
 
     /**
@@ -37,8 +37,8 @@ class ChartLineExample extends Chart
     {
         return [
             [
-                'label'   => 'Medium',
-                'value'   => 40,
+                'label' => 'Medium',
+                'value' => 40,
             ],
         ];
     }

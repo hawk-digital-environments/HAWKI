@@ -16,9 +16,10 @@ class ExternalCommunicationCheck
     public function handle(Request $request, Closure $next): Response
     {
 
-        if (!env('ALLOW_EXTERNAL_COMMUNICATION', false)) {
-            return response()->json(['response' => "External communication is not allowed. Please contact the administration for more information."], 403);
+        if (! config('sanctum.allow_external_communication', false)) {
+            return response()->json(['response' => 'External communication is not allowed. Please contact the administration for more information.'], 403);
         }
+
         return $next($request);
     }
 }

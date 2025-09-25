@@ -1,6 +1,5 @@
 <?php
 
-
 return [
     /*
     |--------------------------------------------------------------------------
@@ -22,9 +21,8 @@ return [
         'avatar_id' => env('HAWKI_AVATAR', 'hawkiAvatar.jpg'),
     ],
 
-    'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
+    'aiHandle' => '@'.ltrim(env('AI_MENTION_HANDLE', 'hawki'), '@'),
 
-
-
-
+    // use default or db
+    'ai_config_system' => 'default',
 ];

@@ -1,6 +1,7 @@
 <div class="main-sidebar">
         <div class="sidebar-content">
             <div class="upper-panel">
+                @if(Auth::user()->hasAccess('chat.access'))
                 <button id="chat-sb-btn" onclick="onSidebarButtonDown('chat')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
                     <x-icon name="chat-icon"/>
 
@@ -8,6 +9,9 @@
                         {{ $translation["Chat"] }}
                     </div>
                 </button>
+                @endif
+
+                @if(Auth::user()->hasAccess('groupchat.access') && config('app.groupchat_active', false))
                 <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent">
                     <x-icon name="assistant-icon"/>
 
@@ -15,6 +19,7 @@
                         {{ $translation["Groupchat"] }}
                     </div>
                 </button>
+                @endif
 
                 <button id="profile-sb-btn" onclick="onSidebarButtonDown('profile')" class="btn-sm sidebar-btn tooltip-parent">
                     <div class="profile-icon round-icon">

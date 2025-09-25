@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace App\Orchid\Filters;
 
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Orchid\Filters\Filter;
-use Orchid\Platform\Models\Role;
 use Orchid\Screen\Fields\Select;
 
 class RoleFilter extends Filter
 {
     /**
      * The displayable name of the filter.
-     *
-     * @return string
      */
     public function name(): string
     {
@@ -23,8 +21,6 @@ class RoleFilter extends Filter
 
     /**
      * The array of matched parameters.
-     *
-     * @return array
      */
     public function parameters(): array
     {
@@ -33,10 +29,6 @@ class RoleFilter extends Filter
 
     /**
      * Apply to a given Eloquent query builder.
-     *
-     * @param Builder $builder
-     *
-     * @return Builder
      */
     public function run(Builder $builder): Builder
     {

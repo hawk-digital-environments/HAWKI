@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Orchid\Layouts\Role;
 
 use Orchid\Screen\Field;
+use Orchid\Screen\Fields\CheckBox;
 use Orchid\Screen\Fields\Input;
 use Orchid\Screen\Layouts\Rows;
 
@@ -33,6 +34,12 @@ class RoleEditLayout extends Rows
                 ->title(__('Slug'))
                 ->placeholder(__('Slug'))
                 ->help(__('Actual name in the system')),
+
+            CheckBox::make('role.selfassign')
+                ->title(__('Self-assignable'))
+                ->placeholder(__('Allow users to self-assign this role during registration'))
+                ->help(__('When enabled, this role will be available for selection during guest registration'))
+                ->sendTrueOrFalse(),
         ];
     }
 }

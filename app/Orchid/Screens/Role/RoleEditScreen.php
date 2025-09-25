@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Orchid\Screens\Role;
 
+use App\Models\Role;
 use App\Orchid\Layouts\Role\RoleEditLayout;
 use App\Orchid\Layouts\Role\RolePermissionLayout;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Orchid\Platform\Models\Role;
 use Orchid\Screen\Action;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Screen;
@@ -30,8 +30,8 @@ class RoleEditScreen extends Screen
     public function query(Role $role): iterable
     {
         return [
-            'role'       => $role,
-            'permission' => $role->statusOfPermissions(),
+            'role' => $role,
+            'permission' => $role->getStatusPermission(),
         ];
     }
 
@@ -57,7 +57,7 @@ class RoleEditScreen extends Screen
     public function permission(): ?iterable
     {
         return [
-            'platform.systems.roles',
+            'platform.access.roles',
         ];
     }
 
@@ -92,7 +92,7 @@ class RoleEditScreen extends Screen
                 RoleEditLayout::class,
             ])
                 ->title('Role')
-                ->description('Defines a set of privileges that grant users access to various services and allow them to perform specific tasks or operations.'),
+                ->description('A role is a collection of privileges (of possibly different services like the Users service, Moderator, and so on) that grants users with that role the ability to perform certain tasks or operations.'),
 
             Layout::block([
                 RolePermissionLayout::class,
@@ -115,7 +115,13 @@ class RoleEditScreen extends Screen
             ],
         ]);
 
-        $role->fill($request->get('role'));
+        // Get role data from request
+        $roleData = $request->get('role', []);
+
+        // Handle checkbox: if not present in request, set to false
+        $roleData['selfassign'] = $request->boolean('role.selfassign', false);
+
+        $role->fill($roleData);
 
         $role->permissions = collect($request->get('permissions'))
             ->map(fn ($value, $key) => [base64_decode($key) => $value])
@@ -130,9 +136,9 @@ class RoleEditScreen extends Screen
     }
 
     /**
-     * @throws \Exception
-     *
      * @return \Illuminate\Http\RedirectResponse
+     *
+     * @throws \Exception
      */
     public function remove(Role $role)
     {
