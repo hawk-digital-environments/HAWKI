@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'HAWKI'),
-    'version' => "2.1.0",
+    'version' => '2.1.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -124,8 +124,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
-
-
-
+    'groupchat_active' => true,
 
 ];

@@ -39,7 +39,7 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
-        ]
+        ],
     ],
 
     /*
@@ -111,5 +111,47 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Local Authentication Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These options control the local user authentication functionality.
+    | Local authentication allows users to authenticate with username/password
+    | stored in the local database instead of external providers.
+    |
+    */
+
+    'local_authentication' => env('LOCAL_AUTHENTICATION', false),
+    'local_selfservice' => env('LOCAL_SELFSERVICE', false),
+    'local_needapproval' => env('LOCAL_NEEDAPPROVAL', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Method
+    |--------------------------------------------------------------------------
+    |
+    | This option defines the primary authentication method for the application.
+    | Supported methods: LDAP, OIDC, Shibboleth, LOCAL_ONLY
+    |
+    */
+
+    'authentication_method' => env('AUTHENTICATION_METHOD', 'LDAP'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Passkey Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These options control the passkey generation and validation for
+    | client-side encryption functionality.
+    |
+    */
+
+    'passkey_method' => env('PASSKEY_METHOD', 'default'),
+    'passkey_secret' => env('PASSKEY_SECRET', 'default-secret'),
+    'passkey_otp' => env('PASSKEY_OTP', false),
+    'passkey_otp_timeout' => env('PASSKEY_OTP_TIMEOUT', 300),
 
 ];

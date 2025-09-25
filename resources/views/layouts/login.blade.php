@@ -15,6 +15,7 @@
 
     <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/guest_request_functions.js') }}"></script>
 
     {!! $settingsPanel !!}
 
@@ -126,4 +127,89 @@
             console.error(error);
         }
     }
+
+    // Local authentication keydown handler
+    function onLocalLoginKeydown(event){
+        if(event.key === "Enter"){
+            const username = document.getElementById('account');
+            if(!username.value){
+                return;
+            }
+            const password = document.getElementById('password');
+            if(document.activeElement !== password){
+                password.focus();
+                return;
+            }
+            if(username.value && password.value){
+                LoginLocal();
+            }
+        }
+    }
+
+    // Guest login keydown handler  
+    function onGuestLoginKeydown(event){
+        if(event.key === "Enter"){
+            const username = document.getElementById('guest-account');
+            if(!username.value){
+                return;
+            }
+            const password = document.getElementById('guest-password');
+            if(document.activeElement !== password){
+                password.focus();
+                return;
+            }
+            if(username.value && password.value){
+                LoginLocal();
+            }
+        }
+    }
+
+    // Local login function
+    async function LoginLocal() {
+        try {
+            var formData = new FormData();
+            
+            // Check if we're in guest mode or main mode
+            const isGuestMode = document.getElementById('local-auth-panel') && 
+                               document.getElementById('local-auth-panel').style.display !== 'none';
+            
+            const accountField = isGuestMode ? 'guest-account' : 'account';
+            const passwordField = isGuestMode ? 'guest-password' : 'password';
+            const messageField = isGuestMode ? 'guest-login-message' : 'login-message';
+            
+            formData.append("account", document.getElementById(accountField).value);
+            formData.append("password", document.getElementById(passwordField).value);
+            
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+            const response = await fetch('/req/login-local', {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error("Login request failed");
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                await setOverlay(true, true)
+                window.location.href = data.redirectUri;
+            } else {
+                document.getElementById(messageField).textContent = 'Login Failed!';
+            }
+        } catch (error) {
+            console.error(error);
+            const messageField = document.getElementById('local-auth-panel') && 
+                               document.getElementById('local-auth-panel').style.display !== 'none' ? 
+                               'guest-login-message' : 'login-message';
+            document.getElementById(messageField).textContent = 'Login Failed!';
+        }
+    }
+
 </script>

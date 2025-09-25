@@ -2,31 +2,35 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSystemText;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Cookie; // Ensure this is imported
-use Illuminate\Support\Facades\Log;
 
 class LanguageController extends Controller
 {
-    /// Changes the language based on the previous values or the default parameters as fallback
+    // Static cache for the current request to avoid repeated accesses
+    protected static $requestCache = [];
+
+    // / Changes the language based on previous values or falls back to default parameters
     public function getTranslation()
     {
         $langs = config('locale.langs');
-        //LANGUAGE CHANGE...
+        // LANGUAGE CHANGE...
         if (Session::has('language')) {
             $language = Session::get('language');
         } else {
-            // try to get cookie from last use
+            // Try to get cookie from last use
             if (Cookie::get('lastLanguage_cookie') && Cookie::get('lastLanguage_cookie') != '') {
                 $language = $langs[Cookie::get('lastLanguage_cookie')];
             } else {
-                // If there's not a cookie, try the default language from config or set a hardcoded default
+                // If there's no cookie, try the default language from config or use a hardcoded default
                 $language = $langs[config('locale.default_language')];
             }
         }
-        if(gettype($language) == 'string'){
-            $langs[config($language)];
+        if (gettype($language) == 'string') {
+            $language = $langs[config($language)];
         }
 
         // Store the language in session
@@ -34,10 +38,13 @@ class LanguageController extends Controller
         // Load the language files
         $translation = $this->fetchTranslationFiles($language['id']);
 
+        // Process placeholders in all translations
+        $translation = $this->processAllPlaceholders($translation, $language['id']);
+
         return $translation;
     }
 
-    /// Change language to the request language
+    // / Changes language based on the request language
     public function changeLanguage(Request $request)
     {
         $validatedData = $request->validate([
@@ -48,8 +55,9 @@ class LanguageController extends Controller
         $langs = config('locale.langs');
         $language = $langs[$langId];
 
-        if (!$language) {
+        if (! $language) {
             error_log('bad lang');
+
             return response()->json(['success' => false, 'error' => 'Invalid language'], 400);
         }
 
@@ -70,57 +78,136 @@ class LanguageController extends Controller
         return $response;
     }
 
-    /// return array of languages
-    public function getAvailableLanguages(){
+    // / Returns an array of languages
+    public function getAvailableLanguages()
+    {
         $languages = config('locale')['langs'];
         $availableLocale = [];
-        foreach($languages as $lang){
-            if($lang['active']){
+        foreach ($languages as $lang) {
+            if ($lang['active']) {
                 array_push($availableLocale, $lang);
             }
         }
+
         return $availableLocale;
     }
 
-    private function fetchTranslationFiles($prefix) {
-        $languagePath = resource_path('language/');
-        $files = scandir($languagePath);
+    private function fetchTranslationFiles($prefix)
+    {
+        // Use Laravel Cache to cache the translations
+        return Cache::remember("translations_{$prefix}", now()->addHours(1), function () use ($prefix) {
+            return AppSystemText::where('language', $prefix)
+                ->get()
+                ->pluck('content', 'content_key')
+                ->toArray();
+        });
+    }
 
-        $translations = [];
-        $defaultTranslations = [];
+    /**
+     * Process placeholders in all translation items
+     *
+     * @param  array  $translations  Array of translations
+     * @param  string  $language  Current language code (e.g., 'de_DE')
+     */
+    protected function processAllPlaceholders(array $translations, string $language): array
+    {
+        // Get placeholders map for this language
+        $placeholders = $this->getPlaceholders($language);
 
-        // Filter and load files with the specific prefix
-        foreach ($files as $file) {
-            // Check if the file has the correct prefix
-            if (strpos($file, $prefix) !== false) {
-                $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
-
-                if ($fileExtension === 'json') {
-                    // Read JSON file as associative array
-                    $fileContent = file_get_contents($languagePath . $file);
-                    $translationArray = json_decode($fileContent, true);
-
-                    if ($translationArray !== null) {
-                        // Check if it's a default language file
-                        if ($file === $prefix . '.json') {
-                            $defaultTranslations = array_merge($defaultTranslations, $translationArray);
-                        } else {
-                            $translations = array_merge($translations, $translationArray);
-                        }
-                    }
-                } elseif ($fileExtension === 'html') {
-                    // Read HTML file and create a key-value pair
-                    $htmlContent = file_get_contents($languagePath . $file);
-                    $baseFileName = basename($file, '_' . $prefix . '.html');
-                    $keyName = '_' . $baseFileName;
-                    $translations[$keyName] = $htmlContent;
-                }
+        // Replace placeholders in all translations
+        foreach ($translations as $key => $value) {
+            if (is_string($value)) {
+                $translations[$key] = strtr($value, $placeholders);
             }
         }
 
-        // Merge default translations with lower priority
-        $mergedTranslations = array_merge($defaultTranslations, $translations);
+        return $translations;
+    }
 
-        return $mergedTranslations;
+    /**
+     * Get placeholder replacements for a specific language
+     *
+     * @return array Associative array of placeholder => replacement value
+     */
+    protected function getPlaceholders(string $language): array
+    {
+        // Check if placeholders are already in request cache
+        $requestCacheKey = "placeholders_{$language}";
+        if (isset(self::$requestCache[$requestCacheKey])) {
+            return self::$requestCache[$requestCacheKey];
+        }
+
+        // Use persistent cache for placeholders with a longer lifetime
+        $cacheKey = "system_placeholders_{$language}";
+
+        $placeholders = Cache::remember($cacheKey, now()->addDay(), function () use ($language) {
+            // Build placeholder mapping
+            $mapping = [];
+
+            // Get app name
+            $appName = $this->getCachedAppName($language);
+            $mapping[':system'] = $appName;
+
+            // Additional placeholders can be added here
+            // $mapping[':placeholder'] = $value;
+
+            return $mapping;
+        });
+
+        // Store in request cache
+        self::$requestCache[$requestCacheKey] = $placeholders;
+
+        return $placeholders;
+    }
+
+    /**
+     * Get and cache the application name
+     */
+    protected function getCachedAppName(string $language): string
+    {
+        // Check request cache first
+        $requestCacheKey = 'app_name';
+        if (isset(self::$requestCache[$requestCacheKey])) {
+            return self::$requestCache[$requestCacheKey];
+        }
+
+        // Use persistent cache
+        $cacheKey = 'app_name';
+
+        $appName = Cache::remember($cacheKey, now()->addDay(), function () {
+            // Get app name from config instead of database
+            return config('app.name');
+        });
+
+        // Store in request cache
+        self::$requestCache[$requestCacheKey] = $appName;
+
+        return $appName;
+    }
+
+    /**
+     * Clear all language-related caches (for use in system text operations)
+     * This method clears translation caches but doesn't handle system text model caches directly,
+     * as system texts are typically cached at the application level.
+     */
+    public static function clearCaches(?string $language = null)
+    {
+        if ($language) {
+            // Clear specific language caches
+            Cache::forget("translations_{$language}");
+            Cache::forget("system_placeholders_{$language}");
+            Cache::forget("app_name_{$language}");
+        } else {
+            // Clear request cache
+            self::$requestCache = [];
+
+            // Get all supported languages
+            $supportedLanguages = ['de_DE', 'en_US'];
+
+            // Clear caches for all languages
+            foreach ($supportedLanguages as $lang) {
+                self::clearCaches($lang);
+            }
+        }
     }
 }

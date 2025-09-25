@@ -1,5 +1,5 @@
 {
-    "Guidelines": "Leitfaden zum Umgang mit HAWKI",
+    "Guidelines": "Leitfaden zum Umgang mit :system",
 
     "Chat":"Chat",
     "Groupchat":"Gruppenchat",
@@ -14,7 +14,7 @@
     "Cnf_leaveRoom": "Möchtest du diesen Raum wirklich verlassen?",
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
 
-    "Cnf_tokenMsg1": "Bitte bewahre diesen Token sicher auf und verwende ihn mit Bedacht, um dein Konto zu schützen. Wenn HAWKI verdächtiges Verhalten feststellt, wird dieser Token widerrufen.",
+    "Cnf_tokenMsg1": "Bitte bewahre diesen Token sicher auf und verwende ihn mit Bedacht, um dein Konto zu schützen. Wenn :system verdächtiges Verhalten feststellt, wird dieser Token widerrufen.",
     "Cnf_tokenMsg2": "Sobald du dieses Fenster schließt, kannst du diesen Schlüssel nicht mehr erneut abrufen.",
     "Cnf_tokenMsgSuccess": "Token erfolgreich erstellt",
     "Cnf_tokenRevoke": "Bist du sicher, dass du den Token widerrufen möchtest?",
@@ -22,7 +22,7 @@
 
     "Cnf_RemoveFile":"Möchtest du diese Datei wirklich löschen?",
 
-    "Logout_Warning":"Um HAWKI weiterhin zu nutzen, müssen Sie diese Bedingungen akzeptieren.<strong>Klicken Sie auf „Bestätigen“, um sich von HAWKI abzumelden.</strong>",
+    "Logout_Warning":"Um :system weiterhin zu nutzen, müssen Sie diese Bedingungen akzeptieren.<strong>Klicken Sie auf „Bestätigen“, um sich von :system abzumelden.</strong>",
 
     "Input_Err_UploadFailed": "Fehler beim Hochladen der Datei!",
     "Input_Err_NotSupported": "Dateityp wird nicht unterstützt:",
@@ -33,7 +33,7 @@
 
     "Summery": "Zusammenfassung",
     "Auto_Generated":"automatisiert erstellt",
-    "Exported_At":"Exportiert aus HAWKI am:",
+    "Exported_At":"Exportiert aus :system am:",
     "By":"von",
     "Chatlog":"Verlauf",
     "Rooms": "Räume",
@@ -41,12 +41,7 @@
     "RemovedMember": "nicht verfügbar",
 
     "Abort": "Abbrechen",
-    "AboutHAWKI": "Über HAWKI",
-    "AboutHAWKI_ArianInfo": " | Wissenschaftlicher Mitarbeiter | HAWKI",
-    "AboutHAWKI_Info": "Das Angebot wurde im Interaction Design Lab der HAWK entwickelt, um allen Hochschulangehörigen die Möglichkeit zu geben, künstliche Intelligenz in die Arbeitsprozesse zu integrieren und einen Begegnungsraum zu haben, damit sich eventuell neue Arbeitsweisen ergeben und eine hochschulinterne Diskussion über den Einsatz von K.I. entstehen kann. Dieses Angebot möchte auch didaktisch unterstützen, ein Verständnis für die Wirkungsweise eines solchen Sprachmodells zu entwickeln und gibt daher in den verschiedenen Bereichen auch Hinweise auf gut funktionierende Prompts (Texteingaben). Wir freuen uns über konstruktives Feedback, um dieses Angebot entsprechend Ihren Bedürfnissen und Erkenntnissen weiterzuentwickeln.",
-    "AboutHAWKI_JonasInfo": " | Wissenschaftlicher Mitarbeiter | Hands On",
-    "AboutHAWKI_StefanInfo": " | Digital Environments | Interaction Design ",
-    "AboutHAWKI_VincentInfo": " | Wissenschaftlicher Mitarbeiter | Leitung Interaction Design Lab",
+    "AboutHAWKI": "Über :system",
     "AccessTokens": "Access Tokens",
     "Add": "Hinzufügen",
     "Bio": "Bio",
@@ -79,11 +74,50 @@
     "HS_PasskeyIs": "Dein Datakey ist:",
     "HS_ResetProfile": "Profil zurücksetzen",
 
+    "HS-EnterBackupMsg": "Bitte gib deinen Wiederherstellungscode ein.",
+    "HS-EnterPasskeyMsg": "Bitte gib deinen Datakey ein.",
+    "HS-ForgottenPasskey": "Datakey vergessen?",
+    "HS-ForgottenBackup": "Wiederherstellungscode verloren?",
+    "HS-PasskeyIs": "Dein Datakey ist:",
+    "HS-ResetProfile": "Profil zurücksetzen",
+    "HS-LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
+    "HS-LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
+
     "HS_RepeatPassKey": "Bitte wiederhole das Datakey.",
     "HS_DifferentEntries": "Die Eingaben sind nicht gleich!",
 
-    "HS_LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
-    "HS_LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
+    "HS-LoginCodeH": ":system Log-in Code 🔐",
+    "HS-LoginCodeT": "Wir senden Ihnen einen Log-in Code per E-Mail zur sicheren Anmeldung.",
+    "HS-LoginCodeB1": "Log-in Code per E-Mail senden",
+    "HS-LoginCodeB2": "Sende E-Mail...",
+    "HS-LoginCodeB3": "Log-in Code verifizieren",
+    "HS-LoginCodeB4": "Log-in Code erneut senden",
+    "HS-LoginCodeB5": "Log-in Code gesendet!",
+    "HS-LoginCodeB6": "Fehler beim Senden",
+    "HS-LoginCodeB7": "Verifiziere Log-in Code...",
+    "HS-LoginCodeB8": "Log-in Code verifiziert!",
+    "HS-LoginCodeB9": "Logge ein...",
+    "HS-LoginCodeB10": "Ungültiger Log-in Code",
+    "HS-LoginCodeB11": "Verifizierung fehlgeschlagen",
+
+    "HS-LoginCodeE1": "Bitte warten Sie, bevor Sie erneut einen Log-in Code anfordern können.",
+    "HS-LoginCodeE2": "Fehler beim Senden des Log-in Codes",
+    "HS-LoginCodeE3": "Bitte geben Sie den Log-in Code ein",
+    "HS-LoginCodeE4": "Fehler beim Generieren des Passkeys",
+    "HS-LoginCodeE5": "Fehler bei der Log-in Code-Verifizierung",
+    "HS-LoginCodeE6": "Log-in Code ist abgelaufen. Bitte fordern Sie einen neuen an.",
+    
+    "HS-LoginCodeM": "Log-in Code gesendet an",
+
+    "HS-LoginCodeT1": "Erneut senden in",
+    "HS-LoginCodeT2": "s möglich",
+    "HS-LoginCodeT3": "Log-in Code abgelaufen",
+
+    "HS-LoginCodePH": "6-stelligen Log-in Code eingeben",
+
+    "HS-ErrorTitle": "Fehler beim Handshake",
+    "HS-ErrorMessage": "Der Handshake-Prozess ist fehlgeschlagen. Bitte versuchen Sie es erneut oder melden Sie sich ab.",
+    "HS-Logout": "Abmelden",
 
 
     "ImgUpload": "Bild hochladen",
@@ -101,7 +135,7 @@
     "MemberInvite": "Mitglieder einladen",
     "MemberRemove": "Mitglied entfernen",
     "Members": "Mitglieder",
-    "MistakeWarning": "HAWKI kann Fehler machen. Überprüfe wichtige Informationen.",
+    "MistakeWarning": ":system kann Fehler machen. Überprüfe wichtige Informationen.",
     "Models": "Modelle",
     "password": "Kennwort",
     "PersonalData": "Persönliche Daten",
@@ -137,12 +171,43 @@
     "theme": "Theme",
     "Think": "Denken",
     "username": "Benutzername",
+    "guest_username": "Benutzername",
+    "guest_password": "Passwort",
+    "login_title": "Anmelden",
+    "local_login": "Lokale Anmeldung",
+    "local_users_login": "Lokale Benutzer Anmeldung",
+    "request_guest_access": "Gastzugang beantragen",
+    "back_to_main_login": "Zurück zur Hauptanmeldung",
+    "back_to_login": "Zurück zur Anmeldung",
+    "confirm_password": "Passwort bestätigen",
+    "email": "E-Mail",
+    "user_group": "Benutzergruppe",
+    "select_user_group": "Benutzergruppe auswählen",
+    "submit_request": "Antrag absenden",
+    "submitting": "Wird gesendet...",
+    "submitting_text": "Bitte warten Sie, während wir Ihren Antrag bearbeiten.",
+    "success": "Erfolg!",
+    "success_message": "Ihr Gastzugangsantrag wurde erfolgreich übermittelt. Sie können sich jetzt mit Ihren Zugangsdaten anmelden.",
+    "error": "Fehler:",
+    "network_error": "Ein Netzwerkfehler ist aufgetreten. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "general_error": "Ein Fehler ist beim Bearbeiten Ihres Antrags aufgetreten. Bitte versuchen Sie es erneut.",
     "You": "Du",
     "PH_AboutMe": "Über mich...",
     "PH_ChooseName": "Wähle einen Namen",
     "PH_ChooseDescription": "Beschreibung eingeben",
     "PH_SystemPrompt": "Gebe deine bevorzugte Systemprompt ein",
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
-    "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
-    "UploadFile": "Datei hochladen"
+    "Api_Warning": "Um die Sprachmodelle von :system auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
+    "UploadFile": "Datei hochladen",
+
+    "Reg_SL0_H": "Deine Daten sind sicher! 🔐",
+    "Reg_SL0_B": "Los geht's!",
+    "Reg_SL0_T": "<strong>Wichtig:</strong> Deine Chats werden verschlüsselt, bevor sie auf unserem Server gespeichert werden. Nur die von dir für :system registrierten Geräte können diese Chats entschlüsseln. 💻📲 <br>Wenn du dich auf einem neuen Gerät anmelden möchtest, musst du deine Identität mit einem Freischaltcode bestätigen, den du per E-Mail erhältst. 📫",
+    "Reg_SL7_H": "Zugang wird geprüft ⏰",
+    "Reg_SL7_T": "Ihr Antrag wird überprüft. Sie erhalten eine E-Mail-Benachrichtigung über den Status Ihres Antrags.",
+    "Reg_SL7_Contact": "Haben Sie Fragen? Kontaktieren Sie uns unter:",
+    
+    "change_password": "Passwort ändern",
+    "change_password_text": "Bitte setzen Sie ein neues Passwort für Ihr Konto.",
+    "new_password": "Neues Passwort"
 }
