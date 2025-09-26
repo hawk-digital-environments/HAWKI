@@ -2,7 +2,7 @@
 
 namespace App\Orchid\Screens\ModelSettings;
 
-use App\Models\AppSystemPrompt;
+use App\Models\AiAssistantPrompt;
 use App\Models\AiModel;
 use App\Services\SettingsService;
 use Illuminate\Http\Request;
@@ -41,20 +41,20 @@ class UtilityModelsSettingsScreen extends Screen
             'available_models' => $this->getAllAvailableModels(),
             'prompts' => [
                 'default_system_prompt' => [
-                    'de_DE' => AppSystemPrompt::getPrompt('default_system_prompt', 'de_DE') ?? 'Default German prompt',
-                    'en_US' => AppSystemPrompt::getPrompt('default_system_prompt', 'en_US') ?? 'Default English prompt',
+                    'de_DE' => AiAssistantPrompt::getPrompt('Default_Prompt', 'de_DE') ?? 'Default German prompt',
+                    'en_US' => AiAssistantPrompt::getPrompt('Default_Prompt', 'en_US') ?? 'Default English prompt',
                 ],
                 'title_generation_prompt' => [
-                    'de_DE' => AppSystemPrompt::getPrompt('title_generation_prompt', 'de_DE') ?? 'Title Generation German prompt',
-                    'en_US' => AppSystemPrompt::getPrompt('title_generation_prompt', 'en_US') ?? 'Title Generation English prompt',
+                    'de_DE' => AiAssistantPrompt::getPrompt('Name_Prompt', 'de_DE') ?? 'Title Generation German prompt',
+                    'en_US' => AiAssistantPrompt::getPrompt('Name_Prompt', 'en_US') ?? 'Title Generation English prompt',
                 ],
                 'prompt_improvement_prompt' => [
-                    'de_DE' => AppSystemPrompt::getPrompt('prompt_improvement_prompt', 'de_DE') ?? 'Prompt Improver German prompt',
-                    'en_US' => AppSystemPrompt::getPrompt('prompt_improvement_prompt', 'en_US') ?? 'Prompt Improver English prompt',
+                    'de_DE' => AiAssistantPrompt::getPrompt('Improvement_Prompt', 'de_DE') ?? 'Prompt Improver German prompt',
+                    'en_US' => AiAssistantPrompt::getPrompt('Improvement_Prompt', 'en_US') ?? 'Prompt Improver English prompt',
                 ],
                 'summary_prompt' => [
-                    'de_DE' => AppSystemPrompt::getPrompt('summary_prompt', 'de_DE') ?? 'Summarizer German prompt',
-                    'en_US' => AppSystemPrompt::getPrompt('summary_prompt', 'en_US') ?? 'Summarizer English prompt',
+                    'de_DE' => AiAssistantPrompt::getPrompt('Summery_Prompt', 'de_DE') ?? 'Summarizer German prompt',
+                    'en_US' => AiAssistantPrompt::getPrompt('Summery_Prompt', 'en_US') ?? 'Summarizer English prompt',
                 ],
             ],
         ];
@@ -280,7 +280,7 @@ class UtilityModelsSettingsScreen extends Screen
         $prompts = $request->input('prompts', []);
         foreach ($prompts as $modelType => $languages) {
             foreach ($languages as $lang => $promptText) {
-                AppSystemPrompt::setPrompt($modelType, $lang, $promptText);
+                AiAssistantPrompt::setPrompt($modelType, $lang, $promptText);
             }
         }
 
@@ -328,7 +328,7 @@ class UtilityModelsSettingsScreen extends Screen
                             $promptSubstring = substr($dePrompts[$jsonKey], 0, 50).(strlen($dePrompts[$jsonKey]) > 50 ? '...' : '');
                             Log::info("German prompt content (truncated): $promptSubstring");
 
-                            AppSystemPrompt::setPrompt($modelType, 'de_DE', $dePrompts[$jsonKey]);
+                            AiAssistantPrompt::setPrompt($modelType, 'de_DE', $dePrompts[$jsonKey]);
                             $importedCount++;
                             Log::info("Successfully imported German prompt for '$jsonKey'");
                         } catch (\Exception $e) {
@@ -360,7 +360,7 @@ class UtilityModelsSettingsScreen extends Screen
                             Log::info("Processing English prompt for key '$jsonKey' -> model_type '$modelType'");
 
                             // Use the correct language code 'en_US'
-                            AppSystemPrompt::setPrompt($modelType, 'en_US', $enPrompts[$jsonKey]);
+                            AiAssistantPrompt::setPrompt($modelType, 'en_US', $enPrompts[$jsonKey]);
                             $importedCount++;
                             Log::info("Successfully imported English prompt for '$jsonKey'");
                         } catch (\Exception $e) {
@@ -392,16 +392,16 @@ class UtilityModelsSettingsScreen extends Screen
     public function runSystemPromptSeeder()
     {
         try {
-            Log::info('=== Starte AppSystemPromptSeeder ===');
+            Log::info('=== Starte AiAssistantPromptSeeder ===');
 
             $output = Artisan::call('db:seed', [
-                '--class' => 'AppSystemPromptSeeder',
+                '--class' => 'AiAssistantPromptSeeder',
             ]);
 
             Log::info('Seeder-Ausgabe: '.Artisan::output());
             Toast::success('System Prompts wurden erfolgreich aus dem Seeder geladen.');
         } catch (\Exception $e) {
-            Log::error('Fehler beim Ausführen des AppSystemPromptSeeders: '.$e->getMessage());
+            Log::error('Fehler beim Ausführen des AiAssistantPromptSeeders: '.$e->getMessage());
             Toast::error('Fehler beim Ausführen des Seeders: '.$e->getMessage());
         }
 

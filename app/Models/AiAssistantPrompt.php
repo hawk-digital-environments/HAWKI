@@ -5,9 +5,16 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class AppSystemPrompt extends Model
+class AiAssistantPrompt extends Model
 {
     use HasFactory;
+
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'ai_assistants_prompts';
 
     /**
      * The attributes that are mass assignable.
@@ -17,6 +24,16 @@ class AppSystemPrompt extends Model
         'language',
         'prompt_text',
     ];
+
+    /**
+     * Get the table associated with the model.
+     *
+     * @return string
+     */
+    public function getTable()
+    {
+        return 'ai_assistants_prompts';
+    }
 
     /**
      * Get system prompt by model type and language.

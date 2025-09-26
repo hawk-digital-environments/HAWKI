@@ -34,10 +34,14 @@ class SystemSettingsScreen extends Screen
      */
     public function query(): iterable
     {
-        $basicSettings = AppSetting::where('group', 'basic')->get();
+        $basicSettings = AppSetting::where('group', 'basic')
+            ->where('source', '!=', 'hawki')
+            ->get();
+        $hawkiSettings = AppSetting::where('source', 'hawki')->get();
 
         return [
             'basic' => $basicSettings,
+            'hawki' => $hawkiSettings,
         ];
     }
 
@@ -90,10 +94,10 @@ class SystemSettingsScreen extends Screen
     {
         $generalSettings = [];
         $systemSettings = [];
-        $chatSettings = [];
+        $hawkiFeatureSettings = [];
         $overrideSettings = [];
 
-        // Gruppiere die Einstellungen nach Kategorien
+        // Gruppiere die basic Einstellungen nach Kategorien
         foreach ($this->query()['basic'] as $setting) {
             $key = $setting->key;
 
@@ -102,14 +106,17 @@ class SystemSettingsScreen extends Screen
                 $generalSettings[] = $this->generateFieldForSetting($setting);
             } elseif (in_array($key, ['app_url', 'app_env', 'app_timezone', 'app_locale'])) {
                 $systemSettings[] = $this->generateFieldForSetting($setting);
-            } elseif (str_contains($key, 'groupchat') || str_contains($key, 'ai_handle')) {
-                $chatSettings[] = $this->generateFieldForSetting($setting);
             } elseif (in_array($key, ['app_debug'])) {
                 $overrideSettings[] = $this->generateFieldForSetting($setting);
             } else {
                 // Fallback für neue/unbekannte Einstellungen
                 $generalSettings[] = $this->generateFieldForSetting($setting);
             }
+        }
+
+        // Lade alle HAWKI Feature Settings (source = "hawki")
+        foreach ($this->query()['hawki'] as $setting) {
+            $hawkiFeatureSettings[] = $this->generateFieldForSetting($setting);
         }
 
         // Array für alle Layouts vorbereiten
@@ -133,13 +140,13 @@ class SystemSettingsScreen extends Screen
                 ->description('Core system configuration including environment and locale settings.');
         }
 
-        // Chat-Einstellungen
-        if (! empty($chatSettings)) {
+        // HAWKI Feature Settings
+        if (! empty($hawkiFeatureSettings)) {
             $layouts[] = Layout::block([
-                Layout::rows($chatSettings),
+                Layout::rows($hawkiFeatureSettings),
             ])
                 ->title('App Feature Settings')
-                ->description('Application-specific features and functionality configuration.');
+                ->description('HAWKI-specific features and functionality configuration.');
         }
 
         // // Override/Overwrite Settings

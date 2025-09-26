@@ -29,7 +29,7 @@
             </div>
         </div>
 
-        <div class="slide" data-index="2" @if(!config('app.groupchat_active', true)) style="display: none;" @endif>
+        <div class="slide" data-index="2" @if(!config('hawki.groupchat_active', true)) style="display: none;" @endif>
             <!-- Groupchat Slide -->
             <h1>{{ $translation["Reg_SL2_H"] }}</h1>
             <div class="slide-content">
@@ -150,7 +150,7 @@
     let passkeyMethod = @json($passkeyMethod ?? 'user');
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
     let needsPasswordReset = @json($needsPasswordReset ?? false);
-    let groupchatActive = @json(config('app.groupchat_active', true));
+    let groupchatActive = @json(config('hawki.groupchat_active', true));
     let needsApproval = @json($needsApproval ?? false);
     const translation = @json($translation);
     

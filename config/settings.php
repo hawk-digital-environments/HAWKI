@@ -25,13 +25,14 @@ return [
         'env' => 'Environment (local, production, testing)',
         'timezone' => 'Default timezone',
         'locale' => 'Default locale',
-        'debug' => 'Enable debug mode (true/false)',
-        'groupchat_active' => 'Enable group chat (true/false)',
+        'debug' => 'Enable debug mode',
 
     ],
     'hawki' => [
-        'aiHandle' => 'AI assistant handle for group chat (e.g., hawki - @ will be added automatically)',
-        'ai_config_system' => 'System to manage AI configurations (default or db)',
+        'aiHandle' => 'AI assistant handle for group chat (@ will be added automatically)',
+        'groupchat_active' => 'Enable group chat',
+        'ai_config_system' => 'DB-based AI configuration system',
+        'language_controller_system' => 'Use database for translations (true) or JSON files (false)',
 
     ],
     'sanctum' => [

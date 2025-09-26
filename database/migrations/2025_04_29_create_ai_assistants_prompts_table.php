@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('app_system_prompts', function (Blueprint $table) {
+        Schema::create('ai_assistants_prompts', function (Blueprint $table) {
             $table->id();
-            $table->string('prompt_type'); // z.B. 'default_model', 'title_generation', etc.
-            $table->string('language', 10); // z.B. 'de_DE', 'en_US', erhöht von 5 auf 10 Zeichen
+            $table->string('prompt_type'); // Keys that match JSON translation keys (e.g. 'Name_Prompt', 'Default_Prompt', etc.)
+            $table->string('language', 10); // e.g. 'de_DE', 'en_US'
             $table->text('prompt_text');
             $table->timestamps();
 
-            // Unique-Constraint für model_type und language
+            // Unique-Constraint für prompt_type und language
             $table->unique(['prompt_type', 'language']);
         });
     }
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('app_system_prompts');
+        Schema::dropIfExists('ai_assistants_prompts');
     }
 };

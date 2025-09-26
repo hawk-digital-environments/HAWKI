@@ -123,7 +123,7 @@ class AppSettingsSeeder extends Seeder
             $type = $this->determineType($value, $dbKey);
 
             // Verwende die benutzerdefinierte Beschreibung, falls vorhanden
-            $description = $customDescription ?: ('');
+            $description = $customDescription ?: null;
 
             $this->createOrUpdateSetting(
                 $dbKey,
@@ -242,7 +242,7 @@ class AppSettingsSeeder extends Seeder
     }
 
     /**
-     * Creates a setting only if it doesn't exist (no updates)
+     * Creates or updates a setting (creates new, updates description for existing)
      *
      * @param  string  $key
      * @param  mixed  $value
@@ -255,8 +255,16 @@ class AppSettingsSeeder extends Seeder
      */
     private function createOrUpdateSetting($key, $value, $group, $type, $description = null, $isPrivate = false, $source = null)
     {
-        // Check if setting already exists - if so, skip it
-        if (AppSetting::where('key', $key)->exists()) {
+        // Check if setting already exists
+        $existingSetting = AppSetting::where('key', $key)->first();
+        
+        if ($existingSetting) {
+            // Update only the description if the setting exists and description is not empty
+            if (!empty($description) && $existingSetting->description !== $description) {
+                $existingSetting->description = $description;
+                $existingSetting->save();
+                $this->command->info("Updated description for existing setting: {$key}");
+            }
             return;
         }
 
@@ -278,5 +286,7 @@ class AppSettingsSeeder extends Seeder
             'description' => $description,
             'is_private' => $isPrivate,
         ]);
+        
+        $this->command->info("Created new setting: {$key}");
     }
 }

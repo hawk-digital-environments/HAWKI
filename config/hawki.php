@@ -23,6 +23,8 @@ return [
 
     'aiHandle' => '@'.ltrim(env('AI_MENTION_HANDLE', 'hawki'), '@'),
 
-    // use default or db
+    // use false (JSON files) or true (database)
+    'groupchat_active' => true,
     'ai_config_system' => 'default',
+    'language_controller_system' => (bool) env('HAWKI_LANGUAGE_CONTROLLER_DB', false),
 ];

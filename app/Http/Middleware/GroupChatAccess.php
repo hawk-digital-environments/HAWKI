@@ -23,7 +23,7 @@ class GroupChatAccess
         }
 
         // Check if group chat is globally enabled
-        if (! config('app.groupchat_active', false)) {
+        if (! config('hawki.groupchat_active', false)) {
             abort(403, 'Group chat functionality is currently disabled. Please contact the administration for more information.');
         }
 
