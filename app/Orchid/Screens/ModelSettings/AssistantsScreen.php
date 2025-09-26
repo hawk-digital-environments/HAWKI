@@ -7,6 +7,7 @@ namespace App\Orchid\Screens\ModelSettings;
 use App\Models\AiAssistant;
 use App\Orchid\Layouts\ModelSettings\AssistantFiltersLayout;
 use App\Orchid\Layouts\ModelSettings\AssistantListLayout;
+use App\Orchid\Layouts\ModelSettings\AssistantsTabMenu;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
@@ -59,15 +60,26 @@ class AssistantsScreen extends Screen
      */
     public function commandBar(): iterable
     {
+        // Preserve filter parameters when creating new assistant
+        $filterParams = request()->only([
+            'assistant_search', 
+            'assistant_status', 
+            'assistant_visibility', 
+            'assistant_owner',
+            'sort',
+            'filter'
+        ]);
+        
+        $createUrl = route('platform.models.assistants.create');
+        if (!empty($filterParams)) {
+            $createUrl .= '?' . http_build_query($filterParams);
+        }
+        
         return [
             Link::make(__('Add Assistant'))
                 ->icon('bs.plus-circle')
-                ->route('platform.models.assistants.create'),
+                ->href($createUrl),
 
-            Button::make('Refresh')
-                ->icon('bs.arrow-clockwise')
-                ->method('refreshAssistants')
-                ->confirm('This will refresh all assistants. Continue?'),
         ];
     }
 
@@ -77,6 +89,8 @@ class AssistantsScreen extends Screen
     public function layout(): iterable
     {
         return [
+            AssistantsTabMenu::class,
+            
             AssistantFiltersLayout::class,
             AssistantListLayout::class,
         ];
@@ -133,11 +147,4 @@ class AssistantsScreen extends Screen
         Toast::info('Assistant has been deleted.');
     }
 
-    /**
-     * Refresh assistants.
-     */
-    public function refreshAssistants(): void
-    {
-        Toast::info('Assistants list has been refreshed.');
-    }
 }

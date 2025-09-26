@@ -115,7 +115,7 @@ class LanguageController extends Controller
             // Also load system prompts from ai_assistants_prompts table
             $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
                 ->get()
-                ->pluck('prompt_text', 'prompt_type')
+                ->pluck('content', 'title')
                 ->toArray();
 
             // Merge translations and prompts

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +13,7 @@ use Orchid\Screen\AsSource;
 
 class AiAssistant extends Model
 {
-    use AsSource, Filterable, HasFactory, HasUuids;
+    use AsSource, Filterable, HasFactory;
 
     /**
      * The attributes that are mass assignable.
@@ -25,7 +24,7 @@ class AiAssistant extends Model
         'description',
         'status',
         'visibility',
-        'org_id',
+        'required_role',
         'owner_id',
         'ai_model',
         'prompt',
@@ -51,6 +50,7 @@ class AiAssistant extends Model
         'description' => Like::class,
         'status' => Where::class,
         'visibility' => Where::class,
+        'required_role' => Where::class,
         'owner_id' => Where::class,
         'prompt' => Like::class,
         'created_at' => WhereDateStartEnd::class,
@@ -65,10 +65,14 @@ class AiAssistant extends Model
         'key',
         'status',
         'visibility',
+        'required_role',
         'owner_id',
+        'ai_model',
         'prompt',
         'created_at',
         'updated_at',
+        // Relationship sorting
+        'owner.name',
     ];
 
     /**
@@ -85,6 +89,14 @@ class AiAssistant extends Model
     public function aiModel(): BelongsTo
     {
         return $this->belongsTo(AiModel::class, 'ai_model', 'system_id');
+    }
+
+    /**
+     * Relationship: Required role for group visibility
+     */
+    public function requiredRole(): BelongsTo
+    {
+        return $this->belongsTo(\Orchid\Platform\Models\Role::class, 'required_role', 'slug');
     }
 
     /**

@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ai_assistants', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->id(); // bigint unsigned auto increment primary key
             $table->string('key')->unique()->comment('Stabiler Slug (z.B. support_bot)');
             $table->string('name')->comment('Anzeigename');
             $table->text('description')->nullable()->comment('Kurze Beschreibung');
             $table->enum('status', ['draft', 'active', 'archived'])->default('active')->comment('Status des Assistenten');
-            $table->enum('visibility', ['private', 'org', 'public'])->default('private')->comment('Sichtbarkeit des Assistenten');
-            $table->uuid('org_id')->nullable()->comment('Organisation/Gruppe für RBAC');
+            $table->enum('visibility', ['private', 'group', 'public'])->default('private')->comment('Sichtbarkeit des Assistenten');
+            $table->string('required_role')->nullable()->comment('Required role for group-based access');
             $table->unsignedBigInteger('owner_id')->default(0)->comment('Verantwortliche Person');
             $table->string('ai_model')->nullable()->comment('AI Model System ID');
             $table->string('prompt')->nullable()->comment('Prompt Type Reference');
@@ -31,8 +31,9 @@ return new class extends Migration
 
             // Indexes for performance
             $table->index(['status', 'visibility']);
-            $table->index('org_id');
+            $table->index('required_role');
             $table->index('owner_id');
+            $table->index('ai_model');
         });
     }
 

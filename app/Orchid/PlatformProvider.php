@@ -84,7 +84,7 @@ class PlatformProvider extends OrchidServiceProvider
                         ->active(['platform.testing.settings', 'platform.testing.mail']),
                 ]),
 
-            Menu::make('Models')
+            Menu::make('AI')
                 ->icon('bs.stars')
                 ->permission('platform.modelsettings.models')
                 ->active('platform.models.*')
@@ -102,16 +102,17 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('API Management')
                         ->route('platform.models.api.providers')
                         ->permission('platform.modelsettings.providers')
-                        ->icon('bs.cloud-upload')
+                        ->icon('bs.key')
                         ->active(['platform.models.api.providers', 'platform.models.api.formats']),
                     Menu::make('Language Models')
                         ->route('platform.models.language')
                         ->permission('platform.modelsettings.models')
-                        ->icon('bs.toggles'),
+                        ->icon('bs.cpu'),
                     Menu::make('Assistants')
                         ->route('platform.models.assistants')
                         ->permission('platform.modelsettings.assistants')
-                        ->icon('bs.robot'),
+                        ->icon('bs.robot')
+                        ->active(['platform.models.assistants', 'platform.models.prompts', 'platform.models.tools']),
                 ]),
 
             Menu::make('')

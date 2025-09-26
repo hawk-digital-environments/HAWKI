@@ -7,7 +7,11 @@ namespace App\Orchid\Screens\ModelSettings;
 use App\Models\AiAssistant;
 use App\Models\AiModel;
 use App\Models\AiAssistantPrompt;
-use App\Orchid\Layouts\ModelSettings\AssistantEditLayout;
+use App\Orchid\Layouts\ModelSettings\AssistantsTabMenu;
+use App\Orchid\Layouts\ModelSettings\AssistantBasicInfoLayout;
+use App\Orchid\Layouts\ModelSettings\AssistantAccessPermissionsLayout;
+use App\Orchid\Layouts\ModelSettings\AssistantAiModelLayout;
+use App\Orchid\Layouts\ModelSettings\AssistantToolsLayout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
@@ -29,6 +33,11 @@ class AssistantEditScreen extends Screen
     public function query(?AiAssistant $assistant = null): iterable
     {
         $this->assistant = $assistant ?? new AiAssistant();
+        
+        // Load owner relationship for badge display
+        if ($this->assistant->exists) {
+            $this->assistant->load('owner');
+        }
 
                 // Get available AI models for dropdown
         $aiModels = AiModel::where('is_active', true)
@@ -37,9 +46,9 @@ class AssistantEditScreen extends Screen
             ->pluck('label', 'system_id');
 
         // Load available prompt types
-        $availablePrompts = AiAssistantPrompt::select('prompt_type')
+        $availablePrompts = AiAssistantPrompt::select('title')
             ->distinct()
-            ->pluck('prompt_type', 'prompt_type')
+            ->pluck('title', 'title')
             ->toArray();
 
         // Get current prompt text for display (German by default)
@@ -50,9 +59,16 @@ class AssistantEditScreen extends Screen
                 ?? '';
         }
 
+        // Prepare creator display name (show "System" for HAWKI)
+        $creatorDisplay = '';
+        if ($this->assistant->exists && $this->assistant->owner) {
+            $creatorDisplay = ($this->assistant->owner->name === 'HAWKI') ? 'System' : $this->assistant->owner->name;
+        }
+
         return [
             'assistant' => $this->assistant,
-            'availableModels' => $availableModels,
+            'creator_display' => $creatorDisplay,
+            'availableModels' => $aiModels,
             'availablePrompts' => $availablePrompts,
             'currentPromptText' => $currentPromptText,
         ];
@@ -81,19 +97,27 @@ class AssistantEditScreen extends Screen
      */
     public function commandBar(): iterable
     {
-        $queryParams = request()->only(['assistant_search', 'assistant_status', 'assistant_visibility', 'assistant_owner']);
-        $backUrl = route('platform.models.assistants');
+        // Preserve filter parameters when navigating back to list
+        $filterParams = request()->only([
+            'assistant_search', 
+            'assistant_status', 
+            'assistant_visibility', 
+            'assistant_owner',
+            'sort',
+            'filter'
+        ]);
         
-        if (!empty($queryParams)) {
-            $backUrl .= '?' . http_build_query($queryParams);
+        $backUrl = route('platform.models.assistants');
+        if (!empty($filterParams)) {
+            $backUrl .= '?' . http_build_query($filterParams);
         }
         
         return [
-            Link::make('Back to Assistants')
+            Link::make('Back')
                 ->href($backUrl)
                 ->icon('bs.arrow-left-circle'),
 
-            Button::make('Save Assistant')
+            Button::make('Save')
                 ->icon('bs.check-circle')
                 ->method('save'),
         ];
@@ -105,9 +129,23 @@ class AssistantEditScreen extends Screen
     public function layout(): iterable
     {
         return [
-            Layout::block(AssistantEditLayout::class)
-                ->title('Assistant Configuration')
-                ->description('Configure the AI assistant settings, model assignment, and system prompts.'),
+            AssistantsTabMenu::class,
+            
+            Layout::block(AssistantBasicInfoLayout::class)
+                ->title('Basic Information')
+                ->description('Configure the assistant name, key, description and status.'),
+
+            Layout::block(AssistantAiModelLayout::class)
+                ->title('AI Model & Prompts')
+                ->description('Configure the AI model and system prompts for this assistant.'),
+
+            Layout::block(AssistantToolsLayout::class)
+                ->title('Tools Configuration')
+                ->description('Configure available tools for this assistant (future feature).'),
+
+            Layout::block(AssistantAccessPermissionsLayout::class)
+                ->title('Access & Permissions')
+                ->description('Configure visibility, ownership and organization access.'),
         ];
     }
 
@@ -117,38 +155,42 @@ class AssistantEditScreen extends Screen
     public function save(Request $request)
     {
         try {
+            // Store original values for change tracking
+            $isNew = !$this->assistant->exists;
+            
             // Validation rules
             $rules = [
                 'assistant.name' => 'required|string|max:255',
-                'assistant.key' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    'regex:/^[a-z0-9_]+$/',
-                    $this->assistant->exists 
-                        ? 'unique:ai_assistants,key,' . $this->assistant->id
-                        : 'unique:ai_assistants,key'
-                ],
                 'assistant.description' => 'nullable|string',
                 'assistant.status' => 'required|in:draft,active,archived',
-                'assistant.visibility' => 'required|in:private,org,public',
-                'assistant.org_id' => 'nullable|uuid',
-                'assistant.owner_id' => 'required|exists:users,id',
+                'assistant.visibility' => 'required|in:private,group,public',
+                'assistant.required_role' => 'nullable|exists:roles,slug',
                 'assistant.ai_model' => 'nullable|exists:ai_models,system_id',
                 'assistant.prompt' => 'nullable|string|max:255',
                 'assistant.tools' => 'nullable|array',
             ];
 
+            // For new assistants, require key (owner_id is set automatically)
+            if ($isNew) {
+                $rules['assistant.key'] = 'required|string|max:255|regex:/^[a-z0-9_]+$/|unique:ai_assistants,key';
+            }
+
+            // If visibility is 'group', require a role
+            $visibility = $request->input('assistant.visibility');
+            if ($visibility === 'group') {
+                $rules['assistant.required_role'] = 'required|exists:roles,slug';
+            }
+
             $messages = [
                 'assistant.key.regex' => 'The key may only contain lowercase letters, numbers, and underscores.',
                 'assistant.key.unique' => 'This key is already taken by another assistant.',
                 'assistant.ai_model.exists' => 'The selected AI model is not valid.',
+                'assistant.required_role.required' => 'A role is required when visibility is set to "Group".',
+                'assistant.required_role.exists' => 'The selected role does not exist.',
             ];
 
             $request->validate($rules, $messages);
 
-            // Store original values for change tracking
-            $isNew = !$this->assistant->exists;
             $originalName = $this->assistant->name ?? null;
             $originalModel = $this->assistant->ai_model ?? null;
             $originalPrompt = $this->assistant->prompt ?? null;
@@ -159,6 +201,20 @@ class AssistantEditScreen extends Screen
             // Handle tools as array (if empty, set to null)
             if (isset($assistantData['tools']) && empty($assistantData['tools'])) {
                 $assistantData['tools'] = null;
+            }
+
+            // Handle required_role based on visibility
+            if (isset($assistantData['visibility']) && $assistantData['visibility'] !== 'group') {
+                $assistantData['required_role'] = null;
+            }
+
+            // For new assistants, set owner to current user (creator)
+            if ($isNew) {
+                $assistantData['owner_id'] = auth()->id();
+            } else {
+                // For existing assistants, preserve key and owner_id (read-only fields)
+                unset($assistantData['key']);
+                unset($assistantData['owner_id']);
             }
 
             $this->assistant->fill($assistantData);
@@ -194,6 +250,29 @@ class AssistantEditScreen extends Screen
             
             Toast::success($message);
 
+            // Stay on the edit screen after saving (preserve filter parameters for back button)
+            if ($isNew) {
+                // For new assistants, redirect to edit screen with ID
+                $filterParams = request()->only([
+                    'assistant_search', 
+                    'assistant_status', 
+                    'assistant_visibility', 
+                    'assistant_owner',
+                    'sort',
+                    'filter'
+                ]);
+                
+                $redirectUrl = route('platform.models.assistants.edit', $this->assistant);
+                if (!empty($filterParams)) {
+                    $redirectUrl .= '?' . http_build_query($filterParams);
+                }
+                
+                return redirect($redirectUrl);
+            }
+            
+            // For existing assistants, stay on current screen
+            return back();
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::warning('Validation failed for assistant ' . ($this->assistant->exists ? 'update' : 'creation'), [
                 'assistant_id' => $this->assistant->id ?? null,
@@ -216,6 +295,8 @@ class AssistantEditScreen extends Screen
             return back()->withInput();
         }
 
+        // This line should not be reached due to the redirect in the success case
+        // But keeping it as fallback for edit operations
         return redirect()->route('platform.models.assistants.edit', $this->assistant);
     }
 

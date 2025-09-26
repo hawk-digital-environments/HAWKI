@@ -17,9 +17,18 @@ class AiAssistantSeeder extends Seeder
             $hawkiUser = \App\Models\User::first();
         }
 
-        // Get AI Model with ID=1
-        $defaultAiModel = \App\Models\AiModel::find(1);
-        $aiModelSystemId = $defaultAiModel ? $defaultAiModel->system_id : null;
+        // Always use the first AI Model's system_id as default until admin changes it
+        $defaultAiModel = \App\Models\AiModel::first();
+        $defaultAiModelSystemId = $defaultAiModel ? $defaultAiModel->system_id : null;
+
+        // Hardcoded mapping: Assistant Key -> Prompt Title
+        // These 4 system prompt types are hardcoded and map to the AiAssistantPrompt titles
+        $promptMapping = [
+            'default_assistant' => 'Default Prompt',
+            'title_generator' => 'Name Prompt', 
+            'prompt_improver' => 'Improvement Prompt',
+            'summarizer' => 'Summary Prompt'
+        ];
 
         $assistants = [
             [
@@ -29,8 +38,8 @@ class AiAssistantSeeder extends Seeder
                 'status' => 'active',
                 'visibility' => 'public',
                 'owner_id' => $hawkiUser->id,
-                'ai_model' => $aiModelSystemId,
-                'prompt' => 'Default_Prompt',
+                'ai_model' => $defaultAiModelSystemId,
+                'prompt' => $promptMapping['default_assistant'],
                 'tools' => null
             ],
             [
@@ -40,8 +49,8 @@ class AiAssistantSeeder extends Seeder
                 'status' => 'active',
                 'visibility' => 'public',
                 'owner_id' => $hawkiUser->id,
-                'ai_model' => $aiModelSystemId,
-                'prompt' => 'Name_Prompt',
+                'ai_model' => $defaultAiModelSystemId,
+                'prompt' => $promptMapping['title_generator'],
                 'tools' => null
             ],
             [
@@ -51,8 +60,8 @@ class AiAssistantSeeder extends Seeder
                 'status' => 'active',
                 'visibility' => 'public',
                 'owner_id' => $hawkiUser->id,
-                'ai_model' => $aiModelSystemId,
-                'prompt' => 'Improvement_Prompt',
+                'ai_model' => $defaultAiModelSystemId,
+                'prompt' => $promptMapping['prompt_improver'],
                 'tools' => null
             ],
             [
@@ -62,19 +71,29 @@ class AiAssistantSeeder extends Seeder
                 'status' => 'active',
                 'visibility' => 'public',
                 'owner_id' => $hawkiUser->id,
-                'ai_model' => $aiModelSystemId,
-                'prompt' => 'Summery_Prompt',
+                'ai_model' => $defaultAiModelSystemId,
+                'prompt' => $promptMapping['summarizer'],
                 'tools' => null
             ]
         ];
 
+        $created = 0;
+        $updated = 0;
+        
         foreach ($assistants as $assistantData) {
-            \App\Models\AiAssistant::firstOrCreate(
+            $assistant = \App\Models\AiAssistant::firstOrCreate(
                 ['key' => $assistantData['key']], 
                 $assistantData
             );
+            
+            if ($assistant->wasRecentlyCreated) {
+                $created++;
+            } else {
+                $updated++;
+            }
         }
 
-        $this->command->info('AI Assistants seeded successfully.');
+        $this->command->info("AI Assistants seeded successfully: {$created} created, {$updated} updated.");
+        $this->command->info('All assistants use default AI Model (first available) and are mapped to system prompt types.');
     }
 }

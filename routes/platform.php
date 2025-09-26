@@ -32,6 +32,9 @@ use App\Orchid\Screens\ModelSettings\ProviderEditScreen;
 use App\Orchid\Screens\ModelSettings\ApiProvidersScreen;
 use App\Orchid\Screens\ModelSettings\AssistantsScreen;
 use App\Orchid\Screens\ModelSettings\AssistantEditScreen;
+use App\Orchid\Screens\ModelSettings\PromptsScreen;
+use App\Orchid\Screens\ModelSettings\PromptEditScreen;
+use App\Orchid\Screens\ModelSettings\ToolsScreen;
 use App\Orchid\Screens\PlatformScreen;
 use App\Orchid\Screens\Role\RoleAssignmentEditScreen;
 use App\Orchid\Screens\Role\RoleAssignmentScreen;
@@ -369,6 +372,37 @@ Route::screen('/models/assistants/{assistant}/edit', AssistantEditScreen::class)
     ->breadcrumbs(fn (Trail $trail, $assistant) => $trail
         ->parent('platform.models.assistants')
         ->push($assistant->name, route('platform.models.assistants.edit', $assistant)));
+
+// Models - Prompts
+Route::screen('/models/prompts', PromptsScreen::class)
+    ->name('platform.models.prompts')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Prompts'), route('platform.models.prompts')));
+
+Route::screen('/models/prompts/create', PromptEditScreen::class)
+    ->name('platform.models.prompts.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.models.prompts')
+        ->push(__('Create Prompt'), route('platform.models.prompts.create')));
+
+Route::screen('/models/prompts/{prompt}/edit', PromptEditScreen::class)
+    ->name('platform.models.prompts.edit')
+    ->breadcrumbs(fn (Trail $trail, $prompt) => $trail
+        ->parent('platform.models.prompts')
+        ->push($prompt->title, route('platform.models.prompts.edit', $prompt)));
+
+// Models - Tools
+Route::screen('/models/tools', ToolsScreen::class)
+    ->name('platform.models.tools')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Tools'), route('platform.models.tools')));
+
+// Models - AI Management (Redirect to Assistants)
+Route::get('/models/ai-management', function () {
+    return redirect()->route('platform.models.assistants');
+})->name('platform.models.ai-management');
 
 // Platform > Profile
 Route::screen('profile', UserProfileScreen::class)

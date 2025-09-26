@@ -19,7 +19,7 @@ class AiAssistantPromptController extends Controller
         $fallbackLanguage = 'en_US';
 
         // Retrieve all available model types
-        $modelTypes = AiAssistantPrompt::select('prompt_type')->distinct()->pluck('prompt_type')->toArray();
+        $modelTypes = AiAssistantPrompt::select('title')->distinct()->pluck('title')->toArray();
 
         $prompts = [];
         foreach ($modelTypes as $modelType) {
