@@ -30,7 +30,8 @@ use App\Orchid\Screens\ModelSettings\AiModelListScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
 use App\Orchid\Screens\ModelSettings\ProviderEditScreen;
 use App\Orchid\Screens\ModelSettings\ApiProvidersScreen;
-use App\Orchid\Screens\ModelSettings\UtilityModelsSettingsScreen;
+use App\Orchid\Screens\ModelSettings\AssistantsScreen;
+use App\Orchid\Screens\ModelSettings\AssistantEditScreen;
 use App\Orchid\Screens\PlatformScreen;
 use App\Orchid\Screens\Role\RoleAssignmentEditScreen;
 use App\Orchid\Screens\Role\RoleAssignmentScreen;
@@ -350,12 +351,24 @@ Route::screen('/models/language/{model}/edit', AiModelEditScreen::class)
         ->parent('platform.models.language')
         ->push(__('Edit Model'), route('platform.models.language.edit', $model)));
 
-// Models - Utility Models
-Route::screen('/models/utility', UtilityModelsSettingsScreen::class)
-    ->name('platform.models.utility')
+// Models - Assistants
+Route::screen('/models/assistants', AssistantsScreen::class)
+    ->name('platform.models.assistants')
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
-        ->push(__('Utility Models'), route('platform.models.utility')));
+        ->push(__('Assistants'), route('platform.models.assistants')));
+
+Route::screen('/models/assistants/create', AssistantEditScreen::class)
+    ->name('platform.models.assistants.create')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.models.assistants')
+        ->push(__('Create Assistant'), route('platform.models.assistants.create')));
+
+Route::screen('/models/assistants/{assistant}/edit', AssistantEditScreen::class)
+    ->name('platform.models.assistants.edit')
+    ->breadcrumbs(fn (Trail $trail, $assistant) => $trail
+        ->parent('platform.models.assistants')
+        ->push($assistant->name, route('platform.models.assistants.edit', $assistant)));
 
 // Platform > Profile
 Route::screen('profile', UserProfileScreen::class)

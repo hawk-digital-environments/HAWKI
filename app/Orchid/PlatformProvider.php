@@ -108,10 +108,10 @@ class PlatformProvider extends OrchidServiceProvider
                         ->route('platform.models.language')
                         ->permission('platform.modelsettings.models')
                         ->icon('bs.toggles'),
-                    Menu::make('Utility Models')
-                        ->route('platform.models.utility')
-                        ->permission('platform.modelsettings.utilitymodels')
-                        ->icon('bs.tools'),
+                    Menu::make('Assistants')
+                        ->route('platform.models.assistants')
+                        ->permission('platform.modelsettings.assistants')
+                        ->icon('bs.robot'),
                 ]),
 
             Menu::make('')
@@ -191,7 +191,7 @@ class PlatformProvider extends OrchidServiceProvider
                 ->addPermission('platform.modelsettings.settings', __('Model Settings Management'))
                 ->addPermission('platform.modelsettings.providers', __('API Providers'))
                 ->addPermission('platform.modelsettings.models', __('Language Models'))
-                ->addPermission('platform.modelsettings.utilitymodels', __('Utility Models')),
+                ->addPermission('platform.modelsettings.assistants', __('Assistants')),
 
             ItemPermission::group(__('Access Controls'))
                 ->addPermission('platform.access.users', __('User Management'))
