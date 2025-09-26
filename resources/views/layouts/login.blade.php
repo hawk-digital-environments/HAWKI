@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ env('APP_NAME') }}</title>
+    <title>{{ config('app.name') }}</title>
 
-    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ route('system.image', 'favicon') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/login_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'style') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'login_style') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'settings_style') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
 
     <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
