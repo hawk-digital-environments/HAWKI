@@ -15,10 +15,11 @@
 
 
     <link rel="stylesheet" href="{{ route('css.get', 'style') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'chat_modules') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'home-style') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'settings_style') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'hljs_custom') }}">
-    <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
 
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
