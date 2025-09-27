@@ -197,6 +197,9 @@ class PromptEditScreen extends Screen
                 ]));
             }
 
+            // Clear language controller caches to update translation arrays
+            \App\Http\Controllers\LanguageController::clearPromptCaches();
+            
             Toast::success(__('Prompt saved successfully in both languages.'));
             
         } catch (\Exception $e) {
@@ -252,6 +255,9 @@ class PromptEditScreen extends Screen
                         'title' => $title
                     ]));
                 }
+                
+                // Clear language controller caches after reset
+                \App\Http\Controllers\LanguageController::clearPromptCaches();
                 
             } catch (\Exception $e) {
                 Toast::error(__('Error resetting prompt: ') . $e->getMessage());

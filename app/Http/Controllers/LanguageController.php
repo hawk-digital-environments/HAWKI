@@ -113,9 +113,14 @@ class LanguageController extends Controller
                 ->toArray();
 
             // Also load system prompts from ai_assistants_prompts table
+            // Format prompt keys for JavaScript compatibility (replace spaces with underscores)
             $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
                 ->get()
-                ->pluck('content', 'title')
+                ->mapWithKeys(function ($prompt) {
+                    // Convert "Default Prompt" to "Default_Prompt" for JS compatibility
+                    $jsKey = str_replace(' ', '_', $prompt->title);
+                    return [$jsKey => $prompt->content];
+                })
                 ->toArray();
 
             // Merge translations and prompts
@@ -150,6 +155,28 @@ class LanguageController extends Controller
                         $translations = array_merge($translations, $data);
                     }
                 }
+            }
+            
+            // In JSON mode, we rely on JSON files for prompts to maintain separation
+            // Only load database prompts if no prompt JSON files exist
+            $promptJsonExists = false;
+            if (is_dir($languageDir)) {
+                $promptFiles = glob($languageDir . "/prompts_{$prefix}.json");
+                $promptJsonExists = !empty($promptFiles);
+            }
+            
+            if (!$promptJsonExists) {
+                // Load database prompts as fallback only if no prompt JSON files exist
+                $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
+                    ->get()
+                    ->mapWithKeys(function ($prompt) {
+                        // Convert "Default Prompt" to "Default_Prompt" for JS compatibility
+                        $jsKey = str_replace(' ', '_', $prompt->title);
+                        return [$jsKey => $prompt->content];
+                    })
+                    ->toArray();
+                
+                $translations = array_merge($translations, $prompts);
             }
             
             return $translations;
@@ -240,8 +267,8 @@ class LanguageController extends Controller
 
     /**
      * Clear all language-related caches (for use in system text operations)
-     * This method clears translation caches but doesn't handle system text model caches directly,
-     * as system texts are typically cached at the application level.
+     * This method clears translation caches including AI Assistant prompts.
+     * Should be called when system texts or prompts are updated via Orchid Admin Panel.
      */
     public static function clearCaches(?string $language = null)
     {
@@ -263,5 +290,18 @@ class LanguageController extends Controller
                 self::clearCaches($lang);
             }
         }
+    }
+
+    /**
+     * Clear prompt-specific caches when AI Assistant prompts are updated
+     * This method should be called from Orchid Admin Panel when prompts are modified
+     */
+    public static function clearPromptCaches()
+    {
+        // Clear all translation caches as they include prompts
+        self::clearCaches();
+        
+        // Also clear any additional prompt-specific caches if needed
+        // (Currently prompts are cached as part of translations)
     }
 }
