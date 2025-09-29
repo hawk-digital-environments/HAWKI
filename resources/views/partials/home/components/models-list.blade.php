@@ -1,6 +1,7 @@
 <div class="model-selection-panel">
     @if(isset($models['models']) && count($models['models']) > 0)
         @foreach($models['models'] as $model)
+            @if(!isset($model['visible']) || $model['visible'])
             <button class="model-selector burger-item"
                     onclick="selectModel(this); closeBurgerMenus()"
                     data-model-id="{{ $model['id'] }}"
@@ -26,6 +27,7 @@
                 <span>{{ $model['label'] }}</span>
 
             </button>
+            @endif
         @endforeach
     @else
         <button class="model-selector burger-item" disabled>

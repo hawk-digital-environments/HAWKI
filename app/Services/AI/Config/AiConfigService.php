@@ -202,7 +202,21 @@ class AiConfigService
      */
     private function getProvidersFromConfig(): array
     {
-        return config('model_providers.providers', []);
+        $providers = config('model_providers.providers', []);
+        
+        // Add 'visible' property to all models from config files for consistency
+        // Config-based models are visible by default
+        foreach ($providers as $providerKey => &$provider) {
+            if (isset($provider['models'])) {
+                foreach ($provider['models'] as &$model) {
+                    if (!isset($model['visible'])) {
+                        $model['visible'] = true;
+                    }
+                }
+            }
+        }
+        
+        return $providers;
     }
 
     /**
@@ -235,10 +249,10 @@ class AiConfigService
             $apiProviders = ApiProvider::where('is_active', true)->get();
             
             foreach ($apiProviders as $apiProvider) {
-                // Get models for this provider (only active AND visible models for UI)
+                // Get models for this provider (all active models, visible and non-visible)
+                // Non-visible models can still be used by AI Assistants, only UI filtering happens later
                 $models = AiModel::where('provider_id', $apiProvider->id)
                     ->where('is_active', true)
-                    ->where('is_visible', true)
                     ->orderBy('display_order')
                     ->get();
                 

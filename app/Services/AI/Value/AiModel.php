@@ -240,6 +240,12 @@ class AiModel implements JsonSerializable
         if(isset($this->context)){
             $out['status'] = $this->context->getStatus()->value;
         }
+        
+        // Ensure visible property is always present for frontend compatibility
+        if (!isset($out['visible'])) {
+            $out['visible'] = true;
+        }
+        
         return $out;
     }
 
