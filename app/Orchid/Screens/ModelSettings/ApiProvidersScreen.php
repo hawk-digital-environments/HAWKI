@@ -664,7 +664,7 @@ class ApiProvidersScreen extends Screen
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
 
             if ($result['success']) {
-                Toast::success("✅ Connection to '{$provider->provider_name}' successful! Response time: {$responseTime}ms");
+                Toast::success("Connection to '{$provider->provider_name}' successful! Response time: {$responseTime}ms");
                 
                 $this->logInfo('provider_connection_test', [
                     'provider_id' => $provider->id,

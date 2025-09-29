@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\AI;
 
 
-use App\Services\AI\AvailableModels\AvailableModelsBuilder;
+use App\Services\AI\AvailModels\AvailableModelsBuilder;
 use App\Services\AI\AvailableModels\AvailableModelsBuilderBuilder;
 use App\Services\AI\Config\AiConfigService;
 use App\Services\AI\Db\ModelStatusDb;
@@ -39,6 +39,8 @@ class AiFactory
     
     public function getAvailableModels(ModelUsageType $usageType): AvailableAiModels
     {
+
+
         return $this->rememberInstance('available_models_' . $usageType->value, function () use ($usageType) {
             $builder = $this->rememberInstance(AvailableModelsBuilder::class, function () {
                 $builder = $this->container->get(AvailableModelsBuilderBuilder::class);
@@ -67,7 +69,9 @@ class AiFactory
                 
                 $i = $builder->build();
                 
+                $totalModels = 0;
                 foreach ($this->createProviderList() as $provider) {
+                    $providerModels = 0;
                     foreach ($provider->getModels() as $model) {
                         $i->addModel(
                             AiModel::bindContext(
@@ -75,6 +79,8 @@ class AiFactory
                                 $this->createModelContext($provider, $model)
                             )
                         );
+                        $providerModels++;
+                        $totalModels++;
                     }
                 }
                 
@@ -87,9 +93,15 @@ class AiFactory
     
     private function createProviderList(): iterable
     {
-        foreach ($this->aiConfigService->getProviders() as $providerId => $rawConfig) {
+        $providers = $this->aiConfigService->getProviders();
+
+
+        foreach ($providers as $providerId => $rawConfig) {
+            
+
             $config = new ProviderConfig($providerId, $rawConfig);
             if (!$config->isActive()) {
+
                 continue;
             }
             
@@ -98,6 +110,8 @@ class AiFactory
             if (!class_exists($modelProviderClass)) {
                 $modelProviderClass = GenericModelProvider::class;
             }
+            
+            
             
             yield new $modelProviderClass($config);
         }

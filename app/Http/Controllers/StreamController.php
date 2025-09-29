@@ -72,6 +72,8 @@ class StreamController extends Controller
      */
     public function handleAiConnectionRequest(Request $request)
     {
+
+
         //validate payload
         try {
             $validatedData = $request->validate([
@@ -124,6 +126,8 @@ class StreamController extends Controller
                                             $hawki->username,
                                             $hawki->avatar_id);
 
+
+
         if ($validatedData['payload']['stream']) {
             // Handle streaming response
             $this->handleStreamingRequest($validatedData['payload'], $hawki, $avatar_url);
@@ -154,6 +158,8 @@ class StreamController extends Controller
      */
     private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
     {
+
+
         // Set headers for SSE
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
@@ -167,6 +173,26 @@ class StreamController extends Controller
                 }
                 flush();
             };
+
+            // Log raw AI response if trigger is enabled
+            if (config('logging.triggers.curl_return_object')) {
+                \Log::info('AI Provider Raw Response', [
+                    'model' => $payload['model'],
+                    'response_content' => $response->content,
+                    'has_usage' => $response->usage !== null,
+                    'is_done' => $response->isDone
+                ]);
+            }
+
+            // Log usage data if trigger is enabled
+            if (config('logging.triggers.usage') && $response->usage) {
+                \Log::info('Token Usage Data', [
+                    'model' => $payload['model'],
+                    'prompt_tokens' => $response->usage->promptTokens,
+                    'completion_tokens' => $response->usage->completionTokens,
+                    'total_tokens' => $response->usage->promptTokens + $response->usage->completionTokens
+                ]);
+            }
 
             $this->usageAnalyzer->submitUsageRecord(
                 $response->usage,
@@ -183,6 +209,16 @@ class StreamController extends Controller
                 'isDone' => $response->isDone,
                 'content' => json_encode($response->content),
             ];
+
+            // Log final stream message before sending to frontend
+            if (config('logging.triggers.translated_return_object')) {
+                \Log::info('Final StreamMessage Output', [
+                    'model' => $messageData['model'],
+                    'isDone' => $messageData['isDone'],
+                    'content' => $messageData['content'],
+                    'has_usage' => $response->usage !== null
+                ]);
+            }
 
             echo json_encode($messageData) . "\n";
             $flush();

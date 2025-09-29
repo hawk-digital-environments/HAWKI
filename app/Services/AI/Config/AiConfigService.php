@@ -6,6 +6,8 @@ namespace App\Services\AI\Config;
 
 use App\Models\AiAssistant;
 use App\Models\AiModel;
+use App\Models\ApiProvider;
+use App\Models\ApiFormatEndpoint;
 use App\Services\AI\Value\ModelUsageType;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
@@ -81,10 +83,7 @@ class AiConfigService
         
         // Log the mode for debugging (can be removed in production)
         if (config('app.debug')) {
-            \Log::info('AI Config System Mode', [
-                'mode' => $useDatabaseConfig ? 'database' : 'config',
-                'config_value' => $configValue
-            ]);
+            
         }
         
         return $useDatabaseConfig;
@@ -233,12 +232,13 @@ class AiConfigService
             $providers = [];
             
             // Get active API providers from database
-            $apiProviders = \App\Models\ApiProvider::where('is_active', true)->get();
+            $apiProviders = ApiProvider::where('is_active', true)->get();
             
             foreach ($apiProviders as $apiProvider) {
-                // Get models for this provider
-                $models = \App\Models\AiModel::where('provider_id', $apiProvider->id)
+                // Get models for this provider (only active AND visible models for UI)
+                $models = AiModel::where('provider_id', $apiProvider->id)
                     ->where('is_active', true)
+                    ->where('is_visible', true)
                     ->orderBy('display_order')
                     ->get();
                 
@@ -256,21 +256,49 @@ class AiConfigService
                             'file_upload' => false,
                             'vision' => false
                         ],
-                        'system_id' => $model->system_id // Keep system_id for reference
+                        'system_id' => $model->system_id, // Keep system_id for reference
+                        'status' => 'online' // Always set to online for UI (real status check implemented later)
                     ];
                 }
+                
+                // Build endpoint URLs from api_format_endpoints
+                $endpoints = $this->buildEndpointsForProvider($apiProvider);
                 
                 $providers[$apiProvider->provider_name] = [
                     'active' => $apiProvider->is_active,
                     'api_key' => $apiProvider->api_key,
-                    'api_url' => $apiProvider->base_url,
-                    'ping_url' => $apiProvider->ping_url,
+                    'api_url' => $endpoints['chat.create'] ?? $apiProvider->base_url,
+                    'stream_url' => $endpoints['chat.stream'] ?? $endpoints['chat.create'] ?? $apiProvider->base_url,
+                    'ping_url' => $endpoints['models.list'] ?? $apiProvider->base_url,
                     'models' => $modelConfigs
                 ];
             }
             
             return $providers;
         });
+    }
+
+    /**
+     * Build endpoint URLs for a provider based on api_format_endpoints
+     *
+     * @param ApiProvider $apiProvider
+     * @return array
+     */
+    private function buildEndpointsForProvider(ApiProvider $apiProvider): array
+    {
+        $endpoints = [];
+        
+        // Get all endpoints for this provider's API format
+        $formatEndpoints = ApiFormatEndpoint::where('api_format_id', $apiProvider->api_format_id)
+            ->where('is_active', true)
+            ->get();
+            
+        foreach ($formatEndpoints as $endpoint) {
+            $fullUrl = rtrim($apiProvider->base_url, '/') . $endpoint->path;
+            $endpoints[$endpoint->name] = $fullUrl;
+        }
+        
+        return $endpoints;
     }
 
     /**

@@ -24,7 +24,7 @@ class AiAssistantSeeder extends Seeder
         // Hardcoded mapping: Assistant Key -> Prompt Title
         // These 4 system prompt types are hardcoded and map to the AiAssistantPrompt titles
         $promptMapping = [
-            'default_assistant' => 'Default Prompt',
+            'default_model' => 'Default Prompt',
             'title_generator' => 'Name Prompt', 
             'prompt_improver' => 'Improvement Prompt',
             'summarizer' => 'Summary Prompt'
@@ -32,14 +32,14 @@ class AiAssistantSeeder extends Seeder
 
         $assistants = [
             [
-                'key' => 'default_assistant',
-                'name' => 'Default Assistant',
-                'description' => 'Der Standard-Assistent für allgemeine Aufgaben und Unterhaltungen',
+                'key' => 'default_model',
+                'name' => 'Default Model',
+                'description' => 'Standard AI Model für allgemeine Anfragen',
                 'status' => 'active',
                 'visibility' => 'public',
                 'owner_id' => $hawkiUser->id,
                 'ai_model' => $defaultAiModelSystemId,
-                'prompt' => $promptMapping['default_assistant'],
+                'prompt' => $promptMapping['default_model'],
                 'tools' => null
             ],
             [
