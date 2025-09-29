@@ -250,11 +250,16 @@ class CssEditScreen extends Screen
 
             Toast::success("CSS rule '{$cssName}' has been reset to default values successfully!");
 
+            // Redirect to avoid session payload issues with large CSS content
+            return redirect()->route('platform.customization.css.edit', urlencode($cssName));
+
         } catch (\Exception $e) {
             Log::error('Error resetting CSS rule: '.$e->getMessage());
             Toast::error('Error resetting CSS rule: '.$e->getMessage());
+            
+            // Use redirect instead of back() to avoid session payload issues
+            return redirect()->route('platform.customization.css');
         }
-
     }
 
     /**
