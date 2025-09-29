@@ -22,7 +22,7 @@ class AssistantsScreen extends Screen
     public function query(): iterable
     {
         return [
-            'assistants' => AiAssistant::with(['owner', 'aiModel'])
+            'assistants' => AiAssistant::with(['owner', 'aiModel.provider'])
                 ->filters(AssistantFiltersLayout::class)
                 ->defaultSort('created_at', 'desc')
                 ->paginate(50),

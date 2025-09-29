@@ -237,8 +237,18 @@ class AiModel implements JsonSerializable
     {
         $out = $this->raw;
         $out['status'] = ModelOnlineStatus::UNKNOWN->value;
+        
         if(isset($this->context)){
             $out['status'] = $this->context->getStatus()->value;
+            
+            // Add provider information as structured object for frontend
+            $provider = $this->context->getProvider();
+            $providerConfig = $provider->getConfig();
+            $out['provider'] = [
+                'id' => $providerConfig->getId(),
+                'name' => $providerConfig->getId(), // For now, use ID as name
+                'icon' => null // Will be implemented later
+            ];
         }
         
         // Ensure visible property is always present for frontend compatibility

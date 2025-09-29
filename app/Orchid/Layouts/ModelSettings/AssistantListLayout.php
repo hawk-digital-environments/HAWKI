@@ -66,7 +66,33 @@ class AssistantListLayout extends Table
                 ->sort()
                 ->render(function (AiAssistant $assistant) {
                     if ($assistant->aiModel) {
-                        return "<span class=\"badge bg-primary border-0 rounded-pill\">{$assistant->aiModel->label}</span>";
+                        $badgeClass = 'bg-primary';
+                        $tooltipText = $assistant->aiModel->label;
+                        $issues = [];
+                        
+                        // Check model status
+                        if (!$assistant->aiModel->is_active) {
+                            $issues[] = 'Model Inactive';
+                            $badgeClass = 'bg-danger';
+                        }
+                        
+                        // Only check visibility for default_model assistant
+                        if ($assistant->key === 'default_model' && !$assistant->aiModel->is_visible) {
+                            $issues[] = 'Default Model Must Be Visible';
+                            $badgeClass = 'bg-warning';
+                        }
+                        
+                        // Check provider status
+                        if ($assistant->aiModel->provider && !$assistant->aiModel->provider->is_active) {
+                            $issues[] = 'Provider Inactive';
+                            $badgeClass = 'bg-danger';
+                        }
+                        
+                        if (!empty($issues)) {
+                            $tooltipText .= ' (' . implode(', ', $issues) . ')';
+                        }
+                        
+                        return "<span class=\"badge {$badgeClass} border-0 rounded-pill\" title=\"{$tooltipText}\">{$assistant->aiModel->label}</span>";
                     }
                     return "<span class=\"badge bg-secondary border-0 rounded-pill\">No Model</span>";
                 }),
@@ -108,18 +134,37 @@ class AssistantListLayout extends Table
                     $isSystemAssistant = $assistant->owner && $assistant->owner->name === 'HAWKI';
                     if ($isSystemAssistant) {
                         $warnings = [];
+                        
+                        // Check if AI Model is assigned
                         if (!$assistant->ai_model) {
                             $warnings[] = 'No AI Model';
+                        } elseif ($assistant->aiModel) {
+                            // Check if assigned AI Model is active
+                            if (!$assistant->aiModel->is_active) {
+                                $warnings[] = 'AI Model Inactive';
+                            }
+                            
+                            // Only check visibility for default_model assistant
+                            if ($assistant->key === 'default_model' && !$assistant->aiModel->is_visible) {
+                                $warnings[] = 'Default Model Must Be Visible';
+                            }
+                            
+                            // Check if the AI Model's provider is active
+                            if ($assistant->aiModel->provider && !$assistant->aiModel->provider->is_active) {
+                                $warnings[] = 'Provider Inactive';
+                            }
                         }
+                        
+                        // Check system prompt
                         if (!$assistant->prompt) {
                             $warnings[] = 'No System Prompt';
                         }
                         
                         if (!empty($warnings)) {
                             // Override with warning status for incomplete system assistants
-                            $badgeText = 'Config Incomplete';
+                            $badgeText = 'Config Issues';
                             $badgeClass = 'bg-danger';
-                            $tooltipText = 'System Assistant: Missing ' . implode(', ', $warnings);
+                            $tooltipText = 'System Assistant Issues: ' . implode(', ', $warnings);
                         } else {
                             // Complete system assistant - show normal status with system indicator
                             $tooltipText = 'System Assistant: Properly configured';

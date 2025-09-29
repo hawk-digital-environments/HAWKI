@@ -271,7 +271,10 @@ class AiConfigService
                             'vision' => false
                         ],
                         'system_id' => $model->system_id, // Keep system_id for reference
-                        'status' => 'online' // Always set to online for UI (real status check implemented later)
+                        'status' => 'online', // Always set to online for UI (real status check implemented later)
+                        'display_order' => $model->display_order,
+                        'provider_name' => $apiProvider->provider_name,
+                        'provider_display_order' => $apiProvider->display_order
                     ];
                 }
                 
