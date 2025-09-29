@@ -54,7 +54,7 @@ class AssistantAccessPermissionsLayout extends Rows
                 if (empty($configurationWarnings)) {
                     $fields[] = BadgeField::make('system_config_status')
                         ->title('System Configuration')
-                        ->value('✅ Complete')
+                        ->value('Complete')
                         ->help('AI Model and System Prompt are properly configured')
                         ->badgeClass('bg-success-subtle text-success-emphasis');
                 } else {

@@ -10,7 +10,8 @@ use App\Models\AiAssistantPrompt;
 use App\Orchid\Layouts\ModelSettings\AssistantsTabMenu;
 use App\Orchid\Layouts\ModelSettings\AssistantBasicInfoLayout;
 use App\Orchid\Layouts\ModelSettings\AssistantAccessPermissionsLayout;
-use App\Orchid\Layouts\ModelSettings\AssistantAiModelLayout;
+use App\Orchid\Layouts\ModelSettings\AssistantAiModelOnlyLayout;
+use App\Orchid\Layouts\ModelSettings\AssistantDefaultPromptLayout;
 use App\Orchid\Layouts\ModelSettings\AssistantToolsLayout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -51,13 +52,7 @@ class AssistantEditScreen extends Screen
             ->pluck('title', 'title')
             ->toArray();
 
-        // Get current prompt text for display (German by default)
-        $currentPromptText = '';
-        if ($this->assistant->prompt) {
-            $currentPromptText = AiAssistantPrompt::getPrompt($this->assistant->prompt, 'de_DE') 
-                ?? AiAssistantPrompt::getPrompt($this->assistant->prompt, 'en_US')
-                ?? '';
-        }
+
 
         // Prepare creator display name (show "System" for HAWKI)
         $creatorDisplay = '';
@@ -70,7 +65,6 @@ class AssistantEditScreen extends Screen
             'creator_display' => $creatorDisplay,
             'availableModels' => $aiModels,
             'availablePrompts' => $availablePrompts,
-            'currentPromptText' => $currentPromptText,
         ];
     }
 
@@ -135,9 +129,13 @@ class AssistantEditScreen extends Screen
                 ->title('Basic Information')
                 ->description('Configure the assistant name, key, description and status.'),
 
-            Layout::block(AssistantAiModelLayout::class)
-                ->title('AI Model & Prompts')
-                ->description('Configure the AI model and system prompts for this assistant.'),
+            Layout::block(AssistantAiModelOnlyLayout::class)
+                ->title('AI Model')
+                ->description('Configure the AI model for this assistant.'),
+
+            Layout::block(AssistantDefaultPromptLayout::class)
+                ->title('Default Prompt')
+                ->description('Configure the system prompt template for this assistant.'),
 
             Layout::block(AssistantToolsLayout::class)
                 ->title('Tools Configuration')
@@ -219,6 +217,19 @@ class AssistantEditScreen extends Screen
 
             $this->assistant->fill($assistantData);
             $this->assistant->save();
+
+            // Clear AI Config cache when AI model assignments change
+            if ($originalModel !== $this->assistant->ai_model || $isNew) {
+                \Illuminate\Support\Facades\Cache::flush();
+                if (app()->bound(\App\Services\AI\Config\AiConfigService::class)) {
+                    app(\App\Services\AI\Config\AiConfigService::class)->clearCache();
+                }
+                Log::info('AI Config cache cleared due to assistant model change', [
+                    'assistant_id' => $this->assistant->id,
+                    'old_model' => $originalModel,
+                    'new_model' => $this->assistant->ai_model
+                ]);
+            }
 
             // Log successful update with change details
             $changes = [];

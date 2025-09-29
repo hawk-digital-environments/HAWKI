@@ -85,7 +85,7 @@ class PlatformProvider extends OrchidServiceProvider
                 ]),
 
             Menu::make('AI')
-                ->icon('bs.stars')
+                ->icon('bs.cpu')
                 ->permission('platform.modelsettings.models')
                 ->active('platform.models.*')
                 ->list([
@@ -107,11 +107,11 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('Language Models')
                         ->route('platform.models.language')
                         ->permission('platform.modelsettings.models')
-                        ->icon('bs.cpu'),
+                        ->icon('bs.chat-left'),
                     Menu::make('Assistants')
                         ->route('platform.models.assistants')
                         ->permission('platform.modelsettings.assistants')
-                        ->icon('bs.robot')
+                        ->icon('bs.stars')
                         ->active(['platform.models.assistants', 'platform.models.prompts', 'platform.models.tools']),
                 ]),
 

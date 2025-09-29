@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Auth;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\Link;
 use Orchid\Screen\Screen;
-use Orchid\Support\Color;
 use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
@@ -87,7 +86,7 @@ class PromptEditScreen extends Screen
         }
 
         $buttons = [
-            Link::make(__('Back to List'))
+            Link::make(__('Back'))
                 ->icon('bs.arrow-left')
                 ->href($backUrl),
         ];
@@ -97,14 +96,12 @@ class PromptEditScreen extends Screen
             $buttons[] = Button::make(__('Reset'))
                 ->icon('bs.arrow-clockwise')
                 ->confirm(__('This will reset this prompt to default values. Are you sure?'))
-                ->method('resetToDefault')
-                ->type(Color::WARNING);
+                ->method('resetToDefault');
         }
 
-        $buttons[] = Button::make(__('Save Prompt'))
+        $buttons[] = Button::make(__('Save'))
             ->icon('bs.check-circle')
-            ->method('save')
-            ->type(Color::BASIC);
+            ->method('save');
 
         return $buttons;
     }

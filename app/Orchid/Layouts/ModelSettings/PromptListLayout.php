@@ -25,7 +25,7 @@ class PromptListLayout extends Table
     {
         return [
             // Primary Identifier - Prompt Group
-            TD::make('title', 'Prompt Group')
+            TD::make('title', 'Prompt')
                 ->sort()
                 ->cantHide()
                 ->render(function (AiAssistantPrompt $prompt) {
@@ -74,38 +74,26 @@ class PromptListLayout extends Table
                     
                     $badges = [];
                     foreach ($variants as $variant) {
-                        // Improved language detection
+                        // Use the language field directly
                         $language = 'Unknown';
                         $badgeClass = 'bg-secondary';
                         
-                        $content = strtolower($variant->content);
-                        
-                        // German detection - check for common German words/phrases
-                        if (str_contains($content, 'du bist') || 
-                            str_contains($content, 'sie sind') ||
-                            str_contains($content, 'deine') ||
-                            str_contains($content, 'ihrer') ||
-                            str_contains($content, 'hilfreicher') ||
-                            str_contains($content, 'assistent') ||
-                            str_contains($content, 'antwort') ||
-                            str_contains($content, 'wörter')) {
-                            $language = 'DE';
-                            $badgeClass = 'bg-primary';
-                        }
-                        // English detection - check for common English words/phrases
-                        elseif (str_contains($content, 'you are') || 
-                                str_contains($content, "you're") ||
-                                str_contains($content, 'your goal') ||
-                                str_contains($content, 'your answer') ||
-                                str_contains($content, 'helpful') ||
-                                str_contains($content, 'assistant') ||
-                                str_contains($content, 'words') ||
-                                str_contains($content, 'abstract')) {
-                            $language = 'EN';
-                            $badgeClass = 'bg-success';
+                        switch ($variant->language) {
+                            case 'de_DE':
+                                $language = 'DE';
+                                $badgeClass = 'bg-primary';
+                                break;
+                            case 'en_US':
+                                $language = 'EN';
+                                $badgeClass = 'bg-success';
+                                break;
+                            default:
+                                $language = strtoupper(substr($variant->language ?? 'unknown', 0, 2));
+                                $badgeClass = 'bg-secondary';
+                                break;
                         }
                         
-                        $badges[] = "<span class=\"badge rounded-pill {$badgeClass} me-1\" title=\"Status: {$variant->status}\">{$language}</span>";
+                        $badges[] = "<span class=\"badge rounded-pill {$badgeClass} me-1\" title=\"Language: {$variant->language}\">{$language}</span>";
                     }
                     
                     return implode('', $badges) ?: '<span class="text-muted">No languages</span>';
@@ -187,16 +175,14 @@ class PromptListLayout extends Table
                     return DropDown::make()
                         ->icon('bs.three-dots-vertical')
                         ->list([
-                            Link::make(__('Edit Group'))
+                            Link::make(__('Edit'))
                                 ->href($editUrl)
-                                ->icon('bs.pencil')
-                                ->title('Edit all prompts in this group'),
+                                ->icon('bs.pencil'),
 
-                            Button::make(__('Delete Group'))
+                            Button::make(__('Delete'))
                                 ->icon('bs.trash3')
                                 ->confirm(__('Are you sure you want to delete ALL prompts in this group? This cannot be undone.'))
-                                ->method('remove', ['id' => $prompt->id])
-                                ->title('Delete all variants in this group'),
+                                ->method('remove', ['id' => $prompt->id]),
                         ]);
                 }),
         ];
