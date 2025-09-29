@@ -7,6 +7,7 @@ namespace App\Services\AI;
 
 use App\Services\AI\AvailableModels\AvailableModelsBuilder;
 use App\Services\AI\AvailableModels\AvailableModelsBuilderBuilder;
+use App\Services\AI\Config\AiConfigService;
 use App\Services\AI\Db\ModelStatusDb;
 use App\Services\AI\Exception\InvalidClientClassException;
 use App\Services\AI\Exception\MissingRequiredAiServiceClassException;
@@ -30,7 +31,8 @@ class AiFactory
     
     public function __construct(
         private readonly ContainerInterface $container,
-        private readonly Repository         $config
+        private readonly Repository         $config,
+        private readonly AiConfigService    $aiConfigService
     )
     {
     }
@@ -39,28 +41,27 @@ class AiFactory
     {
         return $this->rememberInstance('available_models_' . $usageType->value, function () use ($usageType) {
             $builder = $this->rememberInstance(AvailableModelsBuilder::class, function () {
-                $config = $this->config->get('model_providers', []);
-                
                 $builder = $this->container->get(AvailableModelsBuilderBuilder::class);
                 
-                // Fallback for older config structure
-                if (!is_array($config['default_models'] ?? null) && isset($config['defaultModel'])) {
-                    throw new \RuntimeException("The 'defaultModel' configuration key is deprecated. Please use 'default_models' instead.");
-                }
+                // Use AiConfigService to get models from either config or database
+                $defaultModels = $this->aiConfigService->getDefaultModels(ModelUsageType::DEFAULT);
+                $defaultModelsExtApp = $this->aiConfigService->getDefaultModels(ModelUsageType::EXTERNAL_APP);
+                $systemModels = $this->aiConfigService->getSystemModels(ModelUsageType::DEFAULT);
+                $systemModelsExtApp = $this->aiConfigService->getSystemModels(ModelUsageType::EXTERNAL_APP);
                 
-                foreach ($config['default_models'] ?? [] as $modelType => $modelName) {
+                foreach ($defaultModels as $modelType => $modelName) {
                     $builder->addDefaultModelName($modelType, ModelUsageType::DEFAULT, $modelName);
                 }
                 
-                foreach ($config['default_models.ext_app'] ?? [] as $modelType => $modelName) {
+                foreach ($defaultModelsExtApp as $modelType => $modelName) {
                     $builder->addDefaultModelName($modelType, ModelUsageType::EXTERNAL_APP, $modelName);
                 }
                 
-                foreach ($config['system_models'] ?? [] as $modelType => $modelName) {
+                foreach ($systemModels as $modelType => $modelName) {
                     $builder->addSystemModelName($modelType, ModelUsageType::DEFAULT, $modelName);
                 }
                 
-                foreach ($config['system_models.ext_app'] ?? [] as $modelType => $modelName) {
+                foreach ($systemModelsExtApp as $modelType => $modelName) {
                     $builder->addSystemModelName($modelType, ModelUsageType::EXTERNAL_APP, $modelName);
                 }
                 
@@ -86,7 +87,7 @@ class AiFactory
     
     private function createProviderList(): iterable
     {
-        foreach ($this->config->get('model_providers.providers', []) as $providerId => $rawConfig) {
+        foreach ($this->aiConfigService->getProviders() as $providerId => $rawConfig) {
             $config = new ProviderConfig($providerId, $rawConfig);
             if (!$config->isActive()) {
                 continue;

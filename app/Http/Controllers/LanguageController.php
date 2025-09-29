@@ -41,12 +41,15 @@ class LanguageController extends Controller
         // true (1)  = Load from database (app_system_texts table)
         $useDatabase = (bool) config('hawki.language_controller_system', false);
         
+        // AI prompts are always controlled by ai_config_system, independent of language_controller_system
+        $useAiDatabaseConfig = (bool) config('hawki.ai_config_system', false);
+        
         if ($useDatabase) {
             // Load from database (new behavior) - AppSystemText model
-            $translation = $this->fetchTranslationFiles($language['id']);
+            $translation = $this->fetchTranslationFiles($language['id'], $useAiDatabaseConfig);
         } else {
             // Load from JSON files (legacy behavior) - JSON files in resources/language/
-            $translation = $this->fetchTranslationFromFiles($language['id']);
+            $translation = $this->fetchTranslationFromFiles($language['id'], $useAiDatabaseConfig);
         }
 
         // Process placeholders in all translations
@@ -103,35 +106,73 @@ class LanguageController extends Controller
         return $availableLocale;
     }
 
-    private function fetchTranslationFiles($prefix)
+    private function fetchTranslationFiles($prefix, $useAiDatabaseConfig = false)
     {
-        // Use Laravel Cache to cache the translations
-        return Cache::remember("translations_{$prefix}", now()->addHours(1), function () use ($prefix) {
+        // Use Laravel Cache to cache the translations with AI config dependency
+        $cacheKey = "translations_{$prefix}_ai_" . ($useAiDatabaseConfig ? 'db' : 'config');
+        
+        return Cache::remember($cacheKey, now()->addHours(1), function () use ($prefix, $useAiDatabaseConfig) {
             $translations = AppSystemText::where('language', $prefix)
                 ->get()
                 ->pluck('content', 'content_key')
                 ->toArray();
 
-            // Also load system prompts from ai_assistants_prompts table
-            // Format prompt keys for JavaScript compatibility (replace spaces with underscores)
-            $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
-                ->get()
-                ->mapWithKeys(function ($prompt) {
-                    // Convert "Default Prompt" to "Default_Prompt" for JS compatibility
-                    $jsKey = str_replace(' ', '_', $prompt->title);
-                    return [$jsKey => $prompt->content];
-                })
-                ->toArray();
+            // Load prompts based on AI config system setting
+            if ($useAiDatabaseConfig) {
+                // AI Config System = Database: Load prompts from ai_assistants_prompts table
+                $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
+                    ->get()
+                    ->mapWithKeys(function ($prompt) {
+                        // Convert "Default Prompt" to "Default_Prompt" for JS compatibility
+                        $jsKey = str_replace(' ', '_', $prompt->title);
+                        return [$jsKey => $prompt->content];
+                    })
+                    ->toArray();
+                
+                $translations = array_merge($translations, $prompts);
+            } else {
+                // AI Config System = Config: Load prompts from JSON files
+                $languageDir = resource_path("language");
+                
+                if (is_dir($languageDir)) {
+                    // Load prompt JSON files (e.g., prompts_de_DE.json)
+                    $promptFiles = glob($languageDir . "/prompts_{$prefix}.json");
+                    
+                    foreach ($promptFiles as $file) {
+                        $content = file_get_contents($file);
+                        $data = json_decode($content, true);
+                        
+                        if (is_array($data)) {
+                            $translations = array_merge($translations, $data);
+                        }
+                    }
+                    
+                    // If no prompt JSON files exist, use database as fallback
+                    if (empty($promptFiles)) {
+                        $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
+                            ->get()
+                            ->mapWithKeys(function ($prompt) {
+                                // Convert "Default Prompt" to "Default_Prompt" for JS compatibility
+                                $jsKey = str_replace(' ', '_', $prompt->title);
+                                return [$jsKey => $prompt->content];
+                            })
+                            ->toArray();
+                        
+                        $translations = array_merge($translations, $prompts);
+                    }
+                }
+            }
 
-            // Merge translations and prompts
-            return array_merge($translations, $prompts);
+            return $translations;
         });
     }
 
-    private function fetchTranslationFromFiles($prefix)
+    private function fetchTranslationFromFiles($prefix, $useAiDatabaseConfig = false)
     {
-        // Use Laravel Cache to cache the translations from JSON files
-        return Cache::remember("json_translations_{$prefix}", now()->addHours(1), function () use ($prefix) {
+        // Use Laravel Cache to cache the translations from JSON files with AI config dependency
+        $cacheKey = "json_translations_{$prefix}_ai_" . ($useAiDatabaseConfig ? 'db' : 'config');
+        
+        return Cache::remember($cacheKey, now()->addHours(1), function () use ($prefix, $useAiDatabaseConfig) {
             $translations = [];
             
             // Load all JSON files from resources/language directory
@@ -157,16 +198,9 @@ class LanguageController extends Controller
                 }
             }
             
-            // In JSON mode, we rely on JSON files for prompts to maintain separation
-            // Only load database prompts if no prompt JSON files exist
-            $promptJsonExists = false;
-            if (is_dir($languageDir)) {
-                $promptFiles = glob($languageDir . "/prompts_{$prefix}.json");
-                $promptJsonExists = !empty($promptFiles);
-            }
-            
-            if (!$promptJsonExists) {
-                // Load database prompts as fallback only if no prompt JSON files exist
+            // Handle prompts based on AI config system setting
+            if ($useAiDatabaseConfig) {
+                // AI Config System = Database: Load prompts from ai_assistants_prompts table
                 $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
                     ->get()
                     ->mapWithKeys(function ($prompt) {
@@ -177,6 +211,28 @@ class LanguageController extends Controller
                     ->toArray();
                 
                 $translations = array_merge($translations, $prompts);
+            } else {
+                // AI Config System = Config: Only load JSON prompts, not database prompts
+                // Check if prompt JSON files exist, if not use database as fallback
+                $promptJsonExists = false;
+                if (is_dir($languageDir)) {
+                    $promptFiles = glob($languageDir . "/prompts_{$prefix}.json");
+                    $promptJsonExists = !empty($promptFiles);
+                }
+                
+                if (!$promptJsonExists) {
+                    // Load database prompts as fallback only if no prompt JSON files exist
+                    $prompts = \App\Models\AiAssistantPrompt::where('language', $prefix)
+                        ->get()
+                        ->mapWithKeys(function ($prompt) {
+                            // Convert "Default Prompt" to "Default_Prompt" for JS compatibility
+                            $jsKey = str_replace(' ', '_', $prompt->title);
+                            return [$jsKey => $prompt->content];
+                        })
+                        ->toArray();
+                    
+                    $translations = array_merge($translations, $prompts);
+                }
             }
             
             return $translations;
