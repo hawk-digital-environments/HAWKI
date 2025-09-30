@@ -137,7 +137,7 @@ return [
     |
     */
 
-    'authentication_method' => env('AUTHENTICATION_METHOD', 'LDAP'),
+    'authentication_method' => env('AUTHENTICATION_METHOD', 'LOCAL_ONLY'),
 
     /*
     |--------------------------------------------------------------------------

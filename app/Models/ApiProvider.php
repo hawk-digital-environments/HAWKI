@@ -37,6 +37,7 @@ class ApiProvider extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'additional_settings' => 'array',
+        'api_key' => 'encrypted',
     ];
 
     /**

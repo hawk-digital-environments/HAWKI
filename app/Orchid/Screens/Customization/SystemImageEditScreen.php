@@ -308,30 +308,53 @@ class SystemImageEditScreen extends Screen
      */
     private function cleanupOldAttachments($imageName, $keepAttachmentId = null)
     {
-        $systemImage = AppSystemImage::where('name', $imageName)->first();
+        try {
+            $systemImage = AppSystemImage::where('name', $imageName)->first();
 
-        if ($systemImage && $systemImage->file_path) {
-            $pathPattern = 'storage/img/';
-            if (strpos($systemImage->file_path, $pathPattern) === 0) {
-                $relativePath = substr($systemImage->file_path, strlen($pathPattern));
-                $pathInfo = pathinfo($relativePath);
+            if ($systemImage && $systemImage->file_path) {
+                // Parse the file path to extract the actual filename
+                $filePath = $systemImage->file_path;
+                
+                // Handle both storage/img/ and img/ paths
+                if (strpos($filePath, 'storage/img/') === 0) {
+                    $fileName = pathinfo(basename($filePath), PATHINFO_FILENAME); // Get filename without extension
+                    $pathInDb = 'img/';
+                } elseif (strpos($filePath, 'img/') === 0) {
+                    $fileName = pathinfo(basename($filePath), PATHINFO_FILENAME); // Get filename without extension
+                    $pathInDb = 'img/';
+                } else {
+                    // For other files like favicon.ico
+                    $fileName = pathinfo($filePath, PATHINFO_FILENAME);
+                    $pathInDb = pathinfo($filePath, PATHINFO_DIRNAME) . '/';
+                    if ($pathInDb === './') $pathInDb = '';
+                }
 
-                $attachments = Dashboard::model(Attachment::class)::where('path', 'img/')
-                    ->where('name', $pathInfo['filename'])
-                    ->where('extension', $pathInfo['extension'] ?? '');
+                // Find attachments in orchid_attachments table
+                $attachments = \App\Models\OrchidAttachment::where('path', $pathInDb)
+                    ->where('name', $fileName);
 
                 if ($keepAttachmentId) {
                     $attachments->where('id', '!=', $keepAttachmentId);
                 }
 
+                $deletedCount = 0;
                 foreach ($attachments->get() as $attachment) {
                     try {
+                        // Delete the physical file and database record
                         $attachment->delete();
+                        $deletedCount++;
+                        Log::info("Deleted attachment: {$attachment->name} (ID: {$attachment->id})");
                     } catch (\Exception $e) {
-                        Log::warning("Could not delete old attachment: {$e->getMessage()}");
+                        Log::warning("Could not delete attachment {$attachment->id}: {$e->getMessage()}");
                     }
                 }
+
+                if ($deletedCount > 0) {
+                    Log::info("Cleaned up {$deletedCount} attachment(s) for system image: {$imageName}");
+                }
             }
+        } catch (\Exception $e) {
+            Log::error("Error cleaning up attachments for {$imageName}: {$e->getMessage()}");
         }
     }
 }

@@ -79,7 +79,7 @@
     const chatData = @json($chatData);
 	const activeLocale = {!! json_encode(Session::get('language')) !!};
 
-	const modelsList = @json($models).models;
+	const modelsList = @json($models).models.filter(model => !model.hasOwnProperty('visible') || model.visible);
 	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
 

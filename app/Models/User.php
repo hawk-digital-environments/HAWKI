@@ -111,6 +111,11 @@ class User extends OrchidUser
         return $this->hasMany(Invitation::class, 'username', 'username');
     }
 
+    public function createdPrompts()
+    {
+        return $this->hasMany(\App\Models\AiAssistantPrompt::class, 'created_by');
+    }
+
     public function revokProfile()
     {
         $this->update(['isRemoved' => 1]);

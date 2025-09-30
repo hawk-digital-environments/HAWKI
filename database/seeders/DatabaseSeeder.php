@@ -22,7 +22,8 @@ class DatabaseSeeder extends Seeder
             AppCssSeeder::class,
             AppSystemImageSeeder::class,
             ApiProvidersSeeder::class,   // ← Using the more complete seeder with base_url support
-            AppSystemPromptSeeder::class,
+            AiAssistantPromptSeeder::class,
+            AiAssistantSeeder::class,    // ← AI Assistants after prompts
             MailTemplateSeeder::class,   // ← Mail templates after core system setup
         ]);
     }

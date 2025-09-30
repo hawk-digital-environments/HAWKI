@@ -144,7 +144,7 @@ readonly class ProviderConfig implements \JsonSerializable
     
     private function getOrFail(string $key): mixed
     {
-        if (empty($this->config[$key])) {
+        if (!isset($this->config[$key])) {
             throw new MissingKeyInProviderConfigException($this->getId(), $key);
         }
         

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AiConvController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AppCssController;
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
@@ -18,6 +19,24 @@ Route::middleware('prevent_back')->group(function () {
 
     Route::get('/login', [LoginController::class, 'index']);
 
+    // Dynamic CSS route
+    Route::get('/css/{name}', [AppCssController::class, 'getByName'])->name('css.get');
+    
+    // Dynamic system image route
+    Route::get('/system-image/{name}', function ($name) {
+        $image = App\Models\AppSystemImage::getByName($name);
+        if ($image) {
+            return redirect(asset($image->file_path));
+        }
+        
+        // Fallback to static files
+        $fallback = [
+            'favicon' => 'favicon.ico',
+            'logo_svg' => 'img/logo.svg'
+        ];
+        
+        return redirect(asset($fallback[$name] ?? 'img/logo.svg'));
+    })->name('system.image');
 
     Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
     Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
@@ -42,9 +61,7 @@ Route::middleware('prevent_back')->group(function () {
 
     });
 
-
     Route::get('/check-session', [HomeController::class, 'CheckSessionTimeout']);
-
 
     // Announcement routes
     Route::get('/req/announcement/render/{id}', [AnnouncementController::class, 'render']);
@@ -164,7 +181,5 @@ Route::middleware('prevent_back')->group(function () {
     });
     // NAVIGATION ROUTES
     Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
-
-
 
 });

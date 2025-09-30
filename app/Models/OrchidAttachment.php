@@ -26,4 +26,34 @@ class OrchidAttachment extends OrchidBaseAttachment
             'attachmentable_id'
         );
     }
+
+    /**
+     * Override delete to use the correct pivot table
+     */
+    public function delete()
+    {
+        try {
+            // Delete from orchid_attachmentable pivot table first
+            \DB::table('orchid_attachmentable')
+                ->where('attachment_id', $this->id)
+                ->delete();
+        } catch (\Exception $e) {
+            \Log::warning("Could not delete from orchid_attachmentable for attachment {$this->id}: {$e->getMessage()}");
+        }
+
+        // Delete the physical file
+        try {
+            $disk = $this->disk ?? config('platform.attachment.disk', 'public');
+            $filePath = $this->path . $this->name . '.' . $this->extension;
+            
+            if (\Storage::disk($disk)->exists($filePath)) {
+                \Storage::disk($disk)->delete($filePath);
+            }
+        } catch (\Exception $e) {
+            \Log::warning("Could not delete physical file for attachment {$this->id}: {$e->getMessage()}");
+        }
+
+        // Delete the attachment record itself
+        return \DB::table($this->table)->where('id', $this->id)->delete();
+    }
 }

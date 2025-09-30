@@ -18,7 +18,7 @@ return new class extends Migration
                 $table->id();
                 $table->string('provider_name')->unique();
                 $table->foreignId('api_format_id')->nullable()->constrained('api_formats')->onDelete('set null');
-                $table->string('api_key')->nullable();
+                $table->text('api_key')->nullable();
                 $table->string('base_url')->nullable();
                 $table->boolean('is_active')->default(false);
                 $table->integer('display_order')->default(0);

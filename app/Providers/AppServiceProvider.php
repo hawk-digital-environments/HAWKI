@@ -83,6 +83,7 @@ class AppServiceProvider extends ServiceProvider
     protected function registerObservers(): void
     {
         \App\Models\User::observe(\App\Observers\UserObserver::class);
+        \App\Models\AiModel::observe(\App\Observers\AiModelObserver::class);
     }
 
     protected function registerStorageServices(): void

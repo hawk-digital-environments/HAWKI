@@ -9,6 +9,8 @@ use App\Services\AI\Exception\ModelIdNotAvailableException;
 use App\Services\AI\Exception\ModelNotInPayloadException;
 use App\Services\AI\Exception\NoModelSetInRequestException;
 use App\Services\AI\Value\AiModel;
+use App\Services\AI\Value\AiModelCollection;
+use App\Services\AI\Value\AiModelMap;
 use App\Services\AI\Value\AiRequest;
 use App\Services\AI\Value\AiResponse;
 use App\Services\AI\Value\AvailableAiModels;
@@ -33,7 +35,36 @@ readonly class AiService
     public function getAvailableModels(?bool $external = null): AvailableAiModels
     {
         $usageType = $external ? ModelUsageType::EXTERNAL_APP : ModelUsageType::DEFAULT;
-        return $this->factory->getAvailableModels($usageType);
+        
+        try {
+            return $this->factory->getAvailableModels($usageType);
+        } catch (\Exception $e) {
+            // Log the exception if logging trigger is enabled
+            if (config('logging.triggers.default_model')) {
+                \Log::warning('Missing AI models configuration, returning placeholder models', [
+                    'exception' => get_class($e),
+                    'message' => $e->getMessage(),
+                    'usage_type' => $usageType->value
+                ]);
+            }
+            
+            // Return placeholder models when no real models are available
+            return $this->createPlaceholderModels();
+        }
+    }
+    
+    /**
+     * Create placeholder models when no real models are available
+     *
+     * @return AvailableAiModels
+     */
+    private function createPlaceholderModels(): AvailableAiModels
+    {
+        return new AvailableAiModels(
+            models: new AiModelCollection(),
+            defaultModels: new AiModelMap(),
+            systemModels: new AiModelMap()
+        );
     }
     
     /**
@@ -77,7 +108,10 @@ readonly class AiService
     public function sendRequest(array|AiRequest $request): AiResponse
     {
         [$request, $model] = $this->resolveRequestAndModel($request);
-        return $model->getClient()->sendRequest($request);
+        
+        $response = $model->getClient()->sendRequest($request);
+        
+        return $response;
     }
     
     /**
@@ -92,6 +126,7 @@ readonly class AiService
     public function sendStreamRequest(array|AiRequest $request, callable $onData): void
     {
         [$request, $model] = $this->resolveRequestAndModel($request);
+        
         $model->getClient()->sendStreamRequest($request, $onData);
     }
     
@@ -107,12 +142,29 @@ readonly class AiService
             if (empty($modelId)) {
                 throw new ModelNotInPayloadException($request);
             }
-            $model = $this->getModelOrFail($modelId);
+            
+            try {
+                $model = $this->getModelOrFail($modelId);
+            } catch (\Exception $e) {
+                // Log model resolution failure if trigger is enabled
+                if (config('logging.triggers.default_model')) {
+                    \Log::error('Model resolution failed', [
+                        'model_id' => $modelId,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+                throw $e;
+            }
+            
             $request = new AiRequest(payload: $request);
             return [$request, $model];
         }
         
         if ($request->model === null) {
+            // Log missing model if trigger is enabled
+            if (config('logging.triggers.default_model')) {
+                \Log::error('No model set in AiRequest object');
+            }
             throw new NoModelSetInRequestException();
         }
         

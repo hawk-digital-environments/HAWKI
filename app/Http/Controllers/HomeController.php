@@ -75,7 +75,19 @@ class HomeController extends Controller
         }
         Session::put('last-route', 'home');
 
-        $models = $this->aiService->getAvailableModels()->toArray();
+        try {
+            $models = $this->aiService->getAvailableModels()->toArray();
+        } catch (\Exception $e) {
+            // Log the error if logging trigger is enabled
+            if (config('logging.triggers.default_model')) {
+                \Log::error('Failed to load available models', [
+                    'error' => $e->getMessage(),
+                    'user_id' => $user->id
+                ]);
+            }
+            // Provide empty models array as fallback
+            $models = ['models' => []];
+        }
         $announcements = $announcementService->getUserAnnouncements();
 
         $converterActive = FileConverterFactory::converterActive();

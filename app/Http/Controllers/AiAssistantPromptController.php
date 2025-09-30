@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AppSystemPrompt;
+use App\Models\AiAssistantPrompt;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Session;
 
-class AppSystemPromptController extends Controller
+class AiAssistantPromptController extends Controller
 {
     /**
      * Returns all system prompts in the current language
@@ -19,16 +19,16 @@ class AppSystemPromptController extends Controller
         $fallbackLanguage = 'en_US';
 
         // Retrieve all available model types
-        $modelTypes = AppSystemPrompt::select('prompt_type')->distinct()->pluck('prompt_type')->toArray();
+        $modelTypes = AiAssistantPrompt::select('title')->distinct()->pluck('title')->toArray();
 
         $prompts = [];
         foreach ($modelTypes as $modelType) {
             // Try loading the prompt in the current language
-            $promptText = AppSystemPrompt::getPrompt($modelType, $language);
+            $promptText = AiAssistantPrompt::getPrompt($modelType, $language);
 
             // Fallback to the fallback language if not found
             if (! $promptText && $language !== $fallbackLanguage) {
-                $promptText = AppSystemPrompt::getPrompt($modelType, $fallbackLanguage);
+                $promptText = AiAssistantPrompt::getPrompt($modelType, $fallbackLanguage);
             }
 
             if ($promptText) {
@@ -50,11 +50,11 @@ class AppSystemPromptController extends Controller
         $fallbackLanguage = 'en_US';
 
         // Try loading the prompt in the current language
-        $promptText = AppSystemPrompt::getPrompt($modelType, $language);
+        $promptText = AiAssistantPrompt::getPrompt($modelType, $language);
 
         // Fallback to the fallback language if not found
         if (! $promptText && $language !== $fallbackLanguage) {
-            $promptText = AppSystemPrompt::getPrompt($modelType, $fallbackLanguage);
+            $promptText = AiAssistantPrompt::getPrompt($modelType, $fallbackLanguage);
         }
 
         return $promptText;

@@ -11,7 +11,7 @@
                 </button>
                 @endif
 
-                @if(Auth::user()->hasAccess('groupchat.access') && config('app.groupchat_active', false))
+                @if(Auth::user()->hasAccess('groupchat.access') && config('hawki.groupchat_active', false))
                 <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent">
                     <x-icon name="assistant-icon"/>
 

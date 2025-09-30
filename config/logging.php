@@ -157,6 +157,7 @@ return [
      */
 
     'triggers' => [
+        'curl_request_object' => false,
         'curl_return_object' => false,
         'normalized_return_object' => false,
         'formatted_stream_chunk' => false,

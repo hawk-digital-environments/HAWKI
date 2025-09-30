@@ -163,77 +163,48 @@ async function autoGeneratePasskey(){
 async function verifyGeneratedPassKey(){
 
     try {
-        console.log('=== verifyGeneratedPassKey START ===');
-        console.log('passkeySecret configuration:', passkeySecret);
-        
         // Verify userInfo is available
         if (!userInfo) {
             console.error('userInfo is not available');
-            console.log("Failed to verify passkey. User info not available.");
             return;
         }
         
         // Generate the passkey using the same logic as autoGeneratePasskey
-        console.log('Generating passkey using generatePasskeyFromSecret...');
         const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
-        console.log('Generated passkey in verifyGeneratedPassKey:', generatedPasskey);
         
-        console.log('serverKeychainCryptoData available:', !!serverKeychainCryptoData);
-
         // Verify that serverKeychainCryptoData is valid
         if (!serverKeychainCryptoData) {
             console.error('serverKeychainCryptoData is not available');
-            console.log("Failed to verify passkey. Server keychain data not available.");
             return;
         }
 
         // Try to parse serverKeychainCryptoData first
         try {
             const parsedData = JSON.parse(serverKeychainCryptoData);
-            console.log('serverKeychainCryptoData parsed successfully:', {
-                hasKeychain: !!parsedData.keychain,
-                hasKCIV: !!parsedData.KCIV,
-                hasKCTAG: !!parsedData.KCTAG
-            });
+            // parsedData checked for presence of expected fields
         } catch (parseError) {
             console.error('Failed to parse serverKeychainCryptoData:', parseError);
-            console.log("Failed to verify passkey. Invalid server keychain data.");
             return;
         }
 
-        console.log('=== Attempting passkey verification ===');
         const verificationResult = await verifyPasskey(generatedPasskey);
-        console.log('Verification result:', verificationResult);
         
         if(verificationResult){
-            console.log('=== Passkey verified successfully, setting passkey ===');
             await setPassKey(generatedPasskey);
             
             try {
-                console.log('=== Attempting keychain sync ===');
                 await syncKeychain(serverKeychainCryptoData);
-                console.log('keychain synced successfully');
                 window.location.href = '/chat';
             } catch (syncError) {
                 console.error('Error syncing keychain:', syncError);
-                console.log("Failed to sync keychain. Please try again.");
             }
-        }
-        else{
-            console.log("Failed to verify passkey. Generated passkey does not match server keychain.");
         }
     } catch (error) {
         console.error('Error in verifyGeneratedPassKey:', error);
-        console.log("Failed to verify passkey. Please try again.");
     }
-    
-    console.log('=== verifyGeneratedPassKey END ===');
-
 }
 
 // Make functions available globally for backward compatibility
 window.generatePasskeyFromSecret = generatePasskeyFromSecret;
 window.autoGeneratePasskey = autoGeneratePasskey;
 window.verifyGeneratedPassKey = verifyGeneratedPassKey;
-
-console.log('Auto Passkey Generation Module loaded successfully');

@@ -127,10 +127,59 @@ class ApiProvidersScreen extends Screen
         $provider = ApiProvider::findOrFail($request->get('id'));
 
         $newStatus = ! $provider->is_active;
-        $provider->update(['is_active' => $newStatus]);
-
-        $statusText = $newStatus ? 'activated' : 'deactivated';
-        Toast::info("Provider '{$provider->provider_name}' has been {$statusText}.");
+        
+        // If activating the provider, run connection test automatically
+        if ($newStatus) {
+            // First activate the provider, then test connection
+            $provider->update(['is_active' => $newStatus]);
+            
+            $startTime = microtime(true);
+            
+            try {
+                // Use trait method for connection testing (provider is now active)
+                $result = $this->testConnection($provider);
+                $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+                
+                // Store connection test result in additional_settings
+                $additionalSettings = $provider->additional_settings ?? [];
+                $additionalSettings['last_connection_test'] = [
+                    'timestamp' => now()->toISOString(),
+                    'success' => $result['success'],
+                    'response_time_ms' => $responseTime,
+                    'endpoint' => $result['endpoint'] ?? null,
+                    'error' => $result['success'] ? null : ($result['error'] ?? 'Unknown error'),
+                ];
+                
+                $provider->update(['additional_settings' => $additionalSettings]);
+                
+                if ($result['success']) {
+                    Toast::success("Provider '{$provider->provider_name}' activated successfully! Connection test: {$responseTime}ms");
+                } else {
+                    Toast::warning("Provider '{$provider->provider_name}' activated but connection test failed: {$result['error']}");
+                }
+                
+            } catch (\Exception $e) {
+                $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+                
+                // Store failed connection test result
+                $additionalSettings = $provider->additional_settings ?? [];
+                $additionalSettings['last_connection_test'] = [
+                    'timestamp' => now()->toISOString(),
+                    'success' => false,
+                    'response_time_ms' => $responseTime,
+                    'endpoint' => null,
+                    'error' => $e->getMessage(),
+                ];
+                
+                $provider->update(['additional_settings' => $additionalSettings]);
+                
+                Toast::warning("Provider '{$provider->provider_name}' activated but connection test failed: {$e->getMessage()}");
+            }
+        } else {
+            // Just deactivate without testing
+            $provider->update(['is_active' => $newStatus]);
+            Toast::info("Provider '{$provider->provider_name}' has been deactivated.");
+        }
     }
 
     /**
@@ -660,11 +709,22 @@ class ApiProvidersScreen extends Screen
         try {
             // Use trait method for connection testing
             $result = $this->testConnection($provider);
-
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
 
+            // Store connection test result in additional_settings
+            $additionalSettings = $provider->additional_settings ?? [];
+            $additionalSettings['last_connection_test'] = [
+                'timestamp' => now()->toISOString(),
+                'success' => $result['success'],
+                'response_time_ms' => $responseTime,
+                'endpoint' => $result['endpoint'] ?? null,
+                'error' => $result['success'] ? null : ($result['error'] ?? 'Unknown error'),
+            ];
+            
+            $provider->update(['additional_settings' => $additionalSettings]);
+
             if ($result['success']) {
-                Toast::success("✅ Connection to '{$provider->provider_name}' successful! Response time: {$responseTime}ms");
+                Toast::success("Connection to '{$provider->provider_name}' successful! Response time: {$responseTime}ms");
                 
                 $this->logInfo('provider_connection_test', [
                     'provider_id' => $provider->id,
@@ -686,6 +746,19 @@ class ApiProvidersScreen extends Screen
             }
         } catch (\Exception $e) {
             $responseTime = round((microtime(true) - $startTime) * 1000, 2);
+            
+            // Store failed connection test result
+            $additionalSettings = $provider->additional_settings ?? [];
+            $additionalSettings['last_connection_test'] = [
+                'timestamp' => now()->toISOString(),
+                'success' => false,
+                'response_time_ms' => $responseTime,
+                'endpoint' => null,
+                'error' => $e->getMessage(),
+            ];
+            
+            $provider->update(['additional_settings' => $additionalSettings]);
+            
             Toast::error("Failed to test provider connection: {$e->getMessage()}");
 
             $this->logError('provider_connection_test', $e, [

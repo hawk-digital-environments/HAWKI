@@ -95,6 +95,8 @@ trait OrchidSettingsManagementTrait
         $changedSettings = [];
         $count = 0;
 
+
+
         if ($requestSettings) {
             foreach ($requestSettings as $flatKey => $value) {
                 // Convert flat input name back to database key
@@ -155,6 +157,9 @@ trait OrchidSettingsManagementTrait
 
                 $count++;
             }
+
+            // Check if passkey method changed and handle user key invalidation
+            $this->handlePasskeyMethodChange($changedSettings);
 
             // User feedback based on the changes
             if ($count > 0) {
@@ -1165,5 +1170,52 @@ trait OrchidSettingsManagementTrait
             Toast::error('Error clearing cache: '.$e->getMessage());
         }
 
+    }
+
+    /**
+     * Handle passkey method changes by clearing all user public keys and keychains
+     * when the passkey generation method is changed to prevent authentication issues.
+     */
+    protected function handlePasskeyMethodChange(array $changedSettings): void
+    {
+        // Check if auth_passkey_method was changed
+        $passkeyMethodChanged = false;
+        foreach ($changedSettings as $changed) {
+            if ($changed['key'] === 'auth_passkey_method') {
+                $passkeyMethodChanged = true;
+                break;
+            }
+        }
+
+        if ($passkeyMethodChanged) {
+            try {
+                // Clear all user public keys since they are now invalid
+                $affectedUsers = \App\Models\User::where('publicKey', '!=', '')->whereNotNull('publicKey')->count();
+                
+                \App\Models\User::where('publicKey', '!=', '')->whereNotNull('publicKey')->update([
+                    'publicKey' => ''
+                ]);
+
+                // Also clear all private user data (keychains) since they're tied to the old passkeys
+                $affectedKeychains = \App\Models\PrivateUserData::count();
+                \App\Models\PrivateUserData::truncate();
+
+                Log::warning('Passkey method changed - cleared all user authentication data', [
+                    'affected_users' => $affectedUsers,
+                    'affected_keychains' => $affectedKeychains,
+                    'user_id' => auth()->id(),
+                    'action_type' => 'passkey_method_change_cleanup'
+                ]);
+
+                Toast::warning(
+                    "Passkey method changed! All users ({$affectedUsers}) must re-register their accounts " .
+                    "as their existing authentication data is no longer valid with the new passkey method."
+                );
+
+            } catch (\Exception $e) {
+                Log::error('Error clearing user data after passkey method change: ' . $e->getMessage());
+                Toast::error('Error clearing user authentication data: ' . $e->getMessage());
+            }
+        }
     }
 }
