@@ -41,11 +41,9 @@ trait AiConnectionTrait
             $testUrl = $base . '/models';
         }
 
-        // Build headers from DB config
-        $headers = $this->buildHttpHeaders($provider);
-
         try {
-            $response = Http::withHeaders($headers)->timeout(10)->get($testUrl);
+            // Use provider-specific authentication method
+            $response = $this->makeAuthenticatedRequest($provider, $testUrl);
             
             if ($response->successful()) {
                 return [
@@ -93,11 +91,9 @@ trait AiConnectionTrait
             $modelsUrl = $base . '/models';
         }
 
-        // Build headers from DB config
-        $headers = $this->buildHttpHeaders($provider);
-
         try {
-            $response = Http::withHeaders($headers)->timeout(10)->get($modelsUrl);
+            // Use provider-specific authentication method
+            $response = $this->makeAuthenticatedRequest($provider, $modelsUrl);
         } catch (\Exception $e) {
             throw new \Exception('Request failed: ' . $e->getMessage());
         }
@@ -232,12 +228,46 @@ trait AiConnectionTrait
     }
 
     /**
+     * Make an authenticated HTTP request based on provider-specific authentication method.
+     *
+     * @param ApiProvider $provider
+     * @param string $url
+     * @return \Illuminate\Http\Client\Response
+     */
+    protected function makeAuthenticatedRequest(ApiProvider $provider, string $url)
+    {
+        $apiFormatName = $provider->apiFormat?->unique_name ?? 'openai-api';
+        
+        // Google API uses query parameter authentication
+        if ($apiFormatName === 'google-generative-language-api') {
+            $queryParams = [];
+            if (!empty($provider->api_key)) {
+                $queryParams['key'] = $provider->api_key;
+            }
+            
+            $headers = $this->buildHttpHeaders($provider, false); // Don't add Authorization header
+            
+            return Http::withHeaders($headers)
+                ->timeout(10)
+                ->get($url, $queryParams);
+        }
+        
+        // Default authentication method (Bearer token in headers)
+        $headers = $this->buildHttpHeaders($provider, true);
+        
+        return Http::withHeaders($headers)
+            ->timeout(10)
+            ->get($url);
+    }
+
+    /**
      * Build HTTP headers from provider configuration.
      *
      * @param ApiProvider $provider
+     * @param bool $includeAuth Whether to include Authorization header
      * @return array
      */
-    protected function buildHttpHeaders(ApiProvider $provider): array
+    protected function buildHttpHeaders(ApiProvider $provider, bool $includeAuth = true): array
     {
         $headers = [
             'Accept' => 'application/json',
@@ -252,7 +282,7 @@ trait AiConnectionTrait
         }
 
         // Add Authorization header if API key exists and not already set
-        if (!empty($provider->api_key) && !isset($headers['Authorization'])) {
+        if ($includeAuth && !empty($provider->api_key) && !isset($headers['Authorization'])) {
             $headers['Authorization'] = 'Bearer ' . $provider->api_key;
         }
 
@@ -302,25 +332,34 @@ trait AiConnectionTrait
     protected function extractModelData($m, int $displayOrder): array
     {
         if (is_string($m)) {
+            $cleanModelId = $this->cleanGoogleModelId($m);
             return [
-                'model_id' => $m,
-                'label' => $m,
+                'model_id' => $cleanModelId,
+                'label' => $cleanModelId,
                 'display_order' => $displayOrder,
                 'information' => ['source' => 'direct_http']
             ];
         } elseif (is_array($m)) {
             $modelId = $m['id'] ?? $m['name'] ?? ($m['model'] ?? null);
+            $cleanModelId = $this->cleanGoogleModelId((string) $modelId);
+            
+            // For label, prefer displayName (Google API) or fallback to cleaned model ID
+            $label = $m['displayName'] ?? $m['name'] ?? $m['id'] ?? $m['model'] ?? $cleanModelId;
+            
             return [
-                'model_id' => (string) $modelId,
-                'label' => $m['name'] ?? $m['id'] ?? ($m['model'] ?? $modelId),
+                'model_id' => $cleanModelId,
+                'label' => $label,
                 'display_order' => $displayOrder,
                 'information' => array_merge($m, ['source' => 'direct_http'])
             ];
         } elseif (is_object($m)) {
             $modelId = $m->id ?? $m->name ?? null;
+            $cleanModelId = $this->cleanGoogleModelId((string) $modelId);
+            $label = $m->displayName ?? $m->name ?? $m->id ?? $cleanModelId;
+            
             return [
-                'model_id' => (string) $modelId,
-                'label' => $m->name ?? $m->id ?? $modelId,
+                'model_id' => $cleanModelId,
+                'label' => $label,
                 'display_order' => $displayOrder,
                 'information' => array_merge(json_decode(json_encode($m), true), ['source' => 'direct_http'])
             ];
@@ -332,5 +371,21 @@ trait AiConnectionTrait
             'display_order' => $displayOrder,
             'information' => ['source' => 'direct_http']
         ];
+    }
+
+    /**
+     * Clean Google API model IDs by removing 'models/' prefix.
+     *
+     * @param string $modelId
+     * @return string
+     */
+    protected function cleanGoogleModelId(string $modelId): string
+    {
+        // Remove 'models/' prefix from Google API model IDs
+        if (str_starts_with($modelId, 'models/')) {
+            return substr($modelId, 7); // Remove 'models/' (7 characters)
+        }
+        
+        return $modelId;
     }
 }
