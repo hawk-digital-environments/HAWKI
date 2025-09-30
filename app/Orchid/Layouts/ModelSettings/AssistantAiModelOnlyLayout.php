@@ -18,14 +18,6 @@ class AssistantAiModelOnlyLayout extends Rows
     {
         return [
             // AI Model Configuration Section
-            Select::make('ai_provider_filter')
-                ->title('AI Provider (Filter)')
-                ->fromQuery(ApiProvider::whereHas('aiModels', function($query) {
-                    $query->where('is_active', true);
-                })->orderBy('provider_name'), 'provider_name', 'id')
-                ->empty('All Providers')
-                ->help('Filter models by provider (optional)'),
-
             Select::make('assistant.ai_model')
                 ->title('AI Model')
                 ->fromQuery(AiModel::where('is_active', true)->with('provider'), 'label', 'system_id')

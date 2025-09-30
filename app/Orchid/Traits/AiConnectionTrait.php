@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Http;
 trait AiConnectionTrait
 {
     /**
-     * Test connection to a provider using simple HTTP request (DB config only).
+     * Test connection to a provider using lightweight HTTP HEAD request (DB config only).
+     * Only checks connectivity and authentication, doesn't fetch actual data.
      *
      * @param ApiProvider $provider
      * @return array ['success' => bool, 'error' => string|null, 'endpoint' => string, 'status_code' => int|null]
@@ -26,7 +27,7 @@ trait AiConnectionTrait
             ];
         }
 
-        // Try models endpoint first
+        // Try models endpoint first for testing
         $testUrl = $provider->getModelsUrl();
         if (!$testUrl) {
             // Fallback to base URL with /models
@@ -42,8 +43,8 @@ trait AiConnectionTrait
         }
 
         try {
-            // Use provider-specific authentication method
-            $response = $this->makeAuthenticatedRequest($provider, $testUrl);
+            // Use lightweight HEAD request first, fall back to GET if HEAD is not supported
+            $response = $this->makeLightweightConnectionTest($provider, $testUrl);
             
             if ($response->successful()) {
                 return [
@@ -238,26 +239,15 @@ trait AiConnectionTrait
     {
         $apiFormatName = $provider->apiFormat?->unique_name ?? 'openai-api';
         
-        // Google API uses query parameter authentication
-        if ($apiFormatName === 'google-generative-language-api') {
-            $queryParams = [];
-            if (!empty($provider->api_key)) {
-                $queryParams['key'] = $provider->api_key;
-            }
-            
-            $headers = $this->buildHttpHeaders($provider, false); // Don't add Authorization header
-            
-            return Http::withHeaders($headers)
-                ->timeout(10)
-                ->get($url, $queryParams);
+        // Delegate to provider-specific method
+        $methodName = 'makeAuthenticatedRequest' . $this->getProviderMethodSuffix($apiFormatName);
+        
+        if (method_exists($this, $methodName)) {
+            return $this->$methodName($provider, $url);
         }
         
-        // Default authentication method (Bearer token in headers)
-        $headers = $this->buildHttpHeaders($provider, true);
-        
-        return Http::withHeaders($headers)
-            ->timeout(10)
-            ->get($url);
+        // Fallback to default method
+        return $this->makeAuthenticatedRequestDefault($provider, $url);
     }
 
     /**
@@ -269,24 +259,39 @@ trait AiConnectionTrait
      */
     protected function buildHttpHeaders(ApiProvider $provider, bool $includeAuth = true): array
     {
-        $headers = [
-            'Accept' => 'application/json',
-        ];
-
-        // Merge any headers from additional_settings
-        $additionalHeaders = $provider->additional_settings['headers'] ?? [];
-        if (is_array($additionalHeaders)) {
-            foreach ($additionalHeaders as $k => $v) {
-                $headers[$k] = $v;
-            }
+        $apiFormatName = $provider->apiFormat?->unique_name ?? 'openai-api';
+        
+        // Delegate to provider-specific method
+        $methodName = 'buildHttpHeaders' . $this->getProviderMethodSuffix($apiFormatName);
+        
+        if (method_exists($this, $methodName)) {
+            return $this->$methodName($provider, $includeAuth);
         }
+        
+        // Fallback to default method
+        return $this->buildHttpHeadersDefault($provider, $includeAuth);
+    }
 
-        // Add Authorization header if API key exists and not already set
-        if ($includeAuth && !empty($provider->api_key) && !isset($headers['Authorization'])) {
-            $headers['Authorization'] = 'Bearer ' . $provider->api_key;
+    /**
+     * Make a lightweight connection test using HEAD request, fallback to GET if needed.
+     *
+     * @param ApiProvider $provider
+     * @param string $url
+     * @return \Illuminate\Http\Client\Response
+     */
+    protected function makeLightweightConnectionTest(ApiProvider $provider, string $url)
+    {
+        $apiFormatName = $provider->apiFormat?->unique_name ?? 'openai-api';
+        
+        // Delegate to provider-specific method
+        $methodName = 'makeLightweightConnectionTest' . $this->getProviderMethodSuffix($apiFormatName);
+        
+        if (method_exists($this, $methodName)) {
+            return $this->$methodName($provider, $url);
         }
-
-        return $headers;
+        
+        // Fallback to default method
+        return $this->makeLightweightConnectionTestDefault($provider, $url);
     }
 
     /**
@@ -387,5 +392,240 @@ trait AiConnectionTrait
         }
         
         return $modelId;
+    }
+
+    // =====================================================
+    // Provider-specific method implementations
+    // =====================================================
+
+    /**
+     * Get method suffix for provider-specific methods.
+     *
+     * @param string $apiFormatName
+     * @return string
+     */
+    protected function getProviderMethodSuffix(string $apiFormatName): string
+    {
+        $mapping = [
+            'google-generative-language-api' => 'Google',
+            'anthropic-api' => 'Anthropic',
+            'openai-api' => 'OpenAi',
+        ];
+
+        return $mapping[$apiFormatName] ?? 'Default';
+    }
+
+    // =====================================================
+    // Google API specific methods
+    // =====================================================
+
+    /**
+     * Build HTTP headers for Google API.
+     */
+    protected function buildHttpHeadersGoogle(ApiProvider $provider, bool $includeAuth = true): array
+    {
+        $headers = [
+            'Accept' => 'application/json',
+        ];
+
+        // Merge any headers from additional_settings
+        $additionalHeaders = $provider->additional_settings['headers'] ?? [];
+        if (is_array($additionalHeaders)) {
+            foreach ($additionalHeaders as $k => $v) {
+                $headers[$k] = $v;
+            }
+        }
+
+        // Google API doesn't use Authorization header - uses query parameter instead
+        return $headers;
+    }
+
+    /**
+     * Make authenticated request for Google API.
+     */
+    protected function makeAuthenticatedRequestGoogle(ApiProvider $provider, string $url)
+    {
+        $queryParams = [];
+        if (!empty($provider->api_key)) {
+            $queryParams['key'] = $provider->api_key;
+        }
+        
+        $headers = $this->buildHttpHeadersGoogle($provider, false);
+        
+        return Http::withHeaders($headers)
+            ->timeout(10)
+            ->get($url, $queryParams);
+    }
+
+    /**
+     * Make lightweight connection test for Google API.
+     */
+    protected function makeLightweightConnectionTestGoogle(ApiProvider $provider, string $url)
+    {
+        $queryParams = [];
+        if (!empty($provider->api_key)) {
+            $queryParams['key'] = $provider->api_key;
+        }
+        
+        $headers = $this->buildHttpHeadersGoogle($provider, false);
+        
+        // Google API: Skip HEAD entirely, use GET directly
+        // Google's API doesn't support HEAD requests well for /models endpoint
+        return Http::withHeaders($headers)
+            ->timeout(10)
+            ->get($url, $queryParams);
+    }
+
+    // =====================================================
+    // Anthropic API specific methods
+    // =====================================================
+
+    /**
+     * Build HTTP headers for Anthropic API.
+     */
+    protected function buildHttpHeadersAnthropic(ApiProvider $provider, bool $includeAuth = true): array
+    {
+        $headers = [
+            'Accept' => 'application/json',
+            'anthropic-version' => '2023-06-01', // Required for Anthropic API
+        ];
+
+        // Merge any headers from additional_settings
+        $additionalHeaders = $provider->additional_settings['headers'] ?? [];
+        if (is_array($additionalHeaders)) {
+            foreach ($additionalHeaders as $k => $v) {
+                $headers[$k] = $v;
+            }
+        }
+
+        // Add Anthropic-specific authentication
+        if ($includeAuth && !empty($provider->api_key) && !isset($headers['x-api-key'])) {
+            $headers['x-api-key'] = $provider->api_key;
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Make authenticated request for Anthropic API.
+     */
+    protected function makeAuthenticatedRequestAnthropic(ApiProvider $provider, string $url)
+    {
+        $headers = $this->buildHttpHeadersAnthropic($provider, true);
+        
+        return Http::withHeaders($headers)
+            ->timeout(10)
+            ->get($url);
+    }
+
+    /**
+     * Make lightweight connection test for Anthropic API.
+     */
+    protected function makeLightweightConnectionTestAnthropic(ApiProvider $provider, string $url)
+    {
+        $headers = $this->buildHttpHeadersAnthropic($provider, true);
+        
+        // Anthropic API: Skip HEAD entirely, use GET directly
+        // Anthropic's API doesn't support HEAD requests for /models endpoint
+        return Http::withHeaders($headers)
+            ->timeout(10)
+            ->get($url);
+    }
+
+    // =====================================================
+    // OpenAI API specific methods (and default)
+    // =====================================================
+
+    /**
+     * Build HTTP headers for OpenAI API (default implementation).
+     */
+    protected function buildHttpHeadersOpenAi(ApiProvider $provider, bool $includeAuth = true): array
+    {
+        return $this->buildHttpHeadersDefault($provider, $includeAuth);
+    }
+
+    /**
+     * Make authenticated request for OpenAI API (default implementation).
+     */
+    protected function makeAuthenticatedRequestOpenAi(ApiProvider $provider, string $url)
+    {
+        return $this->makeAuthenticatedRequestDefault($provider, $url);
+    }
+
+    /**
+     * Make lightweight connection test for OpenAI API (default implementation).
+     */
+    protected function makeLightweightConnectionTestOpenAi(ApiProvider $provider, string $url)
+    {
+        return $this->makeLightweightConnectionTestDefault($provider, $url);
+    }
+
+    // =====================================================
+    // Default implementation methods
+    // =====================================================
+
+    /**
+     * Build HTTP headers - default implementation.
+     */
+    protected function buildHttpHeadersDefault(ApiProvider $provider, bool $includeAuth = true): array
+    {
+        $headers = [
+            'Accept' => 'application/json',
+        ];
+
+        // Merge any headers from additional_settings
+        $additionalHeaders = $provider->additional_settings['headers'] ?? [];
+        if (is_array($additionalHeaders)) {
+            foreach ($additionalHeaders as $k => $v) {
+                $headers[$k] = $v;
+            }
+        }
+
+        // Add default Bearer token authentication
+        if ($includeAuth && !empty($provider->api_key) && !isset($headers['Authorization'])) {
+            $headers['Authorization'] = 'Bearer ' . $provider->api_key;
+        }
+
+        return $headers;
+    }
+
+    /**
+     * Make authenticated request - default implementation.
+     */
+    protected function makeAuthenticatedRequestDefault(ApiProvider $provider, string $url)
+    {
+        $headers = $this->buildHttpHeadersDefault($provider, true);
+        
+        return Http::withHeaders($headers)
+            ->timeout(10)
+            ->get($url);
+    }
+
+    /**
+     * Make lightweight connection test - default implementation.
+     */
+    protected function makeLightweightConnectionTestDefault(ApiProvider $provider, string $url)
+    {
+        $headers = $this->buildHttpHeadersDefault($provider, true);
+        
+        try {
+            $response = Http::withHeaders($headers)
+                ->timeout(10)
+                ->head($url);
+            
+            // If HEAD is not supported (405 Method Not Allowed), try GET
+            if ($response->status() === 405) {
+                $response = Http::withHeaders($headers)
+                    ->timeout(10)
+                    ->get($url);
+            }
+            
+            return $response;
+        } catch (\Exception $e) {
+            // Fallback to GET if HEAD fails
+            return Http::withHeaders($headers)
+                ->timeout(10)
+                ->get($url);
+        }
     }
 }

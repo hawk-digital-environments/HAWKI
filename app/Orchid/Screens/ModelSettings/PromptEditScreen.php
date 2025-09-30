@@ -197,8 +197,6 @@ class PromptEditScreen extends Screen
             // Clear language controller caches to update translation arrays
             \App\Http\Controllers\LanguageController::clearPromptCaches();
             
-            Toast::success(__('Prompt saved successfully in both languages.'));
-            
         } catch (\Exception $e) {
             Toast::error(__('Error saving prompt: ') . $e->getMessage());
             return back()->withInput();
@@ -218,7 +216,7 @@ class PromptEditScreen extends Screen
             $redirectUrl .= '?' . http_build_query($filterParams);
         }
 
-        Toast::info(__('Prompt saved successfully.'));
+        Toast::success(__('Prompt saved successfully in both languages.'));
 
         return redirect($redirectUrl);
     }

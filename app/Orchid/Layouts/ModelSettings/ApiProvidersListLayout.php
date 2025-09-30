@@ -6,6 +6,7 @@ namespace App\Orchid\Layouts\ModelSettings;
 
 use App\Models\ApiProvider;
 use App\Orchid\Traits\ApiFormatColorTrait;
+use Carbon\Carbon;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\DropDown;
 use Orchid\Screen\Actions\Link;
@@ -54,12 +55,54 @@ class ApiProvidersListLayout extends Table
                 ->render(function (ApiProvider $provider) {
                     $badgeText = $provider->is_active ? 'Active' : 'Inactive';
                     $badgeClass = $provider->is_active ? 'bg-success' : 'bg-secondary';
+                    $tooltipText = null;
+                    $warnings = [];
 
-                    return Button::make($badgeText)
+                    // Check for configuration issues
+                    if ($provider->is_active) {
+                        // Check if API key is missing
+                        $isOllamaProvider = stripos($provider->provider_name, 'ollama') !== false;
+                        
+                        if (empty($provider->api_key)) {
+                            if ($isOllamaProvider) {
+                                // Ollama doesn't require API key, but show it in status
+                                $tooltipText = 'No API Key (Ollama - not required)';
+                            } else {
+                                // Other providers require API key
+                                $warnings[] = 'No API Key';
+                            }
+                        }
+                        
+                        // Check if base URL is missing
+                        if (empty($provider->base_url)) {
+                            $warnings[] = 'No Base URL';
+                        }
+                        
+                        // Check if API format is missing
+                        if (!$provider->apiFormat) {
+                            $warnings[] = 'No API Format';
+                        }
+                        
+                        // Override status if there are configuration issues
+                        if (!empty($warnings)) {
+                            $badgeText = 'Config Issues';
+                            $badgeClass = 'bg-warning';
+                            $tooltipText = 'Configuration Issues: ' . implode(', ', $warnings);
+                        }
+                    }
+
+                    $button = Button::make($badgeText)
                         ->method('toggleStatus', [
                             'id' => $provider->id,
                         ])
                         ->class("badge {$badgeClass} border-0 rounded-pill");
+                    
+                    // Add tooltip if we have one
+                    if ($tooltipText) {
+                        return '<span title="' . htmlspecialchars($tooltipText) . '">' . $button . '</span>';
+                    }
+                    
+                    return $button;
                 }),
 
             TD::make('connection_status', __('Connection'))
@@ -68,7 +111,30 @@ class ApiProvidersListLayout extends Table
                         return '<span class="badge bg-light text-muted">N/A</span>';
                     }
 
-                    // This could be expanded to show cached connection test results
+                    // Check for stored connection test results
+                    $additionalSettings = $provider->additional_settings ?? [];
+                    $lastTest = $additionalSettings['last_connection_test'] ?? null;
+                    
+                    if ($lastTest) {
+                        $timestamp = Carbon::parse($lastTest['timestamp']);
+                        $timeDiff = $timestamp->diffForHumans();
+                        $responseTime = $lastTest['response_time_ms'] ?? 0;
+                        
+                        if ($lastTest['success']) {
+                            $badgeText = "{$responseTime}ms";
+                            $badgeClass = 'bg-success';
+                            $tooltipText = "Last test: {$timeDiff} - Success ({$responseTime}ms)";
+                        } else {
+                            $badgeText = 'Failed';
+                            $badgeClass = 'bg-danger';
+                            $error = $lastTest['error'] ?? 'Unknown error';
+                            $tooltipText = "Last test: {$timeDiff} - Failed: {$error}";
+                        }
+                        
+                        return '<span class="badge ' . $badgeClass . '" title="' . htmlspecialchars($tooltipText) . '">' . $badgeText . '</span>';
+                    }
+
+                    // No test results available
                     return '<span class="badge bg-info" title="Click Test Connection to check">Unknown</span>';
                 })
                 ->cantHide(),

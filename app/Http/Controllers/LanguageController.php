@@ -329,9 +329,13 @@ class LanguageController extends Controller
     public static function clearCaches(?string $language = null)
     {
         if ($language) {
-            // Clear specific language caches
+            // Clear specific language caches - include AI config variants
             Cache::forget("translations_{$language}");
+            Cache::forget("translations_{$language}_ai_db");
+            Cache::forget("translations_{$language}_ai_config");
             Cache::forget("json_translations_{$language}");
+            Cache::forget("json_translations_{$language}_ai_db");
+            Cache::forget("json_translations_{$language}_ai_config");
             Cache::forget("system_placeholders_{$language}");
             Cache::forget("app_name_{$language}");
         } else {

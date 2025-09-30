@@ -21,21 +21,54 @@ class PromptsScreen extends Screen
      */
     public function query(): iterable
     {
-        // Get one representative prompt per group (category + title combination)
-        $currentLanguage = config('app.locale') === 'en' ? 'en' : 'de';
+        // Start with the base query that includes filters
+        $baseQuery = AiAssistantPrompt::filters(PromptFiltersLayout::class);
         
+        // Get unique category + title combinations from filtered results
+        $promptGroups = $baseQuery->select('category', 'title')
+            ->groupBy('category', 'title')
+            ->get();
+
+        // Get the representative prompt for each group (minimum ID per group)
+        $promptIds = collect($promptGroups)->map(function ($group) {
+            return AiAssistantPrompt::where('category', $group->category)
+                ->where('title', $group->title)
+                ->min('id');
+        });
+
+        // Final query with representatives only
+        $query = AiAssistantPrompt::whereIn('id', $promptIds)
+            ->with(['creator']);
+            
+        // Apply sorting (either from user request or default)
+        $sortField = request()->get('sort', 'category');
+        $sortDirection = 'asc';
+        
+        // Handle Orchid's sort format (e.g., '-title' means title DESC)
+        if (str_starts_with($sortField, '-')) {
+            $sortField = substr($sortField, 1);
+            $sortDirection = 'desc';
+        }
+        
+        // Validate sort field to prevent SQL injection
+        $allowedSortFields = ['title', 'category', 'updated_at', 'created_at'];
+        if (!in_array($sortField, $allowedSortFields)) {
+            $sortField = 'category';
+            $sortDirection = 'asc';
+        }
+        
+        $query->orderBy($sortField, $sortDirection);
+        
+        // Add secondary sort for consistency
+        if ($sortField !== 'title') {
+            $query->orderBy('title', 'asc');
+        }
+        if ($sortField !== 'category') {
+            $query->orderBy('category', 'asc');
+        }
+
         return [
-            'prompts' => AiAssistantPrompt::select('*')
-                ->whereIn('id', function($query) {
-                    $query->select('id')
-                        ->from('ai_assistants_prompts as p1')
-                        ->whereRaw('p1.id = (SELECT MIN(p2.id) FROM ai_assistants_prompts p2 WHERE p2.category = p1.category AND p2.title = p1.title)');
-                })
-                ->with(['creator'])
-                ->filters(PromptFiltersLayout::class)
-                ->defaultSort('category', 'asc')
-                ->defaultSort('title', 'asc')
-                ->paginate(50),
+            'prompts' => $query->paginate(50),
         ];
     }
 
