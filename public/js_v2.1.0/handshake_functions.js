@@ -45,7 +45,7 @@ let backupHash = '';
 async function checkPasskey(){
 
     const msg = document.querySelector('#alert-message');
-    const enteredPasskey = String(document.getElementById('passkey-input').dataset.realValue);
+    const enteredPasskey = String(document.getElementById('passkey-input').value);
 
     // if passkey field is left empty.
     if(enteredPasskey === ''){
@@ -57,12 +57,12 @@ async function checkPasskey(){
 
     //Show Repeat Passkey
     if(repeatWrapper.style.display === 'none'){
-        repeatWrapper.style.display = 'flex';
-        repeatWrapper.querySelector('input').focus();
+        repeatWrapper.style.display = 'block';
+        repeatWrapper.focus();
         return;
     }
-    const repeatField = repeatWrapper.querySelector('.passkey-input')
-    const repeatedKey = String(repeatField.dataset.realValue);
+    const repeatField = document.getElementById('passkey-repeat');
+    const repeatedKey = String(repeatField.value);
 
 
     //if repeat passkey is empty
@@ -306,7 +306,7 @@ async function verifyEnteredPassKey(provider){
 
     const slide = provider.closest(".slide");
     const inputField = slide.querySelector("#passkey-input");
-    const enteredKey = String(inputField.dataset.realValue.trim());
+    const enteredKey = String(inputField.value.trim());
     const errorMessage = slide.querySelector("#alert-message");
 
     if (!enteredKey) {
