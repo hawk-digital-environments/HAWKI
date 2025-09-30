@@ -281,12 +281,17 @@ class AiConfigService
                 // Build endpoint URLs from api_format_endpoints
                 $endpoints = $this->buildEndpointsForProvider($apiProvider);
                 
+                // Adjust URLs to match file-based config format for compatibility with existing adapters
+                $apiUrl = $this->buildCompatibleApiUrl($apiProvider, $endpoints);
+                $streamUrl = $this->buildCompatibleStreamUrl($apiProvider, $endpoints);
+                $pingUrl = $endpoints['models.list'] ?? $apiProvider->base_url;
+                
                 $providers[$apiProvider->provider_name] = [
                     'active' => $apiProvider->is_active,
                     'api_key' => $apiProvider->api_key,
-                    'api_url' => $endpoints['chat.create'] ?? $apiProvider->base_url,
-                    'stream_url' => $endpoints['chat.stream'] ?? $endpoints['chat.create'] ?? $apiProvider->base_url,
-                    'ping_url' => $endpoints['models.list'] ?? $apiProvider->base_url,
+                    'api_url' => $apiUrl,
+                    'stream_url' => $streamUrl,
+                    'ping_url' => $pingUrl,
                     'models' => $modelConfigs
                 ];
             }
@@ -328,5 +333,44 @@ class AiConfigService
     {
         $aiModel = AiModel::where('system_id', $systemId)->first();
         return $aiModel?->model_id;
+    }
+
+    /**
+     * Build compatible API URL for specific providers to match file-based config format
+     *
+     * @param ApiProvider $apiProvider
+     * @param array $endpoints
+     * @return string
+     */
+    private function buildCompatibleApiUrl(ApiProvider $apiProvider, array $endpoints): string
+    {
+        // For Google provider, we need to match the file-based config format
+        if (strtolower($apiProvider->provider_name) === 'google') {
+            // File-based format: https://generativelanguage.googleapis.com/v1beta/models/
+            // Database endpoint: /models/{model}:generateContent
+            // We need to return the base URL + /models/ to match file-based behavior
+            return rtrim($apiProvider->base_url, '/') . '/models/';
+        }
+
+        // For other providers, use the endpoint as-is
+        return $endpoints['chat.create'] ?? $apiProvider->base_url;
+    }
+
+    /**
+     * Build compatible stream URL for specific providers to match file-based config format
+     *
+     * @param ApiProvider $apiProvider
+     * @param array $endpoints
+     * @return string
+     */
+    private function buildCompatibleStreamUrl(ApiProvider $apiProvider, array $endpoints): string
+    {
+        // For Google provider, use the same format as API URL
+        if (strtolower($apiProvider->provider_name) === 'google') {
+            return rtrim($apiProvider->base_url, '/') . '/models/';
+        }
+
+        // For other providers, use the stream endpoint or fall back to chat.create
+        return $endpoints['chat.stream'] ?? $endpoints['chat.create'] ?? $apiProvider->base_url;
     }
 }
