@@ -6,20 +6,27 @@
 
     <div class="container" style="overflow:auto">
 
-        <div class="slide" data-index="0">
-                <h1>{{ $translation["Reg_SL0_H"] }}</h1>
-                <div class="slide-content">
-                    <p>
-                        {!! $translation["Reg_SL0_T"] !!}
-                    </p>
-                </div>
-                <div class="nav-buttons">
-                    <button class="btn-lg-fill" onclick="autoGeneratePasskey()">{{ $translation["Reg_SL0_B"] }}</button>
-                </div>                
-                <script>console.log('passkey_method = auto');</script> 
+        @if(($isFirstLoginLocalUser ?? false) && ($needsPasswordReset ?? false))
+        <div class="slide" data-index="0" style="display:none" id="password-change-slide">
+        {{-- Password Change Slide for Local Users who need password reset --}}
+    
+            <h1>{{ $translation["change_password"] ?? "Change Password" }}</h1>
+            <p class="slide-subtitle">
+                {{ $translation["change_password_text"] ?? "Please set a new password for your account." }}
+            </p>
+            <input placeholder="{{ $translation["new_password"] ?? "New Password" }}" id="new-password-input" type="password" class="top-gap-2">
+            <input placeholder="{{ $translation["confirm_password"] ?? "Confirm Password" }}" id="confirm-password-input" type="password" class="top-gap-2">
+            <div class="nav-buttons">
+                <button class="btn-lg-fill" onclick="validateAndSavePassword()">{{ $translation["Save"] ?? "Save" }}</button>
+            </div>
+            <p class="red-text" id="password-alert-message"></p>
         </div>
+        @endif
+        
 
-        <div class="slide" data-index="1">
+        <div class="slide" data-index="1" style="display: none;">
+        {{-- Welcome Slide --}}
+    
             <h1>{{ $translation["Reg_SL1_H"] }}</h1>
             <div class="slide-content">
                 <p>{{ $translation["Reg_SL1_T"] }}</p>
@@ -30,7 +37,8 @@
         </div>
 
         <div class="slide" data-index="2" @if(!config('hawki.groupchat_active', true)) style="display: none;" @endif>
-            <!-- Groupchat Slide -->
+        {{-- Groupchat Slide --}}
+
             <h1>{{ $translation["Reg_SL2_H"] }}</h1>
             <div class="slide-content">
                 <p>
@@ -42,13 +50,17 @@
             </div>
         </div>
 
-        <div class="slide" data-index="3" >
+        <div class="slide" data-index="3" style="display: none;">
+        {{-- Guidelines Slide --}}
+
             @include('partials.home.modals.guidelines-modal')
         </div>
 
 
 
-        <div class="slide" data-index="4">
+        <div class="slide" data-index="4" style="display: none;">
+        {{-- Datakey Info Slide --}}    
+
                 <h1>{{ $translation["Reg_SL4_H"] }}</h1>
                 <div class="slide-content">
                     <p>
@@ -63,7 +75,9 @@
 
 
 
-        <div class="slide" data-index="5">
+        <div class="slide" data-index="5" style="display: none;">
+        {{-- Datakey Input Slide --}} 
+
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
             <input placeholder="{{  $translation["Reg_SL5_PH1"] }}" id="passkey-input" type="password">
             <input placeholder="{{  $translation["Reg_SL5_PH2"] }}" id="passkey-repeat" type="password" class="top-gap-2" style="display:none">
@@ -77,23 +91,11 @@
 
         </div>
 
-        {{-- Password Change Slide for Local Users who need password reset --}}
-        @if(($isFirstLoginLocalUser ?? false) && ($needsPasswordReset ?? false))
-        <div class="slide" data-index="5.5" style="display:none" id="password-change-slide">
-            <h1>{{ $translation["change_password"] ?? "Change Password" }}</h1>
-            <p class="slide-subtitle">
-                {{ $translation["change_password_text"] ?? "Please set a new password for your account." }}
-            </p>
-            <input placeholder="{{ $translation["new_password"] ?? "New Password" }}" id="new-password-input" type="password" class="top-gap-2">
-            <input placeholder="{{ $translation["confirm_password"] ?? "Confirm Password" }}" id="confirm-password-input" type="password" class="top-gap-2">
-            <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="validateAndSavePassword()">{{ $translation["Save"] ?? "Save" }}</button>
-            </div>
-            <p class="red-text" id="password-alert-message"></p>
-        </div>
-        @endif
 
-        <div class="slide" data-index="6">
+
+        <div class="slide" data-index="6" style="display: none;">
+        {{-- Save Datakey Slide --}}
+    
             <h1 class="zero-b-margin">{{ $translation["Reg_SL6_H"] }}</h1>
             <p class="slide-subtitle top-gap-2">
                 {{ $translation["Reg_SL6_T"] }}
@@ -109,29 +111,42 @@
             </div>
         </div>
 
+        <div class="slide" data-index="7" style="display: none;">
+         {{-- Auto Generate Passkey Slide --}}
+
+                 <h1>{{ $translation["Reg_SL0_H"] }}</h1>
+                 <div class="slide-content">
+                     <p>
+                         {!! $translation["Reg_SL0_T"] !!}
+                     </p>
+                 </div>
+                 <div class="nav-buttons">
+                     <button class="btn-lg-fill" onclick="autoGeneratePasskey()">{{ $translation["Reg_SL0_B"] }}</button>
+                 </div>                
+         </div>
+
+        <div class="slide" id="slide-8" data-index="8" style="display: none;">
         {{-- Admin Approval Required Slide for Self-Registered Users --}}
-                    <!-- Slide 7: Approval Required -->
-            <div class="slide" id="slide-7" data-index="7" style="display: none;">
-                <h1>{{ $translation["Reg_SL7_H"] }}</h1>
-                <div class="slide-content">
-                    <p>{{ $translation["Reg_SL7_T"] }}</p>
-                    <p>
-                        {{ $translation["Reg_SL7_Contact"] }}
-                        <strong>
-                            <a href="mailto:{{ config('mail.from.address') }}" id="contact-email">
-                                {{ config('mail.from.address') }}
-                            </a>
-                        </strong>
-                        <br>
-                    </p>
-                </div>
-                <div class="nav-buttons">
-                    <button class="btn-lg-fill" onclick="redirectToLogin()">
-                        {{ $translation["Logout"] ?? "Logout" }}
-                    </button>
-                </div>
-                </div>
+            <h1>{{ $translation["Reg_SL7_H"] }}</h1>
+            <div class="slide-content">
+                <p>{{ $translation["Reg_SL7_T"] }}</p>
+                <p>
+                    {{ $translation["Reg_SL7_Contact"] }}
+                    <strong>
+                        <a href="mailto:{{ config('mail.from.address') }}" id="contact-email">
+                            {{ config('mail.from.address') }}
+                        </a>
+                    </strong>
+                    <br>
+                </p>
             </div>
+            <div class="nav-buttons">
+                <button class="btn-lg-fill" onclick="redirectToLogin()">
+                    {{ $translation["Logout"] ?? "Logout" }}
+                </button>
+            </div>
+            </div>
+        </div>     
 
     </div>
 
@@ -156,6 +171,19 @@
     
     initializeRegistration();
     
+    // Helper function to safely switch to a slide after ensuring DOM is ready
+    function safelyNavigateToSlide(slideIndex, maxRetries = 5) {
+        const slide = document.querySelector(`.slide[data-index="${slideIndex}"]`);
+        if (slide) {
+            switchSlide(slideIndex);
+        } else if (maxRetries > 0) {
+            console.log(`Slide ${slideIndex} not found, retrying...`);
+            setTimeout(() => safelyNavigateToSlide(slideIndex, maxRetries - 1), 50);
+        } else {
+            console.error(`Failed to find slide ${slideIndex} after multiple attempts`);
+        }
+    }
+    
     // Helper function to navigate slides while respecting groupchat settings
     function navigateToSlide(targetSlide) {
         // If trying to navigate to slide 2 (groupchat) and groupchat is disabled, skip to slide 3
@@ -175,13 +203,35 @@
         }
     }
     
-    // Override the switchBackSlide function to handle groupchat skipping
+    // Function to handle navigation from Guidelines slide (slide 3) based on passkey method
+    function navigateFromGuidelines() {
+        if (passkeyMethod === 'system') {
+            // System generated passkeys - go to slide 7 (auto generate)
+            switchSlide(7);
+        } else {
+            // User defined passkeys - go to slide 4 (passkey info)
+            switchSlide(4);
+        }
+    }
+    
+    // Override modalClick to handle guidelines modal completion
+    window.modalClick = function(element) {
+        console.log('Guidelines modal confirmed, navigating based on passkey method:', passkeyMethod);
+        navigateFromGuidelines();
+    };
+    
+    // Override the switchBackSlide function to handle groupchat skipping and passkey method routing
     function switchBackSlideWithGroupchatCheck(){
         let targetIndex = currentSlideIndex - 1;
         
         // If we're going back to slide 2 and groupchat is disabled, go to slide 1 instead
         if (targetIndex === 2 && !groupchatActive) {
             targetIndex = 1;
+        }
+        
+        // Special handling for slides 4 and 7 - both should go back to slide 3 (guidelines)
+        if (currentSlideIndex === 4 || currentSlideIndex === 7) {
+            targetIndex = 3;
         }
         
         switchSlide(targetIndex);
@@ -194,27 +244,28 @@
     if (needsApproval) {
         // HIGHEST PRIORITY: Users who need admin approval - show approval slide immediately
         window.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('slide-7').style.display = 'block';
+            document.getElementById('slide-8').style.display = 'block';
             // Hide back button on approval slide since there's no previous slide
             document.querySelector('.slide-back-btn').style.display = 'none';
-            switchSlide(7);
+            safelyNavigateToSlide(8);
         });
     } else if (isFirstLoginLocalUser && needsPasswordReset) {
         // SECOND PRIORITY: Admin-created users who need password reset
         window.addEventListener('DOMContentLoaded', function() {
             document.getElementById('password-change-slide').style.display = 'block';
-            switchSlide(5.5);
+            safelyNavigateToSlide(0);
         });
     } else {
         // NORMAL FLOW: Users who can proceed with registration (including approved self-service users)
         window.addEventListener('DOMContentLoaded', function() {
-            // Check passkey method to determine starting slide
-            if (passkeyMethod === 'auto') {
-                // Auto passkey generation - start with slide 0
-                switchSlide(0);
+            // Determine starting slide based on user auth type
+            if (isFirstLoginLocalUser) {
+                // Local users start with slide 0 (password change slide is already handled above)
+                // For local users who don't need password reset, start normally
+                safelyNavigateToSlide(1);
             } else {
-                // User passkey generation - start with standard flow (slide 1)
-                switchSlide(1);
+                // External users (LDAP, OIDC, Shibboleth) start with slide 1 (Welcome)
+                safelyNavigateToSlide(1);
             }
         });
     }

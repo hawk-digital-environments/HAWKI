@@ -4,6 +4,12 @@ let currentSlideIndex;
 function switchSlide(targetIndex) {
     const target = document.querySelector(`.slide[data-index="${targetIndex}"]`);
 
+    // Check if target slide exists
+    if (!target) {
+        console.error(`Slide with data-index="${targetIndex}" not found`);
+        return;
+    }
+
     if (previousSlide) {
         previousSlide.style.opacity = "0";
     }
@@ -14,11 +20,15 @@ function switchSlide(targetIndex) {
         }
 
         target.style.display = "flex";
-        if(targetIndex > 1){
-            document.querySelector('.slide-back-btn').style.opacity = "1";
-        }
-        else{
-            document.querySelector('.slide-back-btn').style.opacity = "0";
+        
+        const backBtn = document.querySelector('.slide-back-btn');
+        if (backBtn) {
+            if(targetIndex > 1){
+                backBtn.style.opacity = "1";
+            }
+            else{
+                backBtn.style.opacity = "0";
+            }
         }
 
         // Add a small delay before changing the opacity to ensure the display change has been processed
