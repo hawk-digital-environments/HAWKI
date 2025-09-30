@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('unique_name')->unique()->comment('Internal identifier for the API format (e.g., "openai-api")');
             $table->string('display_name')->comment('Human-readable name for the API format');
             $table->json('metadata')->nullable()->comment('Additional configuration and metadata for future extensions');
-            $table->string('provider_class')->nullable()->comment('Provider class name for this API format');
+            $table->string('client_adapter')->nullable()->comment('Client adapter name for mapping to existing AI client classes');
             $table->timestamps();
         });
     }

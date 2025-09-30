@@ -60,7 +60,7 @@ class AiModelObserver
             // Also clear general application cache to ensure UI updates
             \Illuminate\Support\Facades\Cache::flush();
             
-            \Log::info('AI model cache cleared due to model changes');
+            //\Log::info('AI model cache cleared due to model changes');
         } catch (\Exception $e) {
             \Log::error('Failed to clear AI config cache', [
                 'error' => $e->getMessage()

@@ -17,7 +17,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'openai-api',
                 'display_name' => 'OpenAI API',
-                'provider_class' => 'App\\Services\\AI\\Providers\\GenericModelProvider',
+                'client_adapter' => 'openai',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -35,7 +35,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'openai-responses-api',
                 'display_name' => 'OpenAI Responses API',
-                'provider_class' => 'App\\Services\\AI\\Providers\\GenericModelProvider',
+                'client_adapter' => 'openai',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -54,7 +54,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'ollama-api',
                 'display_name' => 'Ollama API',
-                'provider_class' => 'App\\Services\\AI\\Providers\\GenericModelProvider',
+                'client_adapter' => 'ollama',
                 'metadata' => [
                     'auth_type' => 'none',
                     'content_type' => 'application/json',
@@ -72,7 +72,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'google-generative-language-api',
                 'display_name' => 'Google Generative Language API',
-                'provider_class' => 'App\\Services\\AI\\Providers\\GenericModelProvider',
+                'client_adapter' => 'google',
                 'metadata' => [
                     'auth_type' => 'api_key',
                     'content_type' => 'application/json',
@@ -120,7 +120,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'anthropic-api',
                 'display_name' => 'Anthropic Claude API',
-                'provider_class' => 'App\\Services\\AI\\Providers\\GenericModelProvider',
+                'client_adapter' => 'anthropic',
                 'metadata' => [
                     'auth_type' => 'api_key',
                     'content_type' => 'application/json',
@@ -176,7 +176,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'gwdg-api',
                 'display_name' => 'GWDG AI Service',
-                'provider_class' => 'App\\Services\\AI\\Providers\\GenericModelProvider',
+                'client_adapter' => 'gwdg',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -195,7 +195,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'openwebui-api',
                 'display_name' => 'Open WebUI API',
-                'provider_class' => 'App\\Services\\AI\\Providers\\GenericModelProvider',
+                'client_adapter' => 'openwebui',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -239,34 +239,28 @@ class ApiFormatsSeeder extends Seeder
     }
 
     /**
-     * Clean up provider_class from metadata for existing records
+     * Clean up provider_class from metadata for existing records (legacy migration)
      */
     private function cleanupProviderClassFromMetadata(): void
     {
-        $this->command->info('Cleaning up provider_class from metadata for existing records...');
+        $this->command->info('Cleaning up legacy provider_class from metadata for existing records...');
 
         ApiFormat::whereNotNull('metadata')->each(function ($apiFormat) {
             $metadata = $apiFormat->metadata;
             $hasChanges = false;
 
             if (is_array($metadata) && isset($metadata['provider_class'])) {
-                // If provider_class is not set in the column but exists in metadata, migrate it
-                if (empty($apiFormat->provider_class)) {
-                    $apiFormat->update(['provider_class' => $metadata['provider_class']]);
-                    $this->command->info("Migrated provider_class to column for: {$apiFormat->unique_name}");
-                }
-
-                // Remove from metadata
+                // Remove legacy provider_class from metadata (no longer needed)
                 unset($metadata['provider_class']);
                 $hasChanges = true;
             }
 
             if ($hasChanges) {
                 $apiFormat->update(['metadata' => $metadata]);
-                $this->command->info("Cleaned provider_class from metadata: {$apiFormat->unique_name}");
+                $this->command->info("Cleaned legacy provider_class from metadata: {$apiFormat->unique_name}");
             }
         });
 
-        $this->command->info('Provider class cleanup completed.');
+        $this->command->info('Legacy provider class cleanup completed.');
     }
 }

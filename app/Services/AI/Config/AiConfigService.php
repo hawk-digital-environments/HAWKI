@@ -246,7 +246,7 @@ class AiConfigService
             $providers = [];
             
             // Get active API providers from database
-            $apiProviders = ApiProvider::where('is_active', true)->get();
+            $apiProviders = ApiProvider::where('is_active', true)->with('apiFormat')->get();
             
             foreach ($apiProviders as $apiProvider) {
                 // Get models for this provider (all active models, visible and non-visible)
@@ -286,8 +286,12 @@ class AiConfigService
                 $streamUrl = $this->buildCompatibleStreamUrl($apiProvider, $endpoints);
                 $pingUrl = $endpoints['models.list'] ?? $apiProvider->base_url;
                 
+                // Get adapter name from API format's client_adapter field
+                $adapter = $this->getAdapterFromApiFormat($apiProvider);
+                
                 $providers[$apiProvider->provider_name] = [
                     'active' => $apiProvider->is_active,
+                    'adapter' => $adapter, // Map to existing client classes
                     'api_key' => $apiProvider->api_key,
                     'api_url' => $apiUrl,
                     'stream_url' => $streamUrl,
@@ -372,5 +376,22 @@ class AiConfigService
 
         // For other providers, use the stream endpoint or fall back to chat.create
         return $endpoints['chat.stream'] ?? $endpoints['chat.create'] ?? $apiProvider->base_url;
+    }
+
+    /**
+     * Get adapter name from API format's client_adapter field
+     *
+     * @param ApiProvider $apiProvider
+     * @return string
+     */
+    private function getAdapterFromApiFormat(ApiProvider $apiProvider): string
+    {
+        // Use client_adapter from api_formats table if available
+        if ($apiProvider->apiFormat && !empty($apiProvider->apiFormat->client_adapter)) {
+            return $apiProvider->apiFormat->client_adapter;
+        }
+        
+        // Fallback: use the provider name as adapter (lowercase)
+        return strtolower($apiProvider->provider_name);
     }
 }
