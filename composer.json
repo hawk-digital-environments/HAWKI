@@ -16,6 +16,7 @@
         "league/flysystem-aws-s3-v3": "^3.29",
         "league/flysystem-sftp-v3": "^3.30",
         "league/flysystem-webdav": "^3.0",
+        "orchid/platform": "^14.52",
         "spatie/laravel-backup": "^9.3"
     },
     "require-dev": {
