@@ -148,7 +148,7 @@ class PlatformProvider extends OrchidServiceProvider
     }
 
     /**
-     * Get the hawki submodule commit ID from git_info.json
+     * Get the HAWKI repository commit ID from git_info.json
      */
     private function getHawkiCommitId(): string
     {
@@ -161,11 +161,11 @@ class PlatformProvider extends OrchidServiceProvider
 
             $gitInfo = json_decode(file_get_contents($gitInfoPath), true);
 
-            if (! isset($gitInfo['hawki_submodule']['commit_id'])) {
+            if (! isset($gitInfo['repository']['commit_id'])) {
                 return 'N/A';
             }
 
-            return $gitInfo['hawki_submodule']['commit_id'];
+            return $gitInfo['repository']['commit_id'];
         } catch (\Exception $e) {
             return 'N/A';
         }
