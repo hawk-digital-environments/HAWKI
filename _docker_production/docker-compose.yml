@@ -2,6 +2,10 @@ services:
     app:
         container_name: ${PROJECT_NAME}-app
         image: ${PROJECT_HAWKI_IMAGE}
+        build:
+            context: ..
+            dockerfile: Dockerfile
+            target: app_prod
         restart: no
         volumes:
             - ./storage/:/var/www/html/storage
