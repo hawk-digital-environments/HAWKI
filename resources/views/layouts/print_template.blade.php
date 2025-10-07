@@ -12,6 +12,7 @@
 	<title>{{ env('APP_NAME') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/gfont-firesans/firesans.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.1.0/print_styles.css') }}">
     <!-- <link rel="stylesheet" href="{{ asset('css_v2.1.0/hljs_custom.css') }}"> -->
 
