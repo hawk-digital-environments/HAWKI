@@ -29,7 +29,7 @@ class ShibbolethService
             $nameVar = config('shibboleth.attribute_map.name');
             $mailVar = config('shibboleth.attribute_map.email');
             $employeetypeVar = config('shibboleth.attribute_map.employeetype');
-    
+
             // Check if the required attributes are present in the $_SERVER array
             if (isset($_SERVER[$nameVar], $_SERVER[$mailVar], $_SERVER[$employeetypeVar])) {
                 // Return user information
@@ -47,7 +47,7 @@ class ShibbolethService
             // Redirect to the Shibboleth login page
             $loginPath = config('shibboleth.login_path');
             if (!empty($loginPath)) {
-                return redirect($loginPath);
+                redirect($loginPath)->send();
             } else {
                 // Error handling if the login path is not set
                 return response()->json(['error' => 'Login path is not set'], 500);
