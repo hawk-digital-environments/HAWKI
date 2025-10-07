@@ -21,3 +21,25 @@ yarn-error.log
 config/model_providers.php
 config/model_providers.php
 whisper/venv/venv/
+
+# Python: virtual environments and common build artifacts
+# Ignore any venv/ or .venv/ directories anywhere
+venv/
+.venv/
+env/
+ENV/
+whisper_api/venv/
+# project-specific (already present for another subfolder)
+whisper/venv/
+
+# Python cache / compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Packaging / build dirs
+build/
+dist/
+*.egg-info/
