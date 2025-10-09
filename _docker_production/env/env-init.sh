@@ -213,6 +213,13 @@ ensure_key "BACKUP_SALT" "BACKUP_SALT"
 ensure_key "REVERB_APP_KEY" "REVERB_APP_KEY"
 ensure_key "REVERB_APP_SECRET" "REVERB_APP_SECRET"
 
+# Set queue connection if not set
+echo -e "${BLUE}⚙️  Checking queue configuration...${NC}"
+if ! grep -q "^QUEUE_CONNECTION=" "$SCRIPT_DIR/.env"; then
+    set_env_value "QUEUE_CONNECTION" "database"
+    echo -e "${GREEN}   ✓ QUEUE_CONNECTION set to database${NC}"
+fi
+
 # Set default passwords if they are "changeme" or empty
 echo -e "${BLUE}🔒 Checking passwords...${NC}"
 
