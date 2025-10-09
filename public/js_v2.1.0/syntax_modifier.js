@@ -188,7 +188,6 @@ function processNonCodeSegment(segment, mathRegex, thinkRegex, mathReplacements,
     mathReplacements.push(mathMatch);
     return `%%%MATH${mathReplacements.length - 1}%%%`;
   });
-    console.log('thinkReplacements', thinkReplacements);
 
   // Then process think blocks
   processed = processed.replace(thinkRegex, (thinkMatch) => {
