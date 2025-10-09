@@ -72,6 +72,8 @@ services:
             - ./env/.env
         environment:
             REVERB_HOST: reverb
+            REVERB_PORT: 8080
+            REVERB_SCHEME: http
         command: [ 'php', 'artisan', 'queue:work', '--queue=default,mails,message_broadcast', '--tries=3', '--timeout=90' ]
         depends_on:
             mysql:
