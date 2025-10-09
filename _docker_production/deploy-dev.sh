@@ -57,16 +57,16 @@ if [ ! -f "env/.env" ] || [ "$FORCE_INIT" = true ]; then
 fi
 
 # Load environment variables
-if [ -f "env/.env" ]; then
-    set -a
-    source env/.env
-    set +a
-fi
-
-# Load dev-specific defaults
+# Load order matters: .env.dev first (defaults), then .env (user overrides)
 if [ -f "env/.env.dev" ]; then
     set -a
     source env/.env.dev
+    set +a
+fi
+
+if [ -f "env/.env" ]; then
+    set -a
+    source env/.env
     set +a
 fi
 

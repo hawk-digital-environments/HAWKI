@@ -75,16 +75,16 @@ if [ ! -f "env/.env" ] || [ "$FORCE_INIT" = true ]; then
 fi
 
 # Load environment variables
-if [ -f "env/.env" ]; then
-    set -a
-    source env/.env
-    set +a
-fi
-
-# Load staging-specific defaults
+# Load order matters: .env.staging first (defaults), then .env (user overrides)
 if [ -f "env/.env.staging" ]; then
     set -a
     source env/.env.staging
+    set +a
+fi
+
+if [ -f "env/.env" ]; then
+    set -a
+    source env/.env
     set +a
 fi
 
