@@ -26,8 +26,9 @@ http {
     }
 
     server {
-        listen [::]:80 default_server;
-        listen 80 default_server;
+        ${NGINX_LISTEN_IPV6_HTTP}
+        listen ${NGINX_HTTP_PORT} default_server;
+        ${NGINX_LISTEN_EXTRA_PORT}
 
         # Please note that return is cheaper than redirect
         # See: https://www.nginx.com/resources/wiki/start/topics/tutorials/config_pitfalls/#taxing-rewrites
@@ -37,10 +38,9 @@ http {
     }
 
     server {
-        listen 443 ssl http2;
-        listen [::]:443 ssl http2;
-
-        server_name _;
+        ${NGINX_LISTEN_HTTPS}
+        ${NGINX_HTTP2_CONFIG}
+        server_name ${NGINX_SERVER_NAME};
 
         # Use the internal DNS resolver of Docker
         resolver 127.0.0.11 valid=30s;
@@ -147,6 +147,45 @@ http {
             deny all;
             access_log off;
             stub_status;
+        }
+    }
+
+    # =====================================================
+    # Adminer (Database Management) - db.hawki.dev
+    # =====================================================
+    server {
+        listen ${NGINX_HTTP_PORT};
+        server_name db.hawki.dev;
+        
+        # Redirect HTTP to HTTPS
+        return 301 https://$server_name$request_uri;
+    }
+
+    server {
+        ${NGINX_LISTEN_HTTPS}
+        ${NGINX_HTTP2_CONFIG}
+        server_name db.hawki.dev;
+        
+        ssl_certificate   /etc/nginx/certs/db.hawki.dev.crt;
+        ssl_certificate_key /etc/nginx/certs/db.hawki.dev.key;
+        
+        # SSL configuration
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers on;
+        ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
+        
+        # Reverse proxy to Adminer container
+        location / {
+            proxy_pass http://adminer:8080;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            # Timeouts
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 60s;
+            proxy_read_timeout 60s;
         }
     }
 }

@@ -1,22 +1,16 @@
 # =====================================================
-# HAWKI - Docker Compose Configuration
+# HAWKI - Development Docker Compose Configuration
 # =====================================================
-# Single docker-compose.yml with profiles for dev/staging/prod
-#
-# Usage:
-#   Development:   COMPOSE_PROFILES=dev docker compose up -d
-#   Staging:       COMPOSE_PROFILES=staging docker compose up -d
-#   Production:    COMPOSE_PROFILES=prod docker compose up -d
-#
-# Or use the deploy scripts:
-#   ./deploy-dev.sh
-#   ./deploy-staging.sh
-#   ./deploy-prod.sh
+# Development environment with:
+# - Live code mounting (read-write)
+# - Debug mode enabled
+# - Adminer for database management
+# - Hot reload capabilities
 # =====================================================
 
 services:
     # ====================================================
-    # Application Container (PHP-FPM)
+    # Application Container (PHP-FPM) - DEV
     # ====================================================
     app:
         container_name: ${PROJECT_NAME}-app
@@ -24,26 +18,18 @@ services:
         build:
             context: ..
             dockerfile: Dockerfile
-            target: ${BUILD_TARGET:-app_prod}
+            target: app_dev
             args:
-                DOCKER_UID: ${DOCKER_UID:-33}
-                DOCKER_GID: ${DOCKER_GID:-33}
-        restart: ${RESTART_POLICY:-unless-stopped}
-        profiles: ["dev", "staging", "prod"]
+                DOCKER_UID: ${DOCKER_UID:-501}
+                DOCKER_GID: ${DOCKER_GID:-1000}
+        restart: no
         volumes:
-            # Dev: live code mount (for staging/prod, mount a tmpfs that gets overlayed)
-            - type: ${CODE_MOUNT_TYPE:-bind}
-              source: ${CODE_MOUNT:-.}
-              target: /var/www/html
-              read_only: ${CODE_MOUNT_READONLY:-false}
-              bind:
-                create_host_path: true
-            # Environment file (for artisan commands)
-            - ${ENV_PATH:-./env/.env}:/var/www/html/.env
+            # Live code mount for development
+            - ..:/var/www/html:rw
+            # Environment file
+            - ./env/.env:/var/www/html/.env
             # Storage directory
             - ./storage/:/var/www/html/storage
-            # Bootstrap cache (writable, separate from code)
-            - bootstrap_cache:/var/www/html/bootstrap/cache
             # Config overrides
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
@@ -54,7 +40,7 @@ services:
             retries: 3
             start_period: 30s
         env_file:
-            - ${ENV_PATH:-./env/.env}
+            - ./env/.env
         environment:
             REVERB_HOST: ${APP_URL}
         depends_on:
@@ -62,20 +48,19 @@ services:
                 condition: service_healthy
                 
     # ====================================================
-    # Queue Worker
+    # Queue Worker - DEV
     # ====================================================
     queue:
         container_name: ${PROJECT_NAME}-queue
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
-        profiles: ["dev", "staging", "prod"]
         volumes:
-            - ${CODE_MOUNT:-/dev/null}:/var/www/html:${CODE_MOUNT_MODE:-ro}
-            - ${ENV_PATH:-./env/.env}:/var/www/html/.env
+            - ..:/var/www/html:rw
+            - ./env/.env:/var/www/html/.env
             - ./storage/:/var/www/html/storage
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
         env_file:
-            - ${ENV_PATH:-./env/.env}
+            - ./env/.env
         environment:
             REVERB_HOST: reverb
         command: [ 'php', 'artisan', 'queue:work', '--queue=default,mails,message_broadcast', '--tries=3', '--timeout=90' ]
@@ -84,45 +69,80 @@ services:
                 condition: service_healthy
                 
     # ====================================================
-    # Laravel Reverb (WebSocket Server)
+    # Laravel Reverb (WebSocket Server) - DEV
     # ====================================================
     reverb:
         container_name: ${PROJECT_NAME}-reverb
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
-        profiles: ["dev", "staging", "prod"]
         volumes:
-            - ${CODE_MOUNT:-/dev/null}:/var/www/html:${CODE_MOUNT_MODE:-ro}
-            - ${ENV_PATH:-./env/.env}:/var/www/html/.env
+            - ..:/var/www/html:rw
+            - ./env/.env:/var/www/html/.env
             - ./storage/:/var/www/html/storage
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
         env_file:
-            - ${ENV_PATH:-./env/.env}
+            - ./env/.env
         command: [ 'php', 'artisan', 'reverb:start' ]
         depends_on:
             mysql:
                 condition: service_healthy
                 
     # ====================================================
-    # Task Scheduler
+    # Task Scheduler - DEV
     # ====================================================
     scheduler:
         container_name: ${PROJECT_NAME}-scheduler
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
-        profiles: ["dev", "staging", "prod"]
         volumes:
-            - ${CODE_MOUNT:-/dev/null}:/var/www/html:${CODE_MOUNT_MODE:-ro}
-            - ${ENV_PATH:-./env/.env}:/var/www/html/.env
+            - ..:/var/www/html:rw
+            - ./env/.env:/var/www/html/.env
             - ./storage/:/var/www/html/storage
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
         env_file:
-            - ${ENV_PATH:-./env/.env}
+            - ./env/.env
         command: [ 'php', 'artisan', 'schedule:work' ]
         depends_on:
             mysql:
                 condition: service_healthy
-                
+    
+    # ====================================================
+    # Adminer (Database Management - Dev Only)
+    # ====================================================
+    adminer:
+        container_name: ${PROJECT_NAME}-adminer
+        image: adminer:latest
+        restart: no
+        environment:
+            ADMINER_DEFAULT_SERVER: mysql
+        depends_on:
+            mysql:
+                condition: service_healthy
+            
+    # ====================================================
+    # Nginx Web Server - DEV
+    # ====================================================
+    nginx:
+        container_name: ${PROJECT_NAME}-nginx
+        image: nginx:1.27-alpine
+        volumes:
+            - ./certs:/etc/nginx/certs
+            - ./nginx/nginx.default.conf:/etc/nginx/nginx.conf:ro
+            # Live public directory
+            - ../public:/var/www/html/public:ro
+            - ./storage/app/public:/var/www/html/storage:ro
+        ports:
+            - ${DOCKER_PROJECT_IP:-0.0.0.0}:80:80
+            - ${DOCKER_PROJECT_IP:-0.0.0.0}:443:443
+        depends_on:
+            - app
+        healthcheck:
+            test: curl --fail http://localhost || exit 1
+            interval: 10s
+            timeout: 3s
+            retries: 3
+            start_period: 10s
+            
     # ====================================================
     # File Converter Service
     # ====================================================
@@ -131,9 +151,8 @@ services:
         container_name: ${PROJECT_NAME}-file-converter
         platform: linux/amd64
         restart: always
-        profiles: ["dev", "staging", "prod"]
         env_file:
-            - ./.env
+            - ./env/.env
         environment:
             - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
         healthcheck:
@@ -150,9 +169,8 @@ services:
         container_name: ${PROJECT_NAME}-redis
         image: redis:latest
         restart: always
-        profiles: ["dev", "staging", "prod"]
         env_file:
-            - ./.env
+            - ./env/.env
         volumes:
             - redis_data:/root/redis
         environment:
@@ -170,7 +188,7 @@ services:
             - --default-authentication-plugin=mysql_native_password
             - --max_connections=2000
         env_file:
-            - ./.env
+            - ./env/.env
         environment:
             MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
             MYSQL_DATABASE: ${DB_DATABASE:-hawki}
@@ -180,58 +198,18 @@ services:
             nofile:
                 soft: 65536
                 hard: 65536
-        restart: ${RESTART_POLICY:-unless-stopped}
-        profiles: ["dev", "staging", "prod"]
+        restart: no
         volumes:
             - mysql_data:/var/lib/mysql
         ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:${DB_EXTERNAL_PORT:-${DB_PORT:-3306}}:3306
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:${DB_PORT:-3306}:3306
         healthcheck:
             test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USERNAME:-hawki}", "-p${DB_PASSWORD:-secret}"]
             start_period: 10s
             timeout: 20s
             interval: 5s
             retries: 10
-    
-    # ====================================================
-    # Adminer (Database Management - Dev Only)
-    # ====================================================
-    adminer:
-        container_name: ${PROJECT_NAME}-adminer
-        image: adminer:latest
-        restart: no
-        profiles: ["dev"]
-        environment:
-            ADMINER_DEFAULT_SERVER: mysql
-        depends_on:
-            mysql:
-                condition: service_healthy
-            
-    # ====================================================
-    # Nginx Web Server
-    # ====================================================
-    nginx:
-        container_name: ${PROJECT_NAME}-nginx
-        image: nginx:1.27-alpine
-        profiles: ["dev", "staging", "prod"]
-        volumes:
-            - ./certs:/etc/nginx/certs
-            - ./nginx/nginx.default.conf:/etc/nginx/nginx.conf:ro
-            # Dev/Staging: live public directory
-            - ${PUBLIC_MOUNT:-../public}:/var/www/html/public:ro
-            - ./storage/app/public:/var/www/html/storage:ro
-        ports:
-            - ${DOCKER_PROJECT_IP:-0.0.0.0}:80:80
-            - ${DOCKER_PROJECT_IP:-0.0.0.0}:443:443
-        depends_on:
-            - app
-        healthcheck:
-            test: curl --fail http://localhost || exit 1
-            interval: 10s
-            timeout: 3s
-            retries: 3
-            start_period: 10s
-            
+
 # ====================================================
 # Volumes
 # ====================================================
@@ -239,6 +217,4 @@ volumes:
     mysql_data:
         driver: local
     redis_data:
-        driver: local
-    bootstrap_cache:
         driver: local

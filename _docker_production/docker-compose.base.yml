@@ -1,0 +1,77 @@
+# =====================================================
+# HAWKI - Base Docker Compose Configuration
+# =====================================================
+# Shared services used by all environments (dev/staging/prod)
+# This file should not be used directly - use environment-specific files
+# =====================================================
+
+services:
+    # ====================================================
+    # File Converter Service
+    # ====================================================
+    file-converter:
+        image: digitalenvironments/hawki-toolkit-file-converter:1.0.0
+        container_name: ${PROJECT_NAME}-file-converter
+        platform: linux/amd64
+        restart: always
+        environment:
+            - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://localhost:8001/" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+            
+    # ====================================================
+    # Redis Cache
+    # ====================================================
+    redis:
+        container_name: ${PROJECT_NAME}-redis
+        image: redis:latest
+        restart: always
+        volumes:
+            - redis_data:/root/redis
+        environment:
+            REDIS_PASSWORD: ${REDIS_PASSWORD}
+            REDIS_PORT: ${REDIS_PORT:-6379}
+            REDIS_DATABASES: 16
+            
+    # ====================================================
+    # MySQL Database
+    # ====================================================
+    mysql:
+        container_name: ${PROJECT_NAME}-mysql
+        image: mysql:8.0
+        command:
+            - --default-authentication-plugin=mysql_native_password
+            - --max_connections=2000
+        environment:
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
+            MYSQL_DATABASE: ${DB_DATABASE:-hawki}
+            MYSQL_USER: ${DB_USERNAME:-hawki}
+            MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+        ulimits:
+            nofile:
+                soft: 65536
+                hard: 65536
+        restart: ${RESTART_POLICY:-unless-stopped}
+        volumes:
+            - mysql_data:/var/lib/mysql
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:${DB_PORT:-3306}:3306
+        healthcheck:
+            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${DB_USERNAME:-hawki}", "-p${DB_PASSWORD:-secret}"]
+            start_period: 10s
+            timeout: 20s
+            interval: 5s
+            retries: 10
+
+# ====================================================
+# Volumes
+# ====================================================
+volumes:
+    mysql_data:
+        driver: local
+    redis_data:
+        driver: local
