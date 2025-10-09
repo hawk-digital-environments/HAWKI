@@ -28,8 +28,6 @@ services:
             - ..:/var/www/html:rw
             # Environment file
             - ./env/.env:/var/www/html/.env
-            # Storage directory
-            - ./storage/:/var/www/html/storage
             # Config overrides
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
@@ -57,7 +55,6 @@ services:
         volumes:
             - ..:/var/www/html:rw
             - ./env/.env:/var/www/html/.env
-            - ./storage/:/var/www/html/storage
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
         env_file:
             - ./env/.env
@@ -78,7 +75,6 @@ services:
         volumes:
             - ..:/var/www/html:rw
             - ./env/.env:/var/www/html/.env
-            - ./storage/:/var/www/html/storage
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
         env_file:
             - ./env/.env
@@ -97,7 +93,6 @@ services:
         volumes:
             - ..:/var/www/html:rw
             - ./env/.env:/var/www/html/.env
-            - ./storage/:/var/www/html/storage
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
         env_file:
             - ./env/.env
@@ -130,7 +125,8 @@ services:
             - ./nginx/nginx.default.conf:/etc/nginx/nginx.conf:ro
             # Live public directory
             - ../public:/var/www/html/public:ro
-            - ./storage/app/public:/var/www/html/storage:ro
+            # Storage for uploads (from main project)
+            - ../storage/app/public:/var/www/html/storage:ro
         ports:
             - ${DOCKER_PROJECT_IP:-0.0.0.0}:80:80
             - ${DOCKER_PROJECT_IP:-0.0.0.0}:443:443
