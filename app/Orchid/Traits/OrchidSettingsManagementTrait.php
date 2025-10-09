@@ -521,7 +521,7 @@ trait OrchidSettingsManagementTrait
                 \Orchid\Screen\Fields\Select::make($inputName)
                     ->options([
                         'user' => 'User',
-                        'auto' => 'System',
+                        'system' => 'System',
                     ])
                     ->value($setting->value),
             ])

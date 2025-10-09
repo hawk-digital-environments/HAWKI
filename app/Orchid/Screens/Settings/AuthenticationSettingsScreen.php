@@ -109,10 +109,10 @@ class AuthenticationSettingsScreen extends Screen
                 // Check if we should show conditional passkey settings
                 $shouldShowSetting = true;
 
-                // Hide specific settings when passkey_method is not 'auto'
+                // Hide specific settings when passkey_method is not 'system'
                 if (in_array($setting->key, ['auth_passkey_secret', 'auth_passkey_otp', 'auth_passkey_otp_timeout'])) {
                     $passkeyMethod = config('auth.passkey_method', '');
-                    $shouldShowSetting = (strtolower($passkeyMethod) === 'auto');
+                    $shouldShowSetting = (strtolower($passkeyMethod) === 'system');
                 }
 
                 if ($shouldShowSetting) {

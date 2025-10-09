@@ -169,6 +169,16 @@
     let needsApproval = @json($needsApproval ?? false);
     const translation = @json($translation);
     
+    // Debug output for passkey configuration
+    console.log('=== PASSKEY CONFIGURATION DEBUG ===');
+    console.log('passkeyMethod:', passkeyMethod);
+    console.log('passkeySecret:', passkeySecret);
+    console.log('isFirstLoginLocalUser:', isFirstLoginLocalUser);
+    console.log('needsPasswordReset:', needsPasswordReset);
+    console.log('needsApproval:', needsApproval);
+    console.log('groupchatActive:', groupchatActive);
+    console.log('===================================');
+    
     initializeRegistration();
     
     // Helper function to safely switch to a slide after ensuring DOM is ready
@@ -204,20 +214,40 @@
     }
     
     // Function to handle navigation from Guidelines slide (slide 3) based on passkey method
-    function navigateFromGuidelines() {
+    // Make this a global function for potential reuse
+    window.navigateFromGuidelines = function() {
+        console.log('=== navigateFromGuidelines() called ===');
+        console.log('Current passkeyMethod:', passkeyMethod);
+        console.log('Condition check - passkeyMethod === "system":', passkeyMethod === 'system');
+        
         if (passkeyMethod === 'system') {
+            console.log('→ Navigating to slide 7 (system-generated passkey)');
             // System generated passkeys - go to slide 7 (auto generate)
             switchSlide(7);
         } else {
+            console.log('→ Navigating to slide 4 (user-defined passkey)');
             // User defined passkeys - go to slide 4 (passkey info)
             switchSlide(4);
         }
+        console.log('======================================');
     }
     
-    // Override modalClick to handle guidelines modal completion
-    window.modalClick = function(element) {
+    /**
+     * Override modalClick to handle both modal closing and registration navigation
+     * This consolidates the functionality from home_functions.js and registration-specific logic
+     */
+    window.modalClick = function(button) {
         console.log('Guidelines modal confirmed, navigating based on passkey method:', passkeyMethod);
-        navigateFromGuidelines();
+        
+        // Handle modal closing (from home_functions.js pattern)
+        const modal = button.closest('.modal');
+        if (modal) {
+            localStorage.setItem(modal.id, "true");
+            modal.remove();
+        }
+        
+        // Handle registration-specific navigation
+        window.navigateFromGuidelines();
     };
     
     // Override the switchBackSlide function to handle groupchat skipping and passkey method routing

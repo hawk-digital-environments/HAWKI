@@ -153,7 +153,7 @@
             console.log('opening passkey panel');
             
             // Check config for passkey method
-            @if(config('auth.passkey_method') === 'auto')
+            @if(config('auth.passkey_method') === 'system')
                 @if(config('auth.passkey_otp'))
                     // Show otp dialog
                     switchSlide(0);

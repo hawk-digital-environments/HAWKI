@@ -46,10 +46,8 @@ function switchBackSlide(){
     switchSlide(targetIndex);
 }
 
-function modalClick(btn){
-    switchSlide(4);
-}
-
+// Note: modalClick is now defined in register.blade.php to handle registration-specific logic
+// with passkey method configuration. For general modal handling, see home_functions.js
 
 let backupHash = '';
 async function checkPasskey(){

@@ -46,6 +46,8 @@ async function generatePasskeyFromSecret(passkeySecret, userInfo) {
                 .join('');
             break;
         default:
+            // Invalid passkey secret provided - warn and use username as fallback
+            console.warn(`Invalid passkeySecret value: "${passkeySecret}". Valid values are: 'username', 'time', 'publicKey', 'mixed'. Falling back to 'username'.`);
             passkeyValue = userInfo.username;
             break;
     }
