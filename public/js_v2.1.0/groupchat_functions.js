@@ -1328,6 +1328,8 @@ async function leaveRoom(){
     if (!confirmed) {
         return;
     }
+    const listItem = document.querySelector(`.selection-item[slug="${activeRoom.slug}"]`);
+    const list = listItem.parentElement;
 
     const url = `/req/room/leaveRoom/${activeRoom.slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1345,8 +1347,14 @@ async function leaveRoom(){
 
         if (data.success) {
             removeListItem(activeRoom.slug);
-            loadRoom(list.firstElementChild, null);
-            switchDyMainContent('chat');
+            if(list.length > 0){
+                await loadRoom(list.firstElementChild, null);
+                switchDyMainContent('chat');
+            }
+            else{
+                switchDyMainContent('group-welcome-panel');
+                history.replaceState(null, '', `/groupchat`);
+            }
 
         } else {
             console.error('Room leave was not successful!');
@@ -1365,7 +1373,6 @@ function removeListItem(slug){
         if(list.childElementCount > 0){
             loadRoom(list.firstElementChild, null);
             switchDyMainContent('chat');
-
         }
         else{
             switchDyMainContent('group-welcome-panel');
