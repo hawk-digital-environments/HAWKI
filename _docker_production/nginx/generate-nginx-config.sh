@@ -9,17 +9,24 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOCKER_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Source .env file if it exists
+# Determine deployment profile (dev, staging, prod)
+DEPLOY_PROFILE="${DEPLOY_PROFILE:-dev}"
+
+# Source profile defaults first (for default ports, etc.)
+if [ -f "$DOCKER_DIR/env/.env.${DEPLOY_PROFILE}" ]; then
+    set -a
+    source "$DOCKER_DIR/env/.env.${DEPLOY_PROFILE}"
+    set +a
+fi
+
+# Then source .env file to override with user-specific values
 if [ -f "$DOCKER_DIR/env/.env" ]; then
     set -a
     source "$DOCKER_DIR/env/.env"
     set +a
 fi
 
-# Determine deployment profile (dev, staging, prod)
-DEPLOY_PROFILE="${DEPLOY_PROFILE:-dev}"
-
-# Set default values if not provided
+# Set default values if not provided (final fallback)
 export NGINX_SERVER_NAME="${NGINX_SERVER_NAME:-_}"
 export NGINX_HTTP_PORT="${NGINX_HTTP_PORT:-80}"
 export NGINX_HTTPS_PORT="${NGINX_HTTPS_PORT:-443}"

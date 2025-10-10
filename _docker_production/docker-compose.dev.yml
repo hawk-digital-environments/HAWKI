@@ -130,12 +130,12 @@ services:
             # Storage for uploads (from main project)
             - ../storage/app/public:/var/www/html/storage:ro
         ports:
-            - ${DOCKER_PROJECT_IP:-0.0.0.0}:80:80
-            - ${DOCKER_PROJECT_IP:-0.0.0.0}:443:443
+            - ${DOCKER_PROJECT_IP:-0.0.0.0}:80:8080
+            - ${DOCKER_PROJECT_IP:-0.0.0.0}:443:8443
         depends_on:
             - app
         healthcheck:
-            test: curl --fail http://localhost || exit 1
+            test: curl --fail http://localhost:8080 || exit 1
             interval: 10s
             timeout: 3s
             retries: 3

@@ -190,16 +190,42 @@ echo -e "${BLUE}📝 Generating .env file...${NC}"
 # Start with .env.example if it exists
 if [ -f "$SCRIPT_DIR/.env.example" ]; then
     cp "$SCRIPT_DIR/.env.example" "$SCRIPT_DIR/.env"
+    echo -e "${GREEN}   ✓ Base configuration from .env.example${NC}"
 else
     touch "$SCRIPT_DIR/.env"
+    echo -e "${YELLOW}   ⚠ No .env.example found, creating empty .env${NC}"
 fi
 
-# Load profile-specific defaults
+# Smart merge profile-specific defaults
 PROFILE_ENV="$SCRIPT_DIR/.env.$PROFILE"
 if [ -f "$PROFILE_ENV" ]; then
-    echo -e "${GREEN}   Loading $PROFILE defaults...${NC}"
-    # Append profile defaults to .env (they will override .env.example values)
-    cat "$PROFILE_ENV" >> "$SCRIPT_DIR/.env"
+    echo -e "${GREEN}   ✓ Merging $PROFILE-specific configuration...${NC}"
+    
+    # Read profile file line by line
+    while IFS= read -r line || [ -n "$line" ]; do
+        # Skip empty lines and comments
+        [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+        
+        # Extract key from line (everything before first =)
+        key=$(echo "$line" | cut -d'=' -f1)
+        
+        # Skip if no valid key
+        [[ -z "$key" ]] && continue
+        
+        # Get the full value (everything after first =)
+        value=$(echo "$line" | cut -d'=' -f2-)
+        
+        # Update or append the key in .env
+        if grep -q "^${key}=" "$SCRIPT_DIR/.env"; then
+            # Key exists, replace it
+            sed_inplace "s|^${key}=.*|${key}=${value}|" "$SCRIPT_DIR/.env"
+        else
+            # Key doesn't exist, append it
+            echo "${key}=${value}" >> "$SCRIPT_DIR/.env"
+        fi
+    done < "$PROFILE_ENV"
+    
+    echo -e "${GREEN}   ✓ Profile defaults merged successfully${NC}"
 fi
 
 # Generate all encryption keys
@@ -299,7 +325,6 @@ else
 fi
 
 # Apply configuration to .env file
-# Apply configuration to .env file
 echo -e "${BLUE}📝 Applying configuration to .env...${NC}"
 
 # Set APP_URL (derived from SERVER_NAME)
@@ -318,17 +343,23 @@ echo -e "${GREEN}   ✓ REVERB_HOST=${SERVER_NAME}${NC}"
 set_env_value "VITE_REVERB_HOST" "$SERVER_NAME"
 echo -e "${GREEN}   ✓ VITE_REVERB_HOST=${SERVER_NAME}${NC}"
 
-# Set proxy configuration (HTTP and HTTPS use same value)
+# Set proxy configuration only if explicitly provided by user
 if [ -n "$PROXY_URL" ]; then
     set_env_value "DOCKER_HTTP_PROXY" "$PROXY_URL"
     set_env_value "DOCKER_HTTPS_PROXY" "$PROXY_URL"
     echo -e "${GREEN}   ✓ DOCKER_HTTP_PROXY=${PROXY_URL}${NC}"
     echo -e "${GREEN}   ✓ DOCKER_HTTPS_PROXY=${PROXY_URL}${NC}"
 else
-    # Remove proxy settings if empty
-    sed_inplace '/^DOCKER_HTTP_PROXY=/d' "$SCRIPT_DIR/.env" 2>/dev/null || true
-    sed_inplace '/^DOCKER_HTTPS_PROXY=/d' "$SCRIPT_DIR/.env" 2>/dev/null || true
-    echo -e "${GREEN}   ✓ Proxy settings cleared${NC}"
+    # Check if proxy was already set by profile merge
+    MERGED_PROXY=$(get_current_value "DOCKER_HTTP_PROXY" "$SCRIPT_DIR/.env")
+    if [ -n "$MERGED_PROXY" ]; then
+        echo -e "${GREEN}   ✓ Using proxy from profile: ${MERGED_PROXY}${NC}"
+    else
+        # No proxy configured at all, remove any empty values
+        sed_inplace '/^DOCKER_HTTP_PROXY=/d' "$SCRIPT_DIR/.env" 2>/dev/null || true
+        sed_inplace '/^DOCKER_HTTPS_PROXY=/d' "$SCRIPT_DIR/.env" 2>/dev/null || true
+        echo -e "${GREEN}   ✓ No proxy configured${NC}"
+    fi
 fi
 
 echo ""
