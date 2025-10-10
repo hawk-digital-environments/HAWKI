@@ -48,13 +48,13 @@
                 @endif
 
                 @if($webSearchAvailable)
-                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)" @if(!config('hawki.websearch')) style="display:none;" @endif>
+                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)">
                     <x-icon class="websearch-icon" name="world"/>
                     <div class="tooltip">
                         {{ $translation["WebSearch"] }}
                     </div>
                 </button>
-
+                @endif
 
 
                 <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)" @if(!config('hawki.file_upload')) style="display:none;" @endif>

@@ -42,8 +42,6 @@ Route::middleware('prevent_back')->group(function () {
     Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
     Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
     Route::get('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
-    Route::post('/req/login-local', [AuthenticationController::class, 'localLogin']);
-    Route::post('/req/submit-guest-request', [AuthenticationController::class, 'submitGuestRequest']);    Route::get('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
 
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
@@ -177,8 +175,9 @@ Route::middleware('prevent_back')->group(function () {
         Route::post('/req/profile/uploadAvatar', [ProfileController::class, 'uploadAvatar']);
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
 
-        Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileReseet']);
-        Route::post('/req/backupKeychain', [ProfileController::class, 'backupKeychain']);
+        Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileReset']);
+        Route::post('/req/backupKeychain',  [ProfileController::class, 'backupKeychain']);
+
 
         // AI RELATED ROUTES
     });
