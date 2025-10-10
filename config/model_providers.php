@@ -68,7 +68,7 @@ return [
     */
     'providers' => [
         'openAi' => [
-            'active' => true,
+            'active' => env('OPENAI_ACTIVE', true),
             'api_key' => env('OPENAI_API_KEY'),
             'api_url' => env('OPENAI_URL', 'https://api.openai.com/v1/chat/completions'),
             'ping_url' => env('OPENAI_PING_URL', 'https://api.openai.com/v1/models'),

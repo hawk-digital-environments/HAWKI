@@ -8,9 +8,27 @@
     <div class="container">
 
         <div class="slide" data-index="1">
-            <h3>{{ $translation["HS-EnterPasskeyMsg"] }}</h3>
+            <h3>{{ $translation["HS_EnterPasskeyMsg"] }}</h3>
 
-            <input id="passkey-input" type="password">
+            <form id="passkey-form"  autocomplete="off">
+
+                <div class="password-input-wrapper">
+                    <input
+                        class="passkey-input"
+                        placeholder="{{ $translation['Reg_SL5_PH1'] }}"
+                        id="passkey-input"
+                        type="text"
+                        autocomplete="new-password"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                    />
+                    <div class="btn-xs" id="visibility-toggle">
+                        <x-icon name="eye" id="eye"/>
+                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
+                    </div>
+                </div>
+            </form>
 
             <div class="nav-buttons">
                 <button onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
@@ -34,7 +52,7 @@
             <div class="nav-buttons">
                 <button onclick="extractPasskey()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
-            
+
             <p class="red-text" id="backup-alert-message"></p>
             <button onclick="switchSlide(4)" class="btn-md">{{ $translation["HS-ForgottenBackup"] }}</button>
 
@@ -227,6 +245,84 @@
             }, 100);
         }
     });
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const inputWrappers = document.querySelectorAll('.password-input-wrapper');
+
+        inputWrappers.forEach(wrapper => {
+            const input = wrapper.querySelector('.passkey-input');
+            const toggleBtn = wrapper.querySelector('.btn-xs');
+            input.dataset.visible = 'false'
+
+            // Initialize the real value in a dataset
+            input.dataset.realValue = '';
+
+            //random name will prevent chrome from auto filling.
+            const rand = generateTempHash();
+            input.setAttribute('name', rand);
+
+            // Handle Enter key
+            input.addEventListener('keypress', function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    verifyEnteredPassKey(document.querySelector('#verifyEnteredPassKey-btn'));
+                }
+            });
+
+            // Mask input and store real value
+            input.addEventListener('input', function (e) {
+                const realValue = input.dataset.realValue || '';
+                const newValue = e.target.value;
+                const oldLength = realValue.length;
+                const newLength = newValue.length;
+
+                let updated = realValue;
+                if (newLength > oldLength) {
+                    updated += newValue.slice(oldLength);
+                } else if (newLength < oldLength) {
+                    updated = updated.slice(0, newLength);
+                }
+
+                input.dataset.realValue = updated;
+
+                if(input.dataset.visible === 'false'){
+                    input.value = '*'.repeat(updated.length);
+                }
+
+            });
+
+            // Prevent copy/cut/paste
+            ['copy', 'cut', 'paste'].forEach(evt =>
+                input.addEventListener(evt, e => e.preventDefault())
+            );
+
+            // Toggle visibility
+            toggleBtn.addEventListener('click', function () {
+                const real = input.dataset.realValue || '';
+                const icons = toggleBtn.querySelectorAll('svg');
+                const eye = icons[0];
+                const eyeOff = icons[1];
+
+                const isVisible = input.dataset.visible === 'true';
+                if (!isVisible) {
+                    input.value = real;
+                    eye.style.display = 'none';
+                    eyeOff.style.display = 'inline-block';
+                    input.dataset.visible = 'true';
+                }
+                else {
+                    input.value = '*'.repeat(real.length);
+                    eye.style.display = 'inline-block';
+                    eyeOff.style.display = 'none';
+                    input.dataset.visible = 'false';
+                }
+            });
+        });
+    });
+
+
+
 
     // Function to handle handshake errors
     function handleHandshakeError() {

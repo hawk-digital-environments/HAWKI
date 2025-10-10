@@ -96,7 +96,10 @@ class AiConvService{
         }
         try{
             // Delete related messages and members
-            $conv->messages()->delete();
+            $messages = $conv->messages()->get();
+            foreach($messages as $message){
+                $this->messageHandler->delete($conv, $message->toArray());
+            }
 
             $conv->delete();
             return true;

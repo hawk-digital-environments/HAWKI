@@ -348,9 +348,7 @@ function convertMsgObjToLog(messages){
         msg = messages[i];
         const role = msg.message_role === 'assistant' ? 'assistant' : 'user';
         const msgTxt = msg.content.hasOwnProperty('text') ? msg.content.text : msg.content;
-        // Ensure msgTxt is a string before passing to detectMentioning
-        const safeText = msgTxt || '';
-        const filteredText = typeof safeText === 'string' ? detectMentioning(safeText).filteredText : safeText;
+        const filteredText = detectMentioning(msgTxt).filteredText;
         const messageObject = {
             role: role,
             content:{
