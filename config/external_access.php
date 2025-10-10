@@ -27,16 +27,11 @@ return [
      * After this time has passed, the request will be considered invalid and the user will need to create a new request.
      * Default is 15 minutes (60 seconds * 15).
      */
-    'app_connect_request_timeout' => (int)env('APP_CONNECT_REQUEST_TIMEOUT', 60 * 15),
-    /**
-     * If true, external apps can access the group chat functionality and allow users to chat on
-     * their platform. This is useful for integrating with external chat services.
-     * IMPORTANT: If you use this, ALLOW_EXTERNAL_APPS as well as its required environment variables must be set to true.
-     */
-    'chat' => env('ALLOW_EXTERNAL_CHAT', false),
+    'app_connect_request_timeout' => (int)env('ALLOW_EXTERNAL_APPS_CONNECT_REQUEST_TIMEOUT', 60 * 15),
     /**
      * If true, group chats in external applications can use the "@hawki"(configureable) AI handle,
      * otherwise the chat only works like a normal chat without AI integration.
+     * IMPORTANT: If you use this, ALLOW_EXTERNAL_CHAT as well as ALLOW_EXTERNAL_APPS must be set to true.
      */
-    'chat.ai' => env('ALLOW_EXTERNAL_CHAT_AI', false),
+    'apps_groups_ai' => env('ALLOW_EXTERNAL_APPS_GROUPS_AI', true),
 ];

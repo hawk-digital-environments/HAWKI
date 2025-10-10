@@ -4,24 +4,20 @@
 namespace App\Services\Chat\Message\Handlers;
 
 use App\Events\MessageSentEvent;
-use App\Events\MessageUpdateEvent;
+use App\Events\MessageUpdatedEvent;
 use App\Models\AiConv;
-use App\Models\AiConvMsg;
-use App\Models\Room;
-use App\Models\User;
-use App\Models\Member;
 use App\Models\Message;
-use Illuminate\Auth\Access\AuthorizationException;
-use App\Services\Message\ThreadIdHelper;
+use App\Models\Room;
 use App\Services\Chat\Attachment\AttachmentService;
-
+use App\Services\Message\ThreadIdHelper;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
 
 class GroupMessageHandler extends BaseMessageHandler{
     public function __construct(
         AttachmentService           $attachmentService,
-        private ThreadIdHelper $messageHelper
+        private readonly ThreadIdHelper $threadIdHelper
     )
     {
         parent::__construct($attachmentService);
@@ -37,7 +33,7 @@ class GroupMessageHandler extends BaseMessageHandler{
             'message_id' => $nextMessageId,
             'message_role' => $data['message_role'],
             'model' => $data['model'] ?? null,
-            'thread_id' => $this->messageHelper->getThreadIdForRoomAndThreadIndex($room, $data['threadID']),
+            'thread_id' => $this->threadIdHelper->getThreadIdForRoomAndThreadIndex($room, $data['threadId']),
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
@@ -75,7 +71,7 @@ class GroupMessageHandler extends BaseMessageHandler{
             'model'=> $data['model'] ?? null,
         ]);
         
-        MessageUpdateEvent::dispatch($message);
+        MessageUpdatedEvent::dispatch($message);
 
         return $message;
     }

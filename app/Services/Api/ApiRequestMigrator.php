@@ -22,6 +22,15 @@ readonly class ApiRequestMigrator
     {
     }
     
+    /**
+     * This method migrates request data from newer API versions to the legacy format expected by the controllers.
+     * If the request does not contain a version field, it is assumed to be in the legacy format and is returned as-is.
+     * If the version is unsupported, a ValidationException is thrown.
+     * The "config" may be applied when controllers act differently than they would normally (there are inconsistencies in the old code).
+     * @param Request $request
+     * @param ApiRequestFieldConfig|null $config
+     * @return Request
+     */
     public function migrate(
         Request                $request,
         ?ApiRequestFieldConfig $config = null
@@ -85,16 +94,24 @@ readonly class ApiRequestMigrator
         }
         
         // Migrate the thread ID by looking up the parent message and converting its message ID to a thread ID
-        if (!empty($v2Data[$config->v2ThreadIdField])) {
-            $parentMessage = $this->messageDb->findOneById((int)$v2Data[$config->v2ThreadIdField]);
-            if (!$parentMessage) {
-                throw ValidationException::withMessages([
-                    $config->v2ThreadIdField => ["Parent message with ID {$v2Data[$config->v2ThreadIdField]} not found"]
+        if (array_key_exists($config->v2ThreadIdField, $v2Data)) {
+            $parentMessageId = (int)$v2Data[$config->v2ThreadIdField];
+            if ($parentMessageId === 0) {
+                // Special case: thread_id of 0 means no parent message
+                $request->merge([
+                    $config->threadIdField => 0,
+                ]);
+            } else {
+                $parentMessage = $this->messageDb->findOneById((int)$v2Data[$config->v2ThreadIdField]);
+                if (!$parentMessage) {
+                    throw ValidationException::withMessages([
+                        $config->v2ThreadIdField => ["Parent message with ID {$v2Data[$config->v2ThreadIdField]} not found"]
+                    ]);
+                }
+                $request->merge([
+                    $config->threadIdField => $this->threadIdHelper->convertMessageIdToThreadId($parentMessage->message_id),
                 ]);
             }
-            $request->merge([
-                $config->threadIdField => $this->threadIdHelper->convertMessageIdToThreadId($parentMessage->message_id),
-            ]);
         }
         
         return $request;

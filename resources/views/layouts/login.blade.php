@@ -14,13 +14,14 @@
     <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
 
     <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
 
     {!! $settingsPanel !!}
 
     <script>
 		InitializePreDomSettings(false);
-        UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
+        UpdateSettingsLanguage('<x-current-locale/>');
 	</script>
 
 </head>

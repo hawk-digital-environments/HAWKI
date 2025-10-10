@@ -5,6 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @deprecated This model is deprecated and will be removed in future versions. Use UserKeychainValue instead.
+ */
 class PrivateUserData extends Model
 {
 

@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
-use Hawk\HawkiCrypto\Value\HybridCryptoValue;
-use Illuminate\Database\Eloquent\Casts\Attribute;
+use App\Casts\AsAsymmetricPublicKeyCast;
+use App\Casts\AsHybridCryptoValueCast;
+use App\Events\ExtAppUserCreatedEvent;
+use App\Events\ExtAppUserRemovedEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -22,6 +23,17 @@ class ExtAppUser extends Model
         'api_token'
     ];
     
+    protected $casts = [
+        'user_public_key' => AsAsymmetricPublicKeyCast::class,
+        'user_private_key' => AsHybridCryptoValueCast::class,
+        'api_token' => AsHybridCryptoValueCast::class,
+    ];
+    
+    protected $dispatchesEvents = [
+        'created' => ExtAppUserCreatedEvent::class,
+        'deleted' => ExtAppUserRemovedEvent::class
+    ];
+    
     public function app(): BelongsTo
     {
         return $this->belongsTo(ExtApp::class);
@@ -35,29 +47,5 @@ class ExtAppUser extends Model
     public function personalAccessToken(): BelongsTo
     {
         return $this->belongsTo(PersonalAccessToken::class);
-    }
-    
-    protected function userPublicKey(): Attribute
-    {
-        return Attribute::make(
-            get: static fn(string $value) => AsymmetricPublicKey::fromString($value),
-            set: static fn(AsymmetricPublicKey $key) => (string)$key
-        );
-    }
-    
-    protected function userPrivateKey(): Attribute
-    {
-        return Attribute::make(
-            get: static fn(string $value) => HybridCryptoValue::fromString($value),
-            set: static fn(HybridCryptoValue $key) => (string)$key
-        );
-    }
-    
-    protected function apiToken(): Attribute
-    {
-        return Attribute::make(
-            get: static fn(string $value) => HybridCryptoValue::fromString($value),
-            set: static fn(HybridCryptoValue $token) => (string)$token
-        );
     }
 }

@@ -85,13 +85,10 @@
 
 <script>
     let userInfo = @json($userInfo);
-    const serverKeychainCryptoData = @json($keychainData)
 
     window.addEventListener('DOMContentLoaded', async function (){
 
         if(await getPassKey()){
-            console.log('keychain synced');
-            await syncKeychain(serverKeychainCryptoData);
             window.location.href = '/chat';
         }
         else{

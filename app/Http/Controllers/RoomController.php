@@ -4,20 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Attachment;
 use App\Models\Message;
-use App\Services\Storage\FileStorageService;
+use App\Services\Api\ApiRequestMigrator;
+use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Chat\Message\MessageContentValidator;
+use App\Services\Chat\Room\RoomService;
 use Dotenv\Exception\ValidationException;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
-use App\Services\Chat\Room\RoomService;
-use App\Services\Api\ApiRequestMigrator;
-use App\Services\Chat\Message\MessageContentValidator;
-use App\Services\Chat\Attachment\AttachmentService;
-use Exception;
-use Illuminate\Auth\Access\AuthorizationException;
-
-use Illuminate\Http\JsonResponse;
 
 class RoomController extends Controller
 {
@@ -95,7 +92,7 @@ class RoomController extends Controller
     public function addMember(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            'invitee' => 'string',
+            'username' => 'string',
             'role'=>'string'
         ]);
         $members = $this->roomService->add($slug, $validatedData);
@@ -206,7 +203,7 @@ class RoomController extends Controller
     // SECTION: ATTACHMENTS
     public function storeAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
         $validateData = $request->validate([
-            'file' => 'required|file|max:20480'
+            'file' => 'required|file|max:' . ($attachmentService->getMaxFileSize() / 1024)
         ]);
         $result = $attachmentService->store($validateData['file'], 'group');
         return response()->json($result);
@@ -233,30 +230,6 @@ class RoomController extends Controller
             'success' => true,
             'url' => $url
         ]);
-    }
-    public function downloadAttachment(string $uuid, string $path)
-    {
-        try {
-            $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
-            if(!$attachment->attachable->room->isMember(Auth::id())){
-                throw new AuthorizationException();
-            }
-
-            $storageService = app(FileStorageService::class);
-            $stream = $storageService->streamFromSignedPath($path); // returns a resource
-
-            return response()->streamDownload(function () use ($stream)
-            {
-                fpassthru($stream); // send stream directly to browser
-            },
-                $attachment->filename,
-                [
-                    'Content-Type' => $attachment->mime,
-                ]
-            );
-        } catch (\Illuminate\Contracts\Filesystem\FileNotFoundException $e) {
-            abort(404, 'File not found');
-        }
     }
 
     /**

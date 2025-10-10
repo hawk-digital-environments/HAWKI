@@ -2,20 +2,23 @@
 
 namespace App\Models;
 
-use App\Events\MemberAddToRoomEvent;
-use App\Events\MemberRemoveFromRoomEvent;
-use App\Events\MemberUpdateEvent;
-use App\Events\RoomRemoveEvent;
+use App\Events\MemberAddedToRoomEvent;
+use App\Events\MemberRemovedFromRoomEvent;
+use App\Events\MemberUpdatedEvent;
+use App\Events\RoomDeletingEvent;
+use App\Events\RoomUpdatedEvent;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class Room extends Model
 {
     use HasFactory;
+    
+    private array|null $deferredMemberEvents = null;
 
     protected $fillable = [
         'room_name',
@@ -23,6 +26,14 @@ class Room extends Model
         'room_description',
         'system_prompt',
         'slug'
+    ];
+    
+    protected $dispatchesEvents = [
+        // 'created' is a special case for rooms, so we handle it manually
+        // in the RoomFunctions trait to ensure members are added first.
+        // 'deleting' is also handled manually to ensure we still can resolve
+        // the audience for sync logs.
+        'updated' => RoomUpdatedEvent::class
     ];
 
     protected static function boot()
@@ -89,7 +100,7 @@ class Room extends Model
             $member = $this->members()->where('user_id', $userId)->firstOrFail();
             if(!$member->hasRole($role)){
                 $member->updateRole($role);
-                MemberUpdateEvent::dispatch($member);
+                $this->triggerOrDeferMemberEvent(fn() => MemberUpdatedEvent::dispatch($member));
             }
         }
         else{
@@ -104,7 +115,7 @@ class Room extends Model
                     $member->updateRole($role);
                 }
                 
-                MemberAddToRoomEvent::dispatch($member);
+                $this->triggerOrDeferMemberEvent(fn() => MemberAddedToRoomEvent::dispatch($member));
             }
             else{
                 // create new member for the room
@@ -113,7 +124,7 @@ class Room extends Model
                     'role' => $role,
                 ]);
                 
-                MemberAddToRoomEvent::dispatch($member);
+                $this->triggerOrDeferMemberEvent(fn() => MemberAddedToRoomEvent::dispatch($member));
             }
 
         }
@@ -127,7 +138,7 @@ class Room extends Model
                 $member = $this->members()->where('user_id', $userId)->firstOrFail();
                 $member->revokeMembership();
                 
-                MemberRemoveFromRoomEvent::dispatch($member);
+                $this->triggerOrDeferMemberEvent(fn() => MemberRemovedFromRoomEvent::dispatch($member));
                 
                 //Check if All the members have left the room.
                 if ($this->members()->count() === 1) {
@@ -146,7 +157,7 @@ class Room extends Model
 
     public function deleteRoom(): bool{
         try{
-            RoomRemoveEvent::dispatch($this);
+            RoomDeletingEvent::dispatch($this);
             // Delete related messages and members
             $this->messages()->delete();
             $this->members()->delete();
@@ -194,5 +205,31 @@ class Room extends Model
             }
         }
         return false;
+    }
+    
+    public function runWithDeferredMemberEvents(callable $callback): callable
+    {
+        $this->deferredMemberEvents = [];
+        try {
+            $callback();
+            $deferredEvents = $this->deferredMemberEvents;
+        } finally {
+            $this->deferredMemberEvents = null;
+        }
+        
+        return static function () use ($deferredEvents) {
+            foreach ($deferredEvents as $event) {
+                $event();
+            }
+        };
+    }
+    
+    private function triggerOrDeferMemberEvent(callable $trigger): void
+    {
+        if (is_array($this->deferredMemberEvents)) {
+            $this->deferredMemberEvents[] = $trigger;
+        } else {
+            $trigger();
+        }
     }
 }

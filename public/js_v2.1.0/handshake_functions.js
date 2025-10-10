@@ -237,33 +237,6 @@ async function completeRegistration() {
 
     setOverlay(true, true);
 
-    // Generate a key pair (public and private keys)
-    const keyPair = await generateKeyPair();
-
-    // Export the public key and private key
-    const exportedPublicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-    const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-
-    publicKeyBase64 = arrayBufferToBase64(exportedPublicKey);
-    privateKeyBase64 = arrayBufferToBase64(exportedPrivateKey);
-
-
-    await keychainSet('publicKey', publicKeyBase64, false, false);
-    await keychainSet('privateKey', privateKeyBase64, false, false);
-
-    // Generate and encrypt the aiConvKey and keychain
-    const aiConvKey = await generateKey();
-    const keychainData = await keychainSet('aiConvKey', aiConvKey, true, false);
-
-
-    // Prepare the data to send to the server
-    const dataToSend = {
-        publicKey: publicKeyBase64,
-        keychain: keychainData.ciphertext,
-        KCIV: keychainData.iv,
-        KCTAG: keychainData.tag,
-    };
-
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -275,7 +248,7 @@ async function completeRegistration() {
                 "X-CSRF-TOKEN": csrfToken,
                 'Accept': 'application/json',
             },
-            body: JSON.stringify(dataToSend)
+            body: JSON.stringify({})
         });
 
         // Handle the server response
@@ -288,6 +261,7 @@ async function completeRegistration() {
         const data = await response.json();
         if (data.success) {
             userInfo = data.userData;
+            await initializeNewKeychain();
             window.location.href = data.redirectUri;
         }
 
@@ -318,7 +292,6 @@ async function verifyEnteredPassKey(provider){
 
     if(isVerified){
         await setPassKey(enteredKey);
-        await syncKeychain(serverKeychainCryptoData);
         window.location.href = '/chat';
     }
     else{
@@ -331,26 +304,7 @@ async function verifyEnteredPassKey(provider){
 }
 
 async function verifyPasskey(passkey) {
-    try {
-        const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
-        const keychainEncryptor = await deriveKey(passkey, "keychain_encryptor", udSalt);
-
-        const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainCryptoData);
-
-        const decryptedKeychain = await decryptWithSymKey(
-            keychainEncryptor,
-            keychain,
-            KCIV,
-            KCTAG,
-            false
-        );
-
-        return true;
-    } catch (error) {
-        // You can log the error if needed
-        // console.error("Error during verification or decryption:", error);
-        return false;
-    }
+    return canPasskeyDecryptKeychain(passkey);
 }
 
 
@@ -419,8 +373,8 @@ async function extractPasskey(){
                                                 passkeyBackup.tag,
                                                 false);
 
-        if(verifyPasskey(passkey)){
-            setPassKey(passkey);
+        if (await verifyPasskey(passkey)) {
+            await setPassKey(passkey);
             switchSlide(3);
             document.querySelector('#passkey-field').innerText = passkey;
         }
@@ -470,7 +424,6 @@ async function requestPasskeyBackup(){
 }
 
 async function redirectToChat(){
-    await syncKeychain(serverKeychainCryptoData);
     window.location.href = '/chat';
 }
 

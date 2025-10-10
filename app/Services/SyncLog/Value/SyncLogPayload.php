@@ -7,29 +7,33 @@ namespace App\Services\SyncLog\Value;
 
 use App\Models\Room;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
+/**
+ * @template T
+ */
 readonly class SyncLogPayload
 {
     public function __construct(
         /**
          * The model that should be tracked
+         * @var T
          */
-        public Model                  $model,
+        public mixed              $model,
 
         /**
          * The action that should be tracked for the model.
-         * @var SyncLogEntryActionEnum
+         * @var SyncLogEntryAction
          */
-        public SyncLogEntryActionEnum $action,
+        public SyncLogEntryAction $action,
 
         /**
          * A list of users that should be notified about this log entry.
          * This is the audience for the log entry.
-         * @var Collection<User>
+         * Null means no audience -> ALL users should be notified.
+         * @var Collection<User>|null
          */
-        public Collection             $audience,
+        public Collection|null    $audience,
 
         /**
          * The room for which this log entry is relevant.

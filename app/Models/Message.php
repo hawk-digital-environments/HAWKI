@@ -2,19 +2,13 @@
 
 namespace App\Models;
 
-use App\Events\MessageUpdateEvent;
-use Hamcrest\Core\IsTypeOf;
-use Illuminate\Database\Eloquent\Model;
-use App\Services\Storage\FileStorageService;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
+use App\Events\MessageUpdatedEvent;
 use App\Services\Storage\AvatarStorageService;
-
-use Illuminate\Support\Facades\Log;
-
+use App\Services\Storage\FileStorageService;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\Auth;
 
 
 class Message extends Model
@@ -34,7 +28,6 @@ class Message extends Model
         'content',
         'reader_signs'
     ];
-
 
     public function room(): BelongsTo
     {
@@ -63,6 +56,7 @@ class Message extends Model
         $readStat = $this->isReadBy($requestMember);
 
         return [
+            'id' => $this->id,
             'member_id' => $member->id,
             'member_name' => $member->user->name,
             'message_role' => $this->message_role,
@@ -73,7 +67,7 @@ class Message extends Model
                 'username' => $member->user->username,
                 'name' => $member->user->name,
                 'isRemoved' => $member->isRemoved,
-                'avatar_url' =>!empty($user->avatar_id)
+                'avatar_url' => !empty($member->user->avatar_id)
                                 ? $avatarStorage->getUrl($member->user->avatar_id, 'profile_avatars')
                                 : null,
             ],
@@ -107,7 +101,7 @@ class Message extends Model
             $signs = json_decode($this->reader_signs, true) ?? [];
             $signs[] = $member->id;
             $this->reader_signs = json_encode($signs);
-            MessageUpdateEvent::dispatch($this);
+            MessageUpdatedEvent::dispatch($this);
             $this->save();
         }
     }

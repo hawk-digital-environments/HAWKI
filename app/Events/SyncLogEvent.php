@@ -13,18 +13,29 @@ use Illuminate\Foundation\Events\Dispatchable;
 readonly class SyncLogEvent implements ShouldBroadcast
 {
     use Dispatchable;
-
-    public function __construct(protected SyncLogEntryResource $entry)
+    
+    private int|null $userId;
+    private array $payload;
+    
+    public function __construct(
+        SyncLogEntryResource $resource
+    )
     {
+        $this->userId = $resource->getUserId();
+        $this->payload = $resource->toArray();
     }
-
+    
     public function broadcastWith(): array
     {
-        return $this->entry->toArray(request());
+        return $this->payload;
     }
-
+    
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel('User.' . $this->entry->getUserId());
+        if ($this->userId === null) {
+            return new PrivateChannel('AllUsers');
+        }
+        
+        return new PrivateChannel('User.' . $this->userId);
     }
 }

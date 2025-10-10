@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Session;
-use App\Http\Controllers\LanguageController;
-
 use App\Services\System\SettingsService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\View;
 
 class LoginController extends Controller
 {
@@ -27,7 +24,6 @@ class LoginController extends Controller
         if(Auth::check()){
             return redirect('/handshake');
         }
-
 
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();

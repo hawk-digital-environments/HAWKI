@@ -44,7 +44,12 @@ async function fetchGuidelines(){
         const {view, announcement} = await fetchLatestPolicy();
 
         // Render the HTML (MD rendered to HTML string)
-        const renderedHtml = md.render(view, false);
+    let renderedHtml = view;
+    if (typeof md === 'undefined' || !md.render) {
+        console.error('Markdown renderer not initialized properly.');
+    } else {
+        renderedHtml = md.render(view, false);
+    }
 
         // const parent = document.querySelector('')
         // Insert the rendered HTML into the designated container

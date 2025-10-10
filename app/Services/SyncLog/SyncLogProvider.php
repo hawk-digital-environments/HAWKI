@@ -8,25 +8,25 @@ namespace App\Services\SyncLog;
 use App\Http\Resources\SyncLogEntryCollection;
 use App\Services\SyncLog\Generator\FullSyncLogGenerator;
 use App\Services\SyncLog\Generator\IncrementalSyncLogGenerator;
-use App\Services\SyncLog\Value\SyncLogEntryConstraints;
-use App\Services\SyncLog\Value\SyncLogTypeEnum;
+use App\Services\SyncLog\Value\IncrementalSyncLogEntryConstraints;
+use App\Services\SyncLog\Value\SyncLogType;
 
 readonly class SyncLogProvider
 {
     public function __construct(
-        protected IncrementalSyncLogGenerator $changeBasedGenerator,
+        protected IncrementalSyncLogGenerator $incrementalGenerator,
         protected FullSyncLogGenerator        $fullGenerator,
     )
     {
     }
-
-    public function getLog(SyncLogEntryConstraints $constraints): SyncLogEntryCollection
+    
+    public function getLog(IncrementalSyncLogEntryConstraints $constraints): SyncLogEntryCollection
     {
-        $type = SyncLogTypeEnum::INCREMENTAL;
-        $entries = $this->changeBasedGenerator->findEntries($constraints);
+        $type = SyncLogType::INCREMENTAL;
+        $entries = $this->incrementalGenerator->findEntries($constraints);
 
         if ($entries === null) {
-            $type = SyncLogTypeEnum::FULL;
+            $type = SyncLogType::FULL;
             $entries = $this->fullGenerator->findEntries($constraints);
         }
 

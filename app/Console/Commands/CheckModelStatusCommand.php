@@ -31,7 +31,12 @@ class CheckModelStatusCommand extends Command
         foreach ($models as $model) {
             $this->output->write("Checking model: {$model->getId()}");
             $status = $model->getClient()->getStatus();
-            $this->output->writeln(" is " . $status->value);
+            $oldStatus = $this->modelStatusDb->getStatus($model);
+            if ($oldStatus === $status) {
+                $this->output->writeln(" - status unchanged (" . $status->value . ")");
+                continue;
+            }
+            $this->output->writeln(" is " . $status->value . " (was " . $oldStatus->value . "), updating.");
             $this->modelStatusDb->setModelStatus($model, $status);
         }
         

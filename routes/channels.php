@@ -15,4 +15,12 @@ Broadcast::channel('Rooms.{roomSlug}', function (User $user, string $roomSlug) {
     return $isMember;
 });
 
+/**
+ * Defines a private channel for each user.
+ */
 Broadcast::channel('User.{id}', static fn(User $user, string $id) => $user->id === (int)$id);
+
+/**
+ * Defines a semi-public channel for all logged-in users.
+ */
+Broadcast::channel('AllUsers', static fn(User $user) => true);

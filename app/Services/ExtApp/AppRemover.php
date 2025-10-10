@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\ExtApp;
 
 
-use App\Events\AppRemoveEvent;
 use App\Models\ExtApp;
 use App\Models\ExtAppUser;
 use App\Models\ExtAppUserRequest;
@@ -13,10 +12,10 @@ use DB;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
-class AppRemover
+readonly class AppRemover
 {
     public function __construct(
-        protected LoggerInterface $log
+        private LoggerInterface $log
     )
     {
     }
@@ -30,7 +29,6 @@ class AppRemover
     public function remove(ExtApp $app): void
     {
         try {
-            AppRemoveEvent::dispatch($app);
             DB::transaction(static function () use ($app) {
                 $app->users->each(function (ExtAppUser $appUser) {
                     $appUser->personalAccessToken()?->delete();

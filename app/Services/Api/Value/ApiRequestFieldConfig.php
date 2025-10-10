@@ -18,7 +18,7 @@ readonly class ApiRequestFieldConfig
          * The thread id is a string in the format "12".
          * This is the first part of the parent message ID (before the dot).
          */
-        public string $threadIdField = 'threadID',
+        public string $threadIdField = 'threadId',
         /**
          * The name of the field that contains the message ID in v2 requests.
          * The message id is an integer, which is the internal database ID of the message.

@@ -2,21 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\MessageSentEvent;
-use App\Events\MessageUpdateEvent;
 use App\Events\RoomAiWritingEndedEvent;
 use App\Events\RoomAiWritingStartedEvent;
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
-
 use App\Models\Room;
 use App\Models\User;
 use App\Services\AI\AiService;
 use App\Services\AI\UsageAnalyzerService;
 use App\Services\AI\Value\AiResponse;
 use App\Services\Api\ApiRequestMigrator;
+use App\Services\Api\Value\ApiRequestFieldConfig;
 use App\Services\Chat\Message\MessageHandlerFactory;
-use App\Services\Message\ThreadIdHelper;
 use App\Services\Storage\AvatarStorageService;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Http\Request;
@@ -28,7 +25,6 @@ class StreamController extends Controller
     public function __construct(
         private readonly UsageAnalyzerService $usageAnalyzer,
         private readonly AiService            $aiService,
-        private readonly ThreadIdHelper $messageHelper,
         private readonly AvatarStorageService $avatarStorage
     ){
     }
@@ -79,7 +75,10 @@ class StreamController extends Controller
      */
     public function handleAiConnectionRequest(Request $request, ApiRequestMigrator $requestMigrator)
     {
-        $request = $requestMigrator->migrate($request);
+        $request = $requestMigrator->migrate(
+            $request,
+            new ApiRequestFieldConfig(messageIdField: 'messageId', threadIdField: 'threadIndex')
+        );
         
         //validate payload
         try {
@@ -131,9 +130,9 @@ class StreamController extends Controller
             
             // Broadcast initial generation status immediately
             broadcast(new RoomMessageEvent([
-                'type' => 'aiGenerationStatus',
-                'messageData' => [
-                    'room_id' => Room::where('slug', $validatedData['slug'])->firstOrFail()->id,
+                'type' => 'status',
+                'data' => [
+                    'slug' => $room->slug,
                     'isGenerating' => true,
                     'model' => $validatedData['payload']['model']
                 ]
@@ -268,7 +267,6 @@ class StreamController extends Controller
                 'member' => $member,
                 'message_role'=> 'assistant',
                 'model'=> $data['payload']['model'],
-                'thread_id' => $this->messageHelper->getThreadIdForRoomAndThreadIndex($room, $data['threadIndex']), // @todo is this needed here?
                 'content' => [
                     'text' => [
                         'ciphertext' => base64_encode($encryptedData->ciphertext),

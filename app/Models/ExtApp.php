@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\ExtExtAppCreatedEvent;
+use App\Events\ExtExtAppRemovedEvent;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -58,6 +60,11 @@ class ExtApp extends Model
         'app_public_key',
         'redirect_url',
         'app_user_id'
+    ];
+    
+    protected $dispatchesEvents = [
+        'created' => ExtExtAppCreatedEvent::class,
+        'deleted' => ExtExtAppRemovedEvent::class
     ];
     
     /**

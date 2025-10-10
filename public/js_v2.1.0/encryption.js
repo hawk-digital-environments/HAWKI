@@ -2,16 +2,15 @@ let passKey;
 let saltObj = {};
 
 
-
 //#region Key Creation
 async function generateKey() {
     const key = await window.crypto.subtle.generateKey(
         {
-            name: "AES-GCM",
+            name: 'AES-GCM',
             length: 256
         },
         true,
-        ["encrypt", "decrypt"]
+        ['encrypt', 'decrypt']
     );
 
     return key;
@@ -20,13 +19,13 @@ async function generateKey() {
 async function generateKeyPair() {
     const keyPair = await window.crypto.subtle.generateKey(
         {
-            name: "RSA-OAEP",
+            name: 'RSA-OAEP',
             modulusLength: 2048,
             publicExponent: new Uint8Array([1, 0, 1]),
-            hash: "SHA-256",
+            hash: 'SHA-256'
         },
         true,
-        ["encrypt", "decrypt"]
+        ['encrypt', 'decrypt']
     );
 
     return keyPair;
@@ -38,7 +37,7 @@ function generateTempHash() {
     return Array.from(array).map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-function generatePasskeyBackupHash(){
+function generatePasskeyBackupHash() {
     const array = new Uint8Array(8); // 8 bytes = 64 bits
     window.crypto.getRandomValues(array);
     return Array.from(array)
@@ -57,11 +56,11 @@ async function deriveKey(passkey, label, serverSalt) {
     const enc = new TextEncoder();
 
     const keyMaterial = await window.crypto.subtle.importKey(
-        "raw",
+        'raw',
         enc.encode(passkey),
-        { name: "PBKDF2" },
+        {name: 'PBKDF2'},
         false,
-        ["deriveKey"]
+        ['deriveKey']
     );
 
     // Combine label and serverSalt to create a unique salt for this derived key
@@ -72,15 +71,15 @@ async function deriveKey(passkey, label, serverSalt) {
 
     const derivedKey = await window.crypto.subtle.deriveKey(
         {
-            name: "PBKDF2",
+            name: 'PBKDF2',
             salt: combinedSalt,
             iterations: 100000,
-            hash: "SHA-256"
+            hash: 'SHA-256'
         },
         keyMaterial,
-        { name: "AES-GCM", length: 256 },
+        {name: 'AES-GCM', length: 256},
         true,
-        ["encrypt", "decrypt"]
+        ['encrypt', 'decrypt']
     );
 
     return derivedKey;
@@ -89,11 +88,7 @@ async function deriveKey(passkey, label, serverSalt) {
 //#endregion
 
 
-
 //#region Encyrption
-
-
-
 
 
 //#region Symmetric
@@ -106,7 +101,7 @@ async function encryptWithSymKey(encKey, data, isKey = false) {
     // Encrypt the data
     const encryptedData = await window.crypto.subtle.encrypt(
         {
-            name: "AES-GCM",
+            name: 'AES-GCM',
             iv: iv
         },
         encKey, // Symmetric key
@@ -126,8 +121,6 @@ async function encryptWithSymKey(encKey, data, isKey = false) {
 }
 
 
-
-
 async function decryptWithSymKey(encKey, ciphertext, iv, tag, isKey = false) {
     // Convert Base64-encoded ciphertext, IV, and tag back to ArrayBuffers
     const ciphertextBuffer = base64ToArrayBuffer(ciphertext);
@@ -143,7 +136,7 @@ async function decryptWithSymKey(encKey, ciphertext, iv, tag, isKey = false) {
         // Decrypt the combined ciphertext and tag
         const decryptedData = await window.crypto.subtle.decrypt(
             {
-                name: "AES-GCM",
+                name: 'AES-GCM',
                 iv: ivBuffer
             },
             encKey, // Symmetric key
@@ -154,12 +147,11 @@ async function decryptWithSymKey(encKey, ciphertext, iv, tag, isKey = false) {
         return isKey ? new Uint8Array(decryptedData) : new TextDecoder().decode(decryptedData);
     } catch (error) {
         // console.error("Decryption failed:", error);
-        throw new Error("Decryption failed: " + error.message);
+        throw new Error('Decryption failed: ' + error.message);
     }
 }
 
 //#endregion
-
 
 
 //#region Asymmetric
@@ -170,21 +162,23 @@ async function encryptWithPublicKey(roomKey, publicKey) {
     const exportedRoomKey = await exportSymmetricKey(roomKey);
 
     // Import the recipient's public key
-    const importedPublicKey = await window.crypto.subtle.importKey(
-        "spki", // Key format
-        publicKey, // Recipient's public key in ArrayBuffer format
-        {
-            name: "RSA-OAEP",
-            hash: { name: "SHA-256" },
-        },
-        false, // Not extractable
-        ["encrypt"]
-    );
+    const importedPublicKey = publicKey instanceof CryptoKey
+        ? publicKey
+        : await window.crypto.subtle.importKey(
+            'spki', // Key format
+            publicKey, // Recipient's public key in ArrayBuffer format
+            {
+                name: 'RSA-OAEP',
+                hash: {name: 'SHA-256'}
+            },
+            false, // Not extractable
+            ['encrypt']
+        );
 
     // Encrypt the exported roomKey using the recipient's public key
     const encryptedRoomKey = await window.crypto.subtle.encrypt(
         {
-            name: "RSA-OAEP",
+            name: 'RSA-OAEP'
         },
         importedPublicKey,
         exportedRoomKey // The raw bytes of the roomKey
@@ -192,27 +186,29 @@ async function encryptWithPublicKey(roomKey, publicKey) {
 
     // Return the encrypted roomKey as Base64 string
     return {
-        ciphertext: arrayBufferToBase64(encryptedRoomKey),
+        ciphertext: arrayBufferToBase64(encryptedRoomKey)
     };
 }
 
 async function decryptWithPrivateKey(encryptedData, privateKey) {
     // Import the user's private key
-    const importedPrivateKey = await window.crypto.subtle.importKey(
-        "pkcs8", // Key format
-        privateKey, // User's private key in ArrayBuffer format
-        {
-            name: "RSA-OAEP",
-            hash: { name: "SHA-256" },
-        },
-        false, // Not extractable
-        ["decrypt"]
-    );
+    const importedPrivateKey = privateKey instanceof CryptoKey
+        ? privateKey
+        : await window.crypto.subtle.importKey(
+            'pkcs8', // Key format
+            privateKey, // User's private key in ArrayBuffer format
+            {
+                name: 'RSA-OAEP',
+                hash: {name: 'SHA-256'}
+            },
+            false, // Not extractable
+            ['decrypt']
+        );
 
     // Decrypt the encrypted roomKey
     const decryptedRoomKeyBytes = await window.crypto.subtle.decrypt(
         {
-            name: "RSA-OAEP",
+            name: 'RSA-OAEP'
         },
         importedPrivateKey,
         encryptedData // Encrypted symmetric key in ArrayBuffer format
@@ -220,18 +216,19 @@ async function decryptWithPrivateKey(encryptedData, privateKey) {
 
     // Import the decrypted bytes back into a CryptoKey object
     const roomKey = await window.crypto.subtle.importKey(
-        "raw",
+        'raw',
         decryptedRoomKeyBytes,
         {
-            name: "AES-GCM",
+            name: 'AES-GCM'
         },
         true, // Extractable
-        ["encrypt", "decrypt"]
+        ['encrypt', 'decrypt']
     );
 
     // Return the reconstructed roomKey (CryptoKey object)
     return roomKey;
 }
+
 //#endregion
 
 //#region Hybrid
@@ -362,321 +359,494 @@ async function decryptWithTempHash(encryptedData, tempHash, iv, tag) {
 }
 
 
-
 //#endregion
 
 
-
 //#endregion
-
-
 
 
 //#region Keychain Access
 
-
-async function openHawkIDatabase() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('HAWKI', 1); // Fixed version
-
-        request.onupgradeneeded = function (event) {
-            const db = event.target.result;
-            console.log('Initializing the database.');
-            if (!db.objectStoreNames.contains('keychains')) {
-                db.createObjectStore('keychains', { keyPath: 'username' });
-                console.log('Created object store: keychains');
-            }
-        };
-
-        request.onsuccess = function (event) {
-            resolve(event.target.result);
-        };
-
-        request.onerror = function (event) {
-            reject('Failed to open IndexedDB: ' + event.target.error);
-        };
-    });
-}
-
-
-
-
-// Set the keychain value in IndexedDB
-async function keychainSet(key, value, formatToJWK, backup = true) {
-
-    if (formatToJWK) {
-        value = await exportKeyValueToJWK(value);
+async function keychainSet(key, value, type = 'room_key') {
+    if (!(value instanceof CryptoKey)) {
+        throw new Error('Value must be a CryptoKey');
     }
 
-    let keychain;
-    try {
-        keychain = await openKeychain(); // Try to open and decrypt the keychain
-    } catch (error) {
-        console.warn("Failed to open or decrypt keychain. Creating a new one.");
-        keychain = {}; // Initialize a new keychain if there's an error
+    if (typeof type !== 'string') {
+        console.warn('Migration: Using keychainSet with non-string type. Defaulting to "room_key".');
+        type = 'room_key';
     }
 
-    // Update keychain with username, timestamp, and new key-value pair
-    keychain['username'] = userInfo.username;
-    keychain['time-signature'] = Date.now();
-    keychain[key] = value;
+    const keychain = await getKeychain();
 
-    const keychainString = JSON.stringify(keychain);
+    const existingValue = keychain.find(kv => kv.key === key);
+    const newValue = await createKeychainValue(key, value, existingValue ? existingValue.type : type);
+    if (existingValue && existingValue.type === newValue.type && existingValue.value === newValue.value) {
+        console.log(`Keychain entry for key "${key}" is unchanged. Skipping update.`);
+        return;
+    }
 
-    // Encrypt the updated keychain
-    const passKey = await getPassKey();
-    const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
-    const keychainEncryptor = await deriveKey(passKey, "keychain_encryptor", udSalt);
-    const encKeychainData = await encryptWithSymKey(keychainEncryptor, keychainString, false);
+    const encryptedNewValue = await encryptKeychainValue(
+        await createKeychainEncryptor(await getPassKey()),
+        newValue
+    );
 
-    // Store the encrypted keychain in IndexedDB
-    const db = await openHawkIDatabase();
-    const transaction = db.transaction('keychains', 'readwrite');
-    const store = transaction.objectStore('keychains');
+    await sendKeychainValuesToServer({set: [encryptedNewValue]});
 
-    const keychainData = {
-        ciphertext: encKeychainData.ciphertext,
-        iv: encKeychainData.iv,
-        tag: encKeychainData.tag,
-    };
+    // Update local keychain
+    const idx = keychain.findIndex(kv => kv.key === key);
+    if (idx === -1) {
+        keychain.push(newValue);
+    } else {
+        keychain.splice(idx, 1, newValue);
+    }
 
-    const userData = {
-        username: userInfo.username,
-        keychain: keychainData,
-    };
-
-    const storeRequest = store.put(userData);
-
-    storeRequest.onsuccess = function () {
-        console.log("Keychain successfully stored in IndexedDB.");
-        if (backup) {
-            backupKeychainOnServer(encKeychainData);
-        }
-    };
-
-    storeRequest.onerror = function (event) {
-        console.error("Error storing keychain:", event.target.error);
-    };
-
-    return encKeychainData;
+    console.log(`Keychain entry for key "${key}" updated successfully.`);
 }
 
+async function keychainGet(key, keyType = 'room_key') {
+    const keychain = await getKeychain();
 
+    // Backward compatibility for well known keys
+    if (key === 'publicKey') {
+        keyType = 'public_key';
+    } else if (key === 'privateKey') {
+        keyType = 'private_key';
+    } else if (key === 'aiConvKey') {
+        keyType = 'ai_conv';
+    }
 
-// Get the keychain value from IndexedDB
-async function keychainGet(key) {
-    const keychain = await openKeychain();
-    if (!keychain) {
-        console.warn("No keychain available. Returning null.");
+    const value = keychain.find(kv => kv.key === key && kv.type === keyType);
+    if (!value) {
+        console.warn(`Key "${key}" not found in keychain.`);
         return null;
     }
 
-    if (!(key in keychain)) {
-        console.warn(`Key "${key}" not found in keychain.`);
-        return null; // Return null if key is not found
+    const {type, value: valueBuffer} = value;
+
+    /**
+     * @var CryptoKey | null loadedValue
+     */
+    let loadedValue = null;
+    if (type === 'public_key') {
+        loadedValue = await window.crypto.subtle.importKey(
+            'spki',
+            valueBuffer,
+            {
+                name: 'RSA-OAEP',
+                hash: {name: 'SHA-256'}
+            },
+            false,
+            ['encrypt']
+        );
+    } else if (type === 'private_key') {
+        loadedValue = await window.crypto.subtle.importKey(
+            'pkcs8',
+            valueBuffer,
+            {
+                name: 'RSA-OAEP',
+                hash: {name: 'SHA-256'}
+            },
+            false,
+            ['decrypt']
+        );
+    } else {
+        loadedValue = await importSymmetricKey(valueBuffer);
     }
 
-    try {
-        const keyValue = await importKeyValueFromJWK(keychain[key]);
-        return keyValue;
-    } catch (error) {
-        console.error(`Error importing key "${key}" from keychain:`, error);
-        throw error;
-    }
+    return loadedValue;
 }
 
+/**
+ * Creates a new keychain value
+ * @param {string} key
+ * @param {CryptoKey} value
+ * @param {string} type
+ * @return {Promise<{key:string,value:ArrayBuffer,type:string}>}
+ */
+async function createKeychainValue(key, value, type = 'room_key') {
+    console.log('Creating keychain value:', {key, value, type});
+    let buffer;
 
+    if (key === 'publicKey' || type === 'public_key') {
+        type = 'public_key';
+        buffer = await window.crypto.subtle.exportKey('spki', value);
+    } else if (key === 'privateKey' || type === 'private_key') {
+        type = 'private_key';
+        buffer = await window.crypto.subtle.exportKey('pkcs8', value);
+    } else if (type === 'room_key' || type === 'ai_conv') {
+        buffer = await window.crypto.subtle.exportKey('raw', value);
+    } else {
+        throw new Error('Invalid key type for keychain value');
+    }
 
-// Retrieve and decrypt the keychain from IndexedDB
-async function openKeychain() {
-    const db = await openHawkIDatabase();
-    const transaction = db.transaction('keychains', 'readonly');
-    const store = transaction.objectStore('keychains');
+    return {key, value: buffer, type};
+}
 
-    return new Promise((resolve, reject) => {
-        // console.log("Fetching keychain for user:", userInfo.username);
+/**
+ * Encrypts the given keychain value using the provided encryptor key
+ *
+ * @param {CryptoKey} keychainEncryptor
+ * @param {{key: string, value: ArrayBuffer, type: string}}value
+ * @return {Promise<{key: string, value: string, type: string}>}
+ */
+async function encryptKeychainValue(keychainEncryptor, value) {
+    const encryptedValue = await encryptWithSymKey(keychainEncryptor, arrayBufferToBase64(value.value), false);
+    return {
+        ...value,
+        value: [encryptedValue.iv, encryptedValue.tag, encryptedValue.ciphertext].join('|')
+    };
+}
 
-        const request = store.get(userInfo.username);
+/**
+ * Decrypts the given keychain value using the provided encryptor key
+ * @param {CryptoKey} keychainEncryptor
+ * @param {{key: string, value: string, type: string}}value
+ * @return {Promise<{key: string, value: ArrayBuffer, type: string}>}
+ */
+async function decryptKeychainValue(keychainEncryptor, value) {
+    const [iv, tag, ciphertext] = value.value.split('|');
 
-        request.onsuccess = async function (event) {
-            const result = event.target.result;
-            // console.log("Keychain entry retrieved from IndexedDB:", result);
+    const decrypted = await decryptWithSymKey(
+        keychainEncryptor,
+        ciphertext,
+        iv,
+        tag,
+        false
+    );
 
-            if (!result) {
-                console.warn('No keychain found for user, initializing a new keychain.');
-                resolve({}); // Return an empty object if no entry exists
-                return;
-            }
+    return {...value, value: base64ToArrayBuffer(decrypted)};
+}
 
-            const { ciphertext, iv, tag } = result.keychain;
+/**
+ * Initializes a new keychain for the user
+ * @return {Promise<void>}
+ */
+async function initializeNewKeychain() {
+    const passKey = await getPassKey();
+    const keychainEncryptor = await createKeychainEncryptor(passKey);
+    const keyPair = await generateKeyPair();
 
-            // Verify that required fields exist
-            if (!ciphertext || !iv || !tag) {
-                console.error("Incomplete keychain data in IndexedDB:", result);
-                reject("Keychain data is missing required fields.");
-                return;
-            }
+    const initialValues = [];
+    initialValues.push(
+        await encryptKeychainValue(
+            keychainEncryptor,
+            await createKeychainValue(
+                'publicKey',
+                keyPair.publicKey,
+                'public_key'
+            )
+        )
+    );
+    initialValues.push(
+        await encryptKeychainValue(
+            keychainEncryptor,
+            await createKeychainValue(
+                'privateKey',
+                keyPair.privateKey,
+                'private_key'
+            )
+        )
+    );
+    initialValues.push(
+        await encryptKeychainValue(
+            keychainEncryptor,
+            await createKeychainValue(
+                'aiConvKey',
+                await generateKey(),
+                'ai_conv'
+            )
+        )
+    );
 
-            try {
-                const passKey = await getPassKey();
-                const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
-                const keychainEncryptor = await deriveKey(passKey, "keychain_encryptor", udSalt);
+    const publicKeyString = arrayBufferToBase64(
+        await window.crypto.subtle.exportKey('spki', keyPair.publicKey)
+    );
 
-                // console.log("Decrypting keychain...");
-                const decryptedKeychain = await decryptWithSymKey(
-                    keychainEncryptor,
-                    ciphertext,
-                    iv,
-                    tag,
-                    false  // Expecting text output
-                );
-
-                // console.log("Decrypted keychain:", decryptedKeychain);
-                const keychain = JSON.parse(decryptedKeychain);
-                resolve(keychain);
-            } catch (error) {
-                console.error("Error decrypting keychain:", error);
-                reject(error);
-            }
-        };
-
-        request.onerror = function (event) {
-            console.error('Error fetching keychain from IndexedDB:', event.target.error);
-            reject(event.target.error);
-        };
+    await sendKeychainValuesToServer({
+        set: initialValues,
+        clear: true,
+        publicKey: publicKeyString
     });
 }
 
+/**
+ * Generates the crypto key to use for keychain encryption/decryption
+ * @param passkey
+ * @return {Promise<CryptoKey>}
+ */
+async function createKeychainEncryptor(passkey) {
+    const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
+    return await deriveKey(passkey, 'keychain_encryptor', udSalt);
+}
 
+let __decryptionValidator = null;
 
-async function backupKeychainOnServer(encKeychainData){
-
-    const requestObject = {
-        ciphertext: encKeychainData.ciphertext,
-        iv: encKeychainData.iv,
-        tag: encKeychainData.tag,
+/**
+ * Checks if the given passkey can decrypt at least one keychain value successfully
+ * This implies that the given passkey is valid
+ * @param {string} passkey
+ * @return {Promise<boolean>}
+ */
+async function canPasskeyDecryptKeychain(passkey) {
+    if (!__decryptionValidator) {
+        const response = await fetch('/keychain/validator', {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`Server responded with status ${response.status}`);
+        }
+        const json = await response.json();
+        if (!json.success || !json.validator) {
+            throw new Error('Server indicated failure: ' + (json.error || 'Unknown error'));
+        }
+        __decryptionValidator = json.validator;
     }
 
-    try{
-        const response = await fetch('/req/backupKeychain', {
+    const encryptor = await createKeychainEncryptor(passkey);
+    const [iv, tag, ciphertext] = __decryptionValidator.split('|');
+
+    try {
+        await decryptWithSymKey(
+            encryptor,
+            ciphertext,
+            iv,
+            tag,
+            false  // Expecting text output
+        );
+        return true;
+    } catch (error) {
+        console.error('Invalid passkey, decryption failed:', error);
+        return false;
+    }
+}
+
+/**
+ * @return {Promise<{key:string,value:string,type:string}[]|null>}
+ */
+async function getRawKeychainValues() {
+    const response = await fetch('/keychain', {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+    }
+
+    const json = await response.json();
+
+    if (!Array.isArray(json) || json.length === 0) {
+        return null;
+    }
+
+    return json;
+}
+
+/**
+ * @return {Promise<string|null>}
+ */
+async function getRawLegacyKeychain() {
+    const response = await fetch('/keychain/legacy', {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+    }
+
+    if (response.status === 204) {
+        return null;
+    }
+
+    const json = await response.json();
+    if (!json.success) {
+        throw new Error('Server indicated failure: ' + (json.error || 'Unknown error'));
+    }
+
+    return json.keychain;
+}
+
+let __loadedKeychain = null;
+
+/**
+ * Returns the decrypted keychain entries
+ * @return {Promise<{key:string,value:ArrayBuffer,type:string}[]>}
+ */
+async function getKeychain() {
+    if (__loadedKeychain) {
+        return __loadedKeychain;
+    }
+
+    const markAsMigrated = async () => {
+        await fetch('/keychain/markAsMigrated', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify(requestObject)
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
         });
+    };
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Server Error:', errorData.error);
-            throw new Error(`Server Error: ${errorData.error}`);
+    /**
+     *
+     * @param {CryptoKey} keychainEncryptor
+     * @return {Promise<void>}
+     */
+    const migrateLegacyKeychain = async (
+        keychainEncryptor
+    ) => {
+        const legacyKeychain = await getRawLegacyKeychain();
+        if (!legacyKeychain) {
+            console.log('No legacy keychain to migrate.');
+            return null;
         }
 
-        const data = await response.json();
+        console.log('Legacy keychain found, migrating...');
+        const [iv, tag, ciphertext] = legacyKeychain.split('|');
+        const decryptedKeychain = JSON.parse(
+            await decryptWithSymKey(
+                keychainEncryptor,
+                ciphertext,
+                iv,
+                tag,
+                false  // Expecting text output
+            )
+        );
 
-        if (data.success) {
-            console.log('Keychain backup successful...');
-        } else {
-            console.log('Failed to make backup for keychain');
+        const keysToIgnore = ['username', 'time-signature'];
+        const valuesToSet = [];
+        for (const [key, value] of Object.entries(decryptedKeychain)) {
+            if (keysToIgnore.includes(key)) {
+                continue;
+            }
+
+            console.log(`Migrating key: ${key}`);
+            try {
+                let loadedValue;
+                if (key === 'publicKey') {
+                    loadedValue = await window.crypto.subtle.importKey(
+                        'spki',
+                        base64ToArrayBuffer(value),
+                        {
+                            name: 'RSA-OAEP',
+                            hash: {name: 'SHA-256'}
+                        },
+                        true,
+                        ['encrypt']
+                    );
+                } else if (key === 'privateKey') {
+                    loadedValue = await window.crypto.subtle.importKey(
+                        'pkcs8',
+                        base64ToArrayBuffer(value),
+                        {
+                            name: 'RSA-OAEP',
+                            hash: {name: 'SHA-256'}
+                        },
+                        true,
+                        ['decrypt']
+                    );
+                } else {
+                    loadedValue = await importKeyValueFromJWK(value);
+                }
+
+                valuesToSet.push(
+                    await encryptKeychainValue(
+                        keychainEncryptor,
+                        await createKeychainValue(
+                            key,
+                            loadedValue,
+                            key === 'aiConvKey' ? 'ai_conv' : 'room_key'
+                        )
+                    )
+                );
+            } catch (error) {
+                console.error(`Error importing key "${key}" from legacy keychain:`, error);
+                throw error;
+            }
         }
-    }
-    catch (error) {
-        console.error('Error storing keychain backup:', error);
-        throw error;
-    }
-}
 
+        try {
+            await sendKeychainValuesToServer({
+                set: valuesToSet,
+                clear: true
+            });
+        } catch (error) {
+            console.error('Error sending migrated keychain values to server:', error);
+            throw error;
+        }
 
-async function syncKeychain(serverKeychainData) {
-    const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainData);
+        await markAsMigrated();
+
+        console.log('Legacy keychain migration completed successfully.');
+
+        return await getRawKeychainValues();
+    };
 
     const passKey = await getPassKey();
-    const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
-    const keychainEncryptor = await deriveKey(passKey, "keychain_encryptor", udSalt);
+    const keychainEncryptor = await createKeychainEncryptor(passKey);
 
-    let serverKeychain;
-    try {
-        serverKeychain = await decryptWithSymKey(keychainEncryptor, keychain, KCIV, KCTAG, false);
-        serverKeychain = JSON.parse(serverKeychain);
-    } catch (error) {
-        console.error("Error decrypting server keychain:", error);
-        throw error; // Prevent further sync attempts with corrupted server data
+    let entries = await getRawKeychainValues();
+
+    if (!entries) {
+        entries = await migrateLegacyKeychain(keychainEncryptor);
     }
 
-    const localKeychain = await openKeychain();
-
-    if (!localKeychain || (serverKeychain['time-signature'] > (localKeychain['time-signature'] || 0))) {
-        console.log("Updating local keychain with server data.");
-        const keychainString = JSON.stringify(serverKeychain);
-        const encKeychainData = await encryptWithSymKey(keychainEncryptor, keychainString, false);
-
-        const db = await openHawkIDatabase();
-        const transaction = db.transaction('keychains', 'readwrite');
-        const store = transaction.objectStore('keychains');
-
-        const keychainData = {
-            ciphertext: encKeychainData.ciphertext,
-            iv: encKeychainData.iv,
-            tag: encKeychainData.tag,
-        };
-
-        const userData = {
-            username: userInfo.username,
-            keychain: keychainData,
-        };
-
-        const storeRequest = store.put(userData);
-
-        storeRequest.onsuccess = function () {
-            console.log("Local keychain updated successfully.");
-        };
-
-        storeRequest.onerror = function (event) {
-            console.error("Error updating local keychain:", event.target.error);
-        };
-    } else {
-        console.log("Local keychain is newer. Uploading to server.");
-        const keychainString = JSON.stringify(localKeychain);
-        const encKeychainData = await encryptWithSymKey(keychainEncryptor, keychainString, false);
-        await backupKeychainOnServer(encKeychainData);
+    if (!entries) {
+        console.log('No keychain entries found, initializing a new keychain.');
+        await initializeNewKeychain();
+        entries = await getRawKeychainValues();
     }
+
+    return __loadedKeychain = await Promise.all(entries.map(i => decryptKeychainValue(keychainEncryptor, i)));
 }
 
+/**
+ * @param {{
+ *     set: {key: string, value: string, type: string}[]|undefined,
+ *     remove: {key: string, type: string}[]|undefined,
+ *     clear: boolean|undefined
+ *     publicKey: string|undefined
+ * }} body
+ */
+async function sendKeychainValuesToServer(body) {
+    const response = await fetch('/keychain', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(body)
+    });
 
-
-
-async function removeKeychain(username) {
-    try {
-        const db = await openHawkIDatabase();
-        const transaction = db.transaction('keychains', 'readwrite');
-        const store = transaction.objectStore('keychains');
-
-        return new Promise((resolve, reject) => {
-            const request = store.delete(username);
-
-            request.onsuccess = function () {
-                console.log(`Keychain entry for username '${username}' successfully removed.`);
-                resolve(`Keychain entry for username '${username}' removed.`);
-            };
-
-            request.onerror = function (event) {
-                console.error(`Error removing keychain for username '${username}':`, event.target.error);
-                reject(event.target.error);
-            };
-        });
-    } catch (error) {
-        console.error("Failed to open IndexedDB or remove keychain:", error);
-        throw error;
+    if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
     }
+
+    const json = await response.json();
+    if (!json.success) {
+        throw new Error('Server indicated failure: ' + (json.error || 'Unknown error'));
+    }
+
+    console.log('Keychain values successfully sent to server.');
 }
 
 
 
 //#endregion
-
-
 
 
 //#region Utilities
@@ -685,7 +855,7 @@ async function removeKeychain(username) {
 //fetches server salt with label
 async function fetchServerSalt(saltLabel) {
 
-    if(saltObj[saltLabel]){
+    if (saltObj[saltLabel]) {
         const salt = saltObj[saltLabel];
         const serverSalt = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
         return serverSalt;
@@ -699,9 +869,9 @@ async function fetchServerSalt(saltLabel) {
             headers: {
                 'Content-Type': 'application/json',  // Optional for GET, but useful to include
                 'saltlabel': saltLabel,              // Pass saltlabel as a custom header
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
-            },
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            }
         });
 
         // Check if the server responded with an error
@@ -726,8 +896,6 @@ async function fetchServerSalt(saltLabel) {
 }
 
 
-
-
 function arrayBufferToBase64(buffer) {
     const binary = String.fromCharCode.apply(null, new Uint8Array(buffer));
     return btoa(binary);
@@ -744,61 +912,59 @@ function base64ToArrayBuffer(base64) {
 }
 
 async function exportKeyValueToJWK(keyValue) {
-    return await window.crypto.subtle.exportKey("jwk", keyValue);
+    return await window.crypto.subtle.exportKey('jwk', keyValue);
 }
 
 async function importKeyValueFromJWK(jwk) {
-    try{
+    try {
         const value = await window.crypto.subtle.importKey(
-            "jwk",
+            'jwk',
             jwk,
             {
-                name: "AES-GCM",
+                name: 'AES-GCM',
                 length: 256
             },
             true,
-            ["encrypt", "decrypt"]
+            ['encrypt', 'decrypt']
         );
         return value;
-    }
-    catch{
+    } catch {
         return jwk;
     }
 
 }
 
 
-
 async function exportSymmetricKey(key) {
-    return await window.crypto.subtle.exportKey("raw", key);
+    return await window.crypto.subtle.exportKey('raw', key);
 }
+
 async function importSymmetricKey(decryptedRoomKey) {
     if (decryptedRoomKey.byteLength !== 16 && decryptedRoomKey.byteLength !== 32) {
-        throw new Error("Decrypted AES key must be 128 or 256 bits");
+        throw new Error('Decrypted AES key must be 128 or 256 bits');
     }
 
     return await window.crypto.subtle.importKey(
-        "raw",
+        'raw',
         decryptedRoomKey, // The decrypted AES key in ArrayBuffer format
         {
-            name: "AES-GCM",
+            name: 'AES-GCM',
             length: decryptedRoomKey.byteLength * 8 // Convert byteLength to bits
         },
         true, // The key can be extracted (optional)
-        ["encrypt", "decrypt"]
+        ['encrypt', 'decrypt']
     );
 }
 
 //#endregion
 
 //#region PassKey
-async function getPassKey(){
+async function getPassKey() {
 
-    if(passKey){
-       return passKey;
-    }
-    else{
-        try{
+    if (passKey) {
+        return passKey;
+    } else {
+        try {
             const keyData = localStorage.getItem(`${userInfo.username}PK`);
             const keyJson = JSON.parse(keyData);
             const salt = await fetchServerSalt('PASSKEY_SALT');
@@ -806,23 +972,21 @@ async function getPassKey(){
 
             passKey = await decryptWithSymKey(key, keyJson.ciphertext, keyJson.iv, keyJson.tag, false);
 
-            if(await testPassKey()){
+            if (await canPasskeyDecryptKeychain(passKey)) {
                 return passKey;
-            }
-            else{
+            } else {
                 return null;
             }
-        }
-        catch (error) {
-            console.log("Passkey not found:", error);
+        } catch (error) {
+            console.log('Passkey not found:', error);
             return null;
         }
     }
 
 }
 
-async function setPassKey(enteredKey){
-    if(enteredKey === ''){
+async function setPassKey(enteredKey) {
+    if (enteredKey === '') {
         return null;
     }
     const salt = await fetchServerSalt('PASSKEY_SALT');
@@ -835,18 +999,7 @@ async function setPassKey(enteredKey){
     passKey = enteredKey;
 }
 
-async function testPassKey(passKey){
-
-    if( await keychainGet('username') === userInfo.username){
-        return true;
-    }
-    else{
-        return false;
-    }
-}
-
 //#endregion
-
 
 
 async function cleanupUserData(callback) {
@@ -856,17 +1009,15 @@ async function cleanupUserData(callback) {
             localStorage.removeItem(`${userInfo.username}PK`);
         }
 
-        // Remove the keychain from IndexedDB
-        await removeKeychain(userInfo.username);
 
-        console.log("Cleanup completed successfully.");
+        console.log('Cleanup completed successfully.');
 
         // If a callback is provided, invoke it
         if (callback && typeof callback === 'function') {
             callback();
         }
     } catch (error) {
-        console.error("Error during cleanup:", error);
+        console.error('Error during cleanup:', error);
 
         // Optional: Invoke callback with an error
         if (callback && typeof callback === 'function') {

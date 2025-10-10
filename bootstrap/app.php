@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\LocaleSettingMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__ . '/../app/Services/*/Listeners'
     ])
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(LocaleSettingMiddleware::class);
         $middleware->redirectGuestsTo('/login');
     })
     ->withBroadcasting(

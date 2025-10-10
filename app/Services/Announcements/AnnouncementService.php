@@ -2,20 +2,23 @@
 
 namespace App\Services\Announcements;
 
-use Illuminate\Support\Facades\Session;
 use App\Models\Announcements\Announcement;
 use App\Models\User;
+use App\Services\Translation\LocaleService;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-
-
-use App\Http\Controllers\LanguageController;
-use Illuminate\Support\Facades\Log;
-use Exception;
+use Illuminate\Support\Facades\Session;
 
 
 class AnnouncementService
 {
+    public function __construct(
+        private readonly LocaleService $localeService
+    )
+    {
+    }
+    
     /**
      * Create a new announcement
      *
@@ -133,7 +136,7 @@ class AnnouncementService
 
     public function renderAnnouncement(Announcement $announcement){
         $view = $announcement->view;
-        $lang = Session::get('language')['id'];
+        $lang = $this->localeService->getCurrentLocale()->lang;
         $file = resource_path("announcements/$view/$lang.md");
         $content = file_get_contents($file);
         return $content;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Message;
 
 
-use App\Events\MessageUpdateEvent;
+use App\Events\MessageUpdatedEvent;
 use App\Models\Message;
 use App\Models\Room;
 
@@ -63,6 +63,6 @@ class MessageDb
         
         $parentMessage->has_thread = true;
         $parentMessage->save();
-        MessageUpdateEvent::dispatch($parentMessage);
+        MessageUpdatedEvent::dispatch($parentMessage);
     }
 }

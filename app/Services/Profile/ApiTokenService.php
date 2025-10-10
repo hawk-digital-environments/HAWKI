@@ -2,8 +2,8 @@
 
 namespace App\Services\Profile;
 
-use App\Events\PersonalAccessTokenCreateEvent;
-use App\Events\PersonalAccessTokenRemoveEvent;
+use App\Events\PersonalAccessTokenCreatedEvent;
+use App\Events\PersonalAccessTokenRemovedEvent;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,7 +16,7 @@ class ApiTokenService{
         $user = Auth::user();
         $token = $user->createToken($name);
         
-        PersonalAccessTokenCreateEvent::dispatch($user, $token);
+        PersonalAccessTokenCreatedEvent::dispatch($user, $token);
         
         return $token;
     }
@@ -41,7 +41,7 @@ class ApiTokenService{
             $user = Auth::user();
             $token = $user->tokens()->where('id', $tokenId);
             $token->each(function (PersonalAccessToken $token) use ($user) {
-                PersonalAccessTokenRemoveEvent::dispatch($user, $token);
+                PersonalAccessTokenRemovedEvent::dispatch($user, $token);
                 $token->delete();
             });
             $token->delete();

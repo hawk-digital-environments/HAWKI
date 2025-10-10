@@ -6,8 +6,9 @@ namespace App\Services\SyncLog\Generator;
 
 
 use App\Http\Resources\SyncLogEntryResource;
-use App\Services\SyncLog\Handlers\AbstractTransientSyncLogHandler;
-use App\Services\SyncLog\Handlers\SyncLogHandlerInterface;
+use App\Services\SyncLog\Handlers\Contract\ConditionalSyncLogHandlerInterface;
+use App\Services\SyncLog\Handlers\Contract\FullSyncLogHandlerInterface;
+use App\Services\SyncLog\Handlers\Contract\SyncLogHandlerInterface;
 use App\Services\SyncLog\SyncLogResourceFactory;
 use App\Services\SyncLog\Value\SyncLogEntryConstraints;
 use Illuminate\Container\Attributes\Tag;
@@ -34,7 +35,6 @@ class FullSyncLogGenerator
         // Ensure the constraints are set for a full sync
         $constraints = new SyncLogEntryConstraints(
             user: $constraints->user,
-            lastSync: null,
             offset: $constraints->offset ?? 0,
             limit: $constraints->limit ?? PHP_INT_MAX,
             roomId: $constraints->roomId
@@ -44,14 +44,17 @@ class FullSyncLogGenerator
         $remaining = $constraints->limit;
         $entries = collect();
         foreach ($this->handlers as $handler) {
-            // Ignore transient handlers, as they do not have persistent log entries.
-            if ($handler instanceof AbstractTransientSyncLogHandler) {
+            // Ignore handlers that do not support full sync
+            if (!$handler instanceof FullSyncLogHandlerInterface) {
+                continue;
+            }
+            // Ignore handlers that can not provide
+            if ($handler instanceof ConditionalSyncLogHandlerInterface && !$handler->canProvide()) {
                 continue;
             }
             
             $count = $handler->findCountForFullSync(new SyncLogEntryConstraints(
                 user: $constraints->user,
-                lastSync: null,
                 offset: 0,
                 limit: PHP_INT_MAX,
                 roomId: $constraints->roomId
@@ -70,7 +73,6 @@ class FullSyncLogGenerator
             $takeFromHandler = min($remaining, $count - $offset);
             $models = $handler->findModelsForFullSync(new SyncLogEntryConstraints(
                 user: $constraints->user,
-                lastSync: null,
                 offset: $offset,
                 limit: $takeFromHandler,
                 roomId: $constraints->roomId

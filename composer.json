@@ -16,7 +16,6 @@
         "laravel/reverb": "^1.1",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "neunerlei/dbg": "^3.0",
         "phpseclib/phpseclib": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.29",
         "league/flysystem-sftp-v3": "^3.30",

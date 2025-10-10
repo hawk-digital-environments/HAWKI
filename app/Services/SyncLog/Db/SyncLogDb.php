@@ -6,7 +6,10 @@ namespace App\Services\SyncLog\Db;
 
 
 use App\Models\SyncLog;
-use App\Services\SyncLog\Value\SyncLogEntryConstraints;
+use App\Models\User;
+use App\Services\SyncLog\Value\IncrementalSyncLogEntryConstraints;
+use App\Services\SyncLog\Value\SyncLogEntryType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 readonly class SyncLogDb
@@ -30,15 +33,34 @@ readonly class SyncLogDb
         SyncLog::query()->where('updated_at', '<', now()->subDays(30))->delete();
     }
     
+    public function deleteAllForUser(User $user): void
+    {
+        SyncLog::query()
+            ->where('user_id', $user->id)
+            ->orWhere(function (Builder $query) use ($user) {
+                $query
+                    ->where('type', SyncLogEntryType::USER)
+                    ->where('target_id', $user->id);
+            })
+            ->delete();
+    }
+    
     /**
-     * @param SyncLogEntryConstraints $constraints
+     * @param IncrementalSyncLogEntryConstraints $constraints
      * @return Collection<SyncLog>|null
      */
-    public function findForIncrementalSync(SyncLogEntryConstraints $constraints): Collection|null
+    public function findForIncrementalSync(IncrementalSyncLogEntryConstraints $constraints): Collection|null
     {
         $recordQuery = SyncLog::query();
         
-        $recordQuery->where('user_id', $constraints->user->id);
+        if ($constraints->allowedTypes !== null) {
+            $recordQuery->whereIn('type', $constraints->allowedTypes);
+        }
+        
+        $recordQuery->where(function (Builder $query) use ($constraints) {
+            $query->where('user_id', $constraints->user->id);
+            $query->orWhere('user_id', null);
+        });
         
         if ($constraints->roomId !== null) {
             $recordQuery->where('room_id', $constraints->roomId);

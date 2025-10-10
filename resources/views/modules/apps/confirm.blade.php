@@ -1,8 +1,8 @@
 @extends('layouts.apps_layout')
 
 @section('scripts')
-    <script src="{{ asset('js_v2.0.1_f1/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.0.1_f1/apps_confirm_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/apps_confirm_functions.js') }}"></script>
     <script>
         let userInfo = @json($user);
     </script>
@@ -47,12 +47,12 @@
 @section('buttons')
     <button id="app-decline-button"
             class="btn-lg-fill"
-            data-post-url="{{route('apps.confirm.decline')}}">
+            data-post-url="{{route('web.apps.confirm.decline')}}">
         {{__('apps.confirm.decline_button')}}
     </button>
     <button id="app-accept-button"
             class="btn-lg-fill"
-            data-post-url="{{route('apps.confirm.accept')}}"
+            data-post-url="{{route('web.apps.confirm.accept')}}"
             data-user-public-key="{{ $user_public_key }}">
         {{__('apps.confirm.accept_button')}}
     </button>

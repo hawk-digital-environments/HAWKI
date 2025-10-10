@@ -17,17 +17,14 @@ class AttachmentResource extends JsonResource
     public function toArray(Request $request): array
     {
         $fileStorage = app(FileStorageService::class);
-        
+
         return [
             'uuid' => $this->resource->uuid,
             'name' => $this->resource->name,
             'category' => $this->resource->category,
             'type' => $this->resource->type,
             'mime' => $this->resource->mime,
-            'url' => $fileStorage->getFileUrl(
-                uuid: $this->resource->uuid,
-                category: $this->resource->category
-            )
+            'path_args' => $fileStorage->getFileInfo($this->resource->uuid, $this->resource->category)?->toRoutePathArgsResource()
         ];
     }
 }

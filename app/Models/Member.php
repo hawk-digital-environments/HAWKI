@@ -36,7 +36,7 @@ class Member extends Model
     }
 
     public function updateRole($role){
-        $this->update(['role', $role]);
+        $this->update(['role' => $role]);
     }
 
     public function updateLastRead(){

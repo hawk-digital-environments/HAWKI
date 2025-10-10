@@ -2,126 +2,69 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Translation\Exception\SettingUnavailableLocaleException;
+use App\Services\Translation\LocaleService;
+use App\Services\Translation\Value\Locale;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Session;
-
-// Ensure this is imported
+use Illuminate\Support\Facades\Log;
+use Illuminate\Translation\Translator;
 
 class LanguageController extends Controller
 {
-    /// Changes the language based on the previous values or the default parameters as fallback
-    public function getTranslation()
+    private LocaleService $localeService;
+    private Translator $translator;
+    
+    public function __construct(
+        ?LocaleService $translationService = null,
+        ?Translator    $translator = null
+    )
     {
-        $langs = config('locale.langs');
-        //LANGUAGE CHANGE...
-        if (Session::has('language')) {
-            $language = Session::get('language');
-        } else {
-            // try to get cookie from last use
-            if (Cookie::get('lastLanguage_cookie') && Cookie::get('lastLanguage_cookie') != '') {
-                $language = $langs[Cookie::get('lastLanguage_cookie')];
-            } else {
-                // If there's not a cookie, try the default language from config or set a hardcoded default
-                $language = $langs[config('locale.default_language')];
-            }
-        }
-        if(gettype($language) == 'string'){
-            $langs[config($language)];
-        }
-
-        // Store the language in session
-        Session::put('language', $language);
-        // Load the language files
-        $translation = $this->fetchTranslationFiles($language['id']);
-
-        return $translation;
+        // This service is sometimes used without Laravel's service container, so we need to allow passing the dependencies manually
+        // If not provided, we resolve them from the service container
+        $this->localeService = $translationService ?? app(LocaleService::class);
+        $this->translator = $translator ?? app(Translator::class);
     }
 
     /// Change language to the request language
-    public function changeLanguage(Request $request)
+    public function changeLanguage(Request $request): JsonResponse
     {
         $validatedData = $request->validate([
             'inputLang' => 'required|string|size:5',
         ]);
-        $langId = $validatedData['inputLang'];
-
-        $langs = config('locale.langs');
-        $language = $langs[$langId];
-
-        if (!$language) {
-            error_log('bad lang');
+        
+        try {
+            $this->localeService->setCurrentLocale($validatedData['inputLang'], true); // true = persist in session and cookie
+        } catch (SettingUnavailableLocaleException $e) {
+            Log::warning('LanguageController: changeLanguage: Invalid language requested: ' . $validatedData['inputLang'], ['exception' => $e]);
             return response()->json(['success' => false, 'error' => 'Invalid language'], 400);
         }
-
-        // Store the new language in session
-        Session::put('language', $language);
-
-        // Load the language files
-        $translation = $this->fetchTranslationFiles($language['id']);
-
-        // Set cookie
-        $response = response()->json([
+        
+        return response()->json([
             'success' => true,
         ]);
-
-        // Set the language cookie for 120 days (equivalent to 4 months)
-        Cookie::queue('lastLanguage_cookie', $language['id'], 60 * 24 * 120); // Store cookie for 120 days
-
-        return $response;
     }
-
-    /// return array of languages
-    public function getAvailableLanguages(){
-        $languages = config('locale')['langs'];
-        $availableLocale = [];
-        foreach($languages as $lang){
-            if($lang['active']){
-                array_push($availableLocale, $lang);
-            }
-        }
-        return $availableLocale;
+    
+    /**
+     * @deprecated This method is deprecated and will be removed in future versions. Use laravel's built-in localization features instead.
+     */
+    public function getTranslation(): array
+    {
+        return $this->translator->get('*');
     }
-
-    private function fetchTranslationFiles($prefix) {
-        $languagePath = resource_path('language/');
-        $files = scandir($languagePath);
-
-        $translations = [];
-        $defaultTranslations = [];
-
-        // Filter and load files with the specific prefix
-        foreach ($files as $file) {
-            // Check if the file has the correct prefix
-            if (strpos($file, $prefix) !== false) {
-                $fileExtension = pathinfo($file, PATHINFO_EXTENSION);
-
-                if ($fileExtension === 'json') {
-                    // Read JSON file as associative array
-                    $fileContent = file_get_contents($languagePath . $file);
-                    $translationArray = json_decode($fileContent, true);
-
-                    if ($translationArray !== null) {
-                        // Check if it's a default language file
-                        if ($file === $prefix . '.json') {
-                            $defaultTranslations = array_merge($defaultTranslations, $translationArray);
-                        } else {
-                            $translations = array_merge($translations, $translationArray);
-                        }
-                    }
-                } elseif ($fileExtension === 'html') {
-                    // Read HTML file and create a key-value pair
-                    $htmlContent = file_get_contents($languagePath . $file);
-                    $baseFileName = basename($file, '_' . $prefix . '.html');
-                    $keyName = '_' . $baseFileName;
-                    $translations[$keyName] = $htmlContent;
-                }
-            }
-        }
-
-        // Merge default translations with lower priority
-        $mergedTranslations = array_merge($defaultTranslations, $translations);
-
-        return $mergedTranslations;
+    
+    /**
+     * @deprecated This method is deprecated and will be removed in future versions. Use {@see LocaleService::getAvailableLocales()} instead.
+     */
+    public function getAvailableLanguages(): array
+    {
+        return array_map(
+            static fn(Locale $locale) => [
+                'id' => $locale->lang,
+                'name' => $locale->nameInLanguage,
+                'label' => $locale->shortName
+            ],
+            $this->localeService->getAvailableLocales()
+        );
     }
 }

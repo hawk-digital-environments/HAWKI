@@ -10,12 +10,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class TransientDataResource extends JsonResource
 {
     /**
-     * @var TransientDataModel
+     * @var array
      */
     public $resource;
     
     public function toArray($request): array
     {
-        return $this->resource->getPayload();
+        return $this->resource;
     }
 }

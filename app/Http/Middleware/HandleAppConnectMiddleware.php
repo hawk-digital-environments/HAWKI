@@ -17,7 +17,7 @@ class HandleAppConnectMiddleware
     public function handle(Request $request, Closure $next)
     {
         if ($this->sessionStorage->get() !== null) {
-            return redirect()->route('apps.confirm');
+            return redirect()->route('web.apps.confirm');
         }
 
         return $next($request);

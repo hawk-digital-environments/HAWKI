@@ -2,18 +2,16 @@
 
 namespace App\Services\Chat\Room\Traits;
 
-use App\Events\RoomCreateEvent;
-use App\Events\RoomUpdateEvent;
+use App\Events\RoomCreatedEvent;
 use App\Models\Member;
 use App\Models\Room;
-
 use App\Services\Storage\AvatarStorageService;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-
-use Exception;
-use Illuminate\Auth\Access\AuthorizationException;
 
 trait RoomFunctions
 {
@@ -24,11 +22,19 @@ trait RoomFunctions
         $room = Room::create([
             'room_name' => $data['room_name'],
         ]);
-        RoomCreateEvent::dispatch($room);
-        // Add AI as assistant
-        $room->addMember(1, Member::ROLE_ASSISTANT);
-        // Add the creator as admin
-        $room->addMember(Auth::id(), Member::ROLE_ADMIN);
+        
+        // Because we need the room to have members (that will act as audience for sync logs)
+        // we first create the room and members without triggering the events,
+        // only after that we dispatch the events
+        $deferred = $room->runWithDeferredMemberEvents(function () use ($room) {
+            // Add AI as assistant
+            $room->addMember(1, Member::ROLE_ASSISTANT);
+            // Add the creator as admin
+            $room->addMember(Auth::id(), Member::ROLE_ADMIN);
+        });
+        
+        RoomCreatedEvent::dispatch($room);
+        $deferred();
 
         return $room;
     }
@@ -95,16 +101,16 @@ trait RoomFunctions
             if (!empty($data['name'])) {
                 $room->update(['room_name' => $data['name']]);
             }
-            RoomUpdateEvent::dispatch($room);
             return true;
         } catch (Exception $e) {
             Log::error("Failed to update Room Information. Error: $e");
             return false;
         }
     }
-
-
-    public function assignAvatar($image, string $slug): array{
+    
+    
+    public function assignAvatar(UploadedFile $image, string $slug): array
+    {
         $uuid = Str::uuid();
         $extension = $image->getClientOriginalExtension();
         if (!$extension) {
@@ -121,7 +127,6 @@ trait RoomFunctions
                 'room_avatars');
             $room = Room::where('slug', $slug)->firstOrFail();
             $room->update(['room_icon' => $uuid]);
-            RoomUpdateEvent::dispatch($room);
 
             return [
                 'url'=> $avatarStorage->getUrl($uuid, 'room_avatars'),

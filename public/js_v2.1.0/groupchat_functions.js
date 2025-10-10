@@ -677,9 +677,7 @@ async function handleUserInvitations() {
         if(data.formattedInvitations){
 
             const invitations = data.formattedInvitations;
-            const privateKeyBase64 = await keychainGet('privateKey');
-            // Retrieve and convert private key
-            const privateKey = base64ToArrayBuffer(privateKeyBase64);
+            const privateKey = await keychainGet('privateKey');
 
             for (const inv of invitations) {
                 try {
@@ -752,6 +750,8 @@ async function finishInvitationHandling(invitation_id, roomKey){
     if(data.success){
 
         await keychainSet(data.room.slug, roomKey, true);
+
+        rooms.push(data.room);
 
         createRoomItem(data.room);
         connectWebSocket(data.room.slug);
@@ -1359,7 +1359,7 @@ async function leaveRoom(){
             console.error('Room leave was not successful!');
         }
     } catch (error) {
-        console.error('Failed to leave room!');
+        console.error('Failed to leave room!', error);
     }
 }
 

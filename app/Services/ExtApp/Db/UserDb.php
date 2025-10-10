@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ExtApp\Db;
 
 
-use App\Events\PersonalAccessTokenCreateEvent;
+use App\Events\PersonalAccessTokenCreatedEvent;
 use App\Http\Middleware\AppAccessMiddleware;
 use App\Models\ExtApp;
 use App\Models\User;
@@ -44,7 +44,7 @@ readonly class UserDb
     public function createAppApiUserToken(User $user): NewAccessToken
     {
         $token = $user->createToken(ExtApp::APP_TOKEN_NAME, [AppAccessMiddleware::APP_TOKEN_SCOPE]);
-        PersonalAccessTokenCreateEvent::dispatch($user, $token);
+        PersonalAccessTokenCreatedEvent::dispatch($user, $token);
         return $token;
     }
     
@@ -57,7 +57,7 @@ readonly class UserDb
     public function createTokenForUserOfApp(string $tokenName, User $user): NewAccessToken
     {
         $token = $user->createToken($tokenName);
-        PersonalAccessTokenCreateEvent::dispatch($user, $token);
+        PersonalAccessTokenCreatedEvent::dispatch($user, $token);
         return $token;
     }
 }

@@ -8,18 +8,16 @@ use App\Models\ExtAppUserRequest;
 use App\Services\ExtApp\AppUserRequestActionHandler;
 use App\Services\ExtApp\AppUserRequestCreator;
 use App\Services\ExtApp\AppUserRequestSessionStorage;
-use App\Services\ExtApp\ConnectionFactory;
 use App\Services\ExtApp\Db\AppDb;
 use App\Services\ExtApp\Db\AppUserDb;
 use App\Services\ExtApp\Db\AppUserRequestDb;
 use App\Services\ExtApp\Value\AppUserRequestSessionValue;
+use App\Services\Frontend\Connection\ConnectionFactory;
 use GuzzleHttp\Client;
-use Illuminate\Config\Repository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 use Psr\Log\LoggerInterface;
 
@@ -41,14 +39,14 @@ class ExtAppController extends Controller
         $externalId = $this->resolveExtUserIdOrFail($request);
         $appUser = $this->resolveAppUserOrFail($app, $externalId);
         
-        return response()->json($connectionFactory->create($appUser));
+        return response()->json($connectionFactory->createExtAppConnection($appUser));
     }
     
     public function createConnection(
         Request               $request,
         AppUserRequestDb      $appUserRequestDb,
         AppUserRequestCreator $requestCreator,
-        Repository            $config
+        ConnectionFactory $connectionFactory,
     ): JsonResponse
     {
         $app = $this->resolveAppOrFail($request);
@@ -58,13 +56,11 @@ class ExtAppController extends Controller
             abort(400, 'There is already an active connection for this user.');
         }
         
-        $appUserRequest = $requestCreator->create($app, $externalId);
-        
-        URL::useOrigin($config->get('app.url'));
-        return response()->json([
-            'base_url' => $config->get('app.url'),
-            'connect_url' => route('apps.connect', ['request_id' => $appUserRequest->request_id])
-        ]);
+        return response()->json(
+            $connectionFactory->createExtAppRequestConnection(
+                $requestCreator->create($app, $externalId)
+            )
+        );
     }
     
     public function receiveAppConnectRequest(

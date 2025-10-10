@@ -9,6 +9,7 @@ use App\Models\ExtApp;
 use App\Models\ExtAppUser;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use Hawk\HawkiCrypto\Value\HybridCryptoValue;
+use Illuminate\Support\Collection;
 use Laravel\Sanctum\PersonalAccessToken;
 
 readonly class AppUserDb
@@ -55,5 +56,17 @@ readonly class AppUserDb
         return ExtAppUser::query()
             ->where('personal_access_token_id', $token->id)
             ->first();
+    }
+    
+    /**
+     * Finds all AppUsers for a given internal user ID.
+     * This returns ALL AppUsers across all external applications.
+     * @return Collection<ExtAppUser>
+     */
+    public function findByUserId(int $userId): Collection
+    {
+        return ExtAppUser::query()
+            ->where('user_id', $userId)
+            ->get();
     }
 }

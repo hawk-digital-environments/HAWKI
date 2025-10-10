@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\ExtApp;
 
 
-use App\Events\AppCreateEvent;
 use App\Models\User;
 use App\Services\ExtApp\Db\AppDb;
 use App\Services\ExtApp\Db\UserDb;
@@ -14,12 +13,12 @@ use DB;
 use Hawk\HawkiCrypto\AsymmetricCrypto;
 use Throwable;
 
-class AppCreator
+readonly class AppCreator
 {
     public function __construct(
-        protected AsymmetricCrypto $crypto,
-        protected UserDb           $userDb,
-        protected AppDb            $appDb
+        private AsymmetricCrypto $crypto,
+        private UserDb           $userDb,
+        private AppDb            $appDb
     )
     {
     }
@@ -43,7 +42,7 @@ class AppCreator
         ?string $logoUrl
     ): AppCreationResult
     {
-        $result = DB::transaction(function () use ($name, $url, $redirectUrl, $description, $logoUrl) {
+        return DB::transaction(function () use ($name, $url, $redirectUrl, $description, $logoUrl) {
             $user = $this->createAppUser($name);
             $token = $this->userDb->createAppApiUserToken($user);
             $keypair = $this->crypto->generateKeypair();
@@ -64,10 +63,6 @@ class AppCreator
                 token: $token
             );
         });
-        
-        AppCreateEvent::dispatch($result->app);
-        
-        return $result;
     }
     
     protected function createAppUser(string $appName): User

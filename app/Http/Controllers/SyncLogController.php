@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 
 use App\Services\SyncLog\SyncLogProvider;
-use App\Services\SyncLog\Value\SyncLogEntryConstraints;
+use App\Services\SyncLog\Value\IncrementalSyncLogEntryConstraints;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -35,7 +35,7 @@ class SyncLogController extends Controller
             return response()->json(['error' => 'Invalid parameters', 'details' => $e->errors()], 400);
         }
         
-        $syncLog = $logProvider->getLog(new SyncLogEntryConstraints(
+        $syncLog = $logProvider->getLog(new IncrementalSyncLogEntryConstraints(
             user: $user,
             lastSync: !empty($reqConstraints['last-sync'])
                 ? Carbon::parse($reqConstraints['last-sync'], 'UTC')->setTimezone(config('app.timezone'))

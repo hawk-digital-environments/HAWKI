@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Events\InvitationCreatedEvent;
+use App\Events\InvitationUpdatedEvent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -17,6 +19,11 @@ class Invitation extends Model
         'iv',
         'tag',
         'invitation'
+    ];
+    
+    protected $dispatchesEvents = [
+        'created' => InvitationCreatedEvent::class,
+        'updated' => InvitationUpdatedEvent::class
     ];
 
     public function room(): BelongsTo

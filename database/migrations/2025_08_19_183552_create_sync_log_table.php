@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\SyncLog\Value\SyncLogEntryActionEnum;
+use App\Services\SyncLog\Value\SyncLogEntryAction;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,8 +14,8 @@ return new class extends Migration {
         Schema::create('sync_logs', static function (Blueprint $table) {
             $table->string('type')->index();
             $table->enum('action', [
-                SyncLogEntryActionEnum::SET->value,
-                SyncLogEntryActionEnum::REMOVE->value,
+                SyncLogEntryAction::SET->value,
+                SyncLogEntryAction::REMOVE->value,
             ]);
             $table->integer('target_id');
             $table->integer('user_id');

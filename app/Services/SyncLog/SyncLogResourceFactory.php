@@ -8,11 +8,10 @@ namespace App\Services\SyncLog;
 use App\Http\Resources\SyncLogEntryResource;
 use App\Models\SyncLog;
 use App\Models\User;
-use App\Services\SyncLog\Handlers\AbstractTransientSyncLogHandler;
-use App\Services\SyncLog\Handlers\SyncLogHandlerInterface;
-use App\Services\SyncLog\Value\SyncLogEntryActionEnum;
+use App\Services\SyncLog\Handlers\Contract\IncrementalSyncLogHandlerInterface;
+use App\Services\SyncLog\Handlers\Contract\SyncLogHandlerInterface;
+use App\Services\SyncLog\Value\SyncLogEntryAction;
 use App\Services\SyncLog\Value\SyncLogPayload;
-use Illuminate\Database\Eloquent\Model;
 
 readonly class SyncLogResourceFactory
 {
@@ -32,25 +31,19 @@ readonly class SyncLogResourceFactory
         );
     }
     
-    public function createForRecordAndHandler(
+    public function createForRecordAndIncrementalHandler(
         SyncLog                 $record,
-        SyncLogHandlerInterface $handler
+        IncrementalSyncLogHandlerInterface $handler
     ): SyncLogEntryResource|null
     {
         $resource = null;
         $reference = null;
-        if ($record->action === SyncLogEntryActionEnum::SET) {
-            if ($handler instanceof AbstractTransientSyncLogHandler) {
-                // If the handler expects transient data, we do not need to resolve the model from the database
-                // In this case the log record already contains all the necessary data
-                $reference = $record;
-            } else {
-                $reference = $handler->findModelById((int)$record->target_id);
-                if (!$reference) {
-                    // If the reference is not found, we return null for SET actions
-                    // In this case we assume there is some kind of data inconsistency, we ignore silently.
-                    return null;
-                }
+        if ($record->action === SyncLogEntryAction::SET) {
+            $reference = $handler->findModelById((int)$record->target_id);
+            if (!$reference) {
+                // If the reference is not found, we return null for SET actions
+                // In this case we assume there is some kind of data inconsistency, we ignore silently.
+                return null;
             }
         }
         
@@ -61,36 +54,30 @@ readonly class SyncLogResourceFactory
         // If the resource is null, it means the record is for a deleted resource
         // In this case we set resource to true, which is a hack to indicate that the resource is not available,
         // See SyncLogEntryResource::__construct for details
+        /** @noinspection ProperNullCoalescingOperatorUsageInspection */
         return new SyncLogEntryResource(
             resource: $resource ?? true,
             resourceId: (int)$record->target_id,
             type: $handler->getType(),
-            action: $resource === null ? SyncLogEntryActionEnum::REMOVE : $record->action,
+            action: $resource === null ? SyncLogEntryAction::REMOVE : $record->action,
             timestamp: $record->updated_at,
             userId: $record->user_id
         );
     }
     
     public function createForModelAndHandler(
-        Model                   $model,
+        mixed $model,
         SyncLogHandlerInterface $handler,
         User|null               $user
     ): SyncLogEntryResource
     {
-        $resource = $handler->convertModelToResource($model);
-        $resourceId = $model->getKey();
-        $type = $handler->getType();
-        $action = SyncLogEntryActionEnum::SET;
-        $timestamp = now();
-        $userId = $user?->id ?? -1;
-        
         return new SyncLogEntryResource(
-            resource: $resource,
-            resourceId: $resourceId,
-            type: $type,
-            action: $action,
-            timestamp: $timestamp,
-            userId: $userId
+            resource: $handler->convertModelToResource($model),
+            resourceId: $handler->getIdOfModel($model),
+            type: $handler->getType(),
+            action: SyncLogEntryAction::SET,
+            timestamp: now(),
+            userId: $user?->id ?? -1
         );
     }
 }

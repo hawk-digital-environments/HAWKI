@@ -3,19 +3,19 @@
 namespace App\Services\Profile;
 
 
-use App\Models\User;
-use App\Models\PrivateUserData;
+use App\Events\PersonalAccessTokenRemovedEvent;
+use App\Events\UserRemovedEvent;
+use App\Events\UserUpdatedEvent;
 use App\Models\PasskeyBackup;
-
+use App\Models\PrivateUserData;
+use App\Models\User;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\User\Keychain\UserKeychainDb;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
-
-use App\Services\Profile\Traits\PasskeyHandler;
-use App\Services\Profile\Traits\ApiTokenHandler;
 
 class ProfileService{
 
@@ -30,6 +30,8 @@ class ProfileService{
         if(!empty($data['bio'])){
             $user->update(['bio' => $data['bio']]);
         }
+        
+        UserUpdatedEvent::dispatch($user);
 
         return true;
     }
@@ -56,6 +58,7 @@ class ProfileService{
                                         false);
         if ($response) {
             $user->update(['avatar_id' => $uuid]);
+            UserUpdatedEvent::dispatch($user);
             return $avatarStorage->getUrl($uuid, 'profile_avatars');
         } else {
             throw new Exception('Failed to store image');
@@ -89,6 +92,8 @@ class ProfileService{
     public function deleteUserData(User $user): void{
 
         try{
+            UserRemovedEvent::dispatch($user);
+            
             $roomService = new RoomService();
             $rooms = $user->rooms()->get();
 
@@ -115,6 +120,8 @@ class ProfileService{
             foreach($prvUserData as $data){
                 $data->delete();
             }
+            
+            app(UserKeychainDb::class)->removeAllOfUser($user);
 
             $backups = PasskeyBackup::where('username', $user->username)->get();
 
@@ -124,30 +131,15 @@ class ProfileService{
 
             $tokens = $user->tokens()->get();
             foreach($tokens as $token){
+                PersonalAccessTokenRemovedEvent::dispatch($user, $token);
                 $token->delete();
             }
-
+            
             $user->revokProfile();
         }
         catch(Exception $e){
             throw $e;
         }
-    }
-
-
-
-    /// Sends back user's encrypted keychain
-    public function fetchUserKeychain(){
-
-        $user = Auth::user();
-        $prvUserData = PrivateUserData::where('user_id', $user->id)->first();
-        $keychainData = json_encode([
-            'keychain'=> $prvUserData->keychain,
-            'KCIV'=> $prvUserData->KCIV,
-            'KCTAG'=> $prvUserData->KCTAG,
-        ]);
-
-        return $keychainData;
     }
 
 }

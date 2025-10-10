@@ -47,7 +47,7 @@
 	{!! $settingsPanel !!}
     <script>
 		SwitchDarkMode(false);
-		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
+		UpdateSettingsLanguage('<x-current-locale/>');
 	</script>
 
 </head>
@@ -90,7 +90,7 @@
 	const activeModule = @json($activeModule);
     const hawkiUsername = @json($userData['hawki_username'])
 
-    const activeLocale = {!! json_encode(Session::get('language')) !!};
+	const activeLocale = <x-current-locale-json/>;
 	const translation = @json($translation);
 
 	const modelsList = @json($models).models;

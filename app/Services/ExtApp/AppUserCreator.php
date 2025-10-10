@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\ExtApp;
 
 
-use App\Events\AppUserCreateEvent;
 use App\Models\ExtApp;
 use App\Models\ExtAppUser;
 use App\Models\User;
@@ -15,12 +14,12 @@ use Hawk\HawkiCrypto\HybridCrypto;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use Hawk\HawkiCrypto\Value\HybridCryptoValue;
 
-class AppUserCreator
+readonly class AppUserCreator
 {
     public function __construct(
-        protected HybridCrypto $hybridCrypto,
-        protected UserDb       $userDb,
-        protected AppUserDb    $appUserDb,
+        private HybridCrypto $hybridCrypto,
+        private UserDb       $userDb,
+        private AppUserDb    $appUserDb,
     )
     {
     }
@@ -49,7 +48,7 @@ class AppUserCreator
             $hawkiUser
         );
         
-        $user = $this->appUserDb->create(
+        return $this->appUserDb->create(
             appId: $app->id,
             userId: $hawkiUser->id,
             passkey: $passkey,
@@ -62,9 +61,5 @@ class AppUserCreator
                 $app->app_public_key
             )
         );
-        
-        AppUserCreateEvent::dispatch($user);
-        
-        return $user;
     }
 }
