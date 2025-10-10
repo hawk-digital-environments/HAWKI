@@ -16,10 +16,12 @@
         "league/flysystem-aws-s3-v3": "^3.29",
         "league/flysystem-sftp-v3": "^3.30",
         "league/flysystem-webdav": "^3.0",
+        "orchid/platform": "^14.52",
         "spatie/laravel-backup": "^9.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "laravel/boost": "^1.1",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",
         "mockery/mockery": "^1.6",

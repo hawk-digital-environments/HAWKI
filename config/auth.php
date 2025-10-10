@@ -39,7 +39,7 @@ return [
         'web' => [
             'driver' => 'session',
             'provider' => 'users',
-        ]
+        ],
     ],
 
     /*
@@ -111,5 +111,61 @@ return [
     */
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Local Authentication Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These options control the local user authentication functionality.
+    | Local authentication allows users to authenticate with username/password
+    | stored in the local database instead of external providers.
+    |
+    */
+
+    'local_authentication' => env('LOCAL_AUTHENTICATION', false),
+    'local_selfservice' => env('LOCAL_SELFSERVICE', false),
+    'local_needapproval' => env('LOCAL_NEEDAPPROVAL', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication Method
+    |--------------------------------------------------------------------------
+    |
+    | This option defines the primary authentication method for the application.
+    | Supported methods: LDAP, OIDC, Shibboleth, LOCAL_ONLY
+    |
+    */
+
+    'authentication_method' => env('AUTHENTICATION_METHOD', 'LOCAL_ONLY'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Passkey Configuration
+    |--------------------------------------------------------------------------
+    |
+    | These options control the passkey generation and validation for
+    | client-side encryption functionality.
+    |
+    | Passkey Method Options:
+    | - 'user': User manually enters a passkey during registration (recommended)
+    | - 'system': System auto-generates a passkey with backup code
+    |
+    | Passkey Secret Options (only used when passkey_method is 'auto'):
+    | - 'username': Use username as passkey source (recommended default)
+    | - 'time': Use user creation timestamp as passkey source
+    | - 'publicKey': Use user's public key as passkey source
+    | - 'mixed': Use combination of username + timestamp (hashed)
+    |
+    | WARNING: These settings affect encryption and should not be changed after
+    | users have already been created. Changing them will clear pucblic keys and 
+    | invalidate all existing chat logs!
+    |
+    */
+
+    'passkey_method' => env('PASSKEY_METHOD', 'user'),
+    'passkey_secret' => env('PASSKEY_SECRET', 'username'),
+    'passkey_otp' => env('PASSKEY_OTP', false),
+    'passkey_otp_timeout' => env('PASSKEY_OTP_TIMEOUT', 300),
 
 ];

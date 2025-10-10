@@ -15,6 +15,14 @@ ARG DOCKER_GID=1000
 
 ARG DOCKER_UID=1000
 
+# Proxy configuration for build
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
+
 WORKDIR /var/www/html
 
 
@@ -61,6 +69,20 @@ USER www-data
 # -----------------------------------------------------
 FROM node_root AS node_builder
 
+# Build args for Vite frontend
+ARG VITE_APP_NAME=HAWKI2
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT=443
+ARG VITE_REVERB_SCHEME=https
+
+# Pass to environment for npm build
+ENV VITE_APP_NAME=${VITE_APP_NAME}
+ENV VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY}
+ENV VITE_REVERB_HOST=${VITE_REVERB_HOST}
+ENV VITE_REVERB_PORT=${VITE_REVERB_PORT}
+ENV VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
+
 RUN chown node:node /var/www/html
 
 # Add the app sources
@@ -91,6 +113,14 @@ ARG DOCKER_RUNTIME=docker
 ARG DOCKER_GID=1000
 
 ARG DOCKER_UID=1000
+
+# Proxy configuration for build
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+ARG NO_PROXY
+ENV HTTP_PROXY=${HTTP_PROXY}
+ENV HTTPS_PROXY=${HTTPS_PROXY}
+ENV NO_PROXY=${NO_PROXY}
 
 WORKDIR /var/www/html
 
@@ -184,6 +214,11 @@ RUN rm -rf /usr/local/etc/php/conf.d/zzz.app.prod.ini
 # Recreate the www-data user and group with the current users id
 RUN groupdel -f www-data || true && \
     userdel -r www-data || true && \
+    # Check if group with target GID already exists and rename it
+    EXISTING_GROUP=$(getent group ${DOCKER_GID} | cut -d: -f1) && \
+    if [ ! -z "$EXISTING_GROUP" ]; then \
+        groupmod -g 9999 "$EXISTING_GROUP" || true; \
+    fi && \
     groupadd -g ${DOCKER_GID} www-data && \
     useradd -u ${DOCKER_UID} -g www-data www-data && \
     mkdir -p /home/www-data && \
@@ -228,3 +263,35 @@ COPY docker/php/prepareEnvVariables.php /var/www/prepareEnvVariables.php
 COPY --chmod=+x docker/php/php.entrypoint.prod.sh /user/bin/app/boot.local.sh
 
 USER root
+
+
+# -----------------------------------------------------
+# -----------------------------------------------------
+# APP - STAGING
+# -----------------------------------------------------
+# Staging inherits from app_root for production-like setup
+# but with debug mode enabled (no Xdebug for better performance)
+FROM app_root AS app_staging
+
+# Switch to www-data to copy code
+USER www-data
+
+# Add the app sources
+COPY --chown=www-data:www-data . .
+COPY --from=node_builder --chown=www-data:www-data /var/www/html/public/build /var/www/html/public/build
+RUN rm -rf /var/www/html/hot
+
+# Install the composer dependencies WITHOUT dev dependencies for staging
+RUN --mount=type=cache,id=composer-cache,target=/var/www/html/.composer-cache \
+    --mount=type=bind,from=composer:2,source=/usr/bin/composer,target=/usr/bin/composer \
+    export COMPOSER_CACHE_DIR="/var/www/html/.composer-cache" \
+    && composer install --no-dev --no-progress --no-interaction --verbose --no-autoloader
+
+# Dump the autoload file
+RUN --mount=type=bind,from=composer:2,source=/usr/bin/composer,target=/usr/bin/composer \
+    composer dump-autoload --optimize --classmap-authoritative --no-interaction --verbose --no-cache
+
+USER root
+
+# Use production entrypoint (staging doesn't need dev tools)
+# Debug mode is enabled via APP_DEBUG=true in .env.staging

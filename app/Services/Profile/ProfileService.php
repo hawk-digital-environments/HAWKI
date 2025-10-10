@@ -63,29 +63,30 @@ class ProfileService{
     }
 
 
+    /**
+     * @throws Exception
+     */
     public function resetProfile(): void{
-        try{
-            $user = Auth::user();
-            $this->deleteUserData($user);
+        $user = Auth::user();
+        $this->deleteUserData($user);
 
-            $userInfo = [
-                'username' => $user->username,
-                'name' => $user->name,
-                'email' => $user->email,
-                'employeetype' => $user->employeetype,
-            ];
+        $userInfo = [
+            'username' => $user->username,
+            'name' => $user->name,
+            'email' => $user->email,
+            'employeetype' => $user->employeetype,
+        ];
 
-            Auth::logout();
+        Auth::logout();
 
-            Session::put('registration_access', true);
-            Session::put('authenticatedUserInfo', json_encode($userInfo));
-        }
-        catch(Exception $e){
-            throw $e;
-        }
+        Session::put('registration_access', true);
+        Session::put('authenticatedUserInfo', json_encode($userInfo));
     }
 
 
+    /**
+     * @throws Exception
+     */
     public function deleteUserData(User $user): void{
 
         try{
@@ -137,17 +138,25 @@ class ProfileService{
 
 
     /// Sends back user's encrypted keychain
-    public function fetchUserKeychain(){
+    public function fetchUserKeychain(): string{
 
         $user = Auth::user();
         $prvUserData = PrivateUserData::where('user_id', $user->id)->first();
-        $keychainData = json_encode([
+        
+        // If no keychain exists (e.g., after passkey method change), return empty data
+        if (!$prvUserData) {
+            return json_encode([
+                'keychain' => '',
+                'KCIV' => '',
+                'KCTAG' => '',
+            ]);
+        }
+        
+        return json_encode([
             'keychain'=> $prvUserData->keychain,
             'KCIV'=> $prvUserData->KCIV,
             'KCTAG'=> $prvUserData->KCTAG,
         ]);
-
-        return $keychainData;
     }
 
 }

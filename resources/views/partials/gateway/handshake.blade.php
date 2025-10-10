@@ -6,41 +6,23 @@
 <div class="wrapper">
 
     <div class="container">
-            
-        <div class="slide" data-index="1">
-            <h3>{{ $translation["HS_EnterPasskeyMsg"] }}</h3>
-            
-            <form id="passkey-form"  autocomplete="off">
 
-                <div class="password-input-wrapper">
-                    <input
-                        class="passkey-input"
-                        placeholder="{{ $translation['Reg_SL5_PH1'] }}"
-                        id="passkey-input"
-                        type="text"
-                        autocomplete="new-password"
-                        autocorrect="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                    />
-                    <div class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
-                </div>
-            </form>
+        <div class="slide" data-index="1">
+            <h3>{{ $translation["HS-EnterPasskeyMsg"] }}</h3>
+
+            <input id="passkey-input" type="password">
 
             <div class="nav-buttons">
-                <button id="verifyEnteredPassKey-btn" onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
+                <button onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
             <p class="red-text" id="alert-message"></p>
-            <button onclick="switchSlide(2)" class="btn-md">{{ $translation["HS_ForgottenPasskey"] }}</button>
+            <button onclick="switchSlide(2)" class="btn-md">{{ $translation["HS-ForgottenPasskey"] }}</button>
 
         </div>
 
 
         <div class="slide" data-index="2">
-            <h3>{{ $translation["HS_EnterBackupMsg"] }}</h3>
+            <h3>{{ $translation["HS-EnterBackupMsg"] }}</h3>
 
             <div class="backup-hash-row">
                 <input id="backup-hash-input" type="text">
@@ -54,12 +36,12 @@
             </div>
             
             <p class="red-text" id="backup-alert-message"></p>
-            <button onclick="switchSlide(4)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
+            <button onclick="switchSlide(4)" class="btn-md">{{ $translation["HS-ForgottenBackup"] }}</button>
 
         </div>
 
         <div class="slide" data-index="3">
-            <h2>{{ $translation["HS_PasskeyIs"] }}</h2>
+            <h2>{{ $translation["HS-PasskeyIs"] }}</h2>
             <h3 id="passkey-field" class="demo-hash"></h3>
             <div class="nav-buttons">
                 <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
@@ -68,11 +50,81 @@
         </div>
 
         <div class="slide" data-index="4">
-            <h2>{{ $translation["HS_LostBothT"] }}</h2>
-            <h3>{{ $translation["HS_LostBothB"] }}</h3>
+            <h2>{{ $translation["HS-LostBothT"] }}</h2>
+            <h3>{{ $translation["HS-LostBothB"] }}</h3>
             <div class="nav-buttons">
-                <button onclick="requestProfileReset()" class="btn-lg-fill align-end">{{ $translation["HS_ResetProfile"] }}</button>
+                <button onclick="requestProfileReset()" class="btn-lg-fill align-end">{{ $translation["HS-ResetProfile"] }}</button>
             </div>
+        </div>
+
+        {{-- Error Slide --}}
+        <div class="slide" data-index="5">
+            <h2>{{ $translation["HS-ErrorTitle"] ?? "Fehler beim Handshake" }}</h2>
+            <h3>{{ $translation["HS-ErrorMessage"] ?? "Der Handshake-Prozess ist fehlgeschlagen. Bitte versuchen Sie es erneut oder melden Sie sich ab." }}</h3>
+            <div class="nav-buttons">
+                <button onclick="handleHandshakeError()" class="btn-lg-fill align-end">{{ $translation["HS-Logout"] ?? "Abmelden und Daten bereinigen" }}</button>
+            </div>
+        </div>
+
+
+        {{-- OTP Slide --}}
+        <div class="slide" data-index="0">
+            <h3>{{ $translation["HS-LoginCodeH"] }}</h3>
+            <p class="slide-subtitle">
+                {{ $translation["HS-LoginCodeT"] }}
+            </p>
+
+            {{-- Initial OTP Send Button --}}
+            <div id="otp-send-container">
+                <div class="nav-buttons">
+                    <button id="send-otp-btn" onclick="sendOTP(this)" class="btn-lg-fill">{{ $translation["HS-LoginCodeB1"] }}</button>
+                </div>
+            </div>
+
+            {{-- OTP Input Container (initially hidden) --}}
+            <div id="otp-input-container" style="display: none;">
+                <p class="slide-subtitle text-center text-primary mb-3">
+                    {{ $translation["HS-LoginCodeM"] }} <span id="otp-email-display"></span>
+                </p>
+                
+                {{-- Individual OTP input fields --}}
+                <div class="otp-input-group">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="0">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="1">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="2">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="3">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="4">
+                    <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="5">
+                </div>
+                
+                <div class="nav-buttons">
+                    <button id="verify-otp-btn" onclick="verifyOTP(this)" class="btn-lg-fill">{{ $translation["HS-LoginCodeB3"] }}</button>
+                </div>
+                
+                {{-- Resend Button (initially hidden, appears after 60s cooldown) --}}
+                <div id="resend-container" style="display: none; margin-top: 15px;">
+                    <p class="red-text" id="alert-message" style="text-align: center;">{{ $translation["HS-LoginCodeT3"] }}</p>
+
+                    <div class="nav-buttons"> 
+                        <button id="resend-otp-btn" onclick="resendOTP(this)" class="btn-lg-fill">
+                            {{ $translation["HS-LoginCodeB4"] }}
+                        </button>
+                    </div>
+                </div>
+                
+                {{-- Timer Element (visible during active OTP session) --}}
+                <div style="margin-top: 15px;">
+                    <p id="otp-timer" style="text-align: center; color: var(--accent-color); font-weight: bold;">5:00</p> 
+                </div>
+                {{-- --}}
+
+            </div>
+
+            {{-- Logout Button for OTP Slide --}}
+            <div class="nav-buttons" style="margin-top: 20px;">
+                <button onclick="logout()" class="btn-md">{{ $translation["HS-Logout"] ?? "Abmelden" }}</button>
+            </div>
+
         </div>
 
 
@@ -85,7 +137,10 @@
 
 <script>
     let userInfo = @json($userInfo);
-    const serverKeychainCryptoData = @json($keychainData)
+    let passkeySecret = @json($passkeySecret);
+    const serverKeychainCryptoData = @json($keychainData);
+    const translations = @json($translation);
+    const otpTimeout = @json(config('auth.passkey_otp_timeout', 300));
 
     window.addEventListener('DOMContentLoaded', async function (){
 
@@ -96,7 +151,20 @@
         }
         else{
             console.log('opening passkey panel');
-            switchSlide(1)
+            
+            // Check config for passkey method
+            @if(config('auth.passkey_method') === 'system')
+                @if(config('auth.passkey_otp'))
+                    // Show otp dialog
+                    switchSlide(0);
+                @else
+                    // Go directly to chat interface
+                    verifyGeneratedPassKey();
+                @endif
+            @else
+                switchSlide(1); // Show manual passkey input (default behavior)
+            @endif
+            
             setTimeout(() => {
                 if(@json($activeOverlay)){
                     setOverlay(false, true)
@@ -105,101 +173,24 @@
         }
     });
 
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const inputWrappers = document.querySelectorAll('.password-input-wrapper');
-
-        inputWrappers.forEach(wrapper => {
-            const input = wrapper.querySelector('.passkey-input');
-            const toggleBtn = wrapper.querySelector('.btn-xs');
-            input.dataset.visible = 'false'
-
-            // Initialize the real value in a dataset
-            input.dataset.realValue = '';
-
-            //random name will prevent chrome from auto filling.
-            const rand = generateTempHash();
-            input.setAttribute('name', rand);
-
-            // Input filter for allowed characters
-            input.addEventListener('beforeinput', function (event) {
-                if (event.inputType.startsWith('insert')) {
-                    if (!/^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(event.data)) {
-                        event.preventDefault();
-                        console.log('bad input');
-                        input.parentElement.style.border = '1px solid red'
-
-                        setTimeout(() => {
-                            input.parentElement.style.border = 'var(--border-stroke-thin)';
-                            console.log('back');
-                        }, 100);
-                    }
-                }
-            });
-
-            // Handle Enter key
-            input.addEventListener('keypress', function (event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    verifyEnteredPassKey(document.querySelector('#verifyEnteredPassKey-btn'));
-                }
-            });
-
-            // Mask input and store real value
-            input.addEventListener('input', function (e) {
-                const realValue = input.dataset.realValue || '';
-                const newValue = e.target.value;
-                const oldLength = realValue.length;
-                const newLength = newValue.length;
-
-                let updated = realValue;
-                if (newLength > oldLength) {
-                    updated += newValue.slice(oldLength);
-                } else if (newLength < oldLength) {
-                    updated = updated.slice(0, newLength);
-                }
-
-                input.dataset.realValue = updated;
-
-                if(input.dataset.visible === 'false'){
-                    input.value = '*'.repeat(updated.length);
-                }
-      
-            });
-
-            // Prevent copy/cut/paste
-            ['copy', 'cut', 'paste'].forEach(evt =>
-                input.addEventListener(evt, e => e.preventDefault())
-            );
-
-            // Toggle visibility
-            toggleBtn.addEventListener('click', function () {
-                const real = input.dataset.realValue || '';
-                const icons = toggleBtn.querySelectorAll('svg');
-                const eye = icons[0];
-                const eyeOff = icons[1];
-                
-                const isVisible = input.dataset.visible === 'true';
-                if (!isVisible) {
-                    input.value = real;
-                    eye.style.display = 'none';
-                    eyeOff.style.display = 'inline-block';
-                    input.dataset.visible = 'true';
-                } 
-                else {
-                    input.value = '*'.repeat(real.length);
-                    eye.style.display = 'inline-block';
-                    eyeOff.style.display = 'none';
-                    input.dataset.visible = 'false';
-                }
-            });
-        });
-    });
-
-
-
-
+    // Function to handle handshake errors
+    function handleHandshakeError() {
+        try {
+            logout();
+            cleanupUserData();
+        } catch (error) {
+            console.error('Error during cleanup:', error);
+            // Force redirect to login even if cleanup fails
+            window.location.href = '/login';
+        }
+    }
 </script>
+
+{{-- Auto Passkey Generation Module --}}
+<script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}"></script>
+
+{{-- OTP Functions Module --}}
+<script src="{{ asset('js_v2.1.0/otp_functions.js') }}"></script>
 
 
 @endsection

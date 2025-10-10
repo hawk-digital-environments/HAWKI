@@ -22,10 +22,11 @@ use Illuminate\Support\Facades\Session;
 class HomeController extends Controller
 {
 
-    // Inject LanguageController instance
+    // Inject LanguageController and LocalizationController instances
     public function __construct(
-        private LanguageController $languageController,
-        private AiService          $aiService
+        private LanguageController    $languageController,
+        private LocalizationController $localizationController,
+        private AiService              $aiService
     )
     {
     }
@@ -43,8 +44,10 @@ class HomeController extends Controller
         $user = Auth::user();
 
 
-        // Call getTranslation method from LanguageController
+        // Call getTranslation method from LanguageController and merge with localized content
         $translation = $this->languageController->getTranslation();
+        $localizedContent = $this->localizationController->getAllLocalizedContent();
+        $translation = array_merge($translation, $localizedContent);
         $settingsPanel = (new SettingsService())->render();
 
 
@@ -72,7 +75,19 @@ class HomeController extends Controller
         }
         Session::put('last-route', 'home');
 
-        $models = $this->aiService->getAvailableModels()->toArray();
+        try {
+            $models = $this->aiService->getAvailableModels()->toArray();
+        } catch (\Exception $e) {
+            // Log the error if logging trigger is enabled
+            if (config('logging.triggers.default_model')) {
+                \Log::error('Failed to load available models', [
+                    'error' => $e->getMessage(),
+                    'user_id' => $user->id
+                ]);
+            }
+            // Provide empty models array as fallback
+            $models = ['models' => []];
+        }
         $announcements = $announcementService->getUserAnnouncements();
 
         $converterActive = FileConverterFactory::converterActive();
@@ -121,6 +136,8 @@ class HomeController extends Controller
 
 
         $translation = $this->languageController->getTranslation();
+        $localizedContent = $this->localizationController->getAllLocalizedContent();
+        $translation = array_merge($translation, $localizedContent);
         $settingsPanel = $settingsService->render();
         $models = $this->aiService->getAvailableModels()->toArray();
 

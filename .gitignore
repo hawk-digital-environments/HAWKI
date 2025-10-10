@@ -6,7 +6,6 @@
 /storage/*.key
 /vendor
 .env
-!/_docker_production/.env
 .env.backup
 .env.private
 .env.production
@@ -22,3 +21,5 @@ yarn-error.log
 /.vscode
 docker-compose.override.yml
 .DS_Store
+mcp-server.json
+_docker_production/.env

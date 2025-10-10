@@ -5,22 +5,21 @@
 
 
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
 
+    <title>{{ config('app.name') }}</title>
 
-	<title>{{ env('APP_NAME') }}</title>
+	<link rel="icon" type="image/png" href="{{ route('system.image', 'favicon') }}">
 
-	<link rel="icon" href="{{ asset('favicon.ico') }}">
-
-
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/home-style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/hljs_custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/gfont-firesans/firesans.css') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'style') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'chat_modules') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'home-style') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'settings_style') }}">
+    <link rel="stylesheet" href="{{ route('css.get', 'hljs_custom') }}">
 
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
@@ -99,7 +98,7 @@
     const activeLocale = {!! json_encode(Session::get('language')) !!};
 	const translation = @json($translation);
 
-	const modelsList = @json($models).models;
+	const modelsList = @json($models).models.filter(model => !model.hasOwnProperty('visible') || model.visible);
 	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
 

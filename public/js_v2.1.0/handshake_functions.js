@@ -4,6 +4,12 @@ let currentSlideIndex;
 function switchSlide(targetIndex) {
     const target = document.querySelector(`.slide[data-index="${targetIndex}"]`);
 
+    // Check if target slide exists
+    if (!target) {
+        console.error(`Slide with data-index="${targetIndex}" not found`);
+        return;
+    }
+
     if (previousSlide) {
         previousSlide.style.opacity = "0";
     }
@@ -14,11 +20,15 @@ function switchSlide(targetIndex) {
         }
 
         target.style.display = "flex";
-        if(targetIndex > 1){
-            document.querySelector('.slide-back-btn').style.opacity = "1";
-        }
-        else{
-            document.querySelector('.slide-back-btn').style.opacity = "0";
+        
+        const backBtn = document.querySelector('.slide-back-btn');
+        if (backBtn) {
+            if(targetIndex > 1){
+                backBtn.style.opacity = "1";
+            }
+            else{
+                backBtn.style.opacity = "0";
+            }
         }
 
         // Add a small delay before changing the opacity to ensure the display change has been processed
@@ -36,16 +46,14 @@ function switchBackSlide(){
     switchSlide(targetIndex);
 }
 
-function modalClick(btn){
-    switchSlide(4);
-}
-
+// Note: modalClick is now defined in register.blade.php to handle registration-specific logic
+// with passkey method configuration. For general modal handling, see home_functions.js
 
 let backupHash = '';
 async function checkPasskey(){
 
     const msg = document.querySelector('#alert-message');
-    const enteredPasskey = String(document.getElementById('passkey-input').dataset.realValue);
+    const enteredPasskey = String(document.getElementById('passkey-input').value);
 
     // if passkey field is left empty.
     if(enteredPasskey === ''){
@@ -57,12 +65,12 @@ async function checkPasskey(){
 
     //Show Repeat Passkey
     if(repeatWrapper.style.display === 'none'){
-        repeatWrapper.style.display = 'flex';
-        repeatWrapper.querySelector('input').focus();
+        repeatWrapper.style.display = 'block';
+        repeatWrapper.focus();
         return;
     }
-    const repeatField = repeatWrapper.querySelector('.passkey-input')
-    const repeatedKey = String(repeatField.dataset.realValue);
+    const repeatField = document.getElementById('passkey-repeat');
+    const repeatedKey = String(repeatField.value);
 
 
     //if repeat passkey is empty
@@ -306,7 +314,7 @@ async function verifyEnteredPassKey(provider){
 
     const slide = provider.closest(".slide");
     const inputField = slide.querySelector("#passkey-input");
-    const enteredKey = String(inputField.dataset.realValue.trim());
+    const enteredKey = String(inputField.value.trim());
     const errorMessage = slide.querySelector("#alert-message");
 
     if (!enteredKey) {

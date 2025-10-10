@@ -1610,8 +1610,38 @@
     max-height: 60vh;
     overflow-y: auto;
 }
+
 .model-selector-label{
     text-overflow: ellipsis;
+}
+
+/* Provider Group Styling */
+.provider-group {
+    margin-bottom: 8px;
+}
+
+.provider-header {
+    padding: 0 0.5em;
+}
+
+.provider-name {
+    font-size: 0.85em;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.provider-group .model-selector {
+    border-radius: 0;
+    margin-left: 8px;
+    margin-right: 8px;
+    border-left: 2px solid var(--background-tertiary);
+}
+
+.provider-group .model-selector:first-of-type {
+}
+
+.provider-group .model-selector:last-of-type {
+    margin-bottom: 4px;
 }
 
 

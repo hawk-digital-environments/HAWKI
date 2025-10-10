@@ -69,25 +69,25 @@
                 </div>
 
                 <div class="content-text-container">
-                    <p>{{ $translation['AboutHAWKI_Info'] }}</p>
-                    <p>
-                        <a class="accentText contributor-title" target="_blank" href="https://www.hawk.de/en/university/organization-and-persons/register-of-persons/stefan-wolwer"><b>Prof. Stefan Wölwer</b></a>{{ $translation['AboutHAWKI_StefanInfo'] }}<br/>
-                        <a class="accentText contributor-title" target="_blank" href="https://www.hawk.de/de/hochschule/organisation-und-personen/personenverzeichnis/jonas-trippler"><b>Jonas Trippler</b></a>{{ $translation['AboutHAWKI_JonasInfo'] }}<br/>
-                        <a class="accentText contributor-title" target="_blank" href="https://www.hawk.de/de/hochschule/organisation-und-personen/personenverzeichnis/vincent-timm"><b>Vincent Timm</b></a>{{ $translation['AboutHAWKI_VincentInfo'] }}<br/>
-                        <a class="accentText contributor-title" target="_blank" href="https://www.hawk.de/de/hochschule/organisation-und-personen/personenverzeichnis/arian-sadafi"><b>Arian Sadafi</b></a>{{ $translation['AboutHAWKI_ArianInfo'] }}</p>
-                    </p>
+                    {!! $localizedTexts["about_system"] !!}
                 </div>
             </div>
 
             <div class="guideline-content">
+                <div class="content-header">
                     <div class="back-btn" onclick="ToggleSettingsContent('guideline',false)">
-                      <svg viewBox="0 0 25 25" width="50" height="50">
+                        <svg viewBox="0 0 25 25" width="50" height="50">
                             <g class="button-path-stroke-color" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M 12 8 l -4 4 l 4 4 M 16 12 H 8"/>
                             </g>
                         </svg>
                     </div>
-                    <div id="policy-content" class="content-text-container"></div>
+                    <h1>{{ $translation["Guidelines"] }}</h1>
+                </div>
+                <div class="content-text-container">
+                    {!! $localizedTexts["guidelines_content"] !!}
+                    <br><br><br>
+                </div>
             </div>
 
             <div class="closeButton" onclick="toggleSettingsPanel(false)">

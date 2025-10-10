@@ -14,7 +14,7 @@ return [
     */
 
     'name' => env('APP_NAME', 'HAWKI'),
-    'version' => "2.1.0",
+    'version' => '2.1.0',
 
     /*
     |--------------------------------------------------------------------------
@@ -123,9 +123,6 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-
-
-
 
 
 ];

@@ -24,10 +24,13 @@ trait OllamaUsageTrait
             return null;
         }
         
+        $promptTokens = (int)$data['prompt_eval_count'];
+        $completionTokens = (int)$data['eval_count']; // eval_count is already the response tokens count
+        
         return new TokenUsage(
             model: $model,
-            promptTokens: (int)$data['prompt_eval_count'],
-            completionTokens: (int)$data['prompt_eval_count'] - $data['eval_count'],
+            promptTokens: $promptTokens,
+            completionTokens: $completionTokens,
         );
     }
 }

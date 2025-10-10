@@ -1,5 +1,5 @@
 {
-    "Guidelines": "Guidelines for Using HAWKI",
+    "Guidelines": "Guidelines for Using :system",
 
 
     "Chat":"Chat",
@@ -15,7 +15,7 @@
     "Cnf_leaveRoom":"Do you really want to leave this Room?",
     "Cnf_removeMember":"Do you really want to remove this member?",
 
-    "Cnf_tokenMsg1":"Please keep this token safe and use it carefully to keep you account safe. If HAWKI detects suspicious behaviour this token will be revoked.",
+    "Cnf_tokenMsg1":"Please keep this token safe and use it carefully to keep you account safe. If :system detects suspicious behaviour this token will be revoked.",
     "Cnf_tokenMsg2":"Once you close this window you will not be able to get this key again.",
     "Cnf_tokenMsgSuccess":"Token Created Successfully",
     "Cnf_tokenRevoke":"Are you sure you want to revoke token",
@@ -23,7 +23,7 @@
 
     "Cnf_RemoveFile":"Are you sure you want to delete this file?",
 
-    "Logout_Warning":"To contninue using HAWKI you need to accept these conditions. <br><strong>Click on confirm to logout from HAWKI.</strong>",
+    "Logout_Warning":"To contninue using :system you need to accept these conditions. <br><strong>Click on confirm to logout from :system.</strong>",
 
     "Input_Err_UploadFailed": "Failed to upload the file!",
     "Input_Err_NotSupported": "File type not supported:",
@@ -36,7 +36,7 @@
 
     "Summery": "Summery",
     "Auto_Generated":"generated automatically",
-    "Exported_At":"Exported from HAWKI on:",
+    "Exported_At":"Exported from :system on:",
     "By":"by",
     "Chatlog":"Chatlog",
     "Rooms": "Rooms",
@@ -44,12 +44,7 @@
     "RemovedMember": "unavailable",
 
     "Abort": "Cancel",
-    "AboutHAWKI": "About HAWKI",
-    "AboutHAWKI_ArianInfo": " | Research Associate | HAWKI",
-    "AboutHAWKI_Info": "The offering was developed in the Interaction Design Lab at HAWK to give all university members the opportunity to integrate artificial intelligence into work processes and to have a space for exchange, potentially resulting in new working methods and fostering an internal university discussion on the use of AI. This offering also aims to provide didactic support, to develop an understanding of the functioning of a language model, and therefore gives indications of well-operating prompts (text inputs) in different areas. We welcome constructive feedback to further develop this offering in line with your needs and insights.",
-    "AboutHAWKI_JonasInfo": " | Research Associate | Hands On",
-    "AboutHAWKI_StefanInfo": " | Digital Environments | Interaction Design ",
-    "AboutHAWKI_VincentInfo": " | Research Associate | Head of Interaction Design Lab",
+    "AboutHAWKI": "About :system",
     "AccessTokens": "Access Tokens",
     "Add": "Add",
     "Bio": "Bio",
@@ -81,11 +76,50 @@
     "HS_PasskeyIs": "Your Datakey is:",
     "HS_ResetProfile": "Reset Profile",
 
+    "HS-EnterBackupMsg": "Please enter your Recovery Code.",
+    "HS-EnterPasskeyMsg": "Please enter your Datakey.",
+    "HS-ForgottenPasskey": "Forgotten Datakey?",
+    "HS-ForgottenBackup": "Lost Recovery Code?",
+    "HS-PasskeyIs": "Your Datakey is:",
+    "HS-ResetProfile": "Reset Profile",
+    "HS-LostBothT": "Did you lose both your Datakey and Recovery Code?",
+    "HS-LostBothB": "Unfortuately if you've lost both your Datakey and Recovery Code, we can't recover your profile data. To continue we need to reset your profile and give you a new access. This will remove all your previous data including all your chats and rooms. Do you want to continue?",
+
     "HS_RepeatPassKey": "Please repeat the Datakey.",
     "HS_DifferentEntries": "The entries are not the same!",
 
-    "HS_LostBothT": "Did you lose both your Datakey and Recovery Code?",
-    "HS_LostBothB": "Unfortuately if you've lost both your Datakey and Recovery Code, we can't recover your profile data. To continue we need to reset your profile and give you a new access. This will remove all your previous data including all your chats and rooms. Do you want to continue?",
+    "HS-LoginCodeH": ":system Log-in Code 🔐",
+    "HS-LoginCodeT": "We will send you a log-in code via email for secure authentication.",
+    "HS-LoginCodeB1": "Send log-in code via email",
+    "HS-LoginCodeB2": "Sending email...",
+    "HS-LoginCodeB3": "Verify log-in code",
+    "HS-LoginCodeB4": "Resend log-in code",
+    "HS-LoginCodeB5": "Log-in code sent!",
+    "HS-LoginCodeB6": "Error sending",
+    "HS-LoginCodeB7": "Verifying log-in code...",
+    "HS-LoginCodeB8": "Log-in code verified!",
+    "HS-LoginCodeB9": "Logging in...",
+    "HS-LoginCodeB10": "Invalid log-in code",
+    "HS-LoginCodeB11": "Verification failed",
+
+    "HS-LoginCodeE1": "Please wait before requesting another log-in code.",
+    "HS-LoginCodeE2": "Error sending log-in code",
+    "HS-LoginCodeE3": "Please enter the log-in code",
+    "HS-LoginCodeE4": "Error generating passkey",
+    "HS-LoginCodeE5": "Error verifying log-in code",
+    "HS-LoginCodeE6": "Log-in code has expired. Please request a new one.",
+    
+    "HS-LoginCodeM": "Log-in code sent to",
+
+    "HS-LoginCodeT1": "Resend in",
+    "HS-LoginCodeT2": "s possible",
+    "HS-LoginCodeT3": "Log-in code expired",
+
+    "HS-LoginCodePH": "Enter 6-digit log-in code",
+
+    "HS-ErrorTitle": "Handshake Error",
+    "HS-ErrorMessage": "The handshake process failed. Please try again or log out.",
+    "HS-Logout": "Logout",
 
     "ImgUpload": "Upload Image",
     "ImgUploadDesc": "Select an image or drag it here.<br>Double-click to enter edit mode.",
@@ -102,7 +136,7 @@
     "MemberInvite": "Invite Members",
     "MemberRemove": "Remove Member",
     "Members": "Members",
-    "MistakeWarning": "HAWKI may make mistakes. Check important information.",
+    "MistakeWarning": ":system may make mistakes. Check important information.",
     "Models": "Models",
     "password": "Password",
     "PersonalData": "Personal Data",
@@ -138,6 +172,26 @@
     "theme": "Theme",
     "Think": "Think",
     "username": "Username",
+    "guest_username": "Username",
+    "guest_password": "Password",
+    "login_title": "Sign In",
+    "local_login": "Local Login",
+    "local_users_login": "Local Users Login",
+    "request_guest_access": "Request Guest Access",
+    "back_to_main_login": "Back to Main Login",
+    "back_to_login": "Back to Login",
+    "confirm_password": "Confirm Password",
+    "email": "Email",
+    "user_group": "User Group",
+    "select_user_group": "Select User Group",
+    "submit_request": "Submit Request",
+    "submitting": "Submitting...",
+    "submitting_text": "Please wait while we process your request.",
+    "success": "Success!",
+    "success_message": "Your guest access request has been submitted successfully. You can now log in with your credentials.",
+    "error": "Error:",
+    "network_error": "A network error occurred. Please check your connection and try again.",
+    "general_error": "An error occurred while processing your request. Please try again.",
     "You": "You",
 
     "PH_AboutMe": "About Me...",
@@ -145,8 +199,17 @@
     "PH_ChooseDescription": "Add Description",
     "PH_SystemPrompt": "Enter your prefered system prompt",
     "PH_SearchBar": "Enter Name, Username oder E-Mail Address" ,
-    "Api_Warning": "To be able to use the HAWKI language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you.",
-    "UploadFile": "Upload File"
+    "Api_Warning": "To be able to use the :system language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you.",
+    "UploadFile": "Upload File",
 
-
+    "Reg_SL0_H": "Your data is safe! 🔐",
+    "Reg_SL0_B": "Let's go!",
+    "Reg_SL0_T": "<strong>Important:</strong> Your chats are encrypted before they are stored on our server. Only the devices you have registered for :system can decrypt these chats. 💻📲 <br>If you want to log in on a new device, you must confirm your identity with an activation code that you will receive by email. 📫",
+    "Reg_SL7_H": "Access Under Review ⏰",
+    "Reg_SL7_T": "Your request is being reviewed. You will receive an email notification about the status of your request.",
+    "Reg_SL7_Contact": "Have questions? Contact us at:",
+    
+    "change_password": "Change Password",
+    "change_password_text": "Please set a new password for your account.",
+    "new_password": "New Password"
 }
