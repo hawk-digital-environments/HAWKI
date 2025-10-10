@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\Chat\Message\MessageHandlerFactory;
+use App\Services\Storage\AvatarStorageService;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -146,6 +147,10 @@ class Room extends Model
                 $messageHandler->delete($this, $message->toArray());
             }
             $this->members()->delete();
+            if($this->room_icon){
+                $avatarStorage = app(AvatarStorageService::class);
+                $avatarStorage->delete($this->room_icon,'room_avatars');
+            }
             // Delete the room itself
             $this->delete();
             return true;
@@ -154,7 +159,6 @@ class Room extends Model
             Log::error("Failed to remove member: $e");
             return false;
         }
-
     }
 
 
