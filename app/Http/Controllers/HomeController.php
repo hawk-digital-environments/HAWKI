@@ -15,6 +15,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 // use Illuminate\Support\Facades\View;
@@ -73,6 +74,15 @@ class HomeController extends Controller
         Session::put('last-route', 'home');
 
         $models = $this->aiService->getAvailableModels()->toArray();
+        $webSearchAvailable = false;
+
+        foreach ($models['models'] as $model) {
+            if (!empty($model['tools']['web_search'])) {
+                $webSearchAvailable = true;
+                break;
+            }
+        }
+
         $announcements = $announcementService->getUserAnnouncements();
 
         $converterActive = FileConverterFactory::converterActive();
@@ -88,6 +98,7 @@ class HomeController extends Controller
                             'activeModule',
                             'activeOverlay',
                             'models',
+                            'webSearchAvailable',
                             'announcements',
                             'converterActive',
                         ));

@@ -6,6 +6,7 @@ namespace App\Services\Chat\Message\Handlers;
 use App\Models\AiConv;
 use App\Models\Message;
 use App\Models\Room;
+use App\Services\Chat\Attachment\AttachmentService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
@@ -63,11 +64,15 @@ class GroupMessageHandler extends BaseMessageHandler{
 
 
     public function delete(AiConv|Room $room, array $data): bool{
-        return false;
+        $message = $room->messages->where('message_id', $data['message_id'])->first();
+
+        $attachmentService = app(AttachmentService::class);
+        $attachments = $message->attachments;
+        foreach ($attachments as $attachment) {
+            $attachmentService->delete($attachment);
+        }
+
+        $message->delete();
+        return true;
     }
-
-
-
-
-
 }

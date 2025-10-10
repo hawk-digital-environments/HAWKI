@@ -51,7 +51,10 @@ class ProfileController extends Controller
 
     public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse{
         $profileService->resetProfile();
-        return response()->redirectTo('/register');
+        return response()->json([
+            'success' => true,
+            'redirectUri' => '/register'
+        ]);
     }
 
     public function validatePasskey(Request $request){

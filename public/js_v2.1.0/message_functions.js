@@ -68,9 +68,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     }
 
     /// Set Author Name
-    console.log(messageObj);
     if(messageObj.model && messageObj.message_role === 'assistant'){
-        console.log(messageObj);
         model = modelsList.find(m => m.id === messageObj.model);
         messageElement.querySelector('.message-author').innerHTML =
             model ?
@@ -607,27 +605,6 @@ function editMessage(provider){
     });
 
 
-    /// ATTACHMENTS
-    if(wrapper.querySelectorAll('.attachment').length > 0){
-        const atchs = wrapper.querySelectorAll('.attachment');
-        atchs.forEach(atch => {
-            atch.classList.add('edit-mode');
-            const rmBtn = atch.querySelector('.remove-btn');
-            rmBtn.style.display = 'flex';
-            rmBtn.disabled = false;
-            rmBtn.addEventListener('click', async ()=> {
-                const confirm = await openModal(ModalType.WARNING, translation.Cnf_RemoveFile);
-                if(!confirm){
-                    return;
-                }
-                const deleted = await requestAtchDelete(atch.dataset.fileId, 'conv');
-                if(deleted){
-                    atch.remove();
-                }
-            });
-        });
-    }
-
     content.setAttribute('contenteditable', true);
     content.dataset.tempContent = content.innerHTML;
     const rawMsg = content.closest('.message').dataset.rawMsg;
@@ -667,15 +644,15 @@ function abortEditMessage(provider){
     wrapper.classList.remove('edit-mode');
 
 
-    if(wrapper.querySelectorAll('.attachment').length > 0){
-        const atchs = wrapper.querySelectorAll('.attachment');
-        atchs.forEach(atch => {
-            atch.classList.remove('edit-mode');
-            const rmBtn = atch.querySelector('.remove-btn');
-            rmBtn.disabled = true;
-            rmBtn.style.display = 'none';
-        })
-    };
+    // if(wrapper.querySelectorAll('.attachment').length > 0){
+    //     const atchs = wrapper.querySelectorAll('.attachment');
+    //     atchs.forEach(atch => {
+    //         atch.classList.remove('edit-mode');
+    //         const rmBtn = atch.querySelector('.remove-btn');
+    //         rmBtn.disabled = true;
+    //         rmBtn.style.display = 'none';
+    //     })
+    // };
 
 
     const content = wrapper.querySelector('.message-content');
@@ -699,18 +676,6 @@ async function confirmEditMessage(provider){
 
     const wrapper = provider.closest('.message-wrapper');
     wrapper.classList.remove('edit-mode');
-
-
-    if(wrapper.querySelectorAll('.attachment').length > 0){
-        const atchs = wrapper.querySelectorAll('.attachment');
-        atchs.forEach(atch => {
-            atch.classList.remove('edit-mode');
-            const rmBtn = atch.querySelector('.remove-btn');
-            rmBtn.disabled = true;
-            rmBtn.style.display = 'none';
-        })
-    };
-
 
     const content = wrapper.querySelector('.message-content');
     content.setAttribute('contenteditable', false);

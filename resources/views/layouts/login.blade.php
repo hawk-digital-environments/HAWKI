@@ -61,13 +61,12 @@
 </html>
 
 <script>
-    window.addEventListener('DOMContentLoaded', (event) => {
+    window.addEventListener('DOMContentLoaded', () => {
         if(window.innerWidth < 480){
             const bgVideo = document.querySelector(".image_preview_container");
             bgVideo.remove();
         }
 
-        // console.log(@json($activeOverlay));
         setTimeout(() => {
             if(@json($activeOverlay)){
                 // console.log('close overlay');
@@ -77,14 +76,14 @@
     });
 
     function onLoginKeydown(event){
-        if(event.key == "Enter"){
+        if(event.key === "Enter"){
             const username = document.getElementById('account');
             // console.log(username.value);
             if(!username.value){
                 return;
             }
             const password = document.getElementById('password');
-            if(document.activeElement != password){
+            if(document.activeElement !== password){
                 password.focus();
                 return;
             }

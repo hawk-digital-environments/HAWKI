@@ -78,9 +78,6 @@ class PrivateMessageHandler extends BaseMessageHandler{
         }
 
         $message = $conv->messages->where('message_id', $data['message_id'])->first();
-        if (!$message->user->is(Auth::user())) {
-            throw new AuthorizationException();
-        }
 
         $attachmentService = app(AttachmentService::class);
         $attachments = $message->attachments;
