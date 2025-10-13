@@ -9,6 +9,7 @@ use App\Orchid\Layouts\User\UserApprovalLayout;
 use App\Orchid\Layouts\User\UserEditLayout;
 use App\Orchid\Layouts\User\UserPasswordLayout;
 use App\Orchid\Layouts\User\UserRoleLayout;
+use App\Services\EmployeetypeMappingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -25,6 +26,13 @@ class UserEditScreen extends Screen
      * @var User
      */
     public $user;
+
+    protected EmployeetypeMappingService $employeetypeMappingService;
+
+    public function __construct(EmployeetypeMappingService $employeetypeMappingService)
+    {
+        $this->employeetypeMappingService = $employeetypeMappingService;
+    }
 
     /**
      * Fetch data to be displayed on the screen.
@@ -252,18 +260,16 @@ class UserEditScreen extends Screen
     }
 
     /**
-     * Map employee type to role slug
+     * Map employee type to role slug using EmployeetypeMappingService
      */
     private function mapEmployeeTypeToRoleSlug(string $employeeType): string
     {
-        return match (strtolower($employeeType)) {
-            'student', 'studierende' => 'student',
-            'mitarbeiter', 'staff' => 'staff',
-            'professor', 'lehrende' => 'lecturer',
-            'gast', 'guest' => 'guest',
-            'admin', 'administrator' => 'admin',
-            default => 'guest',
-        };
+        try {
+            $authMethod = config('auth.authentication_method', 'LDAP');
+            return $this->employeetypeMappingService->mapEmployeetypeToRole($employeeType, $authMethod);
+        } catch (\Exception $e) {
+            return 'guest';
+        }
     }
 
     /**

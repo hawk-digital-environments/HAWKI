@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\User;
+use App\Services\EmployeetypeMappingService;
 use Illuminate\Support\Facades\Log;
 use Orchid\Platform\Models\Role;
 
@@ -107,29 +108,33 @@ class UserObserver
     }
 
     /**
-     * Map employeetype values to Orchid role slugs dynamically
-     * This allows for automatic mapping when new roles are created in the admin
+     * Map employeetype values to Orchid role slugs using the EmployeetypeMappingService
+     * This allows for automatic discovery and mapping of new employeetypes
      */
     private function mapEmployeeTypeToRoleSlug(string $employeetype): ?string
     {
-        $employeetype = trim($employeetype);
-
-        // First try exact slug match (case-insensitive)
-        $role = Role::whereRaw('LOWER(slug) = ?', [strtolower($employeetype)])->first();
-        if ($role) {
-            return $role->slug;
+        try {
+            // Determine auth method from config
+            $authMethod = config('auth.authentication_method', 'LDAP');
+            
+            // Resolve EmployeetypeMappingService from container
+            $mappingService = app(EmployeetypeMappingService::class);
+            
+            // Use EmployeetypeMappingService to map employeetype to role
+            $roleSlug = $mappingService->mapEmployeetypeToRole($employeetype, $authMethod);
+            
+            // The service returns 'guest' as fallback, but we want null for unknown employeetypes
+            // to trigger appropriate logging in the caller
+            if ($roleSlug === 'guest') {
+                Log::info("Employeetype '{$employeetype}' mapped to fallback 'guest' role. Check Role Assignment Screen to configure proper mapping.");
+                return $roleSlug;
+            }
+            
+            return $roleSlug;
+            
+        } catch (\Exception $e) {
+            Log::error("Failed to map employeetype '{$employeetype}' to role: " . $e->getMessage());
+            return null;
         }
-
-        // Then try exact name match (case-insensitive)
-        $role = Role::whereRaw('LOWER(name) = ?', [strtolower($employeetype)])->first();
-        if ($role) {
-            return $role->slug;
-        }
-
-        // If no match found, log available roles for debugging
-        $availableRoles = Role::pluck('slug')->toArray();
-        Log::warning("No role mapping found for employeetype: '{$employeetype}'. Available roles: ".implode(', ', $availableRoles));
-
-        return null;
     }
 }
