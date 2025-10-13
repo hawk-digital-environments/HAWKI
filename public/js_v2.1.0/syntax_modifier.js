@@ -36,10 +36,10 @@ function formatChunk(chunk, groundingMetadata) {
     }
 
     // Balance thinking blocks - ensure all blocks are closed
-    const thinkOpenCount = (summedText.match(/&lt;think&gt;/g) || []).length;
-    const thinkCloseCount = (summedText.match(/&lt;\/think&gt;/g) || []).length;
+    const thinkOpenCount = (summedText.match(/<think>/g) || []).length;
+    const thinkCloseCount = (summedText.match(/<\/think>/g) || []).length;
     if (thinkOpenCount > thinkCloseCount) {
-      formatText += '&lt;/think&gt;';
+      formatText += '</think>';
     }
 
     // Render the formatted text using markdown processor
@@ -119,7 +119,7 @@ function preprocessContent(content) {
 
   // RegEx patterns
   const mathRegex = /(\$\$[^0-9].*?\$\$|\$[^0-9].*?\$|\\\(.*?\\\)|\\\[.*?\\\])/gs;
-  const thinkRegex = /&lt;think&gt;[\s\S]*?&lt;\/think&gt;/g;
+  const thinkRegex = /<think>[\s\S]*?<\/think>/g;
   const codeBlockStartRegex = /^```/;
 
   const mathReplacements = [];
@@ -136,6 +136,8 @@ function preprocessContent(content) {
     const line = lines[i];
     const trimmedLine = line.trim();
 
+    // console.log('inCodeBlock', inCodeBlock);
+    // console.log('currentSegment', currentSegment);
     // Detect code block boundaries
     if (codeBlockStartRegex.test(trimmedLine)) {
       // Process current segment before entering/exiting code block
@@ -189,7 +191,7 @@ function processNonCodeSegment(segment, mathRegex, thinkRegex, mathReplacements,
 
   // Then process think blocks
   processed = processed.replace(thinkRegex, (thinkMatch) => {
-    thinkReplacements.push(thinkMatch);
+      thinkReplacements.push(thinkMatch);
     return `%%%THINK${thinkReplacements.length - 1}%%%`;
   });
 
@@ -229,8 +231,8 @@ function postprocessContent(content, mathReplacements, thinkReplacements) {
 
       try {
         const rawThinkContent = thinkReplacements[idx];
-        // Remove &lt;think&gt; and &lt;/think&gt;
-        const thinkContent = rawThinkContent.slice(12, -9);
+        // Remove <think> and </think>
+        const thinkContent = rawThinkContent.slice(7, -8);
 
         const thinkTemp = document.getElementById('think-block-template');
         if (!thinkTemp) {

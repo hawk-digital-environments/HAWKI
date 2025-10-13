@@ -41,9 +41,11 @@
             <button id="prompt-imprv" class="btn-xs" onclick="requestPromptImprovement(this, 'message')">
                 <x-icon name="vector"/>
             </button>
+            @if($activeModule === 'chat')
             <button id="delete-btn" class="btn-xs" onclick="deleteMessage(this);">
                 <x-icon name="trash"/>
             </button>
+            @endif
         </div>
         <div class="edit-bar-section">
             <button id="confirm-btn" class="btn-xs" onclick="confirmEditMessage(this);">

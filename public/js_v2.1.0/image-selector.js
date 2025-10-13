@@ -162,7 +162,6 @@ function saveCroppedImage() {
                     console.error('Failed to get cropped blob');
                     return;
                 }
-                console.log(blob);
                 // If you want a File (with a name):
                 // let file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
 

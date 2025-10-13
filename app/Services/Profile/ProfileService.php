@@ -55,6 +55,10 @@ class ProfileService{
                                         'profile_avatars',
                                         false);
         if ($response) {
+            if($user->avatar_id != null){
+                $avatarStorage->delete($user->avatar_id, 'profile_avatars');
+            }
+
             $user->update(['avatar_id' => $uuid]);
             return $avatarStorage->getUrl($uuid, 'profile_avatars');
         } else {

@@ -14,11 +14,19 @@ function switchSlide(targetIndex) {
         }
 
         target.style.display = "flex";
+        const backBtn = document.querySelector('.slide-back-btn');
+
         if(targetIndex > 1){
-            document.querySelector('.slide-back-btn').style.opacity = "1";
+            backBtn.style.display = "flex";
+            setTimeout(() => {
+                backBtn.style.opacity = "1";
+            }, 20);
         }
         else{
-            document.querySelector('.slide-back-btn').style.opacity = "0";
+            backBtn.style.opacity = "0";
+            setTimeout( () => {
+                backBtn.style.display = "none";
+            }, 500)
         }
 
         // Add a small delay before changing the opacity to ensure the display change has been processed
@@ -421,8 +429,12 @@ async function extractPasskey(){
 
         if(verifyPasskey(passkey)){
             setPassKey(passkey);
-            switchSlide(3);
+            switchSlide(4);
             document.querySelector('#passkey-field').innerText = passkey;
+            setTimeout(()=>{
+                document.querySelector('.slide-back-btn').remove();
+            }, 300)
+
         }
         else{
             msg.innerText = "Failed to verify passkey";

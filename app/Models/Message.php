@@ -71,7 +71,7 @@ class Message extends Model
                 'username' => $member->user->username,
                 'name' => $member->user->name,
                 'isRemoved' => $member->isRemoved,
-                'avatar_url' =>!empty($user->avatar_id)
+                'avatar_url' =>!empty($member->user->avatar_id)
                                 ? $avatarStorage->getUrl($member->user->avatar_id, 'profile_avatars')
                                 : null,
             ],
