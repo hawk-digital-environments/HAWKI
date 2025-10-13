@@ -22,7 +22,6 @@ class SyncUserEmployeetypes extends Command
         if (!$username && !$syncAll) {
             $this->error('Please provide a username or use --all flag');
             $this->info('Usage:');
-            $this->info('  php artisan user:sync-employeetypes gz488');
             $this->info('  php artisan user:sync-employeetypes --all');
             return 1;
         }
