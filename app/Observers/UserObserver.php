@@ -67,12 +67,17 @@ class UserObserver
                 return;
             }
 
-            // Map employeetype to role slug
-            $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype);
+            // Map employeetype to role slug (this also creates the employeetype entry in DB)
+            $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype, $user->auth_type ?? 'LDAP');
 
+            // If no mapping exists, don't assign any role - admin must configure mapping first
             if (! $requiredRoleSlug) {
-                Log::warning("Unknown employeetype for role mapping: {$user->employeetype} for user {$user->id}");
-
+                Log::info("No role mapping configured for employeetype '{$user->employeetype}' - skipping role assignment. Admin can configure mapping in Role Assignment Screen.", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'employeetype' => $user->employeetype,
+                    'auth_type' => $user->auth_type ?? 'LDAP',
+                ]);
                 return;
             }
 
@@ -88,7 +93,13 @@ class UserObserver
             // Add the required role if not already present (never remove any roles)
             if (! $user->roles()->where('roles.id', $requiredRole->id)->exists()) {
                 $user->roles()->attach($requiredRole->id);
-                // Note: Role assignment is logged in AuthenticationController during registration
+                
+                Log::info("Role assigned to user via employeetype mapping", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'employeetype' => $user->employeetype,
+                    'assigned_role' => $requiredRoleSlug,
+                ]);
             }
 
         } catch (\Exception $e) {
@@ -110,30 +121,57 @@ class UserObserver
     /**
      * Map employeetype values to Orchid role slugs using the EmployeetypeMappingService
      * This allows for automatic discovery and mapping of new employeetypes
+     * 
+     * @param string $employeetype Raw employeetype value from auth system
+     * @param string $authMethod Authentication method (LDAP, OIDC, Shibboleth)
+     * @return string|null Role slug or null if no mapping exists
      */
-    private function mapEmployeeTypeToRoleSlug(string $employeetype): ?string
+    private function mapEmployeeTypeToRoleSlug(string $employeetype, string $authMethod = 'LDAP'): ?string
     {
         try {
-            // Determine auth method from config
-            $authMethod = config('auth.authentication_method', 'LDAP');
-            
             // Resolve EmployeetypeMappingService from container
             $mappingService = app(EmployeetypeMappingService::class);
             
             // Use EmployeetypeMappingService to map employeetype to role
+            // This will automatically create an employeetype entry in the database if it doesn't exist
             $roleSlug = $mappingService->mapEmployeetypeToRole($employeetype, $authMethod);
             
-            // The service returns 'guest' as fallback, but we want null for unknown employeetypes
-            // to trigger appropriate logging in the caller
+            // Check if this is the fallback 'guest' role (meaning no real mapping exists)
             if ($roleSlug === 'guest') {
-                Log::info("Employeetype '{$employeetype}' mapped to fallback 'guest' role. Check Role Assignment Screen to configure proper mapping.");
-                return $roleSlug;
+                // Check if there's an actual mapping to guest role or if it's just the fallback
+                $employeetypeEntry = \App\Models\Employeetype::where('raw_value', $employeetype)
+                    ->where('auth_method', $authMethod)
+                    ->first();
+                
+                if ($employeetypeEntry) {
+                    $primaryRole = $employeetypeEntry->primaryRoleAssignment();
+                    
+                    // If there's no actual role assignment, return null (no mapping configured)
+                    if (!$primaryRole || !$primaryRole->role) {
+                        Log::info("Employeetype '{$employeetype}' (auth: {$authMethod}) has no role mapping configured - no role will be assigned.", [
+                            'employeetype' => $employeetype,
+                            'auth_method' => $authMethod,
+                            'employeetype_entry_id' => $employeetypeEntry->id,
+                        ]);
+                        return null;
+                    }
+                    
+                    // There is an actual mapping to guest role
+                    return $primaryRole->role->slug;
+                }
             }
             
             return $roleSlug;
             
         } catch (\Exception $e) {
-            Log::error("Failed to map employeetype '{$employeetype}' to role: " . $e->getMessage());
+            Log::error("Failed to map employeetype '{$employeetype}' to role: " . $e->getMessage(), [
+                'employeetype' => $employeetype,
+                'auth_method' => $authMethod,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // Return null instead of fallback - no role should be assigned on error
             return null;
         }
     }
