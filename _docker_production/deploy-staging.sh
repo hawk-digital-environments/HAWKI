@@ -117,8 +117,8 @@ if [ -d "./storage" ]; then
             chown -R ${STORAGE_UID}:${STORAGE_GID} ./storage 2>/dev/null || true
         fi
         
-        chmod -R 755 ./storage 2>/dev/null || true
-        find ./storage -type f -exec chmod 644 {} \; 2>/dev/null || true
+        chmod -R 775 ./storage 2>/dev/null || true
+        find ./storage -type f -exec chmod 664 {} \; 2>/dev/null || true
         echo "✅ Storage permissions set (UID:${STORAGE_UID}, GID:${STORAGE_GID})"
         echo ""
     else
@@ -210,6 +210,14 @@ docker compose -f _docker_production/docker-compose.staging.yml exec app bash -c
     php artisan config:cache && \
     php artisan view:cache && \
     php artisan optimize:clear"
+echo ""
+
+# Fix storage permissions inside container
+echo "🔒 Setting storage permissions inside container..."
+docker compose -f _docker_production/docker-compose.staging.yml exec app bash -c "\
+    chmod -R 775 storage && \
+    chmod -R 775 storage/logs && \
+    chown -R www-data:www-data storage"
 echo ""
 
 # Generate git info
