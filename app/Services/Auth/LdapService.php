@@ -92,7 +92,10 @@ class LdapService
             }
 
             if($debug_mode){
-                Log::info("LDAP LOGIN: user info: " . json_encode($userInfo));
+                Log::info("LDAP LOGIN: {$username}", [
+                    'ldap_search_results' => $info,
+                    'user_info' => $userInfo
+                ]);
             }
             return $userInfo;
         } catch (\Exception $e) {
