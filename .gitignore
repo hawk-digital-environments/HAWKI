@@ -43,3 +43,4 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+whisper_api/venv/
