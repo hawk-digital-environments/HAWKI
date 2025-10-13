@@ -14,7 +14,6 @@ function switchSlide(targetIndex) {
         }
 
         target.style.display = "flex";
-        
         const backBtn = document.querySelector('.slide-back-btn');
 
         if(targetIndex > 1){
@@ -431,7 +430,7 @@ async function extractPasskey(){
 
         if(verifyPasskey(passkey)){
             setPassKey(passkey);
-            switchSlide(3);
+            switchSlide(4);
             document.querySelector('#passkey-field').innerText = passkey;
             setTimeout(()=>{
                 document.querySelector('.slide-back-btn').remove();

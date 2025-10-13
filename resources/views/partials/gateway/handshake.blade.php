@@ -54,22 +54,13 @@
             </div>
 
             <p class="red-text" id="backup-alert-message"></p>
-            <button onclick="switchSlide(4)" class="btn-md">{{ $translation["HS-ForgottenBackup"] }}</button>
+            <button onclick="switchSlide(3)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
 
         </div>
 
         <div class="slide" data-index="3">
-            <h2>{{ $translation["HS-PasskeyIs"] }}</h2>
-            <h3 id="passkey-field" class="demo-hash"></h3>
-            <div class="nav-buttons">
-                <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
-
-            </div>
-        </div>
-
-        <div class="slide" data-index="4">
-            <h2>{{ $translation["HS-LostBothT"] }}</h2>
-            <h3>{{ $translation["HS-LostBothB"] }}</h3>
+            <h2>{{ $translation["HS_LostBothT"] }}</h2>
+            <h3>{{ $translation["HS_LostBothB"] }}</h3>
             <div class="nav-buttons">
                 <button onclick="requestProfileReset()" class="btn-lg-fill align-end">{{ $translation["HS-ResetProfile"] }}</button>
             </div>
@@ -170,6 +161,17 @@
             </div>
 
         </div>
+
+
+        <div class="slide" data-index="4">
+            <h2>{{ $translation["HS_PasskeyIs"] }}</h2>
+            <h3 id="passkey-field" class="demo-hash"></h3>
+            <div class="nav-buttons">
+                <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
+            </div>
+        </div>
+
+
 
 
     </div>
