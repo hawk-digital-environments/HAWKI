@@ -143,9 +143,9 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     libwebp-dev \
     # Install fcgi for healthcheck
     libfcgi-bin \
-    # LDAP dependencies
-    libldap2-dev \
-    libldap2 \
+    # LDAP dependencies for Debian Bookworm
+    libldap-dev \
+    libldap-2.5-0 \
     libldap-common \
     && apt-get clean
 
