@@ -79,16 +79,16 @@ class LdapService
             // Fetch user attributes
             $info = ldap_get_entries($ldapConn, $sr);
             
-            // Clean and prepare info for logging (before closing connection)
-            $cleanInfo = [];
+            // Extract raw LDAP attributes for logging
+            $rawLdapAttributes = [];
             if (isset($info[0]) && is_array($info[0])) {
                 foreach ($info[0] as $key => $value) {
                     // Skip numeric keys and 'count' entries
                     if (!is_numeric($key) && $key !== 'count') {
                         if (is_array($value) && isset($value[0])) {
-                            $cleanInfo[$key] = $value[0];
+                            $rawLdapAttributes[$key] = $value[0];
                         } else {
-                            $cleanInfo[$key] = $value;
+                            $rawLdapAttributes[$key] = $value;
                         }
                     }
                 }
@@ -107,15 +107,9 @@ class LdapService
                 $userInfo['name'] = ($parts[1] ?? '') . ' ' . ($parts[0] ?? '');
             }
 
-            if($debug_mode){
-                Log::info("LDAP authentication successful: {$username}", [
-                    'ldap_attributes' => $cleanInfo,
-                    'mapped_user_info' => $userInfo,
-                    'username' => $username,
-                    'user_dn' => $userDn ?? 'unknown',
-                    'timestamp' => now()->toISOString(),
-                ]);
-            }
+            // Add raw LDAP attributes to userInfo for logging in AuthenticationController
+            $userInfo['_raw_ldap_attributes'] = $rawLdapAttributes;
+
             return $userInfo;
         } catch (\Exception $e) {
             Log::error('Unexpected LDAP exception during authentication', [

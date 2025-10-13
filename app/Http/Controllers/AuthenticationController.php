@@ -82,7 +82,13 @@ class AuthenticationController extends Controller
             ]);
         }
 
-        Log::info('LOGIN: '.$authenticatedUserInfo['username']);
+        Log::info("User logged in via {$this->authMethod}: {$authenticatedUserInfo['username']}", [
+            'username' => $authenticatedUserInfo['username'],
+            'auth_method' => $this->authMethod,
+            'user_info' => $authenticatedUserInfo,
+            'timestamp' => now()->toISOString(),
+        ]);
+        
         $username = $authenticatedUserInfo['username'];
         $user = User::where('username', $username)->first();
 
