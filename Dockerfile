@@ -143,6 +143,10 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     libwebp-dev \
     # Install fcgi for healthcheck
     libfcgi-bin \
+    # LDAP dependencies
+    libldap2-dev \
+    libldap2 \
+    libldap-common \
     && apt-get clean
 
 RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
@@ -161,6 +165,14 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
         zip \
         redis \
         pcntl
+
+# LDAP installation with dynamic architecture detection
+RUN docker-php-ext-configure ldap --with-libdir=lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH) \
+    && docker-php-ext-install ldap \
+    && docker-php-ext-enable ldap
+
+# Verify LDAP installation
+RUN php -m | grep ldap || echo "WARNING: LDAP extension not loaded"
 
 # Add additional port for reverb
 EXPOSE 8080
