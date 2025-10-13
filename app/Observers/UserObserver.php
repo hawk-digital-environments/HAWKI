@@ -60,15 +60,23 @@ class UserObserver
                 return;
             }
 
-            // Skip if user is not approved
+            // IMPORTANT: Create employeetype entry in DB BEFORE checking approval
+            // This ensures all employeetypes are discoverable in the Role Assignment Screen
+            $authMethod = $user->auth_type ?? 'LDAP';
+            $this->ensureEmployeetypeExists($user->employeetype, $authMethod);
+
+            // Skip role assignment if user is not approved (but employeetype entry was created above)
             if (! $user->approval) {
-                Log::info("Skipping role sync for unapproved user: {$user->username} (ID: {$user->id})");
+                Log::info("User not approved - employeetype entry created but no role assigned: {$user->username} (ID: {$user->id})", [
+                    'employeetype' => $user->employeetype,
+                    'auth_method' => $authMethod,
+                ]);
 
                 return;
             }
 
-            // Map employeetype to role slug (this also creates the employeetype entry in DB)
-            $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype, $user->auth_type ?? 'LDAP');
+            // Map employeetype to role slug (employeetype entry already exists)
+            $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype, $authMethod);
 
             // If no mapping exists, don't assign any role - admin must configure mapping first
             if (! $requiredRoleSlug) {
@@ -76,7 +84,7 @@ class UserObserver
                     'user_id' => $user->id,
                     'username' => $user->username,
                     'employeetype' => $user->employeetype,
-                    'auth_type' => $user->auth_type ?? 'LDAP',
+                    'auth_type' => $authMethod,
                 ]);
                 return;
             }
@@ -104,6 +112,32 @@ class UserObserver
 
         } catch (\Exception $e) {
             Log::error("Failed to sync Orchid role for user {$user->id}: ".$e->getMessage());
+        }
+    }
+
+    /**
+     * Ensure employeetype entry exists in database
+     * This is called early in the sync process to guarantee discovery
+     */
+    private function ensureEmployeetypeExists(string $employeetype, string $authMethod): void
+    {
+        try {
+            $mappingService = app(EmployeetypeMappingService::class);
+            
+            // This will create the employeetype entry if it doesn't exist
+            // We don't care about the return value here, just that the entry exists
+            $mappingService->mapEmployeetypeToRole($employeetype, $authMethod);
+            
+            Log::debug("Ensured employeetype entry exists", [
+                'employeetype' => $employeetype,
+                'auth_method' => $authMethod,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to ensure employeetype entry exists", [
+                'employeetype' => $employeetype,
+                'auth_method' => $authMethod,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
