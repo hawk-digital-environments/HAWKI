@@ -78,6 +78,22 @@ class LdapService
 
             // Fetch user attributes
             $info = ldap_get_entries($ldapConn, $sr);
+            
+            // Clean and prepare info for logging (before closing connection)
+            $cleanInfo = [];
+            if (isset($info[0]) && is_array($info[0])) {
+                foreach ($info[0] as $key => $value) {
+                    // Skip numeric keys and 'count' entries
+                    if (!is_numeric($key) && $key !== 'count') {
+                        if (is_array($value) && isset($value[0])) {
+                            $cleanInfo[$key] = $value[0];
+                        } else {
+                            $cleanInfo[$key] = $value;
+                        }
+                    }
+                }
+            }
+            
             ldap_close($ldapConn);
 
             $userInfo = [];
@@ -92,9 +108,12 @@ class LdapService
             }
 
             if($debug_mode){
-                Log::info("LDAP LOGIN: {$username}", [
-                    'ldap_search_results' => $info,
-                    'user_info' => $userInfo
+                Log::info("LDAP authentication successful: {$username}", [
+                    'ldap_attributes' => $cleanInfo,
+                    'mapped_user_info' => $userInfo,
+                    'username' => $username,
+                    'user_dn' => $userDn ?? 'unknown',
+                    'timestamp' => now()->toISOString(),
                 ]);
             }
             return $userInfo;
