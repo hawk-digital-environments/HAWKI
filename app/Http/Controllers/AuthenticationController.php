@@ -273,6 +273,14 @@ class AuthenticationController extends Controller
 
             $avatarId = $validatedData['avatar_id'] ?? '';
 
+            // Determine auth type from authentication method
+            $authType = match($this->authMethod) {
+                'LDAP' => 'ldap',
+                'OIDC' => 'oidc',
+                'Shibboleth' => 'shibboleth',
+                default => 'ldap',
+            };
+
             // Prepare user data for update/creation
             $userData = [
                 'name' => $name,
@@ -281,12 +289,20 @@ class AuthenticationController extends Controller
                 'publicKey' => $validatedData['publicKey'],
                 'avatar_id' => $avatarId,
                 'isRemoved' => false,
+                'auth_type' => $authType,
+                // External auth users (LDAP/OIDC/Shibboleth) are auto-approved
+                // Local users respect the local_needapproval config
+                'approval' => true, // External auth users are always approved after completing registration
             ];
 
             // Handle password update for local users
             if ($isFirstLoginLocalUser && isset($validatedData['newPassword'])) {
                 $userData['password'] = Hash::make($validatedData['newPassword']);
                 $userData['reset_pw'] = false; // Password has been reset
+                
+                // Local users may need approval based on config
+                $localNeedsApproval = config('auth.local_needapproval', true);
+                $userData['approval'] = !$localNeedsApproval; // Invert: if needs approval, set to false
             }
 
             // Update or create the local user
