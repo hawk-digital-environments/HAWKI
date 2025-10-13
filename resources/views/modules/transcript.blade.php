@@ -1,6 +1,37 @@
 @extends('layouts.home')
 @section('content')
 
+<style>
+	/* Zeigt Warte-Cursor an, wenn Klasse "loading" auf <body> gesetzt wird */
+	.cursor-wait {
+		cursor: wait !important;
+	}
+
+	.spinner {
+	width: 32px;
+	height: 32px;
+	border: 4px solid rgba(0,0,0,0.2);
+	border-top-color: #000;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+	margin: auto;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
+
+#drop-zone {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
+	min-height: 100px;
+	border: 2px dashed #ccc;
+	cursor: pointer;
+}
+</style>
+
 
 <div class="main-panel-grid">
 	<div class="dy-sidebar expanded" id="transcript-sidebar">
@@ -117,7 +148,10 @@
 				
 						<p class="transcript-info">Bitte ziehen Sie eine Datei in das Feld oder klicken Sie darauf.</p>
 						<div class="drop-zone" id="drop-zone">
-							Drag-und-Drop
+							<span id="drop-text">Drag-und-Drop</span>
+							<div id="loading-spinner" style="display: none;">
+								<div class="spinner"></div>
+							</div>
 						</div>
 						<form id="transcript-upload-form" enctype="multipart/form-data">
 							<input type="file" name="audio_file" id="audio_file" style="display: none;">
@@ -127,9 +161,21 @@
 							📎 <span id="selected-file-name">Keine Datei ausgewählt</span>
 						</div>
 					</div>
-					
 				</div>
-			
+				
+					<div id="transcription-output" style="display: none; margin-top: 20px; position: relative;">
+ 						 
+
+				  <!-- Kopierbutton oben rechts -->
+ 						 <button id="copy-transcript-btn" class="copy-button-inline" title="In Zwischenablage kopieren">Kopieren</button>
+
+					<!-- Textcontainer -->
+						<div class="transcription-box" id="transcription-result-container">
+							<div id="transcription-result"></div>
+						</div>
+					</div>
+
+				
 				<!-- UI Live Aufnahme -->
 				<div id="transcript-live-ui" style="display: none;">
     <div class="transcript-section live-transcript-ui">
@@ -239,23 +285,26 @@ audioElement.addEventListener('loadedmetadata', () => {
 });
 });
 	document.getElementById('start-upload-btn').addEventListener('click', function () {
-	if (!selectedAudioFile) {
+		if (!selectedAudioFile) {
 		alert("Bitte wähle zuerst eine Datei aus.");
 		return;
-	}
+		}
+		document.getElementById('drop-text').style.display = 'none';
+		document.getElementById('loading-spinner').style.display = 'block';
+		document.body.classList.add('cursor-wait');
 
-	const formData = new FormData();
-	formData.append('audio_file', selectedAudioFile);
+		const formData = new FormData();
+		formData.append('file', selectedAudioFile);
 
-	formData.append('file_path', document.getElementById('file-path').value);
-	formData.append('start_time', document.getElementById('start-time').value);
-	formData.append('end_time', document.getElementById('end-time').value);
-	formData.append('language', document.getElementById('language-select').value);
-	formData.append('api', document.getElementById('api-select').value);
-	formData.append('speaker_count', document.getElementById('speaker-count').value);
+		/* Erstmal ignorieren
+		formData.append('file_path', document.getElementById('file-path').value);
+		formData.append('start_time', document.getElementById('start-time').value);
+		formData.append('end_time', document.getElementById('end-time').value);
+		formData.append('language', document.getElementById('language-select').value);
+		formData.append('api', document.getElementById('api-select').value);
+		formData.append('speaker_count', document.getElementById('speaker-count').value); */
 
-	fetch('/transcript/upload', {
-		method: 'POST',
+		fetch('http://localhost:8001/transcribe', {		method: 'POST',
 		headers: {
 			'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
 		},
@@ -263,10 +312,47 @@ audioElement.addEventListener('loadedmetadata', () => {
 	})
 	.then(response => response.json())
 	.then(data => {
-		console.log('✅ Upload abgeschlossen:', data);
-		alert("Datei erfolgreich hochgeladen!");
-	})
+		  document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('drop-text').style.display = 'block';
+		document.body.classList.remove('cursor-wait');
+	console.log('✅ Upload abgeschlossen:', JSON.stringify(data, null, 2));
+
+	if (data.text) {
+		// Zeige die Transkription im DOM an
+		const outputDiv = document.getElementById('transcription-result');
+
+		// Alle Eingabeflächen ausblenden
+		document.getElementById('transcript-file-ui').style.display = 'none';
+
+		outputDiv.innerText = data.text;
+
+		outputDiv.innerText = data.text;
+
+		// Blende den gesamten Container sichtbar ein
+		document.getElementById('drop-zone').style.display = 'none';
+		document.getElementById('selected-file-preview').style.display = 'none';
+		// Zeige Transkript und verstecke Drop-Zone + Dateinamen
+		document.getElementById('transcription-output').style.display = 'flex';
+		document.getElementById('transcript-file-ui').style.display = 'none';
+		document.getElementById('selected-file-preview').style.display = 'none';
+		// Zeige Kopier-Button
+		
+		document.getElementById('copy-transcript-btn').onclick = function () {
+			const text = document.getElementById('transcription-result').innerText;
+			navigator.clipboard.writeText(text)
+		.then(() => alert('Transkription wurde in die Zwischenablage kopiert!'))
+		.catch(err => alert('Fehler beim Kopieren: ' + err));
+		};
+			} else {
+		alert("Keine Transkription erhalten.");
+			}
+})
 	.catch(error => {
+
+		document.getElementById('loading-spinner').style.display = 'none';
+		document.getElementById('drop-text').style.display = 'block';
+		document.body.classList.remove('cursor-wait');
+
 		console.error('❌ Upload fehlgeschlagen:', error);
 		alert("Fehler beim Hochladen!");
 	});
@@ -296,18 +382,41 @@ function showTranscriptMode(mode) {
 	}
 }
 function showTranscriptChoice() {
-	document.getElementById('transcript-choice').style.display = 'block';
-	document.getElementById('transcript-file-ui').style.display = 'none';
-	document.getElementById('transcript-live-ui').style.display = 'none';
-	document.getElementById('file-transcription-options').style.display = 'none';
+    // Auswahl anzeigen
+    document.getElementById('transcript-choice').style.display = 'block';
 
-	// Pfeil ausblenden
-	document.getElementById('back-button-wrapper').style.display = 'none';
+    // Alles andere ausblenden
+    document.getElementById('transcript-file-ui').style.display = 'none';
+    document.getElementById('transcript-live-ui').style.display = 'none';
+    document.getElementById('file-transcription-options').style.display = 'none';
+    document.getElementById('start-upload-wrapper').style.display = 'none';
+    document.getElementById('speaker-recognition-wrapper').style.display = 'none';
+    document.getElementById('back-button-wrapper').style.display = 'none';
 
-	document.getElementById('start-upload-wrapper').style.display = 'none';
+    // Transkriptionsergebnis zurücksetzen
+    const outputDiv = document.getElementById('transcription-output');
+    const resultDiv = document.getElementById('transcription-result');
+    const copyBtn = document.getElementById('copy-transcript-btn');
+    
+    if (outputDiv) outputDiv.style.display = 'none';
+    if (resultDiv) resultDiv.innerText = '';
+    if (copyBtn) copyBtn.style.display = 'none';
 
-	document.getElementById('speaker-recognition-wrapper').style.display = 'none';
+    // 🧹 Drop-Zone verstecken
+    const dropZone = document.getElementById('drop-zone');
+  
+    // Datei-Vorschau und Name zurücksetzen
+    const filePreview = document.getElementById('selected-file-preview');
+    if (filePreview) filePreview.style.display = 'none';
+    const fileNameSpan = document.getElementById('selected-file-name');
+    if (fileNameSpan) fileNameSpan.textContent = 'Keine Datei ausgewählt';
 
+    // Zustand zurücksetzen
+    selectedAudioFile = null;
+
+	// Wiederherstellen des Drop-Felds
+const transcriptFileUI = document.getElementById('transcript-file-ui');
+if (transcriptFileUI) transcriptFileUI.style.display = 'block';
 }
 
 /*window.addEventListener('DOMContentLoaded', async function (){

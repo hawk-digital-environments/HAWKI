@@ -14,7 +14,8 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TranscriptController;
+use App\Http\Controllers\TranscriptionController;
+
 
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\AdminAccess;
@@ -22,6 +23,12 @@ use App\Http\Middleware\EditorAccess;
 use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\SessionExpiryChecker;
 
+// Transkriptions-Test Route
+Route::get('/transcribe/test', function() {
+    return view('transcription.test');
+});
+
+Route::post('/transcribe/test', [TranscriptionController::class, 'transcribe']);
 
 Route::middleware('prevent_back')->group(function () {
 
@@ -67,7 +74,7 @@ Route::middleware('prevent_back')->group(function () {
 
         Route::get('/transcript', [HomeController::class, 'show']);
         Route::get('/transcript/{slug?}' , [HomeController::class, 'show']);
-        Route::post('/transcript/upload', [TranscriptController::class, 'upload']);
+        Route::post('/transcript/upload', [TranscriptionController::class, 'transcribe']);
     
         
         Route::get('/req/conv/{slug?}', [AiConvController::class, 'loadConv']);
@@ -128,14 +135,14 @@ Route::middleware('prevent_back')->group(function () {
     
         // AI RELATED ROUTES
         Route::post('/req/streamAI', [StreamController::class, 'handleAiConnectionRequest']);
-    
         Route::get('/req/search', [SearchController::class, 'search']);
-    
-  
-    
-    
+        
+        // TRANSCRIPTION ROUTES
+        Route::post('/req/transcribe', [TranscriptionController::class, 'transcribe']);
+        Route::get('/req/transcription-status/{jobId}', [TranscriptionController::class, 'getStatus']);
     });
-      // NAVIGATION ROUTES
+    
+    // NAVIGATION ROUTES
       Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
 
 

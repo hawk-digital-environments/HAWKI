@@ -9,27 +9,21 @@ return [
         'openai' => [
             'id' => 'openai',
             'active' => true,
-            'api_key' => '',
-            'api_url' => 'https://api.openai.com/v1/chat/completions',
-            'ping_url' => 'https://api.openai.com/v1/models',
-            'models' => [
-                [
-                    'id' => 'gpt-4o',
-                    'label' => 'OpenAI GPT 4o',
-                    'streamable' => true,
-                ],
-                [
-                    'id' => 'gpt-4o-mini',
-                    'label' => 'OpenAI GPT 4o mini',
-                    'streamable' => true,
-                ],
-                [
-                    'id' => 'o1-mini',
-                    'label' => 'OpenAI O1 mini',
-                    'streamable' => false,
-                ]
-                
-            ]
+            return [
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY', ''),
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'model' => env('OPENAI_MODEL', 'gpt-3.5-turbo'),
+        'temperature' => env('OPENAI_TEMPERATURE', 0.9),
+        'max_tokens' => env('OPENAI_MAX_TOKENS', 500),
+        'frequency_penalty' => env('OPENAI_FREQUENCY_PENALTY', 0),
+        'presence_penalty' => env('OPENAI_PRESENCE_PENALTY', 0.6),
+    ],
+    'whisper' => [
+        'python_path' => env('WHISPER_PYTHON_PATH', '/usr/bin/python3'),
+        'model' => env('WHISPER_MODEL', 'base'),
+        'device' => env('WHISPER_DEVICE', 'cpu'),
+    ],
         ],
 
         'gwdg' => [

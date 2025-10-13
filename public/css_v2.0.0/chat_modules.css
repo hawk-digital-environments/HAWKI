@@ -1245,3 +1245,84 @@
     bottom: 110%;
     right: 0;
 } */
+.transcription-scrollbox {
+    max-height: 300px; /* oder 400px je nach Geschmack */
+    overflow-y: auto;
+    white-space: pre-wrap;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+.transcription-box {
+    white-space: pre-wrap;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.copy-button-inline {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 18px;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.transcription-box {
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 5px;
+  max-height: 300px;       /* Höhe begrenzen */
+  overflow-y: auto;        /* Scrollbar wenn nötig */
+  white-space: normal;     /* ZEILENUMBRÜCHE erlauben */
+  word-wrap: break-word;   /* Lange Wörter umbrechen */
+  position: relative;
+}
+
+.copy-button-inline {
+  position: absolute;
+  top: 35px;               /* unter der Überschrift */
+  right: 10px;
+  font-size: 18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.transcription-box {
+  background: #ffffff;
+  color: #222;
+  padding: 40px;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+
+  max-height: 500px;
+  overflow-y: auto;
+
+  /* WORD-Dokument-Look */
+  max-width: 800px;        /* Breite begrenzen */
+  margin: 0 auto;          /* Zentrieren */
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.6;
+  font-family: 'Georgia', serif;
+  font-size: 1rem;
+}
+
+.copy-button-inline {
+  position: absolute;
+  top: 40px;
+  right: calc(50% - 400px + 10px); /* exakt an rechte Kante der Box */
+  font-size: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
