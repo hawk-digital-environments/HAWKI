@@ -2,63 +2,68 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\AiConvController;
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\LanguageController;
-use App\Http\Controllers\InvitationController;
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-
-use App\Services\AI\ModelUtilityService;
 use App\Models\User;
+use App\Services\AI\AiService;
+use App\Services\Announcements\AnnouncementService;
+use App\Services\Chat\AiConv\AiConvService;
+use App\Services\Chat\Room\RoomService;
+use App\Services\FileConverter\FileConverterFactory;
+use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\FileStorageService;
+use App\Services\System\SettingsService;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 
+// use Illuminate\Support\Facades\View;
 
 class HomeController extends Controller
 {
-    protected $languageController;
 
     // Inject LanguageController instance
-    public function __construct(LanguageController $languageController, ModelUtilityService $utilities)
+    public function __construct(
+        private LanguageController $languageController,
+        private AiService          $aiService
+    )
     {
-        $this->languageController = $languageController;
-        $this->utilities = $utilities;
     }
 
     /// Redirects user to Home Layout
     /// Home layout can be chat, groupchat, or any other main module
     /// Propper rendering attributes will be send accordingly to the front end
-    public function show(Request $request, $slug = null){
-
-        $userProfile = Auth::user();
+    public function index(
+        Request              $request,
+        AvatarStorageService $avatarStorage,
+        AnnouncementService  $announcementService,
+                             $slug = null
+    ): View
+    {
+        $user = Auth::user();
 
 
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsController())->initialize();
+        $settingsPanel = (new SettingsService())->render();
+
 
         // get the first part of the path if there's a slug.
         $requestModule = explode('/', $request->path())[0];
 
-        $convController = new AiConvController();
-        $convs = $convController->getUserConvs(request());
+        $avatarUrl = !empty($user->avatar_id)
+            ? $avatarStorage->getUrl($user->avatar_id, 'profile_avatars')
+            : null;
+        $hawkiAvatarUrl = $avatarStorage->getUrl(User::find(1)->avatar_id, 'profile_avatars');
 
-        $roomController = new RoomController();
-        $rooms = $roomController->getUserRooms(request());
-
-        $avatarUrl = $userProfile->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $userProfile->avatar_id) : null;
-        $hawkiAvatarUrl = Storage::disk('public')->url('profile_avatars/' . User::find(1)->avatar_id);
         $userData = [
             'avatar_url'=> $avatarUrl,
             'hawki_avatar_url'=>$hawkiAvatarUrl,
-            'convs' => $convs,
-            'rooms' => $rooms,
+            'convs' => $user->conversations()->with('messages')->get(),
+            'rooms' => $user->rooms()->with('messages')->get(),
+            'hawki_username' => User::find(1)->username,
         ];
-    
 
         $activeModule = $requestModule;
 
@@ -68,65 +73,82 @@ class HomeController extends Controller
         }
         Session::put('last-route', 'home');
 
+        $models = $this->aiService->getAvailableModels()->toArray();
+        $webSearchAvailable = false;
 
-        $models = $this->utilities->getModels();
+        foreach ($models['models'] as $model) {
+            if (!empty($model['tools']['web_search'])) {
+                $webSearchAvailable = true;
+                break;
+            }
+        }
+
+        $announcements = $announcementService->getUserAnnouncements();
+
+        $converterActive = FileConverterFactory::converterActive();
+
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('modules.' . $requestModule, 
-                    compact('translation', 
+        return view('modules.' . $requestModule,
+                    compact('translation',
                             'settingsPanel',
-                            'slug', 
-                            'userProfile', 
+                            'slug',
+                            'user',
                             'userData',
                             'activeModule',
                             'activeOverlay',
-                            'models'));
+                            'models',
+                            'webSearchAvailable',
+                            'announcements',
+                            'converterActive',
+                        ));
     }
 
-    public function print($module, $slug){
+    public function print($module, $slug, AiConvService $aiConvService, RoomService $roomService, AvatarStorageService $avatarStorage, SettingsService $settingsService)
+    {
 
         switch($module){
-            case('chat'):
-                $controller = new AiConvController();
-                $messages = $controller->loadConv($slug);
+            case 'chat':
+                $chatData = $aiConvService->load($slug);
             break;
-            case('groupchat'):
-                $controller = new RoomController();
-                $messages = $controller->loadRoom($slug);
+            case 'groupchat':
+                $chatData = $roomService->load($slug);
             break;
             default:
                 response()->json(['error' => 'Module not valid!'], 404);
             break;
         }
 
-        $userProfile = Auth::user();
-        $avatarUrl = $userProfile->avatar_id !== '' ? Storage::disk('public')->url('profile_avatars/' . $userProfile->avatar_id) : null;
-        $hawkiAvatarUrl = Storage::disk('public')->url('profile_avatars/' . User::find(1)->avatar_id);
+        $user = Auth::user();
+        $avatarUrl = !empty($user->avatar_id)
+                    ? $avatarStorage->getUrl($user->avatar_id, 'profile_avatars')
+                    : null;
+        $hawkiAvatarUrl = $avatarStorage->getUrl(User::find(1)->avatar_id, 'profile_avatars');
+
         $userData = [
             'avatar_url'=> $avatarUrl,
             'hawki_avatar_url'=>$hawkiAvatarUrl,
         ];
 
-        
+
         $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsController())->initialize();
-        
-        $models = $this->utilities->getModels();
+        $settingsPanel = $settingsService->render();
+        $models = $this->aiService->getAvailableModels()->toArray();
 
         $activeModule = $module;
-        return view('layouts.print_template', 
-                compact('translation', 
+        return view('layouts.print_template',
+                compact('translation',
                         'settingsPanel',
-                        'messages',
+                        'chatData',
                         'activeModule',
-                        'userProfile',
+                        'user',
                         'userData',
                         'models'));
-       
+
     }
 
 
-    public function CheckSessionTimeout(){
+    public function CheckSessionTimeout(): JsonResponse{
         if ((time() - Session::get('lastActivity')) > (config('session.lifetime') * 60))
         {
             return response()->json(['expired' => true]);
@@ -139,11 +161,10 @@ class HomeController extends Controller
             ]);
         }
     }
-    
 
-    public function dataprotectionIndex(Request $request){
+
+    public function dataprotectionIndex(Request $request): View{
         $translation = $this->languageController->getTranslation();
         return view('layouts.dataprotection', compact('translation'));
     }
 }
-

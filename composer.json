@@ -1,16 +1,22 @@
 {
-    "name": "laravel/laravel",
+    "name": "hawki/hawki",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "data protection-compliant platform for generative AI in academy.",
+    "keywords": ["HAWKI2", "HAWKI", "laravel", "framework", "Generative AI", "educational"],
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "blade-ui-kit/blade-icons": "^1.8",
+        "hawk-hhg/hawki-crypto": "^0.5.3",
         "jumbojett/openid-connect-php": "^1.0",
-        "laravel/framework": "^11.0",
+        "laravel/framework": "^12.0",
         "laravel/reverb": "^1.1",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "league/flysystem-aws-s3-v3": "^3.29",
+        "league/flysystem-sftp-v3": "^3.30",
+        "league/flysystem-webdav": "^3.0",
+        "spatie/laravel-backup": "^9.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -34,6 +40,7 @@
         }
     },
     "scripts": {
+        "hawki": "php hawki",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
@@ -48,6 +55,16 @@
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
+        ],
+        "queue": [
+            "@php artisan queue:work -vv --queue=default,mails,message_broadcast"
+        ],
+        "websocket": [
+            "@php artisan reverb:start --debug"
+        ],
+        "dev": [
+            "queue",
+            "websocket"
         ]
     },
     "extra": {

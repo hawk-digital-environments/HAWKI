@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -9,12 +9,12 @@
 
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/login_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/login_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
 
-    <script src="{{ asset('js_v2.0.0/functions.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
 
     {!! $settingsPanel !!}
 
@@ -22,7 +22,7 @@
 		InitializePreDomSettings(false);
         UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
 	</script>
-    
+
 </head>
 <body>
 <div class="wrapper">
@@ -35,7 +35,7 @@
 
 
         <div class="footerPanel">
-  
+
             <button class="btn-sm" onclick="toggleSettingsPanel(true)">
                 <x-icon name="settings-icon"/>
             </button>
@@ -61,13 +61,12 @@
 </html>
 
 <script>
-    window.addEventListener('DOMContentLoaded', (event) => {
+    window.addEventListener('DOMContentLoaded', () => {
         if(window.innerWidth < 480){
             const bgVideo = document.querySelector(".image_preview_container");
             bgVideo.remove();
         }
 
-        // console.log(@json($activeOverlay));
         setTimeout(() => {
             if(@json($activeOverlay)){
                 // console.log('close overlay');
@@ -77,14 +76,14 @@
     });
 
     function onLoginKeydown(event){
-        if(event.key == "Enter"){
+        if(event.key === "Enter"){
             const username = document.getElementById('account');
             // console.log(username.value);
             if(!username.value){
                 return;
             }
             const password = document.getElementById('password');
-            if(document.activeElement != password){
+            if(document.activeElement !== password){
                 password.focus();
                 return;
             }
@@ -103,7 +102,8 @@
             const response = await fetch('/req/login-ldap', {
                 method: "POST",
                 headers: {
-                    "X-CSRF-TOKEN": csrfToken
+                    "X-CSRF-TOKEN": csrfToken,
+                    'Accept': 'application/json',
                 },
                 body: formData
             });

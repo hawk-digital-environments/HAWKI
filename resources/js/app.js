@@ -2,32 +2,51 @@ import './echo.js';
 
 
 import jQuery from 'jquery';
+import 'cropperjs/dist/cropper.min.css';
+import Cropper from 'cropperjs';
+import jsPDF from 'jspdf';
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min?url';
+import {EventBus, PDFPageView} from 'pdfjs-dist/web/pdf_viewer';
+import * as docx from 'docx';
+import * as docxPreview from 'docx-preview';
+import hljs from 'highlight.js';
+import 'katex/dist/katex.min.css';
+import katex from 'katex';
+import renderMathInElement from 'katex/contrib/auto-render/auto-render.js';
+import pako from 'pako';
+import markdownit from 'markdown-it';
+
 window.$ = jQuery;
 
 
-import 'cropperjs/dist/cropper.min.css';
-import Cropper from 'cropperjs';
 window.Cropper = Cropper;
 
 
-import jsPDF from 'jspdf';
 window.jsPDF = jsPDF;
 
-import * as docx from "docx";
+window.pdfjsLib = pdfjsLib;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
+// import { TextLayerBuilder } from 'pdfjs-dist/web/pdf_viewer';
+// window.TextLayerBuilder = TextLayerBuilder;
+window.PDFPageView = PDFPageView;
+window.EventBus = EventBus;
+
+
 window.docx = docx;
 
-import hljs from "highlight.js"
+window.docxPreview = docxPreview;
+
+
 window.hljs = hljs;
 
 
-import 'katex/dist/katex.min.css';
-import katex from 'katex';
 window.katex = katex;
-import renderMathInElement from 'katex/contrib/auto-render/auto-render.js';
 window.renderMathInElement = renderMathInElement;
 
-
-import markdownit from 'markdown-it'
+window.pako = pako;
 
 const md = markdownit({
     // Enable HTML tags in source

@@ -1,6 +1,6 @@
 <!-- settings.blade.php -->
 
-<div class="settings-modal"> 
+<div class="settings-modal">
     <div class="settings-panel">
         <div class="settings-wrapper ">
             <div class="settings-content scroll-container">
@@ -31,7 +31,7 @@
                         <div class="settings-section">
                             <h3>{{ $translation["language"] }}</h3>
                             <div class="language-selection">
-                                
+
                                 @foreach ($langs as $lang)
                                     <a id="{{$lang['id']}}_btn" class="language-btn" onclick="changeLanguage( '{{$lang['id']}}' )">{{$lang['label']}}</a>
                                 @endforeach
@@ -80,19 +80,14 @@
             </div>
 
             <div class="guideline-content">
-                <div class="content-header">
                     <div class="back-btn" onclick="ToggleSettingsContent('guideline',false)">
-                        <svg viewBox="0 0 25 25" width="50" height="50">
+                      <svg viewBox="0 0 25 25" width="50" height="50">
                             <g class="button-path-stroke-color" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M 12 8 l -4 4 l 4 4 M 16 12 H 8"/>
                             </g>
                         </svg>
                     </div>
-                    <h1>{{ $translation["Guidelines"] }}</h1>
-                </div>
-                <div class="content-text-container">
-                    {!! $translation["_Guidelines_Content"] !!}<br><br><br>
-                </div>
+                    <div id="policy-content" class="content-text-container"></div>
             </div>
 
             <div class="closeButton" onclick="toggleSettingsPanel(false)">

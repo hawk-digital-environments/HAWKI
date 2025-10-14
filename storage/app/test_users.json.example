@@ -2,8 +2,9 @@
     {
         "username": "tester",
         "password": "123",
-        "name": "tester",
-        "email": "tester@project.com",
-        "employeetype": "Tester"
+        "name": "TheTester",
+        "email": "tester@MyUni.de",
+        "employeetype": "Tester",
+        "avatar_id": ""
     }
 ]

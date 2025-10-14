@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote')->hourly();
+$backupInterval = config('backup.backup.schedule_interval');
+Schedule::command('backup:run --only-db')->$backupInterval();
+Schedule::command('check:model-status')->everyMinute();
+Schedule::command('filestorage:cleanup')->daily();

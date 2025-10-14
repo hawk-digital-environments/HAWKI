@@ -2,11 +2,6 @@
 
 namespace App\Services\Auth;
 
-use LdapRecord\Models\ActiveDirectory\User as LdapUser;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
-use Exception;
 use Illuminate\Support\Facades\Log;
 
 class LdapService
@@ -14,86 +9,111 @@ class LdapService
     public function authenticate($username, $password)
     {
         try {
-            $ldap_host = config('ldap.custom_connection.ldap_host');
-            $ldap_port = config('ldap.custom_connection.ldap_port');
-            $ldap_binddn = config('ldap.custom_connection.ldap_base_dn');
-            $ldap_bindpw = config('ldap.custom_connection.ldap_bind_pw');
-            $ldap_base = config('ldap.custom_connection.ldap_search_dn');
-            $ldap_filter = config('ldap.custom_connection.ldap_filter');
-            $ldap_attributeMap = config('ldap.custom_connection.attribute_map');
+            $debug_mode   = config('ldap.debug_mode', false);
+            $connection   = config('ldap.connections.default');
+            $host         = $connection['ldap_host'];
+            $port         = $connection['ldap_port'];
+            $baseDn       = $connection['ldap_base_dn'];
+            $bindPw       = $connection['ldap_bind_pw'];
+            $searchDn     = $connection['ldap_search_dn'];
+            $filter       = $connection['ldap_filter'];
+            $attributeMap = $connection['attribute_map'];
+            $invertName   = $connection['invert_name'] ?? false;
 
-            // Check if username or password is empty
             if (!$username || !$password) {
+                if ($debug_mode) {
+                    Log::error('LDAP: Empty username or password');
+                }
                 return false;
             }
-            
-            // bypassing certificate validation
-            ldap_set_option(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
-            // Connect to LDAP server
-            $ldapUri = $ldap_host . ':' . $ldap_port;
+
+            // bypassing certificate validation (can be adjusted per config)
+            ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
+
+            // Connect to LDAP
+            $ldapUri = $host . ':' . $port;
             $ldapConn = ldap_connect($ldapUri);
             if (!$ldapConn) {
+                Log::error("LDAP: Failed to connect to {$ldapUri}");
                 return false;
             }
 
-            // Set LDAP protocol version
+            // Set protocol version
             if (!ldap_set_option($ldapConn, LDAP_OPT_PROTOCOL_VERSION, 3)) {
-                return false;
-            }
-        
-            // Bind to LDAP server
-            if (!@ldap_bind($ldapConn, $ldap_binddn, $ldap_bindpw)) {
+                if($debug_mode) $this->logLdapError($ldapConn, 'Failed to set LDAP protocol version');
                 return false;
             }
 
-            // Search LDAP for user
-            $filter = str_replace("username", $username, $ldap_filter);
-            $sr = ldap_search($ldapConn, $ldap_base, $filter);
-            if (!$sr) {
+            // Bind with service account (baseDn + bindPw)
+            if (!@ldap_bind($ldapConn, $baseDn, $bindPw)) {
+                if($debug_mode) $this->logLdapError($ldapConn, 'Service account bind failed');
                 return false;
             }
-            
-            // Get first entry from search results
+
+            // Search for user
+            $searchFilter = str_replace("username", $username, $filter);
+            $sr = ldap_search($ldapConn, $searchDn, $searchFilter);
+            if (!$sr) {
+                if($debug_mode) $this->logLdapError($ldapConn, 'LDAP search failed');
+                return false;
+            }
+
             $entryId = ldap_first_entry($ldapConn, $sr);
             if (!$entryId) {
+                if($debug_mode) $this->logLdapError($ldapConn, 'No LDAP entries found for user');
                 return false;
             }
-            
-            // Get DN from entry
+
             $userDn = ldap_get_dn($ldapConn, $entryId);
             if (!$userDn) {
+                if($debug_mode) $this->logLdapError($ldapConn, 'Failed to retrieve DN for user');
                 return false;
             }
-            
-            // Bind with user DN and password
-            $passValid = ldap_bind($ldapConn, $userDn, $password); 
-            if (!$passValid) {
+
+            // Validate user credentials by binding with their DN + password
+            if (!@ldap_bind($ldapConn, $userDn, $password)) {
+                if($debug_mode) $this->logLdapError($ldapConn, "Invalid password for {$username}");
                 return false;
             }
+
+            // Fetch user attributes
             $info = ldap_get_entries($ldapConn, $sr);
             ldap_close($ldapConn);
 
-
             $userInfo = [];
-            foreach ($ldap_attributeMap as $appAttr => $ldapAttr) {
-                if (isset($info[0][$ldapAttr][0])) {
-                    $userInfo[$appAttr] = $info[0][$ldapAttr][0];
-                } else {
-                    $userInfo[$appAttr] = 'Unknown';
-                }
+            foreach ($attributeMap as $appAttr => $ldapAttr) {
+                $userInfo[$appAttr] = $info[0][$ldapAttr][0] ?? 'Unknown';
             }
 
-            // Example specific logic for display name
-            if (isset($userInfo['displayname'])) {
+            // Handle display name inversion (e.g., "Lastname, Firstname")
+            if (isset($userInfo['displayname']) && $invertName) {
                 $parts = explode(", ", $userInfo['displayname']);
-                $userInfo['name'] = (isset($parts[1]) ? $parts[1] : '') . " " . (isset($parts[0]) ? $parts[0] : '');
+                $userInfo['name'] = ($parts[1] ?? '') . ' ' . ($parts[0] ?? '');
+            }
+
+            if($debug_mode){
+                Log::info("LDAP LOGIN: user info: " . json_encode($userInfo));
             }
             return $userInfo;
         } catch (\Exception $e) {
-
-            Log::error('ERROR LOGIN LDAP');
-            Log::error($e);
+            Log::error('Unexpected LDAP exception during authentication', [
+                'username' => $username,
+                'message'  => $e->getMessage(),
+                'code'     => $e->getCode(),
+                'file'     => $e->getFile(),
+                'line'     => $e->getLine(),
+            ]);
             return false;
         }
+    }
+
+    /**
+     * Helper to log LDAP errors with context.
+     */
+    private function logLdapError($ldapConn, $message): void
+    {
+        $error = ldap_error($ldapConn);
+        $errno = ldap_errno($ldapConn);
+        Log::error("{$message} (Error {$errno}: {$error})");
     }
 }

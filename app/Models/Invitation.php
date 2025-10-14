@@ -23,14 +23,14 @@ class Invitation extends Model
         return $this->belongsTo(Room::class);
     }
 
-    public function user()
-    {
-        $user = User::where('username', $username)->first();
-        if($user){
-            return $user;
-        }
-        else{
-            return null;
-        }
-    }
+    // public function user()
+    // {
+    //     $user = User::where('username', $username)->first();
+    //     if($user){
+    //         return $user;
+    //     }
+    //     else{
+    //         return null;
+    //     }
+    // }
 }

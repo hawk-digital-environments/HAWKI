@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "Preserve",
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "paths": {
+      "@/*": [
+        "./core/*"
+      ]
+    }
+  }
+}

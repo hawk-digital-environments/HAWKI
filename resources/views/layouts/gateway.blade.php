@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="lightMode">
+<html class="lightMode">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
@@ -8,17 +8,19 @@
 
     <title>{{ env('APP_NAME') }}</title>
 
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/handshake_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.0.0/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/handshake_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
 
-    <script src="{{ asset('js_v2.0.0/functions.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/handshake_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.0.0/settings_functions.js') }}"></script>
-	
+    <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/handshake_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
+    @vite('resources/js/app.js')
+
 	{!! $settingsPanel !!}
-    
+
     <script>
 		SwitchDarkMode(false);
 		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');

@@ -15,6 +15,9 @@ class OidcService
 
     public function __construct()
     {
+        if(env('AUTHENTICATION_METHOD') !== 'OIDC'){
+            return;
+        }
         // Retrieve configuration settings
         $idp = config('open_id_connect.oidc_idp');
         $clientId = config('open_id_connect.oidc_client_id');

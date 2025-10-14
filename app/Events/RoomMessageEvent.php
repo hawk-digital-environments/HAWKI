@@ -15,25 +15,22 @@ class RoomMessageEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $data; 
+    public $data;
+    private $slug; // Store room_id separately
 
-    /**
-     * Create a new event instance.
-     */
     public function __construct(array $data)
     {
+        $this->slug = $data['data']['slug']; // Extract room_id before compression
         $this->data = $data;
     }
 
     public function broadcastOn(): array {
         try {
-            $slug = Room::findOrFail($this->data['messageData']['room_id'])->slug;
             return [
-                new PrivateChannel('Rooms.' . $slug), // ensure this matches your channel definition
+                new PrivateChannel('Rooms.' . $this->slug),
             ];
         } catch (\Exception $e) {
             throw $e;
         }
     }
-
 }

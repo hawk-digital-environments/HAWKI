@@ -1,0 +1,21 @@
+{
+    "name": "@bin/env",
+    "version": "2.0.0",
+    "description": "Environment Control application",
+    "type": "module",
+    "license": "Apache-2.0",
+    "scripts": {
+        "run": "tsx index.ts"
+    },
+    "dependencies": {
+        "@inquirer/prompts": "^7.4.0",
+        "@types/glob": "^8.1.0",
+        "chalk": "^5.4.1",
+        "commander": "^13.1.0",
+        "dotenv": "^16.4.7",
+        "glob": "^11.0.1",
+        "inquirer": "^12.5.0",
+        "pretty-error": "^4.0.0",
+        "tsx": "^4.19.3"
+    }
+}

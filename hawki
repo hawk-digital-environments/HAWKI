@@ -1,0 +1,105 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * HAWKI Command Line Utility
+ * Modular version - includes commands from /bin/hawki/
+ */
+
+// Include all modular command files
+require_once __DIR__ . '/bin/hawki/core.php';
+require_once __DIR__ . '/bin/hawki/system.php';
+require_once __DIR__ . '/bin/hawki/setup.php';
+require_once __DIR__ . '/bin/hawki/database.php';
+require_once __DIR__ . '/bin/hawki/development.php';
+require_once __DIR__ . '/bin/hawki/user-management.php';
+require_once __DIR__ . '/bin/hawki/announcements.php';
+require_once __DIR__ . '/bin/hawki/update.php';
+
+// Get the command argument
+$command = $argv[1] ?? 'help';
+$flags = array_slice($argv, 2);
+
+// Process the command
+switch ($command) {
+    case 'check':
+        checkDependencies();
+        break;
+    case 'init':
+    case 'initialize':
+        if(isset($flags[0]) && isset($flags[0]) === '-all'){
+            initializeAll();
+        }
+        else{
+            initialize();
+        }
+        break;
+    case 'setup':
+        setupEnv($flags);
+        break;
+    case 'setup-models':
+        setupModelProviders();
+        break;
+    case 'clear-cache':
+        clearCache();
+        break;
+    case 'migrate':
+        migrate($flags);
+        break;
+    case 'token':
+        handleTokenCommand($flags);
+        break;
+    case 'remove-user':
+        removeUser();
+        break;
+    case 'run':
+        if (isset($flags[0])) {
+            switch ($flags[0]) {
+                case '-dev':
+                    runDev();
+                    break;
+                case '-build':
+                    runBuild();
+                    break;
+                default:
+                    echo RED . "Invalid flag for run command: {$flags[0]}" . RESET . PHP_EOL;
+                    showHelp();
+            }
+        } else {
+            echo RED . "Missing flag for run command. Use -dev or -build" . RESET . PHP_EOL;
+            showHelp();
+        }
+        break;
+    case 'stop':
+        stopProcesses();
+        break;
+    case 'announcement':
+        handleAnnouncementCommand($flags);
+        break;
+//    case 'update':
+//        updateSystem();
+    case 'update':
+        if (isset($flags[0])) {
+            switch ($flags[0]) {
+                case '-hawki-avatar':
+                    if(count($flags) > 1 && $flags[1]){
+                        updateHawkiAvatar($flags[1]);
+                    }
+                    else{
+                        echo RED . "Invalid or missing path:" . RESET . PHP_EOL;
+                        echo YELLOW . " php hawki update hawki-avatar {path}" . RESET . PHP_EOL;
+                    }
+                    break;
+                default:
+                    echo RED . "Invalid flag for run command: {$flags[0]}" . RESET . PHP_EOL;
+                    showHelp();
+            }
+        }
+        break;
+    case 'help':
+        showHelp();
+        break;
+    default:
+        echo RED . "Unknown command: $command" . RESET . PHP_EOL;
+        showHelp();
+}
