@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css_v2.1.0/home-style.css') }}">
 
-    <title>Document</title>
+    <title>{{ $translation["DataProtection"] }}</title>
 </head>
 <body>
     <div class="scroll-container">
