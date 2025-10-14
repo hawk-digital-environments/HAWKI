@@ -43,9 +43,13 @@
                 <x-icon name="settings-icon"/>
             </button>
             <div class="impressumPanel">
+                @if(config('hawki.dataprotection_location'))
                 <a href="{{ config('hawki.dataprotection_location') }}" target="_blank">{{ $translation["DataProtection"] }}</a>
+                @endif
+                @if(config('hawki.imprint_location'))
                 <a href="{{ config('hawki.imprint_location') }}" target="_blank">{{ $translation["Impressum"] }}</a>
-                @if(config('hawki.accessibility_location') && config('hawki.accessibility_location') !== '/accessibility')
+                @endif
+                @if(config('hawki.accessibility_location'))
                 <a href="{{ config('hawki.accessibility_location') }}" target="_blank">{{ $translation["Accessibility"] }}</a>
                 @endif
 
