@@ -39,6 +39,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Data Protection Location
+    |--------------------------------------------------------------------------
+    |
+    | URL to the data protection page (Datenschutz). This will be displayed
+    | in the footer of the login page. Supports both internal routes and
+    | external URLs.
+    |
+    */
+    'dataprotection_location' => env('DATAPROTECTION_LOCATION', '/dataprotection'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accessibility Location
+    |--------------------------------------------------------------------------
+    |
+    | URL to the accessibility statement page (Barrierefreiheit). This will be
+    | displayed in the footer of the login page.
+    |
+    */
+    'accessibility_location' => env('ACCESSIBILITY_LOCATION', '/accessibility'),
+
+    /*
+    |--------------------------------------------------------------------------
     | AI System
     | This setting gets overwritten by the SettingsService with a value from the db
     |--------------------------------------------------------------------------
