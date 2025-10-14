@@ -31,19 +31,22 @@ class AppCssSeeder extends Seeder
                 $name = $file->getFilenameWithoutExtension();
                 $content = File::get($file->getPathname());
 
-                // Create or update CSS with description based on filename
+                // Only create new CSS entries, never update existing ones to preserve customizations
                 $description = $this->getDescriptionForCssFile($name);
 
-                AppCss::updateOrCreate(
-                    ['name' => $name],
-                    [
+                $existing = AppCss::where('name', $name)->first();
+
+                if ($existing) {
+                    $this->command->info("Skipping existing CSS file: {$name} (preserving customizations)");
+                } else {
+                    AppCss::create([
+                        'name' => $name,
                         'content' => $content,
                         'description' => $description,
                         'active' => true,
-                    ]
-                );
-
-                $count++;
+                    ]);
+                    $count++;
+                }
             }
         }
 
