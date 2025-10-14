@@ -14,6 +14,7 @@
     "Cnf_deleteRoom":"Do you really want to delete this Room?",
     "Cnf_leaveRoom":"Do you really want to leave this Room?",
     "Cnf_removeMember":"Do you really want to remove this member?",
+    "Cnf_checkMembersAdded": "Please add at least one user to invite.",
 
     "Cnf_tokenMsg1":"Please keep this token safe and use it carefully to keep you account safe. If HAWKI detects suspicious behaviour this token will be revoked.",
     "Cnf_tokenMsg2":"Once you close this window you will not be able to get this key again.",
