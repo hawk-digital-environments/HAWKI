@@ -212,6 +212,8 @@ class LocalizedTextEditScreen extends Screen
             ]);
 
             // Clear caches to ensure changes are immediately visible
+            // Clear both LanguageController and LocalizationController caches
+            \App\Http\Controllers\LanguageController::clearCaches();
             \App\Http\Controllers\LocalizationController::clearCaches();
 
             Toast::info('Localized text has been saved successfully.');
@@ -247,6 +249,8 @@ class LocalizedTextEditScreen extends Screen
             ]);
 
             // Clear caches to ensure changes are immediately visible
+            // Clear both LanguageController and LocalizationController caches
+            \App\Http\Controllers\LanguageController::clearCaches();
             \App\Http\Controllers\LocalizationController::clearCaches();
 
             if ($importedCount > 0) {
