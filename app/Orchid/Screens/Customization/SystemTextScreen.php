@@ -212,6 +212,14 @@ class SystemTextScreen extends Screen
                 'entries_imported' => $importedCount,
             ]);
 
+            // Clear caches to ensure changes are immediately visible
+            try {
+                \App\Http\Controllers\LanguageController::clearCaches();
+                \App\Http\Controllers\LocalizationController::clearCaches();
+            } catch (\Exception $e) {
+                \Log::error('Error clearing cache after system text reset: '.$e->getMessage());
+            }
+
             if ($importedCount > 0) {
                 Toast::success("Reset system text '{$contentKey}' to default values ({$importedCount} entries imported)");
             } else {
@@ -238,6 +246,14 @@ class SystemTextScreen extends Screen
             $this->logModelOperation('delete', 'system_text', $contentKey, 'success', [
                 'entries_deleted' => $deletedCount,
             ]);
+
+            // Clear caches to ensure changes are immediately visible
+            try {
+                \App\Http\Controllers\LanguageController::clearCaches();
+                \App\Http\Controllers\LocalizationController::clearCaches();
+            } catch (\Exception $e) {
+                \Log::error('Error clearing cache after system text deletion: '.$e->getMessage());
+            }
 
             Toast::success("Deleted {$deletedCount} entries for system text '{$contentKey}'");
         } catch (\Exception $e) {
@@ -296,6 +312,14 @@ class SystemTextScreen extends Screen
                 'entries_deleted' => $currentCount,
                 'entries_imported' => $importedCount,
             ]);
+
+            // Clear caches to ensure changes are immediately visible
+            try {
+                \App\Http\Controllers\LanguageController::clearCaches();
+                \App\Http\Controllers\LocalizationController::clearCaches();
+            } catch (\Exception $e) {
+                \Log::error('Error clearing cache after system texts reset: '.$e->getMessage());
+            }
 
             Toast::success("Reset system texts: Removed {$currentCount} entries and imported {$importedCount} default entries");
         } catch (\Exception $e) {

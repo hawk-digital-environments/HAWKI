@@ -117,6 +117,20 @@ class LanguageController extends Controller
                 ->pluck('content', 'content_key')
                 ->toArray();
 
+            // Load localized texts from app_localized_texts table
+            // These are accessed with underscore prefix (e.g., _DataProtection for key data_protection)
+            $localizedTexts = \App\Models\AppLocalizedText::where('language', $prefix)
+                ->get()
+                ->mapWithKeys(function ($text) {
+                    // Convert snake_case key to _PascalCase for frontend access
+                    // e.g., 'data_protection' → '_DataProtection'
+                    $pascalKey = '_' . str_replace('_', '', ucwords($text->content_key, '_'));
+                    return [$pascalKey => $text->content];
+                })
+                ->toArray();
+            
+            $translations = array_merge($translations, $localizedTexts);
+
             // Load prompts based on AI config system setting
             if ($useAiDatabaseConfig) {
                 // AI Config System = Database: Load prompts from ai_assistants_prompts table
