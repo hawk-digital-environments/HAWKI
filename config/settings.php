@@ -31,6 +31,7 @@ return [
     'hawki' => [
         'aiHandle' => 'AI assistant handle for group chat (@ will be added automatically)',
         'groupchat_active' => 'Enable group chat',
+        'imprint_location' => 'URL to the imprint page (Impressum)',
         'ai_config_system' => 'DB-based AI configuration system',
         'language_controller_system' => 'Use database for translations (true) or JSON files (false)',
 

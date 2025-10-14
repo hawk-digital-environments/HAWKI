@@ -44,7 +44,7 @@
             </button>
             <div class="impressumPanel">
                 <a href="/dataprotection" target="_blank">{{ $translation["DataProtection"] }}</a>
-                <a href="{{ env("IMPRINT_LOCATION") }}" target="_blank">{{ $translation["Impressum"] }}</a>
+                <a href="{{ config('hawki.imprint_location') }}" target="_blank">{{ $translation["Impressum"] }}</a>
             </div>
         </div>
 
