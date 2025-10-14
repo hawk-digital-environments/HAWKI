@@ -58,6 +58,41 @@ class LanguageController extends Controller
         return $translation;
     }
 
+    /**
+     * Get complete translation including localized content (original keys)
+     * This includes all translations plus localized texts with their original database keys
+     * 
+     * @return array Complete translation array
+     */
+    public function getTranslationWithLocalized(): array
+    {
+        $translation = $this->getTranslation();
+        
+        // Get LocalizationController instance and merge original keys
+        $localizationController = app(LocalizationController::class);
+        $localizedContent = $localizationController->getAllLocalizedContent();
+        
+        return array_merge($translation, $localizedContent);
+    }
+
+    /**
+     * Get complete translation with formatted localized content (_PascalCase)
+     * This includes all translations plus localized texts in _PascalCase format
+     * Use this for static pages that expect _DataProtection, _Imprint, etc.
+     * 
+     * @return array Complete translation array ready for static views
+     */
+    public function getTranslationWithLocalizedContent(): array
+    {
+        $translation = $this->getTranslation();
+        
+        // Get LocalizationController instance
+        $localizationController = app(LocalizationController::class);
+        $formattedLocalized = $localizationController->getAllLocalizedContentFormatted();
+        
+        return array_merge($translation, $formattedLocalized);
+    }
+
     // / Changes language based on the request language
     public function changeLanguage(Request $request)
     {
