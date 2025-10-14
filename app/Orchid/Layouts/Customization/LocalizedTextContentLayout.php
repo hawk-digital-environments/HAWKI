@@ -4,6 +4,8 @@ namespace App\Orchid\Layouts\Customization;
 
 use Orchid\Screen\Field;
 use Orchid\Screen\Fields\TextArea;
+use Orchid\Screen\Fields\Quill;
+
 use Orchid\Screen\Layouts\Rows;
 
 class LocalizedTextContentLayout extends Rows
@@ -16,18 +18,17 @@ class LocalizedTextContentLayout extends Rows
     protected function fields(): iterable
     {
         return [
-            TextArea::make('localizedText.de_content')
+            Quill::make('localizedText.de_content')
                 ->title('German Content (de_DE)')
                 ->placeholder('Enter German text content')
-                ->rows(6)
                 ->help('German translation of this localized text')
-                ->resizeable(true),
+                ->class('form-control'),
 
-            TextArea::make('localizedText.en_content')
+            Quill::make('localizedText.en_content')
                 ->title('English Content (en_US)')
                 ->placeholder('Enter English text content')
-                ->rows(6)
-                ->help('English translation of this localized text'),
+                ->help('English translation of this localized text')
+                ->class('form-control'),
         ];
     }
 }
