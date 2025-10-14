@@ -28,6 +28,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Imprint Location
+    |--------------------------------------------------------------------------
+    |
+    | URL to the imprint page (Impressum). This will be displayed in the
+    | footer of the login page.
+    |
+    */
+    'imprint_location' => env('IMPRINT_LOCATION', '/imprint'),
+
+    /*
+    |--------------------------------------------------------------------------
     | AI System
     | This setting gets overwritten by the SettingsService with a value from the db
     |--------------------------------------------------------------------------
