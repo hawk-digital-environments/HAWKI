@@ -94,6 +94,7 @@ class SystemSettingsScreen extends Screen
     {
         $generalSettings = [];
         $systemSettings = [];
+        $urlSettings = [];
         $hawkiFeatureSettings = [];
         $overrideSettings = [];
 
@@ -116,7 +117,14 @@ class SystemSettingsScreen extends Screen
 
         // Lade alle HAWKI Feature Settings (source = "hawki")
         foreach ($this->query()['hawki'] as $setting) {
-            $hawkiFeatureSettings[] = $this->generateFieldForSetting($setting);
+            $key = $setting->key;
+            
+            // Gruppiere URL-Settings separat
+            if (in_array($key, ['hawki_dataprotection_location', 'hawki_imprint_location', 'hawki_accessibility_location'])) {
+                $urlSettings[] = $this->generateFieldForSetting($setting);
+            } else {
+                $hawkiFeatureSettings[] = $this->generateFieldForSetting($setting);
+            }
         }
 
         // Array für alle Layouts vorbereiten
@@ -138,6 +146,15 @@ class SystemSettingsScreen extends Screen
             ])
                 ->title('System Settings')
                 ->description('Core system configuration including environment and locale settings.');
+        }
+
+        // URL Settings Block
+        if (! empty($urlSettings)) {
+            $layouts[] = Layout::block([
+                Layout::rows($urlSettings),
+            ])
+                ->title('Footer Links')
+                ->description('Configure URLs for footer links on the login page. Supports both internal routes (e.g., /dataprotection) and external URLs (e.g., https://example.com/privacy). Leave empty to disable.');
         }
 
         // HAWKI Feature Settings

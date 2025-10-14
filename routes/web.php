@@ -50,6 +50,8 @@ Route::middleware('prevent_back')->group(function () {
     Route::get('/inv/{tempHash}/{slug}', [InvitationController::class, 'openExternInvitation'])->name('open.invitation')->middleware('signed');
 
     Route::get('/dataprotection', [HomeController::class, 'dataprotectionIndex']);
+    Route::get('/accessibility', [HomeController::class, 'accessibilityIndex']);
+    Route::get('/imprint', [HomeController::class, 'imprintIndex']);
 
     Route::middleware('registrationAccess')->group(function () {
 
