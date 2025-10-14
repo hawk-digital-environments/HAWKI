@@ -109,6 +109,28 @@ class LocalizationController extends Controller
     }
 
     /**
+     * Get all localized content with keys formatted as _PascalCase
+     * This is used for views that expect the _PascalCase format (e.g., _DataProtection, _Imprint)
+     *
+     * @return array Localized content with _PascalCase keys
+     */
+    public function getAllLocalizedContentFormatted(): array
+    {
+        $localizedContent = $this->getAllLocalizedContent();
+        
+        // Convert localized content keys to _PascalCase format
+        $formattedLocalized = [];
+        foreach ($localizedContent as $key => $value) {
+            // Convert snake_case key to _PascalCase for frontend access
+            // e.g., 'data_protection' → '_DataProtection'
+            $pascalKey = '_' . str_replace('_', '', ucwords($key, '_'));
+            $formattedLocalized[$pascalKey] = $value;
+        }
+        
+        return $formattedLocalized;
+    }
+
+    /**
      * Replace placeholders with their values
      * Returns either a replacement mapping array or processes text directly
      *

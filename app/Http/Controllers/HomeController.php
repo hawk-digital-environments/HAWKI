@@ -22,11 +22,10 @@ use Illuminate\Support\Facades\Session;
 class HomeController extends Controller
 {
 
-    // Inject LanguageController and LocalizationController instances
+    // Inject LanguageController instance
     public function __construct(
-        private LanguageController    $languageController,
-        private LocalizationController $localizationController,
-        private AiService              $aiService
+        private LanguageController $languageController,
+        private AiService          $aiService
     )
     {
     }
@@ -44,10 +43,8 @@ class HomeController extends Controller
         $user = Auth::user();
 
 
-        // Call getTranslation method from LanguageController and merge with localized content
-        $translation = $this->languageController->getTranslation();
-        $localizedContent = $this->localizationController->getAllLocalizedContent();
-        $translation = array_merge($translation, $localizedContent);
+        // Call getTranslation method from LanguageController with localized content
+        $translation = $this->languageController->getTranslationWithLocalized();
         $settingsPanel = (new SettingsService())->render();
 
 
@@ -135,9 +132,7 @@ class HomeController extends Controller
         ];
 
 
-        $translation = $this->languageController->getTranslation();
-        $localizedContent = $this->localizationController->getAllLocalizedContent();
-        $translation = array_merge($translation, $localizedContent);
+        $translation = $this->languageController->getTranslationWithLocalized();
         $settingsPanel = $settingsService->render();
         $models = $this->aiService->getAvailableModels()->toArray();
 
@@ -169,8 +164,21 @@ class HomeController extends Controller
     }
 
 
-    public function dataprotectionIndex(Request $request): View{
-        $translation = $this->languageController->getTranslation();
+    public function dataprotectionIndex(Request $request): View
+    {
+        $translation = $this->languageController->getTranslationWithLocalizedContent();
         return view('layouts.dataprotection', compact('translation'));
+    }
+
+    public function accessibilityIndex(Request $request): View
+    {
+        $translation = $this->languageController->getTranslationWithLocalizedContent();
+        return view('layouts.accessibility', compact('translation'));
+    }
+
+    public function imprintIndex(Request $request): View
+    {
+        $translation = $this->languageController->getTranslationWithLocalizedContent();
+        return view('layouts.imprint', compact('translation'));
     }
 }
