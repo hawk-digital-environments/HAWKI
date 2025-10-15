@@ -387,11 +387,37 @@ class AiConfigService
     private function getAdapterFromApiFormat(ApiProvider $apiProvider): string
     {
         // Use client_adapter from api_formats table if available
-        if ($apiProvider->apiFormat && !empty($apiProvider->apiFormat->client_adapter)) {
-            return $apiProvider->apiFormat->client_adapter;
+        $adapter = $apiProvider->apiFormat?->client_adapter;
+        
+        if (empty($adapter)) {
+            // Fallback: use the provider name as adapter (lowercase)
+            $adapter = strtolower($apiProvider->provider_name);
         }
         
-        // Fallback: use the provider name as adapter (lowercase)
-        return strtolower($apiProvider->provider_name);
+        // Normalize adapter name to match actual directory/class names
+        // This handles case-sensitivity issues between macOS (case-insensitive) and Linux (case-sensitive)
+        return $this->normalizeAdapterName($adapter);
+    }
+    
+    /**
+     * Normalize adapter names to match actual directory/class names.
+     * This handles case-sensitivity issues between macOS (case-insensitive) and Linux (case-sensitive).
+     *
+     * @param string $adapterName
+     * @return string
+     */
+    private function normalizeAdapterName(string $adapterName): string
+    {
+        // Map of lowercase adapter names to their correct PascalCase directory names
+        $adapterMap = [
+            'openai' => 'OpenAi',
+            'google' => 'Google',
+            'gwdg' => 'Gwdg',
+            'ollama' => 'Ollama',
+            'openwebui' => 'OpenWebUI',
+        ];
+        
+        $lowerName = strtolower($adapterName);
+        return $adapterMap[$lowerName] ?? ucfirst($adapterName);
     }
 }
