@@ -37,11 +37,27 @@ class DetectWrongAuthTypes extends Command
 
         $issues = [];
         
-        // Issue 1: Local users without password
+        // Issue 1: Users with NULL auth_type
+        $usersNullAuthType = User::whereNull('auth_type')
+            ->where('isRemoved', false)
+            ->get();
+
+        if ($usersNullAuthType->count() > 0) {
+            $issues[] = [
+                'type' => 'null_auth_type',
+                'description' => 'Users with NULL auth_type (CRITICAL - prevents role assignment)',
+                'users' => $usersNullAuthType,
+                'severity' => 'critical',
+            ];
+        }
+        
+        // Issue 2: Local users without password
         $localUsersNoPassword = User::where('auth_type', 'local')
             ->where('isRemoved', false)
-            ->whereNull('password')
-            ->orWhere('password', '')
+            ->where(function ($query) {
+                $query->whereNull('password')
+                    ->orWhere('password', '');
+            })
             ->get();
 
         if ($localUsersNoPassword->count() > 0) {
@@ -63,27 +79,13 @@ class DetectWrongAuthTypes extends Command
         if ($externalUsersWithPassword->count() > 0) {
             $issues[] = [
                 'type' => 'external_with_password',
-                'description' => 'External auth users with password field (usually wrong)',
+                'description' => 'External auth users with password field (usually wrong auth_type)',
                 'users' => $externalUsersWithPassword,
                 'severity' => 'warning',
             ];
         }
 
-        // Issue 3: Users with NULL auth_type
-        $usersNullAuthType = User::whereNull('auth_type')
-            ->where('isRemoved', false)
-            ->get();
-
-        if ($usersNullAuthType->count() > 0) {
-            $issues[] = [
-                'type' => 'null_auth_type',
-                'description' => 'Users with NULL auth_type',
-                'users' => $usersNullAuthType,
-                'severity' => 'critical',
-            ];
-        }
-
-        // Issue 4: Users with invalid auth_type values
+        // Issue 3: Users with invalid auth_type values
         $validAuthTypes = ['local', 'ldap', 'oidc', 'shibboleth'];
         $usersInvalidAuthType = User::whereNotNull('auth_type')
             ->whereNotIn('auth_type', $validAuthTypes)

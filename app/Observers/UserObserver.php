@@ -60,27 +60,51 @@ class UserObserver
                 return;
             }
 
-            // IMPORTANT: Create employeetype entry in DB BEFORE checking approval
-            // This ensures all employeetypes are discoverable in the Role Assignment Screen
-            $authMethod = $user->auth_type ?? 'LDAP';
-            $this->ensureEmployeetypeExists($user->employeetype, $authMethod);
-
-            // Skip role assignment if user is not approved (but employeetype entry was created above)
-            if (! $user->approval) {
-                Log::info("User not approved - employeetype entry created but no role assigned: {$user->username} (ID: {$user->id})", [
+            // CRITICAL: Ensure auth_type is set - if NULL, skip role sync
+            // This prevents creating employeetype entries with wrong auth_method
+            if (empty($user->auth_type)) {
+                Log::warning("User has no auth_type set - skipping role sync", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
                     'employeetype' => $user->employeetype,
-                    'auth_method' => $authMethod,
                 ]);
-
                 return;
             }
 
-            // Map employeetype to role slug (employeetype entry already exists)
-            $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype, $authMethod);
+            $authMethod = $user->auth_type;
 
-            // If no mapping exists, don't assign any role - admin must configure mapping first
+            // Skip role assignment if user is not approved
+            if (! $user->approval) {
+                Log::info("User not approved - no role will be assigned: {$user->username} (ID: {$user->id})", [
+                    'employeetype' => $user->employeetype,
+                    'auth_method' => $authMethod,
+                ]);
+                return;
+            }
+
+            // SPECIAL HANDLING: Local auth users use 1:1 mapping (employeetype = role slug)
+            // External auth users (LDAP/OIDC/Shibboleth) use database mapping via employeetypes table
+            if (strtolower($authMethod) === 'local') {
+                // For local users: employeetype IS the role slug (1:1 mapping)
+                $requiredRoleSlug = strtolower($user->employeetype);
+                
+                Log::debug("Local user - using 1:1 employeetype to role mapping", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'employeetype' => $user->employeetype,
+                    'role_slug' => $requiredRoleSlug,
+                ]);
+            } else {
+                // For external auth users: create employeetype entry and use mapping
+                $this->ensureEmployeetypeExists($user->employeetype, $authMethod);
+                
+                // Map employeetype to role slug via database mapping
+                $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype, $authMethod);
+            }
+
+            // If no mapping exists, don't assign any role
             if (! $requiredRoleSlug) {
-                Log::info("No role mapping configured for employeetype '{$user->employeetype}' - skipping role assignment. Admin can configure mapping in Role Assignment Screen.", [
+                Log::info("No role mapping configured for employeetype '{$user->employeetype}' - skipping role assignment.", [
                     'user_id' => $user->id,
                     'username' => $user->username,
                     'employeetype' => $user->employeetype,
