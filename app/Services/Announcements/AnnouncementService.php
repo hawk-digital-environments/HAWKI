@@ -130,13 +130,38 @@ class AnnouncementService
     /**
      * Render announcement Blade and return to frontend
      */
-
-    public function renderAnnouncement(Announcement $announcement){
-        $view = $announcement->view;
+    public function renderAnnouncement(Announcement $announcement): string
+    {
         $lang = Session::get('language')['id'];
+        
+        // Try to get translation from database first
+        $translation = $announcement->getTranslation($lang);
+        
+        if ($translation) {
+            return $translation->content;
+        }
+        
+        // Fallback to file-based system for backwards compatibility
+        $view = $announcement->view;
         $file = resource_path("announcements/$view/$lang.md");
-        $content = file_get_contents($file);
-        return $content;
+        
+        if (file_exists($file)) {
+            return file_get_contents($file);
+        }
+        
+        // If no translation found, try English as fallback
+        $translation = $announcement->getTranslation('en_US');
+        if ($translation) {
+            return $translation->content;
+        }
+        
+        // Last resort: check English file
+        $fallbackFile = resource_path("announcements/$view/en_US.md");
+        if (file_exists($fallbackFile)) {
+            return file_get_contents($fallbackFile);
+        }
+        
+        return "# Content not available\n\nNo translation found for this announcement.";
     }
 
     /**
