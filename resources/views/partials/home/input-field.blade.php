@@ -48,22 +48,25 @@
                 @endif
 
 
+                @if(config('hawki.websearch'))
                 <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)">
                     <x-icon class="websearch-icon" name="world"/>
                     <div class="tooltip">
                         {{ $translation["WebSearch"] }}
                     </div>
                 </button>
+                @endif
 
 
 
-
+                @if(config('hawki.file_upload'))
                 <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
                     <x-icon name="paperclip"/>
                     <div class="tooltip">
                         {{ $translation["UploadFile"] }}
                     </div>
                 </button>
+                @endif
 
 
             </div>
@@ -183,7 +186,7 @@
 
     </div>
     <div class="input" id="0">
-        @if(!$lite)
+        @if(!$lite && config('hawki.file_upload'))
             <input type="file" class="file-upload-input" id="file-upload-input" style="display:none;"/>
         @endif
 
