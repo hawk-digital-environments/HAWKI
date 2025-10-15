@@ -10,7 +10,7 @@ return [
     | Supported: 'LDAP', 'OIDC', 'Shibboleth'
     |
      */
-    'authMethod' => 'Shibboleth', // env('AUTHENTICATION_METHOD', 'LDAP'),
+    'authMethod' => env('AUTHENTICATION_METHOD', 'LDAP'),
 
     /*
     |--------------------------------------------------------------------------
