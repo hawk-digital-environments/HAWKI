@@ -1,6 +1,16 @@
 <?php
 
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication method
+    |--------------------------------------------------------------------------
+    |
+    | Defines the authentication method to be used by the application.
+    | Supported: 'LDAP', 'OIDC', 'Shibboleth'
+    |
+     */
+    'authMethod' => 'Shibboleth', // env('AUTHENTICATION_METHOD', 'LDAP'),
 
     /*
     |--------------------------------------------------------------------------

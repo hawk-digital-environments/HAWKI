@@ -1,6 +1,5 @@
 <?php
 
-use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
