@@ -136,14 +136,6 @@ return [
         // 'mailers.sendmail.path' => 'Path to sendmail binary (e.g., /usr/sbin/sendmail -bs -i)',
 
     ],
-    //'reverb' => [
-    //    'servers.reverb.host' => 'Reverb server host (usually 0.0.0.0 for all interfaces)',
-    //    'servers.reverb.port' => 'Reverb server port (default: 8080)',
-    //    'servers.reverb.hostname' => 'Reverb hostname for client connections',
-    //    'apps.apps.0.options.host' => 'Reverb client host (for WebSocket connections)',
-    //    'apps.apps.0.options.port' => 'Reverb client port (default: 443 for HTTPS)',
-    //    'apps.apps.0.options.scheme' => 'Reverb scheme (http or https)',
-    //],
 
     /*
     |--------------------------------------------------------------------------
@@ -167,6 +159,5 @@ return [
         'session' => 'authentication',
         'logging' => 'logging',
         'mail' => 'mail',
-        //'reverb' => 'websockets',
     ],
 ];

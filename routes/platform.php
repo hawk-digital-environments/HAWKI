@@ -49,7 +49,6 @@ use App\Orchid\Screens\Settings\LogScreen;
 use App\Orchid\Screens\Settings\MailConfigurationSettingsScreen;
 use App\Orchid\Screens\Settings\StorageSettingsScreen;
 use App\Orchid\Screens\Settings\SystemSettingsScreen;
-use App\Orchid\Screens\Settings\WebSocketSettingsScreen;
 use App\Orchid\Screens\Testing\MailTestingScreen;
 use App\Orchid\Screens\Testing\TestingSettingsScreen;
 use App\Orchid\Screens\User\UserEditScreen;
@@ -320,14 +319,6 @@ Route::screen('/customization/announcements/{announcement}/edit', AnnouncementEd
         return $trail
             ->parent('platform.customization.announcements')
             ->push('Edit: ' . $announcement->title, route('platform.customization.announcements.edit', $announcement));
-    });
-
-Route::screen('/settings/websockets', WebSocketSettingsScreen::class)
-    ->name('platform.settings.websockets')
-    ->breadcrumbs(function (Trail $trail) {
-        return $trail
-            ->parent('platform.index')
-            ->push('WebSocket Settings', route('platform.settings.websockets'));
     });
 
 // Models - API Management - Providers
