@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\RoleAssignmentController;
 use App\Orchid\Screens\Customization\CssEditScreen;
 use App\Orchid\Screens\Customization\CssRulesScreen;
+use App\Orchid\Screens\Customization\AnnouncementScreen;
+use App\Orchid\Screens\Customization\AnnouncementEditScreen;
 use App\Orchid\Screens\Customization\LocalizedTextScreen;
 use App\Orchid\Screens\Customization\MailTemplateEditScreen;
 use App\Orchid\Screens\Customization\MailTemplatesScreen;
@@ -293,6 +295,31 @@ Route::screen('/customization/mail-templates', MailTemplatesScreen::class)
         return $trail
             ->parent('platform.index')
             ->push('Mail Templates', route('platform.customization.mail-templates'));
+    });
+
+// Announcements
+Route::screen('/customization/announcements', AnnouncementScreen::class)
+    ->name('platform.customization.announcements')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Announcements', route('platform.customization.announcements'));
+    });
+
+Route::screen('/customization/announcements/create', AnnouncementEditScreen::class)
+    ->name('platform.customization.announcements.create')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.customization.announcements')
+            ->push('Create Announcement', route('platform.customization.announcements.create'));
+    });
+
+Route::screen('/customization/announcements/{announcement}/edit', AnnouncementEditScreen::class)
+    ->name('platform.customization.announcements.edit')
+    ->breadcrumbs(function (Trail $trail, $announcement) {
+        return $trail
+            ->parent('platform.customization.announcements')
+            ->push('Edit: ' . $announcement->title, route('platform.customization.announcements.edit', $announcement));
     });
 
 Route::screen('/settings/websockets', WebSocketSettingsScreen::class)
