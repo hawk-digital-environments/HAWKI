@@ -42,7 +42,7 @@ use App\Orchid\Screens\Role\RoleAssignmentEditScreen;
 use App\Orchid\Screens\Role\RoleAssignmentScreen;
 use App\Orchid\Screens\Role\RoleEditScreen;
 use App\Orchid\Screens\Role\RoleListScreen;
-use App\Orchid\Screens\Settings\ApiSettingsScreen;
+use App\Orchid\Screens\Settings\FeatureSettingsScreen;
 use App\Orchid\Screens\Settings\AuthenticationSettingsScreen;
 use App\Orchid\Screens\Settings\AuthMethodEditScreen;
 use App\Orchid\Screens\Settings\LogScreen;
@@ -116,12 +116,12 @@ Route::screen('/settings/authentication/edit', AuthMethodEditScreen::class)
             ->push('Edit Authentication Method', route('platform.settings.authentication.edit'));
     });
 
-Route::screen('/settings/api', ApiSettingsScreen::class)
+Route::screen('/settings/api', FeatureSettingsScreen::class)
     ->name('platform.settings.api')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('API Settings', route('platform.settings.api'));
+            ->push('Features', route('platform.settings.api'));
     });
 
 Route::screen('/settings/mail-configuration', MailConfigurationSettingsScreen::class)

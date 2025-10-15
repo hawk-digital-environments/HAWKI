@@ -31,6 +31,8 @@ return [
     'hawki' => [
         'aiHandle' => 'AI assistant handle for group chat (@ will be added automatically)',
         'groupchat_active' => 'Enable group chat',
+        'file_upload' => 'Enable file upload functionality',
+        'websearch' => 'Enable web search functionality',
         'dataprotection_location' => 'Data protection URL',
         'imprint_location' => 'Imprint page URL',
         'accessibility_location' => 'Accessibility statement URL',

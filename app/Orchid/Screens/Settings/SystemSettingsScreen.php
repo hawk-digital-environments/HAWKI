@@ -95,7 +95,6 @@ class SystemSettingsScreen extends Screen
         $generalSettings = [];
         $systemSettings = [];
         $urlSettings = [];
-        $hawkiFeatureSettings = [];
         $overrideSettings = [];
 
         // Gruppiere die basic Einstellungen nach Kategorien
@@ -115,15 +114,13 @@ class SystemSettingsScreen extends Screen
             }
         }
 
-        // Lade alle HAWKI Feature Settings (source = "hawki")
+        // Lade HAWKI Settings und gruppiere Footer Links
         foreach ($this->query()['hawki'] as $setting) {
             $key = $setting->key;
             
-            // Gruppiere URL-Settings separat
+            // Gruppiere nur URL-Settings (Footer Links)
             if (in_array($key, ['hawki_dataprotection_location', 'hawki_imprint_location', 'hawki_accessibility_location'])) {
                 $urlSettings[] = $this->generateFieldForSetting($setting);
-            } else {
-                $hawkiFeatureSettings[] = $this->generateFieldForSetting($setting);
             }
         }
 
@@ -148,22 +145,13 @@ class SystemSettingsScreen extends Screen
                 ->description('Core system configuration including environment and locale settings.');
         }
 
-        // URL Settings Block
+        // Footer Links Block
         if (! empty($urlSettings)) {
             $layouts[] = Layout::block([
                 Layout::rows($urlSettings),
             ])
                 ->title('Footer Links')
                 ->description('Configure URLs for footer links on the login page. Supports both internal routes (e.g., /dataprotection) and external URLs (e.g., https://example.com/privacy). Leave empty to disable.');
-        }
-
-        // HAWKI Feature Settings
-        if (! empty($hawkiFeatureSettings)) {
-            $layouts[] = Layout::block([
-                Layout::rows($hawkiFeatureSettings),
-            ])
-                ->title('App Feature Settings')
-                ->description('HAWKI-specific features and functionality configuration.');
         }
 
         // // Override/Overwrite Settings
