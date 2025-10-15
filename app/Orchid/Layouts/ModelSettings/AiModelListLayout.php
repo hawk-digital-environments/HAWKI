@@ -107,6 +107,14 @@ class AiModelListLayout extends Table
                                     : ''))
                             ->icon('bs.pencil'),
 
+                        Button::make('Make Default')
+                            ->icon('bs.stars')
+                            ->confirm("Are you sure you want to set '{$model->label}' as the default model for ALL AI assistants? This will update all existing assistants.")
+                            ->method('setAsDefaultForAssistants', [
+                                'id' => $model->id,
+                            ])
+                            ->canSee($model->is_active),
+
                         Button::make('Delete')
                             ->icon('bs.trash3')
                             ->confirm("Are you sure you want to delete model '{$model->label}'?")
