@@ -6,9 +6,9 @@ use Illuminate\Config\Repository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
-use Route;
 
 
 readonly class ShibbolethService
@@ -150,6 +150,18 @@ readonly class ShibbolethService
 
         if (!empty($value)) {
             return $value;
+        }
+
+        // Try to find value case-insensitively (This is rather expensive, so we log it as a warning)
+        foreach ($request->server->all() as $key => $val) {
+            if (Str::lower($key) === Str::lower($var) && !empty($val)) {
+                $this->logger->warning("Found server variable '$key' case-insensitively for expected '$var'");
+                return $val;
+            }
+            if (Str::lower($key) === Str::lower($redirectVar) && !empty($val)) {
+                $this->logger->warning("Found server variable '$key' case-insensitively for expected '$redirectVar'");
+                return $val;
+            }
         }
 
         throw new \RuntimeException("Neither $var nor $redirectVar are set and not empty", 400);

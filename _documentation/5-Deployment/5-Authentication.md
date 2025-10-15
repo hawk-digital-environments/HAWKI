@@ -78,7 +78,7 @@ The following environment variables are available:
   attribute names.
   This way, the attributes will be concatenated with a space in between. If any of them are missing, they will be
   skipped.
-  Example: SHIBBOLETH_NAME_VAR="displayname" -> "displayName (John Doe)" => "John Doe"
+  Example: SHIBBOLETH_NAME_VAR="displayName" -> "displayName (John Doe)" => "John Doe"
   Example: SHIBBOLETH_NAME_VAR="givenName,sn" -> "givenName (John) + sn (Doe)" => "John Doe"
 
 A word of advice: Shibboleth is sometimes weird with Apache; leading to Shibboleth values being prefixed with
