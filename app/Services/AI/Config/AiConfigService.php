@@ -402,22 +402,52 @@ class AiConfigService
     /**
      * Normalize adapter names to match actual directory/class names.
      * This handles case-sensitivity issues between macOS (case-insensitive) and Linux (case-sensitive).
+     * 
+     * Dynamically scans the Providers directory to find matching adapter directories,
+     * so new adapters (e.g., Perplexity, Anthropic) work automatically without code changes.
      *
      * @param string $adapterName
      * @return string
      */
     private function normalizeAdapterName(string $adapterName): string
     {
-        // Map of lowercase adapter names to their correct PascalCase directory names
-        $adapterMap = [
-            'openai' => 'OpenAi',
-            'google' => 'Google',
-            'gwdg' => 'Gwdg',
-            'ollama' => 'Ollama',
-            'openwebui' => 'OpenWebUI',
-        ];
+        static $adapterMap = null;
+        
+        // Build the map once and cache it in static variable
+        if ($adapterMap === null) {
+            $adapterMap = $this->buildAdapterMap();
+        }
         
         $lowerName = strtolower($adapterName);
         return $adapterMap[$lowerName] ?? ucfirst($adapterName);
+    }
+    
+    /**
+     * Build a map of lowercase adapter names to their actual directory names
+     * by scanning the Providers directory.
+     *
+     * @return array
+     */
+    private function buildAdapterMap(): array
+    {
+        $providersPath = app_path('Services/AI/Providers');
+        $map = [];
+        
+        if (!is_dir($providersPath)) {
+            return $map;
+        }
+        
+        // Scan for directories in the Providers folder
+        $directories = array_filter(
+            scandir($providersPath),
+            fn($item) => $item !== '.' && $item !== '..' && is_dir($providersPath . '/' . $item)
+        );
+        
+        // Build map: lowercase name => actual directory name
+        foreach ($directories as $directory) {
+            $map[strtolower($directory)] = $directory;
+        }
+        
+        return $map;
     }
 }
