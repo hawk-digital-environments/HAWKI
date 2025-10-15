@@ -171,8 +171,12 @@ class UserEditScreen extends Screen
         // Prepare user data
         $userData = $request->collect('user')->except(['password', 'permissions', 'roles'])->toArray();
 
-        // Force auth_type to 'local' for all users created in this screen
-        $userData['auth_type'] = 'local';
+        // CRITICAL: auth_type is immutable - only set for NEW users, never change existing users
+        if (! $user->exists) {
+            // New users created via Orchid admin panel are always local users
+            $userData['auth_type'] = 'local';
+        }
+        // For existing users: DO NOT set auth_type - it must remain unchanged
 
         // Handle approval status - default to true for new users if not explicitly set
         if (! $user->exists) {

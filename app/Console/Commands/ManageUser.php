@@ -219,19 +219,31 @@ class ManageUser extends Command
             $originalEmployeeType = $user->employeetype;
             $originalApproval = $user->approval;
             $originalPassword = $user->password;
+            $originalAuthType = $user->auth_type;
 
             // Update user to admin
+            // CRITICAL: Never change auth_type unless explicitly needed
+            // Only set to 'local' if user has no password yet (external auth user being converted)
             $updateData = [
                 'employeetype' => 'admin',
-                'auth_type' => 'Local', // Ensure local auth
                 'approval' => true, // Always approve admins
                 'isRemoved' => false, // Ensure not removed
             ];
+
+            // Only change auth_type to 'local' if user doesn't have a password
+            // This handles the case of converting an external auth user to local admin
+            if (!$user->password) {
+                $updateData['auth_type'] = 'local';
+            }
+            // Otherwise, preserve existing auth_type (user could already be local)
 
             // Set password if not set or if explicitly provided
             if (! $user->password || $this->option('set-password')) {
                 $updateData['password'] = $newPassword; // Will be auto-hashed
                 $updateData['reset_pw'] = false; // Admin doesn't need to reset
+                
+                // If setting a password, ensure auth_type is 'local'
+                $updateData['auth_type'] = 'local';
             }
 
             $user->update($updateData);
@@ -253,6 +265,9 @@ class ManageUser extends Command
             $changes = [];
             if ($originalEmployeeType !== 'admin') {
                 $changes[] = "Employee Type: {$originalEmployeeType} → admin";
+            }
+            if ($originalAuthType !== $user->auth_type) {
+                $changes[] = "Auth Type: {$originalAuthType} → {$user->auth_type}";
             }
             if (! $originalApproval) {
                 $changes[] = 'Approval: false → true';

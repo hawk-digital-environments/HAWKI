@@ -273,13 +273,34 @@ class AuthenticationController extends Controller
 
             $avatarId = $validatedData['avatar_id'] ?? '';
 
-            // Determine auth type from authentication method
-            $authType = match($this->authMethod) {
-                'LDAP' => 'ldap',
-                'OIDC' => 'oidc',
-                'Shibboleth' => 'shibboleth',
-                default => 'ldap',
-            };
+            // CRITICAL: Check if user already exists to preserve their auth_type
+            // auth_type MUST be immutable - never change an existing user's auth_type
+            $existingUser = User::where('username', $username)->first();
+            
+            // Determine auth type: preserve existing or set based on authentication method
+            if ($existingUser) {
+                // PRESERVE existing auth_type - it must never be changed
+                $authType = $existingUser->auth_type;
+                
+                Log::info('Completing registration for existing user - preserving auth_type', [
+                    'username' => $username,
+                    'auth_type' => $authType,
+                    'existing_user_id' => $existingUser->id,
+                ]);
+            } else {
+                // New user: determine auth type from authentication method
+                $authType = match($this->authMethod) {
+                    'LDAP' => 'ldap',
+                    'OIDC' => 'oidc',
+                    'Shibboleth' => 'shibboleth',
+                    default => 'ldap',
+                };
+                
+                Log::info('Completing registration for new user - setting initial auth_type', [
+                    'username' => $username,
+                    'auth_type' => $authType,
+                ]);
+            }
 
             // Prepare user data for update/creation
             $userData = [
@@ -289,20 +310,29 @@ class AuthenticationController extends Controller
                 'publicKey' => $validatedData['publicKey'],
                 'avatar_id' => $avatarId,
                 'isRemoved' => false,
-                'auth_type' => $authType,
-                // External auth users (LDAP/OIDC/Shibboleth) are auto-approved
-                // Local users respect the local_needapproval config
-                'approval' => true, // External auth users are always approved after completing registration
+                'auth_type' => $authType, // Either preserved from existing user or set for new user
             ];
+
+            // Handle approval logic based on auth type
+            if ($authType === 'local') {
+                // Local users: respect local_needapproval config and existing approval status
+                if ($existingUser && $existingUser->approval !== null) {
+                    // Preserve existing approval status for local users
+                    $userData['approval'] = $existingUser->approval;
+                } else {
+                    // New local user: set approval based on config
+                    $localNeedsApproval = config('auth.local_needapproval', true);
+                    $userData['approval'] = !$localNeedsApproval; // If approval needed: false, else: true
+                }
+            } else {
+                // External auth users (LDAP/OIDC/Shibboleth) are always auto-approved after registration
+                $userData['approval'] = true;
+            }
 
             // Handle password update for local users
             if ($isFirstLoginLocalUser && isset($validatedData['newPassword'])) {
                 $userData['password'] = Hash::make($validatedData['newPassword']);
                 $userData['reset_pw'] = false; // Password has been reset
-                
-                // Local users may need approval based on config
-                $localNeedsApproval = config('auth.local_needapproval', true);
-                $userData['approval'] = !$localNeedsApproval; // Invert: if needs approval, set to false
             }
 
             // Update or create the local user
