@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             AiAssistantPromptSeeder::class,
             AiAssistantSeeder::class,    // ← AI Assistants after prompts
             MailTemplateSeeder::class,   // ← Mail templates after core system setup
+            AnnouncementTranslationsSeeder::class, // ← Import markdown files into DB
         ]);
     }
 }
