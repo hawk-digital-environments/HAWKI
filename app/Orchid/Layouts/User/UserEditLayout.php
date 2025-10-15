@@ -23,6 +23,10 @@ class UserEditLayout extends Rows
         $user = $this->query->get('user');
         $exists = $user && $user->exists;
 
+        // Build employeetype options
+        // Include all self-assignable roles PLUS the current user's employeetype (if it exists)
+        $employeetypeOptions = $this->buildEmployeetypeOptions($user);
+
         return [
             Input::make('user.name')
                 ->type('text')
@@ -50,11 +54,47 @@ class UserEditLayout extends Rows
                 ->disabled($exists),
 
             Select::make('user.employeetype')
-                ->fromQuery(Role::where('selfassign', true), 'name', 'slug')
+                ->options($employeetypeOptions)
                 ->empty('Select Employee Type...', '')
                 ->required()
                 ->title('Employee Type')
-                ->help('Select the employee type/role for this user (only self-assignable roles are shown)'),
+                ->help('Select the employee type/role for this user'),
         ];
+    }
+
+    /**
+     * Build employeetype dropdown options
+     * Includes all self-assignable roles + current user's employeetype if it exists
+     */
+    private function buildEmployeetypeOptions($user): array
+    {
+        // Get all self-assignable roles
+        $selfAssignableRoles = Role::where('selfassign', true)
+            ->orderBy('name')
+            ->get()
+            ->pluck('name', 'slug')
+            ->toArray();
+
+        // If user exists and has an employeetype, ensure it's in the options
+        if ($user && $user->exists && !empty($user->employeetype)) {
+            $currentEmployeetype = $user->employeetype;
+            
+            // Check if current employeetype is already in the list
+            if (!isset($selfAssignableRoles[$currentEmployeetype])) {
+                // Try to find the role in the database
+                $currentRole = Role::where('slug', $currentEmployeetype)->first();
+                
+                if ($currentRole) {
+                    // Add current role to options (even if not self-assignable)
+                    // This allows editing existing users with non-self-assignable roles
+                    $selfAssignableRoles = [$currentEmployeetype => $currentRole->name . ' (current)'] + $selfAssignableRoles;
+                } else {
+                    // Role doesn't exist in database - add as-is with note
+                    $selfAssignableRoles = [$currentEmployeetype => ucfirst($currentEmployeetype) . ' (current)'] + $selfAssignableRoles;
+                }
+            }
+        }
+
+        return $selfAssignableRoles;
     }
 }
