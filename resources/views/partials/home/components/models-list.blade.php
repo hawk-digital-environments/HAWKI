@@ -7,31 +7,33 @@
                 $groupedModels = collect($models['models'])
                     ->filter(fn($model) => !isset($model['visible']) || $model['visible'])
                     ->groupBy(fn($model) => $model['provider']['name'] ?? $model['provider_name'] ?? 'Unknown')
-                    ->sortBy(function ($providerModels, $providerName) {
+                    ->map(function ($providerModels, $providerName) {
                         // Get the display_order from the first model of this provider
                         $firstModel = $providerModels->first();
-                        $displayOrder = $firstModel['provider_display_order'] ?? $firstModel['provider']['display_order'] ?? null;
+                        $displayOrder = $firstModel['provider_display_order'] ?? $firstModel['provider']['display_order'] ?? 9999;
                         
-                        // Create composite sort key: display_order (nulls last) + provider_name for secondary sort
-                        if ($displayOrder !== null) {
-                            // Pad with zeros for consistent sorting + provider name for tie-breaking
-                            return sprintf('%04d_%s', $displayOrder, $providerName);
-                        }
-                        
-                        // For null values, sort alphabetically at the end (9999 ensures they come last)
-                        return sprintf('9999_%s', $providerName);
-                    });
+                        return [
+                            'name' => $providerName,
+                            'models' => $providerModels,
+                            'display_order' => $displayOrder
+                        ];
+                    })
+                    ->sortBy([
+                        ['display_order', 'asc'],
+                        ['name', 'asc']
+                    ])
+                    ->values();
             @endphp
 
-            @foreach($groupedModels as $providerName => $providerModels)
+            @foreach($groupedModels as $providerGroup)
                 <div class="provider-group">
                     <div class="provider-header">
-                        <span class="provider-name">{{ $providerName }}</span>
+                        <span class="provider-name">{{ $providerGroup['name'] }}</span>
                     </div>
                     
                     @php
                         // Sort models within each provider by display_order, then by label
-                        $sortedModels = $providerModels->sortBy(function ($model) {
+                        $sortedModels = $providerGroup['models']->sortBy(function ($model) {
                             $displayOrder = $model['display_order'] ?? 9999;
                             return sprintf('%04d_%s', $displayOrder, $model['label']);
                         });
