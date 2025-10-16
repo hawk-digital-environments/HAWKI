@@ -161,9 +161,9 @@ async function exportAsPDF() {
     yOffset += 20;
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(translation.Summery, margin, yOffset);
+    doc.text(translation.Summary, margin, yOffset);
 
-    const textLenght = translation.Summery.length;
+    const textLenght = translation.Summary.length;
     doc.setFont(font, 'italic');
     doc.setFontSize(titleFS);
     doc.text(` (${translation.Auto_Generated})`, margin + (textLenght * 4) + 0, yOffset);
@@ -194,7 +194,7 @@ async function exportAsPDF() {
     yOffset += 15;
     doc.setFont(font, 'normal');
     doc.setFontSize(textFS);
-    // Create summery
+    // Create system prompt section
     const systemPromptTxt = document.querySelector('#system_prompt_field').textContent;
     const wrappedSP = doc.splitTextToSize(systemPromptTxt, maxWidth);
     wrappedSP.forEach(line => {
@@ -408,7 +408,7 @@ async function exportAsWord() {
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: translation.Summery,
+                    text: translation.Summary,
                     bold: true,
                     size: 36,
                 }),
@@ -632,7 +632,7 @@ async function preparePrintPage(){
     scrollPanel.innerHTML =
     `
         <p>${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}</p>
-        <h1>${translation.Summery}:</h1>
+        <h1>${translation.Summary}:</h1>
         <p>${summary}</p>
         <h3>System Prompt</h3>
         <p>${systemPrompt}</p>

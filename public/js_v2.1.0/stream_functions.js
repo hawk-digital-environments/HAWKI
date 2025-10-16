@@ -203,8 +203,9 @@ function createMessageLogForAI(regenerationElement = null){
 
 function createMsgObject(msg){
     const role = msg.dataset.role === 'assistant' ? 'assistant' : 'user';
-    const msgTxt = msg.querySelector(".message-text").textContent;
-    const filteredText = detectMentioning(msgTxt).filteredText;
+    const msgTextEl = msg.querySelector(".message-text");
+    const msgTxt = msgTextEl ? msgTextEl.textContent : '';
+    const filteredText = msgTxt ? detectMentioning(msgTxt).filteredText : '';
 
     const attachmentEls = msg.querySelectorAll('.attachment');
     const attachments = Array.from(attachmentEls, att => att.dataset.fileId);
@@ -212,7 +213,7 @@ function createMsgObject(msg){
     return {
         role: role,
         content:{
-            text: filteredText,
+            text: filteredText || '', // Ensure text is never undefined
             attachments: attachments
         }
     }
@@ -347,7 +348,9 @@ function convertMsgObjToLog(messages){
         msg = messages[i];
         const role = msg.message_role === 'assistant' ? 'assistant' : 'user';
         const msgTxt = msg.content.hasOwnProperty('text') ? msg.content.text : msg.content;
-        const filteredText = detectMentioning(msgTxt).filteredText;
+        // Ensure msgTxt is a string before passing to detectMentioning
+        const safeText = msgTxt || '';
+        const filteredText = typeof safeText === 'string' ? detectMentioning(safeText).filteredText : safeText;
         const messageObject = {
             role: role,
             content:{
