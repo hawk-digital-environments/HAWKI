@@ -79,7 +79,8 @@ async function postData(data) {
         return response;
 
     } catch(error){
-        console.log('Fetching Aborted'. error);
+        console.log('Fetching Aborted', error);
+        throw error; // Re-throw the error so calling functions can handle it
     }
 }
 
@@ -141,8 +142,8 @@ async function processStream(stream, onData) {
 
 async function processResponse(response, onData){
 
-    const responseJson = await response.json();
-    onData(responseJson, true);
+        const responseJson = await response.json();
+        onData(responseJson, true);
 
 }
 
@@ -291,7 +292,7 @@ async function requestPromptImprovement(sender, type) {
 
 
 
-async function requestChatlogSummery(msgs = null) {
+async function requestChatlogSummary(msgs = null) {
     // shift removes the first element which is system prompt
     if(!msgs){
         msgs = createMessageLogForAI();
@@ -301,7 +302,7 @@ async function requestChatlogSummery(msgs = null) {
         {
             role: "system",
             content: {
-                text: translation.Summery_Prompt
+                text: translation.Summary_Prompt
             },
         },
         {
@@ -345,7 +346,7 @@ function convertMsgObjToLog(messages){
     for(let i = 0; i < messages.length; i++){
         msg = messages[i];
         const role = msg.message_role === 'assistant' ? 'assistant' : 'user';
-        const msgTxt = msg.content.text;
+        const msgTxt = msg.content.hasOwnProperty('text') ? msg.content.text : msg.content;
         const filteredText = detectMentioning(msgTxt).filteredText;
         const messageObject = {
             role: role,
