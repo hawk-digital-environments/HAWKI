@@ -900,7 +900,8 @@ function loadRoomMembers(roomData) {
         </button>`;
 
     roomData.members.forEach(member => {
-        if (member.employeetype === 'system') return;
+        if (member.employeetype === 'system' ||
+            member.employeetype === 'AI') return;
 
         const memberBtnTemp = document.getElementById('member-listBtn-template').content.cloneNode(true);
         const memberBtnIcon = memberBtnTemp.querySelector('#member-icon');
@@ -1392,6 +1393,12 @@ function removeListItem(slug){
 
 async function removeMemberFromRoom(username){
 
+    if(username === hawkiUsername){
+        console.error('You can not remove HAWKI from the Room!');
+        return false;
+    }
+
+
     const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_removeMember);
     if (!confirmed) {
         return false;
@@ -1413,10 +1420,10 @@ async function removeMemberFromRoom(username){
         const data = await response.json();
 
         if (data.success) {
+            console.log(data.message);
             return true;
-        } else {
-            console.error('Removeing user was not successful!');
         }
+        console.error(data.message);
     } catch (error) {
         console.error('Failed to remove user!');
     }
