@@ -44,6 +44,7 @@ class MailTemplateService
             'user_name' => 'Name des Benutzers',
             'user_email' => 'User\'s email address',
             'app_url' => 'URL of the application',
+            'support_email' => 'Support email address',
             'current_date' => 'Current date',
             'current_datetime' => 'Current date and time',
         ];

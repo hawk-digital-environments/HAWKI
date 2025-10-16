@@ -28,6 +28,7 @@ class MailPlaceholderService
         return [
             '{{app_name}}' => Config::get('app.name', 'HAWKI'),
             '{{app_url}}' => Config::get('app.url', 'https://hawki.test'),
+            '{{support_email}}' => Config::get('mail.from.address', 'support@hawki.test'),
             '{{current_date}}' => Carbon::now()->format('Y-m-d'),
             '{{current_datetime}}' => Carbon::now()->format('Y-m-d H:i:s'),
         ];
@@ -63,6 +64,7 @@ class MailPlaceholderService
             '{{user_name}}' => 'Name of the user',
             '{{user_email}}' => 'User\'s email address',
             '{{app_url}}' => 'URL of the application',
+            '{{support_email}}' => 'Support email address',
             '{{current_date}}' => 'Current date (Y-m-d format)',
             '{{current_datetime}}' => 'Current date and time (Y-m-d H:i:s format)',
 

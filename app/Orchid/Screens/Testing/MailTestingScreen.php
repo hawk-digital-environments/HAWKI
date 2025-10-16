@@ -1285,6 +1285,7 @@ class MailTestingScreen extends Screen
             'user_name' => $user->name ?? $user->username ?? 'Test User',
             'user_email' => $user->email ?? 'test@example.com',
             'app_url' => config('app.url', 'https://hawki.test'),
+            'support_email' => config('mail.from.address', 'support@hawki.test'),
             'current_date' => now()->format('Y-m-d'),
             'current_datetime' => now()->format('Y-m-d H:i:s'),
         ];
