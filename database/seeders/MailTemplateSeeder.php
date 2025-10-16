@@ -94,22 +94,22 @@ class MailTemplateSeeder extends Seeder
                 'updated_at' => now(),
             ],
 
-            // User Approval Templates
+            // User Approval Granted Templates
             [
-                'type' => 'approval',
+                'type' => 'approval_granted',
                 'language' => 'en',
-                'description' => 'User registration confirmation email',
-                'subject' => 'Account Created Successfully - Welcome to {{app_name}}!',
-                'body' => $this->getApprovalTemplateEn(),
+                'description' => 'Account approval granted notification',
+                'subject' => 'Your {{app_name}} Account Has Been Approved',
+                'body' => $this->getApprovalGrantedTemplateEn(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
             [
-                'type' => 'approval',
+                'type' => 'approval_granted',
                 'language' => 'de',
-                'description' => 'Bestätigungs-E-Mail für Benutzerregistrierung',
-                'subject' => 'Konto erfolgreich erstellt - Willkommen bei {{app_name}}!',
-                'body' => $this->getApprovalTemplateDe(),
+                'description' => 'Benachrichtigung über erteilte Kontogenehmigung',
+                'subject' => 'Ihr {{app_name}}-Account wurde freigeschaltet',
+                'body' => $this->getApprovalGrantedTemplateDe(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -130,6 +130,26 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Benachrichtigung über ausstehende Kontogenehmigung',
                 'subject' => 'Ihr {{app_name}}-Account wurde erfolgreich beantragt',
                 'body' => $this->getApprovalPendingTemplateDe(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+
+            // Approval Revoked Templates
+            [
+                'type' => 'approval_revoked',
+                'language' => 'en',
+                'description' => 'Account approval revoked notification',
+                'subject' => 'Your {{app_name}} Account Access Has Been Revoked',
+                'body' => $this->getApprovalRevokedTemplateEn(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'type' => 'approval_revoked',
+                'language' => 'de',
+                'description' => 'Benachrichtigung über widerrufene Kontogenehmigung',
+                'subject' => 'Ihr {{app_name}}-Zugang wurde widerrufen',
+                'body' => $this->getApprovalRevokedTemplateDe(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
@@ -486,12 +506,12 @@ class MailTemplateSeeder extends Seeder
         </div>';
     }
 
-    private function getApprovalTemplateEn(): string
+    private function getApprovalGrantedTemplateEn(): string
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
             <div style="padding: 32px 32px 16px 32px; text-align: center;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Welcome to {{app_name}}! 🎉</h1>
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Account Approved! ✅</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -500,43 +520,45 @@ class MailTemplateSeeder extends Seeder
                 </p>
                 
                 <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    Your account has been successfully created and activated.
+                    Great news! Your {{app_name}} account has been approved and is now active.
                 </p>
 
                 <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <strong style="color: #15803d;">✅ Registration Complete!</strong><br>
-                    <span style="color: #166534;">You can now access all {{app_name}} features and start exploring generative AI capabilities.</span>
+                    <strong style="color: #15803d;">✅ Account Activated</strong><br>
+                    <span style="color: #166534;">Your account has been approved by our administrators.</span>
                 </div>
 
                 <h3 style="color: #1f2937; margin: 24px 0 16px 0;">Next Steps:</h3>
                 
                 <ul style="color: #64748b; margin: 16px 0 24px 20px; line-height: 1.7;">
-                    <li><strong>Complete Your Profile:</strong> Add your bio and customize your settings</li>
-                    <li><strong>Set Up Security:</strong> Enable additional security features for enhanced account protection</li>
-                    <li><strong>Start Chatting:</strong> Begin your first AI conversation or join a group chat</li>
-                    <li><strong>Explore Features:</strong> Discover different AI models and collaboration tools</li>
+                    <li><strong>Log In:</strong> Sign in to complete your registration process</li>
+                    <li><strong>Complete Registration:</strong> Set up your encryption keys and finalize your account setup</li>
                 </ul>
 
                 <div style="text-align: center; margin: 32px 0;">
-                    <a href="{{app_url}}" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
-                        Access Your {{app_name}} Account
+                    <a href="{{app_url}}/login" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+                        Log In to Complete Registration
                     </a>
                 </div>
 
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    If you have any questions, feel free to contact our support team at <a href="mailto:{{support_email}}" style="color: #2563eb; text-decoration: none;">{{support_email}}</a>.
+                </p>
+
                 <p style="font-size: 16px; color: #64748b;">
-                    Welcome aboard!<br>
+                    Best regards,<br>
                     <strong>The {{app_name}} Team</strong>
                 </p>
             </div>
         </div>';
     }
 
-    private function getApprovalTemplateDe(): string
+    private function getApprovalGrantedTemplateDe(): string
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
             <div style="padding: 32px 32px 16px 32px; text-align: center;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Willkommen bei {{app_name}}! 🎉</h1>
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Konto freigeschaltet! ✅</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -545,31 +567,33 @@ class MailTemplateSeeder extends Seeder
                 </p>
                 
                 <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    Ihr Konto wurde erfolgreich erstellt und aktiviert.
+                    Gute Nachrichten! Ihr {{app_name}}-Account wurde freigeschaltet und ist jetzt aktiv.
                 </p>
 
                 <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <strong style="color: #15803d;">✅ Registrierung abgeschlossen!</strong><br>
-                    <span style="color: #166534;">Sie können jetzt auf alle {{app_name}}-Funktionen zugreifen und generative KI-Fähigkeiten erkunden.</span>
+                    <strong style="color: #15803d;">✅ Account aktiviert</strong><br>
+                    <span style="color: #166534;">Ihr Account wurde von unseren Administratoren freigegeben.</span>
                 </div>
 
                 <h3 style="color: #1f2937; margin: 24px 0 16px 0;">Nächste Schritte:</h3>
                 
                 <ul style="color: #64748b; margin: 16px 0 24px 20px; line-height: 1.7;">
-                    <li><strong>Vervollständigen Sie Ihr Profil:</strong> Fügen Sie Ihre Biografie hinzu und passen Sie Ihre Einstellungen an</li>
-                    <li><strong>Sicherheit einrichten:</strong> Aktivieren Sie zusätzliche Sicherheitsfeatures für erhöhten Kontoschutz</li>
-                    <li><strong>Mit Chatten beginnen:</strong> Starten Sie Ihr erstes KI-Gespräch oder treten Sie einem Gruppen-Chat bei</li>
-                    <li><strong>Funktionen erkunden:</strong> Entdecken Sie verschiedene KI-Modelle und Kollaborationstools</li>
+                    <li><strong>Einloggen:</strong> Melden Sie sich an, um die Registrierung abzuschließen</li>
+                    <li><strong>Registrierung abschließen:</strong> Richten Sie Ihre Verschlüsselungsschlüssel ein und finalisieren Sie Ihre Account-Einrichtung</li>
                 </ul>
 
                 <div style="text-align: center; margin: 32px 0;">
-                    <a href="{{app_url}}" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
-                        Auf Ihr {{app_name}}-Konto zugreifen
+                    <a href="{{app_url}}/login" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
+                        Einloggen und Registrierung abschließen
                     </a>
                 </div>
 
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Bei Fragen wenden Sie sich gerne an unser Support-Team unter <a href="mailto:{{support_email}}" style="color: #2563eb; text-decoration: none;">{{support_email}}</a>.
+                </p>
+
                 <p style="font-size: 16px; color: #64748b;">
-                    Willkommen an Bord!<br>
+                    Mit freundlichen Grüßen,<br>
                     <strong>Das {{app_name}} Team</strong>
                 </p>
             </div>
@@ -664,6 +688,100 @@ class MailTemplateSeeder extends Seeder
 
                 <p style="font-size: 16px; color: #64748b;">
                     Wir freuen uns darauf, Sie bald willkommen zu heißen!<br>
+                    <strong>Das {{app_name}} Team</strong>
+                </p>
+            </div>
+        </div>';
+    }
+
+    private function getApprovalRevokedTemplateEn(): string
+    {
+        return '
+        <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Account Access Revoked</h1>
+            </div>
+            
+            <div style="padding: 32px; background: #ffffff;">
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Hello {{user_name}},
+                </p>
+                
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    We are writing to inform you that your access to {{app_name}} has been revoked by an administrator.
+                </p>
+
+                <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #991b1b;">⛔ Access Revoked</strong><br>
+                    <span style="color: #b91c1c;">You will no longer be able to access your {{app_name}} account.</span>
+                </div>
+
+                <h3 style="color: #1f2937; margin: 24px 0 16px 0;">What does this mean?</h3>
+                
+                <ul style="color: #64748b; margin: 16px 0 24px 20px; line-height: 1.7;">
+                    <li><strong>Account Disabled:</strong> Your account has been deactivated</li>
+                    <li><strong>No Access:</strong> You cannot log in or use {{app_name}} features</li>
+                    <li><strong>Data Preserved:</strong> Your data remains stored according to our retention policy</li>
+                </ul>
+
+                <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #1d4ed8;">💡 Need Help?</strong><br>
+                    <span style="color: #1e40af;">If you believe this is a mistake or have questions, please contact our support team immediately.</span>
+                </div>
+
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    For assistance or to discuss reactivation, please contact our support team at <a href="mailto:{{support_email}}" style="color: #2563eb; text-decoration: none;">{{support_email}}</a>.
+                </p>
+
+                <p style="font-size: 16px; color: #64748b;">
+                    Best regards,<br>
+                    <strong>The {{app_name}} Team</strong>
+                </p>
+            </div>
+        </div>';
+    }
+
+    private function getApprovalRevokedTemplateDe(): string
+    {
+        return '
+        <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Zugang widerrufen</h1>
+            </div>
+            
+            <div style="padding: 32px; background: #ffffff;">
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Hallo {{user_name}},
+                </p>
+                
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Wir informieren Sie hiermit, dass Ihr Zugang zu {{app_name}} von einem Administrator widerrufen wurde.
+                </p>
+
+                <div style="background: #fee2e2; border: 1px solid #dc2626; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #991b1b;">⛔ Zugang widerrufen</strong><br>
+                    <span style="color: #b91c1c;">Sie können nicht mehr auf Ihren {{app_name}}-Account zugreifen.</span>
+                </div>
+
+                <h3 style="color: #1f2937; margin: 24px 0 16px 0;">Was bedeutet das?</h3>
+                
+                <ul style="color: #64748b; margin: 16px 0 24px 20px; line-height: 1.7;">
+                    <li><strong>Account deaktiviert:</strong> Ihr Account wurde deaktiviert</li>
+                    <li><strong>Kein Zugriff:</strong> Sie können sich nicht anmelden oder {{app_name}}-Funktionen nutzen</li>
+                    <li><strong>Daten gesichert:</strong> Ihre Daten bleiben gemäß unserer Aufbewahrungsrichtlinie gespeichert</li>
+                </ul>
+
+                <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #1d4ed8;">💡 Hilfe benötigt?</strong><br>
+                    <span style="color: #1e40af;">Wenn Sie glauben, dass dies ein Fehler ist oder Fragen haben, kontaktieren Sie bitte umgehend unser Support-Team.</span>
+                </div>
+
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Für Unterstützung oder um eine Reaktivierung zu besprechen, kontaktieren Sie bitte unser Support-Team unter <a href="mailto:{{support_email}}" style="color: #2563eb; text-decoration: none;">{{support_email}}</a>.
+                </p>
+
+                <p style="font-size: 16px; color: #64748b;">
+                    Mit freundlichen Grüßen,<br>
                     <strong>Das {{app_name}} Team</strong>
                 </p>
             </div>

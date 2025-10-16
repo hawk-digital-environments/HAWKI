@@ -12,6 +12,7 @@ use App\Services\Auth\LocalAuthService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
+use App\Services\EmailService;
 use App\Services\Profile\ProfileService;
 use App\Services\System\SettingsService;
 use Cookie;
@@ -357,6 +358,42 @@ class AuthenticationController extends Controller
                     'keychain' => $validatedData['keychain'],
                 ]
             );
+            
+            // Send appropriate email based on approval status if feature is enabled
+            if (config('hawki.send_registration_mails', true)) {
+                try {
+                    $emailService = app(EmailService::class);
+                    
+                    // Send different email based on approval status
+                    if ($user->approval === true) {
+                        // User is approved - send welcome email
+                        $emailService->sendWelcomeEmail($user);
+                        Log::info('Welcome email sent after registration completion', [
+                            'user_id' => $user->id,
+                            'username' => $user->username,
+                            'email' => $user->email,
+                            'approval' => true,
+                        ]);
+                    } else {
+                        // User needs approval - send pending email
+                        $emailService->sendApprovalPendingEmail($user);
+                        Log::info('Approval pending email sent after registration completion', [
+                            'user_id' => $user->id,
+                            'username' => $user->username,
+                            'email' => $user->email,
+                            'approval' => false,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to send registration email', [
+                        'user_id' => $user->id,
+                        'username' => $user->username,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Don't fail the registration if email fails
+                }
+            }
+            
             // Log the user in
             Session::put('registration_access', false);
             Auth::login($user);

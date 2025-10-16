@@ -122,4 +122,26 @@ return [
     |
     */
     'language_controller_system' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send Registration Mails
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable sending registration and approval emails to new users.
+    | When enabled, users will receive welcome emails and approval notifications.
+    |
+    */
+    'send_registration_mails' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send Group Chat Invitation Mails
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable sending email notifications for group chat invitations.
+    | When enabled, users will receive emails when invited to group chats.
+    |
+    */
+    'send_groupchat_invitation_mails' => true,
 ];

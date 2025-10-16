@@ -35,9 +35,18 @@ class MailConfigurationSettingsScreen extends Screen
     public function query(): iterable
     {
         $mailSettings = AppSetting::where('group', 'mail')->get();
+        
+        // Get HAWKI mail-related features from basic group
+        $hawkiMailFeatures = AppSetting::where('group', 'basic')
+            ->whereIn('key', [
+                'hawki_send_registration_mails',
+                'hawki_send_groupchat_invitation_mails',
+            ])
+            ->get();
 
         return [
             'mail' => $mailSettings,
+            'hawki_features' => $hawkiMailFeatures,
         ];
     }
 
@@ -88,11 +97,17 @@ class MailConfigurationSettingsScreen extends Screen
      */
     private function buildMailSettingsLayout()
     {
+        $hawkiFeatures = [];
         $generalSettings = [];
         $smtpSettings = [];
         $herdSettings = [];
         $sendmailSettings = [];
         $logSettings = [];
+
+        // Build HAWKI Mail Features fields
+        foreach ($this->query()['hawki_features'] as $setting) {
+            $hawkiFeatures[] = $this->generateFieldForSetting($setting);
+        }
 
         // Gruppiere die Einstellungen nach Kategorien entsprechend der settings.php
         foreach ($this->query()['mail'] as $setting) {
@@ -130,6 +145,15 @@ class MailConfigurationSettingsScreen extends Screen
 
         // Array für alle Layouts vorbereiten
         $layouts = [];
+
+        // HAWKI Mail Features (at the top)
+        if (! empty($hawkiFeatures)) {
+            $layouts[] = Layout::block([
+                Layout::rows($hawkiFeatures),
+            ])
+                ->title('HAWKI Mail Features')
+                ->description('Enable or disable automatic email notifications for HAWKI features.');
+        }
 
         // General Mail Settings
         if (! empty($generalSettings)) {

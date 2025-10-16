@@ -85,11 +85,27 @@ class EmailService
     }
 
     /**
-     * Send approval/registration confirmation email
+     * Send approval granted confirmation email
      */
     public function sendApprovalEmail(User $user): bool
     {
-        return $this->sendTemplatedEmail('approval', $user->email, [], $user);
+        return $this->sendTemplatedEmail('approval_granted', $user->email, [], $user);
+    }
+
+    /**
+     * Send approval pending notification email
+     */
+    public function sendApprovalPendingEmail(User $user): bool
+    {
+        return $this->sendTemplatedEmail('approval_pending', $user->email, [], $user);
+    }
+
+    /**
+     * Send approval revoked notification email
+     */
+    public function sendApprovalRevokedEmail(User $user): bool
+    {
+        return $this->sendTemplatedEmail('approval_revoked', $user->email, [], $user);
     }
 
     /**

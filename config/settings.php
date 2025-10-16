@@ -38,6 +38,8 @@ return [
         'accessibility_location' => 'Accessibility statement URL',
         'ai_config_system' => 'DB-based AI configuration system ',
         'language_controller_system' => 'Use database for translations (true) or JSON files (false)',
+        'send_registration_mails' => 'Send registration and approval emails to new users',
+        'send_groupchat_invitation_mails' => 'Send email notifications for group chat invitations',
 
     ],
     'sanctum' => [

@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\User;
+use App\Services\EmailService;
 use App\Services\EmployeetypeMappingService;
 use Illuminate\Support\Facades\Log;
 use Orchid\Platform\Models\Role;
@@ -24,6 +25,11 @@ class UserObserver
      */
     public function updated(User $user): void
     {
+        // Handle approval status changes and send emails
+        if ($user->wasChanged('approval') && config('hawki.send_registration_mails', true)) {
+            $this->handleApprovalStatusChange($user);
+        }
+
         // Only sync if employeetype was changed OR approval was changed from false to true
         if ($user->wasChanged('employeetype') ||
             ($user->wasChanged('approval') && $user->approval)) {
@@ -39,6 +45,49 @@ class UserObserver
                 $roleNames = $removedRoles->pluck('name')->implode(', ');
                 Log::info("Removed all Orchid roles for unapproved user {$user->id} ({$user->username}): {$roleNames}");
             }
+        }
+    }
+
+    /**
+     * Handle approval status changes and send appropriate emails
+     */
+    private function handleApprovalStatusChange(User $user): void
+    {
+        try {
+            $emailService = app(EmailService::class);
+            $oldApproval = $user->getOriginal('approval');
+            $newApproval = $user->approval;
+
+            // Skip system users
+            if ($this->isSystemUser($user)) {
+                return;
+            }
+
+            // Approval changed from false to true - send approval email
+            if ($oldApproval === false && $newApproval === true) {
+                $emailService->sendApprovalEmail($user);
+                Log::info('Approval email sent after admin approved user', [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                ]);
+            }
+            // Approval changed from true to false - send revoked email
+            elseif ($oldApproval === true && $newApproval === false) {
+                $emailService->sendApprovalRevokedEmail($user);
+                Log::info('Approval revoked email sent after admin revoked access', [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send approval status change email', [
+                'user_id' => $user->id,
+                'username' => $user->username,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't fail the update if email fails
         }
     }
 

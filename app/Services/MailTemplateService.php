@@ -177,8 +177,9 @@ class MailTemplateService
             'otp' => 'Authentication code email',
             'invitation' => 'Group chat invitation email',
             'notification' => 'General notification email',
-            'approval' => 'Account approval confirmation email',
+            'approval_granted' => 'Account approval granted notification',
             'approval_pending' => 'Account pending approval notification',
+            'approval_revoked' => 'Account approval revoked notification',
             default => 'General email template for '.$templateType,
         };
     }
