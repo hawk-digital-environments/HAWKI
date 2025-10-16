@@ -3,28 +3,22 @@
 namespace App\Http\Controllers;
 
 
-use App\Models\User;
 use App\Models\PrivateUserData;
-
-use App\Services\Profile\ProfileService;
-use App\Services\System\SettingsService;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Auth;
-
-use App\Http\Controllers\Controller;
-use App\Http\Controllers\LanguageController;
-
+use App\Models\User;
+use App\Services\Announcements\AnnouncementService;
 use App\Services\Auth\LdapService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
-
-use App\Services\Announcements\AnnouncementService;
-
-use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
+use App\Services\Profile\ProfileService;
+use App\Services\System\SettingsService;
 use Cookie;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticationController extends Controller
 {
@@ -40,7 +34,7 @@ class AuthenticationController extends Controller
 
     public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService , OidcService $oidcService, TestAuthService $testAuthService, LanguageController $languageController)
     {
-        $this->authMethod = env('AUTHENTICATION_METHOD');
+        $this->authMethod = config('auth.authMethod');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
@@ -116,6 +110,10 @@ class AuthenticationController extends Controller
 
             if (!$authenticatedUserInfo) {
                 return response()->json(['error' => 'Login Failed!'], 401);
+            }
+
+            if ($authenticatedUserInfo instanceof Response) {
+                return $authenticatedUserInfo;
             }
 
             Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
@@ -306,10 +304,9 @@ class AuthenticationController extends Controller
         Cookie::queue(Cookie::forget('PHPSESSID'));
 
         // Redirect depending on authentication method
-        $authMethod = env('AUTHENTICATION_METHOD');
-        if ($authMethod === 'Shibboleth') {
-            $redirectUri = config('shibboleth.logout_path');
-        } elseif ($authMethod === 'OIDC') {
+        if ($this->authMethod === 'Shibboleth') {
+            $redirectUri = $this->shibbolethService->getLogoutPath() ?? '/login';
+        } elseif ($this->authMethod === 'OIDC') {
             $redirectUri = config('open_id_connect.oidc_logout_path');
         } else {
             $redirectUri = '/login';

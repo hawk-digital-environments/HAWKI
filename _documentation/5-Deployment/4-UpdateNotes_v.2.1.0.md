@@ -1,3 +1,6 @@
+---
+sidebar_position: 5
+---
 
 ## Updating to v2.1.0
 
