@@ -125,9 +125,9 @@ async function exportAsPDF() {
     }
 
 
-    // summery
-    const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    // summary
+    const summaryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
+    const summary = await requestChatlogSummary(summaryMsg);
 
 
 
@@ -173,8 +173,8 @@ async function exportAsPDF() {
     yOffset += 10;
     doc.setFont(font, 'normal');
     doc.setFontSize(textFS);
-    // Create summery
-    const wrappedContent = doc.splitTextToSize(summery, maxWidth);
+    // Create summary
+    const wrappedContent = doc.splitTextToSize(summary, maxWidth);
     wrappedContent.forEach(line => {
         // Check if the line will fit on the current page
         if (yOffset + lineHeight > maxPageHeight) {
@@ -385,8 +385,8 @@ async function exportAsWord() {
         return;
     }
 
-    const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    const summaryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
+    const summary = await requestChatlogSummary(summaryMsg);
 
     const chatLogChildren = [];
     const date = new Date();
@@ -422,7 +422,7 @@ async function exportAsWord() {
         })
     );
 
-    chatLogChildren.push(...transformMarkdownToDocxContent(summery));
+    chatLogChildren.push(...transformMarkdownToDocxContent(summary));
 
 
     const systemPromptTxt = document.querySelector('#system_prompt_field').textContent;
@@ -626,14 +626,14 @@ async function preparePrintPage(){
     const date = new Date();
     const formattedDate = `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()}`
 
-    const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    const summaryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
+    const summary = await requestChatlogSummary(summaryMsg);
 
     scrollPanel.innerHTML =
     `
         <p>${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}</p>
         <h1>${translation.Summery}:</h1>
-        <p>${summery}</p>
+        <p>${summary}</p>
         <h3>System Prompt</h3>
         <p>${systemPrompt}</p>
         <h1>${translation.Chatlog}</h1>
