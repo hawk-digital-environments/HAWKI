@@ -33,7 +33,7 @@ class LoginController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService())->render();
 
-        $authenticationMethod = env('AUTHENTICATION_METHOD', 'LDAP');
+        $authenticationMethod = config('auth.authMethod', 'LDAP');
 
        // Read authentication forms
         $authForms = View::make('partials.login.authForms', compact('translation', 'authenticationMethod'))->render();
