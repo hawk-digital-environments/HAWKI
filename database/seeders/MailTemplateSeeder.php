@@ -140,8 +140,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Welcome to {{app_name}}! 🎉</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Welcome to {{app_name}}! 🎉</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -190,8 +190,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Willkommen bei {{app_name}}! 🎉</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Willkommen bei {{app_name}}! 🎉</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -240,8 +240,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Your Authentication Code</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Your Authentication Code</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -288,8 +288,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Ihr Authentifizierungscode</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Ihr Authentifizierungscode</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -336,8 +336,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">You\'re invited to collaborate! 🚀</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">You\'re invited to collaborate! 🚀</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -382,8 +382,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Sie sind zur Zusammenarbeit eingeladen! 🚀</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Sie sind zur Zusammenarbeit eingeladen! 🚀</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -428,8 +428,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">{{notification_title}}</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">{{notification_title}}</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -459,8 +459,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">{{notification_title}}</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">{{notification_title}}</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -490,8 +490,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Welcome to {{app_name}}! 🎉</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Welcome to {{app_name}}! 🎉</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -535,8 +535,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Willkommen bei {{app_name}}! 🎉</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Willkommen bei {{app_name}}! 🎉</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -580,8 +580,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Account Request Received 📋</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Account Request Received 📋</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
@@ -627,8 +627,8 @@ class MailTemplateSeeder extends Seeder
     {
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
-            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Account-Antrag erhalten 📋</h1>
+            <div style="padding: 32px 32px 16px 32px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Account-Antrag erhalten 📋</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
