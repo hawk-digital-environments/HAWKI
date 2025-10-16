@@ -18,8 +18,8 @@ class MailTemplateEditLayout extends Rows
      */
     public function fields(): iterable
     {
-        // Check if we're in edit mode by checking if type is already set
-        $isEdit = ! empty($this->query->get('mailTemplate')['type']);
+        // Check if we're in edit mode by checking the route parameter
+        $isEdit = request()->route('template_type') ? true : false;
 
         if ($isEdit) {
             // Edit mode: Show readonly label for template type and description

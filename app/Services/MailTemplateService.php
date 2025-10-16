@@ -57,6 +57,14 @@ class MailTemplateService
                 'inviter_name' => 'Name of the person sending invitation',
                 'invitation_url' => 'URL to accept invitation',
             ],
+            'approval' => [],
+            'approval_pending' => [],
+            'notification' => [
+                'notification_title' => 'Title of the notification',
+                'notification_message' => 'Main notification message',
+                'action_url' => 'URL for action button',
+                'action_text' => 'Text for action button',
+            ],
             default => [],
         };
 
@@ -87,7 +95,7 @@ class MailTemplateService
 
         // If no specific types provided, reset all templates
         if ($templateTypes === null) {
-            $templateTypes = ['welcome', 'otp', 'invitation', 'notification', 'approval'];
+            $templateTypes = ['welcome', 'otp', 'invitation', 'notification', 'approval', 'approval_pending'];
         } elseif (is_string($templateTypes)) {
             $templateTypes = [$templateTypes];
         }
@@ -170,6 +178,7 @@ class MailTemplateService
             'invitation' => 'Group chat invitation email',
             'notification' => 'General notification email',
             'approval' => 'Account approval confirmation email',
+            'approval_pending' => 'Account pending approval notification',
             default => 'General email template for '.$templateType,
         };
     }
@@ -200,6 +209,8 @@ class MailTemplateService
             'notification_de' => 'getNotificationTemplateDe',
             'approval_en' => 'getApprovalTemplateEn',
             'approval_de' => 'getApprovalTemplateDe',
+            'approval_pending_en' => 'getApprovalPendingTemplateEn',
+            'approval_pending_de' => 'getApprovalPendingTemplateDe',
         ];
 
         foreach ($templateMethods as $key => $methodName) {
@@ -241,6 +252,8 @@ class MailTemplateService
             'notification_de' => '{{app_name}} Benachrichtigung',
             'approval_en' => 'Account Created Successfully - Welcome to {{app_name}}!',
             'approval_de' => 'Konto erfolgreich erstellt - Willkommen bei {{app_name}}!',
+            'approval_pending_en' => 'Your {{app_name}} Account is Pending Approval',
+            'approval_pending_de' => 'Ihr {{app_name}}-Account wurde erfolgreich beantragt',
         ];
 
         return $subjects[$type.'_'.$language] ?? '{{app_name}} Message';
@@ -257,6 +270,7 @@ class MailTemplateService
             'invitation' => 'You\'re invited to join a {{app_name}} Group Chat',
             'notification' => '{{app_name}} Notification',
             'approval' => 'Account Created Successfully - Welcome to {{app_name}}!',
+            'approval_pending' => 'Your {{app_name}} Account is Pending Approval',
             default => '{{app_name}} Message',
         };
     }
@@ -272,6 +286,7 @@ class MailTemplateService
             'invitation' => '<p>You have been invited to {{room_name}}!</p>',
             'notification' => '<p>Hello {{user_name}}, you have a new notification from {{app_name}}.</p>',
             'approval' => '<p>Hello {{user_name}}, your account has been successfully created!</p>',
+            'approval_pending' => '<p>Hello {{user_name}}, your account request has been received and is pending approval. You will be notified once your account is activated.</p>',
             default => '<p>Hello {{user_name}}, this is a message from {{app_name}}.</p>',
         };
     }

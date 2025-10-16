@@ -113,6 +113,26 @@ class MailTemplateSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
+
+            // Approval Pending Templates
+            [
+                'type' => 'approval_pending',
+                'language' => 'en',
+                'description' => 'Account pending approval notification',
+                'subject' => 'Your {{app_name}} Account is Pending Approval',
+                'body' => $this->getApprovalPendingTemplateEn(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'type' => 'approval_pending',
+                'language' => 'de',
+                'description' => 'Benachrichtigung über ausstehende Kontogenehmigung',
+                'subject' => 'Ihr {{app_name}}-Account wurde erfolgreich beantragt',
+                'body' => $this->getApprovalPendingTemplateDe(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
         ]);
     }
 
@@ -550,6 +570,100 @@ class MailTemplateSeeder extends Seeder
 
                 <p style="font-size: 16px; color: #64748b;">
                     Willkommen an Bord!<br>
+                    <strong>Das {{app_name}} Team</strong>
+                </p>
+            </div>
+        </div>';
+    }
+
+    private function getApprovalPendingTemplateEn(): string
+    {
+        return '
+        <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Account Request Received 📋</h1>
+            </div>
+            
+            <div style="padding: 32px; background: #ffffff;">
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Hello {{user_name}},
+                </p>
+                
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Thank you for your interest in {{app_name}}! Your account request has been successfully submitted and is currently being reviewed by our team.
+                </p>
+
+                <div style="background: #fef3c7; border: 1px solid #d97706; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #92400e;">⏳ Pending Approval</strong><br>
+                    <span style="color: #a16207;">Your account is awaiting approval. You will receive a notification email once your account has been activated.</span>
+                </div>
+
+                <h3 style="color: #1f2937; margin: 24px 0 16px 0;">What happens next?</h3>
+                
+                <ul style="color: #64748b; margin: 16px 0 24px 20px; line-height: 1.7;">
+                    <li><strong>Review Process:</strong> Our team will review your account request</li>
+                    <li><strong>Email Notification:</strong> You\'ll receive an email when your account is activated</li>
+                    <li><strong>Access Granted:</strong> Once approved, you can start using all {{app_name}} features</li>
+                </ul>
+
+                <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #1d4ed8;">💡 Please Note:</strong><br>
+                    <span style="color: #1e40af;">The approval process typically takes 1-2 business days. If you have any questions, please don\'t hesitate to contact our support team.</span>
+                </div>
+
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    If you have any questions or need assistance, feel free to reach out to our support team at <a href="mailto:{{support_email}}" style="color: #2563eb; text-decoration: none;">{{support_email}}</a> or explore <a href="https://www.hawki.info/" target="_blank" style="color: #2563eb; text-decoration: none;">our documentation</a>.
+                </p>
+
+                <p style="font-size: 16px; color: #64748b;">
+                    We look forward to welcoming you soon!<br>
+                    <strong>The {{app_name}} Team</strong>
+                </p>
+            </div>
+        </div>';
+    }
+
+    private function getApprovalPendingTemplateDe(): string
+    {
+        return '
+        <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+            <div style="background-color: #2563eb; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 32px; text-align: center; color: white;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: white;">Account-Antrag erhalten 📋</h1>
+            </div>
+            
+            <div style="padding: 32px; background: #ffffff;">
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Hallo {{user_name}},
+                </p>
+                
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Vielen Dank für Ihr Interesse an {{app_name}}! Ihr Account wurde erfolgreich beantragt und wird derzeit von unserem Team überprüft.
+                </p>
+
+                <div style="background: #fef3c7; border: 1px solid #d97706; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #92400e;">⏳ Genehmigung ausstehend</strong><br>
+                    <span style="color: #a16207;">Ihr Account wartet auf Freischaltung. Sie erhalten eine Benachrichtigung per E-Mail, sobald Ihr Account aktiviert wurde.</span>
+                </div>
+
+                <h3 style="color: #1f2937; margin: 24px 0 16px 0;">Wie geht es weiter?</h3>
+                
+                <ul style="color: #64748b; margin: 16px 0 24px 20px; line-height: 1.7;">
+                    <li><strong>Überprüfung:</strong> Unser Team überprüft Ihren Account-Antrag</li>
+                    <li><strong>E-Mail-Benachrichtigung:</strong> Sie erhalten eine E-Mail, sobald Ihr Account freigeschaltet wurde</li>
+                    <li><strong>Zugang gewährt:</strong> Nach der Freischaltung können Sie alle {{app_name}}-Funktionen nutzen</li>
+                </ul>
+
+                <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #1d4ed8;">💡 Bitte beachten:</strong><br>
+                    <span style="color: #1e40af;">Der Freischaltungsprozess dauert in der Regel 1-2 Werktage. Bei Fragen wenden Sie sich gerne an unser Support-Team.</span>
+                </div>
+
+                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
+                    Wenn Sie Fragen haben oder Unterstützung benötigen, zögern Sie nicht, unser Support-Team unter <a href="mailto:{{support_email}}" style="color: #2563eb; text-decoration: none;">{{support_email}}</a> zu kontaktieren oder <a href="https://www.hawki.info/" target="_blank" style="color: #2563eb; text-decoration: none;">unsere Dokumentation</a> zu erkunden.
+                </p>
+
+                <p style="font-size: 16px; color: #64748b;">
+                    Wir freuen uns darauf, Sie bald willkommen zu heißen!<br>
                     <strong>Das {{app_name}} Team</strong>
                 </p>
             </div>
