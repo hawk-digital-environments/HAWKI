@@ -621,26 +621,6 @@ trait OrchidSettingsManagementTrait
                 ->widthColumns('1fr 1fr');
         }
 
-        // Special handling for encryption
-        if (str_contains($key, 'encryption')) {
-            return \Orchid\Screen\Fields\Group::make([
-                \Orchid\Screen\Fields\Label::make("label_{$key}")
-                    ->title($setting->description)
-                    ->help($displayKey)
-                    ->addclass('fw-bold'),
-                \Orchid\Screen\Fields\Select::make($inputName)
-                    ->options([
-                        '' => 'None',
-                        'tls' => 'TLS',
-                        'ssl' => 'SSL',
-                    ])
-                    ->value($setting->value)
-                    ->empty('None'),
-            ])
-                ->alignCenter()
-                ->widthColumns('1fr 1fr');
-        }
-
         // Special handling for WebSocket scheme (HTTP/HTTPS)
         if (str_contains($key, 'scheme') && str_contains($key, 'reverb')) {
             return \Orchid\Screen\Fields\Group::make([

@@ -108,10 +108,9 @@ return [
 
         // SMTP Mailer Configuration
         'mailers.smtp.transport' => 'SMTP transport type (smtp)',
-        'mailers.smtp.url' => 'SMTP URL (alternative to individual settings)',
         'mailers.smtp.host' => 'SMTP server hostname',
-        'mailers.smtp.port' => 'SMTP server port (usually 587 for TLS, 465 for SSL)',
-        'mailers.smtp.encryption' => 'SMTP encryption method (tls, ssl, or none)',
+        'mailers.smtp.port' => 'SMTP server port (usually 587 for TLS, 465 for SSL, 25 for unencrypted)',
+        'mailers.smtp.encryption' => 'SMTP encryption method (tls, ssl, or leave empty for none)',
         'mailers.smtp.username' => 'SMTP authentication username',
         'mailers.smtp.password' => 'SMTP authentication password',
         'mailers.smtp.timeout' => 'SMTP connection timeout in seconds',
