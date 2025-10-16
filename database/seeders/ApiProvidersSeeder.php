@@ -63,10 +63,29 @@ class ApiProvidersSeeder extends Seeder
                 continue;
             }
 
-            // Create or update the API provider
-            $provider = ApiProvider::updateOrCreate(
-                ['provider_name' => $providerName],
-                [
+            // Check if provider already exists
+            $existingProvider = ApiProvider::where('provider_name', $providerName)->first();
+
+            if ($existingProvider) {
+                // Update only essential fields, preserve display_order
+                $existingProvider->update([
+                    'api_format_id' => $apiFormat->id,
+                    'base_url' => $config['base_url'],
+                    // Note: is_active and display_order are preserved from existing record
+                    'additional_settings' => array_merge(
+                        $existingProvider->additional_settings ?? [],
+                        [
+                            'description' => "Default {$providerName} provider configuration",
+                            'created_by_seeder' => true,
+                            'updated_at' => now()->toISOString(),
+                        ]
+                    ),
+                ]);
+                $this->command->info("Updated provider: {$providerName} (ID: {$existingProvider->id}) - preserved display_order: {$existingProvider->display_order}");
+            } else {
+                // Create new provider with all default values
+                $provider = ApiProvider::create([
+                    'provider_name' => $providerName,
                     'api_format_id' => $apiFormat->id,
                     'base_url' => $config['base_url'],
                     'is_active' => $config['is_active'],
@@ -76,11 +95,9 @@ class ApiProvidersSeeder extends Seeder
                         'created_by_seeder' => true,
                         'seeded_at' => now()->toISOString(),
                     ],
-                ]
-            );
-
-            $action = $provider->wasRecentlyCreated ? 'Created' : 'Updated';
-            $this->command->info("{$action} provider: {$providerName} (ID: {$provider->id}) with API format: {$apiFormat->display_name}");
+                ]);
+                $this->command->info("Created provider: {$providerName} (ID: {$provider->id}) with API format: {$apiFormat->display_name}");
+            }
         }
 
         $this->command->info('API Providers seeding completed.');
