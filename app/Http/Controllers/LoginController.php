@@ -30,7 +30,7 @@ class LoginController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService)->render();
 
-        $authenticationMethod = config('auth.authentication_method', 'LDAP');
+        $authenticationMethod = config('auth.authMethod', 'LDAP');
 
         // Local authentication settings - load directly from database if config is not set
         $localUsersActive = config('auth.local_authentication', false);
