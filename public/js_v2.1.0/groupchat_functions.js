@@ -573,6 +573,7 @@ async function sendInvitation(btn){
 
     const addedList = invModal.querySelector('.added-members-list');
     listOfInvitees = [];
+
     addedList.childNodes.forEach(child => {
         if (child.dataset && child.dataset.obj) {
             const userObj = JSON.parse(child.dataset.obj);
@@ -582,7 +583,8 @@ async function sendInvitation(btn){
 
     // Check if no invitees selected
     if (listOfInvitees.length === 0) {
-        alert(translation.Cnf_checkMembersAdded);
+        const msg = invModal.querySelector(".error-msg");
+        msg.innerText = translation.Cnf_checkMembersAdded;
         return;
     }
 
@@ -773,6 +775,7 @@ function openInvitationPanel(){
     modal.querySelector('#searchResults').innerHTML = '';
     modal.querySelector('#searchResults').style.display = 'none';
     modal.querySelector('.added-members-list').innerHTML = '';
+    modal.querySelector(".error-msg").innerText = '';
     tempSearchResult='';
     modal.style.display = 'flex';
 }
@@ -1040,7 +1043,7 @@ async function searchUser(searchBar) {
                     option.dataset.value = JSON.stringify(user);
                     option.innerText = `${user.name} - ${user.username} (${user.email})`;
                     option.addEventListener('click', ()=>{
-                        searchBar.value = user.username; // Fill the search bar with the selected username
+                        searchBar.value = option.innerText; // Fill the search bar with the selected username
                         tempSearchResult = JSON.stringify(user);
                         resultPanel.innerHTML = '';
                         resultPanel.style.display = "none";
