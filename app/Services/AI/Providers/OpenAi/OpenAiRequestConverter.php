@@ -41,15 +41,15 @@ readonly class OpenAiRequestConverter
         // Build payload with common parameters
         $payload = [
             'model' => $modelId,
-            'messages' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
+            'input' => $formattedMessages,
+//            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
 
         // Add optional parameters if present in the raw payload
         if (isset($rawPayload['temperature'])) {
             $payload['temperature'] = $rawPayload['temperature'];
         }
-
+        $payload['temperature'] = 1;
         if (isset($rawPayload['top_p'])) {
             $payload['top_p'] = $rawPayload['top_p'];
         }
@@ -63,36 +63,51 @@ readonly class OpenAiRequestConverter
         }
 
         if($modelId === 'gpt-5'){
-            $payload['verbosity'] = "low";
-            $payload["reasoning_effort"] = "minimal";
-
+            $payload["text"]["verbosity"] = "low";
+            $payload["reasoning"]["effort"] = "medium";
         }
+        $payload['tools'] = [
+            [
+                "type"=>"mcp",
+                "server_label"=>"dmcp",
+                "server_description"=>"A Dungeons and Dragons MCP server to assist with dice rolling.",
+                "server_url"=>"https://dmcp-server.deno.dev/sse",
+                "require_approval"=>"never",
+            ]
+        ];
 
         return $payload;
     }
 
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
-        $formatted = [
-            'role' => $message['role'],
-            'content' => []
-        ];
+//        $formatted = [
+//            'role' => $message['role'],
+//            'content' => []
+//        ];
+//
+//        $content = $message['content'] ?? [];
+//
+//        // Add text if present
+//        if (!empty($content['text'])) {
+//            $formatted['content'][] = [
+//                'type' => 'text',
+//                'text' => $content['text'],
+//            ];
+//        }
+//
+//        // Handle attachments with permission checks
+//        if (!empty($content['attachments'])) {
+//            $this->processAttachments($content['attachments'], $attachmentsMap, $model, $formatted['content']);
+//        }
+
 
         $content = $message['content'] ?? [];
 
-        // Add text if present
-        if (!empty($content['text'])) {
-            $formatted['content'][] = [
-                'type' => 'text',
-                'text' => $content['text'],
-            ];
-        }
-
-        // Handle attachments with permission checks
-        if (!empty($content['attachments'])) {
-            $this->processAttachments($content['attachments'], $attachmentsMap, $model, $formatted['content']);
-        }
-
+        $formatted = [
+            'role' => $message['role'],
+            'content' => $content['text']
+        ];
         return $formatted;
     }
 
