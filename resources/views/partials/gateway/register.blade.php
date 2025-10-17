@@ -409,4 +409,3 @@
 <script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}"></script>
 
 @endsection
-@endsection
