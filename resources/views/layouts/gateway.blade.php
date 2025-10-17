@@ -13,8 +13,9 @@
     <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
 
     <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/handshake_functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/handshake_functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
     @vite('resources/js/app.js')
