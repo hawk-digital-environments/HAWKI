@@ -143,6 +143,15 @@ class MailTemplateSeeder extends Seeder
                     <span style="color: #166534;">You can start using HAWKI\'s powerful AI features right away.</span>
                 </div>
 
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #856404;">Important: Your {{app_name}} Backup Code</strong><br>
+                    <span style="color: #856404;">Please save this backup code securely. You will need it to unlock a new device for {{app_name}}:</span><br>
+                    <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; text-align: center; letter-spacing: 2px; color: #2c3e50;">
+                        {{backup_hash}}
+                    </div>
+                    <small style="color: #856404;">Store this code in a safe place. Do not share it with anyone.</small>
+                </div>
+
                 <h3 style="color: #1f2937; margin: 24px 0 16px 0;">What can you do with {{app_name}}?</h3>
                 
                 <ul style="color: #64748b; margin: 16px 0 24px 20px; line-height: 1.7;">
@@ -196,6 +205,15 @@ class MailTemplateSeeder extends Seeder
                 <div style="background: #dcfce7; border: 1px solid #16a34a; border-radius: 8px; padding: 20px; margin: 24px 0;">
                     <strong style="color: #15803d;">Ihr Konto ist jetzt aktiv!</strong><br>
                     <span style="color: #166534;">Sie können sofort mit der Nutzung von {{app_name}}s leistungsstarken KI-Funktionen beginnen.</span>
+                </div>
+
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #856404;">Wichtig: Ihr {{app_name}}-Wiederherstellungs-Code</strong><br>
+                    <span style="color: #856404;">Bitte speichern Sie diesen Backup-Code sicher. Sie benötigen ihn, um ein neues Gerät für {{app_name}} freizuschalten:</span><br>
+                    <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; text-align: center; letter-spacing: 2px; color: #2c3e50;">
+                        {{backup_hash}}
+                    </div>
+                    <small style="color: #856404;">Bewahren Sie diesen Code an einem sicheren Ort auf. Teilen Sie ihn niemals mit anderen.</small>
                 </div>
 
                 <h3 style="color: #1f2937; margin: 24px 0 16px 0;">Was können Sie mit {{app_name}} machen?</h3>

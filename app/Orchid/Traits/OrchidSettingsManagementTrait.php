@@ -538,9 +538,8 @@ trait OrchidSettingsManagementTrait
                 \Orchid\Screen\Fields\Select::make($inputName)
                     ->options([
                         'username' => 'Username',
-                        'time' => 'Time of registration',
-                        'mixed' => 'Name and Time of registration',
-                        'publicKey' => 'Public Key',
+                        
+                        'random' => 'Random (Cryptographically Secure)',
                         'default' => 'Default',
                     ])
                     ->value($setting->value),

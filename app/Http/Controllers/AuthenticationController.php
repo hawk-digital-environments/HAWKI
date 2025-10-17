@@ -251,6 +251,7 @@ class AuthenticationController extends Controller
                 'publicKey' => 'required|string',
                 'keychain' => 'required|string',
                 'KCIV' => 'required|string',
+                'backupHash' => 'nullable|string',
                 'KCTAG' => 'required|string',
                 'newPassword' => 'nullable|string|min:6', // For local users changing password
             ]);
@@ -305,6 +306,49 @@ class AuthenticationController extends Controller
                     'keychain' => $validatedData['keychain'],
                 ]
             );
+            
+            // Send appropriate email based on approval status if feature is enabled
+            if (config('hawki.send_registration_mails', true)) {
+                try {
+                    $emailService = app(EmailService::class);
+                    
+                    // Prepare custom data with backup hash if provided
+                    $customData = [];
+                    if (isset($validatedData['backupHash'])) {
+                        $customData['{{backup_hash}}'] = $validatedData['backupHash'];
+                    }
+                    
+                    // Send different email based on approval status
+                    if ($user->approval === true) {
+                        // User is approved - send welcome email
+                        $emailService->sendWelcomeEmail($user, $customData);
+                        Log::info('Welcome email sent after registration completion', [
+                            'user_id' => $user->id,
+                            'username' => $user->username,
+                            'email' => $user->email,
+                            'approval' => true,
+                            'backup_hash_included' => isset($validatedData['backupHash']),
+                        ]);
+                    } else {
+                        // User needs approval - send pending email (no backup hash needed yet)
+                        $emailService->sendApprovalPendingEmail($user);
+                        Log::info('Approval pending email sent after registration completion', [
+                            'user_id' => $user->id,
+                            'username' => $user->username,
+                            'email' => $user->email,
+                            'approval' => false,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to send registration email', [
+                        'user_id' => $user->id,
+                        'username' => $user->username,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Don't fail the registration if email fails
+                }
+            }
+            
             // Log the user in
             Session::put('registration_access', false);
             Auth::login($user);
