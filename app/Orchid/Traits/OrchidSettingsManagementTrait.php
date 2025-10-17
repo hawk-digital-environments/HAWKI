@@ -159,7 +159,7 @@ trait OrchidSettingsManagementTrait
             }
 
             // Check if passkey method changed and handle user key invalidation
-            $this->handlePasskeyMethodChange($changedSettings);
+            // $this->handlePasskeyMethodChange($changedSettings);
 
             // User feedback based on the changes
             if ($count > 0) {
