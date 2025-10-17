@@ -270,6 +270,7 @@ async function completeRegistration() {
         keychain: keychainData.ciphertext,
         KCIV: keychainData.iv,
         KCTAG: keychainData.tag,
+        backupHash: backupHash, // Include backup hash for email
     };
 
     try {
@@ -511,5 +512,86 @@ async function requestProfileReset(){
     } catch (error) {
         console.error('Error reseting profile:', error);
         throw error;
+    }
+}
+
+/**
+ * System Passkey Recovery Functions for Slide 6
+ * These are duplicates of the regular backup functions but work with slide 6 elements
+ */
+
+function uploadTextFileSystem() {
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt'; // Accept only text files
+    const msg = document.querySelector('#backup-alert-message-system');
+
+    // Set up an event listener to handle the file once the user selects it
+    input.addEventListener('change', function(event) {
+        const file = event.target.files[0]; // Get the first selected file
+        if (file) {
+            const reader = new FileReader();
+            // Once the file is read, invoke the callback with the file content
+            reader.onload = function(e) {
+                const content = e.target.result;
+                if (isValidBackupKeyFormat(content.trim())) {
+                    document.querySelector('#backup-hash-input-system').value = content;
+                } else {
+                    msg.innerText = 'The file content does not match the required format.';
+                }
+            };
+            // Read the file as text
+            reader.readAsText(file);
+        }
+    });
+
+    // Trigger the file input dialog
+    input.click();
+}
+
+async function extractPasskeySystem(){
+    const msg = document.querySelector('#backup-alert-message-system');
+    const backupHash = document.querySelector('#backup-hash-input-system').value;
+    if(!backupHash){
+        msg.innerText = 'Enter backupHash or upload your backup file.';
+        return;
+    }
+    if(!isValidBackupKeyFormat(backupHash)){
+        msg.innerText = 'Backup key is not valid!';
+        return;
+    }
+
+    // Get passkey backup from server.
+    const passkeyBackup = await requestPasskeyBackup();
+    if(!passkeyBackup){
+        return;
+    }
+
+    // derive Key from entered backupkey
+    const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
+    const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
+    
+    try{
+        //decrypt Passkey
+        const passkey = await decryptWithSymKey(derivedKey,
+                                                passkeyBackup.ciphertext,
+                                                passkeyBackup.iv,
+                                                passkeyBackup.tag,
+                                                false);
+
+        if(verifyPasskey(passkey)){
+            await setPassKey(passkey);
+            // Sync keychain and redirect to chat
+            await syncKeychain(serverKeychainCryptoData);
+            window.location.href = '/chat';
+        }
+        else{
+            msg.innerText = "Failed to verify passkey";
+        }
+    }
+    catch (error) {
+        msg.innerText = 'Error decrypting passkey with backup code.';
+        console.error('Error in extractPasskeySystem:', error);
     }
 }

@@ -51,9 +51,9 @@ class EmailService
     /**
      * Send welcome email to a new user
      */
-    public function sendWelcomeEmail(User $user): bool
+    public function sendWelcomeEmail(User $user, array $customData = []): bool
     {
-        return $this->sendTemplatedEmail('welcome', $user->email, [], $user);
+        return $this->sendTemplatedEmail('welcome', $user->email, $customData, $user);
     }
 
     /**

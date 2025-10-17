@@ -351,7 +351,8 @@
                 publicKey: publicKeyBase64,
                 keychain: keychainData.ciphertext,
                 KCIV: keychainData.iv, 
-                KCTAG: keychainData.tag, 
+                KCTAG: keychainData.tag,
+                backupHash: backupHash, // Include backup hash for email
             };
             
             // Add new password for local users
@@ -407,5 +408,4 @@
 {{-- Auto Passkey Generation Module --}}
 <script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}"></script>
 
-@endsection
 @endsection

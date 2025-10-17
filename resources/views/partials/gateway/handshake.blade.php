@@ -66,6 +66,32 @@
             </div>
         </div>
 
+        {{-- System Passkey Backup Recovery Slide --}}
+        <div class="slide" data-index="6">
+            <h3>{{ $translation["HS-EnterBackupMsg"] }}</h3>
+
+            <div class="backup-hash-row">
+                <input id="backup-hash-input-system" type="text">
+            </div>
+
+            <div class="nav-buttons">
+                <button onclick="extractPasskeySystem()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
+            </div>
+            
+            <p class="red-text" id="backup-alert-message-system"></p>
+            <button onclick="switchSlide(7)" class="btn-md">{{ $translation["HS-ForgottenBackup"] }}</button>
+
+        </div>
+
+        {{-- System Passkey Lost Backup Slide --}}
+        <div class="slide" data-index="7">
+            <h2>{{ $translation["HS-LostBackupT"] ?? "Du hast deinen Wiederherstellungscode verloren?" }}</h2>
+            <h3>{{ $translation["HS-LostBackupB"] ?? "Leider können wir, wenn du deinen Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Wiederherstellungscode einrichten. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?" }}</h3>
+            <div class="nav-buttons">
+                <button onclick="requestProfileReset()" class="btn-lg-fill align-end">{{ $translation["HS-ResetProfile"] }}</button>
+            </div>
+        </div>
+
 
         {{-- OTP Slide --}}
         <div class="slide" data-index="0">
@@ -145,12 +171,41 @@
     window.addEventListener('DOMContentLoaded', async function (){
 
         if(await getPassKey()){
-            console.log('keychain synced');
-            await syncKeychain(serverKeychainCryptoData);
-            window.location.href = '/chat';
+            try {
+                console.log('Attempting to sync keychain with stored passkey...');
+                await syncKeychain(serverKeychainCryptoData);
+                console.log('Keychain synced successfully');
+                window.location.href = '/chat';
+            } catch (error) {
+                console.error('Error syncing keychain with stored passkey:', error);
+                console.warn('Stored passkey is invalid or outdated. Clearing and requesting new authentication.');
+                
+                // Clear invalid passkey from localStorage
+                localStorage.removeItem('passkey');
+                
+                // Show appropriate authentication method based on config
+                @if(config('auth.passkey_method') === 'system')
+                    @if(config('auth.passkey_otp'))
+                        // Show OTP dialog for system passkeys
+                        switchSlide(0);
+                    @else
+                        // Show backup recovery for system passkeys without OTP
+                        switchSlide(6);
+                    @endif
+                @else
+                    // Show manual passkey input for user-defined passkeys
+                    switchSlide(1);
+                @endif
+                
+                setTimeout(() => {
+                    if(@json($activeOverlay)){
+                        setOverlay(false, true)
+                    }
+                }, 100);
+            }
         }
         else{
-            console.log('opening passkey panel');
+            console.log('No passkey found, opening authentication panel...');
             
             // Check config for passkey method
             @if(config('auth.passkey_method') === 'system')

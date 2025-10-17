@@ -19,7 +19,7 @@
 async function generatePasskeyFromSecret(passkeySecret, userInfo) {
     const encoder = new TextEncoder();
     let passkeyValue = null;
-
+    console.log(passkeySecret);
     switch (passkeySecret) {
         case 'username':
             passkeyValue = userInfo.username;
@@ -38,9 +38,17 @@ async function generatePasskeyFromSecret(passkeySecret, userInfo) {
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('');
             break;
+        case 'random':
+            // Generate a cryptographically secure random value
+            const randomBytes = new Uint8Array(32); // 256 bits of randomness
+            crypto.getRandomValues(randomBytes);
+            passkeyValue = Array.from(randomBytes)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+            break;
         default:
             // Invalid passkey secret provided - warn and use username as fallback
-            console.warn(`Invalid passkeySecret value: "${passkeySecret}". Valid values are: 'username', 'time', 'publicKey', 'mixed'. Falling back to 'username'.`);
+            console.warn(`Invalid passkeySecret value: "${passkeySecret}". Valid values are: 'username', 'time', 'publicKey', 'mixed', 'random'. Falling back to 'username'.`);
             passkeyValue = userInfo.username;
             break;
     }
@@ -71,7 +79,7 @@ async function autoGeneratePasskey(){
 
         // Create backup hash
         backupHash = generatePasskeyBackupHash();
-        
+        console.log(backupHash);
         // Check if backup-hash element exists before setting its content
         const backupHashElement = document.querySelector('#backup-hash');
         if (backupHashElement) {
@@ -118,6 +126,9 @@ async function autoGeneratePasskey(){
         // Save passkey to localStorage
         await setPassKey(generatedPasskey);
         
+        // Make backupHash available globally for completeRegistration
+        window.backupHash = backupHash;
+        
         // Complete registration directly - skip backup code slide
         if (typeof completeRegistration === 'function') {
             completeRegistration();
@@ -128,9 +139,14 @@ async function autoGeneratePasskey(){
         
     } catch (error) {
         console.error('Error in autoGeneratePasskey:', error);
-        // Fallback to manual passkey creation
+        // Fallback only in handshake context
         if (typeof switchSlide === 'function') {
-            switchSlide(2);
+            const isHandshakeContext = window.location.pathname.includes('/handshake');
+            if (isHandshakeContext) {
+                // In handshake context with system passkeys, go to backup recovery slide (6)
+                switchSlide(6);
+            }
+            // In registration context: no fallback, registration fails
         }
     }
 }
@@ -203,18 +219,29 @@ async function verifyGeneratedPassKey(){
                 window.location.href = '/chat';
             } catch (syncError) {
                 console.error('Error syncing keychain:', syncError);
-                // Fallback to manual passkey input on sync error
+                // Fallback only in handshake context
                 if (typeof switchSlide === 'function') {
-                    switchSlide(2);
+                    const isHandshakeContext = window.location.pathname.includes('/handshake');
+                    if (isHandshakeContext) {
+                        switchSlide(6);
+                    }
+                    // In registration context: no fallback
                 }
             }
         } else {
-            // Verification failed - fallback to manual passkey input
+            // Verification failed - fallback only in handshake context
             console.error('Automatic passkey verification failed - falling back to manual entry');
             
-            // Show manual passkey input slide
+            // Show appropriate slide based on context
             if (typeof switchSlide === 'function') {
-                switchSlide(2);
+                const isHandshakeContext = window.location.pathname.includes('/handshake');
+                if (isHandshakeContext) {
+                    switchSlide(6);
+                } else {
+                    // In registration context: show error, no fallback
+                    alert('Automatic passkey verification failed. Please try logging in again.');
+                    window.location.href = '/login';
+                }
             } else {
                 alert('Automatic passkey verification failed. Please try logging in again.');
                 window.location.href = '/login';
@@ -222,9 +249,16 @@ async function verifyGeneratedPassKey(){
         }
     } catch (error) {
         console.error('Error in verifyGeneratedPassKey:', error);
-        // Fallback to manual passkey input on any error
+        // Fallback only in handshake context
         if (typeof switchSlide === 'function') {
-            switchSlide(2);
+            const isHandshakeContext = window.location.pathname.includes('/handshake');
+            if (isHandshakeContext) {
+                switchSlide(6);
+            } else {
+                // In registration context: show error, no fallback
+                alert('An error occurred during passkey verification. Please try logging in again.');
+                window.location.href = '/login';
+            }
         } else {
             alert('An error occurred during passkey verification. Please try logging in again.');
             window.location.href = '/login';

@@ -63,6 +63,7 @@ class MailPlaceholderService
             '{{app_name}}' => 'Name of the application',
             '{{user_name}}' => 'Name of the user',
             '{{user_email}}' => 'User\'s email address',
+            '{{backup_hash}}' => 'User\'s passkey backup hash code',
             '{{app_url}}' => 'URL of the application',
             '{{support_email}}' => 'Support email address',
             '{{current_date}}' => 'Current date (Y-m-d format)',
