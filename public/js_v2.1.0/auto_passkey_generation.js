@@ -130,7 +130,7 @@ async function autoGeneratePasskey(){
         console.error('Error in autoGeneratePasskey:', error);
         // Fallback to manual passkey creation
         if (typeof switchSlide === 'function') {
-            switchSlide(1);
+            switchSlide(2);
         }
     }
 }
@@ -205,7 +205,7 @@ async function verifyGeneratedPassKey(){
                 console.error('Error syncing keychain:', syncError);
                 // Fallback to manual passkey input on sync error
                 if (typeof switchSlide === 'function') {
-                    switchSlide(1);
+                    switchSlide(2);
                 }
             }
         } else {
@@ -214,7 +214,7 @@ async function verifyGeneratedPassKey(){
             
             // Show manual passkey input slide
             if (typeof switchSlide === 'function') {
-                switchSlide(1);
+                switchSlide(2);
             } else {
                 alert('Automatic passkey verification failed. Please try logging in again.');
                 window.location.href = '/login';
@@ -224,7 +224,7 @@ async function verifyGeneratedPassKey(){
         console.error('Error in verifyGeneratedPassKey:', error);
         // Fallback to manual passkey input on any error
         if (typeof switchSlide === 'function') {
-            switchSlide(1);
+            switchSlide(2);
         } else {
             alert('An error occurred during passkey verification. Please try logging in again.');
             window.location.href = '/login';
