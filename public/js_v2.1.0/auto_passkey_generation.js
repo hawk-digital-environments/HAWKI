@@ -138,12 +138,7 @@ async function autoGeneratePasskey(){
         console.error('Error in autoGeneratePasskey:', error);
         // Fallback only in handshake context
         if (typeof switchSlide === 'function') {
-            const isHandshakeContext = window.location.pathname.includes('/handshake');
-            if (isHandshakeContext) {
-                // In handshake context with system passkeys, go to backup recovery slide (6)
-                switchSlide(6);
-            }
-            // In registration context: no fallback, registration fails
+            switchSlide(2);
         }
     }
 }
@@ -218,7 +213,7 @@ async function verifyGeneratedPassKey(){
                 console.error('Error syncing keychain:', syncError);
                 // Fallback to manual passkey input on sync error
                 if (typeof switchSlide === 'function') {
-                    switchSlide(1);
+                    switchSlide(2);
                 }
             }
         } else {
@@ -227,7 +222,7 @@ async function verifyGeneratedPassKey(){
             
             // Show manual passkey input slide
             if (typeof switchSlide === 'function') {
-                switchSlide(1);
+                switchSlide(2);
             } else {
                 alert('Automatic passkey verification failed. Please try logging in again.');
                 window.location.href = '/login';
@@ -237,7 +232,7 @@ async function verifyGeneratedPassKey(){
         console.error('Error in verifyGeneratedPassKey:', error);
         // Fallback to manual passkey input on any error
         if (typeof switchSlide === 'function') {
-            switchSlide(1);
+            switchSlide(2);
         } else {
             alert('An error occurred during passkey verification. Please try logging in again.');
             window.location.href = '/login';
