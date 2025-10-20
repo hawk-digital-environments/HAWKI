@@ -14,6 +14,7 @@
     "Cnf_deleteRoom":"Do you really want to delete this Room?",
     "Cnf_leaveRoom":"Do you really want to leave this Room?",
     "Cnf_removeMember":"Do you really want to remove this member?",
+    "Cnf_checkMembersAdded": "Please add at least one user to invite.",
 
     "Cnf_tokenMsg1":"Please keep this token safe and use it carefully to keep you account safe. If :system detects suspicious behaviour this token will be revoked.",
     "Cnf_tokenMsg2":"Once you close this window you will not be able to get this key again.",
@@ -22,6 +23,7 @@
     "Cnf_passkeyRemove":"By confirming this, your Datakey and keychain data will be removed from this browser. Please remember that we currently don't provide any Datakey recovery solutions. <br> <b>Please make sure that you have a secure backup of your Datakey before proceeding.<b>",
 
     "Cnf_RemoveFile":"Are you sure you want to delete this file?",
+    "Cnf_checkMembersAdded": "Please add at least one user to invite.",
 
     "Logout_Warning":"To contninue using :system you need to accept these conditions. <br><strong>Click on confirm to logout from :system.</strong>",
 
@@ -56,6 +58,10 @@
     "Copied": "Copied!",
     "CopiedToolTip": "Copied!",
     "CopyToolTip": "Copy",
+    "EditToolTip": "Edit",
+    "SpeakToolTip": "Read aloud",
+    "RegenerateToolTip": "Regenerate",
+    "ThreadToolTip": "Open thread",
     "CreateARoom": "Create a Room",
     "CreateRoom": "Create Room",
     "CreateToken": "Create New Token",
