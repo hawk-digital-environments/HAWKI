@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 
 use App\Models\Message;
+use App\Models\User;
 use App\Services\Storage\FileStorageService;
 use Dotenv\Exception\ValidationException;
 use Illuminate\Http\Request;
@@ -118,9 +119,19 @@ class RoomController extends Controller
         $validatedData = $request->validate([
             'username' => 'string|max:16',
         ]);
-        $success = $this->roomService->kick($slug, $validatedData['username']);
+        $username = $validatedData['username'];
+        if($username === User::find(1)->username){
+            return response()->json([
+                'success' => false,
+                'message' => "You can't remove HAWKI from the room!"
+            ]);
+        }
+
+
+        $success = $this->roomService->kick($slug, $username);
         return response()->json([
-            'success' => $success
+            'success' => $success,
+            'message' => $success ? "$username was removed from the room!" : "$username could not be removed from the room!"
         ]);
     }
 

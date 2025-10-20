@@ -301,7 +301,7 @@ async function requestChatlogSummery(msgs = null) {
         {
             role: "system",
             content: {
-                text: translation.Summery_Prompt
+                text: translation.Summary_Prompt
             },
         },
         {
