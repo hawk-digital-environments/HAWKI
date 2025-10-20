@@ -11,7 +11,7 @@ return [
     |
     */
     'default_models' => [
-        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
+        'default_model' => env('DEFAULT_MODEL', 'o4-mini'),
         'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
         'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'meta-llama-3.1-8b-instruct'),
         'default_vision_model' =>  env('DEFAULT_VISION_MODEL', 'qwen2.5-vl-72b-instruct'),
@@ -40,9 +40,9 @@ return [
     |
     */
     'system_models' => [
-        'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
-        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
+        'title_generator' => env('TITLE_GENERATOR_MODEL', 'o4-mini'),
+        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'o4-mini'),
+        'summarizer' => env('SUMMARIZER_MODEL', 'o4-mini'),
     ],
 
     /*
@@ -70,9 +70,16 @@ return [
         'openAi' => [
             'active' => true,
             'api_key' => env('OPENAI_API_KEY'),
-            'api_url' => env('OPENAI_URL', 'https://api.openai.com/v1/responses'),
+            'api_url' => env('OPENAI_URL', 'https://api.openai.com/v1/chat/completions'),
             'ping_url' => env('OPENAI_PING_URL', 'https://api.openai.com/v1/models'),
             'models' => require __DIR__ . env('OPENAI_MODEL_LIST_DIR', '/model_lists/openai_models.php'),
+        ],
+        'responses' => [
+            'active' => env('RESPONSES_ACTIVE', true),
+            'api_key' => env('OPENAI_API_KEY'), // Shares same API key as openAi
+            'api_url' => env('RESPONSES_URL', 'https://api.openai.com/v1/responses'),
+            'ping_url' => env('RESPONSES_PING_URL', 'https://api.openai.com/v1/models'),
+            'models' => require __DIR__ . env('RESPONSES_MODEL_LIST_DIR', '/model_lists/responses_models.php'),
         ],
         'gwdg' => [
             'active' => env('GWDG_ACTIVE', true),
