@@ -56,9 +56,18 @@ readonly class ResponsesRequestConverter
             $payload['previous_response_id'] = $rawPayload['previous_response_id'];
         }
 
-        // Note: 'tools' in rawPayload refers to model capabilities (vision, stream, file_upload)
-        // NOT MCP tool-calling parameters. MCP tools will be implemented in a later phase.
-        // For now, we don't send any tools parameter to the Responses API.
+        // Handle web_search tool (following GoogleRequestConverter pattern)
+        // Check if model supports web_search AND frontend has enabled it
+        $availableTools = $model->getTools();
+        if (isset($availableTools['web_search']) && $availableTools['web_search'] === true) {
+            // Model supports web_search - check if frontend enabled it
+            if (isset($rawPayload['tools']['web_search']) && $rawPayload['tools']['web_search'] === true) {
+                // Add web_search tool to payload
+                $payload['tools'] = [
+                    ['type' => 'web_search']
+                ];
+            }
+        }
 
         // Optional parameters
         if (isset($rawPayload['temperature'])) {
