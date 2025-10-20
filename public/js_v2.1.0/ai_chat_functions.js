@@ -144,6 +144,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
     let msg = "";
     let messageObj;
     let metadata;
+    let auxiliaries = [];
 
     // Start buildRequestObject processing
     buildRequestObject(msgAttributes, async (data, done) => {
@@ -154,9 +155,23 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }
 
-            const {messageText, groundingMetadata} = deconstContent(data.content);
+            const {messageText, groundingMetadata, auxiliaries: aux} = deconstContent(data.content);
             if(groundingMetadata != ""){
                 metadata = groundingMetadata;
+            }
+            if(aux && aux.length > 0){
+                auxiliaries = aux;
+                
+                // Store auxiliaries IMMEDIATELY in dataset for multi-turn
+                // This ensures they're available for the next request even without page refresh
+                if (messageElement) {
+                    const tempContent = JSON.stringify({
+                        text: msg + messageText,
+                        groundingMetadata: metadata,
+                        auxiliaries: auxiliaries
+                    });
+                    messageElement.dataset.rawContent = tempContent;
+                }
             }
 
             const content = messageText;
@@ -205,7 +220,8 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
             const cryptoContent = JSON.stringify({
                 text: msg,
-                groundingMetadata : metadata
+                groundingMetadata : metadata,
+                auxiliaries: auxiliaries
             });
 
             const convKey = await keychainGet('aiConvKey');
@@ -214,6 +230,9 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.ciphertext = cryptoMsg.ciphertext;
             messageObj.iv = cryptoMsg.iv;
             messageObj.tag = cryptoMsg.tag;
+
+            // Store raw content for multi-turn (needed for createMsgObject)
+            messageElement.dataset.rawContent = cryptoContent;
 
             activateMessageControls(messageElement);
 
@@ -466,7 +485,7 @@ async function loadConv(btn=null, slug=null){
     const msgs = convData.messages;
     for (const msg of msgs) {
         const decryptedContent =  await decryptWithSymKey(convKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-        // msg.content = [];
+        // msg.content.text contains the full JSON: {text: "...", groundingMetadata: {...}, auxiliaries: [...]}
         msg.content.text = decryptedContent;
     };
 

@@ -264,9 +264,13 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     }
 
     if(updateContent){
-        const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
+        const {messageText, groundingMetadata, auxiliaries} = deconstContent(messageObj.content.text);
 
         messageElement.dataset.rawMsg = messageText;
+        
+        // Store raw content with auxiliaries for multi-turn conversations
+        messageElement.dataset.rawContent = messageObj.content.text;
+        
         if(messageObj.message_role === "user"){
             const filteredContent = detectMentioning(messageText);
             msgTxtElement.innerHTML = filteredContent.modifiedText;
@@ -385,11 +389,15 @@ function deconstContent(inputContent){
 
     let messageText = '';
     let groundingMetadata = '';
+    let auxiliaries = [];
 
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
         if(json.hasOwnProperty('groundingMetadata')){
             groundingMetadata = json.groundingMetadata
+        }
+        if(json.hasOwnProperty('auxiliaries')){
+            auxiliaries = json.auxiliaries
         }
         if(json.hasOwnProperty('text')){
             messageText = json.text;
@@ -404,7 +412,8 @@ function deconstContent(inputContent){
 
     return {
         messageText: messageText,
-        groundingMetadata: groundingMetadata
+        groundingMetadata: groundingMetadata,
+        auxiliaries: auxiliaries
     }
 
 }

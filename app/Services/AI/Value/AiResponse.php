@@ -12,25 +12,17 @@ readonly class AiResponse implements \JsonSerializable
         public ?TokenUsage $usage = null,
         public bool        $isDone = true,
         public ?string     $error = null,
-        public array       $auxiliaries = [],
     )
     {
     }
     
     public function toArray(): array
     {
-        $result = [
+        return [
             'content' => $this->content,
             'usage' => $this->usage,
             'isDone' => $this->isDone,
         ];
-        
-        // Include auxiliaries if present
-        if (!empty($this->auxiliaries)) {
-            $result['auxiliaries'] = $this->auxiliaries;
-        }
-        
-        return $result;
     }
     
     /**
