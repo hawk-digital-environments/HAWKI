@@ -7,7 +7,7 @@ on:
         description: "Version to publish"
         required: true
   release:
-    types: [published]
+    types: [ published ]
 
 jobs:
   push_to_registry:
