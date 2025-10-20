@@ -22,6 +22,9 @@ readonly class ResponsesRequestConverter
         // Map messages and separate instructions from input
         $mappedMessages = $this->mapMessages($messages);
         
+        // Extract previous_response_id from last assistant message's auxiliaries
+        $previousResponseId = $this->extractPreviousResponseId($mappedMessages);
+        
         // Extract instructions (developer/system messages) and input (conversation)
         [$instructions, $input] = $this->separateInstructionsAndInput($mappedMessages);
 
@@ -52,7 +55,10 @@ readonly class ResponsesRequestConverter
         }
 
         // Add previous_response_id for multi-turn conversations
-        if (isset($rawPayload['previous_response_id'])) {
+        // Priority: 1) Extracted from auxiliaries, 2) Explicitly provided in rawPayload
+        if ($previousResponseId) {
+            $payload['previous_response_id'] = $previousResponseId;
+        } elseif (isset($rawPayload['previous_response_id'])) {
             $payload['previous_response_id'] = $rawPayload['previous_response_id'];
         }
 
@@ -105,9 +111,10 @@ readonly class ResponsesRequestConverter
                 'content' => $contentText,
             ];
 
-            // Handle auxiliaries for reasoning continuity
-            if (isset($message['auxiliaries']) && !empty($message['auxiliaries'])) {
-                $mappedMessage['auxiliaries'] = $message['auxiliaries'];
+            // Handle auxiliaries from content (client-side encrypted, now decrypted)
+            // Similar to how Google handles groundingMetadata
+            if (is_array($content) && isset($content['auxiliaries']) && !empty($content['auxiliaries'])) {
+                $mappedMessage['auxiliaries'] = $content['auxiliaries'];
             }
 
             $mapped[] = $mappedMessage;
@@ -197,5 +204,39 @@ readonly class ResponsesRequestConverter
         }
 
         return 'low';
+    }
+
+        /**
+     * Extract previous_response_id from the last assistant message's auxiliaries
+     * This enables conversation continuity across multiple turns
+     * 
+     * Note: auxiliaries are stored at message level after mapMessages() processing
+     */
+    private function extractPreviousResponseId(array $mappedMessages): ?string
+    {
+        // Search backwards through messages for the last assistant message
+        for ($i = count($mappedMessages) - 1; $i >= 0; $i--) {
+            $message = $mappedMessages[$i];
+            
+            if ($message['role'] !== 'assistant') {
+                continue;
+            }
+
+            // Auxiliaries are at message level (added by mapMessages)
+            if (!isset($message['auxiliaries']) || !is_array($message['auxiliaries'])) {
+                continue;
+            }
+
+            foreach ($message['auxiliaries'] as $auxiliary) {
+                if (($auxiliary['type'] ?? '') === 'responsesMetadata') {
+                    $metadata = json_decode($auxiliary['content'], true);
+                    if (isset($metadata['response_id'])) {
+                        return $metadata['response_id'];
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

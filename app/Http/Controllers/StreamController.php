@@ -84,6 +84,7 @@ class StreamController extends Controller
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
+                'payload.messages.*.content.auxiliaries' => 'nullable|array',
                 'payload.tools' => 'nullable|array',
 
                 'broadcast' => 'required|boolean',
@@ -216,7 +217,8 @@ class StreamController extends Controller
                     'model' => $messageData['model'],
                     'isDone' => $messageData['isDone'],
                     'content' => $messageData['content'],
-                    'has_usage' => $response->usage !== null
+                    'has_usage' => $response->usage !== null,
+                    'has_auxiliaries' => !empty($response->auxiliaries)
                 ]);
             }
 

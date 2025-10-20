@@ -32,6 +32,9 @@ class ResponsesClient extends AbstractClient
     /**
      * Execute streaming request to Responses API
      * 
+     * Implements graceful fallback for previous_response_id errors:
+     * If the API returns "Previous response not found", automatically retry without previous_response_id
+     * 
      * @inheritDoc
      */
     protected function executeStreamingRequest(AiRequest $request, callable $onData): void
@@ -44,10 +47,43 @@ class ResponsesClient extends AbstractClient
             );
         }
 
-        (new ResponsesStreamingRequest(
-            $this->converter->convertRequestToPayload($request),
-            $onData
-        ))->execute($request->model);
+        // Convert request to payload
+        $payload = $this->converter->convertRequestToPayload($request);
+        
+        // Track if we should retry without previous_response_id
+        $hasPreviousResponseId = isset($payload['previous_response_id']);
+        $previousResponseId = $payload['previous_response_id'] ?? null;
+        $errorOccurred = false;
+        $errorMessage = null;
+
+        // Wrap onData to detect "Previous response not found" errors
+        $wrappedOnData = function($response) use (&$onData, &$errorOccurred, &$errorMessage, $previousResponseId) {
+            // Check if this is an error response
+            if ($response->error && str_contains($response->error, 'Previous response') && str_contains($response->error, 'not found')) {
+                $errorOccurred = true;
+                $errorMessage = $response->error;
+                
+                //\Log::warning('Responses API: Retrying without previous_response_id', [
+                //    'previous_response_id' => $previousResponseId
+                //]);
+                
+                // Don't call original onData yet - we'll retry
+                return;
+            }
+            
+            // Pass through to original onData
+            $onData($response);
+        };
+
+        // First attempt with original payload
+        (new ResponsesStreamingRequest($payload, $wrappedOnData))->execute($request->model);
+
+        // If error occurred and we had previous_response_id, retry without it
+        if ($errorOccurred && $hasPreviousResponseId) {
+            // Remove previous_response_id and retry (graceful fallback)
+            unset($payload['previous_response_id']);
+            (new ResponsesStreamingRequest($payload, $onData))->execute($request->model);
+        }
     }
 
     /**

@@ -210,13 +210,47 @@ function createMsgObject(msg){
     const attachmentEls = msg.querySelectorAll('.attachment');
     const attachments = Array.from(attachmentEls, att => att.dataset.fileId);
 
-    return {
-        role: role,
-        content:{
-            text: filteredText || '', // Ensure text is never undefined
-            attachments: attachments
+    let msgObject;
+
+    // For assistant messages with rawContent, use the full content (including auxiliaries)
+    if (role === 'assistant' && msg.dataset.rawContent) {
+        try {
+            const rawContent = JSON.parse(msg.dataset.rawContent);
+            
+            msgObject = {
+                role: role,
+                content: {
+                    text: rawContent.text || filteredText,
+                    attachments: attachments
+                }
+            };
+            
+            // Include auxiliaries if present
+            if (rawContent.auxiliaries && Array.isArray(rawContent.auxiliaries) && rawContent.auxiliaries.length > 0) {
+                msgObject.content.auxiliaries = rawContent.auxiliaries;
+            }
+        } catch (e) {
+            // Fallback to standard message object
+            msgObject = {
+                role: role,
+                content:{
+                    text: filteredText || '',
+                    attachments: attachments
+                }
+            };
         }
+    } else {
+        // For user messages or assistant without rawContent
+        msgObject = {
+            role: role,
+            content:{
+                text: filteredText || '',
+                attachments: attachments
+            }
+        };
     }
+
+    return msgObject;
 }
 
 

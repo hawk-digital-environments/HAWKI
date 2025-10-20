@@ -47,7 +47,16 @@ class ResponsesStreamingRequest extends AbstractRequest
 
         // Handle errors
         if (isset($jsonChunk['error'])) {
-            return $this->createErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
+            $errorMessage = $jsonChunk['error']['message'] ?? 'Unknown error';
+            
+            // Log critical error for previous_response_id issues (known OpenAI Beta limitation)
+            //if (str_contains($errorMessage, 'Previous response') && str_contains($errorMessage, 'not found')) {
+            //    \Log::warning('Responses API: previous_response_id not found', [
+            //        'error' => $errorMessage
+            //    ]);
+            //}
+            
+            return $this->createErrorResponse($errorMessage);
         }
 
         $type = $jsonChunk['type'] ?? '';
@@ -97,6 +106,17 @@ class ResponsesStreamingRequest extends AbstractRequest
                 // Extract usage from final response
                 if (!empty($jsonChunk['response']['usage'])) {
                     $usage = $this->extractUsage($model, $jsonChunk['response']);
+                }
+
+                // Extract response ID for multi-turn conversation continuity
+                $responseId = $jsonChunk['response']['id'] ?? null;
+                if ($responseId) {
+                    $auxiliaries[] = [
+                        'type' => 'responsesMetadata',
+                        'content' => json_encode([
+                            'response_id' => $responseId
+                        ])
+                    ];
                 }
 
                 // Include reasoning items as auxiliaries
@@ -157,11 +177,18 @@ class ResponsesStreamingRequest extends AbstractRequest
             );
         }
 
+        // Build content array (like Google does with groundingMetadata)
+        $responseContent = ['text' => $content];
+
+        // Add auxiliaries to content (will be encrypted client-side with text)
+        if (!empty($auxiliaries)) {
+            $responseContent['auxiliaries'] = $auxiliaries;
+        }
+
         return new AiResponse(
-            content: ['text' => $content],
+            content: $responseContent,
             usage: $usage,
-            isDone: $isDone,
-            auxiliaries: $auxiliaries
+            isDone: $isDone
         );
     }
 
