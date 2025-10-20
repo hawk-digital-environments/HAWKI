@@ -22,12 +22,12 @@ trait OpenAiUsageTrait
         if (empty($data['usage'])) {
             return null;
         }
-
+        
         return new TokenUsage(
             model: $model,
-            promptTokens: (int)$data['usage']['input_tokens'],
-            completionTokens: (int)$data['usage']['output_tokens'],
+            promptTokens: (int)$data['usage']['prompt_tokens'],
+            completionTokens: (int)$data['usage']['completion_tokens'],
         );
     }
-
+    
 }
