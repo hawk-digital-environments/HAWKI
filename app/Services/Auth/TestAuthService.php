@@ -2,37 +2,48 @@
 
 namespace App\Services\Auth;
 
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+use App\Services\Auth\Contract\AuthServiceInterface;
+use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
+use App\Services\Auth\Exception\AuthFailedException;
+use App\Services\Auth\Util\AuthServiceWithCredentialsTrait;
+use App\Services\Auth\Value\AuthenticatedUserInfo;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-class TestAuthService
+class TestAuthService implements AuthServiceInterface, AuthServiceWithCredentialsInterface
 {
-    protected $users;
+    use AuthServiceWithCredentialsTrait;
 
-    public function __construct()
+    private array|null $users;
+
+    public function __construct(
+        #[Config('test_users.testers', [])]
+        mixed $users
+    )
     {
-        $this->users = config('test_users')['testers'];
+        $this->users = is_array($users) && !empty($users) ? $users : null;
     }
 
-    public function authenticate($username, $password)
+    public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
         if($this->users === null){
-            return null;
+            throw new AuthFailedException('No test users are configured.', 500);
         }
 
-        $user = collect($this->users)->first(function ($user) use ($username, $password) {
-            return $user['username'] === $username && $user['password'] === $password;
+        $user = collect($this->users)->first(function ($user) {
+            return $user['username'] === $this->username && $user['password'] === $this->password;
         });
 
-        if ($user) {
-            return [
-                'username' => $user['username'],
-                'name' => $user['name'],
-                'email' => $user['email'],
-                'employeetype' => 'tester',
-            ];
+        if (!$user) {
+            throw new AuthFailedException('Invalid test user credentials.', 401);
         }
 
-        return null;
+        return new AuthenticatedUserInfo(
+            username: $user['username'],
+            displayName: $user['name'],
+            email: $user['email'],
+            employeeType: 'tester',
+        );
     }
 }

@@ -35,7 +35,7 @@ return [
         /**
          * The email address for the user for contact and notifications.
          * Defaults to 'mail', which is commonly used in Shibboleth installations.
-         * Other common values are 'email' or 'mail'.
+         * Another common value is 'email'.
          * This value MUST be unique for your installation.
          */
         'email' => env('SHIBBOLETH_EMAIL_VAR', 'mail'),

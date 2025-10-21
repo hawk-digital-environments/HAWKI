@@ -8,9 +8,10 @@ return [
     |
     | Defines the authentication method to be used by the application.
     | Supported: 'LDAP', 'OIDC', 'Shibboleth'
+    | Also supported are fully qualified class names of custom auth services, that implement the AuthServiceInterface!
     |
      */
-    'authMethod' => env('AUTHENTICATION_METHOD', 'LDAP'),
+    'authMethod' => 'LDAP', //env('AUTHENTICATION_METHOD', 'LDAP'),
 
     /*
     |--------------------------------------------------------------------------

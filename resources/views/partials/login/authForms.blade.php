@@ -1,10 +1,5 @@
-@if($authenticationMethod === 'OIDC')
-    <form class="form-column" method="post" id="loginForm-OIDC" action="/req/login-oidc">
-        @csrf
-        <button id="loginButton" class="btn-lg align-end top-gap-1">{{ $translation['Login'] }}</button>
-    </form>
-@elseif($authenticationMethod === 'LDAP' || $authenticationMethod === 'TestAuth')
-    <form class="form-column" id="loginForm-LDAP">
+@if($showLoginForm)
+    <form class="form-column" id="hawkiLoginForm">
         @csrf
         <label for="account">{{ $translation["username"] }}</label>
         <input type="text" name="account" id="account" onkeypress="onLoginKeydown(event)">
@@ -13,13 +8,18 @@
     </form>
     <div id="login-Button-panel">
         <div id="login-message"></div>
-        <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="button" onclick="LoginLDAP()">{{ $translation['Login'] }}</button>
+        <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="button"
+                onclick="submitLogin()">{{ $translation['Login'] }}</button>
     </div>
-@elseif($authenticationMethod === 'Shibboleth')
-    <form class="form-column" method="post" id="loginForm-Shib" action="/req/login-shibboleth">
-        @csrf
-        <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="submit" name="submit">{{ $translation['Login'] }}</button >
-    </form>
 @else
-    No authentication method defined
+    <form class="form-column" method="post" id="hawkiLoginForm" action="/req/login">
+        @csrf
+        @if($errors->has('login_error'))
+            <div id="login-message">
+                {{ $errors->first('login_error') }}
+            </div>
+        @endif
+        <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="submit"
+                name="submit">{{ $translation['Login'] }}</button>
+    </form>
 @endif
