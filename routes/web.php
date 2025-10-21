@@ -178,8 +178,7 @@ Route::middleware('prevent_back')->group(function () {
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
 
         Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileReset']);
-        Route::post('/req/backupKeychain',  [ProfileController::class, 'backupKeychain']);
-
+        Route::post('/req/backupKeychain', [ProfileController::class, 'backupKeychain']);
 
         // AI RELATED ROUTES
     });
