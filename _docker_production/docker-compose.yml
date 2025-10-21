@@ -63,7 +63,7 @@ services:
             mysql:
                 condition: service_healthy
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.0.0
+        image: digitalenvironments/hawki-toolkit-file-converter:1.1.0
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
