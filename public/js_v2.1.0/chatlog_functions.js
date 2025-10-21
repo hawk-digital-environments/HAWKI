@@ -386,10 +386,13 @@ function setModel(modelID = null){
                 const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
 
                 if (websearchBtn) {
-                    if (activeModel.id === defaultModels.default_web_search_model){
+                    // Check if the model supports web_search tool (not if it's the default web search model)
+                    // This supports both file-based and DB-based configs
+                    const supportsWebSearch = activeModel.tools?.web_search === true;
+                    
+                    if (supportsWebSearch) {
                         websearchBtn.classList.add('active');
-                    }
-                    else{
+                    } else {
                         websearchBtn.classList.remove('active');
                     }
                 }
