@@ -35,7 +35,7 @@ class ApiFormatsSeeder extends Seeder
             [
                 'unique_name' => 'openai-responses-api',
                 'display_name' => 'OpenAI Responses API',
-                'client_adapter' => 'openai',
+                'client_adapter' => 'responses',
                 'metadata' => [
                     'auth_type' => 'bearer',
                     'content_type' => 'application/json',
@@ -217,7 +217,7 @@ class ApiFormatsSeeder extends Seeder
             $endpoints = $formatData['endpoints'];
             unset($formatData['endpoints']);
 
-            $apiFormat = ApiFormat::firstOrCreate(
+            $apiFormat = ApiFormat::updateOrCreate(
                 ['unique_name' => $formatData['unique_name']],
                 $formatData
             );

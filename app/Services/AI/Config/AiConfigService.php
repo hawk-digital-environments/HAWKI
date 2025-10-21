@@ -379,12 +379,20 @@ class AiConfigService
      */
     private function buildCompatibleApiUrl(ApiProvider $apiProvider, array $endpoints): string
     {
+        $providerName = strtolower($apiProvider->provider_name);
+        $adapter = strtolower($apiProvider->apiFormat->client_adapter ?? '');
+        
         // For Google provider, we need to match the file-based config format
-        if (strtolower($apiProvider->provider_name) === 'google') {
+        if ($providerName === 'google' || $adapter === 'google') {
             // File-based format: https://generativelanguage.googleapis.com/v1beta/models/
             // Database endpoint: /models/{model}:generateContent
             // We need to return the base URL + /models/ to match file-based behavior
             return rtrim($apiProvider->base_url, '/') . '/models/';
+        }
+
+        // For Responses API, use direct endpoint (check adapter, not provider name)
+        if ($adapter === 'responses') {
+            return $endpoints['responses.create'] ?? $apiProvider->base_url;
         }
 
         // For other providers, use the endpoint as-is
@@ -400,9 +408,17 @@ class AiConfigService
      */
     private function buildCompatibleStreamUrl(ApiProvider $apiProvider, array $endpoints): string
     {
+        $providerName = strtolower($apiProvider->provider_name);
+        $adapter = strtolower($apiProvider->apiFormat->client_adapter ?? '');
+        
         // For Google provider, use the same format as API URL
-        if (strtolower($apiProvider->provider_name) === 'google') {
+        if ($providerName === 'google' || $adapter === 'google') {
             return rtrim($apiProvider->base_url, '/') . '/models/';
+        }
+
+        // For Responses API, streaming uses the same endpoint (check adapter, not provider name)
+        if ($adapter === 'responses') {
+            return $endpoints['responses.create'] ?? $apiProvider->base_url;
         }
 
         // For other providers, use the stream endpoint or fall back to chat.create
@@ -442,6 +458,7 @@ class AiConfigService
         // Map of lowercase adapter names to their correct PascalCase directory names
         $adapterMap = [
             'openai' => 'OpenAi',
+            'responses' => 'Responses',
             'google' => 'Google',
             'gwdg' => 'Gwdg',
             'ollama' => 'Ollama',
