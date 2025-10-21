@@ -4,12 +4,6 @@ let currentSlideIndex;
 function switchSlide(targetIndex) {
     const target = document.querySelector(`.slide[data-index="${targetIndex}"]`);
 
-    // Check if target slide exists
-    if (!target) {
-        console.error(`Slide with data-index="${targetIndex}" not found`);
-        return;
-    }
-
     if (previousSlide) {
         previousSlide.style.opacity = "0";
     }
@@ -22,13 +16,18 @@ function switchSlide(targetIndex) {
         target.style.display = "flex";
         
         const backBtn = document.querySelector('.slide-back-btn');
-        if (backBtn) {
-            if(targetIndex > 1){
+
+        if(targetIndex > 1){
+            backBtn.style.display = "flex";
+            setTimeout(() => {
                 backBtn.style.opacity = "1";
-            }
-            else{
-                backBtn.style.opacity = "0";
-            }
+            }, 20);
+        }
+        else{
+            backBtn.style.opacity = "0";
+            setTimeout( () => {
+                backBtn.style.display = "none";
+            }, 500)
         }
 
         // Add a small delay before changing the opacity to ensure the display change has been processed
@@ -46,14 +45,15 @@ function switchBackSlide(){
     switchSlide(targetIndex);
 }
 
-// Note: modalClick is now defined in register.blade.php to handle registration-specific logic
-// with passkey method configuration. For general modal handling, see home_functions.js
+function modalClick(btn){
+    switchSlide(4);
+}
 
 let backupHash = '';
 async function checkPasskey(){
 
     const msg = document.querySelector('#alert-message');
-    const enteredPasskey = String(document.getElementById('passkey-input').value);
+    const enteredPasskey = String(document.getElementById('passkey-input').dataset.realValue);
 
     // if passkey field is left empty.
     if(enteredPasskey === ''){
@@ -65,12 +65,12 @@ async function checkPasskey(){
 
     //Show Repeat Passkey
     if(repeatWrapper.style.display === 'none'){
-        repeatWrapper.style.display = 'block';
-        repeatWrapper.focus();
+        repeatWrapper.style.display = 'flex';
+        repeatWrapper.querySelector('input').focus();
         return;
     }
-    const repeatField = document.getElementById('passkey-repeat');
-    const repeatedKey = String(repeatField.value);
+    const repeatField = repeatWrapper.querySelector('.passkey-input')
+    const repeatedKey = String(repeatField.dataset.realValue);
 
 
     //if repeat passkey is empty
@@ -270,7 +270,7 @@ async function completeRegistration() {
         keychain: keychainData.ciphertext,
         KCIV: keychainData.iv,
         KCTAG: keychainData.tag,
-        backupHash: backupHash, // Include backup hash for email
+        backupHash: backupHash, // Include backup hash for email notification
     };
 
     try {
@@ -401,11 +401,12 @@ function isValidBackupKeyFormat(content) {
 async function extractPasskey(){
     const msg = document.querySelector('#backup-alert-message');
     const backupHash = document.querySelector('#backup-hash-input').value;
+    
     if(!backupHash){
         msg.innerText = 'Enter backupHash or upload your backup file.';
         return;
     }
-    if(!isValidBackupKeyFormat){
+    if(!isValidBackupKeyFormat(backupHash)){
         msg.innerText = 'Backup key is not valid!';
         return;
     }
@@ -432,6 +433,10 @@ async function extractPasskey(){
             setPassKey(passkey);
             switchSlide(3);
             document.querySelector('#passkey-field').innerText = passkey;
+            setTimeout(()=>{
+                document.querySelector('.slide-back-btn').remove();
+            }, 300)
+
         }
         else{
             msg.innerText = "Failed to verify passkey";
@@ -461,6 +466,10 @@ async function requestPasskeyBackup(){
 
             // Handle the server response
             if (!response.ok) {
+                if (response.status === 404) {
+                    console.warn('No passkey backup found for this user');
+                    return null;
+                }
                 const errorData = await response.json();
                 console.error('Server Error:', errorData.error);
                 throw new Error(`Server Error: ${errorData.error}`);
@@ -471,6 +480,8 @@ async function requestPasskeyBackup(){
                 const passKeyJson = data.passkeyBackup;
                 return passKeyJson;
             }
+            
+            return null;
 
         } catch (error) {
             console.error('Error downloading passkey backup:', error);
@@ -576,72 +587,42 @@ async function extractPasskeySystem(){
     try{
         console.log('Attempting to decrypt passkey backup with provided backup hash...');
         
-        //decrypt Passkey
-        const decryptedPasskey = await decryptWithSymKey(derivedKey,
-                                                passkeyBackup.ciphertext,
-                                                passkeyBackup.iv,
-                                                passkeyBackup.tag,
-                                                false);
+        // Decrypt passkey from backup using backup code
+        const decryptedPasskey = await decryptWithSymKey(
+            derivedKey,
+            passkeyBackup.ciphertext,
+            passkeyBackup.iv,
+            passkeyBackup.tag,
+            false
+        );
         
-        console.log('Backup decrypted successfully. Verifying passkey type...');
+        console.log('Backup decrypted successfully, verifying with keychain...');
 
-        // Try 1: Check if it's a system-generated passkey
-        try {
-            console.log('Try 1: Checking if it\'s a system-generated passkey...');
-            const systemPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
-            if (decryptedPasskey === systemPasskey) {
-                console.log('✓ System-generated passkey match detected');
-                // Verify with keychain
-                const systemVerified = await verifyPasskeyWithKeychain(systemPasskey);
-                if (systemVerified) {
-                    console.log('✓ System passkey verified with keychain');
-                    await setPassKey(systemPasskey);
-                    await syncKeychain(serverKeychainCryptoData);
-                    window.location.href = '/chat';
-                    return;
-                } else {
-                    console.warn('✗ System passkey match but keychain verification failed');
+        // Verify the decrypted passkey with keychain (method-agnostic)
+        // The backup contains the ORIGINAL passkey used during registration
+        const verified = await verifyPasskey(decryptedPasskey);
+        
+        if (verified) {
+            console.log('Passkey verified with keychain - restoring access');
+            await setPassKey(decryptedPasskey);
+            await syncKeychain(serverKeychainCryptoData);
+            window.location.href = '/chat';
+        } else {
+            console.error('Backup code is correct, but passkey does not match keychain');
+            msg.innerText = "Backup code is correct, but passkey verification failed. Please reset your profile.";
+            
+            // Optional: Auto-switch to slide 7 (profile reset) after 3 seconds
+            setTimeout(() => {
+                if (typeof switchSlide === 'function') {
+                    switchSlide(7);
                 }
-            } else {
-                console.log('✗ Not a system-generated passkey, trying user-defined...');
-            }
-        } catch (systemError) {
-            console.log('✗ System passkey check failed:', systemError.message);
+            }, 3000);
         }
-
-        // Try 2: Check if it's a user-defined passkey
-        try {
-            console.log('Try 2: Checking if it\'s a user-defined passkey...');
-            const userVerified = await verifyPasskeyWithKeychain(decryptedPasskey);
-            if (userVerified) {
-                console.log('✓ User-defined passkey verified with keychain');
-                await setPassKey(decryptedPasskey);
-                await syncKeychain(serverKeychainCryptoData);
-                window.location.href = '/chat';
-                return;
-            } else {
-                console.warn('✗ User passkey decrypted but keychain verification failed');
-            }
-        } catch (userError) {
-            console.log('✗ User passkey verification failed:', userError.message);
-        }
-
-        // Both methods failed - show error and suggest reset
-        msg.innerText = "Backup code is correct, but passkey doesn't match keychain. Please reset your profile.";
-        console.error('Both system and user passkey verification failed - keychain mismatch');
-        
-        // Optional: Auto-switch to slide 7 after 3 seconds
-        setTimeout(() => {
-            if (typeof switchSlide === 'function') {
-                switchSlide(7);
-            }
-        }, 3000);
-
     }
     catch (error) {
-        console.error('Error decrypting backup with provided backup hash:', error);
+        console.error('Error during backup recovery:', error);
         
-        // Check if it's a decryption error (wrong backup hash)
+        // Check if it's a decryption error (wrong backup code)
         if (error.message && error.message.includes('Decryption failed')) {
             msg.innerText = 'Incorrect backup code. Please check your backup code and try again.';
         } else {

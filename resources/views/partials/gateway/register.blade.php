@@ -70,7 +70,6 @@
                 <div class="nav-buttons">
                     <button class="btn-lg-fill" onclick="switchSlide(5)">{{ $translation["Reg_SL4_B"] }}</button>
                 </div>
-                <script>console.log('passkey_method = user');</script> 
         </div>
 
 
@@ -161,7 +160,6 @@
 
 <script>
     let userInfo = @json($userInfo);
-    let passkeySecret = @json($passkeySecret);
     let passkeyMethod = @json($passkeyMethod ?? 'user');
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
     let needsPasswordReset = @json($needsPasswordReset ?? false);
