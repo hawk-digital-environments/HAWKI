@@ -17,7 +17,7 @@ class ApiProvidersSeeder extends Seeder
         // Map Provider Names to their default configurations
         $providerConfigs = [
             'OpenAI' => [
-                'api_format_unique_name' => 'openai-api',
+                'api_format_unique_name' => 'openai-responses-api',
                 'base_url' => 'https://api.openai.com/v1',
                 'is_active' => true,
                 'display_order' => 1,
@@ -67,21 +67,19 @@ class ApiProvidersSeeder extends Seeder
             $existingProvider = ApiProvider::where('provider_name', $providerName)->first();
 
             if ($existingProvider) {
-                // Update only essential fields, preserve display_order
+                // For existing providers: DO NOT update anything to preserve user configuration
+                // Only update metadata to track seeder verification
                 $existingProvider->update([
-                    'api_format_id' => $apiFormat->id,
-                    'base_url' => $config['base_url'],
-                    // Note: is_active and display_order are preserved from existing record
                     'additional_settings' => array_merge(
                         $existingProvider->additional_settings ?? [],
                         [
                             'description' => "Default {$providerName} provider configuration",
                             'created_by_seeder' => true,
-                            'updated_at' => now()->toISOString(),
+                            'last_seeder_check' => now()->toISOString(),
                         ]
                     ),
                 ]);
-                $this->command->info("Updated provider: {$providerName} (ID: {$existingProvider->id}) - preserved display_order: {$existingProvider->display_order}");
+                $this->command->info("Verified provider: {$providerName} (ID: {$existingProvider->id}) - preserved ALL user settings (api_format, base_url, api_key, is_active, display_order)");
             } else {
                 // Create new provider with all default values
                 $provider = ApiProvider::create([
