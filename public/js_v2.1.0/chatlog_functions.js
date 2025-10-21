@@ -382,12 +382,16 @@ function setModel(modelID = null){
             const labels = document.querySelectorAll('.model-selector-label');
 
             labels.forEach(label => {
+                const inputContainer = label.closest('.input-container');
+                const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
 
-                if (activeModel.id === defaultModels.default_web_search_model){
-                    label.closest('.input-container').querySelector('#websearch-btn').classList.add('active');
-                }
-                else{
-                    label.closest('.input-container').querySelector('#websearch-btn').classList.remove('active');
+                if (websearchBtn) {
+                    if (activeModel.id === defaultModels.default_web_search_model){
+                        websearchBtn.classList.add('active');
+                    }
+                    else{
+                        websearchBtn.classList.remove('active');
+                    }
                 }
                 label.innerHTML = activeModel.label;
             });
