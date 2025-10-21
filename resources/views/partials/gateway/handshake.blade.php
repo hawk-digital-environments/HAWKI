@@ -242,7 +242,7 @@
 </script>
 
 {{-- Auto Passkey Generation Module --}}
-<script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}"></script>
+<script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/auto_passkey_generation.js')), 0, 8) }}"></script>
 
 {{-- OTP Functions Module --}}
 <script src="{{ asset('js_v2.1.0/otp_functions.js') }}"></script>
