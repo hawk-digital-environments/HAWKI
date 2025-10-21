@@ -130,7 +130,8 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
         xmlrpc \
         zip \
         redis \
-        pcntl
+        pcntl \
+        ldap
 
 # Add additional port for reverb
 EXPOSE 8080

@@ -19,15 +19,18 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
-    
+
     Route::get('/', [LoginController::class, 'index']);
-    
+
     Route::get('/login', [LoginController::class, 'index'])->name('login');
 
 
     Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
     Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
+    Route::get('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin'])
+        ->name('web.auth.shibboleth.login');
     Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
+    Route::get('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
 
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
@@ -64,14 +67,14 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
         'expiry_check',
         SyncLogResponseEnrichingMiddleware::class
     ])->group(function () {
-        
+
         Route::group(['prefix' => 'web-api'], static function () {
             Route::get('/sync', [SyncLogController::class, 'index'])
                 ->name('web.syncLog');
         });
-        
+
         Route::get('/handshake', [AuthenticationController::class, 'handshake']);
-        
+
         // AI CONVERSATION ROUTES
         Route::get('/chat', [HomeController::class, 'index'])
             ->middleware('handle_app_connect');
@@ -81,15 +84,15 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
 
 
         Route::middleware('signature_check')->group(function(){
-            
+
             // STORAGE PROXY
             Route::get('/proxy/storage/{category}/{filename}', [StorageProxyController::class, 'streamRouted'])
                 ->where(['filename' => '.*'])
                 ->name('web.storage.proxy');
-            
+
             Route::get('/chat/{slug?}', [HomeController::class, 'index'])
                 ->middleware('handle_app_connect');
-            
+
             Route::get('/req/conv/{slug?}', [AiConvController::class, 'load'])
                 ->middleware('handle_app_connect');
             Route::post('/req/conv/createChat', [AiConvController::class, 'create']);
@@ -114,7 +117,7 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
             Route::get('/req/room/{slug?}', [RoomController::class, 'load']);
             Route::post('/req/room/createRoom', [RoomController::class, 'create'])
                 ->name('web.roomCreate');
-            
+
             Route::delete('/req/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom'])
                 ->name('web.roomLeave');
             Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead'])
@@ -129,7 +132,7 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
                     ->name('web.roomMessagesEdit');
                 Route::post('/req/room/streamAI/{slug}', [StreamController::class, 'handleAiConnectionRequest'])
                     ->name('web.roomMessagesAiSend');
-                
+
                 Route::post('/req/room/attachment/upload/{slug}', [RoomController::class, 'storeAttachment'])
                     ->name('web.roomMessagesAttachmentUpload');
             });
@@ -147,7 +150,7 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
                     ->name('web.roomRemoveMember');
             });
             Route::delete('/req/room/attachment/delete', [RoomController::class, 'deleteAttachment']);
-            
+
             Route::post('/req/room/search', [RoomController::class, 'searchUser'])
                 ->name('web.roomMemberCandidateSearch');
 
@@ -181,9 +184,9 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
         Route::post('/req/profile/uploadAvatar', [ProfileController::class, 'uploadAvatar'])
             ->name('web.profileAvatarUpload');
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
-        
+
         Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileReset']);
-        
+
         Route::get('/keychain', [UserKeychainController::class, 'list'])
             ->name('web.keychainList');
         Route::get('/keychain/legacy', [UserKeychainController::class, 'getLegacyKeychain'])
@@ -199,13 +202,13 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
     });
     // NAVIGATION ROUTES
     Route::get('/logout', [AuthenticationController::class, 'logout'])->name('logout');
-    
+
     // Routes for external apps
     Route::middleware(['external_access:enabled,apps', 'app_access:declined'])
         ->group(static function () {
             Route::get('/proxy/app-logo/{app_id}', [ExtAppController::class, 'appLogoProxy'])
                 ->name('apps.logo');
-            
+
             Route::group(['prefix' => 'apps'], static function () {
                 Route::group(['prefix' => 'connect'], static function () {
                     Route::middleware(['auth', 'expiry_check', 'app_user_request_required'])->group(static function () {
@@ -213,7 +216,7 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
                         Route::post('/confirm/accept', [ExtAppController::class, 'acceptAppConnectRequestAction'])->name('web.apps.confirm.accept');
                         Route::post('/confirm/decline', [ExtAppController::class, 'declineAppConnectRequestAction'])->name('web.apps.confirm.decline');
                     });
-                    
+
                     Route::get('/{request_id}', [ExtAppController::class, 'receiveAppConnectRequest'])->name('web.apps.connect');
                 });
             });

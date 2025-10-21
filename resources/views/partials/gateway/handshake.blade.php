@@ -6,10 +6,10 @@
 <div class="wrapper">
 
     <div class="container">
-            
+
         <div class="slide" data-index="1">
             <h3>{{ $translation["HS_EnterPasskeyMsg"] }}</h3>
-            
+
             <form id="passkey-form"  autocomplete="off">
 
                 <div class="password-input-wrapper">
@@ -52,28 +52,30 @@
             <div class="nav-buttons">
                 <button onclick="extractPasskey()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
-            
+
             <p class="red-text" id="backup-alert-message"></p>
-            <button onclick="switchSlide(4)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
+            <button onclick="switchSlide(3)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
 
         </div>
 
         <div class="slide" data-index="3">
-            <h2>{{ $translation["HS_PasskeyIs"] }}</h2>
-            <h3 id="passkey-field" class="demo-hash"></h3>
-            <div class="nav-buttons">
-                <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
-
-            </div>
-        </div>
-
-        <div class="slide" data-index="4">
             <h2>{{ $translation["HS_LostBothT"] }}</h2>
             <h3>{{ $translation["HS_LostBothB"] }}</h3>
             <div class="nav-buttons">
                 <button onclick="requestProfileReset()" class="btn-lg-fill align-end">{{ $translation["HS_ResetProfile"] }}</button>
             </div>
         </div>
+
+
+        <div class="slide" data-index="4">
+            <h2>{{ $translation["HS_PasskeyIs"] }}</h2>
+            <h3 id="passkey-field" class="demo-hash"></h3>
+            <div class="nav-buttons">
+                <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
+            </div>
+        </div>
+
+
 
 
     </div>
@@ -118,22 +120,6 @@
             const rand = generateTempHash();
             input.setAttribute('name', rand);
 
-            // Input filter for allowed characters
-            input.addEventListener('beforeinput', function (event) {
-                if (event.inputType.startsWith('insert')) {
-                    if (!/^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(event.data)) {
-                        event.preventDefault();
-                        console.log('bad input');
-                        input.parentElement.style.border = '1px solid red'
-
-                        setTimeout(() => {
-                            input.parentElement.style.border = 'var(--border-stroke-thin)';
-                            console.log('back');
-                        }, 100);
-                    }
-                }
-            });
-
             // Handle Enter key
             input.addEventListener('keypress', function (event) {
                 if (event.key === 'Enter') {
@@ -161,7 +147,7 @@
                 if(input.dataset.visible === 'false'){
                     input.value = '*'.repeat(updated.length);
                 }
-      
+
             });
 
             // Prevent copy/cut/paste
@@ -175,14 +161,14 @@
                 const icons = toggleBtn.querySelectorAll('svg');
                 const eye = icons[0];
                 const eyeOff = icons[1];
-                
+
                 const isVisible = input.dataset.visible === 'true';
                 if (!isVisible) {
                     input.value = real;
                     eye.style.display = 'none';
                     eyeOff.style.display = 'inline-block';
                     input.dataset.visible = 'true';
-                } 
+                }
                 else {
                     input.value = '*'.repeat(real.length);
                     eye.style.display = 'inline-block';

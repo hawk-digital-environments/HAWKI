@@ -16,6 +16,8 @@
     <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
+    @vite('resources/js/app.js')
 
     {!! $settingsPanel !!}
 
@@ -62,13 +64,12 @@
 </html>
 
 <script>
-    window.addEventListener('DOMContentLoaded', (event) => {
+    window.addEventListener('DOMContentLoaded', () => {
         if(window.innerWidth < 480){
             const bgVideo = document.querySelector(".image_preview_container");
             bgVideo.remove();
         }
 
-        // console.log(@json($activeOverlay));
         setTimeout(() => {
             if(@json($activeOverlay)){
                 // console.log('close overlay');
@@ -78,14 +79,14 @@
     });
 
     function onLoginKeydown(event){
-        if(event.key == "Enter"){
+        if(event.key === "Enter"){
             const username = document.getElementById('account');
             // console.log(username.value);
             if(!username.value){
                 return;
             }
             const password = document.getElementById('password');
-            if(document.activeElement != password){
+            if(document.activeElement !== password){
                 password.focus();
                 return;
             }

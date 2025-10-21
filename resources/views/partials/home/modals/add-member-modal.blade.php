@@ -3,7 +3,7 @@
         <div class="modal-content-wrapper">
 
             <div class="closeButton" onclick="closeModal(this)">
-                <x-icon name="x"/>  
+                <x-icon name="x"/>
             </div>
 
             <div class="modal-content">
@@ -13,7 +13,7 @@
 
 
                 <div class="row modal-buttons-bar top-gap-2">
-                    <div></div>
+                    <p class="error-msg red-text"></p>
                     <button class="btn-lg-stroke" onclick="sendInvitation(this)">{{ $translation["Send"] }}</button>
                 </div>
 

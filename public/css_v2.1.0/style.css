@@ -724,6 +724,7 @@ button:disabled{
     font-size: var(--font-xxs);
     align-items: center;
     align-content: center;
+    line-height: 0;
     padding: 0 1rem;
     text-wrap: nowrap;
     cursor: none;

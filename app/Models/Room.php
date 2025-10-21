@@ -7,6 +7,8 @@ use App\Events\MemberRemovedFromRoomEvent;
 use App\Events\MemberUpdatedEvent;
 use App\Events\RoomDeletingEvent;
 use App\Events\RoomUpdatedEvent;
+use App\Services\Chat\Message\MessageHandlerFactory;
+use App\Services\Storage\AvatarStorageService;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +19,7 @@ use Illuminate\Support\Str;
 class Room extends Model
 {
     use HasFactory;
-    
+
     private array|null $deferredMemberEvents = null;
 
     protected $fillable = [
@@ -27,7 +29,7 @@ class Room extends Model
         'system_prompt',
         'slug'
     ];
-    
+
     protected $dispatchesEvents = [
         // 'created' is a special case for rooms, so we handle it manually
         // in the RoomFunctions trait to ensure members are added first.
@@ -114,7 +116,7 @@ class Room extends Model
                 if(!$member->hasRole($role)){
                     $member->updateRole($role);
                 }
-                
+
                 $this->triggerOrDeferMemberEvent(fn() => MemberAddedToRoomEvent::dispatch($member));
             }
             else{
@@ -123,7 +125,7 @@ class Room extends Model
                     'user_id' => $userId,
                     'role' => $role,
                 ]);
-                
+
                 $this->triggerOrDeferMemberEvent(fn() => MemberAddedToRoomEvent::dispatch($member));
             }
 
@@ -137,9 +139,9 @@ class Room extends Model
                 // Attempt to delete the member from the room based on user ID
                 $member = $this->members()->where('user_id', $userId)->firstOrFail();
                 $member->revokeMembership();
-                
+
                 $this->triggerOrDeferMemberEvent(fn() => MemberRemovedFromRoomEvent::dispatch($member));
-                
+
                 //Check if All the members have left the room.
                 if ($this->members()->count() === 1) {
                     $this->deleteRoom();
@@ -159,8 +161,16 @@ class Room extends Model
         try{
             RoomDeletingEvent::dispatch($this);
             // Delete related messages and members
-            $this->messages()->delete();
+            $messages = $this->messages()->get();
+            foreach ($messages as $message){
+                $messageHandler = MessageHandlerFactory::create('group');
+                $messageHandler->delete($this, $message->toArray());
+            }
             $this->members()->delete();
+            if($this->room_icon){
+                $avatarStorage = app(AvatarStorageService::class);
+                $avatarStorage->delete($this->room_icon,'room_avatars');
+            }
             // Delete the room itself
             $this->delete();
             return true;
@@ -169,7 +179,6 @@ class Room extends Model
             Log::error("Failed to remove member: $e");
             return false;
         }
-
     }
 
 
@@ -206,7 +215,7 @@ class Room extends Model
         }
         return false;
     }
-    
+
     public function runWithDeferredMemberEvents(callable $callback): callable
     {
         $this->deferredMemberEvents = [];
@@ -216,14 +225,14 @@ class Room extends Model
         } finally {
             $this->deferredMemberEvents = null;
         }
-        
+
         return static function () use ($deferredEvents) {
             foreach ($deferredEvents as $event) {
                 $event();
             }
         };
     }
-    
+
     private function triggerOrDeferMemberEvent(callable $trigger): void
     {
         if (is_array($this->deferredMemberEvents)) {

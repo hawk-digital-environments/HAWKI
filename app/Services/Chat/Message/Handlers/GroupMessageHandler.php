@@ -49,7 +49,7 @@ class GroupMessageHandler extends BaseMessageHandler{
                 }
             }
         }
-        
+
         MessageSentEvent::dispatch($message);
 
         return $message;
@@ -70,7 +70,7 @@ class GroupMessageHandler extends BaseMessageHandler{
             'content' => $data['content']['text']['ciphertext'],
             'model'=> $data['model'] ?? null,
         ]);
-        
+
         MessageUpdatedEvent::dispatch($message);
 
         return $message;
@@ -78,11 +78,14 @@ class GroupMessageHandler extends BaseMessageHandler{
 
 
     public function delete(AiConv|Room $room, array $data): bool{
-        return false;
+        $message = $room->messages->where('message_id', $data['message_id'])->first();
+
+        $attachments = $message->attachments;
+        foreach ($attachments as $attachment) {
+            $this->attachmentService->delete($attachment);
+        }
+
+        $message->delete();
+        return true;
     }
-
-
-
-
-
 }

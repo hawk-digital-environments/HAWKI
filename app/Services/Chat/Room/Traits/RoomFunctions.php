@@ -125,7 +125,13 @@ trait RoomFunctions
                 $filename,
                 $uuid,
                 'room_avatars');
+
             $room = Room::where('slug', $slug)->firstOrFail();
+
+            if($room->room_icon){
+                $avatarStorage->delete($room->room_icon,'room_avatars');
+            }
+
             $room->update(['room_icon' => $uuid]);
 
             return [

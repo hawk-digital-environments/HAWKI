@@ -29,9 +29,7 @@ async function selectProfileAvatar(btn){
     const initials = btn.querySelector('.user-inits');
 
     openImageSelection(imageElement.getAttribute('src'), async function(croppedImage) {
-
         const imageUrl = await uploadProfileAvatar(croppedImage);
-
 
         imageElement.style.display = 'block';
         if(initials){
@@ -39,10 +37,10 @@ async function selectProfileAvatar(btn){
         }
 
         imageElement.setAttribute('src', imageUrl);
-        const sidebarBtn =document.querySelector('.sidebar');
+        const sidebarBtn = document.getElementById('profile-sb-btn');
         sidebarBtn.querySelector('.profile-icon')
-                    .querySelector('img')
-                    .setAttribute('src', imageUrl);
+                  .querySelector('img')
+                  .setAttribute('src', imageUrl);
         sidebarBtn.querySelector('.user-inits').style.display = 'none';
         sidebarBtn.querySelector('.icon-img').style.display = 'flex';
     });

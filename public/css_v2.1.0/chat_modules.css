@@ -152,8 +152,9 @@
 
 }
 #image-selection-modal .modal-content{
-    height: 75vh;
+    /*height: 75vh;*/
     max-height: 100%;
+    overflow-y: auto;
 }
 #image-selection-modal .modal-content-wrapper{
     overflow: hidden;

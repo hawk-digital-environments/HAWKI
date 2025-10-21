@@ -571,12 +571,21 @@ async function sendInvitation(btn){
 
     const addedList = invModal.querySelector('.added-members-list');
     listOfInvitees = [];
+
     addedList.childNodes.forEach(child => {
         if (child.dataset && child.dataset.obj) {
             const userObj = JSON.parse(child.dataset.obj);
             listOfInvitees.push(userObj);
         }
     });
+
+    // Check if no invitees selected
+    if (listOfInvitees.length === 0) {
+        const msg = invModal.querySelector(".error-msg");
+        msg.innerText = translation.Cnf_checkMembersAdded;
+        return;
+    }
+
     await createAndSendInvitations(listOfInvitees, activeRoom.slug);
     closeModal(btn);
 }
@@ -765,6 +774,7 @@ function openInvitationPanel(){
     modal.querySelector('#searchResults').innerHTML = '';
     modal.querySelector('#searchResults').style.display = 'none';
     modal.querySelector('.added-members-list').innerHTML = '';
+    modal.querySelector(".error-msg").innerText = '';
     tempSearchResult='';
     modal.style.display = 'flex';
 }
@@ -897,7 +907,8 @@ function loadRoomMembers(roomData) {
         </button>`;
 
     roomData.members.forEach(member => {
-        if (member.employeetype === 'system') return;
+        if (member.employeetype === 'system' ||
+            member.employeetype === 'AI') return;
 
         const memberBtnTemp = document.getElementById('member-listBtn-template').content.cloneNode(true);
         const memberBtnIcon = memberBtnTemp.querySelector('#member-icon');
@@ -1040,7 +1051,7 @@ async function searchUser(searchBar) {
                     option.dataset.value = JSON.stringify(user);
                     option.innerText = `${user.name} - ${user.username} (${user.email})`;
                     option.addEventListener('click', ()=>{
-                        searchBar.value = user.username; // Fill the search bar with the selected username
+                        searchBar.value = option.innerText; // Fill the search bar with the selected username
                         tempSearchResult = JSON.stringify(user);
                         resultPanel.innerHTML = '';
                         resultPanel.style.display = "none";
@@ -1335,6 +1346,8 @@ async function leaveRoom(){
     if (!confirmed) {
         return;
     }
+    const listItem = document.querySelector(`.selection-item[slug="${activeRoom.slug}"]`);
+    const list = listItem.parentElement;
 
     const url = `/req/room/leaveRoom/${activeRoom.slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1352,8 +1365,14 @@ async function leaveRoom(){
 
         if (data.success) {
             removeListItem(activeRoom.slug);
-            loadRoom(list.firstElementChild, null);
-            switchDyMainContent('chat');
+            if(list.length > 0){
+                await loadRoom(list.firstElementChild, null);
+                switchDyMainContent('chat');
+            }
+            else{
+                switchDyMainContent('group-welcome-panel');
+                history.replaceState(null, '', `/groupchat`);
+            }
 
         } else {
             console.error('Room leave was not successful!');
@@ -1372,7 +1391,6 @@ function removeListItem(slug){
         if(list.childElementCount > 0){
             loadRoom(list.firstElementChild, null);
             switchDyMainContent('chat');
-
         }
         else{
             switchDyMainContent('group-welcome-panel');
@@ -1381,6 +1399,12 @@ function removeListItem(slug){
 }
 
 async function removeMemberFromRoom(username){
+
+    if(username === hawkiUsername){
+        console.error('You can not remove HAWKI from the Room!');
+        return false;
+    }
+
 
     const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_removeMember);
     if (!confirmed) {
@@ -1403,10 +1427,10 @@ async function removeMemberFromRoom(username){
         const data = await response.json();
 
         if (data.success) {
+            console.log(data.message);
             return true;
-        } else {
-            console.error('Removeing user was not successful!');
         }
+        console.error(data.message);
     } catch (error) {
         console.error('Failed to remove user!');
     }

@@ -141,7 +141,6 @@ class AiConvController extends Controller
         $conv = AiConv::where('slug', $slug)->first();
         $deleted = $this->messageHandler->delete($conv, $validatedData);
 
-
         return response()->json([
             'success'=> true,
         ]);

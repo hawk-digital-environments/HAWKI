@@ -5,16 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\Message;
 use App\Services\Api\ApiRequestMigrator;
-use App\Services\Chat\Attachment\AttachmentService;
-use App\Services\Chat\Message\MessageContentValidator;
-use App\Services\Chat\Room\RoomService;
+use App\Models\User;
 use Dotenv\Exception\ValidationException;
-use Exception;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\Chat\Room\RoomService;
+use App\Services\Chat\Message\MessageContentValidator;
+use App\Services\Chat\Attachment\AttachmentService;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 
 class RoomController extends Controller
 {
@@ -113,9 +114,19 @@ class RoomController extends Controller
         $validatedData = $request->validate([
             'username' => 'string|max:16',
         ]);
-        $success = $this->roomService->kick($slug, $validatedData['username']);
+        $username = $validatedData['username'];
+        if($username === User::find(1)->username){
+            return response()->json([
+                'success' => false,
+                'message' => "You can't remove HAWKI from the room!"
+            ]);
+        }
+
+
+        $success = $this->roomService->kick($slug, $username);
         return response()->json([
-            'success' => $success
+            'success' => $success,
+            'message' => $success ? "$username was removed from the room!" : "$username could not be removed from the room!"
         ]);
     }
 

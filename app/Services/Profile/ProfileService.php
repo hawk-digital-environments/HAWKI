@@ -30,7 +30,7 @@ class ProfileService{
         if(!empty($data['bio'])){
             $user->update(['bio' => $data['bio']]);
         }
-        
+
         UserUpdatedEvent::dispatch($user);
 
         return true;
@@ -57,6 +57,10 @@ class ProfileService{
                                         'profile_avatars',
                                         false);
         if ($response) {
+            if($user->avatar_id != null){
+                $avatarStorage->delete($user->avatar_id, 'profile_avatars');
+            }
+
             $user->update(['avatar_id' => $uuid]);
             UserUpdatedEvent::dispatch($user);
             return $avatarStorage->getUrl($uuid, 'profile_avatars');
@@ -66,34 +70,35 @@ class ProfileService{
     }
 
 
+    /**
+     * @throws Exception
+     */
     public function resetProfile(): void{
-        try{
-            $user = Auth::user();
-            $this->deleteUserData($user);
+        $user = Auth::user();
+        $this->deleteUserData($user);
 
-            $userInfo = [
-                'username' => $user->username,
-                'name' => $user->name,
-                'email' => $user->email,
-                'employeetype' => $user->employeetype,
-            ];
+        $userInfo = [
+            'username' => $user->username,
+            'name' => $user->name,
+            'email' => $user->email,
+            'employeetype' => $user->employeetype,
+        ];
 
-            Auth::logout();
+        Auth::logout();
 
-            Session::put('registration_access', true);
-            Session::put('authenticatedUserInfo', json_encode($userInfo));
-        }
-        catch(Exception $e){
-            throw $e;
-        }
+        Session::put('registration_access', true);
+        Session::put('authenticatedUserInfo', json_encode($userInfo));
     }
 
 
+    /**
+     * @throws Exception
+     */
     public function deleteUserData(User $user): void{
 
         try{
             UserRemovedEvent::dispatch($user);
-            
+
             $roomService = new RoomService();
             $rooms = $user->rooms()->get();
 
@@ -120,7 +125,7 @@ class ProfileService{
             foreach($prvUserData as $data){
                 $data->delete();
             }
-            
+
             app(UserKeychainDb::class)->removeAllOfUser($user);
 
             $backups = PasskeyBackup::where('username', $user->username)->get();
@@ -134,7 +139,7 @@ class ProfileService{
                 PersonalAccessTokenRemovedEvent::dispatch($user, $token);
                 $token->delete();
             }
-            
+
             $user->revokProfile();
         }
         catch(Exception $e){

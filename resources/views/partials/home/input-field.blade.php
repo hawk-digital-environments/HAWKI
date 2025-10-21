@@ -47,14 +47,14 @@
                     </button>
                 @endif
 
-
+                @if($webSearchAvailable)
                 <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)">
                     <x-icon class="websearch-icon" name="world"/>
                     <div class="tooltip">
                         {{ $translation["WebSearch"] }}
                     </div>
                 </button>
-
+                @endif
 
 
 
