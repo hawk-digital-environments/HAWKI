@@ -1,4 +1,5 @@
 {
+    "name": "@hawk-hhg/hawki-2",
     "private": true,
     "type": "module",
     "scripts": {
