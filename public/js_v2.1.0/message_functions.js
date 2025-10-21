@@ -761,7 +761,9 @@ async function regenerateMessage(messageElement, Done = null){
     else{
         inputContainer = messageElement.closest('.thread').querySelector('.input-container');
     }
-    const webSearchActive = inputContainer.querySelector('#websearch-btn').classList.contains('active');
+    
+    const webSearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
+    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
 
     const tools = {
         'web_search': webSearchActive

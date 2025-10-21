@@ -115,9 +115,41 @@ class AiConfigService
                 }
             }
 
-            // For now, we only handle default_model from database
-            // The other models (web_search, file_upload, vision) don't exist in ai_assistants yet
-            // and are not needed according to the requirements
+            // Get web_search model from ai_assistants table (if exists)
+            $webSearchAssistant = AiAssistant::where('key', 'web_search')
+                ->where('status', 'active')
+                ->first();
+            
+            if ($webSearchAssistant && $webSearchAssistant->ai_model) {
+                $modelId = $this->resolveSystemIdToModelId($webSearchAssistant->ai_model);
+                if ($modelId) {
+                    $models['default_web_search_model'] = $modelId;
+                }
+            }
+
+            // Get file_upload model from ai_assistants table (if exists)
+            $fileUploadAssistant = AiAssistant::where('key', 'file_upload')
+                ->where('status', 'active')
+                ->first();
+            
+            if ($fileUploadAssistant && $fileUploadAssistant->ai_model) {
+                $modelId = $this->resolveSystemIdToModelId($fileUploadAssistant->ai_model);
+                if ($modelId) {
+                    $models['default_file_upload_model'] = $modelId;
+                }
+            }
+
+            // Get vision model from ai_assistants table (if exists)
+            $visionAssistant = AiAssistant::where('key', 'vision')
+                ->where('status', 'active')
+                ->first();
+            
+            if ($visionAssistant && $visionAssistant->ai_model) {
+                $modelId = $this->resolveSystemIdToModelId($visionAssistant->ai_model);
+                if ($modelId) {
+                    $models['default_vision_model'] = $modelId;
+                }
+            }
             
             return $models;
         });

@@ -27,11 +27,11 @@
 	<script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
 	<script src="{{ asset('js_v2.1.0/home_functions.js') }}"></script>
 	<script src="{{ asset('js_v2.1.0/stream_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/ai_chat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/chatlog_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/ai_chat_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/ai_chat_functions.js')), 0, 8) }}"></script>
+	<script src="{{ asset('js_v2.1.0/chatlog_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/chatlog_functions.js')), 0, 8) }}"></script>
 	<script src="{{ asset('js_v2.1.0/inputfield_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/message_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/groupchat_functions.js') }}"></script>
+	<script src="{{ asset('js_v2.1.0/message_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/message_functions.js')), 0, 8) }}"></script>
+	<script src="{{ asset('js_v2.1.0/groupchat_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/groupchat_functions.js')), 0, 8) }}"></script>
 	<script src="{{ asset('js_v2.1.0/syntax_modifier.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
