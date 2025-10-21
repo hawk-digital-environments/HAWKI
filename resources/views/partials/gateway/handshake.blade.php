@@ -163,7 +163,7 @@
 
 <script>
     let userInfo = @json($userInfo);
-    let passkeySecret = @json($passkeySecret);
+    let passkeyMethod = @json(config('auth.passkey_method', 'user'));
     const serverKeychainCryptoData = @json($keychainData);
     const translations = @json($translation);
     const otpTimeout = @json(config('auth.passkey_otp_timeout', 300));

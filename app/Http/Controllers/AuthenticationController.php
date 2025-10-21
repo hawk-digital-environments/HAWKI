@@ -176,9 +176,6 @@ class AuthenticationController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService)->render();
 
-        // Get passkey secret from config
-        $passkeySecret = config('auth.passkey_secret', 'default_secret');
-
         $profileService = new ProfileService;
         $keychainData = $profileService->fetchUserKeychain();
 
@@ -189,7 +186,7 @@ class AuthenticationController extends Controller
         Session::put('last-route', 'handshake');
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay', 'passkeySecret'));
+        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay'));
 
     }
 
@@ -227,8 +224,6 @@ class AuthenticationController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService)->render();
 
-        // Get passkey secret from config
-        $passkeySecret = config('auth.passkey_secret', 'default_secret');
         $passkeyMethod = config('auth.passkey_method', 'user');
 
         $activeOverlay = false;
@@ -238,7 +233,7 @@ class AuthenticationController extends Controller
         Session::put('last-route', 'register');
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'passkeySecret', 'passkeyMethod', 'isFirstLoginLocalUser', 'needsPasswordReset', 'needsApproval'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'passkeyMethod', 'isFirstLoginLocalUser', 'needsPasswordReset', 'needsApproval'));
     }
 
     // / Setup User

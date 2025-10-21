@@ -7,57 +7,32 @@
  * 
  * Author: Custom HAWKI Extension
  * Created: 2025-09-18
+ * Updated: 2025-10-21 - Removed insecure passkeySecret options, now uses only cryptographically secure random generation
  */
 
 /**
- * Generate a passkey from a secret and user information
+ * Generate a cryptographically secure random passkey for system-generated method
  * 
- * @param {string} passkeySecret - The secret type ('username', 'time', 'publicKey', 'mixed')
- * @param {object} userInfo - User information object containing username, created_at, publicKey
- * @returns {Promise<string>} - Generated passkey as hex string
+ * System-generated passkeys always use 256 bits of cryptographically secure randomness.
+ * This replaces the old passkeySecret system which had security vulnerabilities.
+ * 
+ * @returns {Promise<string>} - Generated passkey as hex string (64 characters)
  */
-async function generatePasskeyFromSecret(passkeySecret, userInfo) {
-    const encoder = new TextEncoder();
-    let passkeyValue = null;
-    console.log(passkeySecret);
-    switch (passkeySecret) {
-        case 'username':
-            passkeyValue = userInfo.username;
-            break;
-        case 'time':
-            passkeyValue = userInfo.created_at;
-            break;
-        case 'publicKey':
-            passkeyValue = userInfo.publicKey;
-            break;    
-        case 'mixed':
-            // Concatenate username and created_at, then hash the result for passkeyValue
-            const mixedString = userInfo.username + userInfo.created_at;
-            const mixedHashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(mixedString));
-            passkeyValue = Array.from(new Uint8Array(mixedHashBuffer))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-            break;
-        case 'random':
-            // Generate a cryptographically secure random value
-            const randomBytes = new Uint8Array(32); // 256 bits of randomness
-            crypto.getRandomValues(randomBytes);
-            passkeyValue = Array.from(randomBytes)
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-            break;
-        default:
-            // Invalid passkey secret provided - warn and use username as fallback
-            console.warn(`Invalid passkeySecret value: "${passkeySecret}". Valid values are: 'username', 'time', 'publicKey', 'mixed', 'random'. Falling back to 'username'.`);
-            passkeyValue = userInfo.username;
-            break;
-    }
+async function generateRandomPasskey() {
+    // Generate 256 bits (32 bytes) of cryptographically secure randomness
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
     
-    const hashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        encoder.encode(passkeyValue)
-    );
-
+    // Convert to hex string
+    const randomHex = Array.from(randomBytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    
+    // Hash the random value with SHA-256 for additional entropy mixing
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(randomHex));
+    
+    // Convert hash to hex string
     const generatedPasskey = Array.from(new Uint8Array(hashBuffer))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
@@ -67,15 +42,15 @@ async function generatePasskeyFromSecret(passkeySecret, userInfo) {
 
 /**
  * Automatically generate a passkey in the background without user interaction
- * Used during registration process
+ * Used during registration process for system-generated method
  * 
  * @returns {Promise<void>}
  */
 async function autoGeneratePasskey(){
     // This function generates the passkey in the background without user interaction
     try {
-        // Generate the passkey
-        const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
+        // Generate a cryptographically secure random passkey
+        const generatedPasskey = await generateRandomPasskey();
 
         // Create backup hash
         backupHash = generatePasskeyBackupHash();
@@ -205,8 +180,8 @@ async function verifyGeneratedPassKey(){
             return;
         }
 
-        // Generate the passkey using the same logic as autoGeneratePasskey
-        const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
+        // Generate a cryptographically secure random passkey
+        const generatedPasskey = await generateRandomPasskey();
         
         // Verify the generated passkey against the encrypted keychain
         const verificationResult = await verifyPasskeyWithKeychain(generatedPasskey);
@@ -267,7 +242,7 @@ async function verifyGeneratedPassKey(){
 }
 
 // Make functions available globally for backward compatibility
-window.generatePasskeyFromSecret = generatePasskeyFromSecret;
+window.generateRandomPasskey = generateRandomPasskey;
 window.autoGeneratePasskey = autoGeneratePasskey;
 window.verifyGeneratedPassKey = verifyGeneratedPassKey;
 window.verifyPasskeyWithKeychain = verifyPasskeyWithKeychain;
