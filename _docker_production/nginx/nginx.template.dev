@@ -38,7 +38,8 @@ http {
     }
 
     server {
-        ${NGINX_LISTEN_HTTPS}
+        ${NGINX_LISTEN_HTTPS_IPV4}
+        ${NGINX_LISTEN_HTTPS_IPV6}
         ${NGINX_HTTP2_CONFIG}
         server_name ${NGINX_SERVER_NAME};
 
@@ -165,7 +166,8 @@ http {
     }
 
     server {
-        ${NGINX_LISTEN_HTTPS}
+        ${NGINX_LISTEN_HTTPS_IPV4}
+        ${NGINX_LISTEN_HTTPS_IPV6}
         ${NGINX_HTTP2_CONFIG}
         server_name db.hawki.dev;
         

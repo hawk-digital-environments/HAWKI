@@ -40,12 +40,12 @@ else
     export NGINX_LISTEN_EXTRA_PORT="# No extra port"
 fi
 
-# HTTPS Listen directive
+# HTTPS Listen directives (split for BSD sed compatibility on macOS)
+export NGINX_LISTEN_HTTPS_IPV4="listen ${NGINX_HTTPS_PORT} ssl;"
 if [ "$NGINX_ENABLE_IPV6" = "true" ]; then
-    export NGINX_LISTEN_HTTPS="listen ${NGINX_HTTPS_PORT} ssl;
-        listen [::]:${NGINX_HTTPS_PORT} ssl;"
+    export NGINX_LISTEN_HTTPS_IPV6="listen [::]:${NGINX_HTTPS_PORT} ssl;"
 else
-    export NGINX_LISTEN_HTTPS="listen ${NGINX_HTTPS_PORT} ssl;"
+    export NGINX_LISTEN_HTTPS_IPV6="# IPv6 disabled for HTTPS"
 fi
 
 # HTTP2 Configuration (new syntax vs old syntax)
@@ -76,13 +76,14 @@ fi
 
 echo "   Using template: nginx.template.${DEPLOY_PROFILE}"
 
-# Generate the config file using sed (more portable than envsubst)
+# Generate the config file using sed (portable for both Linux and macOS)
 sed -e "s|\${NGINX_SERVER_NAME}|${NGINX_SERVER_NAME}|g" \
     -e "s|\${NGINX_HTTP_PORT}|${NGINX_HTTP_PORT}|g" \
     -e "s|\${NGINX_HTTPS_PORT}|${NGINX_HTTPS_PORT}|g" \
     -e "s|\${NGINX_LISTEN_IPV6_HTTP}|${NGINX_LISTEN_IPV6_HTTP}|g" \
     -e "s|\${NGINX_LISTEN_EXTRA_PORT}|${NGINX_LISTEN_EXTRA_PORT}|g" \
-    -e "s|\${NGINX_LISTEN_HTTPS}|${NGINX_LISTEN_HTTPS}|g" \
+    -e "s|\${NGINX_LISTEN_HTTPS_IPV4}|${NGINX_LISTEN_HTTPS_IPV4}|g" \
+    -e "s|\${NGINX_LISTEN_HTTPS_IPV6}|${NGINX_LISTEN_HTTPS_IPV6}|g" \
     -e "s|\${NGINX_HTTP2_CONFIG}|${NGINX_HTTP2_CONFIG}|g" \
     "$TEMPLATE_FILE" > "$SCRIPT_DIR/nginx.default.conf"
 
