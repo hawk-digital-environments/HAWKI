@@ -9,6 +9,7 @@ use App\Services\Announcements\AnnouncementService;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
+use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
 use App\Services\Profile\ProfileService;
@@ -105,7 +106,22 @@ class AuthenticationController extends Controller
 
             if ($user) {
                 Auth::login($user);
+
+                if ($this->authService instanceof AuthServiceWithPostProcessingInterface) {
+                    $postProcessResponse = $this->authService->afterLoginWithUser($user, $request);
+                    if ($postProcessResponse !== null) {
+                        return $postProcessResponse;
+                    }
+                }
+
                 return $respond('/handshake');
+            }
+
+            if ($this->authService instanceof AuthServiceWithPostProcessingInterface) {
+                $postProcessResponse = $this->authService->afterLoginWithoutUser($authenticateResult, $request);
+                if ($postProcessResponse !== null) {
+                    return $postProcessResponse;
+                }
             }
 
             $request->session()->put([
