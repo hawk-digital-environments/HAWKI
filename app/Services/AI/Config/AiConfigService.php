@@ -290,6 +290,9 @@ class AiConfigService
                 
                 $modelConfigs = [];
                 foreach ($models as $model) {
+                    // Build tools array from settings field, with defaults
+                    $tools = $this->buildToolsFromSettings($model);
+                    
                     $modelConfigs[] = [
                         'id' => $model->model_id,
                         'label' => $model->label,
@@ -297,11 +300,7 @@ class AiConfigService
                         'visible' => $model->is_visible,
                         'input' => ['text'], // Default capabilities
                         'output' => ['text'],
-                        'tools' => [
-                            'stream' => true,
-                            'file_upload' => false,
-                            'vision' => false
-                        ],
+                        'tools' => $tools,
                         'system_id' => $model->system_id, // Keep system_id for reference
                         'status' => 'online', // Always set to online for UI (real status check implemented later)
                         'display_order' => $model->display_order,
@@ -451,5 +450,40 @@ class AiConfigService
         
         $lowerName = strtolower($adapterName);
         return $adapterMap[$lowerName] ?? ucfirst($adapterName);
+    }
+    
+    /**
+     * Build tools array from model settings field with sensible defaults
+     *
+     * @param AiModel $model
+     * @return array
+     */
+    private function buildToolsFromSettings(AiModel $model): array
+    {
+        // Default tools configuration
+        // Note: stream is always true (deprecated field, kept for compatibility)
+        $defaultTools = [
+            'stream' => true,
+            'file_upload' => false,
+            'vision' => false,
+            'web_search' => false,
+        ];
+        
+        // Get tools from settings field if available
+        $settings = $model->settings ?? [];
+        $settingsTools = $settings['tools'] ?? [];
+        
+        // Merge settings with defaults (settings override defaults)
+        $tools = array_merge($defaultTools, $settingsTools);
+        
+        // Ensure all values are boolean
+        foreach ($tools as $key => $value) {
+            $tools[$key] = (bool) $value;
+        }
+        
+        // Stream is always true (deprecated but kept for compatibility)
+        $tools['stream'] = true;
+        
+        return $tools;
     }
 }

@@ -121,13 +121,22 @@ function selectFallbackModel(fieldId) {
     for (const { filter, fallbackKey } of priorityList) {
         // If the filter is present or we're at default, consider this fallback
         if (!filter || filters.includes(filter)) {
+            // Check if active model already matches
             if(availableModelIds.has(activeModel.id)){
                 return true;
             }
+            
+            // Try configured default model first
             const fallbackModelId = defaultModels[fallbackKey];
-
             if (availableModelIds.has(fallbackModelId)) {
                 setModel(fallbackModelId);
+                return true;
+            }
+            
+            // If no default configured (e.g., DB-based mode without explicit default),
+            // use first available model that matches the filter
+            if (filter && filteredModels.length > 0) {
+                setModel(filteredModels[0].id);
                 return true;
             }
         }
