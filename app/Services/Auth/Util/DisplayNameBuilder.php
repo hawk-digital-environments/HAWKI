@@ -43,13 +43,13 @@ readonly class DisplayNameBuilder
                     $values[] = $value;
                 } else {
                     $logger?->debug(sprintf(
-                        'Field in %s to be used in display name is not set',
+                        'Field "%s" to be used in display name is not set',
                         $field
                     ), ['field' => $field]);
                 }
             } catch (\Throwable $e) {
                 $logger?->error(sprintf(
-                    'Field in %s failed to be resolved for display name!',
+                    'Field "%s" failed to be resolved for display name!',
                     $field
                 ), ['field' => $field, 'exception' => $e]);
             }

@@ -35,7 +35,6 @@ class LoginController extends Controller
         $settingsPanel = (new SettingsService())->render();
 
         $showLoginForm = $authService instanceof AuthServiceWithCredentialsInterface;
-//        exit();
         // Read authentication forms
         $authForms = View::make('partials.login.authForms', compact('translation', 'showLoginForm'))->render();
 

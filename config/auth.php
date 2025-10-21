@@ -11,7 +11,7 @@ return [
     | Also supported are fully qualified class names of custom auth services, that implement the AuthServiceInterface!
     |
      */
-    'authMethod' => 'LDAP', //env('AUTHENTICATION_METHOD', 'LDAP'),
+    'authMethod' => env('AUTHENTICATION_METHOD', 'LDAP'),
 
     /*
     |--------------------------------------------------------------------------

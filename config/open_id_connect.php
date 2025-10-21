@@ -39,7 +39,7 @@ return [
         'username' => env('OIDC_USERNAME_VAR', 'preferred_username'),
         /**
          * The email address for the user for contact and notifications.
-         * Defaults to 'email', which is commonly used the OIDC profile claim.
+         * Defaults to 'email', which is commonly used in the OIDC profile claim.
          *  Another common value is 'mail'.
          * This value MUST be unique for your installation.
          */

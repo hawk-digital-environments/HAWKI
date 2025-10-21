@@ -22,7 +22,7 @@ readonly class AuthenticatedUserInfo implements \JsonSerializable
         /**
          * The email address of the authenticated user.
          * This is used for contact and identification purposes.
-         * This value MUST be a valid email format and UNIQue
+         * This value MUST be a valid email format and unique across all users.
          */
         public string $email,
         /**
