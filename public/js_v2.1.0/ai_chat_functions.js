@@ -210,6 +210,10 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 }
             }
 
+            // Add Anthropic citations during streaming
+            if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
+                addAnthropicCitations(messageElement, auxiliaries);
+            }
 
             if(messageElement.querySelector('.think')){
                 scrollPanelToLast(messageElement.querySelector('.think').querySelector('.content-container'));

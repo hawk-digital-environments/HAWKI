@@ -776,6 +776,17 @@ async function regenerateMessage(messageElement, Done = null){
     //reset message content
     messageElement.querySelector('.message-text').innerHTML = '';
     messageElement.dataset.rawMsg = '';
+    
+    // Remove Google search sources
+    if(messageElement.querySelector('.google-search')){
+        messageElement.querySelector('.google-search').remove();
+    }
+    
+    // Remove Anthropic citations
+    if(messageElement.querySelector('.anthropic-sources')){
+        messageElement.querySelector('.anthropic-sources').remove();
+    }
+    
     initializeMessageFormating();
 
     let inputContainer;

@@ -141,8 +141,8 @@ class AnthropicStreamingRequest extends AbstractRequest
         // Build response content
         $responseContent = ['text' => $content];
         
-        // Add citations as auxiliaries if this is the final message
-        if ($isDone && !empty($this->citations)) {
+        // Add citations as auxiliaries as soon as they are available
+        if (!empty($this->citations)) {
             $responseContent['auxiliaries'] = [
                 [
                     'type' => 'anthropicCitations',
