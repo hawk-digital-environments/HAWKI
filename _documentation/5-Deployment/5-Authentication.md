@@ -52,6 +52,16 @@ while the `LDAP_SEARCH_DN` is used to search for users! This is a common source 
 OpenID Connect (OIDC) is a popular authentication protocol built on top of OAuth 2.0.
 Hawki supports OIDC as an authentication provider, allowing users to log in using their existing OIDC credentials.
 
+### Configuring your OIDC Provider
+
+When setting up your OIDC provider (e.g., Keycloak, Auth0, Okta, etc.), you need to register HAWKI as a client
+application. During this registration process, you will receive a client ID and client secret, which you will need to
+configure HAWKI.
+
+You will also be asked to provide a redirect URI for your application. This is the URL where your OIDC provider will
+redirect users after they have
+successfully authenticated. The redirect URI for HAWKI should be set to: `https://your-hawki-domain/req/login`.
+
 #### Setting the environment variables
 
 To configure HAWKI to use OIDC as an authentication provider, set the `AUTHENTICATION_METHOD` environment variable in
@@ -102,12 +112,18 @@ session and basically disable the `SHIBBOLETH_LOGIN_URL` in your `.env` file.
 In your <VirtualHost> you add a <Location> tag for what you want to protect (found in /etc/httpd/conf.d/shib.conf):
 
 ```apacheconf
-<Location /req/login-shibboleth>
+<Location /req/login>
     AuthType shibboleth
     ShibRequestSetting requireSession 1
     Require valid-user
 </Location>
 ```
+
+> **DEPRECATION** Previously, HAWKI used `/req/login-shibboleth` as the protected route; however, to maintain
+> consistency
+> with other authentication methods, it has been changed to `/req/login`. If you have an existing setup using
+> `/req/login-shibboleth`, please update your Apache configuration accordingly.
+> For now, to ensure backward compatibility, HAWKI will still accept both routes.
 
 After everything is set up, Apache needs to be restarted.
 
