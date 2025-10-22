@@ -45,18 +45,24 @@ class AnnouncementTranslationsSeeder extends Seeder
                 $locale = pathinfo($file, PATHINFO_FILENAME); // e.g., 'de_DE' or 'en_US'
                 $content = File::get($file);
 
-                // Create or update translation
-                AnnouncementTranslation::updateOrCreate(
-                    [
+                // Check if translation already exists
+                $existingTranslation = AnnouncementTranslation::where([
+                    'announcement_id' => $announcement->id,
+                    'locale' => $locale,
+                ])->first();
+
+                if ($existingTranslation) {
+                    // Skip existing translations to preserve user modifications
+                    $this->command->info("Skipped existing: {$folderName}/{$locale}.md (preserving existing content)");
+                } else {
+                    // Only create new translations
+                    AnnouncementTranslation::create([
                         'announcement_id' => $announcement->id,
                         'locale' => $locale,
-                    ],
-                    [
                         'content' => $content,
-                    ]
-                );
-
-                $this->command->info("Imported: {$folderName}/{$locale}.md");
+                    ]);
+                    $this->command->info("Created new: {$folderName}/{$locale}.md");
+                }
             }
         }
 

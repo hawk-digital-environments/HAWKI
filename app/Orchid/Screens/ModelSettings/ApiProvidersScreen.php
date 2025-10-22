@@ -801,7 +801,11 @@ class ApiProvidersScreen extends Screen
             $saved = $this->saveModelsToDatabase($provider, $models);
 
             if ($saved['success']) {
-                Toast::success("Successfully fetched and saved {$saved['total']} models from '{$provider->provider_name}'. Created: {$saved['created']}, Updated: {$saved['updated']}");
+                $message = "Successfully processed {$saved['total']} models from '{$provider->provider_name}'. Created: {$saved['created']}, Updated: {$saved['updated']}";
+                if ($saved['skipped'] > 0) {
+                    $message .= ", Skipped: {$saved['skipped']}";
+                }
+                Toast::success($message);
                 
                 $this->logInfo('provider_models_fetch', [
                     'provider_id' => $provider->id,
@@ -809,6 +813,7 @@ class ApiProvidersScreen extends Screen
                     'total_models' => $saved['total'],
                     'created' => $saved['created'],
                     'updated' => $saved['updated'],
+                    'skipped' => $saved['skipped'],
                     'status' => 'success'
                 ]);
             } else {

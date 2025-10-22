@@ -313,6 +313,7 @@ class AiModelListScreen extends Screen
                         $modelsFound = $result['models_count'];
                         $modelsCreated = $result['save_result']['created'] ?? 0;
                         $modelsUpdated = $result['save_result']['updated'] ?? 0;
+                        $modelsSkipped = $result['save_result']['skipped'] ?? 0;
 
                         // Models processing is handled by AiConnectionTrait
 
@@ -321,6 +322,7 @@ class AiModelListScreen extends Screen
                             'models_found' => $modelsFound,
                             'models_created' => $modelsCreated,
                             'models_updated' => $modelsUpdated,
+                            'models_skipped' => $modelsSkipped,
                             'response_time_ms' => $providerDuration,
                         ]);
 
