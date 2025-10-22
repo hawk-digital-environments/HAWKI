@@ -391,6 +391,90 @@ function addGoogleRenderedContent(messageElement, groundingMetadata) {
   }
 }
 
+/**
+ * Add Anthropic web search sources to a message element
+ * @param {HTMLElement} messageElement - The message element to add sources to
+ * @param {Array} auxiliaries - Array of auxiliary data including citations
+ */
+function addAnthropicCitations(messageElement, auxiliaries) {
+  if (!auxiliaries || !Array.isArray(auxiliaries)) {
+    return;
+  }
+
+  // Find anthropicCitations auxiliary
+  const citationsAux = auxiliaries.find(aux => aux.type === 'anthropicCitations');
+  if (!citationsAux || !citationsAux.content) {
+    return;
+  }
+
+  try {
+    const citationsData = JSON.parse(citationsAux.content);
+    const citations = citationsData.citations;
+
+    if (!citations || !Array.isArray(citations) || citations.length === 0) {
+      return;
+    }
+
+    // Create or get sources container
+    let sourcesContainer;
+    if (!messageElement.querySelector('.anthropic-sources')) {
+      sourcesContainer = document.createElement('div');
+      sourcesContainer.classList.add('anthropic-sources', 'web-sources');
+    } else {
+      sourcesContainer = messageElement.querySelector('.anthropic-sources');
+      sourcesContainer.innerHTML = ''; // Clear existing
+    }
+
+    // Add title
+    const title = document.createElement('div');
+    title.classList.add('sources-title');
+    title.textContent = 'Quellen:';
+    sourcesContainer.appendChild(title);
+
+    // Add source chips
+    const chipsContainer = document.createElement('div');
+    chipsContainer.classList.add('sources-chips');
+
+    citations.forEach((citation, index) => {
+      const chip = document.createElement('a');
+      chip.classList.add('source-chip');
+      chip.href = citation.url;
+      chip.target = '_blank';
+      chip.rel = 'noopener noreferrer';
+      chip.title = citation.title;
+
+      // Add chip number
+      const number = document.createElement('span');
+      number.classList.add('chip-number');
+      number.textContent = index + 1;
+      chip.appendChild(number);
+
+      // Add chip title
+      const titleSpan = document.createElement('span');
+      titleSpan.classList.add('chip-title');
+      titleSpan.textContent = citation.title;
+      chip.appendChild(titleSpan);
+
+      // Add page age if available
+      if (citation.page_age) {
+        const ageSpan = document.createElement('span');
+        ageSpan.classList.add('chip-age');
+        ageSpan.textContent = citation.page_age;
+        chip.appendChild(ageSpan);
+      }
+
+      chipsContainer.appendChild(chip);
+    });
+
+    sourcesContainer.appendChild(chipsContainer);
+
+    // Append to message content
+    messageElement.querySelector('.message-content').appendChild(sourcesContainer);
+  } catch (error) {
+    console.error('Error parsing Anthropic citations:', error);
+  }
+}
+
 // Temporary storage for HTML elements to preserve
 const preservedHTML = [];
 function formatGoogleCitations(content, groundingMetadata = '') {

@@ -1,7 +1,7 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
 
-    const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
+    const {messageText, groundingMetadata, auxiliaries} = deconstContent(messageObj.content.text);
 
     /// CLONE
     // clone message element
@@ -165,6 +165,11 @@ function addMessageToChatlog(messageObj, isFromServer = false){
                 messageElement.querySelector('.google-search').remove();
             }
         }
+        
+        // Handle Anthropic citations
+        if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
+            addAnthropicCitations(messageElement, auxiliaries);
+        }
     }
 
 
@@ -290,6 +295,16 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             else{
                 if(messageElement.querySelector('.google-search')){
                     messageElement.querySelector('.google-search').remove();
+                }
+            }
+            
+            // Handle Anthropic citations
+            if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
+                addAnthropicCitations(messageElement, auxiliaries);
+            } else {
+                // Remove existing Anthropic sources if no auxiliaries
+                if (messageElement.querySelector('.anthropic-sources')) {
+                    messageElement.querySelector('.anthropic-sources').remove();
                 }
             }
         }
