@@ -56,7 +56,7 @@ readonly class DisplayNameBuilder
         }
 
         if (empty($values)) {
-            throw new \RuntimeException("None of the fields in $definition are set and not empty, so the display name could not be built!", 500);
+            throw new \RuntimeException("None of the fields in $definition are set and not empty, so the display name could not be built!");
         }
 
         return implode(' ', $values);

@@ -95,7 +95,6 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
 
             // Fetch user attributes
             $info = ldap_get_entries($ldapConn, $sr);
-            ldap_unbind($ldapConn);
 
             $userInfo = [];
             foreach ($attributeMap as $appAttr => $ldapAttr) {
@@ -116,6 +115,10 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
             );
         } catch (\Exception $e) {
             throw new AuthFailedException('LDAP authentication failed', 500, $e);
+        } finally {
+            if ($ldapConn) {
+                ldap_unbind($ldapConn);
+            }
         }
     }
 

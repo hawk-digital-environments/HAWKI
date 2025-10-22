@@ -40,7 +40,7 @@ return [
         /**
          * The email address for the user for contact and notifications.
          * Defaults to 'email', which is commonly used in the OIDC profile claim.
-         *  Another common value is 'mail'.
+         * Another common value is 'mail'.
          * This value MUST be unique for your installation.
          */
         'email' => env('OIDC_EMAIL_VAR', 'email'),
