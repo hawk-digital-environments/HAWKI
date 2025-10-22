@@ -98,6 +98,16 @@ class StreamChunkHandler
             return "";
         }
         
+        // Skip encrypted/binary data chunks (Anthropic web search results)
+        // These are base64-encoded strings without SSE formatting
+        if (!str_contains($this->jsonBuffer, 'event:') && 
+            !str_contains($this->jsonBuffer, 'data:') && 
+            !str_starts_with(trim($this->jsonBuffer), '{')) {
+            // This is likely encrypted content, clear buffer and wait for next event
+            $this->jsonBuffer = "";
+            return "";
+        }
+        
         $output = "";
         $extractedCount = 0;
         $maxExtractions = 1000; // Increased for large response objects

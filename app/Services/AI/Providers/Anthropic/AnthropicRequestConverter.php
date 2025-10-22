@@ -56,6 +56,23 @@ readonly class AnthropicRequestConverter
             $payload['system'] = $systemPrompt;
         }
 
+        // Handle web_search tool (Anthropic format)
+        $availableTools = $model->getTools();
+        
+        if (isset($availableTools['web_search']) && $availableTools['web_search'] === true) {
+            // Model supports web_search - check if frontend enabled it
+            if (isset($rawPayload['tools']['web_search']) && $rawPayload['tools']['web_search'] === true) {
+                // Add web_search tool to payload
+                $payload['tools'] = [
+                    [
+                        'type' => 'web_search_20250305',
+                        'name' => 'web_search',
+                        'max_uses' => 5
+                    ]
+                ];
+            }
+        }
+
         // Add optional parameters if present in the raw payload
         if (isset($rawPayload['temperature'])) {
             $payload['temperature'] = $rawPayload['temperature'];

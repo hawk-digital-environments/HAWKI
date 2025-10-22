@@ -24,14 +24,87 @@ class AnthropicNonStreamingRequest extends AbstractRequest
         return $this->executeNonStreamingRequest(
             model: $model,
             payload: $this->payload,
-            dataToResponse: fn(array $data) => new AiResponse(
-                content: [
-                    'text' => $data['content'][0]['text'] ?? ''
-                ],
-                usage: $this->extractUsage($model, $data)
-            ),
+            dataToResponse: fn(array $data) => $this->buildResponse($model, $data),
             getHttpHeaders: fn(AiModel $model) => $this->getAnthropicHeaders($model)
         );
+    }
+    
+    /**
+     * Build AiResponse from Anthropic data
+     */
+    private function buildResponse(AiModel $model, array $data): AiResponse
+    {
+        $textContent = $this->extractTextContent($data);
+        $citations = $this->extractCitationsFromContent($data);
+        
+        $responseContent = ['text' => $textContent];
+        
+        // Add citations as auxiliaries if available
+        if (!empty($citations)) {
+            $responseContent['auxiliaries'] = [
+                [
+                    'type' => 'anthropicCitations',
+                    'content' => json_encode([
+                        'citations' => $citations
+                    ])
+                ]
+            ];
+        }
+        
+        return new AiResponse(
+            content: $responseContent,
+            usage: $this->extractUsage($model, $data)
+        );
+    }
+    
+    /**
+     * Extract text content from Anthropic response, combining all text blocks
+     * (handles regular text, web_search results, etc.)
+     */
+    private function extractTextContent(array $data): string
+    {
+        $text = '';
+        
+        if (!isset($data['content']) || !is_array($data['content'])) {
+            return $text;
+        }
+        
+        foreach ($data['content'] as $block) {
+            if (isset($block['type']) && $block['type'] === 'text') {
+                $text .= $block['text'] ?? '';
+            }
+        }
+        
+        return $text;
+    }
+    
+    /**
+     * Extract citations from Anthropic response content blocks
+     */
+    private function extractCitationsFromContent(array $data): array
+    {
+        $citations = [];
+        
+        if (!isset($data['content']) || !is_array($data['content'])) {
+            return $citations;
+        }
+        
+        foreach ($data['content'] as $block) {
+            if (isset($block['type']) && $block['type'] === 'text' && isset($block['citations'])) {
+                foreach ($block['citations'] as $citation) {
+                    if (($citation['type'] ?? '') === 'web_search_result_location') {
+                        $citations[] = [
+                            'type' => 'web_search_result',
+                            'url' => $citation['url'] ?? '',
+                            'title' => $citation['title'] ?? '',
+                            'cited_text' => $citation['cited_text'] ?? '',
+                        ];
+                    }
+                }
+            }
+        }
+        
+        return $citations;
     }
     
     /**

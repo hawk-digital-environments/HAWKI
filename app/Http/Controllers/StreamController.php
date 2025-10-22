@@ -211,16 +211,14 @@ class StreamController extends Controller
                 'content' => json_encode($response->content),
             ];
 
-            // Log final stream message before sending to frontend
-            if (config('logging.triggers.translated_return_object')) {
-                \Log::info('Final StreamMessage Output', [
-                    'model' => $messageData['model'],
-                    'isDone' => $messageData['isDone'],
-                    'content' => $messageData['content'],
-                    'has_usage' => $response->usage !== null,
-                    'has_auxiliaries' => !empty($response->auxiliaries)
-                ]);
-            }
+            // Log what we're sending - always log to see auxiliaries
+            \Log::info('[StreamController] Sending to frontend', [
+                'model' => $messageData['model'],
+                'isDone' => $messageData['isDone'],
+                'has_auxiliaries' => isset($response->content['auxiliaries']),
+                'content_keys' => array_keys($response->content),
+                'content_preview' => substr(json_encode($response->content), 0, 300)
+            ]);
 
             echo json_encode($messageData) . "\n";
             $flush();
