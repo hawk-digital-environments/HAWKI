@@ -108,6 +108,13 @@ return [
             'api_url' => env('OPEN_WEB_UI_API_URL', 'your_url/api/chat/completions'),
             'ping_url' => env('OPEN_WEB_UI_PING_URL', 'your_url/api/models'),
             'models' => require __DIR__ . env('OPEN_WEB_UI_MODEL_LIST_DIR', '/model_lists/openwebui_models.php'),
+        ],
+        'anthropic' => [
+            'active' => env('ANTHROPIC_ACTIVE', false),
+            'api_key' => env('ANTHROPIC_API_KEY'),
+            'api_url' => env('ANTHROPIC_API_URL', 'https://api.anthropic.com/v1/messages'),
+            'ping_url' => env('ANTHROPIC_PING_URL', 'https://api.anthropic.com/v1/messages'),
+            'models' => require __DIR__ . env('ANTHROPIC_MODEL_LIST_DIR', '/model_lists/anthropic_models.php'),
         ]
     ]
 ];

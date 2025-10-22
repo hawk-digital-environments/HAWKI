@@ -463,6 +463,7 @@ class AiConfigService
             'gwdg' => 'Gwdg',
             'ollama' => 'Ollama',
             'openwebui' => 'OpenWebUI',
+            'anthropic' => 'Anthropic',
         ];
         
         $lowerName = strtolower($adapterName);
