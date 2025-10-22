@@ -35,7 +35,7 @@ class ApiProvidersScreen extends Screen
     public function query(): iterable
     {
         return [
-            'providers' => ApiProvider::with('apiFormat')
+            'providers' => ApiProvider::with(['apiFormat', 'aiModels'])
                 ->filters(ApiProvidersFiltersLayout::class)
                 ->defaultSort('display_order', 'asc')
                 ->paginate(),
@@ -860,6 +860,53 @@ class ApiProvidersScreen extends Screen
         Toast::success("Provider '{$providerName}' was successfully deleted.");
 
         return redirect()->back();
+    }
+
+    /**
+     * Delete all models associated with a provider.
+     */
+    public function deleteProviderModels(Request $request): void
+    {
+        $providerId = $request->get('id');
+        $provider = ApiProvider::find($providerId);
+
+        if (! $provider) {
+            Toast::error('Provider not found.');
+
+            return;
+        }
+
+        try {
+            // Count models before deletion
+            $modelCount = AiModel::where('provider_id', $providerId)->count();
+
+            if ($modelCount === 0) {
+                Toast::info("No models found for provider '{$provider->provider_name}'.");
+
+                return;
+            }
+
+            // Delete all models associated with this provider
+            AiModel::where('provider_id', $providerId)->delete();
+
+            Toast::success("Successfully deleted {$modelCount} model(s) from provider '{$provider->provider_name}'.");
+
+            $this->logBatchOperation('provider_models_delete', 'models', [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->provider_name,
+                'deleted_count' => $modelCount,
+                'action' => 'Delete all models for provider',
+            ]);
+
+        } catch (\Exception $e) {
+            Toast::error("Failed to delete models for '{$provider->provider_name}': {$e->getMessage()}");
+
+            $this->logError('provider_models_delete', $e, [
+                'provider_id' => $provider->id,
+                'provider_name' => $provider->provider_name,
+                'action' => 'Delete all models for provider',
+            ]);
+        }
     }
 
     /**
