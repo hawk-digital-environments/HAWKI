@@ -39,14 +39,6 @@ class ResponsesClient extends AbstractClient
      */
     protected function executeStreamingRequest(AiRequest $request, callable $onData): void
     {
-        // Validate model compatibility before making request
-        if (!$this->isModelCompatible($request->model->getId())) {
-            throw new \Exception(
-                "Model '{$request->model->getId()}' is not compatible with Responses API. " .
-                "Only GPT-4/5/6 families are supported (excluding o1/o3 models)."
-            );
-        }
-
         // Convert request to payload
         $payload = $this->converter->convertRequestToPayload($request);
         
@@ -62,10 +54,6 @@ class ResponsesClient extends AbstractClient
             if ($response->error && str_contains($response->error, 'Previous response') && str_contains($response->error, 'not found')) {
                 $errorOccurred = true;
                 $errorMessage = $response->error;
-                
-                //\Log::warning('Responses API: Retrying without previous_response_id', [
-                //    'previous_response_id' => $previousResponseId
-                //]);
                 
                 // Don't call original onData yet - we'll retry
                 return;
@@ -90,7 +78,7 @@ class ResponsesClient extends AbstractClient
      * Resolve model status list
      * 
      * Note: Responses API shares the same models endpoint as Chat Completions
-     * We filter for compatible models only
+     * Model compatibility should be managed at the configuration level
      * 
      * @inheritDoc
      */
@@ -99,44 +87,5 @@ class ResponsesClient extends AbstractClient
         // Responses API uses same models endpoint as OpenAI
         // The models are filtered in the model configuration
         // No special status request needed
-    }
-
-    /**
-     * Check if model is compatible with Responses API
-     * 
-     * Only GPT-4, GPT-5, and GPT-6 families are supported
-     * Excludes o1 and o3 reasoning models (not compatible with Responses API)
-     * 
-     * @param string $modelId
-     * @return bool
-     */
-    private function isModelCompatible(string $modelId): bool
-    {
-        $compatiblePrefixes = [
-            'gpt-4',  // GPT-4 family
-            'gpt-5',  // GPT-5 family
-            'gpt-6',  // GPT-6 family (future)
-        ];
-
-        $incompatiblePrefixes = [
-            'o1',     // o1 models NOT compatible
-            'o3',     // o3 models NOT compatible
-        ];
-
-        // Check if model starts with incompatible prefix
-        foreach ($incompatiblePrefixes as $prefix) {
-            if (str_starts_with($modelId, $prefix)) {
-                return false;
-            }
-        }
-
-        // Check if model starts with compatible prefix
-        foreach ($compatiblePrefixes as $prefix) {
-            if (str_starts_with($modelId, $prefix)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }
