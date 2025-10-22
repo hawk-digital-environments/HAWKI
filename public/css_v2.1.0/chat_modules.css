@@ -1610,6 +1610,7 @@
 #model-selector-burger{
     max-height: 60vh;
     overflow-y: auto;
+    min-width: 16rem;
 }
 
 .model-selector-label{

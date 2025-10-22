@@ -63,6 +63,17 @@
                                     <span class="dot red-c"></span>
                             @endswitch
                             <span>{{ $model['label'] }}</span>
+                            <div style="margin-left: auto; display: flex; gap: 0.25rem; align-items: center;">
+                                @if(isset($model['tools']['vision']) && $model['tools']['vision'])
+                                    <x-icon name="eye" class="model-tool-icon" style="width: 16px; height: 16px; flex-shrink: 0; opacity: 0.5;" />
+                                @endif
+                                @if(isset($model['tools']['file_upload']) && $model['tools']['file_upload'])
+                                    <x-icon name="paperclip" class="model-tool-icon" style="width: 16px; height: 16px; flex-shrink: 0; opacity: 0.5;" />
+                                @endif
+                                @if(isset($model['tools']['web_search']) && $model['tools']['web_search'])
+                                    <x-icon name="world" class="model-tool-icon" style="width: 16px; height: 16px; flex-shrink: 0; opacity: 0.5;" />
+                                @endif
+                            </div>
                         </button>
                     @endforeach
                 </div>
