@@ -1,4 +1,4 @@
-<div class="model-selection-panel">
+<div class="model-selection-panel" style="padding: 0.25rem 0.25rem 0 0;">
     @if(isset($models['models']) && count($models['models']) > 0)
         @if(config('hawki.ai_config_system'))
             {{-- Database mode: Group and sort by provider display_order --}}
