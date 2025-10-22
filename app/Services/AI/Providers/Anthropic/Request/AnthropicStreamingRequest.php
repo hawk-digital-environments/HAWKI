@@ -143,11 +143,6 @@ class AnthropicStreamingRequest extends AbstractRequest
         
         // Add citations as auxiliaries if this is the final message
         if ($isDone && !empty($this->citations)) {
-            \Log::info('[Anthropic] Adding citations to response', [
-                'citation_count' => count($this->citations),
-                'citations' => $this->citations
-            ]);
-            
             $responseContent['auxiliaries'] = [
                 [
                     'type' => 'anthropicCitations',
@@ -192,10 +187,6 @@ class AnthropicStreamingRequest extends AbstractRequest
             return;
         }
         
-        \Log::info('[Anthropic] Extracting web search sources', [
-            'result_count' => count($contentBlock['content'])
-        ]);
-        
         foreach ($contentBlock['content'] as $result) {
             if (($result['type'] ?? '') === 'web_search_result') {
                 $source = [
@@ -206,8 +197,6 @@ class AnthropicStreamingRequest extends AbstractRequest
                 ];
                 
                 $this->citations[] = $source;
-                
-                \Log::info('[Anthropic] Web search source extracted', $source);
             }
         }
     }
@@ -217,11 +206,6 @@ class AnthropicStreamingRequest extends AbstractRequest
      */
     private function extractCitations(array $citations): void
     {
-        \Log::info('[Anthropic] Extracting inline citations', [
-            'citation_count' => count($citations),
-            'raw_citations' => $citations
-        ]);
-        
         foreach ($citations as $citation) {
             if (($citation['type'] ?? '') === 'web_search_result_location') {
                 $extractedCitation = [
@@ -232,8 +216,6 @@ class AnthropicStreamingRequest extends AbstractRequest
                 ];
                 
                 $this->citations[] = $extractedCitation;
-                
-                \Log::info('[Anthropic] Inline citation extracted', $extractedCitation);
             }
         }
     }

@@ -17,14 +17,6 @@ class StreamChunkHandler
     
     public function handle(string $data): void
     {
-        // Debug: Log raw input
-        \Log::debug('[StreamChunkHandler] Raw input', [
-            'length' => strlen($data),
-            'preview' => substr($data, 0, 200),
-            'starts_with_data' => str_starts_with(trim($data), 'data: '),
-            'starts_with_event' => str_starts_with(trim($data), 'event:')
-        ]);
-        
         // Normalize data to pure JSON newline format
         if (!str_starts_with(trim($data), 'data: ') && !str_starts_with(trim($data), 'event:')) {
             // Already JSON format (Google) - normalize to ensure complete objects
@@ -33,13 +25,6 @@ class StreamChunkHandler
             // SSE format (Anthropic) - extract and normalize to JSON
             $data = $this->normalizeSSEStreamChunk($data);
         }
-        
-        // Debug: Log normalized output
-        \Log::debug('[StreamChunkHandler] Normalized output', [
-            'length' => strlen($data),
-            'preview' => substr($data, 0, 200),
-            'line_count' => substr_count($data, "\n")
-        ]);
         
         // At this point, $data contains pure JSON objects separated by newlines
         // Split on newlines and process each JSON object
@@ -58,25 +43,12 @@ class StreamChunkHandler
             
             // Filter out common stream end markers that are not JSON
             if ($line === '[DONE]' || $line === 'data: [DONE]') {
-                \Log::debug('[StreamChunkHandler] Skipping stream end marker', [
-                    'line_index' => $index,
-                    'marker' => $line
-                ]);
                 continue;
             }
             
             if (!json_validate($line)) {
-                \Log::warning('[StreamChunkHandler] Invalid JSON line', [
-                    'line_index' => $index,
-                    'line' => substr($line, 0, 100)
-                ]);
                 continue;
             }
-            
-            \Log::debug('[StreamChunkHandler] Calling onChunk with valid JSON', [
-                'line_index' => $index,
-                'preview' => substr($line, 0, 100)
-            ]);
             
             ($this->onChunk)($line);
         }

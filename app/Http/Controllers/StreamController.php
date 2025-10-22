@@ -211,15 +211,6 @@ class StreamController extends Controller
                 'content' => json_encode($response->content),
             ];
 
-            // Log what we're sending - always log to see auxiliaries
-            \Log::info('[StreamController] Sending to frontend', [
-                'model' => $messageData['model'],
-                'isDone' => $messageData['isDone'],
-                'has_auxiliaries' => isset($response->content['auxiliaries']),
-                'content_keys' => array_keys($response->content),
-                'content_preview' => substr(json_encode($response->content), 0, 300)
-            ]);
-
             echo json_encode($messageData) . "\n";
             $flush();
         };
