@@ -166,6 +166,7 @@ class User extends OrchidUser
     public function unreadAnnouncements()
     {
         $now = now();
+        $userRoles = $this->getRoles()->pluck('slug')->toArray();
 
         return Announcement::query()
             ->where(function ($q) use ($now) {
@@ -174,9 +175,14 @@ class User extends OrchidUser
             ->where(function ($q) use ($now) {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>=', $now);
             })
-            ->where(function ($q) {
+            ->where(function ($q) use ($userRoles) {
                 $q->where('is_global', true)
-                    ->orWhereJsonContains('target_users', $this->id);
+                    ->orWhere(function ($q) use ($userRoles) {
+                        // Check if user has any of the target roles
+                        foreach ($userRoles as $role) {
+                            $q->orWhereJsonContains('target_roles', $role);
+                        }
+                    });
             })
             ->whereDoesntHave('users', function ($q) {
                 $q->where('user_id', $this->id)->whereNotNull('accepted_at');
