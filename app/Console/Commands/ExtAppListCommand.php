@@ -94,7 +94,7 @@ class ExtAppListCommand extends AbstractExtAppCommand
         
         $rows = [];
         foreach ($healthyApps as $app) {
-            $rows = [
+            $rows[] = [
                 $app->id,
                 $app->name,
                 substr($app->description, 0, 50) . (strlen($app->description) > 50 ? '...' : ''),
