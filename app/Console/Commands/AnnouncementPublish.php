@@ -14,7 +14,7 @@ class AnnouncementPublish extends Command
                             {--type= : Announcement type (policy, news, system, event, info)}
                             {--force= : User must accept the announcement before proceeding (true/false)}
                             {--global= : Make this a global announcement (true/false)}
-                            {--users=* : Target user IDs (if not global)}
+                            {--roles=* : Target role slugs (if not global)}
                             {--anchor= : Anchor Announcement to an special Frontend Event}
                             {--start= : Start datetime (Y-m-d H:i:s)}
                             {--expire= : Expire datetime (Y-m-d H:i:s)}';
@@ -39,14 +39,22 @@ class AnnouncementPublish extends Command
             ? filter_var($this->option('global'), FILTER_VALIDATE_BOOLEAN)
             : $this->confirm('Is this a global announcement?', true);
 
-        $users = $global
+        $roles = $global
             ? null
-            : ($this->option('users') ?: explode(',', $this->ask('Enter target user IDs (comma-separated)', '')));
+            : ($this->option('roles') ?: explode(',', $this->ask('Enter target role slugs (comma-separated)', '')));
+
+        // Show available anchors from config
+        $availableAnchors = config('announcements.anchors', []);
+        if (!empty($availableAnchors)) {
+            $this->info('Available anchors:');
+            foreach ($availableAnchors as $key => $anchorInfo) {
+                $this->line("  - {$key}: {$anchorInfo['name']} ({$anchorInfo['description']})");
+            }
+        }
 
         $anchor = $this->option('anchor') !== null
             ? filter_var($this->option(('anchor')))
-            : ($this->ask('Enter anchors (optional)', null));
-
+            : ($this->ask('Enter anchor (optional)', null));
 
         $start = $this->option('start') ?: $this->ask('Enter start datetime (Y-m-d H:i:s)', now()->toDateTimeString());
         $expire = $this->option('expire') ?: $this->ask('Enter expire datetime (Y-m-d H:i:s)', null);
@@ -58,7 +66,7 @@ class AnnouncementPublish extends Command
             $type,
             $force,
             $global,
-            $users,
+            $roles,
             $anchor,
             $start,
             $expire

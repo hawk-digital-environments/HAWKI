@@ -4,8 +4,13 @@ let currentAnnouncementIndex = 0;
 let anchored_queue;
 let currentAnchoredAnnouncementIndex=0;
 
-function initAnnouncements(announcementList){
-    announcement_queue = (announcementList || []).filter(a => a.anchor === null);
+function initAnnouncements(announcements){
+    // Use the announcements parameter (which is passed from the global announcementList in home.blade.php)
+    const list = Array.isArray(announcements) ? announcements : [];
+    
+    // Filter non-anchored announcements
+    announcement_queue = list.filter(a => a.anchor === null);
+    
     if (announcement_queue.length > 0) {
         currentAnnouncementIndex = 0;
         renderNextAnnouncement();
@@ -13,10 +18,13 @@ function initAnnouncements(announcementList){
 }
 
 function queueAnchoredAnnouncements(targetAnchor){
-    anchored_queue = (announcementList || []).filter(a => a.anchor === targetAnchor);
-    if (anchored_queue.length > 0) {
-        currentAnnouncementIndex = 0;
-        renderNextAnnouncementInQueue(anchored_queue);
+    // Access the global announcementList declared in home.blade.php
+    if (typeof announcementList !== 'undefined' && Array.isArray(announcementList)) {
+        anchored_queue = announcementList.filter(a => a.anchor === targetAnchor);
+        if (anchored_queue.length > 0) {
+            currentAnchoredAnnouncementIndex = 0;
+            renderNextAnnouncementInQueue(anchored_queue);
+        }
     }
 }
 

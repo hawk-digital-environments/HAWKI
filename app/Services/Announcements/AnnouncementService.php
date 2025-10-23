@@ -28,7 +28,7 @@ class AnnouncementService
         string $type = 'info',
         bool $isForced = false,
         bool $isGlobal = true,
-        ?array $targetUsers = null,
+        ?array $targetRoles = null,
         ?string $anchor = null,
         ?string $startsAt = null,
         ?string $expiresAt = null
@@ -39,7 +39,7 @@ class AnnouncementService
             'type' => $type,
             'is_forced' => $isForced,
             'is_global' => $isGlobal,
-            'target_users' => $targetUsers,
+            'target_roles' => $targetRoles,
             'anchor'=>$anchor,
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
@@ -48,6 +48,12 @@ class AnnouncementService
 
     public function getUserAnnouncements(){
         $announcements = Auth::user()->unreadAnnouncements();
+        
+        // Filter to only include published announcements
+        $announcements = $announcements->filter(function($announcement) {
+            return $announcement->is_published == true;
+        });
+        
         // Collect force announcements
         $forceAnnouncements = [];
         foreach ($announcements as $announcement) {
@@ -104,8 +110,16 @@ class AnnouncementService
             return true;
         }
 
-        // For non-global announcements, check if user is in the target list
-        return $user->announcements()->where('announcement_id', $announcement->id)->exists();
+        // For non-global announcements, check if user has any of the target roles
+        if (!empty($announcement->target_roles)) {
+            $userRoles = $user->getRoles()->pluck('slug')->toArray();
+            $targetRoles = $announcement->target_roles;
+            
+            // Check if user has at least one of the target roles
+            return !empty(array_intersect($userRoles, $targetRoles));
+        }
+
+        return false;
     }
 
     /**
