@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\GuestAccountCreated;
+use App\Mail\OTPMail;
 use App\Models\PrivateUserData;
 use App\Models\User;
 use App\Services\Announcements\AnnouncementService;
@@ -10,12 +12,15 @@ use App\Services\Auth\LocalAuthService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
+use App\Services\Email\EmailService;
 use App\Services\Profile\ProfileService;
 use App\Services\System\SettingsService;
 use Cookie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
