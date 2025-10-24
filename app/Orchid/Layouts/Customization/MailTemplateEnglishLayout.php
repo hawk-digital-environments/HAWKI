@@ -12,6 +12,13 @@ use Orchid\Screen\Layouts\Rows;
 class MailTemplateEnglishLayout extends Rows
 {
     /**
+     * Layout title
+     *
+     * @var string
+     */
+    protected $title = 'English Content';
+
+    /**
      * Get the fields elements to be displayed.
      *
      * @return Field[]
@@ -29,8 +36,9 @@ class MailTemplateEnglishLayout extends Rows
                 ->placeholder('Enter English email content')
                 ->language('html')
                 ->lineNumbers()
-                ->rows(10)
-                ->help('English email content (HTML)'),
+                ->rows(15)
+                ->help('English email content (HTML)')
+                ->style('resize: vertical; min-height: 500px;'),
         ];
     }
 }

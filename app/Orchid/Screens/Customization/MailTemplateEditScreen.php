@@ -136,21 +136,17 @@ class MailTemplateEditScreen extends Screen
         return [
             CustomizationTabMenu::class,
 
-            Layout::block(MailTemplateEditLayout::class)
-                ->title('Mail Template Information')
-                ->description('Template type and description for this mail template.'),
+            Layout::rows([
+                ...(new MailTemplateEditLayout)->fields(),
+            ])->title('Mail Template Information'),
 
-            Layout::block(MailTemplateGermanLayout::class)
-                ->title('German Content')
-                ->description('German email subject and content for this template.'),
+            MailTemplateGermanLayout::class,
 
-            Layout::block(MailTemplateEnglishLayout::class)
-                ->title('English Content')
-                ->description('English email subject and content for this template.'),
+            MailTemplateEnglishLayout::class,
 
-            Layout::block(MailTemplatePlaceholderHelpLayout::class)
-                ->title('Available Placeholders')
-                ->description('Use these placeholders in your email templates. They will be automatically replaced with actual values.'),
+            Layout::rows([
+                ...(new MailTemplatePlaceholderHelpLayout)->fields(),
+            ])->title('Available Placeholders'),
         ];
     }
 

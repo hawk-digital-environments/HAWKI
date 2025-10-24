@@ -124,8 +124,29 @@ class MailTestingScreen extends Screen
             // If there's an error, combinedJobsData will remain an empty array
         }
 
+        // Get available mail templates dynamically from database
+        $templateTypes = MailTemplate::distinct('type')
+            ->orderBy('type')
+            ->pluck('type')
+            ->mapWithKeys(function ($type) {
+                // Generate human-readable labels
+                $label = match ($type) {
+                    'welcome' => 'Welcome Email Template',
+                    'otp' => 'OTP Authentication Template',
+                    'invitation' => 'Group Chat Invitation Template',
+                    'notification' => 'General Notification Template',
+                    'approval' => 'Account Approval Template',
+                    'approval_pending' => 'Account Approval Pending Template',
+                    default => ucwords(str_replace('_', ' ', $type)).' Template',
+                };
+
+                return [$type];
+            })
+            ->toArray();
+
         return [
             'combinedJobsData' => $combinedJobsData,
+            'templateTypes' => $templateTypes,
         ];
     }
 
@@ -211,13 +232,24 @@ class MailTestingScreen extends Screen
 
                 Select::make('template_type')
                     ->title('Select Template Type')
-                    ->options([
-                        'welcome' => 'Welcome Email Template',
-                        'otp' => 'OTP Authentication Template',
-                        'invitation' => 'Group Chat Invitation Template',
-                        'notification' => 'General Notification Template',
-                        'approval' => 'Account Approval Template',
-                    ])
+                    ->options(
+                        MailTemplate::distinct('type')
+                            ->orderBy('type')
+                            ->pluck('type')
+                            ->mapWithKeys(function ($type) {
+                                $label = match ($type) {
+                                    'welcome' => 'Welcome Email Template',
+                                    'otp' => 'OTP Authentication Template',
+                                    'invitation' => 'Group Chat Invitation Template',
+                                    'notification' => 'General Notification Template',
+                                    'approval' => 'Account Approval Template',
+                                    'approval_pending' => 'Account Approval Pending Template',
+                                    default => ucwords(str_replace('_', ' ', $type)).' Template',
+                                };
+                                return [$type => $label];
+                            })
+                            ->toArray()
+                    )
                     ->help('Choose which email template to test')
                     ->value('welcome'),
 
@@ -1285,6 +1317,7 @@ class MailTestingScreen extends Screen
             'user_name' => $user->name ?? $user->username ?? 'Test User',
             'user_email' => $user->email ?? 'test@example.com',
             'app_url' => config('app.url', 'https://hawki.test'),
+            'support_email' => config('mail.from.address', 'support@hawki.test'),
             'current_date' => now()->format('Y-m-d'),
             'current_datetime' => now()->format('Y-m-d H:i:s'),
         ];

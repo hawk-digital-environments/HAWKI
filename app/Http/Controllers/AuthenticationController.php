@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\GuestAccountCreated;
+use App\Mail\GuestAccountCreated;
 use App\Mail\OTPMail;
 use App\Models\PrivateUserData;
 use App\Models\User;
@@ -12,6 +12,7 @@ use App\Services\Auth\LocalAuthService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
+use App\Services\EmailService;
 use App\Services\Profile\ProfileService;
 use App\Services\System\SettingsService;
 use Cookie;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticationController extends Controller
 {
@@ -41,7 +43,7 @@ class AuthenticationController extends Controller
 
     public function __construct(LdapService $ldapService, ShibbolethService $shibbolethService, OidcService $oidcService, TestAuthService $testAuthService, LocalAuthService $localAuthService, LanguageController $languageController)
     {
-        $this->authMethod = config('auth.authentication_method', 'LDAP');
+        $this->authMethod = config('auth.authMethod');
         $this->ldapService = $ldapService;
         $this->shibbolethService = $shibbolethService;
         $this->oidcService = $oidcService;
@@ -82,7 +84,13 @@ class AuthenticationController extends Controller
             ]);
         }
 
-        Log::info('LOGIN: '.$authenticatedUserInfo['username']);
+        Log::info("User logged in via {$this->authMethod}: {$authenticatedUserInfo['username']}", [
+            'username' => $authenticatedUserInfo['username'],
+            'auth_method' => $this->authMethod,
+            'user_info' => $authenticatedUserInfo,
+            'timestamp' => now()->toISOString(),
+        ]);
+        
         $username = $authenticatedUserInfo['username'];
         $user = User::where('username', $username)->first();
 
@@ -115,7 +123,11 @@ class AuthenticationController extends Controller
                 return response()->json(['error' => 'Login Failed!'], 401);
             }
 
-            Log::info('LOGIN: '.$authenticatedUserInfo['username']);
+            if ($authenticatedUserInfo instanceof Response) {
+                return $authenticatedUserInfo;
+            }
+
+            Log::info('LOGIN: ' . $authenticatedUserInfo['username']);
 
             $user = User::where('username', $authenticatedUserInfo['username'])->first();
 
@@ -176,9 +188,6 @@ class AuthenticationController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService)->render();
 
-        // Get passkey secret from config
-        $passkeySecret = config('auth.passkey_secret', 'default_secret');
-
         $profileService = new ProfileService;
         $keychainData = $profileService->fetchUserKeychain();
 
@@ -189,7 +198,7 @@ class AuthenticationController extends Controller
         Session::put('last-route', 'handshake');
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay', 'passkeySecret'));
+        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay'));
 
     }
 
@@ -227,8 +236,6 @@ class AuthenticationController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService)->render();
 
-        // Get passkey secret from config
-        $passkeySecret = config('auth.passkey_secret', 'default_secret');
         $passkeyMethod = config('auth.passkey_method', 'user');
 
         $activeOverlay = false;
@@ -238,7 +245,7 @@ class AuthenticationController extends Controller
         Session::put('last-route', 'register');
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'passkeySecret', 'passkeyMethod', 'isFirstLoginLocalUser', 'needsPasswordReset', 'needsApproval'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'passkeyMethod', 'isFirstLoginLocalUser', 'needsPasswordReset', 'needsApproval'));
     }
 
     // / Setup User
@@ -251,6 +258,7 @@ class AuthenticationController extends Controller
                 'publicKey' => 'required|string',
                 'keychain' => 'required|string',
                 'KCIV' => 'required|string',
+                'backupHash' => 'nullable|string',
                 'KCTAG' => 'required|string',
                 'newPassword' => 'nullable|string|min:6', // For local users changing password
             ]);
@@ -267,6 +275,35 @@ class AuthenticationController extends Controller
 
             $avatarId = $validatedData['avatar_id'] ?? '';
 
+            // CRITICAL: Check if user already exists to preserve their auth_type
+            // auth_type MUST be immutable - never change an existing user's auth_type
+            $existingUser = User::where('username', $username)->first();
+            
+            // Determine auth type: preserve existing or set based on authentication method
+            if ($existingUser) {
+                // PRESERVE existing auth_type - it must never be changed
+                $authType = $existingUser->auth_type;
+                
+                Log::info('Completing registration for existing user - preserving auth_type', [
+                    'username' => $username,
+                    'auth_type' => $authType,
+                    'existing_user_id' => $existingUser->id,
+                ]);
+            } else {
+                // New user: determine auth type from authentication method
+                $authType = match($this->authMethod) {
+                    'LDAP' => 'ldap',
+                    'OIDC' => 'oidc',
+                    'Shibboleth' => 'shibboleth',
+                    default => 'ldap',
+                };
+                
+                Log::info('Completing registration for new user - setting initial auth_type', [
+                    'username' => $username,
+                    'auth_type' => $authType,
+                ]);
+            }
+
             // Prepare user data for update/creation
             $userData = [
                 'name' => $name,
@@ -275,7 +312,24 @@ class AuthenticationController extends Controller
                 'publicKey' => $validatedData['publicKey'],
                 'avatar_id' => $avatarId,
                 'isRemoved' => false,
+                'auth_type' => $authType, // Either preserved from existing user or set for new user
             ];
+
+            // Handle approval logic based on auth type
+            if ($authType === 'local') {
+                // Local users: respect local_needapproval config and existing approval status
+                if ($existingUser && $existingUser->approval !== null) {
+                    // Preserve existing approval status for local users
+                    $userData['approval'] = $existingUser->approval;
+                } else {
+                    // New local user: set approval based on config
+                    $localNeedsApproval = config('auth.local_needapproval', true);
+                    $userData['approval'] = !$localNeedsApproval; // If approval needed: false, else: true
+                }
+            } else {
+                // External auth users (LDAP/OIDC/Shibboleth) are always auto-approved after registration
+                $userData['approval'] = true;
+            }
 
             // Handle password update for local users
             if ($isFirstLoginLocalUser && isset($validatedData['newPassword'])) {
@@ -305,6 +359,49 @@ class AuthenticationController extends Controller
                     'keychain' => $validatedData['keychain'],
                 ]
             );
+            
+            // Send appropriate email based on approval status if feature is enabled
+            if (config('hawki.send_registration_mails', true)) {
+                try {
+                    $emailService = app(EmailService::class);
+                    
+                    // Prepare custom data with backup hash if provided
+                    $customData = [];
+                    if (isset($validatedData['backupHash'])) {
+                        $customData['{{backup_hash}}'] = $validatedData['backupHash'];
+                    }
+                    
+                    // Send different email based on approval status
+                    if ($user->approval === true) {
+                        // User is approved - send welcome email
+                        $emailService->sendWelcomeEmail($user, $customData);
+                        Log::info('Welcome email sent after registration completion', [
+                            'user_id' => $user->id,
+                            'username' => $user->username,
+                            'email' => $user->email,
+                            'approval' => true,
+                            'backup_hash_included' => isset($validatedData['backupHash']),
+                        ]);
+                    } else {
+                        // User needs approval - send pending email (no backup hash needed yet)
+                        $emailService->sendApprovalPendingEmail($user);
+                        Log::info('Approval pending email sent after registration completion', [
+                            'user_id' => $user->id,
+                            'username' => $user->username,
+                            'email' => $user->email,
+                            'approval' => false,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Failed to send registration email', [
+                        'user_id' => $user->id,
+                        'username' => $user->username,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Don't fail the registration if email fails
+                }
+            }
+            
             // Log the user in
             Session::put('registration_access', false);
             Auth::login($user);
@@ -333,10 +430,9 @@ class AuthenticationController extends Controller
         Cookie::queue(Cookie::forget('PHPSESSID'));
 
         // Redirect depending on authentication method
-        $authMethod = env('AUTHENTICATION_METHOD');
-        if ($authMethod === 'Shibboleth') {
-            $redirectUri = config('shibboleth.logout_path');
-        } elseif ($authMethod === 'OIDC') {
+        if ($this->authMethod === 'Shibboleth') {
+            $redirectUri = $this->shibbolethService->getLogoutPath() ?? '/login';
+        } elseif ($this->authMethod === 'OIDC') {
             $redirectUri = config('open_id_connect.oidc_logout_path');
         } else {
             $redirectUri = '/login';

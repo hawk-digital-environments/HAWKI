@@ -69,7 +69,7 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('Settings')
                         ->route('platform.settings.system')
                         ->icon('bs.gear')
-                        ->active(['platform.settings.system', 'platform.settings.authentication', 'platform.settings.websockets', 'platform.settings.api', 'platform.settings.mail-configuration']),
+                        ->active(['platform.settings.system', 'platform.settings.authentication', 'platform.settings.api', 'platform.settings.mail-configuration']),
                     Menu::make('Customization')
                         ->route('platform.customization.localizedtexts')
                         ->icon('bs.paint-bucket')

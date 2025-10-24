@@ -225,10 +225,23 @@
 .impressumPanel {
   display: grid;
   grid-template-columns: auto 1fr;
-  grid-gap: 1.5rem;
-  height: 2rem;
+  grid-gap: 0 1.5rem;
   align-items: center;
 }
+
+/* Dynamic height based on number of links */
+.impressumPanel:has(a:nth-child(1)),
+.impressumPanel:has(a:nth-child(2):last-child) {
+  /* 1-2 links: single row height */
+  height: 2rem;
+}
+
+.impressumPanel:has(a:nth-child(3)),
+.impressumPanel:has(a:nth-child(4)) {
+  /* 3-4 links: two rows height (2-column grid) */
+  height: 2.5rem;
+}
+
 .impressumPanel a {
   max-width: fit-content;
 }

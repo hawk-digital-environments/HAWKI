@@ -313,6 +313,7 @@ class AiModelListScreen extends Screen
                         $modelsFound = $result['models_count'];
                         $modelsCreated = $result['save_result']['created'] ?? 0;
                         $modelsUpdated = $result['save_result']['updated'] ?? 0;
+                        $modelsSkipped = $result['save_result']['skipped'] ?? 0;
 
                         // Models processing is handled by AiConnectionTrait
 
@@ -321,6 +322,7 @@ class AiModelListScreen extends Screen
                             'models_found' => $modelsFound,
                             'models_created' => $modelsCreated,
                             'models_updated' => $modelsUpdated,
+                            'models_skipped' => $modelsSkipped,
                             'response_time_ms' => $providerDuration,
                         ]);
 
@@ -396,6 +398,68 @@ class AiModelListScreen extends Screen
             );
 
             Toast::error('Failed to refresh models: '.$e->getMessage());
+        }
+
+        return redirect()->back();
+    }
+
+    /**
+     * Set a model as default for all AI assistants.
+     */
+    public function setAsDefaultForAssistants(Request $request)
+    {
+        try {
+            $model = AiModel::findOrFail($request->get('id'));
+            
+            // Check if model is active
+            if (!$model->is_active) {
+                Toast::warning("Cannot set inactive model '{$model->label}' as default. Please activate it first.");
+                return redirect()->back();
+            }
+
+            // Count assistants that will be updated
+            $totalAssistants = \App\Models\AiAssistant::count();
+            
+            if ($totalAssistants === 0) {
+                Toast::info('No AI assistants found to update.');
+                return redirect()->back();
+            }
+
+            // Update all assistants to use this model's system_id
+            $updatedCount = \App\Models\AiAssistant::query()
+                ->update(['ai_model' => $model->system_id]);
+
+            // Log the operation
+            $this->logScreenOperation(
+                'set_default_model_for_assistants',
+                'completed',
+                [
+                    'model_id' => $model->id,
+                    'model_label' => $model->label,
+                    'system_id' => $model->system_id,
+                    'provider_name' => $model->provider->provider_name ?? 'Unknown',
+                    'total_assistants' => $totalAssistants,
+                    'updated_count' => $updatedCount,
+                    'initiated_by' => auth()->id(),
+                ]
+            );
+
+            Toast::success("Successfully set '{$model->label}' as default model for {$updatedCount} AI assistants.");
+
+        } catch (\Exception $e) {
+            // Log the error
+            $this->logScreenOperation(
+                'set_default_model_for_assistants',
+                'error',
+                [
+                    'model_id' => $request->get('id'),
+                    'error' => $e->getMessage(),
+                    'initiated_by' => auth()->id(),
+                ],
+                'error'
+            );
+
+            Toast::error('Failed to set default model: '.$e->getMessage());
         }
 
         return redirect()->back();

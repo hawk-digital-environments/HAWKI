@@ -79,7 +79,8 @@ async function postData(data) {
         return response;
 
     } catch(error){
-        console.log('Fetching Aborted'. error);
+        console.log('Fetching Aborted', error);
+        throw error; // Re-throw the error so calling functions can handle it
     }
 }
 
@@ -141,8 +142,8 @@ async function processStream(stream, onData) {
 
 async function processResponse(response, onData){
 
-    const responseJson = await response.json();
-    onData(responseJson, true);
+        const responseJson = await response.json();
+        onData(responseJson, true);
 
 }
 
@@ -202,19 +203,54 @@ function createMessageLogForAI(regenerationElement = null){
 
 function createMsgObject(msg){
     const role = msg.dataset.role === 'assistant' ? 'assistant' : 'user';
-    const msgTxt = msg.querySelector(".message-text").textContent;
-    const filteredText = detectMentioning(msgTxt).filteredText;
+    const msgTextEl = msg.querySelector(".message-text");
+    const msgTxt = msgTextEl ? msgTextEl.textContent : '';
+    const filteredText = msgTxt ? detectMentioning(msgTxt).filteredText : '';
 
     const attachmentEls = msg.querySelectorAll('.attachment');
     const attachments = Array.from(attachmentEls, att => att.dataset.fileId);
 
-    return {
-        role: role,
-        content:{
-            text: filteredText,
-            attachments: attachments
+    let msgObject;
+
+    // For assistant messages with rawContent, use the full content (including auxiliaries)
+    if (role === 'assistant' && msg.dataset.rawContent) {
+        try {
+            const rawContent = JSON.parse(msg.dataset.rawContent);
+            
+            msgObject = {
+                role: role,
+                content: {
+                    text: rawContent.text || filteredText,
+                    attachments: attachments
+                }
+            };
+            
+            // Include auxiliaries if present
+            if (rawContent.auxiliaries && Array.isArray(rawContent.auxiliaries) && rawContent.auxiliaries.length > 0) {
+                msgObject.content.auxiliaries = rawContent.auxiliaries;
+            }
+        } catch (e) {
+            // Fallback to standard message object
+            msgObject = {
+                role: role,
+                content:{
+                    text: filteredText || '',
+                    attachments: attachments
+                }
+            };
         }
+    } else {
+        // For user messages or assistant without rawContent
+        msgObject = {
+            role: role,
+            content:{
+                text: filteredText || '',
+                attachments: attachments
+            }
+        };
     }
+
+    return msgObject;
 }
 
 
@@ -291,7 +327,7 @@ async function requestPromptImprovement(sender, type) {
 
 
 
-async function requestChatlogSummery(msgs = null) {
+async function requestChatlogSummary(msgs = null) {
     // shift removes the first element which is system prompt
     if(!msgs){
         msgs = createMessageLogForAI();
@@ -301,7 +337,7 @@ async function requestChatlogSummery(msgs = null) {
         {
             role: "system",
             content: {
-                text: translation.Summery_Prompt
+                text: translation.Summary_Prompt
             },
         },
         {
@@ -345,7 +381,7 @@ function convertMsgObjToLog(messages){
     for(let i = 0; i < messages.length; i++){
         msg = messages[i];
         const role = msg.message_role === 'assistant' ? 'assistant' : 'user';
-        const msgTxt = msg.content.text;
+        const msgTxt = msg.content.hasOwnProperty('text') ? msg.content.text : msg.content;
         const filteredText = detectMentioning(msgTxt).filteredText;
         const messageObject = {
             role: role,

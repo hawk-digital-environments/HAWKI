@@ -4,12 +4,6 @@ let currentSlideIndex;
 function switchSlide(targetIndex) {
     const target = document.querySelector(`.slide[data-index="${targetIndex}"]`);
 
-    // Check if target slide exists
-    if (!target) {
-        console.error(`Slide with data-index="${targetIndex}" not found`);
-        return;
-    }
-
     if (previousSlide) {
         previousSlide.style.opacity = "0";
     }
@@ -20,15 +14,19 @@ function switchSlide(targetIndex) {
         }
 
         target.style.display = "flex";
-        
         const backBtn = document.querySelector('.slide-back-btn');
-        if (backBtn) {
-            if(targetIndex > 1){
+
+        if(targetIndex > 1){
+            backBtn.style.display = "flex";
+            setTimeout(() => {
                 backBtn.style.opacity = "1";
-            }
-            else{
-                backBtn.style.opacity = "0";
-            }
+            }, 20);
+        }
+        else{
+            backBtn.style.opacity = "0";
+            setTimeout( () => {
+                backBtn.style.display = "none";
+            }, 500)
         }
 
         // Add a small delay before changing the opacity to ensure the display change has been processed
@@ -46,14 +44,15 @@ function switchBackSlide(){
     switchSlide(targetIndex);
 }
 
-// Note: modalClick is now defined in register.blade.php to handle registration-specific logic
-// with passkey method configuration. For general modal handling, see home_functions.js
+function modalClick(btn){
+    switchSlide(4);
+}
 
 let backupHash = '';
 async function checkPasskey(){
 
     const msg = document.querySelector('#alert-message');
-    const enteredPasskey = String(document.getElementById('passkey-input').value);
+    const enteredPasskey = String(document.getElementById('passkey-input').dataset.realValue);
 
     // if passkey field is left empty.
     if(enteredPasskey === ''){
@@ -65,12 +64,12 @@ async function checkPasskey(){
 
     //Show Repeat Passkey
     if(repeatWrapper.style.display === 'none'){
-        repeatWrapper.style.display = 'block';
-        repeatWrapper.focus();
+        repeatWrapper.style.display = 'flex';
+        repeatWrapper.querySelector('input').focus();
         return;
     }
-    const repeatField = document.getElementById('passkey-repeat');
-    const repeatedKey = String(repeatField.value);
+    const repeatField = repeatWrapper.querySelector('.passkey-input')
+    const repeatedKey = String(repeatField.dataset.realValue);
 
 
     //if repeat passkey is empty
@@ -270,6 +269,7 @@ async function completeRegistration() {
         keychain: keychainData.ciphertext,
         KCIV: keychainData.iv,
         KCTAG: keychainData.tag,
+        backupHash: backupHash, // Include backup hash for email notification
     };
 
     try {
@@ -400,11 +400,12 @@ function isValidBackupKeyFormat(content) {
 async function extractPasskey(){
     const msg = document.querySelector('#backup-alert-message');
     const backupHash = document.querySelector('#backup-hash-input').value;
+    
     if(!backupHash){
         msg.innerText = 'Enter backupHash or upload your backup file.';
         return;
     }
-    if(!isValidBackupKeyFormat){
+    if(!isValidBackupKeyFormat(backupHash)){
         msg.innerText = 'Backup key is not valid!';
         return;
     }
@@ -429,8 +430,12 @@ async function extractPasskey(){
 
         if(verifyPasskey(passkey)){
             setPassKey(passkey);
-            switchSlide(3);
+            switchSlide(4);
             document.querySelector('#passkey-field').innerText = passkey;
+            setTimeout(()=>{
+                document.querySelector('.slide-back-btn').remove();
+            }, 300)
+
         }
         else{
             msg.innerText = "Failed to verify passkey";
@@ -460,6 +465,10 @@ async function requestPasskeyBackup(){
 
             // Handle the server response
             if (!response.ok) {
+                if (response.status === 404) {
+                    console.warn('No passkey backup found for this user');
+                    return null;
+                }
                 const errorData = await response.json();
                 console.error('Server Error:', errorData.error);
                 throw new Error(`Server Error: ${errorData.error}`);
@@ -470,6 +479,8 @@ async function requestPasskeyBackup(){
                 const passKeyJson = data.passkeyBackup;
                 return passKeyJson;
             }
+            
+            return null;
 
         } catch (error) {
             console.error('Error downloading passkey backup:', error);
@@ -511,5 +522,110 @@ async function requestProfileReset(){
     } catch (error) {
         console.error('Error reseting profile:', error);
         throw error;
+    }
+}
+
+/**
+ * System Passkey Recovery Functions for Slide 6
+ * These are duplicates of the regular backup functions but work with slide 6 elements
+ */
+
+function uploadTextFileSystem() {
+    // Create a file input element
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt'; // Accept only text files
+    const msg = document.querySelector('#backup-alert-message-system');
+
+    // Set up an event listener to handle the file once the user selects it
+    input.addEventListener('change', function(event) {
+        const file = event.target.files[0]; // Get the first selected file
+        if (file) {
+            const reader = new FileReader();
+            // Once the file is read, invoke the callback with the file content
+            reader.onload = function(e) {
+                const content = e.target.result;
+                if (isValidBackupKeyFormat(content.trim())) {
+                    document.querySelector('#backup-hash-input-system').value = content;
+                } else {
+                    msg.innerText = 'The file content does not match the required format.';
+                }
+            };
+            // Read the file as text
+            reader.readAsText(file);
+        }
+    });
+
+    // Trigger the file input dialog
+    input.click();
+}
+
+async function extractPasskeySystem(){
+    const msg = document.querySelector('#backup-alert-message-system');
+    const backupHash = document.querySelector('#backup-hash-input-system').value;
+    if(!backupHash){
+        msg.innerText = 'Enter backupHash or upload your backup file.';
+        return;
+    }
+    if(!isValidBackupKeyFormat(backupHash)){
+        msg.innerText = 'Backup key is not valid!';
+        return;
+    }
+
+    // Get passkey backup from server.
+    const passkeyBackup = await requestPasskeyBackup();
+    if(!passkeyBackup){
+        msg.innerText = 'No backup found for this user.';
+        return;
+    }
+
+    // derive Key from entered backupkey
+    const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
+    const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
+    
+    try{
+        console.log('Attempting to decrypt passkey backup with provided backup hash...');
+        
+        // Decrypt passkey from backup using backup code
+        const decryptedPasskey = await decryptWithSymKey(
+            derivedKey,
+            passkeyBackup.ciphertext,
+            passkeyBackup.iv,
+            passkeyBackup.tag,
+            false
+        );
+        
+        console.log('Backup decrypted successfully, verifying with keychain...');
+
+        // Verify the decrypted passkey with keychain (method-agnostic)
+        // The backup contains the ORIGINAL passkey used during registration
+        const verified = await verifyPasskey(decryptedPasskey);
+        
+        if (verified) {
+            console.log('Passkey verified with keychain - restoring access');
+            await setPassKey(decryptedPasskey);
+            await syncKeychain(serverKeychainCryptoData);
+            window.location.href = '/chat';
+        } else {
+            console.error('Backup code is correct, but passkey does not match keychain');
+            msg.innerText = "Backup code is correct, but passkey verification failed. Please reset your profile.";
+            
+            // Optional: Auto-switch to slide 7 (profile reset) after 3 seconds
+            setTimeout(() => {
+                if (typeof switchSlide === 'function') {
+                    switchSlide(7);
+                }
+            }, 3000);
+        }
+    }
+    catch (error) {
+        console.error('Error during backup recovery:', error);
+        
+        // Check if it's a decryption error (wrong backup code)
+        if (error.message && error.message.includes('Decryption failed')) {
+            msg.innerText = 'Incorrect backup code. Please check your backup code and try again.';
+        } else {
+            msg.innerText = 'Error processing backup code: ' + error.message;
+        }
     }
 }

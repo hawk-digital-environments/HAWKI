@@ -125,9 +125,9 @@ async function exportAsPDF() {
     }
 
 
-    // summery
-    const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    // summary
+    const summaryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
+    const summary = await requestChatlogSummary(summaryMsg);
 
 
 
@@ -161,9 +161,9 @@ async function exportAsPDF() {
     yOffset += 20;
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(translation.Summery, margin, yOffset);
+    doc.text(translation.Summary, margin, yOffset);
 
-    const textLenght = translation.Summery.length;
+    const textLenght = translation.Summary.length;
     doc.setFont(font, 'italic');
     doc.setFontSize(titleFS);
     doc.text(` (${translation.Auto_Generated})`, margin + (textLenght * 4) + 0, yOffset);
@@ -173,8 +173,8 @@ async function exportAsPDF() {
     yOffset += 10;
     doc.setFont(font, 'normal');
     doc.setFontSize(textFS);
-    // Create summery
-    const wrappedContent = doc.splitTextToSize(summery, maxWidth);
+    // Create summary
+    const wrappedContent = doc.splitTextToSize(summary, maxWidth);
     wrappedContent.forEach(line => {
         // Check if the line will fit on the current page
         if (yOffset + lineHeight > maxPageHeight) {
@@ -194,7 +194,7 @@ async function exportAsPDF() {
     yOffset += 15;
     doc.setFont(font, 'normal');
     doc.setFontSize(textFS);
-    // Create summery
+    // Create system prompt section
     const systemPromptTxt = document.querySelector('#system_prompt_field').textContent;
     const wrappedSP = doc.splitTextToSize(systemPromptTxt, maxWidth);
     wrappedSP.forEach(line => {
@@ -385,8 +385,8 @@ async function exportAsWord() {
         return;
     }
 
-    const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    const summaryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
+    const summary = await requestChatlogSummary(summaryMsg);
 
     const chatLogChildren = [];
     const date = new Date();
@@ -408,7 +408,7 @@ async function exportAsWord() {
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: translation.Summery,
+                    text: translation.Summary,
                     bold: true,
                     size: 36,
                 }),
@@ -422,7 +422,7 @@ async function exportAsWord() {
         })
     );
 
-    chatLogChildren.push(...transformMarkdownToDocxContent(summery));
+    chatLogChildren.push(...transformMarkdownToDocxContent(summary));
 
 
     const systemPromptTxt = document.querySelector('#system_prompt_field').textContent;
@@ -626,14 +626,14 @@ async function preparePrintPage(){
     const date = new Date();
     const formattedDate = `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()}`
 
-    const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
-    const summery = await requestChatlogSummery(summeryMsg);
+    const summaryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
+    const summary = await requestChatlogSummary(summaryMsg);
 
     scrollPanel.innerHTML =
     `
         <p>${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}</p>
-        <h1>${translation.Summery}:</h1>
-        <p>${summery}</p>
+        <h1>${translation.Summary}:</h1>
+        <p>${summary}</p>
         <h3>System Prompt</h3>
         <p>${systemPrompt}</p>
         <h1>${translation.Chatlog}</h1>

@@ -23,3 +23,4 @@ docker-compose.override.yml
 .DS_Store
 mcp-server.json
 _docker_production/.env
+phpunit.xml

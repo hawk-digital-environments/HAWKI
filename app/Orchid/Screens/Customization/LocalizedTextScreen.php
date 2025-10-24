@@ -120,6 +120,8 @@ class LocalizedTextScreen extends Screen
             ]);
 
             // Clear caches to ensure changes are immediately visible
+            // Clear both LanguageController and LocalizationController caches
+            \App\Http\Controllers\LanguageController::clearCaches();
             \App\Http\Controllers\LocalizationController::clearCaches();
 
             if ($importedCount > 0) {
@@ -148,6 +150,11 @@ class LocalizedTextScreen extends Screen
             $this->logModelOperation('delete', 'localized_text', $contentKey, 'success', [
                 'entries_deleted' => $deletedCount,
             ]);
+
+            // Clear caches to ensure changes are immediately visible
+            // Clear both LanguageController and LocalizationController caches
+            \App\Http\Controllers\LanguageController::clearCaches();
+            \App\Http\Controllers\LocalizationController::clearCaches();
 
             Toast::success("Deleted {$deletedCount} entries for localized text '{$contentKey}'");
         } catch (\Exception $e) {
@@ -206,6 +213,11 @@ class LocalizedTextScreen extends Screen
                 'entries_deleted' => $currentCount,
                 'entries_imported' => $importedCount,
             ]);
+
+            // Clear caches to ensure changes are immediately visible
+            // Clear both LanguageController and LocalizationController caches
+            \App\Http\Controllers\LanguageController::clearCaches();
+            \App\Http\Controllers\LocalizationController::clearCaches();
 
             Toast::success("Reset localized texts: Removed {$currentCount} entries and imported {$importedCount} default entries");
         } catch (\Exception $e) {

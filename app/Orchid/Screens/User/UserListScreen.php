@@ -10,6 +10,7 @@ use App\Orchid\Layouts\User\UserEditLayout;
 use App\Orchid\Layouts\User\UserFiltersLayout;
 use App\Orchid\Layouts\User\UserImportLayout;
 use App\Orchid\Layouts\User\UserListLayout;
+use App\Services\EmployeetypeMappingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -21,6 +22,13 @@ use Orchid\Support\Facades\Toast;
 
 class UserListScreen extends Screen
 {
+    protected EmployeetypeMappingService $employeetypeMappingService;
+
+    public function __construct(EmployeetypeMappingService $employeetypeMappingService)
+    {
+        $this->employeetypeMappingService = $employeetypeMappingService;
+    }
+
     /**
      * Fetch data to be displayed on the screen.
      *
@@ -310,26 +318,19 @@ class UserListScreen extends Screen
     }
 
     /**
-     * Map employeetype values to Orchid role slugs dynamically
+     * Map employeetype values to Orchid role slugs using EmployeetypeMappingService
      * Same logic as in UserObserver to ensure consistency
      */
     private function mapEmployeeTypeToRoleSlug(string $employeetype): ?string
     {
-        $employeetype = trim($employeetype);
-
-        // First try exact slug match (case-insensitive)
-        $role = Role::whereRaw('LOWER(slug) = ?', [strtolower($employeetype)])->first();
-        if ($role) {
-            return $role->slug;
+        try {
+            $authMethod = config('auth.authentication_method', 'LDAP');
+            $roleSlug = $this->employeetypeMappingService->mapEmployeetypeToRole($employeetype, $authMethod);
+            
+            // Service returns 'guest' as fallback
+            return $roleSlug;
+        } catch (\Exception $e) {
+            return null;
         }
-
-        // Then try exact name match (case-insensitive)
-        $role = Role::whereRaw('LOWER(name) = ?', [strtolower($employeetype)])->first();
-        if ($role) {
-            return $role->slug;
-        }
-
-        // No match found
-        return null;
     }
 }

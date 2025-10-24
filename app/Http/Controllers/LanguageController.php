@@ -58,6 +58,41 @@ class LanguageController extends Controller
         return $translation;
     }
 
+    /**
+     * Get complete translation including localized content (original keys)
+     * This includes all translations plus localized texts with their original database keys
+     * 
+     * @return array Complete translation array
+     */
+    public function getTranslationWithLocalized(): array
+    {
+        $translation = $this->getTranslation();
+        
+        // Get LocalizationController instance and merge original keys
+        $localizationController = app(LocalizationController::class);
+        $localizedContent = $localizationController->getAllLocalizedContent();
+        
+        return array_merge($translation, $localizedContent);
+    }
+
+    /**
+     * Get complete translation with formatted localized content (_PascalCase)
+     * This includes all translations plus localized texts in _PascalCase format
+     * Use this for static pages that expect _DataProtection, _Imprint, etc.
+     * 
+     * @return array Complete translation array ready for static views
+     */
+    public function getTranslationWithLocalizedContent(): array
+    {
+        $translation = $this->getTranslation();
+        
+        // Get LocalizationController instance
+        $localizationController = app(LocalizationController::class);
+        $formattedLocalized = $localizationController->getAllLocalizedContentFormatted();
+        
+        return array_merge($translation, $formattedLocalized);
+    }
+
     // / Changes language based on the request language
     public function changeLanguage(Request $request)
     {
@@ -116,6 +151,20 @@ class LanguageController extends Controller
                 ->get()
                 ->pluck('content', 'content_key')
                 ->toArray();
+
+            // Load localized texts from app_localized_texts table
+            // These are accessed with underscore prefix (e.g., _DataProtection for key data_protection)
+            $localizedTexts = \App\Models\AppLocalizedText::where('language', $prefix)
+                ->get()
+                ->mapWithKeys(function ($text) {
+                    // Convert snake_case key to _PascalCase for frontend access
+                    // e.g., 'data_protection' → '_DataProtection'
+                    $pascalKey = '_' . str_replace('_', '', ucwords($text->content_key, '_'));
+                    return [$pascalKey => $text->content];
+                })
+                ->toArray();
+            
+            $translations = array_merge($translations, $localizedTexts);
 
             // Load prompts based on AI config system setting
             if ($useAiDatabaseConfig) {

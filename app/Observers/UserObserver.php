@@ -3,6 +3,8 @@
 namespace App\Observers;
 
 use App\Models\User;
+use App\Services\EmailService;
+use App\Services\EmployeetypeMappingService;
 use Illuminate\Support\Facades\Log;
 use Orchid\Platform\Models\Role;
 
@@ -23,6 +25,11 @@ class UserObserver
      */
     public function updated(User $user): void
     {
+        // Handle approval status changes and send emails
+        if ($user->wasChanged('approval') && config('hawki.send_registration_mails', true)) {
+            $this->handleApprovalStatusChange($user);
+        }
+
         // Only sync if employeetype was changed OR approval was changed from false to true
         if ($user->wasChanged('employeetype') ||
             ($user->wasChanged('approval') && $user->approval)) {
@@ -38,6 +45,49 @@ class UserObserver
                 $roleNames = $removedRoles->pluck('name')->implode(', ');
                 Log::info("Removed all Orchid roles for unapproved user {$user->id} ({$user->username}): {$roleNames}");
             }
+        }
+    }
+
+    /**
+     * Handle approval status changes and send appropriate emails
+     */
+    private function handleApprovalStatusChange(User $user): void
+    {
+        try {
+            $emailService = app(EmailService::class);
+            $oldApproval = $user->getOriginal('approval');
+            $newApproval = $user->approval;
+
+            // Skip system users
+            if ($this->isSystemUser($user)) {
+                return;
+            }
+
+            // Approval changed from false to true - send approval email
+            if ($oldApproval === false && $newApproval === true) {
+                $emailService->sendApprovalEmail($user);
+                Log::info('Approval email sent after admin approved user', [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                ]);
+            }
+            // Approval changed from true to false - send revoked email
+            elseif ($oldApproval === true && $newApproval === false) {
+                $emailService->sendApprovalRevokedEmail($user);
+                Log::info('Approval revoked email sent after admin revoked access', [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to send approval status change email', [
+                'user_id' => $user->id,
+                'username' => $user->username,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't fail the update if email fails
         }
     }
 
@@ -59,19 +109,56 @@ class UserObserver
                 return;
             }
 
-            // Skip if user is not approved
-            if (! $user->approval) {
-                Log::info("Skipping role sync for unapproved user: {$user->username} (ID: {$user->id})");
-
+            // CRITICAL: Ensure auth_type is set - if NULL, skip role sync
+            // This prevents creating employeetype entries with wrong auth_method
+            if (empty($user->auth_type)) {
+                Log::warning("User has no auth_type set - skipping role sync", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'employeetype' => $user->employeetype,
+                ]);
                 return;
             }
 
-            // Map employeetype to role slug
-            $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype);
+            $authMethod = $user->auth_type;
 
+            // Skip role assignment if user is not approved
+            if (! $user->approval) {
+                Log::info("User not approved - no role will be assigned: {$user->username} (ID: {$user->id})", [
+                    'employeetype' => $user->employeetype,
+                    'auth_method' => $authMethod,
+                ]);
+                return;
+            }
+
+            // SPECIAL HANDLING: Local auth users use 1:1 mapping (employeetype = role slug)
+            // External auth users (LDAP/OIDC/Shibboleth) use database mapping via employeetypes table
+            if (strtolower($authMethod) === 'local') {
+                // For local users: employeetype IS the role slug (1:1 mapping)
+                $requiredRoleSlug = strtolower($user->employeetype);
+                
+                Log::debug("Local user - using 1:1 employeetype to role mapping", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'employeetype' => $user->employeetype,
+                    'role_slug' => $requiredRoleSlug,
+                ]);
+            } else {
+                // For external auth users: create employeetype entry and use mapping
+                $this->ensureEmployeetypeExists($user->employeetype, $authMethod);
+                
+                // Map employeetype to role slug via database mapping
+                $requiredRoleSlug = $this->mapEmployeeTypeToRoleSlug($user->employeetype, $authMethod);
+            }
+
+            // If no mapping exists, don't assign any role
             if (! $requiredRoleSlug) {
-                Log::warning("Unknown employeetype for role mapping: {$user->employeetype} for user {$user->id}");
-
+                Log::info("No role mapping configured for employeetype '{$user->employeetype}' - skipping role assignment.", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'employeetype' => $user->employeetype,
+                    'auth_type' => $authMethod,
+                ]);
                 return;
             }
 
@@ -87,11 +174,43 @@ class UserObserver
             // Add the required role if not already present (never remove any roles)
             if (! $user->roles()->where('roles.id', $requiredRole->id)->exists()) {
                 $user->roles()->attach($requiredRole->id);
-                // Note: Role assignment is logged in AuthenticationController during registration
+                
+                Log::info("Role assigned to user via employeetype mapping", [
+                    'user_id' => $user->id,
+                    'username' => $user->username,
+                    'employeetype' => $user->employeetype,
+                    'assigned_role' => $requiredRoleSlug,
+                ]);
             }
 
         } catch (\Exception $e) {
             Log::error("Failed to sync Orchid role for user {$user->id}: ".$e->getMessage());
+        }
+    }
+
+    /**
+     * Ensure employeetype entry exists in database
+     * This is called early in the sync process to guarantee discovery
+     */
+    private function ensureEmployeetypeExists(string $employeetype, string $authMethod): void
+    {
+        try {
+            $mappingService = app(EmployeetypeMappingService::class);
+            
+            // This will create the employeetype entry if it doesn't exist
+            // We don't care about the return value here, just that the entry exists
+            $mappingService->mapEmployeetypeToRole($employeetype, $authMethod);
+            
+            Log::debug("Ensured employeetype entry exists", [
+                'employeetype' => $employeetype,
+                'auth_method' => $authMethod,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("Failed to ensure employeetype entry exists", [
+                'employeetype' => $employeetype,
+                'auth_method' => $authMethod,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -107,29 +226,60 @@ class UserObserver
     }
 
     /**
-     * Map employeetype values to Orchid role slugs dynamically
-     * This allows for automatic mapping when new roles are created in the admin
+     * Map employeetype values to Orchid role slugs using the EmployeetypeMappingService
+     * This allows for automatic discovery and mapping of new employeetypes
+     * 
+     * @param string $employeetype Raw employeetype value from auth system
+     * @param string $authMethod Authentication method (LDAP, OIDC, Shibboleth)
+     * @return string|null Role slug or null if no mapping exists
      */
-    private function mapEmployeeTypeToRoleSlug(string $employeetype): ?string
+    private function mapEmployeeTypeToRoleSlug(string $employeetype, string $authMethod = 'LDAP'): ?string
     {
-        $employeetype = trim($employeetype);
-
-        // First try exact slug match (case-insensitive)
-        $role = Role::whereRaw('LOWER(slug) = ?', [strtolower($employeetype)])->first();
-        if ($role) {
-            return $role->slug;
+        try {
+            // Resolve EmployeetypeMappingService from container
+            $mappingService = app(EmployeetypeMappingService::class);
+            
+            // Use EmployeetypeMappingService to map employeetype to role
+            // This will automatically create an employeetype entry in the database if it doesn't exist
+            $roleSlug = $mappingService->mapEmployeetypeToRole($employeetype, $authMethod);
+            
+            // Check if this is the fallback 'guest' role (meaning no real mapping exists)
+            if ($roleSlug === 'guest') {
+                // Check if there's an actual mapping to guest role or if it's just the fallback
+                $employeetypeEntry = \App\Models\Employeetype::where('raw_value', $employeetype)
+                    ->where('auth_method', $authMethod)
+                    ->first();
+                
+                if ($employeetypeEntry) {
+                    $primaryRole = $employeetypeEntry->primaryRoleAssignment();
+                    
+                    // If there's no actual role assignment, return null (no mapping configured)
+                    if (!$primaryRole || !$primaryRole->role) {
+                        Log::info("Employeetype '{$employeetype}' (auth: {$authMethod}) has no role mapping configured - no role will be assigned.", [
+                            'employeetype' => $employeetype,
+                            'auth_method' => $authMethod,
+                            'employeetype_entry_id' => $employeetypeEntry->id,
+                        ]);
+                        return null;
+                    }
+                    
+                    // There is an actual mapping to guest role
+                    return $primaryRole->role->slug;
+                }
+            }
+            
+            return $roleSlug;
+            
+        } catch (\Exception $e) {
+            Log::error("Failed to map employeetype '{$employeetype}' to role: " . $e->getMessage(), [
+                'employeetype' => $employeetype,
+                'auth_method' => $authMethod,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // Return null instead of fallback - no role should be assigned on error
+            return null;
         }
-
-        // Then try exact name match (case-insensitive)
-        $role = Role::whereRaw('LOWER(name) = ?', [strtolower($employeetype)])->first();
-        if ($role) {
-            return $role->slug;
-        }
-
-        // If no match found, log available roles for debugging
-        $availableRoles = Role::pluck('slug')->toArray();
-        Log::warning("No role mapping found for employeetype: '{$employeetype}'. Available roles: ".implode(', ', $availableRoles));
-
-        return null;
     }
 }

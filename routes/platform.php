@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\Controllers\Admin\RoleAssignmentController;
 use App\Orchid\Screens\Customization\CssEditScreen;
 use App\Orchid\Screens\Customization\CssRulesScreen;
+use App\Orchid\Screens\Customization\AnnouncementScreen;
+use App\Orchid\Screens\Customization\AnnouncementEditScreen;
 use App\Orchid\Screens\Customization\LocalizedTextScreen;
 use App\Orchid\Screens\Customization\MailTemplateEditScreen;
 use App\Orchid\Screens\Customization\MailTemplatesScreen;
@@ -40,14 +42,13 @@ use App\Orchid\Screens\Role\RoleAssignmentEditScreen;
 use App\Orchid\Screens\Role\RoleAssignmentScreen;
 use App\Orchid\Screens\Role\RoleEditScreen;
 use App\Orchid\Screens\Role\RoleListScreen;
-use App\Orchid\Screens\Settings\ApiSettingsScreen;
+use App\Orchid\Screens\Settings\FeatureSettingsScreen;
 use App\Orchid\Screens\Settings\AuthenticationSettingsScreen;
 use App\Orchid\Screens\Settings\AuthMethodEditScreen;
 use App\Orchid\Screens\Settings\LogScreen;
 use App\Orchid\Screens\Settings\MailConfigurationSettingsScreen;
 use App\Orchid\Screens\Settings\StorageSettingsScreen;
 use App\Orchid\Screens\Settings\SystemSettingsScreen;
-use App\Orchid\Screens\Settings\WebSocketSettingsScreen;
 use App\Orchid\Screens\Testing\MailTestingScreen;
 use App\Orchid\Screens\Testing\TestingSettingsScreen;
 use App\Orchid\Screens\User\UserEditScreen;
@@ -115,12 +116,12 @@ Route::screen('/settings/authentication/edit', AuthMethodEditScreen::class)
             ->push('Edit Authentication Method', route('platform.settings.authentication.edit'));
     });
 
-Route::screen('/settings/api', ApiSettingsScreen::class)
+Route::screen('/settings/api', FeatureSettingsScreen::class)
     ->name('platform.settings.api')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('API Settings', route('platform.settings.api'));
+            ->push('Features', route('platform.settings.api'));
     });
 
 Route::screen('/settings/mail-configuration', MailConfigurationSettingsScreen::class)
@@ -295,12 +296,29 @@ Route::screen('/customization/mail-templates', MailTemplatesScreen::class)
             ->push('Mail Templates', route('platform.customization.mail-templates'));
     });
 
-Route::screen('/settings/websockets', WebSocketSettingsScreen::class)
-    ->name('platform.settings.websockets')
+// Announcements
+Route::screen('/customization/announcements', AnnouncementScreen::class)
+    ->name('platform.customization.announcements')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('WebSocket Settings', route('platform.settings.websockets'));
+            ->push('Announcements', route('platform.customization.announcements'));
+    });
+
+Route::screen('/customization/announcements/create', AnnouncementEditScreen::class)
+    ->name('platform.customization.announcements.create')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.customization.announcements')
+            ->push('Create Announcement', route('platform.customization.announcements.create'));
+    });
+
+Route::screen('/customization/announcements/{announcement}/edit', AnnouncementEditScreen::class)
+    ->name('platform.customization.announcements.edit')
+    ->breadcrumbs(function (Trail $trail, $announcement) {
+        return $trail
+            ->parent('platform.customization.announcements')
+            ->push('Edit: ' . $announcement->title, route('platform.customization.announcements.edit', $announcement));
     });
 
 // Models - API Management - Providers

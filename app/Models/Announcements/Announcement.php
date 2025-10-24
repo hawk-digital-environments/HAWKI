@@ -4,6 +4,8 @@ namespace App\Models\Announcements;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Announcement extends Model
 {
@@ -25,7 +27,7 @@ class Announcement extends Model
         'expires_at' => 'datetime',
     ];
 
-    public function users()
+    public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'announcement_user')
                     ->using(AnnouncementUser::class) // use custom pivot model
@@ -33,4 +35,19 @@ class Announcement extends Model
                     ->withTimestamps();
     }
 
+    /**
+     * Get all translations for the announcement.
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(AnnouncementTranslation::class);
+    }
+
+    /**
+     * Get translation for a specific locale.
+     */
+    public function getTranslation(string $locale): ?AnnouncementTranslation
+    {
+        return $this->translations()->where('locale', $locale)->first();
+    }
 }

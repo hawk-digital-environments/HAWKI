@@ -70,7 +70,6 @@
                 <div class="nav-buttons">
                     <button class="btn-lg-fill" onclick="switchSlide(5)">{{ $translation["Reg_SL4_B"] }}</button>
                 </div>
-                <script>console.log('passkey_method = user');</script> 
         </div>
 
 
@@ -79,8 +78,10 @@
         {{-- Datakey Input Slide --}} 
 
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
-            <input placeholder="{{  $translation["Reg_SL5_PH1"] }}" id="passkey-input" type="password">
-            <input placeholder="{{  $translation["Reg_SL5_PH2"] }}" id="passkey-repeat" type="password" class="top-gap-2" style="display:none">
+            <input placeholder="{{  $translation["Reg_SL5_PH1"] }}" id="passkey-input" class="passkey-input" type="password">
+            <div id="passkey-repeat" style="display:none" class="top-gap-2">
+                <input placeholder="{{  $translation["Reg_SL5_PH2"] }}" class="passkey-input" type="password">
+            </div>
             <p class="slide-subtitle top-gap-2">
                 {!! $translation["Reg_SL5_T"] !!}
             </p>
@@ -161,7 +162,6 @@
 
 <script>
     let userInfo = @json($userInfo);
-    let passkeySecret = @json($passkeySecret);
     let passkeyMethod = @json($passkeyMethod ?? 'user');
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
     let needsPasswordReset = @json($needsPasswordReset ?? false);
@@ -169,15 +169,6 @@
     let needsApproval = @json($needsApproval ?? false);
     const translation = @json($translation);
     
-    // Debug output for passkey configuration
-    console.log('=== PASSKEY CONFIGURATION DEBUG ===');
-    console.log('passkeyMethod:', passkeyMethod);
-    console.log('passkeySecret:', passkeySecret);
-    console.log('isFirstLoginLocalUser:', isFirstLoginLocalUser);
-    console.log('needsPasswordReset:', needsPasswordReset);
-    console.log('needsApproval:', needsApproval);
-    console.log('groupchatActive:', groupchatActive);
-    console.log('===================================');
     
     initializeRegistration();
     
@@ -216,20 +207,14 @@
     // Function to handle navigation from Guidelines slide (slide 3) based on passkey method
     // Make this a global function for potential reuse
     window.navigateFromGuidelines = function() {
-        console.log('=== navigateFromGuidelines() called ===');
-        console.log('Current passkeyMethod:', passkeyMethod);
-        console.log('Condition check - passkeyMethod === "system":', passkeyMethod === 'system');
         
         if (passkeyMethod === 'system') {
-            console.log('→ Navigating to slide 7 (system-generated passkey)');
             // System generated passkeys - go to slide 7 (auto generate)
             switchSlide(7);
         } else {
-            console.log('→ Navigating to slide 4 (user-defined passkey)');
             // User defined passkeys - go to slide 4 (passkey info)
             switchSlide(4);
         }
-        console.log('======================================');
     }
     
     /**
@@ -237,7 +222,7 @@
      * This consolidates the functionality from home_functions.js and registration-specific logic
      */
     window.modalClick = function(button) {
-        console.log('Guidelines modal confirmed, navigating based on passkey method:', passkeyMethod);
+        //console.log('Guidelines modal confirmed, navigating based on passkey method:', passkeyMethod);
         
         // Handle modal closing (from home_functions.js pattern)
         const modal = button.closest('.modal');
@@ -340,7 +325,7 @@
         
         // Override with our version that adds the password
         window.completeRegistration = async function() {
-            console.log('Local user completeRegistration called with password:', window.localUserNewPassword);
+            //console.log('Local user completeRegistration called with password:', window.localUserNewPassword);
             
             setOverlay(true, true);
 
@@ -366,13 +351,14 @@
                 publicKey: publicKeyBase64,
                 keychain: keychainData.ciphertext,
                 KCIV: keychainData.iv, 
-                KCTAG: keychainData.tag, 
+                KCTAG: keychainData.tag,
+                backupHash: backupHash, // Include backup hash for email
             };
             
             // Add new password for local users
             if (window.localUserNewPassword) {
                 dataToSend.newPassword = window.localUserNewPassword;
-                console.log('Added newPassword to dataToSend');
+                //console.log('Added newPassword to dataToSend');
             }
 
             try {
@@ -409,109 +395,8 @@
         };
     }
 
-    // Auto-generate passkey function for 'auto' passkey method
-    async function generatePasskeyFromSecret(passkeySecret, userInfo) {
-        const encoder = new TextEncoder();
-        let passkeyValue = null;
-
-        console.log('Generating passkey with secret:', passkeySecret);
-        console.log('User info for passkey generation:', {
-            username: userInfo.username,
-            created_at: userInfo.created_at,
-            publicKey: userInfo.publicKey ? 'available' : 'not available'
-        });
-
-        switch (passkeySecret) {
-            case 'username':
-                passkeyValue = userInfo.username;
-                break;
-            case 'time':
-                passkeyValue = userInfo.created_at;
-                break;
-            case 'publicKey':
-                passkeyValue = userInfo.publicKey;
-                break;    
-            default:
-                console.error('Unknown passkey secret:', passkeySecret);
-                passkeyValue = userInfo.username; // fallback
-                break;
-        }
-
-        console.log('Generated passkey:', passkeyValue);
-        return passkeyValue;
-    }
-
-    async function autoGeneratePasskey(){
-        // This function generates the passkey in the background without user interaction
-        console.log('=== autoGeneratePasskey START ===');
-        
-        try {
-            const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
-            console.log('=== autoGeneratePasskey - passkey generated ===');
-
-            // create backup hash
-            backupHash = generatePasskeyBackupHash();
-            console.log('backupHash: ' + backupHash);
-            
-            // Check if backup-hash element exists before setting its content
-            const backupHashElement = document.querySelector('#backup-hash');
-            if (backupHashElement) {
-                backupHashElement.innerText = backupHash;
-            }
-            
-            // derive key from backup hash
-            const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
-            const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
-            //encrypt Passkey as plaintext
-            const cryptoPasskey = await encryptWithSymKey(derivedKey, generatedPasskey, false);
-            
-            // upload backup to the server.
-            const dataToSend = {
-                'username': userInfo.username,
-                'cipherText': cryptoPasskey.ciphertext,
-                'tag': cryptoPasskey.tag,
-                'iv': cryptoPasskey.iv,
-            }
-            
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            // Send the registration data to the server
-            const response = await fetch('/req/profile/backupPassKey', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    "X-CSRF-TOKEN": csrfToken,
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify(dataToSend)
-            });
-
-            // Handle the server response
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Server Error:', errorData.error);
-                throw new Error(`Server Error: ${errorData.error}`);
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                console.log('Backup stored successfully');
-            }
-            
-            // save passkey to localstorage.
-            await setPassKey(generatedPasskey);
-
-            console.log('Passkey generated and saved successfully');
-            console.log('=== autoGeneratePasskey END ===');
-            
-            // Complete registration directly - skip backup code slide
-            completeRegistration();
-            
-        } catch (error) {
-            console.error('Error in autoGeneratePasskey:', error);
-            // Fallback to manual passkey creation
-            switchSlide(1);
-        }
-    }
+    // Note: generatePasskeyFromSecret() and autoGeneratePasskey() are now imported from auto_passkey_generation.js
+    // These functions are available globally via window object
 
     setTimeout(() => {
         if(@json($activeOverlay)){
@@ -520,10 +405,7 @@
     }, 100);
 </script>
 
-
-
-
-
-
+{{-- Auto Passkey Generation Module --}}
+<script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/auto_passkey_generation.js')), 0, 8) }}"></script>
 
 @endsection

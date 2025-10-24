@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Orchid\Filters\Filterable;
 use Orchid\Filters\Types\Like;
@@ -14,6 +15,38 @@ use Orchid\Screen\AsSource;
 class AiModel extends Model
 {
     use AsSource, Filterable, HasFactory;
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        // Clear AI config cache when model is saved or deleted
+        static::saved(function ($model) {
+            static::clearAiConfigCache();
+        });
+
+        static::deleted(function ($model) {
+            static::clearAiConfigCache();
+        });
+    }
+
+    /**
+     * Clear all AI configuration caches
+     */
+    protected static function clearAiConfigCache(): void
+    {
+        Cache::forget('ai_config_default_models');
+        Cache::forget('ai_config_system_models');
+        Cache::forget('ai_config_providers');
+        
+        // Clear tagged cache if driver supports it
+        try {
+            Cache::tags(['ai_config'])->flush();
+        } catch (\BadMethodCallException $e) {
+            // Cache driver doesn't support tags, skip
+        }
+    }
 
     protected $table = 'ai_models';
 

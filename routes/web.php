@@ -40,16 +40,20 @@ Route::middleware('prevent_back')->group(function () {
 
     Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
     Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
+    Route::get('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin'])
+        ->name('web.auth.shibboleth.login');
     Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
     Route::get('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
     Route::post('/req/login-local', [AuthenticationController::class, 'localLogin']);
-    Route::post('/req/submit-guest-request', [AuthenticationController::class, 'submitGuestRequest']);
+
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
 
     Route::get('/inv/{tempHash}/{slug}', [InvitationController::class, 'openExternInvitation'])->name('open.invitation')->middleware('signed');
 
     Route::get('/dataprotection', [HomeController::class, 'dataprotectionIndex']);
+    Route::get('/accessibility', [HomeController::class, 'accessibilityIndex']);
+    Route::get('/imprint', [HomeController::class, 'imprintIndex']);
 
     Route::middleware('registrationAccess')->group(function () {
 

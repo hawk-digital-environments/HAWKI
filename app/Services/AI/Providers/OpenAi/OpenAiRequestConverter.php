@@ -62,12 +62,6 @@ readonly class OpenAiRequestConverter
             $payload['presence_penalty'] = $rawPayload['presence_penalty'];
         }
 
-        if($modelId === 'gpt-5'){
-            $payload['verbosity'] = "low";
-            $payload["reasoning_effort"] = "minimal";
-
-        }
-
         return $payload;
     }
 

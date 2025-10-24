@@ -28,6 +28,60 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | File Upload
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable file upload functionality in the application.
+    |
+    */
+    'file_upload' => env('HAWKI_FILE_UPLOAD', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Web Search
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable web search functionality in the application.
+    |
+    */
+    'websearch' => env('HAWKI_WEBSEARCH', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Imprint Location
+    |--------------------------------------------------------------------------
+    |
+    | URL to the imprint page (Impressum). This will be displayed in the
+    | footer of the login page.
+    |
+    */
+    'imprint_location' => env('IMPRINT_LOCATION', '/imprint'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Data Protection Location
+    |--------------------------------------------------------------------------
+    |
+    | URL to the data protection page (Datenschutz). This will be displayed
+    | in the footer of the login page. Supports both internal routes and
+    | external URLs.
+    |
+    */
+    'dataprotection_location' => env('DATAPROTECTION_LOCATION', '/dataprotection'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Accessibility Location
+    |--------------------------------------------------------------------------
+    |
+    | URL to the accessibility statement page (Barrierefreiheit). This will be
+    | displayed in the footer of the login page.
+    |
+    */
+    'accessibility_location' => env('ACCESSIBILITY_LOCATION', '/accessibility'),
+
+    /*
+    |--------------------------------------------------------------------------
     | AI System
     | This setting gets overwritten by the SettingsService with a value from the db
     |--------------------------------------------------------------------------
@@ -68,4 +122,26 @@ return [
     |
     */
     'language_controller_system' => false,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send Registration Mails
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable sending registration and approval emails to new users.
+    | When enabled, users will receive welcome emails and approval notifications.
+    |
+    */
+    'send_registration_mails' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send Group Chat Invitation Mails
+    |--------------------------------------------------------------------------
+    |
+    | Enable or disable sending email notifications for group chat invitations.
+    | When enabled, users will receive emails when invited to group chats.
+    |
+    */
+    'send_groupchat_invitation_mails' => true,
 ];

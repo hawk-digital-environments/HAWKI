@@ -3,10 +3,6 @@
 namespace App\Services\Auth;
 
 use Jumbojett\OpenIDConnectClient;
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Exception;
 
 
 class OidcService
@@ -15,7 +11,7 @@ class OidcService
 
     public function __construct()
     {
-        if(env('AUTHENTICATION_METHOD') !== 'OIDC'){
+        if (config('auth.authMethod') !== 'OIDC') {
             return;
         }
         // Retrieve configuration settings

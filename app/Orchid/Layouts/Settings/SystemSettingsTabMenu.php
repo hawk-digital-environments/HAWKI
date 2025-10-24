@@ -23,11 +23,7 @@ class SystemSettingsTabMenu extends TabMenu
                 ->route('platform.settings.authentication')
                 ->active('platform.settings.authentication*'),
 
-            Menu::make('WebSockets')
-                ->route('platform.settings.websockets')
-                ->active('platform.settings.websockets*'),
-
-            Menu::make('API')
+            Menu::make('Features')
                 ->route('platform.settings.api')
                 ->active('platform.settings.api*'),
 

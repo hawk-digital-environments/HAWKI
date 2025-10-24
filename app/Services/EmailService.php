@@ -51,9 +51,9 @@ class EmailService
     /**
      * Send welcome email to a new user
      */
-    public function sendWelcomeEmail(User $user): bool
+    public function sendWelcomeEmail(User $user, array $customData = []): bool
     {
-        return $this->sendTemplatedEmail('welcome', $user->email, [], $user);
+        return $this->sendTemplatedEmail('welcome', $user->email, $customData, $user);
     }
 
     /**
@@ -85,11 +85,27 @@ class EmailService
     }
 
     /**
-     * Send approval/registration confirmation email
+     * Send approval granted confirmation email
      */
     public function sendApprovalEmail(User $user): bool
     {
-        return $this->sendTemplatedEmail('approval', $user->email, [], $user);
+        return $this->sendTemplatedEmail('approval_granted', $user->email, [], $user);
+    }
+
+    /**
+     * Send approval pending notification email
+     */
+    public function sendApprovalPendingEmail(User $user): bool
+    {
+        return $this->sendTemplatedEmail('approval_pending', $user->email, [], $user);
+    }
+
+    /**
+     * Send approval revoked notification email
+     */
+    public function sendApprovalRevokedEmail(User $user): bool
+    {
+        return $this->sendTemplatedEmail('approval_revoked', $user->email, [], $user);
     }
 
     /**

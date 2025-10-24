@@ -84,6 +84,7 @@ class StreamController extends Controller
                 'payload.messages.*.content' => 'required|array',
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
+                'payload.messages.*.content.auxiliaries' => 'nullable|array',
                 'payload.tools' => 'nullable|array',
 
                 'broadcast' => 'required|boolean',
@@ -209,16 +210,6 @@ class StreamController extends Controller
                 'isDone' => $response->isDone,
                 'content' => json_encode($response->content),
             ];
-
-            // Log final stream message before sending to frontend
-            if (config('logging.triggers.translated_return_object')) {
-                \Log::info('Final StreamMessage Output', [
-                    'model' => $messageData['model'],
-                    'isDone' => $messageData['isDone'],
-                    'content' => $messageData['content'],
-                    'has_usage' => $response->usage !== null
-                ]);
-            }
 
             echo json_encode($messageData) . "\n";
             $flush();

@@ -139,6 +139,34 @@ class ApiProvidersListLayout extends Table
                 })
                 ->cantHide(),
 
+            TD::make('models_count', __('Models'))
+                ->width('120px')
+                ->align(TD::ALIGN_RIGHT)
+                ->render(function (ApiProvider $provider) {
+                    $totalCount = $provider->aiModels->count();
+                    $activeCount = $provider->aiModels->where('is_active', true)->count();
+                    
+                    if ($totalCount === 0) {
+                        return '<span class="badge bg-light text-muted">0</span>';
+                    }
+                    
+                    // Tooltip with detailed information
+                    if ($activeCount === 0) {
+                        $tooltipText = "{$totalCount} model(s) total, but none are active";
+                    } elseif ($activeCount === $totalCount) {
+                        $tooltipText = "All {$totalCount} model(s) are active";
+                    } else {
+                        $tooltipText = "{$activeCount} active out of {$totalCount} total model(s)";
+                    }
+                    
+                    $displayText = $activeCount === $totalCount 
+                        ? "{$totalCount}" 
+                        : "{$activeCount}/{$totalCount}";
+                    
+                    return '<span class="badge bg-light text-dark" title="' . htmlspecialchars($tooltipText) . '">' . $displayText . '</span>';
+                })
+                ->sort(),
+
             TD::make('created_at', __('Created'))
                 ->usingComponent(DateTimeSplit::class)
                 ->align(TD::ALIGN_RIGHT)
@@ -173,6 +201,13 @@ class ApiProvidersListLayout extends Table
                                 'id' => $provider->id,
                             ])
                             ->canSee($provider->is_active),
+
+                        Button::make(__('Clear Models'))
+                            ->icon('bs.folder-x')
+                            ->confirm(__('Are you sure you want to delete all models associated with this provider? This action cannot be undone.'))
+                            ->method('deleteProviderModels', [
+                                'id' => $provider->id,
+                            ]),
 
                         Button::make(__('Delete'))
                             ->icon('bs.trash3')

@@ -159,7 +159,7 @@ trait OrchidSettingsManagementTrait
             }
 
             // Check if passkey method changed and handle user key invalidation
-            $this->handlePasskeyMethodChange($changedSettings);
+            // $this->handlePasskeyMethodChange($changedSettings);
 
             // User feedback based on the changes
             if ($count > 0) {
@@ -538,9 +538,8 @@ trait OrchidSettingsManagementTrait
                 \Orchid\Screen\Fields\Select::make($inputName)
                     ->options([
                         'username' => 'Username',
-                        'time' => 'Time of registration',
-                        'mixed' => 'Name and Time of registration',
-                        'publicKey' => 'Public Key',
+                        
+                        'random' => 'Random (Cryptographically Secure)',
                         'default' => 'Default',
                     ])
                     ->value($setting->value),
@@ -616,26 +615,6 @@ trait OrchidSettingsManagementTrait
                         'emergency' => 'Emergency',
                     ])
                     ->value($setting->value),
-            ])
-                ->alignCenter()
-                ->widthColumns('1fr 1fr');
-        }
-
-        // Special handling for encryption
-        if (str_contains($key, 'encryption')) {
-            return \Orchid\Screen\Fields\Group::make([
-                \Orchid\Screen\Fields\Label::make("label_{$key}")
-                    ->title($setting->description)
-                    ->help($displayKey)
-                    ->addclass('fw-bold'),
-                \Orchid\Screen\Fields\Select::make($inputName)
-                    ->options([
-                        '' => 'None',
-                        'tls' => 'TLS',
-                        'ssl' => 'SSL',
-                    ])
-                    ->value($setting->value)
-                    ->empty('None'),
             ])
                 ->alignCenter()
                 ->widthColumns('1fr 1fr');

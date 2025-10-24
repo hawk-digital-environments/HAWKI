@@ -55,6 +55,10 @@ class ProfileService{
                                         'profile_avatars',
                                         false);
         if ($response) {
+            if($user->avatar_id != null){
+                $avatarStorage->delete($user->avatar_id, 'profile_avatars');
+            }
+
             $user->update(['avatar_id' => $uuid]);
             return $avatarStorage->getUrl($uuid, 'profile_avatars');
         } else {
@@ -142,16 +146,6 @@ class ProfileService{
 
         $user = Auth::user();
         $prvUserData = PrivateUserData::where('user_id', $user->id)->first();
-        
-        // If no keychain exists (e.g., after passkey method change), return empty data
-        if (!$prvUserData) {
-            return json_encode([
-                'keychain' => '',
-                'KCIV' => '',
-                'KCTAG' => '',
-            ]);
-        }
-        
         return json_encode([
             'keychain'=> $prvUserData->keychain,
             'KCIV'=> $prvUserData->KCIV,

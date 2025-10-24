@@ -11,7 +11,7 @@ return [
     |
     */
     'default_models' => [
-        'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
+        'default_model' => env('DEFAULT_MODEL', 'o4-mini'),
         'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
         'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'meta-llama-3.1-8b-instruct'),
         'default_vision_model' =>  env('DEFAULT_VISION_MODEL', 'qwen2.5-vl-72b-instruct'),
@@ -40,9 +40,9 @@ return [
     |
     */
     'system_models' => [
-        'title_generator' => env('TITLE_GENERATOR_MODEL', 'gpt-4.1-nano'),
-        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
-        'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
+        'title_generator' => env('TITLE_GENERATOR_MODEL', 'o4-mini'),
+        'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'o4-mini'),
+        'summarizer' => env('SUMMARIZER_MODEL', 'o4-mini'),
     ],
 
     /*
@@ -68,11 +68,18 @@ return [
     */
     'providers' => [
         'openAi' => [
-            'active' => true,
+            'active' => env('OPENAI_ACTIVE', true),
             'api_key' => env('OPENAI_API_KEY'),
             'api_url' => env('OPENAI_URL', 'https://api.openai.com/v1/chat/completions'),
             'ping_url' => env('OPENAI_PING_URL', 'https://api.openai.com/v1/models'),
             'models' => require __DIR__ . env('OPENAI_MODEL_LIST_DIR', '/model_lists/openai_models.php'),
+        ],
+        'responses' => [
+            'active' => env('RESPONSES_ACTIVE', true),
+            'api_key' => env('OPENAI_API_KEY'), // Shares same API key as openAi
+            'api_url' => env('RESPONSES_URL', 'https://api.openai.com/v1/responses'),
+            'ping_url' => env('RESPONSES_PING_URL', 'https://api.openai.com/v1/models'),
+            'models' => require __DIR__ . env('RESPONSES_MODEL_LIST_DIR', '/model_lists/responses_models.php'),
         ],
         'gwdg' => [
             'active' => env('GWDG_ACTIVE', true),
@@ -101,6 +108,13 @@ return [
             'api_url' => env('OPEN_WEB_UI_API_URL', 'your_url/api/chat/completions'),
             'ping_url' => env('OPEN_WEB_UI_PING_URL', 'your_url/api/models'),
             'models' => require __DIR__ . env('OPEN_WEB_UI_MODEL_LIST_DIR', '/model_lists/openwebui_models.php'),
+        ],
+        'anthropic' => [
+            'active' => env('ANTHROPIC_ACTIVE', false),
+            'api_key' => env('ANTHROPIC_API_KEY'),
+            'api_url' => env('ANTHROPIC_API_URL', 'https://api.anthropic.com/v1/messages'),
+            'ping_url' => env('ANTHROPIC_PING_URL', 'https://api.anthropic.com/v1/messages'),
+            'models' => require __DIR__ . env('ANTHROPIC_MODEL_LIST_DIR', '/model_lists/anthropic_models.php'),
         ]
     ]
 ];

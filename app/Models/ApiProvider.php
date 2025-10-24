@@ -16,6 +16,40 @@ class ApiProvider extends Model
     use AsSource, Filterable, HasFactory;
 
     /**
+     * The "booted" method of the model.
+     */
+    protected static function booted(): void
+    {
+        // Clear caches when provider is saved or deleted
+        static::saved(function ($provider) {
+            $provider->clearUrlCaches();
+            static::clearAiConfigCache();
+        });
+
+        static::deleted(function ($provider) {
+            $provider->clearUrlCaches();
+            static::clearAiConfigCache();
+        });
+    }
+
+    /**
+     * Clear all AI configuration caches
+     */
+    protected static function clearAiConfigCache(): void
+    {
+        Cache::forget('ai_config_default_models');
+        Cache::forget('ai_config_system_models');
+        Cache::forget('ai_config_providers');
+        
+        // Clear tagged cache if driver supports it
+        try {
+            Cache::tags(['ai_config'])->flush();
+        } catch (\BadMethodCallException $e) {
+            // Cache driver doesn't support tags, skip
+        }
+    }
+
+    /**
      * The accessors to append to the model's array form.
      *
      * @var array

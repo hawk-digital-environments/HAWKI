@@ -7,100 +7,68 @@
  * 
  * Author: Custom HAWKI Extension
  * Created: 2025-09-18
+ * Updated: 2025-10-21 - Removed insecure passkeySecret options, now uses only cryptographically secure random generation
  */
 
 /**
- * Generate a passkey from a secret and user information
+ * Generate a cryptographically secure random passkey for system-generated method
  * 
- * @param {string} passkeySecret - The secret type ('username', 'time', 'publicKey', 'mixed')
- * @param {object} userInfo - User information object containing username, created_at, publicKey
- * @returns {Promise<string>} - Generated passkey as hex string
+ * System-generated passkeys always use 256 bits of cryptographically secure randomness.
+ * This replaces the old passkeySecret system which had security vulnerabilities.
+ * 
+ * @returns {Promise<string>} - Generated passkey as hex string (64 characters)
  */
-async function generatePasskeyFromSecret(passkeySecret, userInfo) {
-    const encoder = new TextEncoder();
-    let passkeyValue = null;
-
-    console.log('Generating passkey with secret:', passkeySecret);
-    console.log('User info for passkey generation:', {
-        username: userInfo.username,
-        created_at: userInfo.created_at,
-        publicKey: userInfo.publicKey ? 'available' : 'not available'
-    });
-
-    switch (passkeySecret) {
-        case 'username':
-            passkeyValue = userInfo.username;
-            break;
-        case 'time':
-            passkeyValue = userInfo.created_at;
-            break;
-        case 'publicKey':
-            passkeyValue = userInfo.publicKey;
-            break;    
-        case 'mixed':
-            // Concatenate username and created_at, then hash the result for passkeyValue
-            const mixedString = userInfo.username + userInfo.created_at;
-            const mixedHashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(mixedString));
-            passkeyValue = Array.from(new Uint8Array(mixedHashBuffer))
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('');
-            break;
-        default:
-            // Invalid passkey secret provided - warn and use username as fallback
-            console.warn(`Invalid passkeySecret value: "${passkeySecret}". Valid values are: 'username', 'time', 'publicKey', 'mixed'. Falling back to 'username'.`);
-            passkeyValue = userInfo.username;
-            break;
-    }
-
-    console.log('passkeyValue:', passkeyValue);
+async function generateRandomPasskey() {
+    // Generate 256 bits (32 bytes) of cryptographically secure randomness
+    const randomBytes = new Uint8Array(32);
+    crypto.getRandomValues(randomBytes);
     
-    const hashBuffer = await crypto.subtle.digest(
-        'SHA-256',
-        encoder.encode(passkeyValue)
-    );
-
+    // Convert to hex string
+    const randomHex = Array.from(randomBytes)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    
+    // Hash the random value with SHA-256 for additional entropy mixing
+    const encoder = new TextEncoder();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(randomHex));
+    
+    // Convert hash to hex string
     const generatedPasskey = Array.from(new Uint8Array(hashBuffer))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
     
-    console.log('Generated passkey:', generatedPasskey);
     return generatedPasskey;
 }
 
 /**
  * Automatically generate a passkey in the background without user interaction
- * Used during registration process
+ * Used during registration process for system-generated method
  * 
  * @returns {Promise<void>}
  */
 async function autoGeneratePasskey(){
     // This function generates the passkey in the background without user interaction
-    console.log('=== autoGeneratePasskey START ===');
-    console.log('passkeySecret configuration:', passkeySecret);
-    
     try {
-        // Use the same logic as verifyGeneratedPassKey to ensure consistency
-        console.log('Generating passkey using generatePasskeyFromSecret...');
-        const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
-        console.log('Generated passkey in autoGeneratePasskey:', generatedPasskey);
+        // Generate a cryptographically secure random passkey
+        const generatedPasskey = await generateRandomPasskey();
 
-        // create backup hash
+        // Create backup hash
         backupHash = generatePasskeyBackupHash();
-        console.log('backupHash: ' + backupHash);
-        
+        console.log(backupHash);
         // Check if backup-hash element exists before setting its content
         const backupHashElement = document.querySelector('#backup-hash');
         if (backupHashElement) {
             backupHashElement.innerText = backupHash;
         }
         
-        // derive key from backup hash
+        // Derive key from backup hash
         const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
         const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
-        //encrypt Passkey as plaintext
+        
+        // Encrypt passkey as plaintext
         const cryptoPasskey = await encryptWithSymKey(derivedKey, generatedPasskey, false);
         
-        // upload backup to the server.
+        // Upload backup to the server
         const dataToSend = {
             'username': userInfo.username,
             'cipherText': cryptoPasskey.ciphertext,
@@ -109,7 +77,6 @@ async function autoGeneratePasskey(){
         }
         
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        // Send the registration data to the server
         const response = await fetch('/req/profile/backupPassKey', {
             method: 'POST',
             headers: {
@@ -120,7 +87,6 @@ async function autoGeneratePasskey(){
             body: JSON.stringify(dataToSend)
         });
 
-        // Handle the server response
         if (!response.ok) {
             const errorData = await response.json();
             console.error('Server Error:', errorData.error);
@@ -128,32 +94,62 @@ async function autoGeneratePasskey(){
         }
 
         const data = await response.json();
-        if (data.success) {
-            console.log('Backup stored successfully');
+        if (!data.success) {
+            throw new Error('Failed to store backup');
         }
         
-        // save passkey to localstorage.
+        // Save passkey to localStorage
         await setPassKey(generatedPasskey);
-
-        console.log('Passkey generated and saved successfully');
-        console.log('=== autoGeneratePasskey END ===');
+        
+        // Make backupHash available globally for completeRegistration
+        window.backupHash = backupHash;
         
         // Complete registration directly - skip backup code slide
-        // Check if completeRegistration function exists (for registration context)
         if (typeof completeRegistration === 'function') {
             completeRegistration();
         } else {
             // For handshake context, go directly to chat
-            console.log('Handshake context - redirecting to chat');
             window.location.href = '/chat';
         }
         
     } catch (error) {
         console.error('Error in autoGeneratePasskey:', error);
-        // Fallback to manual passkey creation
+        // Fallback only in handshake context
         if (typeof switchSlide === 'function') {
-            switchSlide(1);
+            const isHandshakeContext = window.location.pathname.includes('/handshake');
+            if (isHandshakeContext) {
+                // In handshake context with system passkeys, go to backup recovery slide (6)
+                switchSlide(6);
+            }
+            // In registration context: no fallback, registration fails
         }
+    }
+}
+
+/**
+ * Verify a passkey against the encrypted keychain
+ * 
+ * @param {string} passkey - The passkey to verify
+ * @returns {Promise<boolean>} - True if verification succeeds
+ */
+async function verifyPasskeyWithKeychain(passkey) {
+    try {
+        const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
+        const keychainEncryptor = await deriveKey(passkey, "keychain_encryptor", udSalt);
+        const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainCryptoData);
+
+        await decryptWithSymKey(
+            keychainEncryptor,
+            keychain,
+            KCIV,
+            KCTAG,
+            false
+        );
+
+        return true;
+    } catch (error) {
+        console.error('Passkey verification failed:', error.message);
+        return false;
     }
 }
 
@@ -163,7 +159,6 @@ async function autoGeneratePasskey(){
  * @returns {Promise<void>}
  */
 async function verifyGeneratedPassKey(){
-
     try {
         // Verify userInfo is available
         if (!userInfo) {
@@ -171,25 +166,25 @@ async function verifyGeneratedPassKey(){
             return;
         }
         
-        // Generate the passkey using the same logic as autoGeneratePasskey
-        const generatedPasskey = await generatePasskeyFromSecret(passkeySecret, userInfo);
-        
         // Verify that serverKeychainCryptoData is valid
         if (!serverKeychainCryptoData) {
             console.error('serverKeychainCryptoData is not available');
             return;
         }
 
-        // Try to parse serverKeychainCryptoData first
+        // Parse serverKeychainCryptoData to validate format
         try {
-            const parsedData = JSON.parse(serverKeychainCryptoData);
-            // parsedData checked for presence of expected fields
+            JSON.parse(serverKeychainCryptoData);
         } catch (parseError) {
             console.error('Failed to parse serverKeychainCryptoData:', parseError);
             return;
         }
 
-        const verificationResult = await verifyPasskey(generatedPasskey);
+        // Generate a cryptographically secure random passkey
+        const generatedPasskey = await generateRandomPasskey();
+        
+        // Verify the generated passkey against the encrypted keychain
+        const verificationResult = await verifyPasskeyWithKeychain(generatedPasskey);
         
         if(verificationResult){
             await setPassKey(generatedPasskey);
@@ -199,14 +194,55 @@ async function verifyGeneratedPassKey(){
                 window.location.href = '/chat';
             } catch (syncError) {
                 console.error('Error syncing keychain:', syncError);
+                // Fallback only in handshake context
+                if (typeof switchSlide === 'function') {
+                    const isHandshakeContext = window.location.pathname.includes('/handshake');
+                    if (isHandshakeContext) {
+                        switchSlide(6);
+                    }
+                    // In registration context: no fallback
+                }
+            }
+        } else {
+            // Verification failed - fallback only in handshake context
+            console.error('Automatic passkey verification failed - falling back to manual entry');
+            
+            // Show appropriate slide based on context
+            if (typeof switchSlide === 'function') {
+                const isHandshakeContext = window.location.pathname.includes('/handshake');
+                if (isHandshakeContext) {
+                    switchSlide(6);
+                } else {
+                    // In registration context: show error, no fallback
+                    alert('Automatic passkey verification failed. Please try logging in again.');
+                    window.location.href = '/login';
+                }
+            } else {
+                alert('Automatic passkey verification failed. Please try logging in again.');
+                window.location.href = '/login';
             }
         }
     } catch (error) {
         console.error('Error in verifyGeneratedPassKey:', error);
+        // Fallback only in handshake context
+        if (typeof switchSlide === 'function') {
+            const isHandshakeContext = window.location.pathname.includes('/handshake');
+            if (isHandshakeContext) {
+                switchSlide(6);
+            } else {
+                // In registration context: show error, no fallback
+                alert('An error occurred during passkey verification. Please try logging in again.');
+                window.location.href = '/login';
+            }
+        } else {
+            alert('An error occurred during passkey verification. Please try logging in again.');
+            window.location.href = '/login';
+        }
     }
 }
 
 // Make functions available globally for backward compatibility
-window.generatePasskeyFromSecret = generatePasskeyFromSecret;
+window.generateRandomPasskey = generateRandomPasskey;
 window.autoGeneratePasskey = autoGeneratePasskey;
 window.verifyGeneratedPassKey = verifyGeneratedPassKey;
+window.verifyPasskeyWithKeychain = verifyPasskeyWithKeychain;

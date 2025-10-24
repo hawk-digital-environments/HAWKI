@@ -115,9 +115,41 @@ class AiConfigService
                 }
             }
 
-            // For now, we only handle default_model from database
-            // The other models (web_search, file_upload, vision) don't exist in ai_assistants yet
-            // and are not needed according to the requirements
+            // Get web_search model from ai_assistants table (if exists)
+            $webSearchAssistant = AiAssistant::where('key', 'web_search')
+                ->where('status', 'active')
+                ->first();
+            
+            if ($webSearchAssistant && $webSearchAssistant->ai_model) {
+                $modelId = $this->resolveSystemIdToModelId($webSearchAssistant->ai_model);
+                if ($modelId) {
+                    $models['default_web_search_model'] = $modelId;
+                }
+            }
+
+            // Get file_upload model from ai_assistants table (if exists)
+            $fileUploadAssistant = AiAssistant::where('key', 'file_upload')
+                ->where('status', 'active')
+                ->first();
+            
+            if ($fileUploadAssistant && $fileUploadAssistant->ai_model) {
+                $modelId = $this->resolveSystemIdToModelId($fileUploadAssistant->ai_model);
+                if ($modelId) {
+                    $models['default_file_upload_model'] = $modelId;
+                }
+            }
+
+            // Get vision model from ai_assistants table (if exists)
+            $visionAssistant = AiAssistant::where('key', 'vision')
+                ->where('status', 'active')
+                ->first();
+            
+            if ($visionAssistant && $visionAssistant->ai_model) {
+                $modelId = $this->resolveSystemIdToModelId($visionAssistant->ai_model);
+                if ($modelId) {
+                    $models['default_vision_model'] = $modelId;
+                }
+            }
             
             return $models;
         });
@@ -258,6 +290,9 @@ class AiConfigService
                 
                 $modelConfigs = [];
                 foreach ($models as $model) {
+                    // Build tools array from settings field, with defaults
+                    $tools = $this->buildToolsFromSettings($model);
+                    
                     $modelConfigs[] = [
                         'id' => $model->model_id,
                         'label' => $model->label,
@@ -265,11 +300,7 @@ class AiConfigService
                         'visible' => $model->is_visible,
                         'input' => ['text'], // Default capabilities
                         'output' => ['text'],
-                        'tools' => [
-                            'stream' => true,
-                            'file_upload' => false,
-                            'vision' => false
-                        ],
+                        'tools' => $tools,
                         'system_id' => $model->system_id, // Keep system_id for reference
                         'status' => 'online', // Always set to online for UI (real status check implemented later)
                         'display_order' => $model->display_order,
@@ -348,12 +379,20 @@ class AiConfigService
      */
     private function buildCompatibleApiUrl(ApiProvider $apiProvider, array $endpoints): string
     {
+        $providerName = strtolower($apiProvider->provider_name);
+        $adapter = strtolower($apiProvider->apiFormat->client_adapter ?? '');
+        
         // For Google provider, we need to match the file-based config format
-        if (strtolower($apiProvider->provider_name) === 'google') {
+        if ($providerName === 'google' || $adapter === 'google') {
             // File-based format: https://generativelanguage.googleapis.com/v1beta/models/
             // Database endpoint: /models/{model}:generateContent
             // We need to return the base URL + /models/ to match file-based behavior
             return rtrim($apiProvider->base_url, '/') . '/models/';
+        }
+
+        // For Responses API, use direct endpoint (check adapter, not provider name)
+        if ($adapter === 'responses') {
+            return $endpoints['responses.create'] ?? $apiProvider->base_url;
         }
 
         // For other providers, use the endpoint as-is
@@ -369,9 +408,17 @@ class AiConfigService
      */
     private function buildCompatibleStreamUrl(ApiProvider $apiProvider, array $endpoints): string
     {
+        $providerName = strtolower($apiProvider->provider_name);
+        $adapter = strtolower($apiProvider->apiFormat->client_adapter ?? '');
+        
         // For Google provider, use the same format as API URL
-        if (strtolower($apiProvider->provider_name) === 'google') {
+        if ($providerName === 'google' || $adapter === 'google') {
             return rtrim($apiProvider->base_url, '/') . '/models/';
+        }
+
+        // For Responses API, streaming uses the same endpoint (check adapter, not provider name)
+        if ($adapter === 'responses') {
+            return $endpoints['responses.create'] ?? $apiProvider->base_url;
         }
 
         // For other providers, use the stream endpoint or fall back to chat.create
@@ -387,11 +434,74 @@ class AiConfigService
     private function getAdapterFromApiFormat(ApiProvider $apiProvider): string
     {
         // Use client_adapter from api_formats table if available
-        if ($apiProvider->apiFormat && !empty($apiProvider->apiFormat->client_adapter)) {
-            return $apiProvider->apiFormat->client_adapter;
+        $adapter = $apiProvider->apiFormat?->client_adapter;
+        
+        if (empty($adapter)) {
+            // Fallback: use the provider name as adapter (lowercase)
+            $adapter = strtolower($apiProvider->provider_name);
         }
         
-        // Fallback: use the provider name as adapter (lowercase)
-        return strtolower($apiProvider->provider_name);
+        // Normalize adapter name to match actual directory/class names
+        // This handles case-sensitivity issues between macOS (case-insensitive) and Linux (case-sensitive)
+        return $this->normalizeAdapterName($adapter);
+    }
+    
+    /**
+     * Normalize adapter names to match actual directory/class names.
+     * This handles case-sensitivity issues between macOS (case-insensitive) and Linux (case-sensitive).
+     *
+     * @param string $adapterName
+     * @return string
+     */
+    private function normalizeAdapterName(string $adapterName): string
+    {
+        // Map of lowercase adapter names to their correct PascalCase directory names
+        $adapterMap = [
+            'openai' => 'OpenAi',
+            'responses' => 'Responses',
+            'google' => 'Google',
+            'gwdg' => 'Gwdg',
+            'ollama' => 'Ollama',
+            'openwebui' => 'OpenWebUI',
+            'anthropic' => 'Anthropic',
+        ];
+        
+        $lowerName = strtolower($adapterName);
+        return $adapterMap[$lowerName] ?? ucfirst($adapterName);
+    }
+    
+    /**
+     * Build tools array from model settings field with sensible defaults
+     *
+     * @param AiModel $model
+     * @return array
+     */
+    private function buildToolsFromSettings(AiModel $model): array
+    {
+        // Default tools configuration
+        // Note: stream is always true (deprecated field, kept for compatibility)
+        $defaultTools = [
+            'stream' => true,
+            'file_upload' => false,
+            'vision' => false,
+            'web_search' => false,
+        ];
+        
+        // Get tools from settings field if available
+        $settings = $model->settings ?? [];
+        $settingsTools = $settings['tools'] ?? [];
+        
+        // Merge settings with defaults (settings override defaults)
+        $tools = array_merge($defaultTools, $settingsTools);
+        
+        // Ensure all values are boolean
+        foreach ($tools as $key => $value) {
+            $tools[$key] = (bool) $value;
+        }
+        
+        // Stream is always true (deprecated but kept for compatibility)
+        $tools['stream'] = true;
+        
+        return $tools;
     }
 }

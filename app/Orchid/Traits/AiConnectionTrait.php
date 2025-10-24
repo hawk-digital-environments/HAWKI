@@ -110,23 +110,33 @@ trait AiConnectionTrait
     }
 
     /**
-     * Save models to database using updateOrCreate.
+     * Save models to database, preserving user customizations.
+     *
+     * For existing models:
+     * - Preserves user-modified label (display name)
+     * - Preserves is_active and is_visible states
+     * - Updates display_order and information metadata only
+     *
+     * For new models:
+     * - Creates with default values (inactive, invisible)
      *
      * @param ApiProvider $provider
      * @param array $models
-     * @return array ['success' => bool, 'total' => int, 'created' => int, 'updated' => int, 'error' => string|null]
+     * @return array ['success' => bool, 'total' => int, 'created' => int, 'updated' => int, 'skipped' => int, 'error' => string|null]
      */
     public function saveModelsToDatabase(ApiProvider $provider, array $models): array
     {
         try {
             $created = 0;
             $updated = 0;
+            $skipped = 0;
             $order = 1;
 
             foreach ($models as $m) {
                 $modelData = $this->extractModelData($m, $order++);
                 
                 if (!$modelData['model_id']) {
+                    $skipped++;
                     continue;
                 }
 
@@ -136,15 +146,23 @@ trait AiConnectionTrait
                 ])->first();
 
                 if ($aiModel) {
+                    // For existing models: ONLY update metadata, preserve ALL user settings
+                    // Do NOT update: label, is_active, is_visible (user customizations)
+                    // DO update: display_order (from API), information (metadata from API)
                     $aiModel->update([
-                        'label' => $modelData['label'],
-                        'is_active' => false,
-                        'is_visible' => false,
                         'display_order' => $modelData['display_order'],
-                        'information' => $modelData['information'],
+                        'information' => array_merge(
+                            $aiModel->information ?? [],
+                            $modelData['information'],
+                            [
+                                'last_sync' => now()->toISOString(),
+                                'original_api_label' => $modelData['label'], // Store API label for reference
+                            ]
+                        ),
                     ]);
                     $updated++;
                 } else {
+                    // Create new model with default values
                     AiModel::create([
                         'provider_id' => $provider->id,
                         'model_id' => $modelData['model_id'],
@@ -152,7 +170,13 @@ trait AiConnectionTrait
                         'is_active' => false,
                         'is_visible' => false,
                         'display_order' => $modelData['display_order'],
-                        'information' => $modelData['information'],
+                        'information' => array_merge(
+                            $modelData['information'],
+                            [
+                                'created_at' => now()->toISOString(),
+                                'original_api_label' => $modelData['label'],
+                            ]
+                        ),
                     ]);
                     $created++;
                 }
@@ -162,7 +186,8 @@ trait AiConnectionTrait
                 'success' => true,
                 'total' => count($models),
                 'created' => $created,
-                'updated' => $updated
+                'updated' => $updated,
+                'skipped' => $skipped
             ];
 
         } catch (\Exception $e) {
@@ -171,7 +196,8 @@ trait AiConnectionTrait
                 'error' => $e->getMessage(),
                 'total' => 0,
                 'created' => 0,
-                'updated' => 0
+                'updated' => 0,
+                'skipped' => 0
             ];
         }
     }

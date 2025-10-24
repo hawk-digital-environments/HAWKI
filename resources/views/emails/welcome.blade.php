@@ -14,6 +14,15 @@
     You can start using HAWKI's powerful AI features right away.
 </div>
 
+<div class="alert alert-warning" style="background-color: #fff3cd; border-left: 4px solid #ffc107; color: #856404;">
+    <strong>Important: Your {{config('app.name')}} Backup Code</strong><br>
+    Please save this backup code securely. You will need it to unlock a new device for {{config('app.name')}}:<br>
+    <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; text-align: center; letter-spacing: 2px; color: #2c3e50;">
+        {{backup_hash}}
+    </div>
+    <small>Store this code in a safe place. Do not share it with anyone.</small>
+</div>
+
 <p class="content-text">
     <strong>What can you do with HAWKI?</strong>
 </p>

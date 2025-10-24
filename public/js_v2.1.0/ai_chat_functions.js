@@ -121,7 +121,10 @@ async function sendMessageConv(inputField) {
     messageElement.dataset.rawMsg = submissionData.content.text;
     scrollToLast(true, messageElement);
 
-    const webSearchActive = inputField.closest('.input-container').querySelector('#websearch-btn').classList.contains('active');
+    const inputContainer = inputField.closest('.input-container');
+    const webSearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
+    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
+    
     const tools = {
         'web_search': webSearchActive
     }
@@ -144,6 +147,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
     let msg = "";
     let messageObj;
     let metadata;
+    let auxiliaries = [];
 
     // Start buildRequestObject processing
     buildRequestObject(msgAttributes, async (data, done) => {
@@ -154,9 +158,23 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }
 
-            const {messageText, groundingMetadata} = deconstContent(data.content);
+            const {messageText, groundingMetadata, auxiliaries: aux} = deconstContent(data.content);
             if(groundingMetadata != ""){
                 metadata = groundingMetadata;
+            }
+            if(aux && aux.length > 0){
+                auxiliaries = aux;
+                
+                // Store auxiliaries IMMEDIATELY in dataset for multi-turn
+                // This ensures they're available for the next request even without page refresh
+                if (messageElement) {
+                    const tempContent = JSON.stringify({
+                        text: msg + messageText,
+                        groundingMetadata: metadata,
+                        auxiliaries: auxiliaries
+                    });
+                    messageElement.dataset.rawContent = tempContent;
+                }
             }
 
             const content = messageText;
@@ -192,6 +210,10 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 }
             }
 
+            // Add Anthropic citations during streaming
+            if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
+                addAnthropicCitations(messageElement, auxiliaries);
+            }
 
             if(messageElement.querySelector('.think')){
                 scrollPanelToLast(messageElement.querySelector('.think').querySelector('.content-container'));
@@ -205,7 +227,8 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
             const cryptoContent = JSON.stringify({
                 text: msg,
-                groundingMetadata : metadata
+                groundingMetadata : metadata,
+                auxiliaries: auxiliaries
             });
 
             const convKey = await keychainGet('aiConvKey');
@@ -214,6 +237,9 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.ciphertext = cryptoMsg.ciphertext;
             messageObj.iv = cryptoMsg.iv;
             messageObj.tag = cryptoMsg.tag;
+
+            // Store raw content for multi-turn (needed for createMsgObject)
+            messageElement.dataset.rawContent = cryptoContent;
 
             activateMessageControls(messageElement);
 
@@ -466,7 +492,7 @@ async function loadConv(btn=null, slug=null){
     const msgs = convData.messages;
     for (const msg of msgs) {
         const decryptedContent =  await decryptWithSymKey(convKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-        // msg.content = [];
+        // msg.content.text contains the full JSON: {text: "...", groundingMetadata: {...}, auxiliaries: [...]}
         msg.content.text = decryptedContent;
     };
 

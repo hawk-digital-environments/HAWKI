@@ -17,7 +17,8 @@
 
     <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
     <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/guest_request_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
+    @vite('resources/js/app.js')
 
     {!! $settingsPanel !!}
 
@@ -43,8 +44,16 @@
                 <x-icon name="settings-icon"/>
             </button>
             <div class="impressumPanel">
-                <a href="/dataprotection" target="_blank">{{ $translation["DataProtection"] }}</a>
-                <a href="{{ env("IMPRINT_LOCATION") }}" target="_blank">{{ $translation["Impressum"] }}</a>
+                @if(config('hawki.dataprotection_location'))
+                <a href="{{ config('hawki.dataprotection_location') }}" target="_blank">{{ $translation["DataProtection"] }}</a>
+                @endif
+                @if(config('hawki.imprint_location'))
+                <a href="{{ config('hawki.imprint_location') }}" target="_blank">{{ $translation["Impressum"] }}</a>
+                @endif
+                @if(config('hawki.accessibility_location'))
+                <a href="{{ config('hawki.accessibility_location') }}" target="_blank">{{ $translation["Accessibility"] }}</a>
+                @endif
+
             </div>
         </div>
 

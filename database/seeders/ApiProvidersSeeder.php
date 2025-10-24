@@ -11,13 +11,25 @@ class ApiProvidersSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * 
+     * IMPORTANT: This seeder only runs when the api_providers table is empty (initial setup).
+     * For updates/deployments, new providers should be added via migrations, not seeders.
+     * This ensures existing provider configurations are never touched during updates.
      */
     public function run(): void
     {
+        // Check if table already has data - skip seeding if not empty
+        if (ApiProvider::count() > 0) {
+            $this->command->info('API Providers table is not empty. Skipping seeder (use migrations for new providers).');
+            return;
+        }
+        
+        $this->command->info('API Providers table is empty. Running initial seed...');
+        
         // Map Provider Names to their default configurations
         $providerConfigs = [
             'OpenAI' => [
-                'api_format_unique_name' => 'openai-api',
+                'api_format_unique_name' => 'openai-responses-api',
                 'base_url' => 'https://api.openai.com/v1',
                 'is_active' => true,
                 'display_order' => 1,
@@ -63,24 +75,21 @@ class ApiProvidersSeeder extends Seeder
                 continue;
             }
 
-            // Create or update the API provider
-            $provider = ApiProvider::updateOrCreate(
-                ['provider_name' => $providerName],
-                [
-                    'api_format_id' => $apiFormat->id,
-                    'base_url' => $config['base_url'],
-                    'is_active' => $config['is_active'],
-                    'display_order' => $config['display_order'],
-                    'additional_settings' => [
-                        'description' => "Default {$providerName} provider configuration",
-                        'created_by_seeder' => true,
-                        'seeded_at' => now()->toISOString(),
-                    ],
-                ]
-            );
-
-            $action = $provider->wasRecentlyCreated ? 'Created' : 'Updated';
-            $this->command->info("{$action} provider: {$providerName} (ID: {$provider->id}) with API format: {$apiFormat->display_name}");
+            // Create new provider with all default values
+            // Since we only run when table is empty, all providers are new
+            $provider = ApiProvider::create([
+                'provider_name' => $providerName,
+                'api_format_id' => $apiFormat->id,
+                'base_url' => $config['base_url'],
+                'is_active' => $config['is_active'],
+                'display_order' => $config['display_order'],
+                'additional_settings' => [
+                    'description' => "Default {$providerName} provider configuration",
+                    'created_by_seeder' => true,
+                    'seeded_at' => now()->toISOString(),
+                ],
+            ]);
+            $this->command->info("Created provider: {$providerName} (ID: {$provider->id}) with API format: {$apiFormat->display_name}");
         }
 
         $this->command->info('API Providers seeding completed.');

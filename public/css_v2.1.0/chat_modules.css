@@ -152,8 +152,9 @@
 
 }
 #image-selection-modal .modal-content{
-    height: 75vh;
+    /*height: 75vh;*/
     max-height: 100%;
+    overflow-y: auto;
 }
 #image-selection-modal .modal-content-wrapper{
     overflow: hidden;
@@ -1609,6 +1610,7 @@
 #model-selector-burger{
     max-height: 60vh;
     overflow-y: auto;
+    min-width: 16rem;
 }
 
 .model-selector-label{
@@ -1756,6 +1758,122 @@ display: block;
 }
 .darkMode .google-search .gradient {
 background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);
+}
+
+/* ANTHROPIC WEB SOURCES */
+.anthropic-sources {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.anthropic-sources .sources-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+.anthropic-sources .sources-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.anthropic-sources .source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 16px;
+  border: 1px solid;
+  text-decoration: none;
+  font-size: 0.813rem;
+  transition: all 0.15s ease;
+  max-width: 100%;
+}
+
+.anthropic-sources .source-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.anthropic-sources .chip-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  font-size: 0.688rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.anthropic-sources .chip-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.anthropic-sources .chip-age {
+  font-size: 0.688rem;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* Light Mode */
+.lightMode .anthropic-sources {
+  background-color: #fafafa;
+  border-color: #e0e0e0;
+}
+
+.lightMode .anthropic-sources .sources-title {
+  color: #1f1f1f;
+}
+
+.lightMode .anthropic-sources .source-chip {
+  background-color: #ffffff;
+  border-color: #d2d2d2;
+  color: #5e5e5e;
+}
+
+.lightMode .anthropic-sources .source-chip:hover {
+  background-color: #f2f2f2;
+  border-color: #c0c0c0;
+}
+
+.lightMode .anthropic-sources .chip-number {
+  background-color: #e8e8e8;
+  color: #1f1f1f;
+}
+
+/* Dark Mode */
+.darkMode .anthropic-sources {
+  background-color: #1f1f1f;
+  border-color: #3c4043;
+}
+
+.darkMode .anthropic-sources .sources-title {
+  color: #fff;
+}
+
+.darkMode .anthropic-sources .source-chip {
+  background-color: #2c2c2c;
+  border-color: #3c4043;
+  color: #fff;
+}
+
+.darkMode .anthropic-sources .source-chip:hover {
+  background-color: #353536;
+  border-color: #53575b;
+}
+
+.darkMode .anthropic-sources .chip-number {
+  background-color: #3c4043;
+  color: #fff;
 }
 
 .inline-citation{

@@ -31,8 +31,15 @@ return [
     'hawki' => [
         'aiHandle' => 'AI assistant handle for group chat (@ will be added automatically)',
         'groupchat_active' => 'Enable group chat',
-        'ai_config_system' => 'DB-based AI configuration system',
+        'file_upload' => 'Enable file upload functionality',
+        'websearch' => 'Enable web search functionality',
+        'dataprotection_location' => 'Data protection URL',
+        'imprint_location' => 'Imprint page URL',
+        'accessibility_location' => 'Accessibility statement URL',
+        'ai_config_system' => 'DB-based AI configuration system ',
         'language_controller_system' => 'Use database for translations (true) or JSON files (false)',
+        'send_registration_mails' => 'Send registration and approval emails to new users',
+        'send_groupchat_invitation_mails' => 'Send email notifications for group chat invitations',
 
     ],
     'sanctum' => [
@@ -103,10 +110,9 @@ return [
 
         // SMTP Mailer Configuration
         'mailers.smtp.transport' => 'SMTP transport type (smtp)',
-        'mailers.smtp.url' => 'SMTP URL (alternative to individual settings)',
         'mailers.smtp.host' => 'SMTP server hostname',
-        'mailers.smtp.port' => 'SMTP server port (usually 587 for TLS, 465 for SSL)',
-        'mailers.smtp.encryption' => 'SMTP encryption method (tls, ssl, or none)',
+        'mailers.smtp.port' => 'SMTP server port (usually 587 for TLS, 465 for SSL, 25 for unencrypted)',
+        'mailers.smtp.encryption' => 'SMTP encryption method (tls, ssl, or leave empty for none)',
         'mailers.smtp.username' => 'SMTP authentication username',
         'mailers.smtp.password' => 'SMTP authentication password',
         'mailers.smtp.timeout' => 'SMTP connection timeout in seconds',
@@ -133,14 +139,6 @@ return [
         // 'mailers.sendmail.path' => 'Path to sendmail binary (e.g., /usr/sbin/sendmail -bs -i)',
 
     ],
-    //'reverb' => [
-    //    'servers.reverb.host' => 'Reverb server host (usually 0.0.0.0 for all interfaces)',
-    //    'servers.reverb.port' => 'Reverb server port (default: 8080)',
-    //    'servers.reverb.hostname' => 'Reverb hostname for client connections',
-    //    'apps.apps.0.options.host' => 'Reverb client host (for WebSocket connections)',
-    //    'apps.apps.0.options.port' => 'Reverb client port (default: 443 for HTTPS)',
-    //    'apps.apps.0.options.scheme' => 'Reverb scheme (http or https)',
-    //],
 
     /*
     |--------------------------------------------------------------------------
@@ -164,6 +162,5 @@ return [
         'session' => 'authentication',
         'logging' => 'logging',
         'mail' => 'mail',
-        //'reverb' => 'websockets',
     ],
 ];

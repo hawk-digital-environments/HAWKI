@@ -9,6 +9,7 @@ use App\Orchid\Layouts\User\UserApprovalLayout;
 use App\Orchid\Layouts\User\UserEditLayout;
 use App\Orchid\Layouts\User\UserPasswordLayout;
 use App\Orchid\Layouts\User\UserRoleLayout;
+use App\Services\EmployeetypeMappingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -25,6 +26,13 @@ class UserEditScreen extends Screen
      * @var User
      */
     public $user;
+
+    protected EmployeetypeMappingService $employeetypeMappingService;
+
+    public function __construct(EmployeetypeMappingService $employeetypeMappingService)
+    {
+        $this->employeetypeMappingService = $employeetypeMappingService;
+    }
 
     /**
      * Fetch data to be displayed on the screen.
@@ -163,8 +171,12 @@ class UserEditScreen extends Screen
         // Prepare user data
         $userData = $request->collect('user')->except(['password', 'permissions', 'roles'])->toArray();
 
-        // Force auth_type to 'local' for all users created in this screen
-        $userData['auth_type'] = 'local';
+        // CRITICAL: auth_type is immutable - only set for NEW users, never change existing users
+        if (! $user->exists) {
+            // New users created via Orchid admin panel are always local users
+            $userData['auth_type'] = 'local';
+        }
+        // For existing users: DO NOT set auth_type - it must remain unchanged
 
         // Handle approval status - default to true for new users if not explicitly set
         if (! $user->exists) {
@@ -252,18 +264,16 @@ class UserEditScreen extends Screen
     }
 
     /**
-     * Map employee type to role slug
+     * Map employee type to role slug using EmployeetypeMappingService
      */
     private function mapEmployeeTypeToRoleSlug(string $employeeType): string
     {
-        return match (strtolower($employeeType)) {
-            'student', 'studierende' => 'student',
-            'mitarbeiter', 'staff' => 'staff',
-            'professor', 'lehrende' => 'lecturer',
-            'gast', 'guest' => 'guest',
-            'admin', 'administrator' => 'admin',
-            default => 'guest',
-        };
+        try {
+            $authMethod = config('auth.authentication_method', 'LDAP');
+            return $this->employeetypeMappingService->mapEmployeetypeToRole($employeeType, $authMethod);
+        } catch (\Exception $e) {
+            return 'guest';
+        }
     }
 
     /**

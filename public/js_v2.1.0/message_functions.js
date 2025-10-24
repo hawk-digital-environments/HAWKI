@@ -1,7 +1,7 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
 
-    const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
+    const {messageText, groundingMetadata, auxiliaries} = deconstContent(messageObj.content.text);
 
     /// CLONE
     // clone message element
@@ -165,6 +165,11 @@ function addMessageToChatlog(messageObj, isFromServer = false){
                 messageElement.querySelector('.google-search').remove();
             }
         }
+        
+        // Handle Anthropic citations
+        if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
+            addAnthropicCitations(messageElement, auxiliaries);
+        }
     }
 
 
@@ -264,9 +269,13 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
     }
 
     if(updateContent){
-        const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
+        const {messageText, groundingMetadata, auxiliaries} = deconstContent(messageObj.content.text);
 
         messageElement.dataset.rawMsg = messageText;
+        
+        // Store raw content with auxiliaries for multi-turn conversations
+        messageElement.dataset.rawContent = messageObj.content.text;
+        
         if(messageObj.message_role === "user"){
             const filteredContent = detectMentioning(messageText);
             msgTxtElement.innerHTML = filteredContent.modifiedText;
@@ -286,6 +295,16 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             else{
                 if(messageElement.querySelector('.google-search')){
                     messageElement.querySelector('.google-search').remove();
+                }
+            }
+            
+            // Handle Anthropic citations
+            if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
+                addAnthropicCitations(messageElement, auxiliaries);
+            } else {
+                // Remove existing Anthropic sources if no auxiliaries
+                if (messageElement.querySelector('.anthropic-sources')) {
+                    messageElement.querySelector('.anthropic-sources').remove();
                 }
             }
         }
@@ -385,11 +404,15 @@ function deconstContent(inputContent){
 
     let messageText = '';
     let groundingMetadata = '';
+    let auxiliaries = [];
 
     if(isValidJson(inputContent)){
         const json = JSON.parse(inputContent);
         if(json.hasOwnProperty('groundingMetadata')){
             groundingMetadata = json.groundingMetadata
+        }
+        if(json.hasOwnProperty('auxiliaries')){
+            auxiliaries = json.auxiliaries
         }
         if(json.hasOwnProperty('text')){
             messageText = json.text;
@@ -404,7 +427,8 @@ function deconstContent(inputContent){
 
     return {
         messageText: messageText,
-        groundingMetadata: groundingMetadata
+        groundingMetadata: groundingMetadata,
+        auxiliaries: auxiliaries
     }
 
 }
@@ -752,6 +776,17 @@ async function regenerateMessage(messageElement, Done = null){
     //reset message content
     messageElement.querySelector('.message-text').innerHTML = '';
     messageElement.dataset.rawMsg = '';
+    
+    // Remove Google search sources
+    if(messageElement.querySelector('.google-search')){
+        messageElement.querySelector('.google-search').remove();
+    }
+    
+    // Remove Anthropic citations
+    if(messageElement.querySelector('.anthropic-sources')){
+        messageElement.querySelector('.anthropic-sources').remove();
+    }
+    
     initializeMessageFormating();
 
     let inputContainer;
@@ -761,7 +796,9 @@ async function regenerateMessage(messageElement, Done = null){
     else{
         inputContainer = messageElement.closest('.thread').querySelector('.input-container');
     }
-    const webSearchActive = inputContainer.querySelector('#websearch-btn').classList.contains('active');
+    
+    const webSearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
+    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
 
     const tools = {
         'web_search': webSearchActive

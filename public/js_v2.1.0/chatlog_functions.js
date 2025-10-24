@@ -223,7 +223,7 @@ function loadMessagesOnGUI(messages) {
     let threads = []
     messages.forEach(messageObj => {
         const addedMsg = addMessageToChatlog(messageObj, true);
-        updateMessageElement(addedMsg, messageObj);
+        updateMessageElement(addedMsg, messageObj, true); // ✅ Set updateContent = true to populate dataset.rawContent
 
 
         // Observe unread messages
@@ -382,12 +382,19 @@ function setModel(modelID = null){
             const labels = document.querySelectorAll('.model-selector-label');
 
             labels.forEach(label => {
+                const inputContainer = label.closest('.input-container');
+                const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
 
-                if (activeModel.id === defaultModels.default_web_search_model){
-                    label.closest('.input-container').querySelector('#websearch-btn').classList.add('active');
-                }
-                else{
-                    label.closest('.input-container').querySelector('#websearch-btn').classList.remove('active');
+                if (websearchBtn) {
+                    // Check if the model supports web_search tool (not if it's the default web search model)
+                    // This supports both file-based and DB-based configs
+                    const supportsWebSearch = activeModel.tools?.web_search === true;
+                    
+                    if (supportsWebSearch) {
+                        websearchBtn.classList.add('active');
+                    } else {
+                        websearchBtn.classList.remove('active');
+                    }
                 }
                 label.innerHTML = activeModel.label;
             });

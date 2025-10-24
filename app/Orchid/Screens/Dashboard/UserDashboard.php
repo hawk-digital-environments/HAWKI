@@ -4,6 +4,7 @@ namespace App\Orchid\Screens\Dashboard;
 
 use App\Orchid\Layouts\Charts\BarChart;
 use App\Orchid\Layouts\Charts\PercentageChart;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -44,16 +45,17 @@ class UserDashboard extends Screen
         }
 
         // Labels
-        // Dynamisch erstellte Labels für den aktuell ausgewählten Monat
-        $currentYear = date('Y');
-        $currentMonth = date('m');
-        $currentDay = date('d');
+        // Dynamisch erstellte Labels für den aktuell ausgewählten Monat mit Carbon
+        $now = Carbon::now();
+        $currentYear = $now->year;
+        $currentMonth = $now->month;
+        $currentDay = $now->day;
         $specificDay = '2025-03-21';
 
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int) $currentMonth, (int) $currentYear);
+        $daysInMonth = $now->daysInMonth;
         $labelsForCurrentMonth = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
-            $labelsForCurrentMonth[] = sprintf('%s-%02d-%02d', $currentYear, $currentMonth, $d);
+            $labelsForCurrentMonth[] = Carbon::create($currentYear, $currentMonth, $d)->format('Y-m-d');
         }
 
         // Statische Labels für einen 24h-Stunden Tag
@@ -71,8 +73,8 @@ class UserDashboard extends Screen
 
         // Anzahl der User, die sich diesen Monat neu angemeldet haben
         $newUsersThisMonth = DB::table('users')
-            ->whereYear('created_at', date('Y'))
-            ->whereMonth('created_at', date('m'))
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
             ->count();
 
         $percentage = round((($totalUsers > 0) ? ($newUsersThisMonth / $totalUsers) * 100 : 0), 2);
@@ -253,14 +255,15 @@ class UserDashboard extends Screen
      */
     private function getPlaceholderData(): array
     {
-        // Aktuelle Zeiträume für Labels
-        $currentYear = date('Y');
-        $currentMonth = date('m');
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, (int) $currentMonth, (int) $currentYear);
+        // Aktuelle Zeiträume für Labels mit Carbon
+        $now = Carbon::now();
+        $currentYear = $now->year;
+        $currentMonth = $now->month;
+        $daysInMonth = $now->daysInMonth;
 
         $labelsForCurrentMonth = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
-            $labelsForCurrentMonth[] = sprintf('%s-%02d-%02d', $currentYear, $currentMonth, $d);
+            $labelsForCurrentMonth[] = Carbon::create($currentYear, $currentMonth, $d)->format('Y-m-d');
         }
 
         // Statische Labels für 24h-Tag
@@ -326,17 +329,17 @@ class UserDashboard extends Screen
 
         switch ($period) {
             case 'today':
-                $query->whereDate('created_at', date('Y-m-d'));
+                $query->whereDate('created_at', Carbon::today());
                 break;
             case 'week':
                 $query->whereBetween('created_at', [
-                    now()->startOfWeek(),
-                    now()->endOfWeek(),
+                    Carbon::now()->startOfWeek(),
+                    Carbon::now()->endOfWeek(),
                 ]);
                 break;
             case 'month':
-                $query->whereYear('created_at', date('Y'))
-                    ->whereMonth('created_at', date('m'));
+                $query->whereYear('created_at', Carbon::now()->year)
+                    ->whereMonth('created_at', Carbon::now()->month);
                 break;
                 // 'total' benötigt keine zusätzlichen Filter
         }

@@ -7,8 +7,8 @@ namespace App\Orchid\Screens\ModelSettings;
 use App\Models\AiModel;
 use App\Orchid\Layouts\ModelSettings\AiModelBasicInfoLayout;
 use App\Orchid\Layouts\ModelSettings\AiModelInformationLayout;
-use App\Orchid\Layouts\ModelSettings\AiModelSettingsLayout;
 use App\Orchid\Layouts\ModelSettings\AiModelStatusLayout;
+use App\Orchid\Layouts\ModelSettings\AiModelToolsLayout;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
@@ -36,8 +36,6 @@ class AiModelEditScreen extends Screen
 
         return [
             'model' => $model,
-            'settingsJson' => json_encode($model->settings, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}',
-            'informationJson' => json_encode($model->information, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '{}',
         ];
     }
 
@@ -98,9 +96,9 @@ class AiModelEditScreen extends Screen
                 ->title('Model Status')
                 ->description('Control model availability and visibility for users.'),
 
-            Layout::block(AiModelSettingsLayout::class)
-                ->title('Model Settings')
-                ->description('Configure model parameters and behavior in JSON format.'),
+            Layout::block(AiModelToolsLayout::class)
+                ->title('Model Capabilities (Tools)')
+                ->description('Configure which features and tools this model supports.'),
 
             Layout::block(AiModelInformationLayout::class)
                 ->title('Provider Information')
@@ -121,27 +119,18 @@ class AiModelEditScreen extends Screen
                 'model.label' => 'required|string|max:255',
                 'model.is_active' => 'boolean',
                 'model.is_visible' => 'boolean',
-                'settingsJson' => 'nullable|string',
+                'model.settings.tools.file_upload' => 'nullable|boolean',
+                'model.settings.tools.vision' => 'nullable|boolean',
+                'model.settings.tools.web_search' => 'nullable|boolean',
             ]);
 
-            // Validate and decode settings JSON
-            $settingsJson = $request->input('settingsJson');
-            $settings = [];
-
-            if (! empty($settingsJson)) {
-                $settings = json_decode($settingsJson, true);
-
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    Log::warning('Invalid JSON in model settings', [
-                        'model_id' => $this->model->id,
-                        'json_error' => json_last_error_msg(),
-                        'input' => $settingsJson,
-                    ]);
-
-                    Toast::error('Invalid JSON format in Model Settings. Please check your input.');
-
-                    return back()->withInput();
-                }
+            // Get current settings and merge with tools from UI
+            $settings = $this->model->settings ?? [];
+            
+            // Merge tools from UI checkboxes into settings
+            $modelData = $request->get('model', []);
+            if (isset($modelData['settings']['tools'])) {
+                $settings['tools'] = $modelData['settings']['tools'];
             }
 
             // Store original values for change tracking
@@ -150,8 +139,8 @@ class AiModelEditScreen extends Screen
             $originalVisible = $this->model->is_visible;
             $originalSettings = $this->model->settings;
 
-            // Update model fields
-            $modelData = $request->get('model', []);
+            // Update model fields (exclude nested settings, we handle it separately)
+            unset($modelData['settings']);
             $this->model->fill($modelData);
             $this->model->settings = $settings;
             $this->model->save();
