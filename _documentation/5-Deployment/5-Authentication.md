@@ -105,7 +105,7 @@ If Shibboleth is installed with yum or apt-get, the Apache module `mod_shib` wil
 What you need to do next is to determine how the actual service should be protected.
 
 You need to tell Apache, which part should be protected by Shibboleth. In our case it is a simple route
-`/req/login-shibboleth` that will trigger the Shibboleth login. You can of course, if you want to protect the entire
+`/req/login` that will trigger the Shibboleth login. You can of course, if you want to protect the entire
 site, use `/` as the path. Note, that the latter will make the entire site inaccessible without a valid Shibboleth
 session and basically disable the `SHIBBOLETH_LOGIN_URL` in your `.env` file.
 
@@ -120,9 +120,8 @@ In your <VirtualHost> you add a <Location> tag for what you want to protect (fou
 ```
 
 > **DEPRECATION** Previously, HAWKI used `/req/login-shibboleth` as the protected route; however, to maintain
-> consistency
-> with other authentication methods, it has been changed to `/req/login`. If you have an existing setup using
-> `/req/login-shibboleth`, please update your Apache configuration accordingly.
+> consistency with other authentication methods, it has been changed to `/req/login`. If you have an existing setup
+> using `/req/login-shibboleth`, please update your Apache configuration accordingly.
 > For now, to ensure backward compatibility, HAWKI will still accept both routes.
 
 After everything is set up, Apache needs to be restarted.
