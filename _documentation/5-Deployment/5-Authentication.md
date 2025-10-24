@@ -22,13 +22,18 @@ Next, you need to configure the LDAP connection parameters. The following enviro
 
 - `LDAP_HOST` is the hostname or IP address of your LDAP server; something like: "ldap.example.com".
 - `LDAP_PORT` is the port number of your LDAP server. Defaults to `389`.
-- `LDAP_BASE_DN` is the base distinguished name (DN) for your LDAP directory; something like:
-  "dc=example,dc=com". This value is basically the credential you are using to authenticate against an LDAP. We know,
-  this SHOULD be the "BIND_DN", but historically we can not change this variable name without breaking existing setups.
-- `LDAP_BIND_PW` is the password for the base DN you specified above. _Note of the author: You do not want to know why
-  this is called "LDAP_BIND_PW" and not "LDAP_BASE_PW" 🙈._
-- `LDAP_SEARCH_DN` is what is **commonly** referred to as the "base DN" or "search base". This is the DN where user
-  searches will start; something like: "ou=users,dc=example,dc=com".
+- `LDAP_BIND_DN` This value is the distinguished name (DN) used to bind to the LDAP server. Basically it is the user
+  that HAWKI will use to perform searches against the LDAP server (not the user that is logging in). This should be
+  something like: "cn=admin,dc=example,dc=com". Historically this was called "LDAP_BASE_DN", but to avoid confusion with
+  the actual "base DN" used for searches, this has been renamed. If `LDAP_BIND_DN` is not set, HAWKI will
+  fall back to the old variable name `LDAP_BASE_DN` for backward compatibility. **Set this to `anonymous` to use
+  anonymous binding.**
+- `LDAP_BIND_PW` is the password for the base DN you specified above.
+- `LDAP_BASE_DN`_(when using LDAP_BIND_DN)_|`LDAP_SEARCH_DN`_(historically/deprecated)_ is the "search base".
+  This is the DN where user searches will start; something like: "ou=users,dc=example,dc=com".
+  Historically this was called "LDAP_SEARCH_DN", while "LDAP_BASE_DN" was used for the bind DN; to avoid confusion we
+  swapped the names.
+  **IF AND ONLY IF** you are using `LDAP_BIND_DN` to bind, `LDAP_BASE_DN` will be used as the search base.
 - `LDAP_FILTER` is the LDAP search filter to find users. This should be something like
   `(|(sAMAccountName=username)(mail=username))`, which searches for entries with the object class "person" and a "uid"
   attribute matching the provided username. **NOTE** The placeholder `username` will be replaced with the actual
@@ -40,9 +45,19 @@ The following environment variables are available for this and MUST be set accor
 
 - `LDAP_ATTR_USERNAME` is the LDAP attribute that contains the username. Defaults to `cn`.
 - `LDAP_ATTR_EMAIL` is the LDAP attribute that contains the email address. Defaults to `mail`.
-- `LDAP_ATTR_NAME` is the LDAP attribute that contains the full name of the user. Defaults to `displayname`.
+- `LDAP_ATTR_NAME` is the LDAP attribute that contains the full name of the user. Defaults to `displayname`. If you need
+  to concatenate multiple attributes (e.g. cn and displayname), you can provide a comma-separated list of
+  attribute names. This way, the attributes will be concatenated with a space in between. If any of them are missing,
+  they will be
+  skipped.
+  Example: LDAP_ATTR_NAME="displayname" -> "displayname (John Doe)" => "John Doe"
+  Example: LDAP_ATTR_NAME="cn,ln" -> "cn (John) + ln (Doe)" => "John Doe"
+  **IMPORTANT**: Setting this attribute to a comma separated list, will disable `LDAP_INVERT_NAME`.
 - `LDAP_ATTR_EMPLOYEETYPE` is the LDAP attribute that contains the employee type or group identifier. Defaults to
   `employeetype`.
+- `LDAP_INVERT_NAME` is an optional flag (set to `true` or `false`) that indicates whether the first and last names in
+  the `LDAP_ATTR_NAME` attribute should be inverted (i.e., "Last First" instead of "First Last"). Defaults to `false`.
+  Assumes that the value is: "Last, Name" or "Name, Last" when set to true.
 
 **IMPORTANT** PLEASE NOTE that the `LDAP_BASE_DN` and `LDAP_BIND_PW` are used to authenticate against the LDAP server,
 while the `LDAP_SEARCH_DN` is used to search for users! This is a common source of confusion.

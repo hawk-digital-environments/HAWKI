@@ -6,6 +6,7 @@ use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Util\AuthServiceWithCredentialsTrait;
+use App\Services\Auth\Util\DisplayNameBuilder;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
@@ -18,12 +19,20 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
 {
     use AuthServiceWithCredentialsTrait;
 
+    private readonly array $connection;
+
     public function __construct(
-        #[Config('ldap.connections.default')]
-        private readonly array           $connection,
+        #[Config('ldap.connections')]
+        array  $connections,
+        #[Config('ldap.default')]
+        string $connectionName,
         private readonly LoggerInterface $logger
     )
     {
+        if (!isset($connections[$connectionName])) {
+            throw new \InvalidArgumentException("LDAP connection configuration '{$connectionName}' not found.");
+        }
+        $this->connection = $connections[$connectionName];
     }
 
     /**
@@ -38,11 +47,15 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
         try {
             $host = $this->connection['ldap_host'];
             $port = $this->connection['ldap_port'];
-            $baseDn = $this->connection['ldap_base_dn'];
+            $bindDn = $this->connection['ldap_bind_dn'];
             $bindPw = $this->connection['ldap_bind_pw'];
-            $searchDn = $this->connection['ldap_search_dn'];
+            $baseDn = $this->connection['ldap_base_dn'];
             $filter = $this->connection['ldap_filter'];
             $attributeMap = $this->connection['attribute_map'];
+            $usernameAttribute = $attributeMap['username'] ?? 'cn';
+            $nameAttribute = $attributeMap['name'] ?? 'displayname';
+            $employeeTypeAttribute = $attributeMap['employeetype'] ?? 'employeetype';
+            $emailAttribute = $attributeMap['email'] ?? 'mail';
             $invertName = $this->connection['invert_name'] ?? false;
 
             if (empty($this->username) || empty($this->password)) {
@@ -66,14 +79,14 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
                 $this->logLdapError($ldapConn, 'Failed to set LDAP protocol version');
             }
 
-            // Bind with service account (baseDn + bindPw)
-            if (!@ldap_bind($ldapConn, $baseDn, $bindPw)) {
+            // Bind with service account (bindDn + bindPw)
+            if (strtolower((string)$bindDn) !== 'anonymous' && !@ldap_bind($ldapConn, $bindDn, $bindPw)) {
                 $this->logLdapError($ldapConn, 'Service account bind failed');
             }
 
             // Search for user
             $searchFilter = str_replace("username", $this->username, $filter);
-            $sr = ldap_search($ldapConn, $searchDn, $searchFilter);
+            $sr = ldap_search($ldapConn, $baseDn, $searchFilter);
             if (!$sr) {
                 $this->logLdapError($ldapConn, 'LDAP search failed');
             }
@@ -96,22 +109,37 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
             // Fetch user attributes
             $info = ldap_get_entries($ldapConn, $sr);
 
-            $userInfo = [];
-            foreach ($attributeMap as $appAttr => $ldapAttr) {
-                $userInfo[$appAttr] = $info[0][$ldapAttr][0] ?? 'Unknown';
-            }
+            $getLdapValue = static function (string $attribute) use ($info) {
+                if (empty($info[0][$attribute][0])) {
+                    throw new \RuntimeException("LDAP: User info attribute '{$attribute}' is missing or empty.");
+                }
+                if (!is_string($info[0][$attribute][0])) {
+                    throw new \RuntimeException("LDAP: User info attribute '{$attribute}' is not a string.");
+                }
+                return $info[0][$attribute][0];
+            };
 
-            // Handle display name inversion (e.g., "Lastname, Firstname")
-            if (isset($userInfo['displayname']) && $invertName) {
-                $parts = explode(", ", $userInfo['displayname']);
-                $userInfo['name'] = ($parts[1] ?? '') . ' ' . ($parts[0] ?? '');
+            // Check if comma separated list
+            if (str_contains($getLdapValue($usernameAttribute), ',')) {
+                $displayName = DisplayNameBuilder::build(
+                    definition: $nameAttribute,
+                    valueResolver: $getLdapValue,
+                    logger: $this->logger
+                );
+            } else {
+                $displayName = $getLdapValue($nameAttribute);
+                // Handle display name inversion (e.g., "Lastname, Firstname")
+                if ($invertName) {
+                    $parts = explode(", ", $displayName);
+                    $displayName = ($parts[1] ?? '') . ' ' . ($parts[0] ?? '');
+                }
             }
 
             return new AuthenticatedUserInfo(
-                username: $userInfo['username'],
-                displayName: $userInfo['name'],
-                email: $userInfo['email'],
-                employeeType: $userInfo['employeetype']
+                username: $getLdapValue($usernameAttribute),
+                displayName: $displayName,
+                email: $getLdapValue($emailAttribute),
+                employeeType: $getLdapValue($employeeTypeAttribute)
             );
         } catch (\Exception $e) {
             throw new AuthFailedException('LDAP authentication failed', 500, $e);
