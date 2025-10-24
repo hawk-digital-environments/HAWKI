@@ -6,7 +6,10 @@ namespace App\Orchid\Screens\Customization;
 
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementTranslation;
-use App\Orchid\Layouts\Customization\AnnouncementEditLayout;
+use App\Orchid\Layouts\Customization\AnnouncementBasicLayout;
+use App\Orchid\Layouts\Customization\AnnouncementContentLayout;
+use App\Orchid\Layouts\Customization\AnnouncementTargetingLayout;
+use App\Orchid\Layouts\Customization\AnnouncementTimingLayout;
 use App\Orchid\Layouts\Customization\CustomizationTabMenu;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
@@ -14,6 +17,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Screen;
+use Orchid\Support\Facades\Layout;
 use Orchid\Support\Facades\Toast;
 
 class AnnouncementEditScreen extends Screen
@@ -67,7 +71,7 @@ class AnnouncementEditScreen extends Screen
      */
     public function description(): ?string
     {
-        return 'Manage announcement details and translated content (Markdown supported)';
+        return 'Manage announcement details and translated content (Markdown supported). The identifier is used for internal reference, while the actual title displayed to users comes from the first heading in the markdown content.';
     }
 
     /**
@@ -105,7 +109,22 @@ class AnnouncementEditScreen extends Screen
     {
         return [
             CustomizationTabMenu::class,
-            AnnouncementEditLayout::class,
+
+            Layout::rows([
+                ...(new AnnouncementBasicLayout)->fields(),
+            ])->title('Basic Information'),
+
+            Layout::rows([
+                ...(new AnnouncementTargetingLayout)->fields(),
+            ])->title('Audience Targeting'),
+
+            Layout::rows([
+                ...(new AnnouncementTimingLayout)->fields(),
+            ])->title('Timing & Triggers'),
+
+            Layout::rows([
+                ...(new AnnouncementContentLayout)->fields(),
+            ])->title('Content'),
         ];
     }
 
@@ -114,48 +133,81 @@ class AnnouncementEditScreen extends Screen
      */
     public function save(Request $request, Announcement $announcement)
     {
+        // Trim whitespace from content fields before validation (handle null values)
+        $deContent = $request->input('de_content');
+        $enContent = $request->input('en_content');
+        
+        $request->merge([
+            'de_content' => is_string($deContent) ? trim($deContent) : $deContent,
+            'en_content' => is_string($enContent) ? trim($enContent) : $enContent,
+        ]);
+
         $data = $request->validate([
             'announcement.title' => 'required|string|max:255',
-            'announcement.view' => 'required|string|max:255',
+            'announcement.view' => 'nullable|string|max:255',
             'announcement.type' => 'required|in:policy,news,system,event,info',
             'announcement.is_forced' => 'boolean',
             'announcement.is_global' => 'boolean',
+            'announcement.target_roles' => 'nullable|array',
+            'announcement.target_roles.*' => 'string|exists:roles,slug',
             'announcement.anchor' => 'nullable|string|max:255',
             'announcement.starts_at' => 'nullable|date',
             'announcement.expires_at' => 'nullable|date',
-            'de_content' => 'nullable|string',
-            'en_content' => 'nullable|string',
+            'de_content' => 'required|string|min:3',
+            'en_content' => 'required|string|min:3',
+        ], [
+            'de_content.required' => 'German content is required',
+            'de_content.min' => 'German content must be at least 3 characters',
+            'en_content.required' => 'English content is required',
+            'en_content.min' => 'English content must be at least 3 characters',
         ]);
 
         try {
+            // Auto-generate view key from title if not provided
+            if (empty($data['announcement']['view'])) {
+                $data['announcement']['view'] = \Illuminate\Support\Str::slug($data['announcement']['title']);
+            }
+
+            // If not global, ensure target_roles is set
+            if (!$data['announcement']['is_global'] && empty($data['announcement']['target_roles'])) {
+                Toast::warning('Please select at least one role for non-global announcements');
+                return back()->withInput();
+            }
+
+            // If global, clear target_roles
+            if ($data['announcement']['is_global']) {
+                $data['announcement']['target_roles'] = null;
+            }
+
+            // Empty string anchor should be saved as null
+            if (empty($data['announcement']['anchor'])) {
+                $data['announcement']['anchor'] = null;
+            }
+
             // Save announcement
             $announcement->fill($data['announcement'])->save();
 
             // Save German translation
-            if (!empty($data['de_content'])) {
-                AnnouncementTranslation::updateOrCreate(
-                    [
-                        'announcement_id' => $announcement->id,
-                        'locale' => 'de_DE',
-                    ],
-                    [
-                        'content' => $data['de_content'],
-                    ]
-                );
-            }
+            AnnouncementTranslation::updateOrCreate(
+                [
+                    'announcement_id' => $announcement->id,
+                    'locale' => 'de_DE',
+                ],
+                [
+                    'content' => $data['de_content'],
+                ]
+            );
 
             // Save English translation
-            if (!empty($data['en_content'])) {
-                AnnouncementTranslation::updateOrCreate(
-                    [
-                        'announcement_id' => $announcement->id,
-                        'locale' => 'en_US',
-                    ],
-                    [
-                        'content' => $data['en_content'],
-                    ]
-                );
-            }
+            AnnouncementTranslation::updateOrCreate(
+                [
+                    'announcement_id' => $announcement->id,
+                    'locale' => 'en_US',
+                ],
+                [
+                    'content' => $data['en_content'],
+                ]
+            );
 
             $this->logModelOperation(
                 $announcement->wasRecentlyCreated ? 'create' : 'update',
