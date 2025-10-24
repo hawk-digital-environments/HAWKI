@@ -2,26 +2,26 @@
 
 namespace App\Providers;
 
-use Illuminate\Filesystem\FilesystemAdapter;
-use Illuminate\Support\ServiceProvider;
-use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\AdminAccess;
+use App\Http\Middleware\DeprecatedEndpointMiddleware;
 use App\Http\Middleware\EditorAccess;
 use App\Http\Middleware\ExternalCommunicationCheck;
+use App\Http\Middleware\MandatorySignatureCheck;
 use App\Http\Middleware\PreventBackHistory;
+use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
-use App\Http\Middleware\MandatorySignatureCheck;
-use App\Services\Storage\StorageServiceFactory;
-use App\Services\Storage\FileStorageService;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\FileStorageService;
+use App\Services\Storage\StorageServiceFactory;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Filesystem;
 use League\Flysystem\WebDAV\WebDAVAdapter;
 use Sabre\DAV\Client;
-
 
 
 class AppServiceProvider extends ServiceProvider
@@ -87,5 +87,6 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
         Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
         Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
+        Route::aliasMiddleware('deprecated', DeprecatedEndpointMiddleware::class);
     }
 }

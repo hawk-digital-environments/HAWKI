@@ -90,42 +90,50 @@
                 return;
             }
             if(username.value && password.value){
-                LoginLDAP();
+                submitLogin();
             }
         }
     }
-    async function LoginLDAP() {
+
+    async function submitLogin() {
         try {
             var formData = new FormData();
-            formData.append("account", document.getElementById("account").value);
-            formData.append("password", document.getElementById("password").value);
-            const csrfToken = document.getElementById('loginForm-LDAP').querySelector('input[name="_token"]').value;
+            formData.append('account', document.getElementById('account').value);
+            formData.append('password', document.getElementById('password').value);
+            const csrfToken = document.getElementById('hawkiLoginForm').querySelector('input[name="_token"]').value;
 
-            const response = await fetch('/req/login-ldap', {
-                method: "POST",
+            const response = await fetch('/req/login', {
+                method: 'POST',
                 headers: {
-                    "X-CSRF-TOKEN": csrfToken,
-                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
                 },
                 body: formData
             });
 
             if (!response.ok) {
-                throw new Error("Login request failed");
+                throw new Error('Login request failed');
             }
 
             const data = await response.json();
 
             if (data.success) {
-                await setOverlay(true, true)
+                await setOverlay(true, true);
                 window.location.href = data.redirectUri;
 
             } else {
                 // console.log('login failed');
-                document.getElementById("login-message").textContent = 'Login Failed!';
+                document.getElementById('login-message').textContent = 'Login Failed!';
             }
         } catch (error) {
             console.error(error);
         }
+    }
+
+    /**
+     * @deprecated: use submitLogin() instead!
+     */
+    async function LoginLDAP() {
+        await submitLogin();
     }
 </script>

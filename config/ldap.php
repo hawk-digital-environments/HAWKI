@@ -29,7 +29,7 @@ return [
     'connections' => [
         'default' =>[
             'ldap_host' => env('LDAP_HOST'),
-            'ldap_port' => env('LDAP_PORT'),
+            'ldap_port' => env('LDAP_PORT', 389),
             'ldap_base_dn' => env('LDAP_BASE_DN'),
             'ldap_bind_pw' => env('LDAP_BIND_PW'),
             'ldap_search_dn' => env('LDAP_SEARCH_DN'),
