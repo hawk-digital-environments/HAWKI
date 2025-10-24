@@ -35,6 +35,7 @@ return new class extends Migration
                 null,
                 now()->toDateTimeString(),
                 null,
+                true // is_published
             );
         }
 
@@ -50,6 +51,7 @@ return new class extends Migration
                 "FileUpload",
                 now()->toDateTimeString(),
                 null,
+                true // is_published
             );
         }
     }

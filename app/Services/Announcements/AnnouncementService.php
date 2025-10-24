@@ -31,9 +31,11 @@ class AnnouncementService
         ?array $targetRoles = null,
         ?string $anchor = null,
         ?string $startsAt = null,
-        ?string $expiresAt = null
+        ?string $expiresAt = null,
+        bool $isPublished = false
     ): Announcement {
         return Announcement::create([
+            'is_published' => $isPublished,
             'title' => $title,
             'view' => $view,
             'type' => $type,
