@@ -51,9 +51,15 @@ services:
         restart: always
         environment:
             - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://localhost:8001/" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
     redis:
         container_name: ${PROJECT_NAME}-redis
-        image: redis:latest
+        image: redis:8-bookworm
         restart: always
         volumes:
             - redis_data:/root/redis
