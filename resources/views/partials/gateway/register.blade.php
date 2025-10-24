@@ -71,7 +71,7 @@
                         <x-icon name="eye-off" id="eye-off" style="display: none"/>
                     </div>
                 </div>
-                
+
                 <div id="passkey-repeat" class="password-input-wrapper top-gap-2" style="display:none" >
                     <input
                         class="passkey-input"
@@ -83,7 +83,7 @@
                         spellcheck="false"
                         name="not_a_password_input"
 
-                    />    
+                    />
                     <div class="btn-xs" id="visibility-toggle">
                         <x-icon name="eye" id="eye"/>
                         <x-icon name="eye-off" id="eye-off" style="display: none"/>
@@ -93,10 +93,11 @@
             <p class="slide-subtitle top-gap-2">
                 {!! $translation["Reg_SL5_T"] !!}
             </p>
+            <p class="red-text" id="alert-message"></p>
+
             <div class="nav-buttons">
                 <button class="btn-lg-fill" onclick="checkPasskey()">{{ $translation["Save"] }}</button>
             </div>
-            <p class="red-text" id="alert-message"></p>
 
         </div>
 
@@ -136,7 +137,7 @@
         switchSlide(1);
         cleanupUserData();
     });
-    
+
     document.addEventListener('DOMContentLoaded', function () {
         const inputWrappers = document.querySelectorAll('.password-input-wrapper');
 
@@ -157,7 +158,7 @@
                 if (event.inputType.startsWith('insert')) {
                     if (!/^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(event.data)) {
                         event.preventDefault();
-                        console.log('bad input');
+                        showAllowedCharactersMessage();
                         input.parentElement.style.border = '1px solid red'
 
                         setTimeout(() => {
@@ -195,7 +196,7 @@
                 if(input.dataset.visible === 'false'){
                     input.value = '*'.repeat(updated.length);
                 }
-      
+
             });
 
             // Prevent copy/cut/paste
@@ -209,14 +210,14 @@
                 const icons = toggleBtn.querySelectorAll('svg');
                 const eye = icons[0];
                 const eyeOff = icons[1];
-                
+
                 const isVisible = input.dataset.visible === 'true';
                 if (!isVisible) {
                     input.value = real;
                     eye.style.display = 'none';
                     eyeOff.style.display = 'inline-block';
                     input.dataset.visible = 'true';
-                } 
+                }
                 else {
                     input.value = '*'.repeat(real.length);
                     eye.style.display = 'inline-block';
@@ -227,7 +228,10 @@
         });
     });
 
-
+    function showAllowedCharactersMessage(){
+        const msg = document.querySelector('#alert-message');
+        msg.innerText = translation.HS_Allowed_PK_Characters;
+    }
 
 
     setTimeout(() => {
