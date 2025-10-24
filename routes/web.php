@@ -44,6 +44,7 @@ Route::middleware('prevent_back')->group(function () {
         ->name('web.auth.shibboleth.login');
     Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
     Route::get('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
+    Route::post('/req/login-local', [AuthenticationController::class, 'localLogin']);
 
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);

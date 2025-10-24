@@ -78,8 +78,10 @@
         {{-- Datakey Input Slide --}} 
 
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
-            <input placeholder="{{  $translation["Reg_SL5_PH1"] }}" id="passkey-input" type="password">
-            <input placeholder="{{  $translation["Reg_SL5_PH2"] }}" id="passkey-repeat" type="password" class="top-gap-2" style="display:none">
+            <input placeholder="{{  $translation["Reg_SL5_PH1"] }}" id="passkey-input" class="passkey-input" type="password">
+            <div id="passkey-repeat" style="display:none" class="top-gap-2">
+                <input placeholder="{{  $translation["Reg_SL5_PH2"] }}" class="passkey-input" type="password">
+            </div>
             <p class="slide-subtitle top-gap-2">
                 {!! $translation["Reg_SL5_T"] !!}
             </p>
