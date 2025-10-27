@@ -74,9 +74,15 @@ return [
 
         'apps' => [
             [
-                'key' => env('REVERB_APP_KEY'),
+                'key' => (static function () {
+                    $key = env('REVERB_APP_KEY');
+                    if (empty($key)) {
+                        return 'hawki2';
+                    }
+                    return $key;
+                }),
                 'secret' => env('REVERB_APP_SECRET'),
-                'app_id' => env('REVERB_APP_ID'),
+                'app_id' => env('REVERB_APP_ID', 'hawki'),
                 'options' => [
                     'host' => env('REVERB_HOST'),
                     'port' => env('REVERB_PORT', 443),
