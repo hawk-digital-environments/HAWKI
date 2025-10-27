@@ -112,23 +112,31 @@ function setupCropper() {
         cropper.destroy();
     }
 
-    // Initialize the CropperJS
+    // Initialize the CropperJS v2 with custom template
+    // The template uses web components and sets aspectRatio on cropper-selection
+    const template = (
+        '<cropper-canvas background>'
+            + '<cropper-image></cropper-image>'
+            + '<cropper-shade hidden></cropper-shade>'
+            + '<cropper-handle action="select" plain></cropper-handle>'
+            + '<cropper-selection initial-coverage="1" aspect-ratio="1" movable resizable>'
+                + '<cropper-grid role="grid" bordered covered></cropper-grid>'
+                + '<cropper-crosshair centered></cropper-crosshair>'
+                + '<cropper-handle action="move" theme-color="rgba(255, 255, 255, 0.35)"></cropper-handle>'
+                + '<cropper-handle action="n-resize"></cropper-handle>'
+                + '<cropper-handle action="e-resize"></cropper-handle>'
+                + '<cropper-handle action="s-resize"></cropper-handle>'
+                + '<cropper-handle action="w-resize"></cropper-handle>'
+                + '<cropper-handle action="ne-resize"></cropper-handle>'
+                + '<cropper-handle action="nw-resize"></cropper-handle>'
+                + '<cropper-handle action="se-resize"></cropper-handle>'
+                + '<cropper-handle action="sw-resize"></cropper-handle>'
+            + '</cropper-selection>'
+        + '</cropper-canvas>'
+    );
+
     cropper = new Cropper(imageElement, {
-        viewMode: 1,                // Restrict the crop box to not exceed the size of the canvas
-        dragMode: 'crop',           // Enable the drag mode when the image is ready
-        autoCropArea: 1,            // Define the initial aspect ratio of the crop box
-        responsive: true,           // Make the crop box responsive
-        restore: false,
-        modal: true,
-        guides: true,
-        highlight: true,
-        background: false,          // Hide the viewport background
-        cropBoxResizable: true,     // Allow resizing the crop box
-        cropBoxMovable: true,       // Allow moving the crop box
-        toggleDragModeOnDblclick: false, // Disable double-click switching
-        aspectRatio: 1,             // Enforce 1:1 aspect ratio for the crop box
-        zoomable: false,            // Disable zooming (both mouse wheel and pinch)
-        wheelZoomRatio: 0           // Specifically disable zoom on mouse scroll
+        template: template
     });
 }
 
@@ -143,39 +151,42 @@ function saveCroppedImage() {
         return;
     }
 
-    // Get the cropping data using CropperJS
-    const cropData = cropper.getData(true); // Use `true` to get rounded values
-
-    // Using CropperJS to get the resulting cropped canvas
-    const croppedCanvas = cropper.getCroppedCanvas();
-
-    if (!croppedCanvas) {
-        console.error('Failed to get cropped canvas');
+    // Get the cropper selection element (v2 API)
+    const selection = cropper.getCropperSelection();
+    
+    if (!selection) {
+        console.error('Cropper selection not found');
         return;
     }
 
-    resizeImage(croppedCanvas, 1024)
+    // Using CropperJS v2 to get the resulting cropped canvas (returns a Promise)
+    selection.$toCanvas()
+        .then((croppedCanvas) => {
+            if (!croppedCanvas) {
+                console.error('Failed to get cropped canvas');
+                return;
+            }
+
+            return resizeImage(croppedCanvas, 1024);
+        })
         .then((resizedCanvas) => {
-            // NEW: convert canvas to Blob instead of base64
+            // Convert canvas to Blob
             resizedCanvas.toBlob(function(blob) {
                 if (!blob) {
                     console.error('Failed to get cropped blob');
                     return;
                 }
-                // If you want a File (with a name):
-                // let file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
-
-                // Call the callback with the Blob (or File)
+                
+                // Call the callback with the Blob
                 if (typeof currentImageCallback === 'function') {
-                    currentImageCallback(blob); // or file
+                    currentImageCallback(blob);
                 }
                 closeImageSelector();
             }, 'image/jpeg');
-
-        closeImageSelector();
-    }).catch((err) => {
-        console.error('Error resizing image:', err);
-    });
+        })
+        .catch((err) => {
+            console.error('Error processing image:', err);
+        });
 }
 
 

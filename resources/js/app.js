@@ -2,7 +2,6 @@ import './echo.js';
 
 
 import jQuery from 'jquery';
-import 'cropperjs/dist/cropper.min.css';
 import Cropper from 'cropperjs';
 import jsPDF from 'jspdf';
 import * as pdfjsLib from 'pdfjs-dist';
