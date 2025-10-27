@@ -9,13 +9,13 @@
 
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/login_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.2.0/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.2.0/login_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css_v2.2.0/settings_style.css') }}">
 
-    <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
+    <script src="{{ asset('js_v2.2.0/functions.js') }}"></script>
+    <script src="{{ asset('js_v2.2.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js_v2.2.0/announcements.js') }}"></script>
     @vite('resources/js/app.js')
 
     {!! $settingsPanel !!}
