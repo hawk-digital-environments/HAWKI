@@ -2,70 +2,120 @@
 
 namespace App\Services\Auth;
 
+use App\Services\Auth\Contract\AuthServiceInterface;
+use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
+use App\Services\Auth\Exception\AuthFailedException;
+use App\Services\Auth\Util\AuthRedirectBuilder;
+use App\Services\Auth\Util\DisplayNameBuilder;
+use App\Services\Auth\Value\AuthenticatedUserInfo;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Jumbojett\OpenIDConnectClient;
+use Psr\Log\LoggerInterface;
+use SensitiveParameter;
+use Symfony\Component\HttpFoundation\Response;
 
-
-class OidcService
+#[Singleton]
+readonly class OidcService implements AuthServiceInterface, AuthServiceWithLogoutRedirectInterface
 {
-    protected $oidc;
 
-    public function __construct()
+    public function __construct(
+        #[Config('open_id_connect.oidc_idp')]
+        private string          $idp,
+        #[Config('open_id_connect.oidc_client_id')]
+        private string          $clientId,
+        #[Config('open_id_connect.oidc_client_secret')]
+        #[SensitiveParameter]
+        private string          $clientSecret,
+        #[Config('open_id_connect.oidc_scopes')]
+        private array           $scopes,
+        #[Config('open_id_connect.attribute_map.username')]
+        private string          $usernameAttribute,
+        #[Config('open_id_connect.attribute_map.email')]
+        private string          $emailAttribute,
+        #[Config('open_id_connect.attribute_map.employeetype')]
+        private string          $employeeTypeAttribute,
+        #[Config('open_id_connect.attribute_map.name')]
+        private string          $nameAttribute,
+        #[Config('open_id_connect.oidc_logout_path')]
+        private string          $logoutPath,
+        private LoggerInterface $logger
+    )
     {
-        if (config('auth.authMethod') !== 'OIDC') {
-            return;
-        }
-        // Retrieve configuration settings
-        $idp = config('open_id_connect.oidc_idp');
-        $clientId = config('open_id_connect.oidc_client_id');
-        $clientSecret = config('open_id_connect.oidc_client_secret');
-
-        // Validate configuration settings
-        if (empty($idp) || empty($clientId) || empty($clientSecret)) {
-            throw new \InvalidArgumentException('OIDC configuration variables are not set properly.');
-        }
-
-        // Initialize the OpenID Connect client
-        $this->oidc = new OpenIDConnectClient($idp, $clientId, $clientSecret);
-
-        // Add scopes as an array
-        $scopes = config('open_id_connect.oidc_scopes');
-        $this->oidc->addScope($scopes);
     }
 
-    public function authenticate()
+    /**
+     * @inheritDoc
+     */
+    public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
+        if (empty($this->idp) || empty($this->clientId) || empty($this->clientSecret)) {
+            throw new AuthFailedException('OIDC configuration variables are not set properly.', 500);
+        }
+
+        $oidc = new OpenIDConnectClient($this->idp, $this->clientId, $this->clientSecret);
+        $oidc->addScope($this->scopes);
+
         try {
             // Attempt to authenticate the user
-            $this->oidc->authenticate();
-
-            // Retrieve attribute mapping from configuration
-            $firstNameAttr = config('open_id_connect.attribute_map.firstname');
-            $lastNameAttr = config('open_id_connect.attribute_map.lastname');
-            $emailAttr = config('open_id_connect.attribute_map.email');
-            $employeetypeAttr = config('open_id_connect.attribute_map.employeetype');
-
-            // Retrieve user information
-            $email = $this->oidc->requestUserInfo($emailAttr);
-            $employeetype = $this->oidc->requestUserInfo($employeetypeAttr);
-
-            $firstname = $this->oidc->requestUserInfo($firstNameAttr);
-            $surname = $this->oidc->requestUserInfo($lastNameAttr);
-            $name = trim("$firstname $surname");
-
-            // Return UserInfo array to authentication controller
-            if (!empty($_SERVER['REMOTE_USER'])) {
-                return [
-                    'username' => $_SERVER['REMOTE_USER'],
-                    'name' => $name,
-                    'email' => $email,
-                    'employeetype' => $employeetype,
-                ];
-            } else {
-                throw new \RuntimeException('REMOTE_USER is not set.');
+            if ($oidc->authenticate()) {
+                $request->session()->put('oidc_id_token', $oidc->getIdToken());
+                $this->logger->debug('Authenticated OIDC user');
             }
-        } catch (\Exception $e) {
-            // Handle errors, such as authentication failures
-            return response()->json(['error' => 'Authentication failed: ' . $e->getMessage()], 401);
+        } catch (\Throwable $e) {
+            throw new AuthFailedException('OIDC authentication failed', 401, $e);
         }
+
+        try {
+            return new AuthenticatedUserInfo(
+                username: $this->getUserInfoOrFail($oidc, $this->usernameAttribute),
+                displayName: DisplayNameBuilder::build(
+                    definition: $this->nameAttribute,
+                    valueResolver: fn(string $field) => $this->getUserInfoOrFail($oidc, $field),
+                    logger: $this->logger
+                ),
+                email: $this->getUserInfoOrFail($oidc, $this->emailAttribute),
+                employeeType: $this->getUserInfoOrFail($oidc, $this->employeeTypeAttribute),
+            );
+        } catch (\Exception $e) {
+            throw new AuthFailedException('Failed to resolve userdata for OIDC auth', 500, $e);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getLogoutResponse(Request $request): ?RedirectResponse
+    {
+        $idTokenHint = $request->session()->get('oidc_id_token');
+
+        $params = [];
+        if (!empty($idTokenHint)) {
+            $params = [
+                'id_token_hint' => $idTokenHint
+            ];
+        }
+
+        return AuthRedirectBuilder::build(
+            $this->logoutPath,
+            [
+                'post_logout_redirect_uri' => 'login'
+            ],
+            $params
+        );
+    }
+
+    private function getUserInfoOrFail(OpenIDConnectClient $oidc, string $var): string
+    {
+        $value = $oidc->requestUserInfo($var);
+        if (empty($value)) {
+            throw new \RuntimeException("OIDC: User info attribute '{$var}' is missing or empty.");
+        }
+        if (!is_string($value)) {
+            throw new \RuntimeException("OIDC: User info attribute '{$var}' is not a string.");
+        }
+        return $value;
     }
 }

@@ -24,7 +24,6 @@
     "Cnf_RemoveFile":"Möchtest du diese Datei wirklich löschen?",
     "Cnf_checkMembersAdded": "Bitte fügen Sie mindestens ein Mitglied hinzu.",
 
-
     "Logout_Warning":"Um HAWKI weiterhin zu nutzen, müssen Sie diese Bedingungen akzeptieren.<strong>Klicken Sie auf „Bestätigen“, um sich von HAWKI abzumelden.</strong>",
 
     "Input_Err_UploadFailed": "Fehler beim Hochladen der Datei!",
@@ -91,6 +90,8 @@
 
     "HS_LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
     "HS_LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
+
+    "HS_Allowed_PK_Characters": "Erlaubte Zeichen: A–Z, a–z, 0–9 sowie ! @ # $ % ^ & * ( ) _ + -",
 
 
     "ImgUpload": "Bild hochladen",
