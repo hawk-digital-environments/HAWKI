@@ -15,7 +15,7 @@
         "vite": "^7.1.12"
     },
     "dependencies": {
-        "cropperjs": "^1.6.2",
+        "cropperjs": "^2.1.0",
         "docx": "^9.5.1",
         "docx-preview": "^0.3.7",
         "highlight.js": "^11.11.1",

@@ -1,7 +1,5 @@
 
-let croppedImageData;
 let currentImageCallback = null;
-let imageField;
 let placeholder
 let cropper;
 
@@ -15,17 +13,13 @@ function openImageSelection(currentImageUrl, callback) {
     currentImageCallback = callback;     // Store the callback function
     imageModal.style.display = 'flex';
 
-    imageField = imageModal.querySelector('#image-field');
     placeholder = imageModal.querySelector('#image-field-placeholder');
-    if(currentImageUrl){
-        imageField.style.display = 'block';
-        placeholder.style.display = 'none';
-
-        imageField.setAttribute('src', currentImageUrl);
-        setupCropper();
-    }
-    else{
-        imageField.style.display = 'none';
+    if (currentImageUrl) {
+        if (placeholder) {
+            placeholder.style.display = 'none';
+        }
+        setupCropper(currentImageUrl);
+    } else if (placeholder) {
         placeholder.style.display = 'flex';
     }
 
@@ -54,8 +48,9 @@ function initImageModal() {
 
         const file = e.dataTransfer.files[0];
         if (file && file.type.startsWith('image/')) {
-            imageField.style.display = 'block';
-            placeholder.style.display = 'none';
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
 
             handleFile(file);
         }
@@ -69,10 +64,9 @@ function initImageModal() {
         imageFileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
-
-                imageField.style.display = 'block';
-                placeholder.style.display = 'none';
-
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
                 handleFile(file);
             } else {
                 alert('Please upload a valid image.');
@@ -87,16 +81,7 @@ function handleFile(file) {
     reader.onload = function(event) {
         const img = new Image();
         img.onload = function() {
-            imgWidth = img.width;
-            imgHeight = img.height;
-
-            const $image = $('#image-field');
-            $image.attr('src', event.target.result);
-
-            // Ensure the image dimensions are calculated correctly
-            setTimeout(() => {
-                setupCropper();
-            }, 100); // Use a timeout to ensure rendering
+            setupCropper(event.target.result);
         };
         img.src = event.target.result;
     };
@@ -104,9 +89,7 @@ function handleFile(file) {
 }
 
 
-function setupCropper() {
-    const imageElement = document.getElementById('image-field');
-
+function setupCropper(currentImageUrl) {
     // Destroy the previous cropper instance, if any
     if (cropper) {
         cropper.destroy();
@@ -115,14 +98,12 @@ function setupCropper() {
     // Initialize the CropperJS v2 with custom template
     // The template uses web components and sets aspectRatio on cropper-selection
     const template = (
-        '<cropper-canvas background>'
-            + '<cropper-image></cropper-image>'
-            + '<cropper-shade hidden></cropper-shade>'
+        '<cropper-canvas background style="width: 100%;">'
+        + '<cropper-image src="' + currentImageUrl + '" id="cropper-selector-image"></cropper-image>'
+        + '<cropper-shade hidden id="cropper-shade"></cropper-shade>'
             + '<cropper-handle action="select" plain></cropper-handle>'
-            + '<cropper-selection initial-coverage="1" aspect-ratio="1" movable resizable>'
-                + '<cropper-grid role="grid" bordered covered></cropper-grid>'
-                + '<cropper-crosshair centered></cropper-crosshair>'
-                + '<cropper-handle action="move" theme-color="rgba(255, 255, 255, 0.35)"></cropper-handle>'
+        + '<cropper-selection initial-coverage="0.95" aspect-ratio="1" movable resizable zoomable outlined keyboard id="cropper-selection">'
+        + '<cropper-handle action="move" theme-color="transparent"></cropper-handle>'
                 + '<cropper-handle action="n-resize"></cropper-handle>'
                 + '<cropper-handle action="e-resize"></cropper-handle>'
                 + '<cropper-handle action="s-resize"></cropper-handle>'
@@ -135,8 +116,24 @@ function setupCropper() {
         + '</cropper-canvas>'
     );
 
-    cropper = new Cropper(imageElement, {
-        template: template
+    document.getElementById('image-container').innerHTML = template;
+    const image = document.getElementById('cropper-selector-image');
+    const shade = document.getElementById('cropper-shade');
+    const selection = document.getElementById('cropper-selection');
+    image.$ready(() => {
+        if (shade.shadowRoot) {
+            shade.style.borderRadius = '50%';
+        }
+        if (selection.shadowRoot) {
+            selection.style.borderRadius = '50%';
+        }
+        image.scalable = true;
+        image.translatable = true;
+        console.log(image.$center('contain'));
+        setTimeout(() => {
+            image.scalable = false;
+            image.translatable = false;
+        });
     });
 }
 
@@ -146,36 +143,27 @@ function setupCropper() {
 // Save the cropped image and update the original element
 // When the image is saved, execute the callback function
 function saveCroppedImage() {
-    if (!cropper) {
-        console.error('Cropper instance not found');
-        return;
-    }
+    const selection = document.getElementById('cropper-selection');
 
-    // Get the cropper selection element (v2 API)
-    const selection = cropper.getCropperSelection();
-    
     if (!selection) {
         console.error('Cropper selection not found');
         return;
     }
 
     // Using CropperJS v2 to get the resulting cropped canvas (returns a Promise)
-    selection.$toCanvas()
+    selection.$toCanvas({width: 512, height: 512})
         .then((croppedCanvas) => {
             if (!croppedCanvas) {
                 throw new Error('Failed to get cropped canvas');
             }
 
-            return resizeImage(croppedCanvas, 1024);
-        })
-        .then((resizedCanvas) => {
             // Convert canvas to Blob
-            resizedCanvas.toBlob(function(blob) {
+            croppedCanvas.toBlob(function (blob) {
                 if (!blob) {
                     console.error('Failed to get cropped blob');
                     return;
                 }
-                
+
                 // Call the callback with the Blob
                 if (typeof currentImageCallback === 'function') {
                     currentImageCallback(blob);
@@ -194,17 +182,8 @@ function closeImageSelector() {
     const imageModal = document.getElementById('image-selection-modal');
     imageModal.style.display = 'none';
 
-    const modalImageField = imageModal.querySelector('#image-field');
-
-    // Clear image styles and source
-    modalImageField.style.width = '';
-    modalImageField.style.height = '';
-    modalImageField.removeAttribute('src');
-    // Destroy the Cropper.js instance if it exists
-    if (cropper) {
-        cropper.destroy();
-        cropper = null; // Clear the reference to ensure the next image reload creates a new instance
-    }
+    const imageContainer = document.getElementById('image-container');
+    imageContainer.innerHTML = ''; // Clear the container
 }
 
 
