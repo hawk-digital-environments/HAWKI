@@ -46,7 +46,7 @@ services:
             mysql:
                 condition: service_healthy
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.0.0
+        image: digitalenvironments/hawki-toolkit-file-converter:1.1.0
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
@@ -70,6 +70,7 @@ services:
     mysql:
         container_name: ${PROJECT_NAME}-mysql
         image: mysql:8.0
+        platform: linux/amd64
         command:
             - --default-authentication-plugin=mysql_native_password
             - --max_connections=2000
