@@ -1,7 +1,6 @@
 import {defineEnv} from './project/defineEnv.ts';
 import {defineUi} from './project/defineUi.ts';
 import type {AddonEntrypoint} from '@/loadAddons.ts';
-import {confirm} from '@inquirer/prompts';
 
 export const addon: AddonEntrypoint = async (context) => ({
     ui: defineUi,
@@ -46,12 +45,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .command('dev')
             .description('starts both the queue and the websocket server in the current shell')
             .action(async () => {
-                if (await confirm({
-                    message: 'This will open everything to run a dev environment. You can exit it by pressing Ctrl+B and then D. Do you want to continue?',
-                    default: true
-                })) {
-                    await context.docker.executeCommandInService('app', ['/usr/bin/app/dev.command.sh'], {interactive: true});
-                }
+                await context.docker.executeCommandInService('app', ['/usr/bin/app/dev.command.sh'], {interactive: true});
             });
 
         program
