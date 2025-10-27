@@ -163,8 +163,7 @@ function saveCroppedImage() {
     selection.$toCanvas()
         .then((croppedCanvas) => {
             if (!croppedCanvas) {
-                console.error('Failed to get cropped canvas');
-                return;
+                throw new Error('Failed to get cropped canvas');
             }
 
             return resizeImage(croppedCanvas, 1024);
