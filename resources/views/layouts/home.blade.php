@@ -17,35 +17,35 @@
 	<link rel="icon" href="{{ asset('favicon.ico') }}">
 
 
-    <link rel="stylesheet" href="{{ asset('css_v2.2.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.2.0/home-style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.2.0/settings_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.2.0/hljs_custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/home-style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}">
 
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
 
-	<script src="{{ asset('js_v2.2.0/functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/home_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/stream_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/ai_chat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/chatlog_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/inputfield_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/message_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/groupchat_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.2.0/syntax_modifier.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/image-selector.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/export.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/user_profile.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/file_manager.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/attachment_handler.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/model_list_filtering.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/announcements.js') }}"></script>
+    <script src="{{ asset('js/functions.js') }}"></script>
+    <script src="{{ asset('js/home_functions.js') }}"></script>
+    <script src="{{ asset('js/stream_functions.js') }}"></script>
+    <script src="{{ asset('js/ai_chat_functions.js') }}"></script>
+    <script src="{{ asset('js/chatlog_functions.js') }}"></script>
+    <script src="{{ asset('js/inputfield_functions.js') }}"></script>
+    <script src="{{ asset('js/message_functions.js') }}"></script>
+    <script src="{{ asset('js/groupchat_functions.js') }}"></script>
+    <script src="{{ asset('js/syntax_modifier.js') }}"></script>
+    <script src="{{ asset('js/settings_functions.js') }}"></script>
+    <script src="{{ asset('js/encryption.js') }}"></script>
+    <script src="{{ asset('js/image-selector.js') }}"></script>
+    <script src="{{ asset('js/export.js') }}"></script>
+    <script src="{{ asset('js/user_profile.js') }}"></script>
+    <script src="{{ asset('js/file_manager.js') }}"></script>
+    <script src="{{ asset('js/attachment_handler.js') }}"></script>
+    <script src="{{ asset('js/model_list_filtering.js') }}"></script>
+    <script src="{{ asset('js/announcements.js') }}"></script>
 
 	@if(config('sanctum.allow_external_communication'))
-		<script src="{{ asset('js_v2.2.0/sanctum_functions.js') }}"></script>
+        <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
 
 
@@ -162,4 +162,3 @@
 
 
 </script>
-

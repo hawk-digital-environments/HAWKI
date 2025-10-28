@@ -129,7 +129,7 @@ function setupCropper(currentImageUrl) {
         }
         image.scalable = true;
         image.translatable = true;
-        console.log(image.$center('contain'));
+        image.$center('contain');
         setTimeout(() => {
             image.scalable = false;
             image.translatable = false;
