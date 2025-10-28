@@ -34,8 +34,10 @@ jobs:
           cache: npm
 
       - name: Install dependencies
+        working-directory: _documentation
         run: npm ci
       - name: Build website
+        working-directory: _documentation
         run: npm run build
 
       - name: Upload Build Artifact
