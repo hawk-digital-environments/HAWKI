@@ -142,9 +142,12 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
                 employeeType: $getLdapValue($employeeTypeAttribute)
             );
         } catch (\Exception $e) {
+            if ($e instanceof \ErrorException && preg_match('~ldap_.*\(\):~', $e->getMessage())) {
+                $this->logger->error('LDAP Error: ' . $e->getMessage(), ['exception' => $e]);
+            }
             throw new AuthFailedException('LDAP authentication failed', 500, $e);
         } finally {
-            if ($ldapConn) {
+            if (isset($ldapConn)) {
                 ldap_unbind($ldapConn);
             }
         }

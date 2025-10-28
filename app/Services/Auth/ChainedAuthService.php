@@ -63,15 +63,30 @@ class ChainedAuthService implements AuthServiceInterface,
      */
     public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
+        $previousException = null;
+        $previousMessages = [];
         foreach ($this->services as $service) {
             try {
                 return $service->authenticate($request);
-            } catch (AuthFailedException) {
-                // Try the next service
+            } catch (AuthFailedException $e) {
+                // Try the next service, keep the exception for debugging purposes
+                $message = sprintf(
+                    'Service "%s" failed: %s',
+                    get_class($service),
+                    $e->getMessage()
+                );
+                $previousMessages[] = $message;
+                $previousException = new AuthFailedException($message, 0, $previousException);
             }
         }
 
-        throw new AuthFailedException('All authentication services failed to authenticate the user.');
+        $errorDetails = implode(' | ', $previousMessages);
+
+        throw new AuthFailedException(
+            'All authentication services failed to authenticate the user. Errors: ' . $errorDetails,
+            0,
+            $previousException
+        );
     }
 
     /**
