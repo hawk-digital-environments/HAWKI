@@ -53,7 +53,7 @@ return [
 
                 // If the LDAP_BIND_DN is set, we assume that LDAP_BASE_DN is now correctly pointing to the base
                 $bindDn = env('LDAP_BIND_DN');
-                if (empty($bindDn)) {
+                if (!empty($bindDn)) {
                     $baseDn = env('LDAP_BASE_DN');
                     if (!empty($baseDn)) {
                         return $baseDn;

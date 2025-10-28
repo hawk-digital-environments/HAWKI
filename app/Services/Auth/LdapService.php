@@ -144,7 +144,7 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
         } catch (\Exception $e) {
             throw new AuthFailedException('LDAP authentication failed', 500, $e);
         } finally {
-            if ($ldapConn) {
+            if (isset($ldapConn)) {
                 ldap_unbind($ldapConn);
             }
         }
