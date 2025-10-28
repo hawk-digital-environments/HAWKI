@@ -4,10 +4,11 @@ sidebar_position: 1
 
 # Local Installation
 
+This chapter of the documentation focuses on setting up and running HAWKI 2.0 on your local system. If you prefer to
+create a local Docker environment follow [Local Docker Installation](2-Local%20Docker%20Installation.md)
 
-This chapter of the documentation focuses on setting up and running HAWKI 2.0 on your local system. If you prefer to create a local Docker environment follow [Local Docker Installation](2-Local Docker Installation.md)
-
->*Although we strongly recommend that you first test HAWKI on your local device before deploying it on the server, If you want to skip this please read the ["Deployment"](./5-Deployment/1-%20Apache%20Server.md) chapter*
+> *Although we strongly recommend that you first test HAWKI on your local device before deploying it on the server, If
+you want to skip this please read the ["Deployment"](../5-Deployment/1-Apache%20Server.md) chapter*
 
 ---
 
@@ -26,11 +27,12 @@ or **download** the latest version files from [Releases Page](https://github.com
 Ensure that you have the basic PHP modules, node and composer to run HAWKI on your machine.
 
 
-><details> 
+> <details> 
 ><summary>Check Pre-Requirements</summary>
 >
 >HAWKI 2.0 utilizes the Laravel 11 backend framework. To run HAWKI on your local machine, it is essential to ensure that all Laravel prerequisites are installed. In particular, you will need to have PHP, Composer and Node.js (including npm) installed on your system. For comprehensive setup instructions, please refer to the [laravel documentation](https://laravel.com/docs/11.x).
-HAWKI also requires a database to store the messages and profile pictures. We recommend that you use a mySQL database. The use of administration tools such as phpMyAdmin can also speed up the process.
+> HAWKI also requires a database to store the messages and profile pictures. We recommend that you use a mySQL database.
+> The use of administration tools such as phpMyAdmin can also speed up the process.
 >#### Checking Requirements Using HAWKI CLI
 >You can use the HAWKI CLI to check if your system meets all requirements. Navigate to project root (if already cloned) and run:
 >
@@ -97,7 +99,8 @@ At this point the dependency packages should be installed. `node_modules` and `v
 ### Configuration
 
 To configure the environment variable open `.env` file in the root directory.
-For a complete guide to environment variables please refer to [.env section]() of the documentation.
+For a complete guide to environment variables please refer to [.env section](../3-architecture/10-dot%20Env.md) of the
+documentation.
 
 ><details>
 ><summary>Use HAWKI CLI for step-by-step configuration</summary>
@@ -362,7 +365,6 @@ This command finds and terminates:
 - Reverb server
 - Schedule worker
 
->**Important:** You can also use `localhost:8000` to open the web page in your browser. However, some of the communication is restricted by the address defined in the .env file.
-If you wish to change this, update the `APP_URL` variable in .env.
-
-
+> **Important:** You can also use `localhost:8000` to open the web page in your browser. However, some of the
+> communication is restricted by the address defined in the .env file.
+> If you wish to change this, update the `APP_URL` variable in .env.

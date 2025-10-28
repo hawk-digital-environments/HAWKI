@@ -1,6 +1,9 @@
 import {defineEnv} from './project/defineEnv.ts';
 import {defineUi} from './project/defineUi.ts';
 import type {AddonEntrypoint} from '@/loadAddons.ts';
+import {execSync} from 'node:child_process';
+import path from 'path';
+import fs from 'fs';
 
 export const addon: AddonEntrypoint = async (context) => ({
     ui: defineUi,
@@ -69,6 +72,57 @@ export const addon: AddonEntrypoint = async (context) => ({
             .allowUnknownOption(true)
             .action(async (options, command) => {
                 await context.docker.executeCommandInService('app', ['php', 'hawki', ...command.args], {interactive: true});
+            });
+
+        const docsDir = path.join(context.paths.projectDir, '_documentation.build');
+
+        const docs = program
+            .command('docs')
+            .description('a list of commands to help you with documentation tasks');
+
+        const installDocksIfNeeded = () => {
+            // Automatically run npm install if node_modules does not exist
+            if (!fs.existsSync(path.join(docsDir, 'node_modules'))) {
+                console.log('node_modules not found, running npm install...');
+                execSync('npm install', {
+                    cwd: docsDir,
+                    stdio: 'inherit'
+                });
+            }
+        };
+
+        docs
+            .command('npm')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .description('runs an npm command inside the documentation directory')
+            .action(async (options, command) => {
+                execSync(`npm ${command.args.join(' ')}`, {
+                    cwd: docsDir,
+                    stdio: 'inherit'
+                });
+            });
+
+        docs
+            .command('build')
+            .description('builds the documentation')
+            .action(async () => {
+                installDocksIfNeeded();
+                execSync('npm run build', {
+                    cwd: docsDir,
+                    stdio: 'inherit'
+                });
+            });
+
+        docs
+            .command('watch')
+            .description('watches and serves the documentation with live reload')
+            .action(async () => {
+                installDocksIfNeeded();
+                execSync('npm run start', {
+                    cwd: docsDir,
+                    stdio: 'inherit'
+                });
             });
     }
 });

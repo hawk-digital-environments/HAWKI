@@ -44,3 +44,4 @@ For more information about HAWKI, please visit HAWKI website and explore the doc
 
 - [HAWKI Website](https://www.hawki.info/)
 - [Documentation](https://hawk-digital-environments.github.io/HAWKI2-Documentation/)
+- [Questions? Ideas? Feedback? - Join our Discord](https://discord.gg/zzR54sRWDE)

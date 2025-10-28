@@ -124,7 +124,7 @@ You need to tell Apache, which part should be protected by Shibboleth. In our ca
 site, use `/` as the path. Note, that the latter will make the entire site inaccessible without a valid Shibboleth
 session and basically disable the `SHIBBOLETH_LOGIN_URL` in your `.env` file.
 
-In your <VirtualHost> you add a <Location> tag for what you want to protect (found in /etc/httpd/conf.d/shib.conf):
+In your `<VirtualHost>` you add a `<Location>` tag for what you want to protect (found in /etc/httpd/conf.d/shib.conf):
 
 ```apacheconf
 <Location /req/login>
