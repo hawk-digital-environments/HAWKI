@@ -1,8 +1,8 @@
 @extends('layouts.apps_layout')
 
 @section('scripts')
-    <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/apps_confirm_functions.js') }}"></script>
+    <script src="{{ asset('js/encryption.js') }}"></script>
+    <script src="{{ asset('js/apps_confirm_functions.js') }}"></script>
     <script>
         let userInfo = @json($user);
     </script>

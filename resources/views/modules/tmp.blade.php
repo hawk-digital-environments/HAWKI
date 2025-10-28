@@ -2,7 +2,7 @@
 
 @section('scripts')
     <script src="{{asset('hawki-client.umd.cjs')}}"></script>
-    <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
+    <script src="{{ asset('js/encryption.js') }}"></script>
     <x-internal-frontend-connection/>
 @endsection
 

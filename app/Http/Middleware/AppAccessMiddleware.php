@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AppAccessMiddleware
+readonly class AppAccessMiddleware
 {
     public const APP_TOKEN_SCOPE = 'externalAccess:app';
 

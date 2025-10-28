@@ -246,7 +246,7 @@ async function completeRegistration() {
     setOverlay(true, true);
 
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         // Send the registration data to the server
         const response = await fetch('/req/complete_registration', {
@@ -258,6 +258,14 @@ async function completeRegistration() {
             },
             body: JSON.stringify({})
         });
+
+        const newCsrfToken = response.headers.get('X-HAWKI-CSRF-TOKEN');
+        if (!newCsrfToken) {
+            throw new Error('No CSRF token received from server');
+        }
+        
+        // Update CSRF token in meta tag
+        document.querySelector('meta[name="csrf-token"]').setAttribute('content', newCsrfToken);
 
         // Handle the server response
         if (!response.ok) {

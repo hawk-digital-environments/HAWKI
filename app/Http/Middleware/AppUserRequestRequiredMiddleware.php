@@ -8,11 +8,11 @@ use Closure;
 use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 
-class AppUserRequestRequiredMiddleware
+readonly class AppUserRequestRequiredMiddleware
 {
     public function __construct(
-        protected AppUserRequestSessionStorage $sessionStorage,
-        protected Container                    $container
+        private AppUserRequestSessionStorage $sessionStorage,
+        private Container                    $container
     )
     {
     }

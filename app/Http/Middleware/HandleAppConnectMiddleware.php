@@ -6,10 +6,10 @@ use App\Services\ExtApp\AppUserRequestSessionStorage;
 use Closure;
 use Illuminate\Http\Request;
 
-class HandleAppConnectMiddleware
+readonly class HandleAppConnectMiddleware
 {
     public function __construct(
-        protected AppUserRequestSessionStorage $sessionStorage
+        private AppUserRequestSessionStorage $sessionStorage
     )
     {
     }

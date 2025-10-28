@@ -11,11 +11,6 @@ use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
 use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
-use App\Services\Profile\ProfileService;
-use App\Services\Auth\LdapService;
-use App\Services\Auth\OidcService;
-use App\Services\Auth\ShibbolethService;
-use App\Services\Auth\TestAuthService;
 use App\Services\System\SettingsService;
 use Cookie;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +20,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
-
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthenticationController extends Controller

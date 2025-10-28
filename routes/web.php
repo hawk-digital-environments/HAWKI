@@ -14,6 +14,7 @@ use App\Http\Controllers\StorageProxyController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SyncLogController;
 use App\Http\Controllers\UserKeychainController;
+use App\Http\Middleware\CsrfTokenResponseEnrichingMiddleware;
 use App\Http\Middleware\SyncLogResponseEnrichingMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -50,7 +51,10 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
     Route::get('/dataprotection',[HomeController::class, 'dataprotectionIndex']);
 
 
-    Route::middleware('registrationAccess')->group(function () {
+    Route::middleware([
+        'registrationAccess',
+        CsrfTokenResponseEnrichingMiddleware::class
+    ])->group(function () {
 
         Route::get('/register', [AuthenticationController::class, 'register']);
         Route::post('/req/profile/validatePasskey', [ProfileController::class, 'validatePasskey']);

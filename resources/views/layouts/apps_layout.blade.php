@@ -9,12 +9,12 @@
         @endif</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/apps_connect_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/apps_connect_style.css') }}">
     @yield('styles')
 
     @vite('resources/js/app.js')
-    <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
+    <script src="{{ asset('js/settings_functions.js') }}"></script>
     @yield('scripts')
     <script>
         SwitchDarkMode(false);
