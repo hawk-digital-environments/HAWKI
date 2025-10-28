@@ -15,6 +15,7 @@ on:
     paths:
       - _documentation/**
       - _documentation.build/**
+      - .github/workflows/publish-documentation.yml
 
 permissions:
   contents: write
