@@ -191,12 +191,6 @@
     margin-top: 0;
 }
 
-.cropper-view-box,
-.cropper-face {
-  border-radius: 50%;
-}
-
-
 /* SECTION: ROOM CREATION */
 
 #room-creation, #group-chat, #group-welcome-panel{
@@ -1743,4 +1737,3 @@ background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);
 sup{
     margin: 0 .5rem;
 }
-

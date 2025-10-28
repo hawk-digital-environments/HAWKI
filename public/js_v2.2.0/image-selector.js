@@ -1,7 +1,5 @@
 
-let croppedImageData;
 let currentImageCallback = null;
-let imageField;
 let placeholder
 let cropper;
 
@@ -15,17 +13,13 @@ function openImageSelection(currentImageUrl, callback) {
     currentImageCallback = callback;     // Store the callback function
     imageModal.style.display = 'flex';
 
-    imageField = imageModal.querySelector('#image-field');
     placeholder = imageModal.querySelector('#image-field-placeholder');
-    if(currentImageUrl){
-        imageField.style.display = 'block';
-        placeholder.style.display = 'none';
-
-        imageField.setAttribute('src', currentImageUrl);
-        setupCropper();
-    }
-    else{
-        imageField.style.display = 'none';
+    if (currentImageUrl) {
+        if (placeholder) {
+            placeholder.style.display = 'none';
+        }
+        setupCropper(currentImageUrl);
+    } else if (placeholder) {
         placeholder.style.display = 'flex';
     }
 
@@ -54,8 +48,9 @@ function initImageModal() {
 
         const file = e.dataTransfer.files[0];
         if (file && file.type.startsWith('image/')) {
-            imageField.style.display = 'block';
-            placeholder.style.display = 'none';
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
 
             handleFile(file);
         }
@@ -69,10 +64,9 @@ function initImageModal() {
         imageFileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
-
-                imageField.style.display = 'block';
-                placeholder.style.display = 'none';
-
+                if (placeholder) {
+                    placeholder.style.display = 'none';
+                }
                 handleFile(file);
             } else {
                 alert('Please upload a valid image.');
@@ -87,16 +81,7 @@ function handleFile(file) {
     reader.onload = function(event) {
         const img = new Image();
         img.onload = function() {
-            imgWidth = img.width;
-            imgHeight = img.height;
-
-            const $image = $('#image-field');
-            $image.attr('src', event.target.result);
-
-            // Ensure the image dimensions are calculated correctly
-            setTimeout(() => {
-                setupCropper();
-            }, 100); // Use a timeout to ensure rendering
+            setupCropper(event.target.result);
         };
         img.src = event.target.result;
     };
@@ -104,31 +89,51 @@ function handleFile(file) {
 }
 
 
-function setupCropper() {
-    const imageElement = document.getElementById('image-field');
-
+function setupCropper(currentImageUrl) {
     // Destroy the previous cropper instance, if any
     if (cropper) {
         cropper.destroy();
     }
 
-    // Initialize the CropperJS
-    cropper = new Cropper(imageElement, {
-        viewMode: 1,                // Restrict the crop box to not exceed the size of the canvas
-        dragMode: 'crop',           // Enable the drag mode when the image is ready
-        autoCropArea: 1,            // Define the initial aspect ratio of the crop box
-        responsive: true,           // Make the crop box responsive
-        restore: false,
-        modal: true,
-        guides: true,
-        highlight: true,
-        background: false,          // Hide the viewport background
-        cropBoxResizable: true,     // Allow resizing the crop box
-        cropBoxMovable: true,       // Allow moving the crop box
-        toggleDragModeOnDblclick: false, // Disable double-click switching
-        aspectRatio: 1,             // Enforce 1:1 aspect ratio for the crop box
-        zoomable: false,            // Disable zooming (both mouse wheel and pinch)
-        wheelZoomRatio: 0           // Specifically disable zoom on mouse scroll
+    // Initialize the CropperJS v2 with custom template
+    // The template uses web components and sets aspectRatio on cropper-selection
+    const template = (
+        '<cropper-canvas background style="width: 100%;">'
+        + '<cropper-image src="' + currentImageUrl + '" id="cropper-selector-image"></cropper-image>'
+        + '<cropper-shade hidden id="cropper-shade"></cropper-shade>'
+            + '<cropper-handle action="select" plain></cropper-handle>'
+        + '<cropper-selection initial-coverage="0.95" aspect-ratio="1" movable resizable zoomable outlined keyboard id="cropper-selection">'
+        + '<cropper-handle action="move" theme-color="transparent"></cropper-handle>'
+                + '<cropper-handle action="n-resize"></cropper-handle>'
+                + '<cropper-handle action="e-resize"></cropper-handle>'
+                + '<cropper-handle action="s-resize"></cropper-handle>'
+                + '<cropper-handle action="w-resize"></cropper-handle>'
+                + '<cropper-handle action="ne-resize"></cropper-handle>'
+                + '<cropper-handle action="nw-resize"></cropper-handle>'
+                + '<cropper-handle action="se-resize"></cropper-handle>'
+                + '<cropper-handle action="sw-resize"></cropper-handle>'
+            + '</cropper-selection>'
+        + '</cropper-canvas>'
+    );
+
+    document.getElementById('image-container').innerHTML = template;
+    const image = document.getElementById('cropper-selector-image');
+    const shade = document.getElementById('cropper-shade');
+    const selection = document.getElementById('cropper-selection');
+    image.$ready(() => {
+        if (shade.shadowRoot) {
+            shade.style.borderRadius = '50%';
+        }
+        if (selection.shadowRoot) {
+            selection.style.borderRadius = '50%';
+        }
+        image.scalable = true;
+        image.translatable = true;
+        console.log(image.$center('contain'));
+        setTimeout(() => {
+            image.scalable = false;
+            image.translatable = false;
+        });
     });
 }
 
@@ -138,44 +143,37 @@ function setupCropper() {
 // Save the cropped image and update the original element
 // When the image is saved, execute the callback function
 function saveCroppedImage() {
-    if (!cropper) {
-        console.error('Cropper instance not found');
+    const selection = document.getElementById('cropper-selection');
+
+    if (!selection) {
+        console.error('Cropper selection not found');
         return;
     }
 
-    // Get the cropping data using CropperJS
-    const cropData = cropper.getData(true); // Use `true` to get rounded values
+    // Using CropperJS v2 to get the resulting cropped canvas (returns a Promise)
+    selection.$toCanvas({width: 512, height: 512})
+        .then((croppedCanvas) => {
+            if (!croppedCanvas) {
+                throw new Error('Failed to get cropped canvas');
+            }
 
-    // Using CropperJS to get the resulting cropped canvas
-    const croppedCanvas = cropper.getCroppedCanvas();
-
-    if (!croppedCanvas) {
-        console.error('Failed to get cropped canvas');
-        return;
-    }
-
-    resizeImage(croppedCanvas, 1024)
-        .then((resizedCanvas) => {
-            // NEW: convert canvas to Blob instead of base64
-            resizedCanvas.toBlob(function(blob) {
+            // Convert canvas to Blob
+            croppedCanvas.toBlob(function (blob) {
                 if (!blob) {
                     console.error('Failed to get cropped blob');
                     return;
                 }
-                // If you want a File (with a name):
-                // let file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
 
-                // Call the callback with the Blob (or File)
+                // Call the callback with the Blob
                 if (typeof currentImageCallback === 'function') {
-                    currentImageCallback(blob); // or file
+                    currentImageCallback(blob);
                 }
                 closeImageSelector();
             }, 'image/jpeg');
-
-        closeImageSelector();
-    }).catch((err) => {
-        console.error('Error resizing image:', err);
-    });
+        })
+        .catch((err) => {
+            console.error('Error processing image:', err);
+        });
 }
 
 
@@ -184,17 +182,8 @@ function closeImageSelector() {
     const imageModal = document.getElementById('image-selection-modal');
     imageModal.style.display = 'none';
 
-    const modalImageField = imageModal.querySelector('#image-field');
-
-    // Clear image styles and source
-    modalImageField.style.width = '';
-    modalImageField.style.height = '';
-    modalImageField.removeAttribute('src');
-    // Destroy the Cropper.js instance if it exists
-    if (cropper) {
-        cropper.destroy();
-        cropper = null; // Clear the reference to ensure the next image reload creates a new instance
-    }
+    const imageContainer = document.getElementById('image-container');
+    imageContainer.innerHTML = ''; // Clear the container
 }
 
 
