@@ -24,6 +24,9 @@ jobs:
   build:
     name: Build Docusaurus
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./_documentation.build
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,16 +37,14 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        working-directory: _documentation
         run: npm ci
       - name: Build website
-        working-directory: _documentation
         run: npm run build
 
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _documentation.build/build
+          path: build
 
   deploy:
     name: Deploy to GitHub Pages
