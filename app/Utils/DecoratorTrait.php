@@ -60,7 +60,16 @@ trait DecoratorTrait
         $myClass = static::class;
         // Check if the parent object is of the same class as the parent class of $this
         $parentClass = get_parent_class($myClass);
-        if ($parentClass === false || !($parent instanceof $parentClass)) {
+        if ($parentClass === false) {
+            throw new \LogicException(sprintf(
+                'Class %s must extend another class to use %s; I would expect you want to extend: %s',
+                $myClass,
+                __TRAIT__,
+                get_class($parent)
+            ));
+        }
+
+        if (!($parent instanceof $parentClass)) {
             throw new \InvalidArgumentException(sprintf(
                 'When inheriting all properties, the parent object must be an instance of %s, %s given.',
                 $parentClass,
@@ -71,16 +80,37 @@ trait DecoratorTrait
         // Create new instance without calling constructor
         $instance = (new \ReflectionClass($myClass))->newInstanceWithoutConstructor();
 
-        $reflection = new \ReflectionObject($parent);
-        $selfReflection = new \ReflectionObject($instance);
+        // Walk up the inheritance chain to get ALL properties
+        $sourceReflection = new \ReflectionObject($parent);
+        $targetReflection = new \ReflectionObject($instance);
 
-        foreach ($reflection->getProperties() as $property) {
-            $property->setAccessible(true);
-            $selfProperty = $selfReflection->getProperty($property->getName());
-            $selfProperty->setAccessible(true);
+        do {
+            foreach ($sourceReflection->getProperties() as $sourceProperty) {
+                // Skip if target class doesn't have this property
+                if (!$targetReflection->hasProperty($sourceProperty->getName())) {
+                    continue;
+                }
 
-            $selfProperty->setValue($instance, $property->getValue($parent));
-        }
+                $sourceProperty->setAccessible(true);
+                $targetProperty = $targetReflection->getProperty($sourceProperty->getName());
+                $targetProperty->setAccessible(true);
+
+                if ($sourceProperty->isStatic()) {
+                    if (!$sourceProperty->isInitialized(null)) {
+                        continue;
+                    }
+                    $value = $sourceProperty->getValue();
+                    $targetProperty->setValue(null, $value);
+                } else {
+                    if (!$sourceProperty->isInitialized($parent)) {
+                        continue;
+                    }
+                    $value = $sourceProperty->getValue($parent);
+                    $targetProperty->setValue($instance, $value);
+                }
+            }
+        } while ($sourceReflection = $sourceReflection->getParentClass());
+
 
         return $instance;
     }
