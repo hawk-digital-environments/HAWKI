@@ -63,7 +63,6 @@ class ChainedAuthService implements AuthServiceInterface,
      */
     public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
-        $previousException = null;
         $previousMessages = [];
         foreach ($this->services as $service) {
             try {
@@ -71,21 +70,20 @@ class ChainedAuthService implements AuthServiceInterface,
             } catch (AuthFailedException $e) {
                 // Try the next service, keep the exception for debugging purposes
                 $message = sprintf(
-                    'Service "%s" failed: %s',
+                    'Service "%s" failed: %s in (%s)',
                     get_class($service),
-                    $e->getMessage()
+                    $e->getMessage(),
+                    $e->getFile() . '::' . $e->getLine(),
                 );
-                $previousMessages[] = $message;
-                $previousException = new AuthFailedException($message, 0, $previousException);
+
+                $previousMessages[] = $message . $this->exceptionChainToString($e->getPrevious());
             }
         }
 
-        $errorDetails = implode(' | ', $previousMessages);
+        $errorDetails = implode(PHP_EOL . 'and ', $previousMessages);
 
         throw new AuthFailedException(
-            'All authentication services failed to authenticate the user. Errors: ' . $errorDetails,
-            0,
-            $previousException
+            'All authentication services failed to authenticate the user. Errors:' . PHP_EOL . $errorDetails
         );
     }
 
@@ -104,5 +102,23 @@ class ChainedAuthService implements AuthServiceInterface,
         }
 
         return null;
+    }
+
+    private function exceptionChainToString(\Throwable|null $exception): string
+    {
+        if (!$exception) {
+            return '';
+        }
+
+        $message = sprintf(
+            '%s: %s in (%s)',
+            get_class($exception),
+            $exception->getMessage(),
+            $exception->getFile() . '::' . $exception->getLine(),
+        );
+
+        $message .= $this->exceptionChainToString($exception->getPrevious());
+
+        return PHP_EOL . '   -> caused by ' . $message;
     }
 }
