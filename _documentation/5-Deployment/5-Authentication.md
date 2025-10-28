@@ -48,13 +48,12 @@ The following environment variables are available for this and MUST be set accor
 - `LDAP_ATTR_NAME` is the LDAP attribute that contains the full name of the user. Defaults to `displayname`. If you need
   to concatenate multiple attributes (e.g. cn and displayname), you can provide a comma-separated list of
   attribute names. This way, the attributes will be concatenated with a space in between. If any of them are missing,
-  they will be
-  skipped.
+  they will be skipped.
   Example: LDAP_ATTR_NAME="displayname" -> "displayname (John Doe)" => "John Doe"
   Example: LDAP_ATTR_NAME="cn,ln" -> "cn (John) + ln (Doe)" => "John Doe"
   **IMPORTANT**: Setting this attribute to a comma separated list, will disable `LDAP_INVERT_NAME`.
 - `LDAP_ATTR_EMPLOYEETYPE` is the LDAP attribute that contains the employee type or group identifier. Defaults to
-  `employeetype`.
+  `employeetype`. Other common values are `ou`, `department`, `groupMembership` or `memberOf`.
 - `LDAP_INVERT_NAME` is an optional flag (set to `true` or `false`) that indicates whether the first and last names in
   the `LDAP_ATTR_NAME` attribute should be inverted (i.e., "Last First" instead of "First Last"). Defaults to `false`.
   Assumes that the value is: "Last, Name" or "Name, Last" when set to true.
