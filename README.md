@@ -43,5 +43,5 @@ The updated HAWKI ecosystem deliberately emphasizes inter-university collaborati
 For more information about HAWKI, please visit HAWKI website and explore the documentation.
 
 - [HAWKI Website](https://www.hawki.info/)
-- [Documentation](https://hawk-digital-environments.github.io/HAWKI2-Documentation/)
+- [Documentation](https://docs.hawki.info)
 - [Questions? Ideas? Feedback? - Join our Discord](https://discord.gg/zzR54sRWDE)
