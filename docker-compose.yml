@@ -89,7 +89,7 @@ services:
             retries: 10
     nginx:
         image: nginx:1.27-alpine
-        container_name: ${PROJECT_NAME}-nginx
+        container_name: nginx.hawki.dev
         volumes:
             - ./docker/certs:/etc/nginx/certs
             - ./docker/nginx/config/nginx.dev${DOCKER_PROJECT_SSL_MARKER:-}.conf:/etc/nginx/nginx.conf:ro
@@ -100,6 +100,9 @@ services:
             - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
         depends_on:
             - app
+        networks:
+            - local_net
+            - default
         healthcheck:
             test: curl --fail http://localhost || exit 1
             interval: 10s
@@ -119,3 +122,10 @@ volumes:
         driver: local
     redis_data:
         driver: local
+networks:
+    # This network allows other HAWKI related project to connect to this project's nginx service,
+    # which acts as the main entry point for HAWKI. Simply add the other project's container to this network,
+    # and access nginx using the container name 'nginx.hawki.dev' on port 80 or 443.
+    local_net:
+        name: hawki-local
+        driver: bridge
