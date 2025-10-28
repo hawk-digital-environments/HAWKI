@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-## Updating to v2.1.0
+## Updating to v2.1.0+
 
 If you have already implemented HAWKI 2.0.x on your machine, there are a few steps needed to update to version 2.1.0
 

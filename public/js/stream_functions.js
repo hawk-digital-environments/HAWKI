@@ -79,7 +79,8 @@ async function postData(data) {
         return response;
 
     } catch(error){
-        console.log('Fetching Aborted'. error);
+        console.log('Error while posting data', data, 'resulted in', error);
+        throw new Error('An error occurred while fetching data.');
     }
 }
 
@@ -358,4 +359,3 @@ function convertMsgObjToLog(messages){
 
     return list;
 }
-

@@ -2,11 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Profile\ProfileService;
+use App\Models\User;
+use App\Services\Profile\ApiTokenService;
 use Exception;
 use Illuminate\Console\Command;
-use App\Models\User;
-use Illuminate\Http\Request;
 
 class CreateSanctumTokenForUser extends Command
 {
@@ -24,12 +23,21 @@ class CreateSanctumTokenForUser extends Command
      */
     protected $description = 'Create or revoke Sanctum API tokens for a user';
 
+    /**
+     * @inheritDoc
+     */
+    public function __construct(
+        private ApiTokenService $apiTokenService
+    )
+    {
+        parent::__construct();
+    }
 
 
     /**
      * Execute the console command.
      */
-    public function handle(ProfileService $profileService)
+    public function handle(): void
     {
         $isRevoking = $this->option('revoke');
         $actionText = $isRevoking ? 'revoke' : 'create';
@@ -75,12 +83,12 @@ class CreateSanctumTokenForUser extends Command
 
         if ($isRevoking) {
             // List existing tokens
-            $this->listUserTokens($profileService);
+            $this->listUserTokens();
 
             $tokenId = $this->ask('Enter the token ID to revoke');
             try{
                 // Call the revoke method
-                $profileService->revokeToken($tokenId);
+                $this->apiTokenService->revokeToken($tokenId);
                 $this->info('Token successfully revoked.');
             }
             catch(Exception $e){
@@ -92,7 +100,7 @@ class CreateSanctumTokenForUser extends Command
             $tokenName = $this->ask('Enter a name for the token (max 16 characters)');
 
             // Call the create method
-            $token = $profileService->createApiToken($tokenName);
+            $token = $this->apiTokenService->createApiToken($tokenName);
 
             // Check the response status
             if ($token) {
@@ -114,9 +122,9 @@ class CreateSanctumTokenForUser extends Command
     /**
      * List tokens for the user
      */
-    private function listUserTokens(ProfileService $profileService)
+    private function listUserTokens()
     {
-        $tokens = $profileService->fetchTokenList();
+        $tokens = $this->apiTokenService->fetchTokenList();
 
         if (!$tokens || empty($tokens)) {
             $this->warn('No tokens found for this user.');

@@ -22,16 +22,26 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
 
     Route::get('/', [LoginController::class, 'index']);
 
-    Route::get('/login', [LoginController::class, 'index'])->name('login');
+    Route::get('/login', [LoginController::class, 'index'])
+        ->name('login');
 
+    Route::get('/req/login', [AuthenticationController::class, 'handleLogin'])
+        ->name('web.auth.login');
+    Route::post('/req/login', [AuthenticationController::class, 'handleLogin'])
+        ->name('web.auth.login');
 
-    Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
-    Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
-    Route::get('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin'])
-        ->name('web.auth.shibboleth.login');
-    Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
-    Route::get('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
-
+    /*
+     * Those routes are deprecated and will be removed in future releases.
+     * They are merely aliases now and will log a warning when accessed.
+     */
+    Route::middleware('deprecated:/req/login')->group(function () {
+        Route::post('/req/login-ldap', [AuthenticationController::class, 'handleLogin']);
+        Route::post('/req/login-shibboleth', [AuthenticationController::class, 'handleLogin']);
+        Route::get('/req/login-shibboleth', [AuthenticationController::class, 'handleLogin'])
+            ->name('web.auth.shibboleth.login');
+        Route::post('/req/login-oidc', [AuthenticationController::class, 'handleLogin']);
+        Route::get('/req/login-oidc', [AuthenticationController::class, 'handleLogin']);
+    });
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
 

@@ -46,14 +46,20 @@ services:
             mysql:
                 condition: service_healthy
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.0.0
+        image: digitalenvironments/hawki-toolkit-file-converter:1.1.0
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
             - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
+        healthcheck:
+            test: [ "CMD", "curl", "-f", "http://localhost:8001/" ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
     redis:
         container_name: ${PROJECT_NAME}-redis
-        image: redis:latest
+        image: redis:8-bookworm
         restart: always
         volumes:
             - redis_data:/root/redis
@@ -64,6 +70,7 @@ services:
     mysql:
         container_name: ${PROJECT_NAME}-mysql
         image: mysql:8.0
+        platform: linux/amd64
         command:
             - --default-authentication-plugin=mysql_native_password
             - --max_connections=2000

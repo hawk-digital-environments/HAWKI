@@ -56,7 +56,6 @@ function initFileUploader(inputField) {
         dragCounter = 0;
         overlay.style.display = 'none';
         handleSelectedFiles(e.dataTransfer.files, input);
-        queueAnchoredAnnouncements('FileUpload');
 
     });
 
@@ -80,8 +79,9 @@ async function handleSelectedFiles(files, inputField) {
 
     const allowedTypes = [
         // Images
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+        'image/jpeg', 'image/jpg', 'image/png',
     ];
+
     if(converterActive){
         allowedTypes.push(
             // Documents
@@ -102,6 +102,8 @@ async function handleSelectedFiles(files, inputField) {
             showFeedbackMsg(inputField, 'error', `${translation.Input_Err_NotSupported} ${file.type}`);
             return null; // Early exit from this file's processing
         }
+        queueAnchoredAnnouncements('FileUpload');
+
 
         // File size validation
         if (file.size > maxFileSize) {

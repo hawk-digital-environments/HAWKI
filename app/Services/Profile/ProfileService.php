@@ -10,6 +10,8 @@ use App\Models\PasskeyBackup;
 use App\Models\PrivateUserData;
 use App\Models\User;
 use App\Services\Chat\Room\RoomService;
+use App\Services\Profile\Traits\ApiTokenHandler;
+use App\Services\Profile\Traits\PasskeyHandler;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\User\Keychain\UserKeychainDb;
 use Exception;

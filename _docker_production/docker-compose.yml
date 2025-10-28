@@ -63,7 +63,7 @@ services:
             mysql:
                 condition: service_healthy
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.0.0
+        image: digitalenvironments/hawki-toolkit-file-converter:1.1.0
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
@@ -76,7 +76,7 @@ services:
             start_period: 40s
     redis:
         container_name: ${PROJECT_NAME}-redis
-        image: redis:latest
+        image: redis:8-bookworm
         restart: always
         volumes:
             - redis_data:/root/redis
@@ -112,7 +112,7 @@ services:
             retries: 10
     nginx:
         container_name: ${PROJECT_NAME}-nginx
-        image: nginx:1.27-alpine
+        image: nginx:1.29-alpine
         volumes:
             - ./certs:/etc/nginx/certs
             - ./nginx.default.conf:/etc/nginx/nginx.conf:ro

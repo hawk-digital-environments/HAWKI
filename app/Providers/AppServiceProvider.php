@@ -15,6 +15,7 @@ use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use App\Http\Middleware\DeprecatedEndpointMiddleware;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('handle_app_connect', HandleAppConnectMiddleware::class);
         Route::aliasMiddleware('app_user_request_required', AppUserRequestRequiredMiddleware::class);
         Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
+        Route::aliasMiddleware('deprecated', DeprecatedEndpointMiddleware::class);
     }
 
     /**
