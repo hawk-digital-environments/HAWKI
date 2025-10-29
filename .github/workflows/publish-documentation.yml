@@ -8,10 +8,7 @@ on:
       - _documentation/**
       - _documentation.build/**
   push:
-    branches: [
-      main,
-      'feat/Martin/automatic-docs'
-    ]
+    branches: [ main ]
     paths:
       - _documentation/**
       - _documentation.build/**

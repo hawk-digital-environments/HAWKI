@@ -39,7 +39,7 @@ your API keys.
 1. **Clone the Git Repo:**
 
 ```
-git clone git@github.com:HAWK-Digital-Environments/HAWKI.git
+git clone -b main https://github.com/hawk-digital-environments/HAWKI.git
 ```
 
 2. **Navigate to the project folder:**
@@ -106,7 +106,7 @@ A few commands that might be useful:
 1. **Clone the Git Repo:**
 
 ```
-git clone git@github.com:HAWK-Digital-Environments/HAWKI.git
+git clone -b main https://github.com/hawk-digital-environments/HAWKI.git
 ```
 
 2. **Navigate to the project folder:**

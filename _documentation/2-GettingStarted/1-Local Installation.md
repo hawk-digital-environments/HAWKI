@@ -19,7 +19,7 @@ you want to skip this please read the ["Deployment"](../5-Deployment/1-Apache%20
 To start clone the Git Repo using:
 
 ```
-git clone https://github.com/HAWK-Digital-Environments/HAWKI.git
+git clone -b main https://github.com/hawk-digital-environments/HAWKI.git
 ```
 
 or **download** the latest version files from [Releases Page](https://github.com/hawk-digital-environments/HAWKI/releases)

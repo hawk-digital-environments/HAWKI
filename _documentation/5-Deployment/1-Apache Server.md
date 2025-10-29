@@ -77,7 +77,7 @@ This command checks for:
 1. Copy the HAWKI project content to the desired webserver location, typically at `/var/www/html/hawki-project`. 
 This can be done via cloning the Git repository:
 ```
-git clone https://github.com/HAWK-Digital-Environments/HAWKI.git
+git clone -b main https://github.com/hawk-digital-environments/HAWKI.git
 ```
 
 or **download** the latest version files from [Releases Page](https://github.com/hawk-digital-environments/HAWKI/releases)
