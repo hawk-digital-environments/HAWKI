@@ -1,13 +1,12 @@
 name: HAWKI Release Pipeline
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
 
 permissions:
   contents: write
-  
+
 jobs:
   # ========================================================
   # JOB 1: Detect version and create the release.
@@ -146,13 +145,28 @@ jobs:
     needs: [ release, build-and-publish-docker ]
     if: success() && needs.release.outputs.should_release == 'true'
     steps:
-      - name: Send Discord Notification
-        uses: SethCohen/github-releases-to-discord@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          webhook_url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
-          content: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
-          footer_title: "Changelog"
-          reduce_headings: true
+          node-version: '24'
+
+      - name: Install dependencies for notify script
+        working-directory: .github/.hawki-release
+        run: npm install
+
+      - name: Send Discord Notification
+        working-directory: .github/.hawki-release
+        env:
+          INPUT_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
+          INPUT_RELEASE_NAME: ${{ needs.release.outputs.release_name }}
+          INPUT_RELEASE_BODY: ${{ needs.release.outputs.release_body }}
+          INPUT_RELEASE_URL: ${{ needs.release.outputs.release_url }}
+          INPUT_CONTENT: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
+          INPUT_FOOTER_TITLE: "Changelog"
+        run: node send-discord-notification.js
 
 
   # ================================================================
@@ -181,5 +195,5 @@ jobs:
         run: |
           git checkout development
           git pull origin development
-          git merge main --no-ff -m "chore: Merge main back to development after release ${{ needs.release.outputs.version }}"
+          git merge origin/main --no-ff -m "chore: Merge main back to development after release ${{ needs.release.outputs.version }}"
           git push origin development

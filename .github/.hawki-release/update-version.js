@@ -7,7 +7,8 @@ function updateVersionFile(newVersion) {
 
     try {
         const versionData = {
-            version: newVersion
+            version: newVersion,
+            released_at: new Date().toISOString() // Setting this helps us to avoid issues when re-releasing the same version, also it is a good indicator of when the version was released
         };
 
         fs.writeFileSync(versionFilePath, JSON.stringify(versionData, null, 2) + '\n');

@@ -46,6 +46,9 @@ async function createRelease(version, body) {
 
         core.info(`Successfully created release v${version}`);
         core.info(`Release URL: ${release.data.html_url}`);
+        core.setOutput('release_name', release.data.name);
+        core.setOutput('release_body', release.data.body);
+        core.setOutput('release_url', release.data.html_url);
 
     } catch (error) {
         core.setFailed(`Failed to create release: ${error.message}`);
