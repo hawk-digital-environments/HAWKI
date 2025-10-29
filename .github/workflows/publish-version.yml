@@ -7,7 +7,7 @@ on:
 
 permissions:
   contents: write
-  
+
 jobs:
   # ========================================================
   # JOB 1: Detect version and create the release.
@@ -140,19 +140,34 @@ jobs:
   # ================================================================
   # JOB 3: Notify Discord.
   # ================================================================
-  notify-discord:
-    name: Notify Discord
-    runs-on: ubuntu-latest
-    needs: [ release, build-and-publish-docker ]
-    if: success() && needs.release.outputs.should_release == 'true'
-    steps:
-      - name: Send Discord Notification
-        uses: SethCohen/github-releases-to-discord@v1
-        with:
-          webhook_url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
-          content: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
-          footer_title: "Changelog"
-          reduce_headings: true
+notify-discord:
+  name: Notify Discord
+  runs-on: ubuntu-latest
+  needs: [ release, build-and-publish-docker ]
+  if: success() && needs.release.outputs.should_release == 'true'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+
+    - name: Install dependencies for notify script
+      working-directory: .github/.hawki-release
+      run: npm install
+
+    - name: Send Discord Notification
+      working-directory: .github/.hawki-release
+      run: node send-discord-notification.js
+      with: # 'with' here passes inputs to the script via core.getInput()
+        webhook_url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
+        release_name: ${{ needs.release.outputs.release_name }}
+        release_body: ${{ needs.release.outputs.release_body }}
+        release_url: ${{ needs.release.outputs.release_url }}
+        content: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
+        footer_title: "Changelog"
 
 
   # ================================================================
@@ -181,5 +196,5 @@ jobs:
         run: |
           git checkout development
           git pull origin development
-          git merge main --no-ff -m "chore: Merge main back to development after release ${{ needs.release.outputs.version }}"
+          git merge origin/main --no-ff -m "chore: Merge main back to development after release ${{ needs.release.outputs.version }}"
           git push origin development
