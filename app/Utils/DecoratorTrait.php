@@ -86,13 +86,23 @@ trait DecoratorTrait
 
         do {
             foreach ($sourceReflection->getProperties() as $sourceProperty) {
-                // Skip if target class doesn't have this property
-                if (!$targetReflection->hasProperty($sourceProperty->getName())) {
+                // We must iterate over all parent classes of the target to find the property
+                // because it might be declared as private in a parent class.
+                $localTargetReflection = $targetReflection;
+                do {
+                    if ($localTargetReflection->hasProperty($sourceProperty->getName())) {
+                        break;
+                    }
+
+                } while ($localTargetReflection = $localTargetReflection->getParentClass());
+
+                // Skip if we didn't find the property in the target class hierarchy
+                if (!$localTargetReflection) {
                     continue;
                 }
 
                 $sourceProperty->setAccessible(true);
-                $targetProperty = $targetReflection->getProperty($sourceProperty->getName());
+                $targetProperty = $localTargetReflection->getProperty($sourceProperty->getName());
                 $targetProperty->setAccessible(true);
 
                 if ($sourceProperty->isStatic()) {
@@ -110,7 +120,6 @@ trait DecoratorTrait
                 }
             }
         } while ($sourceReflection = $sourceReflection->getParentClass());
-
 
         return $instance;
     }
