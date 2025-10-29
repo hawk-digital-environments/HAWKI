@@ -1,7 +1,6 @@
 name: HAWKI Release Pipeline
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
 
@@ -140,34 +139,34 @@ jobs:
   # ================================================================
   # JOB 3: Notify Discord.
   # ================================================================
-notify-discord:
-  name: Notify Discord
-  runs-on: ubuntu-latest
-  needs: [ release, build-and-publish-docker ]
-  if: success() && needs.release.outputs.should_release == 'true'
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+  notify-discord:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: [ release, build-and-publish-docker ]
+    if: success() && needs.release.outputs.should_release == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
-    - name: Install dependencies for notify script
-      working-directory: .github/.hawki-release
-      run: npm install
+      - name: Install dependencies for notify script
+        working-directory: .github/.hawki-release
+        run: npm install
 
-    - name: Send Discord Notification
-      working-directory: .github/.hawki-release
-      run: node send-discord-notification.js
-      with: # 'with' here passes inputs to the script via core.getInput()
-        webhook_url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
-        release_name: ${{ needs.release.outputs.release_name }}
-        release_body: ${{ needs.release.outputs.release_body }}
-        release_url: ${{ needs.release.outputs.release_url }}
-        content: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
-        footer_title: "Changelog"
+      - name: Send Discord Notification
+        working-directory: .github/.hawki-release
+        run: node send-discord-notification.js
+        with: # 'with' here passes inputs to the script via core.getInput()
+          webhook_url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
+          release_name: ${{ needs.release.outputs.release_name }}
+          release_body: ${{ needs.release.outputs.release_body }}
+          release_url: ${{ needs.release.outputs.release_url }}
+          content: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
+          footer_title: "Changelog"
 
 
   # ================================================================
