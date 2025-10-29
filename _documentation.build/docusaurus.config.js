@@ -1,5 +1,12 @@
 // @ts-check
 import {themes as prismThemes} from 'prism-react-renderer';
+import {changelogSorter} from './changelogSorter.js';
+
+// The "x" is there, because the docs are stored in the parent directory, which confuses docusaurus
+// It will be automatically be stripped out by docusaurus
+const editUrl = 'https://github.com/hawk-digital-environments/HAWKI/edit/main/x/';
+const githubOrganization = 'hawk-digital-environments';
+const githubProject = 'HAWKI';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -10,8 +17,8 @@ const config = {
     url: 'https://docs.hawki.info',
     baseUrl: '/',
 
-    organizationName: 'hawk-digital-environments', // Update accordingly
-    projectName: 'HAWKI', // Update with your actual project name
+    organizationName: githubOrganization, // Update accordingly
+    projectName: githubProject, // Update with your actual project name
 
     onBrokenLinks: 'throw',
     onBrokenMarkdownLinks: 'warn',
@@ -21,6 +28,22 @@ const config = {
         locales: ['en']
     },
 
+    plugins: [
+        [
+            '@docusaurus/plugin-content-docs',
+            {
+                path: '../_changelog',
+                routeBasePath: 'changelog',
+                id: 'changelog',
+                sidebarPath: require.resolve('./sidebars-changelog.js'),
+                editUrl: editUrl,
+                async sidebarItemsGenerator({docs}) {
+                    return changelogSorter(docs, githubOrganization, githubProject);
+                }
+            }
+        ]
+    ],
+
     presets: [
         [
             'classic',
@@ -29,9 +52,8 @@ const config = {
                 docs: {
                     path: '../_documentation',
                     routeBasePath: '/',
-                    sidebarPath: require.resolve('./sidebars.js'),
-                    // The "x" is there, because the docs are stored in the parent directory, which confuses docusaurus
-                    editUrl: 'https://github.com/hawk-digital-environments/HAWKI/edit/main/x/'
+                    sidebarPath: require.resolve('./sidebars-docs.js'),
+                    editUrl: editUrl
                 },
                 theme: {
                     customCss: require.resolve('./custom.css')
