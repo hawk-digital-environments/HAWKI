@@ -160,7 +160,7 @@ jobs:
       - name: Send Discord Notification
         working-directory: .github/.hawki-release
         run: node send-discord-notification.js
-        with: # 'with' here passes inputs to the script via core.getInput()
+        with:
           webhook_url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
           release_name: ${{ needs.release.outputs.release_name }}
           release_body: ${{ needs.release.outputs.release_body }}
