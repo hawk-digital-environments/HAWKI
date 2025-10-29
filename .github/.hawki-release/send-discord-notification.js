@@ -101,17 +101,12 @@ const limitString = (str, maxLength) => {
 };
 
 const buildEmbedMessage = (name, html_url, description) => {
-    const embedMsg = {
+    return {
         title: limitString(name, 256),
         url: html_url,
         description: limitString(description, 4096),
         footer: {}
     };
-
-    if (core.getInput('footer_title')) {
-        embedMsg.footer.text = limitString(core.getInput('footer_title'), 2048);
-    }
-    return embedMsg;
 };
 
 const buildRequestBody = (embedMsg) => {

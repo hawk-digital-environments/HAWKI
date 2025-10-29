@@ -169,7 +169,6 @@ jobs:
           INPUT_RELEASE_BODY: ${{ needs.release.outputs.release_body }}
           INPUT_RELEASE_URL: ${{ needs.release.outputs.release_url }}
           INPUT_CONTENT: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
-          INPUT_FOOTER_TITLE: "Changelog"
         run: node send-discord-notification.js
 
 
