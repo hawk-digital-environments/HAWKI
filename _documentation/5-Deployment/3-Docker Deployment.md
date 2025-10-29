@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Docker Deployment
 
-Instead of manually setting up PHP and Apache [as described in "Apache Deployment"](Apache%20Deployment.md), you can use
+Instead of manually setting up PHP and Apache [as described in "Apache Deployment"](1-Apache%20Server.md), you can use
 Docker to deploy HAWKI. Our official
 image [digitalenvironments/hawki](https://hub.docker.com/r/digitalenvironments/hawki) is
 available on Docker Hub.
@@ -34,10 +34,10 @@ A few things to consider:
 * Nginx - The nginx server acts as a main entrypoint for the application, it is configured to listen on port 80 and 443,
   with automatic SSL redirection. Check the `nginx.default.conf` file for more details and adapt it to your needs.
 * Authentication - To authenticate users you can use LDAP, OpenID Connect or SAML, adjust the `.env` file as described
-  in the `Setup Authentication Methods` section of the [Apache Deployment](Apache%20Deployment.md) guide.
+  in the `Setup Authentication Methods` section of the [Apache Deployment](1-Apache%20Server.md) guide.
 * Model configuration - You find a default `model_providers.php` file in the `_docker_production` directory, you
   which will be mounted to the HAWKI container. Please adjust it as described in the `Adding API Keys` section of the
-  [Apache Deployment](Apache%20Deployment.md) guide.
+  [Apache Deployment](1-Apache%20Server.md) guide.
 
 ### What's in the box
 
