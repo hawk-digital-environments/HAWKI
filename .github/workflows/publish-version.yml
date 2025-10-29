@@ -1,9 +1,13 @@
 name: Release new HAWKI Version
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+  
 jobs:
   release:
     runs-on: ubuntu-latest
