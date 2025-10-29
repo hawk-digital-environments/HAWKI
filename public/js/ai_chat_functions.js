@@ -1,7 +1,7 @@
 let convMessageTemplate;
 let chatItemTemplate;
 let activeConv;
-let defaultPromt;
+let defaultPrompt;
 let chatlogElement;
 
 function initializeAiChatModule(chatsObject){
@@ -10,11 +10,11 @@ function initializeAiChatModule(chatsObject){
     chatItemTemplate = document.getElementById('selection-item-template');
     chatlogElement = document.querySelector('.chatlog');
 
-    defaultPromt = translation.Default_Prompt;
+    defaultPrompt = translation.Default_Prompt;
 
     const systemPromptFields = document.querySelectorAll('.system_prompt_field');
     systemPromptFields.forEach(field => {
-        field.textContent = defaultPromt;
+        field.textContent = defaultPrompt;
     });
 
     chats = chatsObject;
@@ -298,7 +298,7 @@ function startNewChat(){
 
     const systemPromptFields = document.querySelectorAll('.system_prompt_field');
     systemPromptFields.forEach(field => {
-        field.textContent = defaultPromt;
+        field.textContent = defaultPrompt;
     });
 
     const lastActive = document.getElementById('chats-list').querySelector('.selection-item.active');

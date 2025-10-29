@@ -367,7 +367,7 @@ async function requestAtchDelete(fileId, category){
 
 // Update file status in UI
 function updateFileStatus(fileId, status) {
-    console.log(fileId);
+
     const fileElement = document.querySelector(`.attachment[data-file-id="${fileId}"]`);
 
     if (!fileElement) return;
