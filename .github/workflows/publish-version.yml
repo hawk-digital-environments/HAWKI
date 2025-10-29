@@ -159,14 +159,14 @@ jobs:
 
       - name: Send Discord Notification
         working-directory: .github/.hawki-release
+        env:
+          INPUT_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
+          INPUT_RELEASE_NAME: ${{ needs.release.outputs.release_name }}
+          INPUT_RELEASE_BODY: ${{ needs.release.outputs.release_body }}
+          INPUT_RELEASE_URL: ${{ needs.release.outputs.release_url }}
+          INPUT_CONTENT: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
+          INPUT_FOOTER_TITLE: "Changelog"
         run: node send-discord-notification.js
-        with:
-          webhook_url: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
-          release_name: ${{ needs.release.outputs.release_name }}
-          release_body: ${{ needs.release.outputs.release_body }}
-          release_url: ${{ needs.release.outputs.release_url }}
-          content: "||@everyone|| Successfully released and published **HAWKI v${{ needs.release.outputs.version }}**!"
-          footer_title: "Changelog"
 
 
   # ================================================================
