@@ -19,6 +19,9 @@ jobs:
     outputs:
       should_release: ${{ steps.should_release.outputs.should_release }}
       version: ${{ steps.version.outputs.version }}
+      release_name: ${{ steps.create_release.outputs.release_name }}
+      release_body: ${{ steps.create_release.outputs.release_body }}
+      release_url: ${{ steps.create_release.outputs.release_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -191,8 +194,12 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+      - name: Wait for main branch propagation
+        run: sleep 10
+
       - name: Merge main into development
         run: |
+          git fetch origin main
           git checkout development
           git pull origin development
           git merge origin/main --no-ff -m "chore: Merge main back to development after release ${{ needs.release.outputs.version }}"
