@@ -80,7 +80,7 @@ return [
                         return 'hawki2';
                     }
                     return $key;
-                }),
+                })(),
                 'secret' => env('REVERB_APP_SECRET'),
                 'app_id' => env('REVERB_APP_ID', 'hawki'),
                 'options' => [

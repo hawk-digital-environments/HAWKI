@@ -428,7 +428,7 @@ function openRoomCreatorPanel(){
 
     const roomCreationPanel = document.getElementById('room-creation');
 
-    defaultPromt = translation.Default_Prompt;
+    defaultPrompt = translation.Default_Prompt;
 
     roomCreationPanel.querySelector('#chat-name-input').value = '';
     roomCreationPanel.querySelector('#user-search-bar').value = '';
@@ -437,7 +437,7 @@ function openRoomCreatorPanel(){
     roomCreationPanel.querySelector('#room-creation-avatar').style.display = 'none';
 
 
-    roomCreationPanel.querySelector('#system-prompt-input').value = defaultPromt;
+    roomCreationPanel.querySelector('#system-prompt-input').value = defaultPrompt;
     resizeInputField(roomCreationPanel.querySelector('#system-prompt-input'));
 }
 
@@ -1513,8 +1513,6 @@ async function updateRoomInfo(slug, formData){
         });
 
         if(!response.ok){
-            console.log('response');
-            console.log(response);
             console.error(`HTTP error! status: ${response.status}`);
             return null;
         }

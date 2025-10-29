@@ -8,15 +8,15 @@
 
     <title>{{ env('APP_NAME') }}</title>
 
-    <link rel="stylesheet" href="{{ asset('css_v2.2.0/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.2.0/handshake_style.css') }}">
-    <link rel="stylesheet" href="{{ asset('css_v2.2.0/settings_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/handshake_style.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
 
-    <script src="{{ asset('js_v2.2.0/functions.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/handshake_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.2.0/announcements.js') }}"></script>
+    <script src="{{ asset('js/functions.js') }}"></script>
+    <script src="{{ asset('js/handshake_functions.js') }}"></script>
+    <script src="{{ asset('js/encryption.js') }}"></script>
+    <script src="{{ asset('js/settings_functions.js') }}"></script>
+    <script src="{{ asset('js/announcements.js') }}"></script>
     @vite('resources/js/app.js')
 
 	{!! $settingsPanel !!}

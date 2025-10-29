@@ -14,7 +14,15 @@ return [
     */
 
     'name' => env('APP_NAME', 'HAWKI'),
-    'version' => "2.2.0",
+    'version' => json_decode(file_get_contents(__DIR__ . '/hawki_version.json'), true)['version'],
+
+    // Allows you to add a custom value as a cache buster.
+    // This is normally only required if you extend HAWKI with your own frontend assets.
+    // The cache buster will normally be created based on the application version and the
+    // last modified timestamp of the asset.
+    // However, if you want to force a cache bust for all assets, you can set this value to e.g. a random string or
+    // the current timestamp.
+    'cache_buster' => env('APP_CACHE_BUSTER'),
 
     /*
     |--------------------------------------------------------------------------

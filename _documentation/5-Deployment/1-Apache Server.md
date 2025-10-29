@@ -1,15 +1,17 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 
-This chapter provides detailed instructions for deploying HAWKI on an nginx web server.
+This chapter provides detailed instructions for deploying HAWKI on an apache web server.
 
 ---
 
 ## Server Preparation
 
-To prepare your server, ensure communication ports are properly configured. HAWKI deployment requires the HTTPS protocol, though testing locally or alternatives using HTTP are possible but not recommended. For local testing, refer to the ["Getting Started"](../2-GettingStarted/1-Local%20Installation.md) chapter.
+To prepare your server, ensure communication ports are properly configured. HAWKI deployment requires the HTTPS
+protocol, though testing locally or alternatives using HTTP are possible but not recommended. For local testing, refer
+to the ["Getting Started"](../2-GettingStarted/1-Local%20Installation.md) chapter.
 
 For this guide, we'll assume port usage as follows:
 
@@ -55,7 +57,6 @@ node >= v20.19.x
 npm >= v10.8.x
 ```
 
-
 You can use the HAWKI CLI to check if your system meets all requirements. Navigate to project root and run:
 
 ```
@@ -69,98 +70,9 @@ This command checks for:
 - Required PHP extensions (mbstring, xml, pdo, curl, zip, json, fileinfo, openssl)
 
 ---
-## Nginx Server Configuration
-
-Nginx requires specific configuration to work properly with Laravel applications and WebSocket connections.
-
-1. Install Nginx if not already installed:
-```js
-sudo apt update
-sudo apt install nginx
-```
-
-
-2. Create a new Nginx server block configuration:
-sudo nano /etc/nginx/sites-available/hawki
-
-3. Add the following configuration:
-
-```js
-server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$server_name$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name your-domain.com;
-
-    ssl_certificate /path/to/your/certificate.crt;
-    ssl_certificate_key /path/to/your/private.key;
-
-    root /var/www/html/hawki-project/public;
-    index index.php;
-
-    location / {
-        try_files $uri $uri/ /index.php?$query_string;
-    }
-
-    location ~ \.php$ {
-        include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-    }
-
-    location ~ /\.ht {
-        deny all;
-    }
-
-    # WebSocket Proxy for Laravel Reverb
-    location /app {
-        proxy_pass http://localhost:8080/app;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    location /apps {
-        proxy_pass http://localhost:8080/apps;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-This configuration creates a redirect from HTTP to HTTPS and sets up the necessary proxy rules for WebSocket connections.
-
-4. Create a symbolic link to enable the site:
-```
-sudo ln -s /etc/nginx/sites-available/hawki /etc/nginx/sites-enabled/
-```
-
-5. Test the Nginx configuration:
-```
-sudo nginx -t
-```
-
-6. Restart Nginx:
-```
-sudo service nginx restart
-```
-
-
----
 
 ## Project Deployment
+
 
 1. Copy the HAWKI project content to the desired webserver location, typically at `/var/www/html/hawki-project`. 
 This can be done via cloning the Git repository:
@@ -170,7 +82,19 @@ git clone https://github.com/HAWK-Digital-Environments/HAWKI.git
 
 or **download** the latest version files from [Releases Page](https://github.com/hawk-digital-environments/HAWKI/releases)
 
+
 2. Configure your server to use `/var/www/html/hawki-project/public` as the Document Root for port 443.
+
+```
+DocumentRoot /var/www/html/hawki-project/public
+```
+
+- Optionally, redirect port 80 traffic to HTTPS:
+```
+Redirect permanent / https://yourDomain.com/
+```
+
+
 
 3. Now that you have the project files on your machine, navigate to the project folder and run:
 
@@ -214,7 +138,8 @@ At this point, the project is transferred to the server, but you may encounter a
 ### Configuration
 
 To configure the environment variable open `.env` file in the root directory.
-For a complete guide to environment variables please refer to [.env section]() of the documentation.
+For a complete guide to environment variables please refer to [.env section](../3-architecture/10-dot%20Env.md) of the
+documentation.
 
 ><details>
 ><summary>Use HAWKI CLI for step-by-step configuration</summary>
@@ -424,155 +349,38 @@ If you ran `php hawki init` these variables are already populated with random ha
 
 
 
+## Broadcasting & Workers
 
----
-##  PROJECT CONFIGURATION
-
-Edit the .env file within the root folder. Most variables can remain at their default values unless specific adjustments are
-required.
-
-You can configure your environment using the HAWKI CLI interactive setup:
-
-```
-php hawki setup
-```
-
-This command will guide you through configuring all aspects of your HAWKI installation. Alternatively, you can configure specific sections:
-
-```
-php hawki setup -g    # General settings
-php hawki setup -auth # Authentication settings
-php hawki setup -reverb # Reverb settings
-```
-
-### Create Storage Link
-
-To allow clients to read files from the storage folder, we need to create a symbolic link for the storage.
-Use the following command to create the symbolic link:
-```
-php artisan storage:link
-```
-
-This step is automatically handled if you used `php hawki init`.
-
-You should be able to see the storage shortcut inside public folder.
-
-Please note that after changing the structure of your files in the storage folder you may need to recreate the virtual link:
-```
-sudo rm -rf public/storage
-php artisan storage:link
-```
-
-### Setup Server Salts 
-
-For encryption purposes, HAWKI utilises individual salts for each component. Though not mandatory, unique hash keys are
-recommended. These can be configured during the HAWKI CLI setup process.
-
-### Setup Authentication Methods
-
-In the .env file find AUTHENTICATION_METHOD variable.
-Currently HAWKI supports LDAP, OpenID, and Shibboleth authentication services. A built-in Test User Authentication for
-internal testing purposes is also available.
-
-Set the variable to one of the following:
-```
-- AUTHENTICATION_METHOD="LDAP"
-- AUTHENTICATION_METHOD="OIDC"
-- AUTHENTICATION_METHOD="Shibboleth"
-```
-
-According to your authentication method, set the necessary variables. For more information refer to the documentation in .env
-file.
-
-Using HAWKI CLI, you can configure authentication settings with:
-
-```
-php hawki setup -auth
-```
-
-### Add Data Protection and Imprint
-
-Data protection and imprint notes are linked in the login page. To set your organization specific legal notes:
-
-1. In the .env file find IMPRINT_LOCATION and add the URL to your organization imprint page.
-2. Locate DataProtection Files in the /resources/language folder and add the data protection notes for each language in HTML 
-format.
-
-### Adding API Keys
-
-Navigate to config folder. There you'll find model_providers.php.example. Rename it to model_providers.php.
-Open the file and update the configuration as you need. HAWKI currently supports OpenAI, GWDG, and Google.
-
-You can also use the HAWKI CLI to configure AI model providers interactively:
-
-```
-php hawki setup-models
-```
-
-This command will allow you to:
-- Activate or deactivate AI providers
-- Set API keys for each active provider
-- Configure the default model
-- Set models for system tasks (title generation, prompt improvement, etc.)
-
-Alternatively, edit the configuration file manually:
-
-```js
-// The Default Model (use the id of one of model you wish)
-'defaultModel' => 'gpt-4o',
-
-// The model which generates the chat names.
-'titleGenerationModel' => 'gpt-4o-mini',
-
-'providers' =>[
-    'openai' => [
-        'id' => 'openai',
-        'active' => true, //set to false if you want to disable the provider
-        'api_key' => ' ** YOUR SECRET API KEY ** ',
-        'api_url' => 'https://api.openai.com/v1/chat/completions',
-        'ping_url' => 'https://api.openai.com/v1/models',
-        'models' => [
-            [
-                'id' => 'gpt-4o',
-                'label' => 'OpenAI GPT 4o',
-                'streamable' => true,
-            ],
-            ...
-        ]
-    ],
-    ...
-]
-```
-
-
-### Broadcasting & Workers
-
-HAWKI uses https://reverb.laravel.com/ for real-time communication between client and server.
+HAWKI uses [Laravel Reverb](https://reverb.laravel.com/) for real-time communication between client and server.
 In the .env file you simply need to set reverb variables:
 
-```js
+```
 REVERB_APP_ID=my-app-id
 REVERB_APP_KEY=my-app-key
 REVERB_APP_SECRET=my-app-secret
+```
 
 REVERB configuration defaults to port 8080. Use HTTPS for secure communication:
 
+```
 REVERB_SERVER_HOST=0.0.0.0
 REVERB_SERVER_PORT=8080
 ```
 
-However, to secure the communication between the client and the server you should use https protocol and port 443 for
-websocket as well.
+However, to secure the communication between the client and the server you should use https protocol and port 443 for websocket as well.
 Set the variables to:
-```js
+
+```
 REVERB_HOST=yourDomain.com // set your domain without any prefixes
 REVERB_PORT=443
 REVERB_SCHEME=https //reverb scheme must be set to https instead of http.
 ```
-Also add the path to the SSL certificate chain and key path:
-```js
-SSL_CERTIFICATE="/path/to/certificate.crt"
-SSL_CERTIFICATE_KEY="/path/to/private.key"
+
+also add the path the SSL certificate chain and key path:
+
+```
+SSL_CERTIFICATE=""
+SSL_CERTIFICATE_KEY=""
 ```
 
 rebuild the node packages to update the config variables:
@@ -580,17 +388,68 @@ rebuild the node packages to update the config variables:
 npm run build
 ```
 
-Ensure Port 8080 is blocked by the server firewall to prevent direct access. The WebSocket proxy configuration added to the
-Nginx server block handles the secure redirection.
+Ensure Port 8080 is blocked by the server firewall. Establish a reverse proxy for communication redirection.
+first make sure the proxy modules are activated:
+
+```
+sudo a2enmod proxy
+sudo a2enmod proxy_http
+sudo a2enmod proxy_wstunnel
+```
+
+open the configuration file, normally located at: `/etc/apache2/sites-available/hawki-ssl.com.conf`.
+Add the following to the configuration:
+```
+# Specific WebSocket Proxy
+ProxyPass /app ws://localhost:8080/app
+ProxyPassReverse /app ws://localhost:8080/app
+
+ProxyPass /apps ws://localhost:8080/apps
+ProxyPassReverse /apps ws://localhost:8080/apps
+```
+
+restart apache server:
+
+```
+sudo service apache2 restart
+```
+
+At this step if you run
+```
+php artisan reverb:start
+```
+
+With php artisan reverb:start, clients can connect to Reverb-created group chat channels.
+
+You can also use the HAWKI CLI to clear all Laravel caches (which may be necessary after configuration changes):
+
+```
+php hawki clear-cache
+```
+
+This clears:
+- Configuration cache
+- Application cache
+- View cache
+- Route cache
+- Event cache
+- Compiled files
+
+Preparing workers to broadcast messages follows.
 
 ---
-### SERVICES
 
-Before broadcasting messages to users, each message is queued on the server and processed by Laravel workers.
-In order to automate the Reverb broadcasting and Laravel workers, we need to create system services:
+## Services
 
-1. Create a new file for Reverb at `/etc/systemd/system/reverb.service`. Insert this content:
+Before broadcasting messages to users, each message is queued on the server and laravel workers.
+In order to automate the reverb broadcasting and laravel workers we need to create extra services in your linux server.
+If reverb is already running from the previous step, stop it before continuing.
 
+HAWKI also requires a service to run schedule worker, which ensures that scheduled tasks are triggered.
+
+1. Navigate to `/etc/systemd/system`. You will find the list of linux services.
+
+2. Create a new file for reverb and call it reverb.service. Insert this content:
 >**Don't forget to update paths: `/var/www/html/hawki-project`**
 
 ```
@@ -609,9 +468,10 @@ LimitNOFILE=4096
 
 [Install]
 WantedBy=multi-user.target
-```
 
-2. Create a new file for queue workers and call it "queue-worker.service". Insert this content:
+``` 
+
+3. Create a new file for queue workers and call it "queue-worker.service". Insert this content:
 
 >**Don't forget to update paths: `/var/www/html/hawki-project`**
 
@@ -641,7 +501,7 @@ WantedBy=multi-user.target
 
 ```
 
-3. Create a new file for schedule worker and call it "schedule-worker.service". Insert this content:
+4. Create a new file for schedule worker and call it "schedule-worker.service". Insert this content:
 
 >**Don't forget to update paths: `/var/www/html/hawki-project`**
 
@@ -663,7 +523,8 @@ LimitNOFILE=4096
 WantedBy=multi-user.target
 ```
 
-4- Reload Systemd Manager Configuration:
+4- Reload Systemd Manager Configuration
+
 ```
 sudo systemctl daemon-reload
 ```
@@ -692,6 +553,7 @@ sudo systemctl status queue-worker.service
 sudo systemctl status schedule-worker.service
 ```
 
+
 ##  File Converter
 
 The new Attachments feature in HAWKI allows user to upload files in the chat. But since the models mostly do not accept document files as input, we need to first convert these to text.
@@ -706,19 +568,6 @@ For more information refer to the [File Converter Repo](https://github.com/hawk-
 
 Now that workers are running the queued messages should be successfully broadcasted to the users.
 
-You can also use the HAWKI CLI to clear all Laravel caches (which may be necessary after configuration changes):
-
-```
-php hawki clear-cache
-```
-
-This clears:
-- Configuration cache
-- Application cache
-- View cache
-- Route cache
-- Event cache
-- Compiled files
 
 ---
 ## FAQs
@@ -780,44 +629,42 @@ If you were previously using the dev server, locate and remove "hot" file in the
 <details>
 <summary>6. Login page is accessible in browser but other routes are not responding</summary>
 
-If your server is rendering the login page correctly but other functions (like login) are not working, there may be a problem reading the nginx configuration for your Laravel routes.
-To make sure, that this is the case, first you can try to test another function. for example by changing the language from the settings panel. If the language is also not being changed, the problem is in fact the routing system and nginx configuration not being set up correctly for Laravel.
+If your server is rendering the login page correctly but other functions (like login) are not working, there may be a problem reading the .htaccess file in the public folder.
+To make sure, that this is the case, first you can try to test another function. for example by changing the language from the settings panel. If the language is also not being changed, the problem is in fact the routing system and .htaccess not being read by apache.
 Follow these steps:
 
-Make sure your nginx server block has the correct try_files directive for Laravel:
+Open your site’s config file (usually in /etc/apache2/sites-available/your-site.conf or /etc/httpd/conf.d/ depending on distro) and add:
 ```
-location / {
-    try_files $uri $uri/ /index.php?$query_string;
-}
+<Directory /var/www/html/your-site>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
 ```
+Apache ignores .htaccess unless AllowOverride is set properly in your Apache config.
 
-Also verify that PHP-FPM is configured correctly and the location block for PHP files is present:
-```
-location ~ \.php$ {
-    include snippets/fastcgi-php.conf;
-    fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-}
-```
-
-After making changes, reload nginx:
+After changes, reload Apache:
 
 ```
-sudo systemctl reload nginx
+sudo systemctl reload apache2   # Debian/Ubuntu
+sudo systemctl reload httpd
 ```
 
-Check nginx error logs if issues persist:
-```
-sudo tail -f /var/log/nginx/error.log
-```
+Check mod_rewrite (if using rewrites)
 
-This should solve the issue. But you can also check file and directory permissions.
-The nginx user (usually www-data) should have proper access to your Laravel directory.
+If your .htaccess contains rewrite rules, ensure the rewrite module is enabled:
+
+sudo a2enmod rewrite   # Debian/Ubuntu
+sudo systemctl restart apache2
+
+This should solve the issue. But you can also check file and directory permissions
+The .htaccess file should be readable by Apache (typically owned by your web user, www-data or apache).
 ```
-ls -la /var/www/html/hawki-project/
+ls -la /var/www/html/your-site/.htaccess
 ```
 Permissions should be something like:
 ```
-drwxr-xr-x  12 www-data www-data  4096 ...
+-rw-r--r--  1 www-data www-data  ...
 ```
 
 </details>

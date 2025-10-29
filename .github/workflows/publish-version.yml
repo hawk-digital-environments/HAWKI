@@ -1,0 +1,76 @@
+name: Release new HAWKI Version
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install dependencies for release scripts
+        working-directory: .github/.hawki-release
+        run: npm install
+
+      - name: Detect latest version from changelog
+        id: version
+        working-directory: .github/.hawki-release
+        run: node detect-version.js
+
+      - name: Check if version should be released
+        id: should_release
+        if: steps.version.outputs.version != ''
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Check if tag already exists
+          if git tag --list | grep -q "$VERSION$"; then
+            echo "Tag $VERSION already exists, skipping release"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Tag $VERSION does not exist, proceeding with release"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update hawki_version.json
+        if: steps.should_release.outputs.should_release == 'true'
+        working-directory: .github/.hawki-release
+        run: node update-version.js "${{ steps.version.outputs.version }}"
+
+      - name: Commit and push version update
+        if: steps.should_release.outputs.should_release == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          git add config/hawki_version.json
+          git commit -m "Update version to $VERSION"
+          git push
+
+      - name: Create git tag
+        if: steps.should_release.outputs.should_release == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          git tag "$VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub release
+        if: steps.should_release.outputs.should_release == 'true'
+        working-directory: .github/.hawki-release
+        run: node create-release.js "${{ steps.version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
