@@ -3,19 +3,20 @@
 
 namespace App\Services\Chat\Room\Traits;
 
+use App\Models\ExtApp;
+use App\Models\Member;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Member;
 use Exception;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
 
 
 trait RoomMembers{
     /**
      * @throws Exception
      */
-    public function add(string $slug, string $data): array
+    public function add(string $slug, array $data): array
     {
         try{
             $room = Room::where('slug', $slug)->firstOrFail();
@@ -25,7 +26,7 @@ trait RoomMembers{
 
             $user = User::where('username', $data['username'])->firstOrFail();
             $room->addMember($user->id, $data['role']);
-            return $room->members;
+            return $room->members->toArray();
         }
         catch (Exception $e){
             throw new Exception('Failed to add new member:' . $e->getMessage());
@@ -81,6 +82,7 @@ trait RoomMembers{
                             ->orWhere('username', 'like', "%{$query}%")
                             ->orWhere('email', 'like', "%{$query}%");
             })
+            ->where('users.employeetype', '!=', ExtApp::EMPLOYEE_TYPE_APP)
             ->take(5)
             ->get();
 

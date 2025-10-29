@@ -1,5 +1,6 @@
+@php use App\Services\Translation\LocaleService; @endphp
 
-@switch(Session::get('language'))
+@switch(app(LocaleService::class)->getCurrentLocale()->lang)
     @case('de_DE')
     <ul>
     <li><strong>Datenschutz & Sicherheit:</strong> End-to-End-Verschlüsselung und lokale Speicherung auf Hochschulservern gewährleisten höchsten Datenschutz, um die Sicherheit sensibler Daten im akademischen Kontext zu garantieren.<br><br></li>
@@ -35,8 +36,3 @@
     @break
 
 @endswitch
-
-
-
-
-   

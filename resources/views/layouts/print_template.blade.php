@@ -77,7 +77,7 @@
 	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
 	const activeModule = @json($activeModule);
     const chatData = @json($chatData);
-	const activeLocale = {!! json_encode(Session::get('language')) !!};
+	const activeLocale = <x-current-locale-json/>;
 
 	const modelsList = @json($models).models;
 	const defaultModels = @json($models).defaultModels;

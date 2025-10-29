@@ -3,16 +3,11 @@
 <html class="lightMode">
 <head>
 
-
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-
-
-	<title>{{ env('APP_NAME') }}</title>
+    <title>{{ env('APP_NAME') }}</title>
 
 	<link rel="icon" href="{{ asset('favicon.ico') }}">
 
@@ -44,7 +39,7 @@
     <script src="{{ asset('js/model_list_filtering.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
 
-	@if(config('sanctum.allow_external_communication'))
+    @if(config('external_access.enabled'))
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
 
@@ -52,12 +47,11 @@
 	{!! $settingsPanel !!}
     <script>
 		SwitchDarkMode(false);
-		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
+		UpdateSettingsLanguage('<x-current-locale/>');
 	</script>
 
 </head>
 <body>
-
 
 	<div class="wrapper">
 
@@ -96,7 +90,7 @@
 	const activeModule = @json($activeModule);
     const hawkiUsername = @json($userData['hawki_username'])
 
-    const activeLocale = {!! json_encode(Session::get('language')) !!};
+	const activeLocale = <x-current-locale-json/>;
 	const translation = @json($translation);
 
 	const modelsList = @json($models).models;
@@ -128,7 +122,6 @@
 		}
 
 		handleUserInvitations();
-
 
 		//Module Checkup
 		setActiveSidebarButton(activeModule);

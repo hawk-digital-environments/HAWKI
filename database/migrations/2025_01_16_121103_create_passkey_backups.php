@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('passkey_backup');
+        Schema::dropIfExists('passkey_backups');
     }
 };

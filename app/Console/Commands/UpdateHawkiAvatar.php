@@ -39,15 +39,12 @@ class UpdateHawkiAvatar extends Command
             $this->error('Unable to open file.');
         }
 
-        $array = explode('/', $path);
-        $filename = end($array);
-        $extension = pathinfo($filename, PATHINFO_EXTENSION);
         $avatarStorage = app(AvatarStorageService::class);
         $uuid = Str::uuid();
         $avatarStorage->store($file,
-                            $filename,
-                            $uuid,
-                            'profile_avatars');
+            basename($path),
+            $uuid,
+            'profile_avatars');
 
 
         $hawki->update([

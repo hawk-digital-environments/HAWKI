@@ -3,26 +3,55 @@
 namespace App\Services\Chat\Attachment;
 
 
+use App\Events\AttachmentAssignedToMessageEvent;
+use App\Events\AttachmentRemovedFromMessageEvent;
 use App\Models\AiConvMsg;
-use App\Models\Message;
 use App\Models\Attachment;
-
-use App\Services\Chat\Attachment\AttachmentFactory;
-
+use App\Models\Message;
 use App\Services\Storage\FileStorageService;
-use App\Services\Storage\Interfaces\StorageServiceInterface;
-use App\Services\Storage\StorageServiceFactory;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-
 use Exception;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AttachmentService{
 
 
     public function __construct(
-        private FileStorageService $storageService
+        private readonly FileStorageService $storageService,
+        #[Config('filesystems.upload_limits.max_attachment_files')]
+        private readonly int                $maxAttachments = 0
     ) {}
+    
+    /**
+     * Get allowed mime types for file uploads.
+     *
+     * @return array
+     */
+    public function getAllowedMimeTypes(): array
+    {
+        return $this->storageService->getAllowedMimeTypes();
+    }
+    
+    /**
+     * Get maximum file size for uploads in bytes.
+     *
+     * @return int
+     */
+    public function getMaxFileSize(): int
+    {
+        return $this->storageService->getMaxFileSize();
+    }
+    
+    /**
+     * Get maximum number of attachments allowed.
+     * If 0, then unlimited attachments are allowed.
+     * @return int
+     */
+    public function getMaxAttachments(): int
+    {
+        return $this->maxAttachments;
+    }
 
     public function store($file, $category): ?array
     {
@@ -96,6 +125,11 @@ class AttachmentService{
             if(!$deleted){
                 return false;
             }
+            
+            $attachable = $attachment->attachable;
+            if ($attachable instanceof Message) {
+                AttachmentRemovedFromMessageEvent::dispatch($attachment, $attachable);
+            }
 
             $attachment->delete();
             return true;
@@ -105,10 +139,9 @@ class AttachmentService{
             return false;
         }
     }
-
-
-    public function convertToAttachmentType($mime){
-
+    
+    public function convertToAttachmentType($mime): string
+    {
         if(str_contains($mime, 'pdf') ||
            str_contains($mime, 'word')){
             return 'document';
@@ -116,17 +149,18 @@ class AttachmentService{
         if(str_contains($mime, 'image')){
             return 'image';
         }
+        throw new \RuntimeException('Unsupported mime type: ' . $mime);
     }
-
-
-    public function assignToMessage(AiConvMsg|Message $message, array $data): ?string
+    
+    
+    public function assignToMessage(AiConvMsg|Message $message, array $data): bool
     {
         try{
             $category = $message instanceof AiConvMsg ? 'private' : 'group';
             $this->storageService->moveFileToPersistentFolder($data['uuid'], $category);
 
             $type = $this->convertToAttachmentType($data['mime']);
-            $message->attachments()->create([
+            $attachment = $message->attachments()->create([
                 'uuid' => $data['uuid'],
                 'name' => $data['name'],
                 'category' => $category,
@@ -134,6 +168,11 @@ class AttachmentService{
                 'type'=> $type,
                 'user_id'=> Auth::id()
             ]);
+            
+            if ($message instanceof Message) {
+                AttachmentAssignedToMessageEvent::dispatch($message, $attachment);
+            }
+            
             return true;
         }
         catch(Exception $e){

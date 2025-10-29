@@ -2,16 +2,23 @@
 
 namespace App\Services\Profile;
 
+use App\Events\PersonalAccessTokenCreatedEvent;
+use App\Events\PersonalAccessTokenRemovedEvent;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use laravel\Sanctum\NewAccessToken;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ApiTokenService{
 
     public function createApiToken(string $name): NewAccessToken{
         $user = Auth::user();
-        return $user->createToken($name);
+        $token = $user->createToken($name);
+        
+        PersonalAccessTokenCreatedEvent::dispatch($user, $token);
+        
+        return $token;
     }
 
 
@@ -33,6 +40,10 @@ class ApiTokenService{
         try{
             $user = Auth::user();
             $token = $user->tokens()->where('id', $tokenId);
+            $token->each(function (PersonalAccessToken $token) use ($user) {
+                PersonalAccessTokenRemovedEvent::dispatch($user, $token);
+                $token->delete();
+            });
             $token->delete();
         }
         catch(Exception $e){

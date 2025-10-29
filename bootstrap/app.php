@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\LocaleSettingMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,11 +14,20 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
-
+    ->withEvents([
+        __DIR__ . '/../app/Services/*/Listeners'
+    ])
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(LocaleSettingMiddleware::class);
         $middleware->redirectGuestsTo('/login');
     })
-
+    ->withBroadcasting(
+        channels: __DIR__ . '/../routes/channels.php',
+        attributes: [
+            'prefix' => 'api',
+            'middleware' => ['auth:sanctum', 'external_access:enabled,apps', 'app_access:declined']
+        ]
+    )
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->shouldRenderJsonWhen(function (Request $request) {
             return $request->expectsJson() || $request->is('api/*');
