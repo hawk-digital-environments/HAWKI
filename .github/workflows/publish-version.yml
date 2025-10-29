@@ -79,6 +79,7 @@ jobs:
           git push origin "$VERSION"
 
       - name: Create GitHub release
+        id: create_release
         if: steps.should_release.outputs.should_release == 'true'
         working-directory: .github/.hawki-release
         run: node create-release.js "${{ steps.version.outputs.version }}"
