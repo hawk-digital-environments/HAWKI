@@ -1,8 +1,8 @@
 const core = require('@actions/core');
-const fetch = require('node-fetch');
+const fetch = require('node-fetch').default;
 
 /*
- * A lot of code in this file has been adapted from https://raw.githubusercontent.com/SethCohen/github-releases-to-discord
+ * A lot of code in this file has been adapted from https://github.com/SethCohen/github-releases-to-discord
  * Licensed under the MIT License.
  * I sadly could not use the action directly, as it always expected to be called in a workflow triggered by a GitHub Release event.
  */
@@ -104,7 +104,6 @@ const buildEmbedMessage = (name, html_url, description) => {
     const embedMsg = {
         title: limitString(name, 256),
         url: html_url,
-        color: core.getInput('color'),
         description: limitString(description, 4096),
         footer: {}
     };
