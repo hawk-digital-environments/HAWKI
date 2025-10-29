@@ -1,9 +1,13 @@
 name: HAWKI Release Pipeline
 
 on:
+  workflow_dispatch:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+  
 jobs:
   # ========================================================
   # JOB 1: Detect version and create the release.
