@@ -29,7 +29,7 @@ return [
     'connections' => [
         'default' =>[
             'ldap_host' => env('LDAP_HOST'),
-            'ldap_port' => env('LDAP_PORT', 389),
+            'ldap_port' => env('LDAP_PORT'),
             'ldap_bind_dn' => (static function () {
                 $bindDn = env('LDAP_BIND_DN');
                 if (!empty($bindDn)) {
@@ -68,7 +68,7 @@ return [
             'attribute_map' => [
                 'username' => env("LDAP_ATTR_USERNAME", "cn"),
                 'email' => env("LDAP_ATTR_EMAIL", "mail"),
-                'employeetype' => env("LDAP_ATTR_EMPLOYEETYPE", "employeetype"),
+                'employeeType' => env("LDAP_ATTR_EMPLOYEETYPE", "employeetype"),
                 'name' => env("LDAP_ATTR_NAME", "displayname"),
             ],
             'invert_name' => env('LDAP_INVERT_NAME', true),
