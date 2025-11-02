@@ -11,7 +11,7 @@ return [
     |
     |
     |
-    | !!! YOU CAN NOT CHANGE THE MIGRATION ATTRIBUTES AFTER MIGRATING THE DATABSE !!!
+    | !!! YOU CAN NOT CHANGE THE MIGRATION ATTRIBUTES AFTER MIGRATING THE DATABASE !!!
     */
 
     'migration' => [
@@ -23,8 +23,4 @@ return [
     ],
 
     'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
-
-
-
-
 ];
