@@ -131,8 +131,6 @@ class AuthenticationController extends Controller
 
             return $respond('/register');
         } catch (\Throwable $e) {
-            $this->logger->error('Authentication failed', ['exception' => $e]);
-
             $error = $e instanceof AuthFailedException ? $e->getMessage() : 'An unexpected error occurred during authentication.';
 
             if ($authHasForm) {
