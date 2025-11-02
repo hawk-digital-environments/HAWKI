@@ -11,6 +11,8 @@ use Psr\Log\LoggerInterface;
 
 readonly class LdapFilterArgs
 {
+    private const USERNAME_PLACEHOLDER = '=username';
+
     public string $baseDn;
     public string $filterTemplate;
 
@@ -29,7 +31,7 @@ readonly class LdapFilterArgs
         if (!is_string($filterTemplate) || empty($filterTemplate)) {
             throw new LdapException('The LDAP filter template must be a non-empty string.');
         }
-        if (!str_contains($filterTemplate, '=username')) {
+        if (!str_contains($filterTemplate, self::USERNAME_PLACEHOLDER)) {
             $logger?->warning("The provided LDAP filter template '{$filterTemplate}' does not contain the placeholder 'username'. There might be issues finding users.");
         }
         $this->baseDn = $baseDn;
@@ -43,7 +45,7 @@ readonly class LdapFilterArgs
      */
     public function getFilterForUser(string $username): string
     {
-        return str_replace('=username', '=' . LdapUtil::escapeLdapFilterValue($username), $this->filterTemplate);
+        return str_replace(self::USERNAME_PLACEHOLDER, '=' . LdapUtil::escapeLdapFilterValue($username), $this->filterTemplate);
     }
 
 }

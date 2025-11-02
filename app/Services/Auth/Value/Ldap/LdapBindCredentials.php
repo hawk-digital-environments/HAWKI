@@ -45,6 +45,8 @@ readonly class LdapBindCredentials
             $this->bindPw = empty($bindPw) ? null : $bindPw;
             if ($this->bindPw === null) {
                 $this->bindPwRedacted = null;
+            } else if (strlen($this->bindPw) < 2) {
+                $this->bindPwRedacted = str_repeat('*', strlen($this->bindPw));
             } else {
                 $firstChar = $this->bindPw[0];
                 $lastChar = $this->bindPw[strlen($this->bindPw) - 1];

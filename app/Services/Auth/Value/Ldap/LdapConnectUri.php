@@ -82,7 +82,7 @@ readonly class LdapConnectUri implements \Stringable
             throw new LdapException("The LDAP URI '{$uri}' must start with 'ldap://' or 'ldaps://'.");
         }
 
-        $isSsl = $scheme === 'ldaps';
+        $isSsl = strtolower($scheme) === 'ldaps';
 
         $port = $this->loadPort($uriParts['port'] ?? $globalPort ?? ($isSsl ? 636 : 389));
 

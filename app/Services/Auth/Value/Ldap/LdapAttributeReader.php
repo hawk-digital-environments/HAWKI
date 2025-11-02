@@ -50,11 +50,11 @@ readonly class LdapAttributeReader
         }
         $this->displayNameAttribute = $displayNameAttribute;
 
-        $this->displayNameAttributeIsArray = str_contains($displayNameAttribute, ',');
         if (!is_string($employeeTypeAttribute) || empty($employeeTypeAttribute)) {
             throw new LdapException('The LDAP "employee type" attribute must be a non-empty string.');
         }
         $this->employeeTypeAttribute = $employeeTypeAttribute;
+        $this->displayNameAttributeIsArray = str_contains($displayNameAttribute, ',');
 
         $this->legacyInvertDisplayNameOrder = (bool)$legacyInvertDisplayNameOrder;
     }
