@@ -6,8 +6,11 @@ use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Util\AuthServiceWithCredentialsTrait;
-use App\Services\Auth\Util\DisplayNameBuilder;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
+use App\Services\Auth\Value\Ldap\LdapAttributeReader;
+use App\Services\Auth\Value\Ldap\LdapBindCredentials;
+use App\Services\Auth\Value\Ldap\LdapConnectUri;
+use App\Services\Auth\Value\Ldap\LdapFilterArgs;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Http\Request;
@@ -41,63 +44,94 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
     public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
         if (!function_exists('ldap_set_option')) {
-            throw new \RuntimeException('LDAP functions are not available. Please ensure the PHP LDAP extension is installed and enabled.');
+            $this->logger->error('LDAP functions are not available. Please ensure the PHP LDAP extension is installed and enabled');
+            throw new \RuntimeException('LDAP functions are not available.');
         }
 
         try {
-            $host = $this->connection['ldap_host'];
-            $port = $this->connection['ldap_port'];
-            $bindDn = $this->connection['ldap_bind_dn'];
-            $bindPw = $this->connection['ldap_bind_pw'];
-            $baseDn = $this->connection['ldap_base_dn'];
-            $filter = $this->connection['ldap_filter'];
+            $connectUri = new LdapConnectUri(
+                $this->connection['ldap_host'],
+                $this->connection['ldap_port'],
+                $this->logger
+            );
+            $bindCredentials = new LdapBindCredentials(
+                bindDn: $this->connection['ldap_bind_dn'],
+                bindPw: $this->connection['ldap_bind_pw']
+            );
+            $filterArgs = new LdapFilterArgs(
+                baseDn: $this->connection['ldap_base_dn'],
+                filterTemplate: $this->connection['ldap_filter'],
+                logger: $this->logger
+            );
             $attributeMap = $this->connection['attribute_map'];
-            $usernameAttribute = $attributeMap['username'] ?? 'cn';
-            $nameAttribute = $attributeMap['name'] ?? 'displayname';
-            $employeeTypeAttribute = $attributeMap['employeetype'] ?? 'employeetype';
-            $emailAttribute = $attributeMap['email'] ?? 'mail';
-            $invertName = $this->connection['invert_name'] ?? false;
+            $attributeReader = new LdapAttributeReader(
+                usernameAttribute: $attributeMap['username'],
+                emailAttribute: $attributeMap['email'],
+                displayNameAttribute: $attributeMap['name'],
+                employeeTypeAttribute: $attributeMap['employeeType'],
+                legacyInvertDisplayNameOrder: $this->connection['invert_name'] ?? false,
+                logger: $this->logger
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error('LDAP configuration error: ' . $e->getMessage());
+            throw new AuthFailedException('LDAP server is misconfigured.', 500, $e);
+        }
 
+        try {
             if (empty($this->username) || empty($this->password)) {
-                $this->logger->warning('LDAP authentication attempted without credentials');
+                if (empty($this->username)) {
+                    $this->logger->warning('LDAP authentication attempted with empty username.');
+                } else {
+                    $this->logger->warning("LDAP authentication attempted for user '{$this->username}' with empty password.");
+                }
                 throw new AuthFailedException('To authenticate, username and password must be provided.');
             }
 
-            // bypassing certificate validation (can be adjusted per config)
-            ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
+            $globalOptions = [
+                LDAP_OPT_NETWORK_TIMEOUT => 5,
+                LDAP_OPT_TIMELIMIT => 5,
+                LDAP_OPT_REFERRALS => 0,
+                // bypassing certificate validation (can be adjusted per config)
+                // @todo should this really be hardcoded like this?
+                LDAP_OPT_X_TLS_REQUIRE_CERT => LDAP_OPT_X_TLS_NEVER,
+            ];
 
-            // Connect to LDAP
-            $ldapUri = $host . ':' . $port;
-            $ldapConn = ldap_connect($ldapUri);
+            foreach ($globalOptions as $option => $value) {
+                if (!@ldap_set_option(null, $option, $value)) {
+                    $this->logger->error("LDAP: Failed to set global option {$option} to value {$value}");
+                    throw new AuthFailedException('Failed to set LDAP global options.');
+                }
+            }
+
+            $ldapConn = @ldap_connect((string)$connectUri);
             if (!$ldapConn) {
-                $this->logger->error("LDAP: Failed to connect to {$ldapUri}");
+                $this->logger->error("LDAP: Failed to connect to {$connectUri}");
                 throw new AuthFailedException('Failed to connect to LDAP server.');
             }
 
-            // Set protocol version
-            if (!ldap_set_option($ldapConn, LDAP_OPT_PROTOCOL_VERSION, 3)) {
+            if (!@ldap_set_option($ldapConn, LDAP_OPT_PROTOCOL_VERSION, 3)) {
                 $this->logLdapError($ldapConn, 'Failed to set LDAP protocol version');
             }
 
-            // Bind with service account (bindDn + bindPw)
-            if (strtolower((string)$bindDn) !== 'anonymous' && !@ldap_bind($ldapConn, $bindDn, $bindPw)) {
-                $this->logLdapError($ldapConn, 'Service account bind failed');
+            if (!$bindCredentials->isAnonymousBind && !@ldap_bind($ldapConn, $bindCredentials->bindDn, $bindCredentials->bindPw)) {
+                $this->logLdapError($ldapConn, 'Failed to bind to LDAP server with configured bind DN as: ' . $bindCredentials->bindDn . ' with password: ' . ($bindCredentials->bindPwRedacted ?? 'without password'));
             }
 
-            // Search for user
-            $searchFilter = str_replace("username", $this->username, $filter);
-            $sr = ldap_search($ldapConn, $baseDn, $searchFilter);
-            if (!$sr) {
-                $this->logLdapError($ldapConn, 'LDAP search failed');
+            $sr = @ldap_search($ldapConn, $filterArgs->baseDn, $filterArgs->getFilterForUser($this->username));
+            if ($sr === false) {
+                $this->logLdapError($ldapConn, 'LDAP search failed. Used filter: ' . $filterArgs->getFilterForUser($this->username) . ' in base DN: ' . $filterArgs->baseDn);
             }
 
-            $entryId = ldap_first_entry($ldapConn, $sr);
-            if (!$entryId) {
-                $this->logLdapError($ldapConn, 'No LDAP entries found for user');
+            $entryId = @ldap_first_entry($ldapConn, $sr);
+            if ($entryId === false) {
+                $this->logLdapError(
+                    $ldapConn,
+                    'User: ' . $this->username . ' not found in LDAP directory with filter: ' . $filterArgs->getFilterForUser($this->username) . ' in base DN: ' . $filterArgs->baseDn
+                );
             }
 
-            $userDn = ldap_get_dn($ldapConn, $entryId);
-            if (!$userDn) {
+            $userDn = @ldap_get_dn($ldapConn, $entryId);
+            if ($userDn === false) {
                 $this->logLdapError($ldapConn, 'Failed to retrieve DN for user');
             }
 
@@ -106,40 +140,16 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
                 $this->logLdapError($ldapConn, "Invalid password for {$this->username}");
             }
 
-            // Fetch user attributes
-            $info = ldap_get_entries($ldapConn, $sr);
-
-            $getLdapValue = static function (string $attribute) use ($info) {
-                if (empty($info[0][$attribute][0])) {
-                    throw new \RuntimeException("LDAP: User info attribute '{$attribute}' is missing or empty.");
-                }
-                if (!is_string($info[0][$attribute][0])) {
-                    throw new \RuntimeException("LDAP: User info attribute '{$attribute}' is not a string.");
-                }
-                return $info[0][$attribute][0];
-            };
-
-            // Check if comma separated list
-            if (str_contains($getLdapValue($usernameAttribute), ',')) {
-                $displayName = DisplayNameBuilder::build(
-                    definition: $nameAttribute,
-                    valueResolver: $getLdapValue,
-                    logger: $this->logger
-                );
-            } else {
-                $displayName = $getLdapValue($nameAttribute);
-                // Handle display name inversion (e.g., "Lastname, Firstname")
-                if ($invertName) {
-                    $parts = explode(", ", $displayName);
-                    $displayName = ($parts[1] ?? '') . ' ' . ($parts[0] ?? '');
-                }
+            $ldapEntry = @ldap_get_entries($ldapConn, $sr);
+            if ($ldapEntry === false) {
+                $this->logLdapError($ldapConn, 'Failed to retrieve LDAP entry for user');
             }
 
             return new AuthenticatedUserInfo(
-                username: $getLdapValue($usernameAttribute),
-                displayName: $displayName,
-                email: $getLdapValue($emailAttribute),
-                employeeType: $getLdapValue($employeeTypeAttribute)
+                username: $attributeReader->getUsername($ldapEntry),
+                displayName: $attributeReader->getdisplayName($ldapEntry),
+                email: $attributeReader->getemail($ldapEntry),
+                employeeType: $attributeReader->getEmployeeType($ldapEntry)
             );
         } catch (\Exception $e) {
             throw new AuthFailedException('LDAP authentication failed', 500, $e);
@@ -153,11 +163,19 @@ class LdapService implements AuthServiceWithCredentialsInterface, AuthServiceInt
     /**
      * Helper to log LDAP errors with context.
      */
-    private function logLdapError($ldapConn, $message): never
+    private function logLdapError(
+        $ldapConn,
+        string $message
+    ): never
     {
-        $error = ldap_error($ldapConn);
         $errno = ldap_errno($ldapConn);
-        $this->logger->error("LDAP Error: {$message} (Error {$errno}: {$error})");
+
+        if ($errno === 0) {
+            $this->logger->info("LDAP Info: {$message} (No error)");
+        } else {
+            $error = ldap_error($ldapConn);
+            $this->logger->error("LDAP Error: {$message} (Error {$errno}: {$error})");
+        }
         throw new AuthFailedException('LDAP authentication failed');
     }
 }

@@ -63,27 +63,16 @@ class ChainedAuthService implements AuthServiceInterface,
      */
     public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
-        $previousMessages = [];
         foreach ($this->services as $service) {
             try {
                 return $service->authenticate($request);
-            } catch (AuthFailedException $e) {
+            } catch (AuthFailedException) {
                 // Try the next service, keep the exception for debugging purposes
-                $message = sprintf(
-                    'Service "%s" failed: %s in (%s)',
-                    get_class($service),
-                    $e->getMessage(),
-                    $e->getFile() . '::' . $e->getLine(),
-                );
-
-                $previousMessages[] = $message . $this->exceptionChainToString($e->getPrevious());
             }
         }
 
-        $errorDetails = implode(PHP_EOL . 'and ', $previousMessages);
-
         throw new AuthFailedException(
-            'All authentication services failed to authenticate the user. Errors:' . PHP_EOL . $errorDetails
+            'All authentication services failed to authenticate the user'
         );
     }
 
@@ -102,23 +91,5 @@ class ChainedAuthService implements AuthServiceInterface,
         }
 
         return null;
-    }
-
-    private function exceptionChainToString(\Throwable|null $exception): string
-    {
-        if (!$exception) {
-            return '';
-        }
-
-        $message = sprintf(
-            '%s: %s in (%s)',
-            get_class($exception),
-            $exception->getMessage(),
-            $exception->getFile() . '::' . $exception->getLine(),
-        );
-
-        $message .= $this->exceptionChainToString($exception->getPrevious());
-
-        return PHP_EOL . '   -> caused by ' . $message;
     }
 }
