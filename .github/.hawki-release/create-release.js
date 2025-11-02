@@ -18,6 +18,13 @@ function readChangelogContent(version) {
     const headingRegex = new RegExp(`^#\\s*v?${version}\\s*\\n?`);
     content = content.replace(headingRegex, '').trim();
 
+    // Ensure the content is not empty, otherwise we let the pipeline fail
+    const contentWithoutWsAndNewlines = content.replace(/\s+/g, '');
+    if (contentWithoutWsAndNewlines.length === 0) {
+        core.setFailed(`Changelog content for version ${version} is empty after removing heading.`);
+        throw new Error(`Changelog content is empty.`);
+    }
+
     const upgradeGuidePath = path.join(process.cwd(), `../../_changelog/${version}-upgrade.md`);
     if (fs.existsSync(upgradeGuidePath)) {
         const upgradeGuideText = `\n\n## Upgrade Guide\n\nFor this update, manual changes are required. Please see the [upgrade guide](https://docs.hawki.info/changelog/${version}-upgrade) for more information.`;
