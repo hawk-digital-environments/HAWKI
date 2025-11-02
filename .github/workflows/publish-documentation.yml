@@ -12,6 +12,7 @@ on:
     paths:
       - _documentation/**
       - _documentation.build/**
+      - _changelog/**
       - .github/workflows/publish-documentation.yml
 
 permissions:
