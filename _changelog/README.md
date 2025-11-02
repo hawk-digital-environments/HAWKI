@@ -20,7 +20,7 @@ Here is a simple template you can use for your changelog entry:
 
 - The main new features and changes in this version.
 
-### Quality of Live
+### Quality of Life
 
 - Improvements and enhancements that improve the user experience.
 
