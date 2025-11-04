@@ -145,6 +145,7 @@
     "SystemPrompt": "System Prompt",
     "theme": "Theme",
     "Think": "Think",
+    "Today": "Today",
     "username": "Username",
     "You": "You",
 
@@ -154,7 +155,6 @@
     "PH_SystemPrompt": "Enter your prefered system prompt",
     "PH_SearchBar": "Enter Name, Username oder E-Mail Address" ,
     "Api_Warning": "To be able to use the HAWKI language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you.",
-    "UploadFile": "Upload File"
-
-
+    "UploadFile": "Upload File",
+    "Yesterday": "Yesterday"
 }

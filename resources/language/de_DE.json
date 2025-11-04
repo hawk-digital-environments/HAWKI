@@ -144,6 +144,7 @@
     "SystemPrompt": "Systemprompt",
     "theme": "Theme",
     "Think": "Denken",
+    "Today": "Heute",
     "username": "Benutzername",
     "You": "Du",
     "PH_AboutMe": "Über mich...",
@@ -152,5 +153,6 @@
     "PH_SystemPrompt": "Gebe deine bevorzugte Systemprompt ein",
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
     "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
-    "UploadFile": "Datei hochladen"
+    "UploadFile": "Datei hochladen",
+    "Yesterday": "Gestern"
 }
