@@ -223,9 +223,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
       - name: Configure Git
         run: |
           git config --local user.email "action@github.com"
@@ -237,5 +234,5 @@ jobs:
           git fetch origin main
           git checkout development
           git pull origin development
-          git merge origin/main --no-ff -m "chore: Merge main back to development after release ${{ needs.detect-version.outputs.version }}"
+          git merge --no-ff -m "chore: Merge release ${RELEASE_COMMIT_SHA} into development" "${RELEASE_COMMIT_SHA}"
           git push origin development
