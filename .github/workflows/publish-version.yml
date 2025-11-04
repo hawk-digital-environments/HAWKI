@@ -74,8 +74,8 @@ jobs:
           push: false
           target: app_prod
           tags: digitalenvironments/hawki:test
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ needs.detect-version.outputs.version }}
+          cache-to: type=gha,mode=max,scope=${{ needs.detect-version.outputs.version }}
 
   # ========================================================
   # JOB 3: Create release (only after successful build test)
@@ -172,8 +172,8 @@ jobs:
           tags: |
             digitalenvironments/hawki:latest
             digitalenvironments/hawki:${{ needs.detect-version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ needs.detect-version.outputs.version }}
+          cache-to: type=gha,mode=max,scope=${{ needs.detect-version.outputs.version }}
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
