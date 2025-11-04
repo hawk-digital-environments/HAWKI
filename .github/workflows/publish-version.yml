@@ -73,6 +73,7 @@ jobs:
           file: ./Dockerfile
           push: false
           target: app_prod
+          platforms: linux/amd64,linux/arm64
           tags: digitalenvironments/hawki:test
           cache-from: type=gha,scope=${{ needs.detect-version.outputs.version }}
           cache-to: type=gha,mode=max,scope=${{ needs.detect-version.outputs.version }}
