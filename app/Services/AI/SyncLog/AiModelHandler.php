@@ -31,7 +31,7 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
     )
     {
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -39,7 +39,7 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
     {
         return SyncLogEntryType::AI_MODEL;
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -47,7 +47,7 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
     {
         return true;
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -55,13 +55,13 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
     {
         return !$this->featureSwitch->isExtAppRequest() || $this->featureSwitch->isAiInGroupsEnabled();
     }
-    
+
     /**
      * @inheritDoc
      */
     public function listeners(): array
     {
-        $handleSet = function (AiModelStatusUpdateEvent $event) {
+        $handleSet = function (AiModelStatusUpdateEvent|AiModelNumericIdAssignedEvent $event) {
             return $this->createSetPayload(
                 $event->model,
                 null
@@ -72,7 +72,7 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
             AiModelNumericIdAssignedEvent::class => $handleSet,
         ];
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -80,21 +80,21 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
     {
         return new AiModelResource($model);
     }
-    
+
     /**
      * @inheritDoc
      */
     public function findModelById(int $id): ?AiModel
     {
         $modelId = $this->modelIdMapDb->getModelIdByNumeric($id);
-        
+
         if ($modelId === null) {
             return null;
         }
-        
+
         return $this->aiService->getModel($modelId);
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -102,7 +102,7 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
     {
         return $this->modelIdMapDb->getOrAssignNumericId($model);
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -110,7 +110,7 @@ class AiModelHandler extends AbstractSyncLogHandler implements ConditionalSyncLo
     {
         return $this->aiService->getAvailableModels()->models->count();
     }
-    
+
     /**
      * @inheritDoc
      */
