@@ -1,10 +1,28 @@
 services:
+    migrator:
+        container_name: ${PROJECT_NAME}-migrator
+        image: ${PROJECT_HAWKI_IMAGE}
+        env_file:
+            - .env
+        command: >
+            sh -c "
+                chmod -R 777 /var/www/html/storage &&
+                su -s /bin/sh www-data -c 'php artisan migrate --force' &&
+                su -s /bin/sh www-data -c 'php artisan db:seed --force'
+            "
+        depends_on:
+            mysql:
+                condition: service_healthy
+        volumes:
+            - ./storage/app:/var/www/html/storage/app
+            - ./storage/logs:/var/www/html/storage/logs
+        restart: "no"
     app:
         container_name: ${PROJECT_NAME}-app
         image: ${PROJECT_HAWKI_IMAGE}
         restart: no
         volumes:
-            - ./storage/:/var/www/html/storage
+            - ./storage/app:/var/www/html/storage/app
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
             - /var/www/html/public
@@ -19,57 +37,60 @@ services:
         environment:
             REVERB_HOST: $APP_URL
         depends_on:
-            mysql:
-                condition: service_healthy
+            migrator:
+                condition: service_completed_successfully
     queue:
         container_name: ${PROJECT_NAME}-queue
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
         volumes:
-            - ./storage/:/var/www/html/storage
-            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./storage/app:/var/www/html/storage/app
+            - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./config/model_lists:/var/www/html/config/model_lists:ro
         env_file:
             - .env
         environment:
             REVERB_HOST: reverb
         command: [ 'php artisan queue:work --queue=default,mails,message_broadcast --tries=3 --timeout=90' ]
         depends_on:
-            mysql:
-                condition: service_healthy
+            migrator:
+                condition: service_completed_successfully
     reverb:
         container_name: ${PROJECT_NAME}-reverb
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
         volumes:
-            - ./storage/:/var/www/html/storage
-            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./storage/app:/var/www/html/storage/app
+            - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./config/model_lists:/var/www/html/config/model_lists:ro
         env_file:
             - .env
         command: [ 'php artisan reverb:start' ]
         depends_on:
-            mysql:
-                condition: service_healthy
+            migrator:
+                condition: service_completed_successfully
     scheduler:
         container_name: ${PROJECT_NAME}-scheduler
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
         volumes:
-            - ./storage/:/var/www/html/storage
-            - ./model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./storage/app:/var/www/html/storage/app
+            - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./config/model_lists:/var/www/html/config/model_lists:ro
         env_file:
             - .env
         command: [ 'php artisan schedule:work' ]
         depends_on:
-            mysql:
-                condition: service_healthy
+            migrator:
+                condition: service_completed_successfully
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.1.0
+        image: digitalenvironments/hawki-toolkit-file-converter:1.2.0
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
             - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
         healthcheck:
-            test: [ "CMD", "curl", "-f", "http://localhost:8001/" ]
+            test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
             interval: 30s
             timeout: 10s
             retries: 3
@@ -116,14 +137,15 @@ services:
         volumes:
             - ./certs:/etc/nginx/certs
             - ./nginx.default.conf:/etc/nginx/nginx.conf:ro
-            - ./storage/app/public:/var/www/html/storage:ro
+            - ./storage/app/public:/var/www/html/storage
         volumes_from:
             - app # This will automatically mount /var/www/html/public, so we can serve the static assets
         ports:
             - ${DOCKER_PROJECT_IP:-0.0.0.0}:80:80
             - ${DOCKER_PROJECT_IP:-0.0.0.0}:443:443
         depends_on:
-            - app
+            app:
+                condition: service_healthy
         healthcheck:
             test: curl --fail http://localhost || exit 1
             interval: 10s

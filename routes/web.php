@@ -27,9 +27,9 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
         ->name('login');
 
     Route::get('/req/login', [AuthenticationController::class, 'handleLogin'])
-        ->name('web.auth.login');
+        ->name('web.auth.login.get');
     Route::post('/req/login', [AuthenticationController::class, 'handleLogin'])
-        ->name('web.auth.login');
+        ->name('web.auth.login.post');
 
     /*
      * Those routes are deprecated and will be removed in future releases.

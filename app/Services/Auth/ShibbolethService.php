@@ -49,7 +49,7 @@ readonly class ShibbolethService implements AuthServiceWithLogoutRedirectInterfa
         } catch (\RuntimeException $e) {
             $loginRedirect = AuthRedirectBuilder::build(
                 $this->loginPath,
-                ['target' => 'web.auth.login']
+                ['target' => 'web.auth.login.get']
             );
 
             if (!$loginRedirect) {
