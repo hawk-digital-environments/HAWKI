@@ -14,7 +14,7 @@ use JsonSerializable;
 class AiModel implements JsonSerializable
 {
     private ?AiModelContext $context = null;
-    
+
     public function __construct(
         /**
          * The raw configuration array for the model.
@@ -52,6 +52,9 @@ class AiModel implements JsonSerializable
      */
     public function idMatches(string $idToTest): bool
     {
+        if(empty($idToTest)) {
+            return false;
+        }
         $id = $this->getId();
         if (empty($id)) {
             return false;
@@ -96,7 +99,7 @@ class AiModel implements JsonSerializable
     {
         return $this->raw['input'] ?? ['text'];
     }
-    
+
     /**
      * Checks if the model supports a specific input method.
      * @param string $input The input method to check for.
@@ -117,7 +120,7 @@ class AiModel implements JsonSerializable
     {
         return $this->raw['output'] ?? ['text'];
     }
-    
+
     /**
      * Checks if the model supports a specific output method.
      * @param string $output The output method to check for.
@@ -139,7 +142,7 @@ class AiModel implements JsonSerializable
     {
         return $this->raw['tools'] ?? [];
     }
-    
+
     /**
      * Checks if the model has a specific tool enabled.
      * @param string $tool The tool to check for.
@@ -151,7 +154,7 @@ class AiModel implements JsonSerializable
         $tools = $this->getTools();
         return array_key_exists($tool, $tools) && $tools[$tool] === true;
     }
-    
+
     /**
      * Checks if this model possesses all required tools to process a document.
      * @return bool
@@ -160,7 +163,7 @@ class AiModel implements JsonSerializable
     {
         return $this->hasTool('file_upload');
     }
-    
+
     /**
      * Checks if this model possesses all required tools to process an image.
      * @return bool
@@ -169,7 +172,7 @@ class AiModel implements JsonSerializable
     {
         return $this->hasInputMethod('image') && $this->hasTool('vision');
     }
-    
+
     /**
      * Checks if the model is available for the given usage type.
      * This is typically used to restrict certain models to specific usage contexts,
@@ -182,11 +185,11 @@ class AiModel implements JsonSerializable
         if ($usageType === ModelUsageType::DEFAULT) {
             return true;
         }
-        
+
         if ($usageType === ModelUsageType::EXTERNAL_APP && $this->isAllowedInExternalApp()) {
             return true;
         }
-        
+
         return false;
     }
 
@@ -199,7 +202,7 @@ class AiModel implements JsonSerializable
     {
         return (isset($this->raw['external']) && $this->raw['external'] === true) || !array_key_exists('external', $this->raw);
     }
-    
+
     /**
      * Returns the provider instance that manages this model.
      * This method will throw an exception if the model is not bound to a context.
@@ -210,7 +213,7 @@ class AiModel implements JsonSerializable
         $this->assertContextIsSet(__METHOD__);
         return $this->context->getProvider();
     }
-    
+
     /**
      * Returns the current online status of the model.
      * This method will throw an exception if the model is not bound to a context.
@@ -221,7 +224,7 @@ class AiModel implements JsonSerializable
         $this->assertContextIsSet(__METHOD__);
         return $this->context->getStatus();
     }
-    
+
     /**
      * Returns the client instance used to interact with the model's API.
      * This method will throw an exception if the model is not bound to a context.
@@ -250,14 +253,14 @@ class AiModel implements JsonSerializable
     {
         return $this->toArray();
     }
-    
+
     private function assertContextIsSet(string $method): void
     {
         if ($this->context === null) {
             throw new NoContextBoundException($this->getId(), $method);
         }
     }
-    
+
     /**
      * Binds the given context to the model.
      * This method is intended for internal use only and will be called by {@see AiFactory::createModelWithContext()}

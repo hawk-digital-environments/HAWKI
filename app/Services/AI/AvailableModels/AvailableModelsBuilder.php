@@ -16,7 +16,7 @@ use App\Services\AI\Value\ModelUsageType;
 class AvailableModelsBuilder
 {
     private AiModelCollection $models;
-    
+
     public function __construct(
         /**
          * @var array<string, array<string, ?string>> $defaultModelsByType
@@ -30,27 +30,27 @@ class AvailableModelsBuilder
     {
         $this->models = new AiModelCollection();
     }
-    
+
     public function addModel(AiModel $model): self
     {
         $this->models = $this->models->withModel($model);
         return $this;
     }
-    
+
     public function build(ModelUsageType $usageType): AvailableAiModels
     {
         $defaultModelIds = $this->getModelListWithFallbackForType($this->defaultModelsByType, $usageType);
         $systemModelIds = $this->getModelListWithFallbackForType($this->systemModelsByType, $usageType);
-        
+
         $defaultModels = new AiModelMap();
         $systemModels = new AiModelMap();
         $models = new AiModelCollection();
-        
+
         foreach ($this->models as $model) {
             if (!$model->isActive()) {
                 continue;
             }
-            
+
             $isDefaultModel = false;
             foreach ($defaultModelIds as $defaultModelType => $defaultModelId) {
                 if ($model->idMatches($defaultModelId)) {
@@ -58,7 +58,7 @@ class AvailableModelsBuilder
                     $isDefaultModel = true;
                 }
             }
-            
+
             $isSystemModel = false;
             foreach ($systemModelIds as $systemModelType => $systemModelId) {
                 if ($model->idMatches($systemModelId)) {
@@ -66,28 +66,27 @@ class AvailableModelsBuilder
                     $isSystemModel = true;
                 }
             }
-            
+
             if (!$isDefaultModel && !$isSystemModel && !$model->isAvailableInUsageType($usageType)) {
                 continue;
             }
-            
             $models = $models->withModel($model);
         }
-        
-        if (count($defaultModelIds) !== $defaultModels->count()) {
+
+        if (count(array_filter($defaultModelIds)) !== $defaultModels->count()) {
             throw MissingDefaultModelsException::createForMissing($defaultModelIds, $defaultModels);
         }
         if (count($systemModelIds) !== $systemModels->count()) {
             throw MissingSystemModelsException::createForMissing($systemModelIds, $systemModels);
         }
-        
+
         return new AvailableAiModels(
             models: $models,
             defaultModels: $defaultModels,
             systemModels: $systemModels
         );
     }
-    
+
     private function getModelListWithFallbackForType(array $list, ModelUsageType $usageType): array
     {
         $defaultModels = $list[ModelUsageType::DEFAULT->value] ?? [];
