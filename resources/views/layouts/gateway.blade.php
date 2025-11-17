@@ -17,6 +17,7 @@
     <script src="{{ asset('js/encryption.js') }}"></script>
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
+    <script src="{{ asset('js/passkeyInputs.js') }}"></script>
     @vite('resources/js/app.js')
 
 	{!! $settingsPanel !!}
