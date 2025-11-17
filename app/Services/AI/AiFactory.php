@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Services\AI;
 
 
-use App\Services\AI\AvailableModels\AvailableModelsBuilder;
-use App\Services\AI\AvailableModels\AvailableModelsBuilderBuilder;
 use App\Services\AI\Db\ModelStatusDb;
 use App\Services\AI\Exception\InvalidClientClassException;
 use App\Services\AI\Exception\MissingRequiredAiServiceClassException;
@@ -41,7 +39,7 @@ class AiFactory
             $builder = $this->rememberInstance(AvailableModelsBuilder::class, function () {
                 $config = $this->config->get('model_providers', []);
 
-                $builder = $this->container->get(AvailableModelsBuilderBuilder::class);
+                $builder = $this->container->get(AvailableModelsBuilder::class);
 
                 // Fallback for older config structure
                 if (!is_array($config['default_models'] ?? null) && isset($config['defaultModel'])) {
@@ -49,9 +47,6 @@ class AiFactory
                 }
 
                 foreach ($config['default_models'] ?? [] as $modelType => $modelName) {
-//                    if(empty($modelName)){
-//                        continue;
-//                    }
                     $builder->addDefaultModelName($modelType, ModelUsageType::DEFAULT, $modelName);
                 }
 
@@ -67,11 +62,9 @@ class AiFactory
                     $builder->addSystemModelName($modelType, ModelUsageType::EXTERNAL_APP, $modelName);
                 }
 
-                $i = $builder->build();
-
                 foreach ($this->createProviderList() as $provider) {
                     foreach ($provider->getModels() as $model) {
-                        $i->addModel(
+                        $builder->addModel(
                             AiModel::bindContext(
                                 $model,
                                 $this->createModelContext($provider, $model)
@@ -80,7 +73,7 @@ class AiFactory
                     }
                 }
 
-                return $i;
+                return $builder;
             });
 
             return $builder->build($usageType);
@@ -161,6 +154,12 @@ class AiFactory
         return __NAMESPACE__ . '\\Providers\\' . $adapter . '\\' . $adapter . ucfirst($className);
     }
 
+    /**
+     * @template T of object
+     * @param class-string<T> $key
+     * @param callable<T> $callback
+     * @return T|object
+     */
     private function rememberInstance(string $key, callable $callback): object
     {
         if (!isset($this->instances[$key])) {

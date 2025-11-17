@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace App\Services\AI\AvailableModels;
+namespace App\Services\AI;
 
 
 use App\Services\AI\Exception\MissingDefaultModelsException;
@@ -15,18 +15,15 @@ use App\Services\AI\Value\ModelUsageType;
 
 class AvailableModelsBuilder
 {
+    /**
+     * @var array<string, array<string, ?string>> $defaultModelsByType
+     */
+    private array $defaultModelsByType = [];
+    private array $systemModelsByType = [];
+
     private AiModelCollection $models;
 
-    public function __construct(
-        /**
-         * @var array<string, array<string, ?string>> $defaultModelsByType
-         */
-        private readonly array $defaultModelsByType,
-        /**
-         * @var array<string, array<string, ?string>> $systemModelsByType
-         */
-        private readonly array $systemModelsByType
-    )
+    public function __construct()
     {
         $this->models = new AiModelCollection();
     }
@@ -37,8 +34,23 @@ class AvailableModelsBuilder
         return $this;
     }
 
+    public function addDefaultModelName(string $modelType, ModelUsageType $usageType, ?string $modelId): self
+    {
+        $this->defaultModelsByType[$usageType->value][$modelType] = $modelId;
+        return $this;
+    }
+
+    public function addSystemModelName(string $modelType, ModelUsageType $usageType, ?string $modelId): self
+    {
+        $this->systemModelsByType[$usageType->value][$modelType] = $modelId;
+        return $this;
+    }
+
     public function build(ModelUsageType $usageType): AvailableAiModels
     {
+        $this->validateKeysOverAllTypes($this->defaultModelsByType);
+        $this->validateKeysOverAllTypes($this->systemModelsByType);
+
         $defaultModelIds = $this->getModelListWithFallbackForType($this->defaultModelsByType, $usageType);
         $systemModelIds = $this->getModelListWithFallbackForType($this->systemModelsByType, $usageType);
 
@@ -70,8 +82,10 @@ class AvailableModelsBuilder
             if (!$isDefaultModel && !$isSystemModel && !$model->isAvailableInUsageType($usageType)) {
                 continue;
             }
+
             $models = $models->withModel($model);
         }
+
 
         if (count(array_filter($defaultModelIds)) !== $defaultModels->count()) {
             throw MissingDefaultModelsException::createForMissing($defaultModelIds, $defaultModels);
@@ -95,5 +109,21 @@ class AvailableModelsBuilder
             $defaultModels,
             array_filter($specificModels)
         );
+    }
+
+    private function validateKeysOverAllTypes(array $modelsByType): void
+    {
+        $defaultKeys = array_keys($modelsByType[ModelUsageType::DEFAULT->value] ?? []);
+
+        foreach ($modelsByType as $type => $models) {
+            if ($type === ModelUsageType::DEFAULT->value) {
+                continue;
+            }
+
+            $typeKeys = array_keys($models);
+            if (!empty(array_diff($typeKeys, $defaultKeys))) {
+                throw new \RuntimeException("Inconsistent keys for model type '{$type}'. Keys must match those of the 'default' usage type. Expected keys: [" . implode(', ', $defaultKeys) . "], found: [" . implode(', ', $typeKeys) . "].");
+            }
+        }
     }
 }
