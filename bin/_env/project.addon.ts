@@ -60,13 +60,6 @@ export const addon: AddonEntrypoint = async (context) => ({
             });
 
         program
-            .command('setup-models')
-            .description('starts a wizard to setup the AI models for the project')
-            .action(async () => {
-                await context.docker.executeCommandInService('app', ['php', 'hawki', 'setup-models'], {interactive: true});
-            });
-
-        program
             .command('hawki')
             .description('executes the hawki cli tool inside the app container')
             .allowExcessArguments(true)

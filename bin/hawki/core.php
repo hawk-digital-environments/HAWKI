@@ -24,7 +24,7 @@ function showHelp() {
     echo BOLD . "HAWKI Command Line Utility" . RESET . PHP_EOL;
     echo "Usage: php hawki [command] [options]" . PHP_EOL . PHP_EOL;
     echo "Available commands:" . PHP_EOL;
-    echo "  check                           - Check required dependencies" . PHP_EOL;
+    echo "  health, check            - Run comprehensive system health check (BETA)" . PHP_EOL;
     echo "  init, initialize                - Initialize the project" . PHP_EOL;
     echo "    Flags:" . PHP_EOL;
     echo "      -all                        - Continue to setup process". PHP_EOL;
@@ -34,7 +34,6 @@ function showHelp() {
     echo "      -db                         - Database settings" . PHP_EOL;
     echo "      -auth                       - Authentication settings" . PHP_EOL;
     echo "      -reverb                     - Reverb settings" . PHP_EOL;
-    echo "  setup-models                    - Configure AI model providers" . PHP_EOL;
     echo "  clear-cache                     - Clear all Laravel caches" . PHP_EOL;
     echo "  migrate [--fresh]               - Run database migrations" . PHP_EOL;
     echo "  announcement                    - Create and publish new Announcements" . PHP_EOL;
@@ -44,15 +43,19 @@ function showHelp() {
     echo "  token [--revoke]                - Create or revoke API tokens for a user" . PHP_EOL;
     echo "  update -hawki-avatar {path}     - Update HAWKI Avatar." . PHP_EOL;
     echo "  remove-user                     - Remove a user from the system" . PHP_EOL;
-    echo "  run -dev                        - Run development servers" . PHP_EOL;
-    echo "  run -build                      - Build the project" . PHP_EOL;
+
+    echo "  run                             - Run development servers" . PHP_EOL;
+    echo "    Flags:" . PHP_EOL;
+    echo "      -dev                        - Run development servers" . PHP_EOL;
+    echo "      -build                      - Build the project" . PHP_EOL;
     echo "  stop                            - Stop all running processes" . PHP_EOL;
     echo "  update                          - (BETA) Update HAWKI to the latest version from GitHub" . PHP_EOL;
     echo "  help                            - Show this help message" . PHP_EOL . PHP_EOL;
 
     echo BOLD . GREEN . "For more information please refer to HAWKI documentation at:" . RESET . PHP_EOL;
-    echo BOLD . "https://hawk-digital-environments.github.io/HAWKI2-Documentation/" . RESET . PHP_EOL . PHP_EOL;
-    echo d() . RESET . PHP_EOL . PHP_EOL;
+    echo BOLD . "https://docs.hawki.info//" . RESET . PHP_EOL . PHP_EOL;
+
+    checkVersion();
 }
 
 // Helper functions
@@ -71,7 +74,10 @@ function getEnvContent() {
 function getEnvValue($key, $envContent) {
     $pattern = "/^{$key}=(.*)$/m";
     if (preg_match($pattern, $envContent, $matches)) {
-        return trim($matches[1]);
+        $value = trim($matches[1]);
+        // Remove surrounding quotes if present
+        $value = trim($value, '"\'');
+        return $value;
     }
     return '';
 }
@@ -193,4 +199,3 @@ function askForNextStep($nextStep){
         return false;
     }
 }
-

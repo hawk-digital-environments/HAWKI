@@ -15,6 +15,7 @@ require_once __DIR__ . '/bin/hawki/development.php';
 require_once __DIR__ . '/bin/hawki/user-management.php';
 require_once __DIR__ . '/bin/hawki/announcements.php';
 require_once __DIR__ . '/bin/hawki/update.php';
+require_once __DIR__ . '/bin/hawki/healthCheck.php';
 
 // Get the command argument
 $command = $argv[1] ?? 'help';
@@ -22,8 +23,9 @@ $flags = array_slice($argv, 2);
 
 // Process the command
 switch ($command) {
+    case 'health':
     case 'check':
-        checkDependencies();
+        checkHealth();
         break;
     case 'init':
     case 'initialize':
@@ -36,9 +38,6 @@ switch ($command) {
         break;
     case 'setup':
         setupEnv($flags);
-        break;
-    case 'setup-models':
-        setupModelProviders();
         break;
     case 'clear-cache':
         clearCache();
@@ -76,8 +75,6 @@ switch ($command) {
     case 'announcement':
         handleAnnouncementCommand($flags);
         break;
-//    case 'update':
-//        updateSystem();
     case 'update':
         if (isset($flags[0])) {
             switch ($flags[0]) {
@@ -98,6 +95,10 @@ switch ($command) {
         break;
     case 'help':
         showHelp();
+        break;
+    case '--version':
+    case '--v':
+        checkVersion();
         break;
     default:
         echo RED . "Unknown command: $command" . RESET . PHP_EOL;
