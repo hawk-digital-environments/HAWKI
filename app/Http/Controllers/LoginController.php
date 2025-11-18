@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Auth\Contract\AuthServiceInterface;
+use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\System\SettingsService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
@@ -17,8 +20,8 @@ class LoginController extends Controller
         $this->languageController = $languageController;
     }
 
-    // / Redirect to Login Page
-    public function index()
+    /// Redirect to Login Page
+    public function index(AuthServiceInterface $authService, Request $request)
     {
         Session::put('registration_access', false);
 
@@ -28,41 +31,24 @@ class LoginController extends Controller
 
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsService)->render();
+        $settingsPanel = (new SettingsService())->render();
 
-        $authenticationMethod = config('auth.authMethod', 'LDAP');
-
-        // Local authentication settings - load directly from database if config is not set
+        $showLoginForm = $authService instanceof AuthServiceWithCredentialsInterface;
+        // @todo we probably have to adjust this, so $showLoginForm gets updated.
         $localUsersActive = config('auth.local_authentication', false);
         $localSelfserviceActive = config('auth.local_selfservice', false);
 
-        // Fallback: Load from database if config values are not set
-        // if (!$localUsersActive || !$localSelfserviceActive) {
-        //    $dbSettings = \DB::table('app_settings')
-        //        ->whereIn('key', ['auth_local_authentication', 'auth_local_selfservice'])
-        //        ->pluck('value', 'key');
-        //
-        //    $localUsersActive = ($dbSettings['auth_local_authentication'] ?? 'false') === 'true';
-        //    $localSelfserviceActive = ($dbSettings['auth_local_selfservice'] ?? 'false') === 'true';
-        // }
+        // Read authentication forms
+        $authForms = View::make('partials.login.authForms', compact('translation', 'showLoginForm'))->render();
+
+        // Initialize settings panel
+        $settingsPanel = (new SettingsService())->render();
 
         // Get available roles for guest registration
         $availableRoles = [];
         if ($localSelfserviceActive) {
             $availableRoles = \Orchid\Platform\Models\Role::where('selfassign', true)->get();
         }
-
-        // Read authentication forms with local auth variables
-        $authForms = View::make('partials.login.authForms', compact(
-            'translation',
-            'authenticationMethod',
-            'localUsersActive',
-            'localSelfserviceActive',
-            'availableRoles'
-        ))->render();
-
-        // Initialize settings panel
-        $settingsPanel = (new SettingsService)->render();
 
         $activeOverlay = false;
         if (Session::get('last-route') && Session::get('last-route') != 'login') {
@@ -75,6 +61,9 @@ class LoginController extends Controller
             'authForms',
             'settingsPanel',
             'activeOverlay',
-            'authenticationMethod'));
+            'localUsersActive',
+            'localSelfserviceActive',
+            'availableRoles'
+        ));
     }
 }

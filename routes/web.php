@@ -13,39 +13,51 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use Illuminate\Support\Facades\Route;
 
+
 Route::middleware('prevent_back')->group(function () {
 
     Route::get('/', [LoginController::class, 'index']);
 
-    Route::get('/login', [LoginController::class, 'index']);
+    Route::get('/login', [LoginController::class, 'index'])
+        ->name('login');
+
+    Route::get('/req/login', [AuthenticationController::class, 'handleLogin'])
+        ->name('web.auth.login.get');
+    Route::post('/req/login', [AuthenticationController::class, 'handleLogin'])
+        ->name('web.auth.login.post');
 
     // Dynamic CSS route
     Route::get('/css/{name}', [AppCssController::class, 'getByName'])->name('css.get');
-    
+
     // Dynamic system image route
+    // @todo move this to its own controller
     Route::get('/system-image/{name}', function ($name) {
         $image = App\Models\AppSystemImage::getByName($name);
         if ($image) {
             return redirect(asset($image->file_path));
         }
-        
+
         // Fallback to static files
         $fallback = [
             'favicon' => 'favicon.ico',
             'logo_svg' => 'img/logo.svg'
         ];
-        
+
         return redirect(asset($fallback[$name] ?? 'img/logo.svg'));
     })->name('system.image');
 
-    Route::post('/req/login-ldap', [AuthenticationController::class, 'ldapLogin']);
-    Route::post('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin']);
-    Route::get('/req/login-shibboleth', [AuthenticationController::class, 'shibbolethLogin'])
-        ->name('web.auth.shibboleth.login');
-    Route::post('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
-    Route::get('/req/login-oidc', [AuthenticationController::class, 'openIDLogin']);
-    Route::post('/req/login-local', [AuthenticationController::class, 'localLogin']);
-
+    /*
+     * Those routes are deprecated and will be removed in future releases.
+     * They are merely aliases now and will log a warning when accessed.
+     */
+    Route::middleware('deprecated:/req/login')->group(function () {
+        Route::post('/req/login-ldap', [AuthenticationController::class, 'handleLogin']);
+        Route::post('/req/login-shibboleth', [AuthenticationController::class, 'handleLogin']);
+        Route::get('/req/login-shibboleth', [AuthenticationController::class, 'handleLogin'])
+            ->name('web.auth.shibboleth.login');
+        Route::post('/req/login-oidc', [AuthenticationController::class, 'handleLogin']);
+        Route::get('/req/login-oidc', [AuthenticationController::class, 'handleLogin']);
+    });
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
 

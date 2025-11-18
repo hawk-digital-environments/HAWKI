@@ -3,7 +3,7 @@
 # =====================================================
 # NODE - ROOT
 # -----------------------------------------------------
-FROM node:23-bookworm AS node_root
+FROM node:24-bookworm AS node_root
 
 ARG APP_ENV=prod
 

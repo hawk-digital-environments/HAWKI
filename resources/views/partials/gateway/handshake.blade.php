@@ -31,7 +31,7 @@
             </form>
 
             <div class="nav-buttons">
-                <button onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
+                <button id="verifyEnteredPassKey-btn" onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
             <p class="red-text" id="alert-message"></p>
             <button onclick="switchSlide(2)" class="btn-md">{{ $translation["HS-ForgottenPasskey"] }}</button>
@@ -54,7 +54,7 @@
             </div>
 
             <p class="red-text" id="backup-alert-message"></p>
-            <button onclick="switchSlide(3)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
+            <button onclick="switchSlide(4)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
 
         </div>
 
@@ -86,7 +86,7 @@
             <div class="nav-buttons">
                 <button onclick="extractPasskeySystem()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
-            
+
             <p class="red-text" id="backup-alert-message-system"></p>
             <button onclick="switchSlide(7)" class="btn-md">{{ $translation["HS-ForgottenBackup"] }}</button>
 
@@ -121,7 +121,7 @@
                 <p class="slide-subtitle text-center text-primary mb-3">
                     {{ $translation["HS-LoginCodeM"] }} <span id="otp-email-display"></span>
                 </p>
-                
+
                 {{-- Individual OTP input fields --}}
                 <div class="otp-input-group">
                     <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="0">
@@ -131,25 +131,25 @@
                     <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="4">
                     <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" autocomplete="off" data-index="5">
                 </div>
-                
+
                 <div class="nav-buttons">
                     <button id="verify-otp-btn" onclick="verifyOTP(this)" class="btn-lg-fill">{{ $translation["HS-LoginCodeB3"] }}</button>
                 </div>
-                
+
                 {{-- Resend Button (initially hidden, appears after 60s cooldown) --}}
                 <div id="resend-container" style="display: none; margin-top: 15px;">
                     <p class="red-text" id="alert-message" style="text-align: center;">{{ $translation["HS-LoginCodeT3"] }}</p>
 
-                    <div class="nav-buttons"> 
+                    <div class="nav-buttons">
                         <button id="resend-otp-btn" onclick="resendOTP(this)" class="btn-lg-fill">
                             {{ $translation["HS-LoginCodeB4"] }}
                         </button>
                     </div>
                 </div>
-                
+
                 {{-- Timer Element (visible during active OTP session) --}}
                 <div style="margin-top: 15px;">
-                    <p id="otp-timer" style="text-align: center; color: var(--accent-color); font-weight: bold;">5:00</p> 
+                    <p id="otp-timer" style="text-align: center; color: var(--accent-color); font-weight: bold;">5:00</p>
                 </div>
                 {{-- --}}
 
@@ -199,10 +199,10 @@
             } catch (error) {
                 console.error('Error syncing keychain with stored passkey:', error);
                 console.warn('Stored passkey is invalid or outdated. Clearing and requesting new authentication.');
-                
+
                 // Clear invalid passkey from localStorage
                 localStorage.removeItem('passkey');
-                
+
                 // Show appropriate authentication method based on config
                 @if(config('auth.passkey_method') === 'system')
                     @if(config('auth.passkey_otp'))
@@ -216,7 +216,7 @@
                     // Show manual passkey input for user-defined passkeys
                     switchSlide(1);
                 @endif
-                
+
                 setTimeout(() => {
                     if(@json($activeOverlay)){
                         setOverlay(false, true)
@@ -226,7 +226,7 @@
         }
         else{
             console.log('No passkey found, opening authentication panel...');
-            
+
             // Check config for passkey method
             @if(config('auth.passkey_method') === 'system')
                 @if(config('auth.passkey_otp'))
@@ -239,7 +239,7 @@
             @else
                 switchSlide(1); // Show manual passkey input (default behavior)
             @endif
-            
+
             setTimeout(() => {
                 if(@json($activeOverlay)){
                     setOverlay(false, true)
@@ -340,6 +340,6 @@
 </script>
 
 {{-- Auto Passkey Generation Module --}}
-<script src="{{ asset('js_v2.1.0/auto_passkey_generation.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/auto_passkey_generation.js')), 0, 8) }}"></script>
+<script src="{{ asset('js/auto_passkey_generation.js') }}"></script>
 
 @endsection

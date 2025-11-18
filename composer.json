@@ -2,32 +2,39 @@
     "name": "hawki/hawki",
     "type": "project",
     "description": "data protection-compliant platform for generative AI in academy.",
-    "keywords": ["HAWKI2", "HAWKI", "laravel", "framework", "Generative AI", "educational"],
+    "keywords": [
+        "HAWKI2",
+        "HAWKI",
+        "laravel",
+        "framework",
+        "Generative AI",
+        "educational"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "blade-ui-kit/blade-icons": "^1.8",
+        "blade-ui-kit/blade-icons": "^1.8.0",
         "hawk-hhg/hawki-crypto": "^0.5.3",
-        "jumbojett/openid-connect-php": "^1.0",
-        "laravel/framework": "^12.0",
-        "laravel/reverb": "^1.1",
-        "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.9",
-        "league/flysystem-aws-s3-v3": "^3.29",
-        "league/flysystem-sftp-v3": "^3.30",
-        "league/flysystem-webdav": "^3.0",
+        "jumbojett/openid-connect-php": "^1.0.2",
+        "laravel/framework": "^12.35.1",
+        "laravel/reverb": "^1.6.0",
+        "laravel/sanctum": "^4.2.0",
+        "laravel/tinker": "^2.10.1",
+        "league/flysystem-aws-s3-v3": "^3.30.1",
+        "league/flysystem-sftp-v3": "^3.30.0",
+        "league/flysystem-webdav": "^3.30.0",
         "orchid/platform": "^14.52",
-        "spatie/laravel-backup": "^9.3"
+        "spatie/laravel-backup": "^9.3.4"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.23",
+        "fakerphp/faker": "^1.24.1",
         "laravel/boost": "^1.1",
-        "laravel/pint": "^1.13",
-        "laravel/sail": "^1.26",
-        "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^8.0",
+        "laravel/pint": "^1.25.1",
+        "laravel/sail": "^1.46.0",
+        "mockery/mockery": "^1.6.12",
+        "nunomaduro/collision": "^8.8.2",
         "phpunit/phpunit": "^11.0.1",
-        "spatie/laravel-ignition": "^2.4"
+        "spatie/laravel-ignition": "^2.9.1"
     },
     "autoload": {
         "psr-4": {

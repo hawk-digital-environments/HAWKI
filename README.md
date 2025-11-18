@@ -37,3 +37,11 @@ The updated HAWKI ecosystem deliberately emphasizes inter-university collaborati
 
 
 **HAWKI 2 is open for everyone—join now, shape the future, and explore the possibilities of generative AI in university teaching!** 
+
+## Additional Resources
+
+For more information about HAWKI, please visit HAWKI website and explore the documentation.
+
+- [HAWKI Website](https://www.hawki.info/)
+- [Documentation](https://docs.hawki.info)
+- [Questions? Ideas? Feedback? - Join our Discord](https://discord.gg/zzR54sRWDE)

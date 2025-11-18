@@ -114,7 +114,7 @@
     "HS-LoginCodeE4": "Error generating passkey",
     "HS-LoginCodeE5": "Error verifying log-in code",
     "HS-LoginCodeE6": "Log-in code has expired. Please request a new one.",
-    
+
     "HS-LoginCodeM": "Log-in code sent to",
 
     "HS-LoginCodeT1": "Resend in",
@@ -126,6 +126,8 @@
     "HS-ErrorTitle": "Handshake Error",
     "HS-ErrorMessage": "The handshake process failed. Please try again or log out.",
     "HS-Logout": "Logout",
+
+    "HS_Allowed_PK_Characters": "Allowed characters: A–Z, a–z, 0–9, and ! @ # $ % ^ & * ( ) _ + -",
 
     "ImgUpload": "Upload Image",
     "ImgUploadDesc": "Select an image or drag it here.<br>Double-click to enter edit mode.",
@@ -178,6 +180,7 @@
     "SystemPrompt": "System Prompt",
     "theme": "Theme",
     "Think": "Think",
+    "Today": "Today",
     "username": "Username",
     "guest_username": "Username",
     "guest_password": "Password",
@@ -208,6 +211,7 @@
     "PH_SearchBar": "Enter Name, Username oder E-Mail Address" ,
     "Api_Warning": "To be able to use the :system language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you.",
     "UploadFile": "Upload File",
+    "Yesterday": "Yesterday",
 
     "Reg_SL0_H": "Your data is safe! 🔐",
     "Reg_SL0_B": "Let's go!",
@@ -215,7 +219,7 @@
     "Reg_SL7_H": "Access Under Review ⏰",
     "Reg_SL7_T": "Your request is being reviewed. You will receive an email notification about the status of your request.",
     "Reg_SL7_Contact": "Have questions? Contact us at:",
-    
+
     "change_password": "Change Password",
     "change_password_text": "Please set a new password for your account.",
     "new_password": "New Password"

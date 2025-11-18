@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Http\Middleware\AdminAccess;
+use App\Http\Middleware\DeprecatedEndpointMiddleware;
 use App\Http\Middleware\EditorAccess;
 use App\Http\Middleware\ExternalCommunicationCheck;
 use App\Http\Middleware\MandatorySignatureCheck;
@@ -22,6 +23,8 @@ use League\Flysystem\Filesystem;
 use League\Flysystem\WebDAV\WebDAVAdapter;
 use Orchid\Support\Facades\Dashboard;
 use Sabre\DAV\Client;
+
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -90,12 +93,12 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(
             AvatarStorageService::class,
-            fn (Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
+            fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
         );
 
         $this->app->singleton(
             FileStorageService::class,
-            fn (Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
+            fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
         );
     }
 
@@ -130,5 +133,6 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
         Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
         Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
+        Route::aliasMiddleware('deprecated', DeprecatedEndpointMiddleware::class);
     }
 }

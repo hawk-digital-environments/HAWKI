@@ -1,5 +1,7 @@
 //#region Overlay
 
+// @todo remove me! merge setupTooltip
+
 async function setOverlay(activation, smooth = true) {
     const overlay = document.getElementById('overlay');
 

@@ -7,17 +7,17 @@
 
     <title>{{ config('app.name') }}</title>
 
-    <link rel="icon" type="image/png" href="{{ route('system.image', 'favicon') }}">
+    <link rel="icon"  href="{{ route('system.image', 'favicon') }}">
 
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/gfont-firesans/firesans.css') }}">
+{{--  @todo check me!  <link rel="stylesheet" href="{{ asset('css_v2.1.0/gfont-firesans/firesans.css') }}">--}}
     <link rel="stylesheet" href="{{ route('css.get', 'style') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'login_style') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'settings_style') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
 
-    <script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
+    <script src="{{ asset('js/functions.js') }}"></script>
+    <script src="{{ asset('js/settings_functions.js') }}"></script>
+    <script src="{{ asset('js/announcements.js') }}"></script>
     @vite('resources/js/app.js')
 
     {!! $settingsPanel !!}
@@ -100,43 +100,51 @@
                 return;
             }
             if(username.value && password.value){
-                LoginLDAP();
+                submitLogin();
             }
         }
     }
-    async function LoginLDAP() {
+
+    async function submitLogin() {
         try {
             var formData = new FormData();
-            formData.append("account", document.getElementById("account").value);
-            formData.append("password", document.getElementById("password").value);
-            const csrfToken = document.getElementById('loginForm-LDAP').querySelector('input[name="_token"]').value;
+            formData.append('account', document.getElementById('account').value);
+            formData.append('password', document.getElementById('password').value);
+            const csrfToken = document.getElementById('hawkiLoginForm').querySelector('input[name="_token"]').value;
 
-            const response = await fetch('/req/login-ldap', {
-                method: "POST",
+            const response = await fetch('/req/login', {
+                method: 'POST',
                 headers: {
-                    "X-CSRF-TOKEN": csrfToken,
-                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
                 },
                 body: formData
             });
 
             if (!response.ok) {
-                throw new Error("Login request failed");
+                throw new Error('Login request failed');
             }
 
             const data = await response.json();
 
             if (data.success) {
-                await setOverlay(true, true)
+                await setOverlay(true, true);
                 window.location.href = data.redirectUri;
 
             } else {
                 // console.log('login failed');
-                document.getElementById("login-message").textContent = 'Login Failed!';
+                document.getElementById('login-message').textContent = 'Login Failed!';
             }
         } catch (error) {
             console.error(error);
         }
+    }
+
+    /**
+     * @deprecated: use submitLogin() instead!
+     */
+    async function LoginLDAP() {
+        await submitLogin();
     }
 
     // Local authentication keydown handler
@@ -157,7 +165,7 @@
         }
     }
 
-    // Guest login keydown handler  
+    // Guest login keydown handler
     function onGuestLoginKeydown(event){
         if(event.key === "Enter"){
             const username = document.getElementById('guest-account');
@@ -179,18 +187,18 @@
     async function LoginLocal() {
         try {
             var formData = new FormData();
-            
+
             // Check if we're in guest mode or main mode
-            const isGuestMode = document.getElementById('local-auth-panel') && 
+            const isGuestMode = document.getElementById('local-auth-panel') &&
                                document.getElementById('local-auth-panel').style.display !== 'none';
-            
+
             const accountField = isGuestMode ? 'guest-account' : 'account';
             const passwordField = isGuestMode ? 'guest-password' : 'password';
             const messageField = isGuestMode ? 'guest-login-message' : 'login-message';
-            
+
             formData.append("account", document.getElementById(accountField).value);
             formData.append("password", document.getElementById(passwordField).value);
-            
+
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             const response = await fetch('/req/login-local', {
@@ -216,8 +224,8 @@
             }
         } catch (error) {
             console.error(error);
-            const messageField = document.getElementById('local-auth-panel') && 
-                               document.getElementById('local-auth-panel').style.display !== 'none' ? 
+            const messageField = document.getElementById('local-auth-panel') &&
+                               document.getElementById('local-auth-panel').style.display !== 'none' ?
                                'guest-login-message' : 'login-message';
             document.getElementById(messageField).textContent = 'Login Failed!';
         }

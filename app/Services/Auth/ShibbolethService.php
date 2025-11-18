@@ -2,145 +2,92 @@
 
 namespace App\Services\Auth;
 
-use Illuminate\Config\Repository;
-use Illuminate\Http\JsonResponse;
+use App\Services\Auth\Contract\AuthServiceInterface;
+use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
+use App\Services\Auth\Exception\AuthFailedException;
+use App\Services\Auth\Util\AuthRedirectBuilder;
+use App\Services\Auth\Util\DisplayNameBuilder;
+use App\Services\Auth\Value\AuthenticatedUserInfo;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 
-readonly class ShibbolethService
+#[Singleton]
+readonly class ShibbolethService implements AuthServiceWithLogoutRedirectInterface, AuthServiceInterface
 {
     public function __construct(
-        private Repository      $config,
-        private LoggerInterface $logger
+        #[Config('shibboleth.attribute_map.username')]
+        private string          $usernameAttribute,
+        #[Config('shibboleth.attribute_map.email')]
+        private string          $emailAttribute,
+        #[Config('shibboleth.attribute_map.employeetype')]
+        private string          $employeeTypeAttribute,
+        #[Config('shibboleth.attribute_map.name')]
+        private string          $nameAttribute,
+        #[Config('shibboleth.login_path')]
+        private string          $loginPath,
+        #[Config('shibboleth.logout_path')]
+        private string          $logoutPath,
+        private LoggerInterface $logger,
     )
     {
     }
 
     /**
-     * Authenticates the user via Shibboleth and returns user information if authenticated.
-     * If the user is not authenticated, redirects to the Shibboleth login page.
-     *
-     * @param Request $request The HTTP request instance.
-     * @return array|RedirectResponse|JsonResponse User information array if authenticated,
-     *                                             redirection to the login page if not authenticated,
-     *                                             or a JSON error response if required attributes are missing or the login path is not set.
+     * @inheritDoc
      */
-    public function authenticate(Request $request): array|RedirectResponse|JsonResponse
+    public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
-        $usernameVar = $this->config->get('shibboleth.attribute_map.username', 'REMOTE_USER');
-
         try {
-            $username = $this->getServerVarOrFail($request, $usernameVar);
+            $username = $this->getServerVarOrFail($request, $this->usernameAttribute);
             $this->logger->debug('Authenticated Shibboleth user', ['username' => $username]);
         } catch (\RuntimeException $e) {
-            // Redirect to the Shibboleth login page
-            $loginPath = $this->getLoginPath();
+            $loginRedirect = AuthRedirectBuilder::build(
+                $this->loginPath,
+                ['target' => 'web.auth.login.get']
+            );
 
-            if (!empty($loginPath)) {
-                $this->logger->debug('Redirecting to Shibboleth login path', ['login_path' => $loginPath, 'exception' => $e]);
-                return redirect($loginPath);
+            if (!$loginRedirect) {
+                throw new AuthFailedException('Shibboleth login path is not set in configuration', 500, $e);
             }
 
-            $this->logger->error('Shibboleth login path is not set in configuration', ['exception' => $e]);
-
-            // Error handling if the login path is not set
-            return response()->json(['error' => 'Login path is not set'], 500);
+            return $loginRedirect;
         }
 
         try {
-            $userdata = [
-                'username' => $username,
-                'name' => $this->getDisplayName($request),
-                'email' => $this->getServerVarOrFail($request, $this->config->get('shibboleth.attribute_map.email')),
-                'employeetype' => $this->getServerVarOrFail($request, $this->config->get('shibboleth.attribute_map.employeetype'))
-            ];
+            $userdata = new AuthenticatedUserInfo(
+                username: $username,
+                displayName: DisplayNameBuilder::build(
+                    definition: $this->nameAttribute,
+                    valueResolver: fn(string $field) => $this->getServerVarOrFail($request, $field),
+                    logger: $this->logger
+                ),
+                email: $this->getServerVarOrFail($request, $this->emailAttribute),
+                employeeType: $this->getServerVarOrFail($request, $this->employeeTypeAttribute),
+            );
 
             $this->logger->debug('Retrieved Shibboleth user attributes', ['userdata' => $userdata]);
 
             return $userdata;
-        } catch (\RuntimeException $e) {
-            $this->logger->error('Failed to resolve userdata for Shibboleth auth', ['exception' => $e]);
-            return response()->json(['error' => $e->getMessage()], $e->getCode());
+        } catch (\Throwable $e) {
+            throw new AuthFailedException('Failed to resolve userdata for Shibboleth auth', 500, $e);
         }
     }
 
     /**
-     * Either the logout URL from configuration with the return parameter appended,
-     * or null if no logout URL is configured.
-     * @return string|null
+     * @inheritDoc
      */
-    public function getLogoutPath(): ?string
+    public function getLogoutResponse(Request $request): ?RedirectResponse
     {
-        $logoutPath = $this->config->get('shibboleth.logout_path');
-
-        if (empty($logoutPath)) {
-            $this->logger->warning('Shibboleth logout path is not set in configuration');
-            return null;
-        }
-
-        // Automatically append the return parameter to the logout URL
-        // This ensures that after logout, the user is redirected back to the homepage
-        return url()->query($logoutPath, ['return' => url('/')]);
-    }
-
-    /**
-     * Gets the Shibboleth login path from configuration and appends the target parameter.
-     *
-     * @return string|null
-     */
-    private function getLoginPath(): ?string
-    {
-        $loginPath = $this->config->get('shibboleth.login_path');
-
-        if (empty($loginPath)) {
-            $this->logger->warning('Shibboleth login path is not set in configuration');
-            return null;
-        }
-
-        // Automatically append the target parameter to the login URL
-        // This ensures that after successful authentication, the user is redirected back to the intended page
-        $targetPath = Route::getRoutes()->getByName('web.auth.shibboleth.login');
-        if ($targetPath) {
-            $loginPath = url()->query($loginPath, ['target' => url('/' . $targetPath->uri())]);
-            $this->logger->debug('Appended target parameter to Shibboleth login path', ['login_path' => $loginPath]);
-        }
-
-        return $loginPath;
-    }
-
-    /**
-     * Builds the display name from a list of attributes specified in the configuration.
-     * If the nameList configuration is empty, it falls back to a single attribute.
-     *
-     * @param Request $request
-     * @return string
-     */
-    private function getDisplayName(Request $request): string
-    {
-        $nameField = $this->config->get('shibboleth.attribute_map.name');
-        if (!str_contains($nameField, ',')) {
-            return $this->getServerVarOrFail($request, $this->config->get('shibboleth.attribute_map.name'));
-        }
-
-        $values = [];
-        foreach (Str::of($nameField)->explode(',')->map('trim')->filter()->all() as $field) {
-            try {
-                $values[] = $this->getServerVarOrFail($request, $field);
-            } catch (\RuntimeException) {
-                // Ignore missing fields
-                $this->logger->debug('Field in SHIBBOLETH_NAME_VAR is not set in $_SERVER', ['field' => $field]);
-            }
-        }
-
-        if (empty($values)) {
-            throw new \RuntimeException("None of the fields in SHIBBOLETH_NAME_VAR are set and not empty", 500);
-        }
-
-        return implode(' ', $values);
+        return AuthRedirectBuilder::build(
+            $this->logoutPath,
+            ['return' => 'login']
+        );
     }
 
     private function getServerVarOrFail(Request $request, string $var): string

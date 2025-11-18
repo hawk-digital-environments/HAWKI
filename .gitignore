@@ -1,11 +1,14 @@
 /.phpunit.cache
-/node_modules
+node_modules
 /public/build
 /public/hot
 /public/storage
 /storage/*.key
 /vendor
 .env
+!/_docker_production/.env
+_documentation.build/build
+_documentation.build/.docusaurus
 .env.backup
 .env.private
 .env.production
@@ -21,6 +24,6 @@ yarn-error.log
 /.vscode
 docker-compose.override.yml
 .DS_Store
+_docker_production_test
 mcp-server.json
-_docker_production/.env
 phpunit.xml

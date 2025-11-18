@@ -6,11 +6,10 @@
             </div>
             <div class="modal-content">
 
-                <h2 class="header">{{ $translation['ImgUpload'] }}</h2> 
+                <h2 class="header">{{ $translation['ImgUpload'] }}</h2>
                 <p>{!! $translation['ImgUploadDesc'] !!}</p>
 
                 <div class="image-container edit" id="image-container">
-                    <img id="image-field"   alt="Bild">
                     <div id="image-field-placeholder"></div>
                 </div>
 

@@ -10,7 +10,7 @@ return [
     |
     |
     |
-    | !!! YOU CAN NOT CHANGE THE MIGRATION ATTRIBUTES AFTER MIGRATING THE DATABSE !!!
+    | !!! YOU CAN NOT CHANGE THE MIGRATION ATTRIBUTES AFTER MIGRATING THE DATABASE !!!
     */
 
     'migration' => [
@@ -21,7 +21,7 @@ return [
         'avatar_id' => env('HAWKI_AVATAR', 'hawkiAvatar.jpg'),
     ],
 
-    'aiHandle' => '@'.ltrim(env('AI_MENTION_HANDLE', 'hawki'), '@'),
+    'aiHandle' => '@'.ltrim(env('AI_MENTION_HANDLE', 'hawki'), '@ '),
 
     // use false (JSON files) or true (database)
     'groupchat_active' => true,
@@ -111,7 +111,7 @@ return [
     |                  - AI prompts from ai_assistants_prompts table (fallback)
     |                  - Better separation between HAWKI and Orchid
     |
-    | true           = Load from Database only  
+    | true           = Load from Database only
     |                  - System texts from app_system_texts table
     |                  - Localization texts from app_localized_texts table
     |                  - AI prompts from ai_assistants_prompts table

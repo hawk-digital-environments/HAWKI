@@ -9,6 +9,11 @@ interface BaseExecuteCommandOptions {
      * If true, an error will be thrown if the command exits with a non-zero exit code.
      */
     throwOnExitCode?: boolean;
+
+    /**
+     * The working directory to execute the command in. If omitted, the current working directory will be used.
+     */
+    cwd?: string;
 }
 
 interface GenericExecuteCommandOptions extends BaseExecuteCommandOptions {
@@ -61,13 +66,14 @@ export async function executeCommand(command: string, args: string[], opt?: Gene
         }
         return res;
     };
+    const cwd = opt?.cwd;
     if (opt?.interactive) {
-        return executeInteractiveCommand(command, args, env).then(exitCodeHandler);
+        return executeInteractiveCommand(command, args, env, cwd).then(exitCodeHandler);
     }
     if (opt?.foreground) {
-        return executeCommandInForeground(command, args, env).then(exitCodeHandler);
+        return executeCommandInForeground(command, args, env, cwd).then(exitCodeHandler);
     } else {
-        return executeCommandInBackground(command, args, env).then(exitCodeHandler);
+        return executeCommandInBackground(command, args, env, cwd).then(exitCodeHandler);
     }
 }
 
@@ -76,11 +82,13 @@ export async function executeCommand(command: string, args: string[], opt?: Gene
  * @param command
  * @param args
  * @param env
+ * @param cwd
  */
 async function executeCommandInBackground(
     command: string,
     args: string[],
-    env: NodeJS.ProcessEnv
+    env: NodeJS.ProcessEnv,
+    cwd?: string
 ): Promise<{ stdout: string, stderr: string, code: number }> {
     return new Promise((resolve, reject) => {
         let stdout = '';
@@ -89,7 +97,8 @@ async function executeCommandInBackground(
         const proc = childProcess.spawn(command, args, {
             // No need to inherit stdio since we're capturing all output
             stdio: ['ignore', 'pipe', 'pipe'],
-            env
+            env,
+            cwd
         });
 
         proc.stdout.on('data', (data) => {
@@ -122,11 +131,13 @@ async function executeCommandInBackground(
  * @param command
  * @param args
  * @param env
+ * @param cwd
  */
 async function executeCommandInForeground(
     command: string,
     args: string[],
-    env: NodeJS.ProcessEnv
+    env: NodeJS.ProcessEnv,
+    cwd?: string
 ): Promise<{ stdout: string, stderr: string, code: number }> {
     return new Promise((resolve, reject) => {
         let stdout = '';
@@ -134,7 +145,8 @@ async function executeCommandInForeground(
 
         const proc = childProcess.spawn(command, args, {
             stdio: ['inherit', 'pipe', 'pipe'],
-            env
+            env,
+            cwd
         });
 
         proc.stdout.on('data', (data) => {
@@ -169,18 +181,21 @@ async function executeCommandInForeground(
  * @param command
  * @param args
  * @param env
+ * @param cwd
  */
 async function executeInteractiveCommand(
     command: string,
     args: string[],
-    env: NodeJS.ProcessEnv
+    env: NodeJS.ProcessEnv,
+    cwd?: string
 ): Promise<{ code: number }> {
     return new Promise((resolve, reject) => {
         try {
             // For other platforms, use standard spawn with inherit
             const proc = childProcess.spawn(command, args, {
                 stdio: 'inherit',
-                env
+                env,
+                cwd
             });
 
             proc.on('close', (code) => {

@@ -18,22 +18,23 @@ This file is a template for the .env file. It documents all relevant settings, t
 
 ## Global Application Settings
 
-| Variable               | Default Value         | Description                                                                                                   |
-|------------------------|-----------------------|---------------------------------------------------------------------------------------------------------------|
-| PROJECT_NAME           | hawki2                | URL-safe name of the project (lowercase, no spaces, no special characters) used for naming docker containers  |
-| APP_NAME               | HAWKI2                | Application name, can be anything you like                                                                    |
-| APP_ENV                | local                 | Deployment type: "local", "staging" or "production"                                                           |
-| APP_URL                | http://127.0.0.1:8000 | Public URL to access the web interface                                                                        |
-| APP_DEBUG              | true                  | Enable debug output: "true" or "false"                                                                        |
-| APP_TIMEZONE           | CET                   | Timezone of the web server                                                                                    |
-| APP_LOCALE             | de_DE                 | Default language of the user interface (de_DE, en_US)                                                         |
-| APP_FALLBACK_LOCALE    | en_US                 | Fallback language (for any missing translations)                                                              |
-| APP_FAKER_LOCALE       | de_DE                 | Laravel faker locale for testing data generation                                                              |
-| APP_KEY                |                       | Encryption key: base64 encoded 32-byte key (generate with `php artisan key:generate`)                         |
-| APP_PREVIOUS_KEYS      |                       | Comma separated list of previously used encryption keys                                                       |
-| APP_MAINTENANCE_DRIVER | cache                 | Maintenance mode driver: "cache" or "file" - "cache" allows setting maintenance mode across multiple machines |
-| APP_MAINTENANCE_STORE  | database              | Maintenance mode storage: "database" or "file"                                                                |
-| AI_MENTION_HANDLE      | hawki                 | Handle to mention AI in group chats (without @ symbol)                                                        |
+| Variable               | Default Value         | Description                                                                                                                                                                                             |
+|------------------------|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| PROJECT_NAME           | hawki2                | URL-safe name of the project (lowercase, no spaces, no special characters) used for naming docker containers                                                                                            |
+| APP_NAME               | HAWKI2                | Application name, can be anything you like                                                                                                                                                              |
+| APP_ENV                | local                 | Deployment type: "local", "staging" or "production"                                                                                                                                                     |
+| APP_URL                | http://127.0.0.1:8000 | Public URL to access the web interface                                                                                                                                                                  |
+| APP_DEBUG              | true                  | Enable debug output: "true" or "false"                                                                                                                                                                  |
+| APP_TIMEZONE           | CET                   | Timezone of the web server                                                                                                                                                                              |
+| APP_LOCALE             | de_DE                 | Default language of the user interface (de_DE, en_US)                                                                                                                                                   |
+| APP_FALLBACK_LOCALE    | en_US                 | Fallback language (for any missing translations)                                                                                                                                                        |
+| APP_FAKER_LOCALE       | de_DE                 | Laravel faker locale for testing data generation                                                                                                                                                        |
+| APP_KEY                |                       | Encryption key: base64 encoded 32-byte key (generate with `php artisan key:generate`)                                                                                                                   |
+| APP_PREVIOUS_KEYS      |                       | Comma separated list of previously used encryption keys                                                                                                                                                 |
+| APP_MAINTENANCE_DRIVER | cache                 | Maintenance mode driver: "cache" or "file" - "cache" allows setting maintenance mode across multiple machines                                                                                           |
+| APP_MAINTENANCE_STORE  | database              | Maintenance mode storage: "database" or "file"                                                                                                                                                          |
+| APP_CACHE_BUSTER       |                       | Custom version string to include when generating the cache buster hash for JS/CSS assets. This is OPTIONAL -> helps if you build your own HAWKI version and want to ensure users get the latest assets. |
+| AI_MENTION_HANDLE      | hawki                 | Handle to mention AI in group chats (without @ symbol)                                                                                                                                                  |
 
 
 
@@ -258,63 +259,14 @@ Set the AUTHENTICATION_METHOD variable to one of the following:
 
 According to your authentication method, set the necessary variables as follows:
 
+> Custom authentication methods can be implemented as described in
+> the [Custom Auth Services documentation](8.1-Custom%20Auth%20Services.md).
+> To register your own class: `AUTHENTICATION_METHOD="App\Services\Auth\MyCustomAuthService"`
 
+## LDAP, OIDC and Shibboleth Configuration
 
-## LDAP Configuration
-
-| Variable        | Default Value                                  | Description                                                                                                                            |
-|-----------------|------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|
-| LDAP_CONNECTION |                                                | Configure the LDAP connection. Currently only "default" is supported (see config/ldap.php)                                             |
-| LDAP_HOST       | "ldaps://...de"                                | Hostname of the LDAP server                                                                                                            |
-| LDAP_PORT       | "636"                                          | Port number of the LDAP server                                                                                                         |
-| LDAP_USERNAME   |                                                | Distinguished Name (DN) used for bind operation                                                                                        |
-| LDAP_BIND_PW    | "xxx"                                          | Password to access the LDAP server                                                                                                     |
-| LDAP_BASE_DN    | "xxx"                                          | Base DN for the LDAP search                                                                                                            |
-| LDAP_TIMEOUT    |                                                | Timeout for LDAP queries in seconds                                                                                                    |
-| LDAP_SSL        |                                                | Use SSL to connect to the LDAP server. Not recommended: "true" or "false"                                                              |
-| LDAP_TLS        |                                                | Use TLS to connect to the LDAP server. Recommended: "true" or "false"                                                                  |
-| LDAP_SASL       |                                                | Use SASL to connect to the LDAP server: "true" or "false"                                                                              |
-| LDAP_LOGGING    |                                                | Enable logging of LDAP queries: "true" or "false"                                                                                      |
-| LDAP_CACHE      |                                                | Enable caching of LDAP queries: "true" or "false"                                                                                      |
-| LDAP_ATTRIBUTES | cn,mail,employeetype,displayname               | Attributes required for data extraction (Username, Email Address, Employee Type, Name)                                                 |
-| LDAP_FILTER     | "(\|(sAMAccountName=username)(mail=username))" | Filter required for authentication based on Username                                                                                   |
-| CACHE_DRIVER    |                                                | Cache driver for caching LDAP queries: "file", ...                                                                                     |
-| TEST_USER_LOGIN | true / false                                   | Reads the test users list in storage folder before LDAP. Set to true for allowing test access and add tester profile to the json file. |
-
-
-
-
-## Shibboleth Configuration
-
-| Variable                    | Default Value                           | Description                                                                                           |
-|-----------------------------|-----------------------------------------|-------------------------------------------------------------------------------------------------------|
-| SHIBBOLETH_LOGIN_URL        | "Shibboleth.sso/Login?target=login.php" | Path to the Shibboleth login handler `"{$scheme}://{$_SERVER['HTTP_HOST']}/{$loginPath}{$loginPage}"` |
-| SHIBBOLETH_LOGOUT_URL       |                                         | URL for Shibboleth logout                                                                             |
-| SHIBBOLETH_NAME_VAR         | "displayname"                           | Defined attribute on shibboleth server for name                                                       |
-| SHIBBOLETH_EMPLOYEETYPE_VAR | "email"                                 | Defined attribute on shibboleth server for employee type                                              |
-| SHIBBOLETH_EMAIL_VAR        | "employeetype"                          | Defined attribute on shibboleth server for email address                                              |
-
-
-
-
-
-
-## OpenID Connect (OIDC) Configuration
-
-| Variable              | Default Value  | Description                                                                                    |
-|-----------------------|----------------|------------------------------------------------------------------------------------------------|
-| OIDC_IDP              | "https://xxx"  | URL of the OpenID Connect Identity Provider                                                    |
-| OIDC_CLIENT_ID        | "xxx"          | Client ID for the OIDC application                                                             |
-| OIDC_CLIENT_SECRET    | "xxx"          | Client secret for the OIDC application                                                         |
-| OIDC_LOGOUT_URI       | "xxx"          | URI for OIDC logout                                                                            |
-| OIDC_SCOPES           | profile,email  | Scopes define the level of access that the client is requesting from the authorization server. |
-| OIDC_FIRSTNAME_VAR    | "firstname"    | "firstname"                                                                                    |
-| OIDC_LASTNAME_VAR     | "lastname"     | "lastname"                                                                                     |
-| OIDC_EMAIL_VAR        | "email"        | "email"                                                                                        |
-| OIDC_EMPLOYEETYPE_VAR | "employeetype" | "employeetype"                                                                                 |
-
-
-
+The environment variables for configuring the authentication providers are described in
+the [Authentication deployment documentation](../5-Deployment/5-Authentication.md).
 
 ## External Communication Configuration
 
@@ -437,5 +389,3 @@ For enhanced security, HAWKI utilizes individual salts for each component to ens
 | Variable         | Description                                |
 |------------------|--------------------------------------------|
 | IMPRINT_LOCATION | The URL to your organization imprint page. |
-
-

@@ -182,10 +182,7 @@
 
     </div>
     <div class="input" id="0">
-        @if(!$lite)
-            <input type="file" class="file-upload-input" id="file-upload-input" style="display:none;"/>
-        @endif
-
+        <input type="file" class="file-upload-input" id="file-upload-input" style="display:none;"/>
         <div class="file-attachments">
             <div class="attachments-list">
             </div>

@@ -113,7 +113,7 @@
     "HS-LoginCodeE4": "Fehler beim Generieren des Passkeys",
     "HS-LoginCodeE5": "Fehler bei der Log-in Code-Verifizierung",
     "HS-LoginCodeE6": "Log-in Code ist abgelaufen. Bitte fordern Sie einen neuen an.",
-    
+
     "HS-LoginCodeM": "Log-in Code gesendet an",
 
     "HS-LoginCodeT1": "Erneut senden in",
@@ -125,6 +125,8 @@
     "HS-ErrorTitle": "Fehler beim Handshake",
     "HS-ErrorMessage": "Der Handshake-Prozess ist fehlgeschlagen. Bitte versuchen Sie es erneut oder melden Sie sich ab.",
     "HS-Logout": "Abmelden",
+
+    "HS_Allowed_PK_Characters": "Erlaubte Zeichen: A–Z, a–z, 0–9 sowie ! @ # $ % ^ & * ( ) _ + -",
 
 
     "ImgUpload": "Bild hochladen",
@@ -178,6 +180,7 @@
     "SystemPrompt": "Systemprompt",
     "theme": "Theme",
     "Think": "Denken",
+    "Today": "Heute",
     "username": "Benutzername",
     "guest_username": "Benutzername",
     "guest_password": "Passwort",
@@ -207,15 +210,15 @@
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
     "Api_Warning": "Um die Sprachmodelle von :system auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
     "UploadFile": "Datei hochladen",
-
     "Reg_SL0_H": "Deine Daten sind sicher! 🔐",
     "Reg_SL0_B": "Los geht's!",
     "Reg_SL0_T": "<strong>Wichtig:</strong> Deine Chats werden verschlüsselt, bevor sie auf unserem Server gespeichert werden. Nur die von dir für :system registrierten Geräte können diese Chats entschlüsseln. 💻📲 <br>Wenn du dich auf einem neuen Gerät anmelden möchtest, musst du deine Identität mit einem Freischaltcode bestätigen, den du per E-Mail erhältst. 📫",
     "Reg_SL7_H": "Zugang wird geprüft ⏰",
     "Reg_SL7_T": "Ihr Antrag wird überprüft. Sie erhalten eine E-Mail-Benachrichtigung über den Status Ihres Antrags.",
     "Reg_SL7_Contact": "Haben Sie Fragen? Kontaktieren Sie uns unter:",
-    
+
     "change_password": "Passwort ändern",
     "change_password_text": "Bitte setzen Sie ein neues Passwort für Ihr Konto.",
-    "new_password": "Neues Passwort"
+    "new_password": "Neues Passwort",
+    "Yesterday": "Gestern"
 }

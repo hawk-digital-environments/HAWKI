@@ -6,7 +6,8 @@ sidebar_position: 2
 
 This guide will walk you through setting up a local Docker environment for developing and testing HAWKI on your local machine.
 Please keep in mind, that this guide is intended for development and testing purposes only. For production,
-please refer to the [production installation guide](Docker%20Deployment.md), as it is more secure and robust.
+please refer to the [production installation guide](../5-Deployment/3-Docker%20Deployment.md), as it is more secure and
+robust.
 
 The PHP(8.4) container is based on an alpine linux using FPM which can be found [here](https://github.com/Neunerlei/docker-php),
 we are planning to deploy our own php base image built on a ubuntu distro in the future.
@@ -22,21 +23,23 @@ as a drop-in replacement for Docker and Docker Compose, however this has not bee
 
 ## Installation
 
-You have two options to run HAWKI with docker; you can either set up everything manually or use our `bin/env` script to 
-control the environment for you. This guide will have some overlaps with the [Local Installation Guide](Local%20Installation.md),
+You have two options to run HAWKI with docker; you can either set up everything manually or use our `bin/env` script to
+control the environment for you. This guide will have some overlaps with
+the [Local Installation Guide](1-Local%20Installation.md),
 and will refer to it for some steps.
 
 ### Defining your API keys for the AI Models
 
 This is necessary to configure the AI models that HAWKI uses, you MUST do this before starting the application.
-Follow the "Configuration -> API KEYS" section of the [Local Installation Guide](Local%20Installation.md) to define your API keys.
+Follow the "Configuration -> API KEYS" section of the [Local Installation Guide](1-Local%20Installation.md) to define
+your API keys.
 
 ### The fast way: Using the `bin/env` script
 
 1. **Clone the Git Repo:**
 
 ```
-git clone git@github.com:HAWK-Digital-Environments/HAWKI.git
+git clone -b main https://github.com/hawk-digital-environments/HAWKI.git
 ```
 
 2. **Navigate to the project folder:**
@@ -103,7 +106,7 @@ A few commands that might be useful:
 1. **Clone the Git Repo:**
 
 ```
-git clone git@github.com:HAWK-Digital-Environments/HAWKI.git
+git clone -b main https://github.com/hawk-digital-environments/HAWKI.git
 ```
 
 2. **Navigate to the project folder:**
@@ -161,7 +164,8 @@ All other values are optional and can be left as they are OR adjusted to your ne
 
 4. **Install the test user:**
 
-Follow the "Configuration -> Authentication" section of the [Local Installation Guide](Local%20Installation.md) to create 
+Follow the "Configuration -> Authentication" section of the [Local Installation Guide](1-Local%20Installation.md) to
+create
 the test user file.
 
 5. **Start the application:**

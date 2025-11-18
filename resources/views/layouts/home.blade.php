@@ -11,7 +11,8 @@
 
     <title>{{ config('app.name') }}</title>
 
-	<link rel="icon" type="image/png" href="{{ route('system.image', 'favicon') }}">
+	<link rel="icon" href="{{ route('system.image', 'favicon') }}">
+
 
     <link rel="stylesheet" href="{{ asset('css_v2.1.0/gfont-firesans/firesans.css') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'style') }}">
@@ -24,27 +25,27 @@
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
 
-	<script src="{{ asset('js_v2.1.0/functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/home_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/stream_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/ai_chat_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/ai_chat_functions.js')), 0, 8) }}"></script>
-	<script src="{{ asset('js_v2.1.0/chatlog_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/chatlog_functions.js')), 0, 8) }}"></script>
-	<script src="{{ asset('js_v2.1.0/inputfield_functions.js') }}"></script>
-	<script src="{{ asset('js_v2.1.0/message_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/message_functions.js')), 0, 8) }}"></script>
-	<script src="{{ asset('js_v2.1.0/groupchat_functions.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/groupchat_functions.js')), 0, 8) }}"></script>
-	<script src="{{ asset('js_v2.1.0/syntax_modifier.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/syntax_modifier.js')), 0, 8) }}"></script>
-    <script src="{{ asset('js_v2.1.0/settings_functions.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/encryption.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/image-selector.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/export.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/user_profile.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/file_manager.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/attachment_handler.js') }}"></script>
-    <script src="{{ asset('js_v2.1.0/model_list_filtering.js') }}?v={{ substr(md5_file(public_path('js_v2.1.0/model_list_filtering.js')), 0, 8) }}"></script>
-    <script src="{{ asset('js_v2.1.0/announcements.js') }}"></script>
+    <script src="{{ asset('js/functions.js') }}"></script>
+    <script src="{{ asset('js/home_functions.js') }}"></script>
+    <script src="{{ asset('js/stream_functions.js') }}"></script>
+    <script src="{{ asset('js/ai_chat_functions.js') }}"></script>
+    <script src="{{ asset('js/chatlog_functions.js') }}"></script>
+    <script src="{{ asset('js/inputfield_functions.js') }}"></script>
+    <script src="{{ asset('js/message_functions.js') }}"></script>
+    <script src="{{ asset('js/groupchat_functions.js') }}"></script>
+    <script src="{{ asset('js/syntax_modifier.js') }}"></script>
+    <script src="{{ asset('js/settings_functions.js') }}"></script>
+    <script src="{{ asset('js/encryption.js') }}"></script>
+    <script src="{{ asset('js/image-selector.js') }}"></script>
+    <script src="{{ asset('js/export.js') }}"></script>
+    <script src="{{ asset('js/user_profile.js') }}"></script>
+    <script src="{{ asset('js/file_manager.js') }}"></script>
+    <script src="{{ asset('js/attachment_handler.js') }}"></script>
+    <script src="{{ asset('js/model_list_filtering.js') }}"></script>
+    <script src="{{ asset('js/announcements.js') }}"></script>
 
 	@if(config('sanctum.allow_external_communication'))
-		<script src="{{ asset('js_v2.1.0/sanctum_functions.js') }}"></script>
+        <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
 
 
@@ -161,4 +162,3 @@
 
 
 </script>
-
