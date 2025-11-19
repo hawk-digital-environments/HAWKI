@@ -30,7 +30,7 @@
     "Input_Err_UploadFailed": "Failed to upload the file!",
     "Input_Err_NotSupported": "File type not supported:",
     "Input_Err_MaxSize": "File size exceeds maximum limit.",
-    "Input_Err_FilterConflict": "You can't use the selected tools at the same time.",
+    "Input_Err_FilterConflict": "Die ausgewählten Werkzeuge können nicht gleichzeitig verwendet werden.",
 
 
     "Exp_Title":"SESSION TIMEOUT",

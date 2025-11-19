@@ -179,6 +179,7 @@ function createFileStruct(file) {
 
 
 // Add file to the UI for display
+
 function createAttachmentThumbnail(fileData, thumbType) {
 
     const attachTemp = document.getElementById('attachment-thumbnail-template')

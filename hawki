@@ -23,7 +23,7 @@ $flags = array_slice($argv, 2);
 // Process the command
 switch ($command) {
     case 'check':
-        checkDependencies();
+        checkDependencies(); //@Todo: remove at version 3.0.0
         break;
     case 'init':
     case 'initialize':
@@ -38,7 +38,7 @@ switch ($command) {
         setupEnv($flags);
         break;
     case 'setup-models':
-        setupModelProviders();
+        setupModelProviders(); //@Todo: remove at version 3.0.0
         break;
     case 'clear-cache':
         clearCache();
@@ -76,8 +76,6 @@ switch ($command) {
     case 'announcement':
         handleAnnouncementCommand($flags);
         break;
-//    case 'update':
-//        updateSystem();
     case 'update':
         if (isset($flags[0])) {
             switch ($flags[0]) {
@@ -99,7 +97,12 @@ switch ($command) {
     case 'help':
         showHelp();
         break;
+    case '--version':
+    case '-v':
+        checkVersion(true);
+        break;
     default:
         echo RED . "Unknown command: $command" . RESET . PHP_EOL;
         showHelp();
+        die();
 }
