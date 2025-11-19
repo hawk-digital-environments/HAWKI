@@ -143,11 +143,12 @@ readonly class OpenAiRequestConverter
     private function processImageAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
         try {
-            $url = $attachmentService->getFileUrl($attachment);
+            $file = $attachmentService->retrieve($attachment);
+            $imageData = base64_encode($file);
             return [
                 'type' => 'image_url',
                 'image_url' => [
-                    'url' => $url,
+                    'url' => "data:{$attachment->mime};base64,{$imageData}",
                 ]
             ];
         } catch (\Exception $e) {

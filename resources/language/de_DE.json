@@ -22,13 +22,13 @@
     "Cnf_passkeyRemove": "Durch die Bestätigung werden dein Passwort und deine Schlüsselbunddaten aus diesem Browser entfernt. Bitte beachte, dass wir derzeit keine Lösungen zur Wiederherstellung von Passwörtern anbieten. <br> <b>Bitte stelle sicher, dass du eine sichere Sicherung deines Passworts hast, bevor du fortfährst.<b>",
 
     "Cnf_RemoveFile":"Möchtest du diese Datei wirklich löschen?",
-    "Cnf_checkMembersAdded": "Bitte fügen Sie mindestens ein Mitglied hinzu.",
 
     "Logout_Warning":"Um HAWKI weiterhin zu nutzen, müssen Sie diese Bedingungen akzeptieren.<strong>Klicken Sie auf „Bestätigen“, um sich von HAWKI abzumelden.</strong>",
 
     "Input_Err_UploadFailed": "Fehler beim Hochladen der Datei!",
     "Input_Err_NotSupported": "Dateityp wird nicht unterstützt:",
     "Input_Err_MaxSize": "Dateigröße überschreitet das zulässige Maximum.",
+    "Input_Err_FilterConflict": "You can't use the selected tools at the same time.",
 
     "Exp_Title":"SESSION-TIMEOUT",
     "Exp_MSG":"Bitte logg dich erneut ein!",
@@ -61,6 +61,9 @@
     "CopiedToolTip": "Kopiert!",
     "CopyToolTip": "Kopieren",
     "EditToolTip": "Bearbeiten",
+    "FilePreview": "Anzeigen",
+    "FileDownload": "Download",
+    "FileRemove": "Löschen",
     "SpeakToolTip": "Vorlesen",
     "RegenerateToolTip": "Regenerieren",
     "ThreadToolTip": "Thread öffnen",
@@ -144,6 +147,7 @@
     "SystemPrompt": "Systemprompt",
     "theme": "Theme",
     "Think": "Denken",
+    "Today": "Heute",
     "username": "Benutzername",
     "You": "Du",
     "PH_AboutMe": "Über mich...",
@@ -152,5 +156,6 @@
     "PH_SystemPrompt": "Gebe deine bevorzugte Systemprompt ein",
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
     "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
-    "UploadFile": "Datei hochladen"
+    "UploadFile": "Datei hochladen",
+    "Yesterday": "Gestern"
 }

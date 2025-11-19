@@ -1,4 +1,4 @@
-/// === FILTER RULES ===
+// === FILTER RULES ===
 const FILTER_RULES = {
     vision: {
         implies: ['file_upload'],
@@ -8,7 +8,7 @@ const FILTER_RULES = {
     // Add more rules as needed
 };
 
-/// === Global Filter State ===
+// === Global Filter State ===
 let inputFilters = new Map();                // Per fieldId => [user filters]
 
 
@@ -17,7 +17,7 @@ function initModelFilter(){
 }
 
 
-/// === Utility: Expand Filters (with implication logic) ===
+// === Utility: Expand Filters (with implication logic) ===
 function expandFilters(filters, rules = FILTER_RULES) {
     const result = new Set(filters);
     let size;
@@ -34,7 +34,7 @@ function expandFilters(filters, rules = FILTER_RULES) {
     return Array.from(result);
 }
 
-/// === Model Eligibility Function ===
+// === Model Eligibility Function ===
 function isModelEligible(model, filters) {
     const expandedFilters = expandFilters(filters);
 
@@ -60,29 +60,30 @@ function isModelEligible(model, filters) {
 }
 
 
-/// === Filter Models for a Field ===
+// === Filter Models for a Field ===
 function filterModels(fieldId) {
     const filters = inputFilters.get(fieldId) || [];
     return modelsList.filter(model => isModelEligible(model, filters));
 }
 
-/// === Refresh UI: Enable/Disable model selectors ===
+// === Refresh UI: Enable/Disable model selectors ===
 function refreshModelList(fieldId) {
-    const filteredModels = filterModels(fieldId);
-    const allowedIds = new Set(filteredModels.map(m => m.id));
-    const inputCont = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
-    inputCont.querySelectorAll('.model-selector').forEach(button => {
-        if(button.dataset.status ==='offline'){
-            return;
-        }
-        button.disabled = !allowedIds.has(button.dataset.modelId);
-    });
-
-    return selectFallbackModel(fieldId);
-
+    const success = selectFallbackModel(fieldId);
+    if(success) {
+        const filteredModels = filterModels(fieldId);
+        const allowedIds = new Set(filteredModels.map(m => m.id));
+        const inputCont = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
+        inputCont.querySelectorAll('.model-selector').forEach(button => {
+            if(button.dataset.status ==='offline'){
+                return;
+            }
+            button.disabled = !allowedIds.has(button.dataset.modelId);
+        });
+    }
+    return success
 }
 
-/// === Add Input Filter ===
+// === Add Input Filter ===
 function addInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.add(filterName);
@@ -90,7 +91,7 @@ function addInputFilter(fieldId, filterName) {
     return refreshModelList(fieldId);
 }
 
-/// === Remove Input Filter ===
+// === Remove Input Filter ===
 function removeInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.delete(filterName);
@@ -98,13 +99,13 @@ function removeInputFilter(fieldId, filterName) {
     return refreshModelList(fieldId);
 }
 
-/// === Clear Input Filters for Field ===
+// === Clear Input Filters for Field ===
 function clearInputFilters(fieldId) {
     inputFilters.set(fieldId, []);
     return refreshModelList(fieldId);
 }
 
-/// === If the model is to capable, switch to default model ===
+// === If the model is to capable, switch to default model ===
 function selectFallbackModel(fieldId) {
     const filters = inputFilters.get(fieldId) || [];
     const filteredModels = filterModels(fieldId);
@@ -124,7 +125,13 @@ function selectFallbackModel(fieldId) {
             if(availableModelIds.has(activeModel.id)){
                 return true;
             }
-            const fallbackModelId = defaultModels[fallbackKey];
+
+            let fallbackModelId = defaultModels[fallbackKey];
+
+            if(!fallbackModelId){
+                // find a fallback to fallback model if the fallback model is empty but a capable model exists.
+                fallbackModelId = modelsList.find(m => m.tools.web_search === true).id
+            }
 
             if (availableModelIds.has(fallbackModelId)) {
                 setModel(fallbackModelId);
@@ -134,7 +141,7 @@ function selectFallbackModel(fieldId) {
     }
 
     const input = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
-    showFeedbackMsg(input,'error', `No available models for the selected filters: ${filters.join(',  ')}`);
+    showFeedbackMsg(input,'error', `${translation.Input_Err_FilterConflict} : ${filters.join(',  ')}`);
     return false;
 
 }

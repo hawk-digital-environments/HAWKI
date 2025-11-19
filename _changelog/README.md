@@ -9,6 +9,20 @@ The main work of release ing a new version of HAWKI is done using a GitHub actio
 
 To create a new changelog entry, create a new markdown file in the `_changelog` folder. The file name must be the `semver` version number you want to release, e.g. `2.1.0.md`. The content of the file should contain the changelog entry in markdown format.
 
+### Which version number to use?
+
+Always adhere to [Semantic Versioning](https://semver.org/) when choosing a version number. In short:
+
+**Patch version Z (x.y.Z | x > 0)** MUST be incremented if only backward compatible bug fixes are introduced. A bug fix is defined as an internal change that fixes incorrect behavior.
+
+**Minor version Y (x.Y.z | x > 0)** MUST be incremented if new, backward compatible functionality is introduced to the public API. It MUST be incremented if any public API functionality is marked as deprecated. It MAY be incremented if substantial new functionality or improvements are introduced within the private code. It MAY include patch level changes. Patch version MUST be reset to 0 when minor version is incremented.
+
+**Major version X (X.y.z | X > 0)** MUST be incremented if any backward incompatible changes are introduced to the public API. It MAY also include minor and patch level changes. Patch and minor versions MUST be reset to 0 when major version is incremented.
+
+### How to track changes?
+
+There SHOULD always be a `next.md` file in the `_changelog` folder. This file is used to track changes that are planned for the next release. Before creating a new pull request for the `development` branch, simply add your changes to the `next.md` file. When you are ready to release a new version, copy the content of the `next.md` file into a new version file with the appropriate version number, and then clear the content of the `next.md` file.
+
 ### Changelog template
 
 Here is a simple template you can use for your changelog entry:

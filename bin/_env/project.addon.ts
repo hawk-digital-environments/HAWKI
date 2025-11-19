@@ -4,6 +4,7 @@ import type {AddonEntrypoint} from '@/loadAddons.ts';
 import {execSync} from 'node:child_process';
 import path from 'path';
 import fs from 'fs';
+import {startDockerProductionTest} from './project/startDockerProductionTest.js';
 
 export const addon: AddonEntrypoint = async (context) => ({
     ui: defineUi,
@@ -80,7 +81,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .command('docs')
             .description('a list of commands to help you with documentation tasks');
 
-        const installDocksIfNeeded = () => {
+        const installDocsIfNeeded = () => {
             // Automatically run npm install if node_modules does not exist
             if (!fs.existsSync(path.join(docsDir, 'node_modules'))) {
                 console.log('node_modules not found, running npm install...');
@@ -107,7 +108,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .command('build')
             .description('builds the documentation')
             .action(async () => {
-                installDocksIfNeeded();
+                installDocsIfNeeded();
                 execSync('npm run build', {
                     cwd: docsDir,
                     stdio: 'inherit'
@@ -118,11 +119,16 @@ export const addon: AddonEntrypoint = async (context) => ({
             .command('watch')
             .description('watches and serves the documentation with live reload')
             .action(async () => {
-                installDocksIfNeeded();
+                installDocsIfNeeded();
                 execSync('npm run start', {
                     cwd: docsDir,
                     stdio: 'inherit'
                 });
             });
+
+        program
+            .command('start-docker-production-test')
+            .description('Creates a running system of the `_docker_production` directory for testing purposes')
+            .action(async () => startDockerProductionTest(context));
     }
 });
