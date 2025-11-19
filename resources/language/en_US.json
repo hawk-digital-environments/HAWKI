@@ -23,7 +23,6 @@
     "Cnf_passkeyRemove":"By confirming this, your Datakey and keychain data will be removed from this browser. Please remember that we currently don't provide any Datakey recovery solutions. <br> <b>Please make sure that you have a secure backup of your Datakey before proceeding.<b>",
 
     "Cnf_RemoveFile":"Are you sure you want to delete this file?",
-    "Cnf_checkMembersAdded": "Please add at least one user to invite.",
 
     "Logout_Warning":"To contninue using HAWKI you need to accept these conditions. <br><strong>Click on confirm to logout from HAWKI.</strong>",
 
@@ -64,6 +63,9 @@
     "CopiedToolTip": "Copied!",
     "CopyToolTip": "Copy",
     "EditToolTip": "Edit",
+    "FilePreview": "Show",
+    "FileDownload": "Download",
+    "FileRemove": "Remove",
     "SpeakToolTip": "Read aloud",
     "RegenerateToolTip": "Regenerate",
     "ThreadToolTip": "Open thread",
