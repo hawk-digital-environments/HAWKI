@@ -114,7 +114,8 @@ async function onSendMessageToRoom(inputField) {
         const aiKeyRaw = await exportSymmetricKey(aiKey);
         const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
 
-        const webSearchActive = inputField.closest('.input-container').querySelector('#websearch-btn').classList.contains('active');
+        const webSearchBtn = inputField.closest('.input-container').querySelector('#websearch-btn');
+        const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
         const tools = {
             'web_search': webSearchActive
         }
