@@ -1,4 +1,4 @@
-.wrapper {  
+.wrapper {
   position: fixed;
   top: 0;
   bottom: 0;
@@ -42,11 +42,14 @@
 /* Login Panel Styles */
 .loginPanel {
   flex: 1;
-  margin-bottom: 2rem;
+    overflow: auto;
+    margin: 0 -2rem 2rem -2rem;
+    padding: 0 2rem;
+
 }
 
 /* Auth Panel Switching */
-#main-auth-panel, 
+#main-auth-panel,
 #local-auth-panel,
 #guest-request-panel {
   transition: opacity 0.3s ease-in-out;
@@ -321,7 +324,7 @@ main {
   z-index: 1;
   bottom: 1rem;
   right: 3rem;
-  
+
 }
 
 @media (max-width: 800px) {
@@ -342,12 +345,12 @@ main {
 }
 
 
-@media only screen 
-  and (min-device-width: 320px) 
+@media only screen
+  and (min-device-width: 320px)
   and (max-device-width: 480px)
   and (-webkit-min-device-pixel-ratio: 2)
   and (orientation: portrait) {
-    
+
     main{
       display: none;
     }

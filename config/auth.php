@@ -1,17 +1,20 @@
 <?php
 
 return [
+
     /*
     |--------------------------------------------------------------------------
-    | Authentication method
+    | Authentication Method
     |--------------------------------------------------------------------------
     |
-    | Defines the authentication method to be used by the application.
-    | Supported: 'LDAP', 'OIDC', 'Shibboleth'
-    | Also supported are fully qualified class names of custom auth services, that implement the AuthServiceInterface!
+    | This option defines the primary authentication method for the application.
+    | Supported methods: LDAP, OIDC, Shibboleth, LOCAL_ONLY, CUSTOM
     |
-     */
-    'authMethod' => env('AUTHENTICATION_METHOD', 'LDAP'),
+    */
+
+    'authentication_method' => env('AUTHENTICATION_METHOD', 'LOCAL_ONLY'),
+    // If "authentication_method" is set to "CUSTOM", specify the custom class here, that points to a class implementing AuthServiceInterface
+    'authentication_method_custom_class' => '',
 
     /*
     |--------------------------------------------------------------------------
@@ -137,18 +140,6 @@ return [
     'local_authentication' => env('LOCAL_AUTHENTICATION', false),
     'local_selfservice' => env('LOCAL_SELFSERVICE', false),
     'local_needapproval' => env('LOCAL_NEEDAPPROVAL', true),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Authentication Method
-    |--------------------------------------------------------------------------
-    |
-    | This option defines the primary authentication method for the application.
-    | Supported methods: LDAP, OIDC, Shibboleth, LOCAL_ONLY
-    |
-    */
-
-    'authentication_method' => env('AUTHENTICATION_METHOD', 'LOCAL_ONLY'),
 
     /*
     |--------------------------------------------------------------------------

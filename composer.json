@@ -23,6 +23,7 @@
         "league/flysystem-aws-s3-v3": "^3.30.1",
         "league/flysystem-sftp-v3": "^3.30.0",
         "league/flysystem-webdav": "^3.30.0",
+        "neunerlei/dbg": "^3.2",
         "orchid/platform": "^14.52",
         "spatie/laravel-backup": "^9.3.4"
     },
@@ -82,6 +83,7 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
+            "0.0.0/composer-include-files": true,
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         }

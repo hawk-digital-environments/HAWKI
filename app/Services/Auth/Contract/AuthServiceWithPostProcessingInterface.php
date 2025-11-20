@@ -25,9 +25,10 @@ interface AuthServiceWithPostProcessingInterface
      *
      * @param User $user The user that was just logged in.
      * @param Request $request The current HTTP request.
+     * @param AuthenticatedUserInfo $userInfo
      * @return RedirectResponse|null A response if, for example, a redirection is needed, or null to continue normal flow.
      */
-    public function afterLoginWithUser(User $user, Request $request): Response|null;
+    public function afterLoginWithUser(User $user, Request $request, AuthenticatedUserInfo $userInfo): Response|null;
 
     /**
      * Executed after a new user has been created as part of the authentication process.

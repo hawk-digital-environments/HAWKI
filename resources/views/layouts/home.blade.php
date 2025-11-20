@@ -14,7 +14,7 @@
 	<link rel="icon" href="{{ route('system.image', 'favicon') }}">
 
 
-    <link rel="stylesheet" href="{{ asset('css_v2.1.0/gfont-firesans/firesans.css') }}">
+{{--    <link rel="stylesheet" href="{{ asset('css_v2.1.0/gfont-firesans/firesans.css') }}">--}}
     <link rel="stylesheet" href="{{ route('css.get', 'style') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'custom-styles') }}">
     <link rel="stylesheet" href="{{ route('css.get', 'chat_modules') }}">

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\View;
+use Orchid\Platform\Models\Role;
 
 class LoginController extends Controller
 {
@@ -34,21 +35,19 @@ class LoginController extends Controller
         $settingsPanel = (new SettingsService())->render();
 
         $showLoginForm = $authService instanceof AuthServiceWithCredentialsInterface;
-        // @todo we probably have to adjust this, so $showLoginForm gets updated.
         $localUsersActive = config('auth.local_authentication', false);
         $localSelfserviceActive = config('auth.local_selfservice', false);
+        $availableRoles = $localSelfserviceActive ? Role::where('selfassign', true)->get() : [];
 
         // Read authentication forms
-        $authForms = View::make('partials.login.authForms', compact('translation', 'showLoginForm'))->render();
+        $authForms = View::make('partials.login.authForms', compact(
+            'translation',
+            'showLoginForm',
+            'localUsersActive',
+            'localSelfserviceActive',
+            'availableRoles'
+        ))->render();
 
-        // Initialize settings panel
-        $settingsPanel = (new SettingsService())->render();
-
-        // Get available roles for guest registration
-        $availableRoles = [];
-        if ($localSelfserviceActive) {
-            $availableRoles = \Orchid\Platform\Models\Role::where('selfassign', true)->get();
-        }
 
         $activeOverlay = false;
         if (Session::get('last-route') && Session::get('last-route') != 'login') {
@@ -57,13 +56,11 @@ class LoginController extends Controller
         Session::put('last-route', 'login');
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('layouts.login', compact('translation',
+        return view('layouts.login', compact(
+            'translation',
             'authForms',
             'settingsPanel',
-            'activeOverlay',
-            'localUsersActive',
-            'localSelfserviceActive',
-            'availableRoles'
+            'activeOverlay'
         ));
     }
 }

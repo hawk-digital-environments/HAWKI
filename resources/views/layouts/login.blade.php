@@ -18,6 +18,7 @@
     <script src="{{ asset('js/functions.js') }}"></script>
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
+    <script src="{{ asset('js/guest_request_functions.js') }}"></script>
     @vite('resources/js/app.js')
 
     {!! $settingsPanel !!}

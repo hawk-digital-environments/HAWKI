@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Auth;
 
 
+use App\Models\User;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
+use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
 use Illuminate\Http\RedirectResponse;
@@ -20,7 +22,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ChainedAuthService implements AuthServiceInterface,
     AuthServiceWithCredentialsInterface,
-    AuthServiceWithLogoutRedirectInterface
+    AuthServiceWithLogoutRedirectInterface,
+    AuthServiceWithPostProcessingInterface
 {
     /**
      * @var array<AuthServiceInterface> $services
@@ -84,6 +87,41 @@ class ChainedAuthService implements AuthServiceInterface,
         foreach ($this->services as $service) {
             if ($service instanceof AuthServiceWithLogoutRedirectInterface) {
                 $response = $service->getLogoutResponse($request);
+                if ($response !== null) {
+                    return $response;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param AuthenticatedUserInfo $userInfo
+     * @inheritDoc
+     */
+    public function afterLoginWithUser(User $user, Request $request, AuthenticatedUserInfo $userInfo): Response|null
+    {
+        foreach ($this->services as $service) {
+            if ($service instanceof AuthServiceWithPostProcessingInterface) {
+                $response = $service->afterLoginWithUser($user, $request, $userInfo);
+                if ($response !== null) {
+                    return $response;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function afterLoginWithoutUser(AuthenticatedUserInfo $userInfo, Request $request): Response|null
+    {
+        foreach ($this->services as $service) {
+            if ($service instanceof AuthServiceWithPostProcessingInterface) {
+                $response = $service->afterLoginWithoutUser($userInfo, $request);
                 if ($response !== null) {
                     return $response;
                 }

@@ -3,160 +3,105 @@
 namespace App\Services\Auth;
 
 use App\Models\User;
+use App\Services\Auth\Contract\AuthServiceInterface;
+use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
+use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
+use App\Services\Auth\Exception\AuthFailedException;
+use App\Services\Auth\Util\AuthServiceWithCredentialsTrait;
+use App\Services\Auth\Value\AuthenticatedUserInfo;
 use Exception;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\Response;
 
-class LocalAuthService
+
+class LocalAuthService implements AuthServiceInterface, AuthServiceWithCredentialsInterface, AuthServiceWithPostProcessingInterface
 {
+    use AuthServiceWithCredentialsTrait;
+
+    public function __construct(
+        #[Config('auth.local_authentication')]
+        bool                             $enabled,
+        private readonly LoggerInterface $logger
+    )
+    {
+    }
+
     /**
-     * Authenticate local user with username and password
-     *
-     * @param  string  $username
-     * @param  string  $password
-     * @return array|null User information array if authenticated, null if failed
+     * @inheritDoc
      */
-    public function authenticate($username, $password)
+    public function authenticate(Request $request): AuthenticatedUserInfo|Response
     {
         try {
-            // Check if username or password is empty
-            if (! $username || ! $password) {
-                return null;
+            if (empty($this->username) || empty($this->password)) {
+                if (empty($this->username)) {
+                    $this->logger->warning('LDAP authentication attempted with empty username.');
+                } else {
+                    $this->logger->warning("LDAP authentication attempted for user '{$this->username}' with empty password.");
+                }
+                throw new AuthFailedException('To authenticate, username and password must be provided.');
             }
 
             // Find local user (auth_type = 'local')
-            $user = User::where('username', $username)
+            $user = User::where('username', $this->username)
                 ->where('auth_type', 'local')
                 ->where('isRemoved', false)
                 ->first();
 
-            if (! $user) {
-                return null;
+            if (!$user) {
+                throw new AuthFailedException('Invalid user or password');
             }
 
             // Verify password
-            if (! Hash::check($password, $user->password)) {
-                return null;
+            if (!Hash::check($this->password, $user->password)) {
+                throw new AuthFailedException('Invalid user or password');
             }
 
-            // Return user information in same format as other auth services
-            return [
-                'username' => $user->username,
-                'name' => $user->name,
-                'email' => $user->email,
-                'employeetype' => $user->employeetype ?? 'local',
-            ];
-
+            return new AuthenticatedUserInfo(
+                username: $user->username,
+                displayName: $user->name,
+                email: $user->email,
+                employeeType: $user->employeetype ?? 'local'
+            );
         } catch (Exception $e) {
-            Log::error('LocalAuth authentication failed: '.$e->getMessage());
+            throw new AuthFailedException('Local authentication failed', 500, $e);
+        }
+    }
 
+    /**
+     * @inheritDoc
+     */
+    public function afterLoginWithUser(User $user, Request $request, AuthenticatedUserInfo $userInfo): Response|null
+    {
+        // Check if this is a local user who needs to complete registration
+        if ($user->auth_type !== 'local' || !empty($user->publicKey)) {
             return null;
         }
+
+        // Local user who needs to complete registration process
+        // This includes both admin-created users and self-service users
+        $request->session()->put([
+            'registration_access' => true,
+            'authenticatedUserInfo' => json_encode($userInfo),
+            'first_login_local_user' => true
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'redirectUri' => '/register',
+        ]);
     }
 
     /**
-     * Check if a user is a local user
-     *
-     * @param  string  $username
-     * @return bool
+     * @inheritDoc
      */
-    public function isLocalUser($username)
+    public function afterLoginWithoutUser(AuthenticatedUserInfo $userInfo, Request $request): Response|null
     {
-        return User::where('username', $username)
-            ->where('auth_type', 'local')
-            ->exists();
-    }
-
-    /**
-     * Create a new local user
-     *
-     * @param  array  $userData
-     * @param  bool  $needsPasswordReset  - Whether user needs to reset password (for admin-created users)
-     * @return User|null
-     */
-    public function createLocalUser($userData, $needsPasswordReset = false)
-    {
-        try {
-            // Approval-Logik: Standardmäßig approval=false, wenn local_needapproval aktiv ist
-            $needsApproval = config('auth.local_needapproval') === true;
-            $approval = array_key_exists('approval', $userData)
-                ? (bool) $userData['approval']
-                : ! $needsApproval; // Wenn Approval benötigt: false, sonst true
-
-            $user = User::create([
-                'username' => $userData['username'],
-                'name' => $userData['name'],
-                'email' => $userData['email'],
-                'password' => $userData['password'], // Will be automatically hashed
-                'employeetype' => $userData['employeetype'] ?? 'local',
-                'auth_type' => 'local', // Explicitly set as local user
-                'reset_pw' => $needsPasswordReset, // Set based on user creation method
-                'publicKey' => $userData['publicKey'] ?? '',
-                'avatar_id' => $userData['avatar_id'] ?? null,
-                'bio' => $userData['bio'] ?? null,
-                'isRemoved' => false,
-                'approval' => $approval,
-            ]);
-
-            return $user;
-        } catch (Exception $e) {
-            Log::error('Failed to create local user: '.$e->getMessage());
-
-            return null;
-        }
-    }
-
-    /**
-     * Update local user password
-     *
-     * @param  string  $username
-     * @param  string  $newPassword
-     * @return bool
-     */
-    public function updatePassword($username, $newPassword)
-    {
-        try {
-            $user = User::where('username', $username)
-                ->where('auth_type', 'local')
-                ->first();
-
-            if (! $user) {
-                return false;
-            }
-
-            $user->password = $newPassword; // Will be automatically hashed
-
-            return $user->save();
-
-        } catch (Exception $e) {
-            Log::error('Failed to update local user password: '.$e->getMessage());
-
-            return false;
-        }
-    }
-
-    /**
-     * Get all local users
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getLocalUsers()
-    {
-        return User::where('auth_type', 'local')
-            ->where('isRemoved', false)
-            ->get();
-    }
-
-    /**
-     * Get all external users (not local)
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function getExternalUsers()
-    {
-        return User::where('auth_type', '!=', 'local')
-            ->where('isRemoved', false)
-            ->get();
+        return response()->json([
+            'success' => false,
+            'message' => 'User account not found or deactivated.',
+        ]);
     }
 }

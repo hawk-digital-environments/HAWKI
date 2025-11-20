@@ -6,6 +6,7 @@ use App\Services\Auth\ChainedAuthService;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
 use App\Services\Auth\LdapService;
+use App\Services\Auth\LocalAuthService;
 use App\Services\Auth\OidcService;
 use App\Services\Auth\ShibbolethService;
 use App\Services\Auth\TestAuthService;
@@ -23,17 +24,35 @@ class AuthServiceProvider extends ServiceProvider
         'LDAP' => LdapService::class,
         'Shibboleth' => ShibbolethService::class,
         'OIDC' => OidcService::class,
+        'LOCAL_ONLY' => LocalAuthService::class
     ];
 
     public function register(): void
     {
         $this->app->singleton(AuthServiceInterface::class, function (Application $app) {
-            $usesTestAuth = config('test_users.active', false);
+            $authenticationMethod = config('auth.authentication_method');
+            if($authenticationMethod === 'CUSTOM'){
+                $authenticationClass = config('auth.authentication_method_custom_class');
+                if(empty($authenticationClass)){
+                    throw new \RuntimeException('Custom authentication method selected, but no class configured.');
+                }
+                if(!class_exists($authenticationClass)){
+                    throw new \RuntimeException(sprintf(
+                        'Custom authentication method class %s does not exist.',
+                        $authenticationClass
+                    ));
+                }
+                $configuredAuthService = $authenticationClass;
+            } elseif(is_string($authenticationMethod) && isset(self::LEGACY_AUTH_SERVICE_MAP[$authenticationMethod])){
+                $configuredAuthService = self::LEGACY_AUTH_SERVICE_MAP[$authenticationMethod];
+            } else {
+                throw new \RuntimeException(sprintf(
+                    'Invalid authentication method configured: %s',
+                    is_string($authenticationMethod) ? $authenticationMethod : gettype($authenticationMethod)
+                ));
+            }
 
-            // This can be either a legacy auth method name or a fully qualified class name.
-            $configuredAuthService = config('auth.authMethod');
-            $configuredAuthService = self::LEGACY_AUTH_SERVICE_MAP[$configuredAuthService] ?? $configuredAuthService;
-
+            // Special handling for
             $instance = $app->make($configuredAuthService);
             if (!$instance instanceof AuthServiceInterface) {
                 throw new \RuntimeException(sprintf(
@@ -43,13 +62,28 @@ class AuthServiceProvider extends ServiceProvider
                 ));
             }
 
-            // If the test authentication is enabled AND the selected auth service supports credentials,
-            // wrap the selected auth service with the test auth service in a chained auth service.
-            // This will first try to authenticate using the test auth service, and if it fails,
-            // it will fall back to the selected auth service.
-            if ($usesTestAuth && $instance instanceof AuthServiceWithCredentialsInterface) {
-                $testAuth = $app->make(TestAuthService::class);
-                $instance = new ChainedAuthService($testAuth, $instance);
+            // If the current auth service, supports login via a local form
+            // We can chain it with additional authentication services based on the configuration
+            if ($instance instanceof AuthServiceWithCredentialsInterface) {
+                /**
+                 * @var AuthServiceInterface[] $services
+                 */
+                $services = [$instance];
+
+                // If test user authentication is enabled, add it as authenticator
+                // This is deprecated, and we therefore add it AFTER local auth
+                if (config('test_users.active', false)) {
+                    array_unshift($services, $app->make(TestAuthService::class));
+                }
+
+                // If local auth is enabled, add it as authenticator
+                if (!$instance instanceof LocalAuthService && config('auth.local_authentication')) {
+                    array_unshift($services, $app->make(LocalAuthService::class));
+                }
+
+                if(count($services) > 1){
+                    $instance = new ChainedAuthService(...$services);
+                }
             }
 
             return $instance;

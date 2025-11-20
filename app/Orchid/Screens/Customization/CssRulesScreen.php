@@ -2,12 +2,12 @@
 
 namespace App\Orchid\Screens\Customization;
 
-use App\Http\Controllers\AppCssController;
 use App\Models\AppCss;
 use App\Orchid\Layouts\Customization\CssFiltersLayout;
 use App\Orchid\Layouts\Customization\CssListLayout;
 use App\Orchid\Layouts\Customization\CustomizationTabMenu;
 use App\Orchid\Traits\OrchidLoggingTrait;
+use App\Services\Frontend\CssCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
@@ -120,7 +120,7 @@ class CssRulesScreen extends Screen
 
         try {
             // Load content from CSS file if it exists
-            $cssFilePath = public_path("css_v2.1.0/{$name}.css");
+            $cssFilePath = public_path("css/{$name}.css");
             $defaultContent = '/* Default CSS content */';
             $defaultDescription = "Default CSS stylesheet for {$name}";
 
@@ -146,7 +146,8 @@ class CssRulesScreen extends Screen
                 ]
             );
 
-            AppCssController::clearCaches();
+            // @todo avoid using app() helper in favor of dependency injection
+            app(CssCache::class)->forgetAll();
 
             $this->logModelOperation('update', 'css_rule', $name, 'success', [
                 'action' => 'reset_to_default',
@@ -175,7 +176,8 @@ class CssRulesScreen extends Screen
             $css->active = ! $css->active;
             $css->save();
 
-            AppCssController::clearCaches();
+            // @todo avoid using app() helper in favor of dependency injection
+            app(CssCache::class)->forgetAll();
 
             $status = $css->active ? 'activated' : 'deactivated';
             $this->logModelOperation('update', 'css_rule', $css->name, 'success', [
@@ -202,7 +204,7 @@ class CssRulesScreen extends Screen
 
             foreach ($this->defaultCssEntries as $name => $config) {
                 // Load content from CSS file if it exists
-                $cssFilePath = public_path("css_v2.1.0/{$name}.css");
+                $cssFilePath = public_path("css/{$name}.css");
                 $defaultContent = $config['content'] ?? '/* Default CSS content */';
                 $defaultDescription = $config['description'] ?? "Default CSS stylesheet for {$name}";
 
@@ -227,7 +229,8 @@ class CssRulesScreen extends Screen
             }
 
             if ($resetCount > 0) {
-                AppCssController::clearCaches();
+                // @todo avoid using app() helper in favor of dependency injection
+                app(CssCache::class)->forgetAll();
 
                 $this->logModelOperation('update', 'css_rules', 'multiple', 'success', [
                     'action' => 'reset_all_to_defaults',
@@ -311,7 +314,8 @@ class CssRulesScreen extends Screen
     public function clearCssCache()
     {
         try {
-            AppCssController::clearCaches();
+            // @todo avoid using app() helper in favor of dependency injection
+            app(CssCache::class)->forgetAll();
             Toast::success('CSS cache cleared successfully!');
         } catch (\Exception $e) {
             Toast::error('Error clearing CSS cache: '.$e->getMessage());

@@ -11,6 +11,9 @@ use Illuminate\Container\Attributes\Config;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * @deprecated This service is superseded by {@see LocalAuthService}
+ */
 class TestAuthService implements AuthServiceInterface, AuthServiceWithCredentialsInterface
 {
     use AuthServiceWithCredentialsTrait;

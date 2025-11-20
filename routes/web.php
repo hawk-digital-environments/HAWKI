@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\AiConvController;
 use App\Http\Controllers\AnnouncementController;
-use App\Http\Controllers\AppCssController;
+use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuthenticationController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\LocalRegistrationController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\OtpController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
@@ -25,26 +27,11 @@ Route::middleware('prevent_back')->group(function () {
         ->name('web.auth.login.get');
     Route::post('/req/login', [AuthenticationController::class, 'handleLogin'])
         ->name('web.auth.login.post');
+    Route::post('/req/submit-guest-request', [LocalRegistrationController::class, 'submitGuestRequest']);
 
     // Dynamic CSS route
-    Route::get('/css/{name}', [AppCssController::class, 'getByName'])->name('css.get');
-
-    // Dynamic system image route
-    // @todo move this to its own controller
-    Route::get('/system-image/{name}', function ($name) {
-        $image = App\Models\AppSystemImage::getByName($name);
-        if ($image) {
-            return redirect(asset($image->file_path));
-        }
-
-        // Fallback to static files
-        $fallback = [
-            'favicon' => 'favicon.ico',
-            'logo_svg' => 'img/logo.svg'
-        ];
-
-        return redirect(asset($fallback[$name] ?? 'img/logo.svg'));
-    })->name('system.image');
+    Route::get('/css/{name}', [AssetController::class, 'serveCss'])->name('css.get');
+    Route::get('/system-image/{name}', [AssetController::class, 'getSystemImage'])->name('system.image');
 
     /*
      * Those routes are deprecated and will be removed in future releases.
@@ -91,8 +78,8 @@ Route::middleware('prevent_back')->group(function () {
         Route::get('/handshake', [AuthenticationController::class, 'handshake']);
 
         // OTP Routes for passkey alternative authentication
-        Route::post('/req/send-otp', [AuthenticationController::class, 'sendOTP']);
-        Route::post('/req/verify-otp', [AuthenticationController::class, 'verifyOTP']);
+        Route::post('/req/send-otp', [OtpController::class, 'sendOTP']);
+        Route::post('/req/verify-otp', [OtpController::class, 'verifyOTP']);
 
         // AI CONVERSATION ROUTES
         Route::middleware('chatAccess')->group(function () {

@@ -2,10 +2,10 @@
 
 namespace App\Orchid\Screens\Customization;
 
-use App\Http\Controllers\AppCssController;
 use App\Models\AppCss;
 use App\Orchid\Layouts\Customization\CustomizationTabMenu;
 use App\Orchid\Traits\OrchidLoggingTrait;
+use App\Services\Frontend\CssCache;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
@@ -191,8 +191,8 @@ class CssEditScreen extends Screen
                 $cssData
             );
 
-            // Always clear cache after saving
-            AppCssController::clearCaches();
+            // @todo avoid using app() helper in favor of dependency injection
+            app(CssCache::class)->forgetAll();
 
             $this->logModelOperation('update', 'css_rule', $cssName, 'success', [
                 'content_length' => strlen($content),
@@ -220,7 +220,7 @@ class CssEditScreen extends Screen
 
         try {
             // Load content from CSS file if it exists
-            $cssFilePath = public_path("css_v2.1.0/{$cssName}.css");
+            $cssFilePath = public_path("css/{$cssName}.css");
             $defaultContent = '/* Default CSS content */';
             $defaultDescription = "Default CSS stylesheet for {$cssName}";
 
@@ -241,7 +241,8 @@ class CssEditScreen extends Screen
                 ]
             );
 
-            AppCssController::clearCaches();
+            // @todo avoid using app() helper in favor of dependency injection
+            app(CssCache::class)->forgetAll();
 
             $this->logModelOperation('update', 'css_rule', $cssName, 'success', [
                 'action' => 'reset_to_default',
@@ -256,7 +257,7 @@ class CssEditScreen extends Screen
         } catch (\Exception $e) {
             Log::error('Error resetting CSS rule: '.$e->getMessage());
             Toast::error('Error resetting CSS rule: '.$e->getMessage());
-            
+
             // Use redirect instead of back() to avoid session payload issues
             return redirect()->route('platform.customization.css');
         }
