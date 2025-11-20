@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 
-use App\Models\PrivateUserData;
 use App\Models\User;
 use App\Services\Announcements\AnnouncementService;
 use App\Services\Auth\Contract\AuthServiceInterface;
@@ -12,7 +11,6 @@ use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
 use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
-use App\Services\Profile\ProfileService;
 use App\Services\System\SettingsService;
 use Cookie;
 use Illuminate\Http\JsonResponse;
@@ -160,9 +158,6 @@ class AuthenticationController extends Controller
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService())->render();
 
-        $profileService = new ProfileService();
-        $keychainData = $profileService->fetchUserKeychain();
-
         $activeOverlay = false;
         if (Session::get('last-route') && Session::get('last-route') != 'handshake') {
             $activeOverlay = true;
@@ -171,7 +166,7 @@ class AuthenticationController extends Controller
 
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay'));
+        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay'));
 
     }
 
@@ -211,12 +206,7 @@ class AuthenticationController extends Controller
     {
         try {
             // Validate input data
-            $validatedData = $request->validate([
-                'publicKey' => 'required|string',
-                'keychain' => 'required|string',
-                'KCIV' => 'required|string',
-                'KCTAG' => 'required|string',
-            ]);
+            $validatedData = $request->validate([]);
 
             // Retrieve user info from session
             $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
@@ -236,7 +226,7 @@ class AuthenticationController extends Controller
                     'name' => $name,
                     'email' => $email,
                     'employeetype' => $employeetype,
-                    'publicKey' => $validatedData['publicKey'],
+                    'publicKey' => '',
                     'avatar_id' => $avatarId,
                     'isRemoved' => false
                 ]
@@ -249,15 +239,6 @@ class AuthenticationController extends Controller
             } catch (\Throwable) {
             }
 
-            // Update or create the Private User Data
-            PrivateUserData::create(
-                [
-                    'user_id' => $user->id,
-                    'KCIV' => $validatedData['KCIV'],
-                    'KCTAG' => $validatedData['KCTAG'],
-                    'keychain' => $validatedData['keychain']
-                ]
-            );
             // Log the user in
             Session::put('registration_access', false);
             Auth::login($user);

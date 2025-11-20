@@ -3,25 +3,19 @@
 namespace App\Providers;
 
 use App\Http\Middleware\AdminAccess;
-use App\Http\Middleware\DeprecatedEndpointMiddleware;
+use App\Http\Middleware\AppAccessMiddleware;
+use App\Http\Middleware\AppUserRequestRequiredMiddleware;
 use App\Http\Middleware\EditorAccess;
-use App\Http\Middleware\ExternalCommunicationCheck;
+use App\Http\Middleware\ExternalAccessMiddleware;
+use App\Http\Middleware\HandleAppConnectMiddleware;
 use App\Http\Middleware\MandatorySignatureCheck;
 use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
-use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\FileStorageService;
-use App\Services\Storage\StorageServiceFactory;
-use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
-use League\Flysystem\Filesystem;
-use League\Flysystem\WebDAV\WebDAVAdapter;
-use Sabre\DAV\Client;
+use App\Http\Middleware\DeprecatedEndpointMiddleware;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -31,8 +25,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->registerMiddlewareAliases();
-        $this->registerStorageServices();
+        Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
+        Route::aliasMiddleware('roomAdmin', AdminAccess::class);
+        Route::aliasMiddleware('roomEditor', EditorAccess::class);
+        Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
+        Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
+        Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
+        Route::aliasMiddleware('external_access', ExternalAccessMiddleware::class);
+        Route::aliasMiddleware('app_access', AppAccessMiddleware::class);
+        Route::aliasMiddleware('handle_app_connect', HandleAppConnectMiddleware::class);
+        Route::aliasMiddleware('app_user_request_required', AppUserRequestRequiredMiddleware::class);
+        Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
+        Route::aliasMiddleware('deprecated', DeprecatedEndpointMiddleware::class);
     }
 
     /**
@@ -40,53 +44,5 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->bootWebdavStorage();
-    }
-
-    protected function registerStorageServices(): void
-    {
-        $this->app->singleton(
-            AvatarStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
-        );
-
-        $this->app->singleton(
-            FileStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
-        );
-    }
-
-    protected function bootWebdavStorage(): void
-    {
-        // Register WebDAV driver for NextCloud support
-        Storage::extend('webdav', static function ($app, $config) {
-            $client = new Client([
-                'baseUri' => $config['base_uri'],
-                'userName' => $config['username'],
-                'password' => $config['password'],
-            ]);
-
-            $adapter = new WebDAVAdapter($client, $config['prefix'] ?? '');
-
-            return new FilesystemAdapter(
-                new Filesystem($adapter),
-                $adapter,
-                $config
-            );
-        });
-    }
-
-    private function registerMiddlewareAliases(): void
-    {
-        // Register middleware aliases
-        Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
-        Route::aliasMiddleware('roomAdmin', AdminAccess::class);
-        Route::aliasMiddleware('roomEditor', EditorAccess::class);
-        Route::aliasMiddleware('api_isActive', ExternalCommunicationCheck::class);
-        Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
-        Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
-        Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
-        Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
-        Route::aliasMiddleware('deprecated', DeprecatedEndpointMiddleware::class);
     }
 }

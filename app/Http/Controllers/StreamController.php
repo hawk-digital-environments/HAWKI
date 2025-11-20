@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RoomAiWritingEndedEvent;
+use App\Events\RoomAiWritingStartedEvent;
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
-
 use App\Models\Room;
 use App\Models\User;
 use App\Services\AI\AiService;
 use App\Services\AI\UsageAnalyzerService;
 use App\Services\AI\Value\AiResponse;
+use App\Services\Api\ApiRequestMigrator;
+use App\Services\Api\Value\ApiRequestFieldConfig;
 use App\Services\Chat\Message\MessageHandlerFactory;
 use App\Services\Storage\AvatarStorageService;
 use Hawk\HawkiCrypto\SymmetricCrypto;
@@ -70,8 +73,13 @@ class StreamController extends Controller
     /**
      * Handle AI connection requests using the new architecture
      */
-    public function handleAiConnectionRequest(Request $request)
+    public function handleAiConnectionRequest(Request $request, ApiRequestMigrator $requestMigrator)
     {
+        $request = $requestMigrator->migrate(
+            $request,
+            new ApiRequestFieldConfig(messageIdField: 'messageId', threadIdField: 'threadIndex')
+        );
+        
         //validate payload
         try {
             $validatedData = $request->validate([
@@ -86,11 +94,7 @@ class StreamController extends Controller
 
                 'broadcast' => 'required|boolean',
                 'isUpdate' => 'nullable|boolean',
-                'messageId' => ['nullable', function ($_, $value, $fail) {
-                    if ($value !== null && !is_string($value) && !is_int($value)) {
-                        $fail('The messageId must be a valid numeric string (e.g., "192.000" or "12").');
-                    }
-                }],
+                'messageId' => 'nullable|string',
                 'threadIndex' => 'nullable|int',
                 'slug' => 'nullable|string',
                 'key' => 'nullable|string',
@@ -115,8 +119,36 @@ class StreamController extends Controller
         }
 
         if ($validatedData['broadcast']) {
-            $this->handleGroupChatRequest($validatedData);
-            return null;
+            $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
+            try {
+                $model = $this->aiService->getModelOrFail($validatedData['payload']['model']);
+            } catch (\Throwable) {
+                return response()->json(['error' => 'The requested model is not available.'], 400);
+            }
+            
+            RoomAiWritingStartedEvent::dispatch($room, $model);
+            
+            // Broadcast initial generation status immediately
+            broadcast(new RoomMessageEvent([
+                'type' => 'status',
+                'data' => [
+                    'slug' => $room->slug,
+                    'isGenerating' => true,
+                    'model' => $validatedData['payload']['model']
+                ]
+            ]));
+            
+            // We want the request to be handled after the response is sent,
+            // so we register a shutdown function to handle the group chat request
+            // This allows the client to receive a response immediately while processing continues in the background
+            // This is useful for group chat requests where we don't want to block the client waiting for the AI response
+            // and we want to handle the request asynchronously.
+            // Note: This is not the best practice and should be migrated into a proper job queue in the future.
+            register_shutdown_function(function () use ($validatedData) {
+                $this->handleGroupChatRequest($validatedData);
+            });
+            
+            return response()->json(['success' => true]);
         }
 
         $hawki = User::find(1); // HAWKI user
@@ -198,18 +230,7 @@ class StreamController extends Controller
     {
         $isUpdate = (bool) ($data['isUpdate'] ?? false);
         $room = Room::where('slug', $data['slug'])->firstOrFail();
-
-        // Broadcast initial generation status
-        $generationStatus = [
-            'type' => 'status',
-            'data' => [
-                'slug' => $room->slug,
-                'isGenerating' => true,
-                'model' => $data['payload']['model']
-            ]
-        ];
-        broadcast(new RoomMessageEvent($generationStatus));
-
+        
         // Process the request
         $response = $this->aiService->sendRequest($data['payload']);
 
@@ -227,7 +248,7 @@ class StreamController extends Controller
         // Store message
         $messageHandler = MessageHandlerFactory::create('group');
         $member = $room->members()->where('user_id', 1)->firstOrFail();
-
+        
         if ($isUpdate) {
             $message = $messageHandler->update($room, [
                 'message_id' => $data['messageId'],
@@ -255,14 +276,18 @@ class StreamController extends Controller
                 ]
             ]);
         }
-
-
+        
         $broadcastObject = [
             'slug' => $room->slug,
             'message_id'=> $message->message_id,
         ];
         SendMessage::dispatch($broadcastObject, $isUpdate)->onQueue('message_broadcast');
 
+        $model = $this->aiService->getModel($data['payload']['model']);
+        if ($model) {
+            RoomAiWritingEndedEvent::dispatch($room, $model);
+        }
+        
         // Update and broadcast final generation status
         $generationStatus = [
             'type' => 'status',
