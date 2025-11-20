@@ -2,9 +2,14 @@
 
 /**
  * System and dependency management commands
+ * @deprecated will be removed in v3.0.0.
  */
 
 function checkDependencies() {
+
+    echo BOLD . YELLOW. "⚠️  DEPRECATION NOTICE". RESET . PHP_EOL;
+    echo BOLD . "This command is deprecated since v2.3.1 and will be removed in v3.0.0.". RESET . PHP_EOL. PHP_EOL;
+
     echo BOLD . "Checking dependencies..." . RESET . PHP_EOL;
 
     // Check PHP version

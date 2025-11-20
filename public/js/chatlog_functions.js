@@ -336,10 +336,8 @@ function setModel(modelID = null){
     let model;
     if(!modelID){
         if(localStorage.getItem("definedModel")){
-
             model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
         }
-        // if there is no defined model
         // if there is no defined model
         // or the defined model is outdated or cruppted
         if(!model){
@@ -352,35 +350,27 @@ function setModel(modelID = null){
     activeModel = model;
     localStorage.setItem("definedModel", activeModel.id);
 
-    // If the selected model is a web search model, enable the web search button
-
-
-
-    // if (activeModel.id === defaultModels.default_web_search_model) {
-    //             console.log('web search model');
-    //     websearchBtns.forEach(btn => {
-    //         webSearchButton.classList.add('active');
-    //     });
-
-    // } else {
-    //     console.log('not web search model');
-
-    //     const webSearchButton = document.querySelector('#websearch-btn').parentElement;
-    //     if (webSearchButton) {
-    //         webSearchButton.classList.remove('active');
-    //     }
-    // }
-
     //UI UPDATE...
     const selectors = document.querySelectorAll('.model-selector');
     selectors.forEach(selector => {
         //if this is our target model selector
-        //if this is our target model selector
         if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
+
+            const modelObject = modelsList.find(m => m.id === activeModel.id);
             selector.classList.add('active');
 
-            const labels = document.querySelectorAll('.model-selector-label');
+            if(modelObject.tools.web_search && modelObject.tools.web_search === true){
+                document.querySelectorAll('#websearch-btn').forEach(btn => {
+                    btn.classList.add('active');
+                })
+            }
+            else{
+                document.querySelectorAll('#websearch-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                })
+            }
 
+            const labels = document.querySelectorAll('.model-selector-label');
             labels.forEach(label => {
                 const inputContainer = label.closest('.input-container');
                 const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
@@ -389,7 +379,7 @@ function setModel(modelID = null){
                     // Check if the model supports web_search tool (not if it's the default web search model)
                     // This supports both file-based and DB-based configs
                     const supportsWebSearch = activeModel.tools?.web_search === true;
-                    
+
                     if (supportsWebSearch) {
                         websearchBtn.classList.add('active');
                     } else {
@@ -416,7 +406,10 @@ function selectWebSearchModel(button) {
         removeInputFilter(input.id, 'web_search');
 
     } else {
-        button.classList.add('active');
+        const filterActive = addInputFilter(input.id, 'web_search');
+        if(filterActive){
+            button.classList.add('active');
+        }
         addInputFilter(input.id, 'web_search');
     }
 }
@@ -505,5 +498,3 @@ function scrollPanelToLast(panel){
 }
 
 //#endregion
-
-

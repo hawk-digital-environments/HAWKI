@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Services\AI;
 
 
-use App\Services\AI\AvailModels\AvailableModelsBuilder;
-use App\Services\AI\AvailableModels\AvailableModelsBuilderBuilder;
 use App\Services\AI\Config\AiConfigService;
 use App\Services\AI\Db\ModelStatusDb;
 use App\Services\AI\Exception\InvalidClientClassException;
@@ -28,7 +26,7 @@ use Psr\Container\ContainerInterface;
 class AiFactory
 {
     private array $instances;
-    
+
     public function __construct(
         private readonly ContainerInterface $container,
         private readonly Repository         $config,
@@ -36,91 +34,86 @@ class AiFactory
     )
     {
     }
-    
+
     public function getAvailableModels(ModelUsageType $usageType): AvailableAiModels
     {
-
-
         return $this->rememberInstance('available_models_' . $usageType->value, function () use ($usageType) {
             $builder = $this->rememberInstance(AvailableModelsBuilder::class, function () {
-                $builder = $this->container->get(AvailableModelsBuilderBuilder::class);
-                
+                $config = $this->config->get('model_providers', []);
+
+                $builder = $this->container->get(AvailableModelsBuilder::class);
+
                 // Use AiConfigService to get models from either config or database
                 $defaultModels = $this->aiConfigService->getDefaultModels(ModelUsageType::DEFAULT);
                 $defaultModelsExtApp = $this->aiConfigService->getDefaultModels(ModelUsageType::EXTERNAL_APP);
                 $systemModels = $this->aiConfigService->getSystemModels(ModelUsageType::DEFAULT);
                 $systemModelsExtApp = $this->aiConfigService->getSystemModels(ModelUsageType::EXTERNAL_APP);
-                
+
+                // Fallback for older config structure
+                if (!is_array($config['default_models'] ?? null) && isset($config['defaultModel'])) {
+                    throw new \RuntimeException("The 'defaultModel' configuration key is deprecated. Please use 'default_models' instead.");
+                }
+
                 foreach ($defaultModels as $modelType => $modelName) {
                     $builder->addDefaultModelName($modelType, ModelUsageType::DEFAULT, $modelName);
                 }
-                
+
                 foreach ($defaultModelsExtApp as $modelType => $modelName) {
                     $builder->addDefaultModelName($modelType, ModelUsageType::EXTERNAL_APP, $modelName);
                 }
-                
+
                 foreach ($systemModels as $modelType => $modelName) {
                     $builder->addSystemModelName($modelType, ModelUsageType::DEFAULT, $modelName);
                 }
-                
+
                 foreach ($systemModelsExtApp as $modelType => $modelName) {
                     $builder->addSystemModelName($modelType, ModelUsageType::EXTERNAL_APP, $modelName);
                 }
-                
-                $i = $builder->build();
-                
-                $totalModels = 0;
+
                 foreach ($this->createProviderList() as $provider) {
-                    $providerModels = 0;
                     foreach ($provider->getModels() as $model) {
-                        $i->addModel(
+                        $builder->addModel(
                             AiModel::bindContext(
                                 $model,
                                 $this->createModelContext($provider, $model)
                             )
                         );
-                        $providerModels++;
-                        $totalModels++;
                     }
                 }
-                
-                return $i;
+
+                return $builder;
             });
-            
+
             return $builder->build($usageType);
         });
     }
-    
+
     private function createProviderList(): iterable
     {
         $providers = $this->aiConfigService->getProviders();
 
-
         foreach ($providers as $providerId => $rawConfig) {
-            
+
 
             $config = new ProviderConfig($providerId, $rawConfig);
             if (!$config->isActive()) {
-
                 continue;
             }
-            
+
             /** @var class-string<ModelProviderInterface> $modelProviderClass */
             $modelProviderClass = $this->buildProviderRelativeClassName($config, 'ModelProvider');
             if (!class_exists($modelProviderClass)) {
                 $modelProviderClass = GenericModelProvider::class;
             }
-            
-            
-            
+
             yield new $modelProviderClass($config);
         }
     }
-    
+
     private function createModelContext(ModelProviderInterface $provider, AiModel $model): AiModelContext
     {
         $status = null;
-        
+
         return new AiModelContext(
             $model,
             $provider,
@@ -143,42 +136,48 @@ class AiFactory
             }
         );
     }
-    
+
     private function getClientForProvider(ModelProviderInterface $provider): ClientInterface
     {
         return $this->rememberInstance(
             'client_for_provider_' . $provider->getConfig()->getId(),
             function () use ($provider) {
                 $clientClass = $this->buildProviderRelativeClassName($provider->getConfig(), 'Client');
-                
+
                 if (!class_exists($clientClass)) {
                     throw new MissingRequiredAiServiceClassException($clientClass);
                 }
-                
+
                 $client = $this->container->get($clientClass);
                 if (!$client instanceof ClientInterface) {
                     throw new InvalidClientClassException($clientClass);
                 }
-                
+
                 $client->setProvider($provider);
-                
+
                 return $client;
             }
         );
     }
-    
+
     private function buildProviderRelativeClassName(ProviderConfig $config, string $className): string
     {
         $adapter = ucfirst($config->getAdapterName());
         return __NAMESPACE__ . '\\Providers\\' . $adapter . '\\' . $adapter . ucfirst($className);
     }
-    
+
+    /**
+     * @template T of object
+     * @param class-string<T> $key
+     * @param callable<T> $callback
+     * @return T|object
+     */
     private function rememberInstance(string $key, callable $callback): object
     {
         if (!isset($this->instances[$key])) {
             $this->instances[$key] = $callback();
         }
-        
+
         return $this->instances[$key];
     }
 }
