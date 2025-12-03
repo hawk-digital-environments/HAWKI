@@ -33,6 +33,8 @@ return [
         'groupchat_active' => 'Enable group chat',
         'file_upload' => 'Enable file upload functionality',
         'websearch' => 'Enable web search functionality',
+        'websearch_auto_enable' => 'Automatically enable web search when selecting compatible models',
+        'force_default_model' => 'Always reset to default model when opening a new chat',
         'dataprotection_location' => 'Data protection URL',
         'imprint_location' => 'Imprint page URL',
         'accessibility_location' => 'Accessibility statement URL',
@@ -42,19 +44,23 @@ return [
         'send_groupchat_invitation_mails' => 'Send email notifications for group chat invitations',
 
     ],
+    'system' => [
+        'disable_stream_buffering' => 'Clear all output buffers before streaming (enables real-time SSE streaming)',
+        'stream_disable_nginx_buffering' => 'Disable Nginx proxy buffering via X-Accel-Buffering header (Impact: High)',
+        'stream_disable_apache_gzip' => 'Disable Apache mod_deflate compression for streaming (Impact: Medium)',
+        'stream_disable_php_output_buffering' => 'Disable PHP internal output buffering (WARNING: May cause 4s lag, test first!)',
+        'stream_disable_zlib_compression' => 'Disable PHP zlib.output_compression for streaming (Impact: Medium)',
+    ],
     'sanctum' => [
         'allow_external_communication' => 'Allow HAWKI API',
         'allow_user_token' => 'Allow generation of user API tokens',
     ],
     'auth' => [
-        'local_authentication' => 'Activate login form for local users ',
-        'local_selfservice' => 'Activate registration form for local user account creation',
+        'local_authentication' => 'Activate local user authentication ',
+        'local_selfservice' => 'Allow local users to request a guest account',
         'local_needapproval' => 'New local users need admin approval before given access',
         'authentication_method' => 'Authentication method',
-        'passkey_method' => 'Method for generating the PassKey (cannot be changed later)',
-        'passkey_secret' => 'Secret for PassKey generation (cannot be changed later)',
-        'passkey_otp' => 'Send Log-in codes when user tries to login with new device',
-        'passkey_otp_timeout' => 'Set Timeout for Log-in code verification (seconds)',
+        'passkey_method' => 'Method for generating the PassKey',
     ],
     'ldap' => [
         'logging.enabled' => 'Logging of LDAP queries',
@@ -94,14 +100,8 @@ return [
         'default' => 'Default log channel (stack, single, daily, database, stack_with_database, etc.)',
         'channels.stack.channels' => 'Comma-separated list of channels for stack driver',
         'channels.database.level' => 'Minimum log level for database logging (debug, info, warning, error, critical)',
-        'triggers.curl_request_object' => '0. Log raw cURL response data from AI providers (BaseAIModelProvider level)',
-        'triggers.curl_return_object' => '1. Log raw cURL response data from AI providers (BaseAIModelProvider level)',
-        'triggers.normalized_return_object' => '2. Log SSE stream data after normalization in StreamController',
-        'triggers.formatted_stream_chunk' => '3. Log AI provider formatted StreamChunk output',
-        'triggers.translated_return_object' => '4. Log final StreamMessages output (last point before frontend)',
-        'triggers.default_model' => 'Log default model selection and fallback behavior',
-        'triggers.usage' => 'Log token usage data from AI provider responses',
-
+        'triggers.raw_curl_chunk' => '0. Log raw cURL chunks before StreamChunkHandler processing (streaming requests only)',
+        'triggers.curl_return_object' => '1. Log cURL response after StreamChunkHandler',
     ],
     'mail' => [
         'default' => 'Default mailer (smtp, herd, sendmail, log, array, etc.)',
@@ -154,6 +154,7 @@ return [
     'group_mapping' => [
         'app' => 'basic',
         'hawki' => 'basic',
+        'system' => 'system',
         'sanctum' => 'api',
         'auth' => 'authentication',
         'ldap' => 'authentication',

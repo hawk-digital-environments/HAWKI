@@ -102,8 +102,8 @@ class AssistantListLayout extends Table
                 ->sort()
                 ->render(function (AiAssistant $assistant) {
                     if ($assistant->owner) {
-                        // Show "System" for HAWKI user
-                        if ($assistant->owner->name === 'HAWKI') {
+                        // Show "System" for system user (ID 1 or employeetype 'system')
+                        if ($assistant->owner_id === 1 || $assistant->owner->employeetype === 'system') {
                             return "<span class=\"badge bg-primary border-0 rounded-pill\">System</span>";
                         }
                         return $assistant->owner->name;
@@ -131,7 +131,10 @@ class AssistantListLayout extends Table
                     $tooltipText = null;
 
                     // Check for system assistant configuration issues
-                    $isSystemAssistant = $assistant->owner && $assistant->owner->name === 'HAWKI';
+                    $isSystemAssistant = $assistant->owner_id === 1 || 
+                                        ($assistant->owner && $assistant->owner->employeetype === 'system');
+                    
+                    // System assistants must always be active and non-toggleable
                     if ($isSystemAssistant) {
                         $warnings = [];
                         
@@ -155,8 +158,8 @@ class AssistantListLayout extends Table
                             }
                         }
                         
-                        // Check system prompt
-                        if (!$assistant->prompt) {
+                        // Check system prompt (only for assistants that should have prompts)
+                        if (in_array($assistant->key, ['default_model', 'title_generator', 'prompt_improver', 'summarizer']) && !$assistant->prompt) {
                             $warnings[] = 'No System Prompt';
                         }
                         
@@ -166,31 +169,20 @@ class AssistantListLayout extends Table
                             $badgeClass = 'bg-danger';
                             $tooltipText = 'System Assistant Issues: ' . implode(', ', $warnings);
                         } else {
-                            // Complete system assistant - show normal status with system indicator
-                            $tooltipText = 'System Assistant: Properly configured';
+                            // Complete system assistant - always show active
+                            $badgeText = 'Active';
+                            $badgeClass = 'bg-success';
+                            $tooltipText = 'System Assistant: Always active, cannot be changed';
                         }
+                        
+                        // Non-clickable badge for system assistants
+                        return '<span class="badge ' . $badgeClass . ' border-0 rounded-pill" title="' . htmlspecialchars($tooltipText) . '">' . $badgeText . '</span>';
                     }
 
-                    // Check if this is an incomplete system assistant (non-clickable)
-                    $isIncompleteSystemAssistant = $isSystemAssistant && !empty($warnings);
-                    
-                    if ($isIncompleteSystemAssistant) {
-                        // Non-clickable badge for incomplete system assistants
-                        $badgeHtml = '<span class="badge ' . $badgeClass . ' border-0 rounded-pill">' . $badgeText . '</span>';
-                        return '<span title="' . htmlspecialchars($tooltipText) . '">' . $badgeHtml . '</span>';
-                    } else {
-                        // Clickable button for all other cases
-                        $buttonHtml = Button::make($badgeText)
-                            ->method('toggleStatus', ['id' => $assistant->id])
-                            ->class("badge {$badgeClass} border-0 rounded-pill");
-                        
-                        // Add tooltip if we have one
-                        if ($tooltipText) {
-                            return '<span title="' . htmlspecialchars($tooltipText) . '">' . $buttonHtml . '</span>';
-                        }
-                        
-                        return $buttonHtml;
-                    }
+                    // Clickable button for user-created assistants
+                    return Button::make($badgeText)
+                        ->method('toggleStatus', ['id' => $assistant->id])
+                        ->class("badge {$badgeClass} border-0 rounded-pill");
                 }),
 
             // Visibility Column (interaktiv mit Toggle-Button)
@@ -207,6 +199,15 @@ class AssistantListLayout extends Table
                         'group' => 'bg-info',
                         'private' => 'bg-warning'
                     ];
+
+                    // Check if this is a system assistant
+                    $isSystemAssistant = $assistant->owner_id === 1 || 
+                                        ($assistant->owner && $assistant->owner->employeetype === 'system');
+                    
+                    // System assistants must always be public and non-toggleable
+                    if ($isSystemAssistant) {
+                        return '<span class="badge bg-success border-0 rounded-pill" title="System Assistant: Always public, cannot be changed">Public</span>';
+                    }
 
                     $badgeText = $visibilityLabels[$assistant->visibility] ?? 'Unknown';
                     $badgeClass = $visibilityColors[$assistant->visibility] ?? 'bg-secondary';
@@ -249,27 +250,35 @@ class AssistantListLayout extends Table
                         $editUrl .= '?' . http_build_query($filterParams);
                     }
                     
+                    // Check if this is a system assistant
+                    $isSystemAssistant = $assistant->owner_id === 1 || 
+                                        ($assistant->owner && $assistant->owner->employeetype === 'system');
+                    
+                    $actions = [
+                        Link::make(__('Edit'))
+                            ->href($editUrl)
+                            ->icon('bs.pencil'),
+                    ];
+                    
+                    // Only add toggle buttons and delete for non-system assistants
+                    if (!$isSystemAssistant) {
+                        $actions[] = Button::make(__('Toggle Status'))
+                            ->icon('bs.toggle-on')
+                            ->method('toggleStatus', ['id' => $assistant->id]);
+                        
+                        $actions[] = Button::make(__('Toggle Visibility'))
+                            ->icon('bs.eye')
+                            ->method('toggleVisibility', ['id' => $assistant->id]);
+                        
+                        $actions[] = Button::make(__('Delete'))
+                            ->icon('bs.trash3')
+                            ->confirm(__('Are you sure you want to delete this assistant?'))
+                            ->method('remove', ['id' => $assistant->id]);
+                    }
+                    
                     return DropDown::make()
                         ->icon('bs.three-dots-vertical')
-                        ->list([
-                            Link::make(__('Edit'))
-                                ->href($editUrl)
-                                ->icon('bs.pencil'),
-
-
-                            Button::make(__('Toggle Status'))
-                                ->icon('bs.toggle-on')
-                                ->method('toggleStatus', ['id' => $assistant->id]),
-
-                            Button::make(__('Toggle Visibility'))
-                                ->icon('bs.eye')
-                                ->method('toggleVisibility', ['id' => $assistant->id]),
-
-                            Button::make(__('Delete'))
-                                ->icon('bs.trash3')
-                                ->confirm(__('Are you sure you want to delete this assistant?'))
-                                ->method('remove', ['id' => $assistant->id]),
-                        ]);
+                        ->list($actions);
                 }),
         ];
     }

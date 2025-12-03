@@ -33,7 +33,7 @@ class Dashboard extends Screen
 
         // Wenn die benötigten Tabellen nicht existieren oder leer sind, zeige Platzhalter
         if (! $usageRecordsExists || ! $conversationsExists || ! $hasUsageRecords) {
-            Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
+            //Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
 
             return $this->getPlaceholderData();
         }

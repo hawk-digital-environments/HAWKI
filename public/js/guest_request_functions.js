@@ -268,21 +268,10 @@ function submitGuestRequest() {
                 </div>
             `;
             
-            // Auto-switch to login after 3 seconds (don't clear form yet)
+            // Auto-switch to main login after 3 seconds
             setTimeout(() => {
                 clearGuestRequestForm();
-                
-                // Check authentication method to determine correct panel to switch to
-                // Look for LOCAL_ONLY mode indicators in the DOM
-                const isLocalOnlyMode = document.querySelector('#main-auth-panel form#loginForm-LOCAL') !== null;
-                
-                if (isLocalOnlyMode) {
-                    // In LOCAL_ONLY mode, switch to main panel (which contains local login)
-                    switchToMainLogin();
-                } else {
-                    // In other modes, switch to local auth panel
-                    switchToLocalUsersLogin();
-                }
+                switchToMainLogin();
             }, 3000);
             
         } else {

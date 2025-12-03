@@ -269,17 +269,9 @@ class CssEditScreen extends Screen
     private function getDescriptionForCssFile(string $filename): string
     {
         $descriptions = [
-            'style' => 'Main application stylesheet containing core styling rules and theme definitions.',
             'custom-styles' => 'Custom CSS styles for additional styling and overrides. Use this for organization-specific customizations.',
-            'home-style' => 'Styles specific to the home page layout and components.',
-            'chat_modules' => 'CSS styles for chat modules and conversation interfaces.',
-            'login_style' => 'Styling for login and authentication pages.',
-            'settings_style' => 'Styles for settings and configuration pages.',
-            'handshake_style' => 'Styles for handshake and connection establishment interfaces.',
-            'print_styles' => 'Print-specific CSS styles for proper document formatting.',
-            'hljs_custom' => 'Custom syntax highlighting styles for code blocks.',
         ];
 
-        return $descriptions[$filename] ?? "CSS stylesheet for {$filename} related styling.";
+        return $descriptions[$filename] ?? 'Custom CSS stylesheet';
     }
 }

@@ -55,7 +55,6 @@ class RequestsDashboard extends Screen
         for ($hour = 0; $hour < 24; $hour++) {
             $hourLabels[] = sprintf('%02d:00', $hour);
         }
-        Log::info('BarChart Hour Labels: '.json_encode($hourLabels));
 
         // User Statistics
         $totalUsers = DB::table('users')->count();
@@ -204,14 +203,12 @@ class RequestsDashboard extends Screen
                 'values' => array_values($providerSummary),
             ],
         ];
-        Log::info('Provider request summary: '.json_encode($providerData));
 
         $specificModel = 'gpt-4o-mini';
         $countForSpecificDay = DB::table('usage_records')
             ->where('model', $specificModel)
             ->whereDate('created_at', $specificDay)
             ->count();
-        Log::info("Aufrufe von Model {$specificModel} am {$specificDay}: ".$countForSpecificDay);
 
         // Neue Abfrage: Anzahl der Aufrufe eines spezifischen Models im gesamten Monat
         $specificYear = '2025';
@@ -221,10 +218,7 @@ class RequestsDashboard extends Screen
             ->whereYear('created_at', $specificYear)
             ->whereMonth('created_at', $specificMonth)
             ->count();
-        Log::info("Aufrufe von Model {$specificModel} im {$specificYear}-{$specificMonth}: ".$countForSpecificMonth);
 
-        Log::info('Total requests: '.$totalRequests);
-        Log::info('Requests OpenAI: '.$openAiRequests->count());
         // Abfrage der Anzahl der Requests für den spezifischen Tag und Erstellen eines Arrays als Werte
         $requestsCountForSpecificDay = DB::table('usage_records')
             ->whereDate('created_at', $specificDay)

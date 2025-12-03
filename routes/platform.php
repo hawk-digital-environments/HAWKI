@@ -47,8 +47,10 @@ use App\Orchid\Screens\Settings\AuthenticationSettingsScreen;
 use App\Orchid\Screens\Settings\AuthMethodEditScreen;
 use App\Orchid\Screens\Settings\LogScreen;
 use App\Orchid\Screens\Settings\MailConfigurationSettingsScreen;
+use App\Orchid\Screens\Settings\PerformanceSettingsScreen;
 use App\Orchid\Screens\Settings\StorageSettingsScreen;
 use App\Orchid\Screens\Settings\SystemSettingsScreen;
+use App\Orchid\Screens\Settings\UsageDebugScreen;
 use App\Orchid\Screens\Testing\MailTestingScreen;
 use App\Orchid\Screens\Testing\TestingSettingsScreen;
 use App\Orchid\Screens\User\UserEditScreen;
@@ -91,6 +93,12 @@ Route::screen('/dashboard/requests', RequestsDashboard::class)
         ->parent('platform.index')
         ->push(__('Requests Dashboard'), route('platform.dashboard.requests')));
 
+Route::screen('/dashboard/usage-debug', UsageDebugScreen::class)
+    ->name('platform.dashboard.usage.debug')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Usage Debug'), route('platform.dashboard.usage.debug')));
+
 // Settings
 Route::screen('/settings/system', SystemSettingsScreen::class)
     ->name('platform.settings.system')
@@ -98,6 +106,14 @@ Route::screen('/settings/system', SystemSettingsScreen::class)
         return $trail
             ->parent('platform.index')
             ->push('System Settings', route('platform.settings.system'));
+    });
+
+Route::screen('/settings/performance', PerformanceSettingsScreen::class)
+    ->name('platform.settings.performance')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Performance Settings', route('platform.settings.performance'));
     });
 
 Route::screen('/settings/authentication', AuthenticationSettingsScreen::class)
@@ -297,28 +313,28 @@ Route::screen('/customization/mail-templates', MailTemplatesScreen::class)
     });
 
 // Announcements
-Route::screen('/customization/announcements', AnnouncementScreen::class)
-    ->name('platform.customization.announcements')
+Route::screen('/announcements', AnnouncementScreen::class)
+    ->name('platform.announcements')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Announcements', route('platform.customization.announcements'));
+            ->push('Announcements', route('platform.announcements'));
     });
 
-Route::screen('/customization/announcements/create', AnnouncementEditScreen::class)
-    ->name('platform.customization.announcements.create')
+Route::screen('/announcements/create', AnnouncementEditScreen::class)
+    ->name('platform.announcements.create')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
-            ->parent('platform.customization.announcements')
-            ->push('Create Announcement', route('platform.customization.announcements.create'));
+            ->parent('platform.announcements')
+            ->push('Create Announcement', route('platform.announcements.create'));
     });
 
-Route::screen('/customization/announcements/{announcement}/edit', AnnouncementEditScreen::class)
-    ->name('platform.customization.announcements.edit')
+Route::screen('/announcements/{announcement}/edit', AnnouncementEditScreen::class)
+    ->name('platform.announcements.edit')
     ->breadcrumbs(function (Trail $trail, $announcement) {
         return $trail
-            ->parent('platform.customization.announcements')
-            ->push('Edit: ' . $announcement->title, route('platform.customization.announcements.edit', $announcement));
+            ->parent('platform.announcements')
+            ->push('Edit: ' . $announcement->title, route('platform.announcements.edit', $announcement));
     });
 
 // Models - API Management - Providers

@@ -97,7 +97,18 @@ class User extends OrchidUser
     public function rooms()
     {
         return $this->belongsToMany(Room::class, 'members', 'user_id', 'room_id')
-            ->wherePivot('isRemoved', false);
+            ->wherePivot('isMember', true)
+            ->wherePivot('isRemoved', false)
+            ->withPivot('isRemoved', 'isMember');
+    }
+
+    // Rooms including those where user was removed (for showing removal notifications)
+    // This includes rooms where isMember=1 and isRemoved=1 (pending removal confirmation)
+    public function roomsIncludingRemoved()
+    {
+        return $this->belongsToMany(Room::class, 'members', 'user_id', 'room_id')
+            ->wherePivot('isMember', true)  // Only active members (includes pending removal)
+            ->withPivot('isRemoved', 'isMember');
     }
 
     // Define the relationship with AiConv
@@ -109,6 +120,12 @@ class User extends OrchidUser
     public function invitations()
     {
         return $this->hasMany(Invitation::class, 'username', 'username');
+    }
+
+    public function hasUnreadInvitations(): bool
+    {
+        // Check if user has any pending invitations (invitations exist = not accepted)
+        return $this->invitations()->exists();
     }
 
     public function createdPrompts()

@@ -1,3 +1,20 @@
+/* CSS Variables for Status Indicator */
+:root {
+    --status-success-color: #10b981;
+    --status-warning-color: #f59e0b;
+    --status-primary-color: #2F2ABF;
+}
+
+.lightMode {
+    --status-panel-hover: #e8e8e8;
+    --status-primary-color: #2F2ABF;
+}
+
+.darkMode {
+    --status-panel-hover: rgb(50, 60, 80);
+    --status-primary-color: rgb(121, 147, 198);
+}
+
 /* SECTION: Dynamic Panels */
 .dy-sidebar{
     position: relative;
@@ -190,6 +207,12 @@
 #image-selection-modal p{
     margin-top: 0;
 }
+
+.cropper-view-box,
+.cropper-face {
+  border-radius: 50%;
+}
+
 
 /* SECTION: ROOM CREATION */
 
@@ -601,6 +624,20 @@
     display: none;
 }
 
+/* Regenerate button animation during generation */
+#regenerate-btn.regenerating svg {
+    animation: spin-flipped 1s linear infinite;
+}
+
+@keyframes spin-flipped {
+    from { transform: scaleX(-1) rotate(0deg); }
+    to { transform: scaleX(-1) rotate(-360deg); }
+}
+
+@keyframes spin-reverse {
+    to { transform: rotate(-360deg); }
+}
+
 
 .branch .message{
     background-color: transparent !important;
@@ -799,15 +836,16 @@
 .think .content-container{
     position: relative;
     display: flex;
-    padding: 1rem;
-    overflow-y: auto;
+    padding: 0 1rem;
+    overflow-y: hidden;
     box-sizing: border-box;
-    /* height: 10rem; */
-    max-height: 15rem;
-    transition: max-height var(--transition-medium);
+    max-height: 0;
+    transition: max-height var(--transition-medium), padding var(--transition-medium);
 }
 .think.expanded .content-container{
-    max-height: 500rem;
+    padding: 1rem;
+    overflow-y: auto;
+    max-height: 15rem;
 }
 .think-expand-btn{
     transition: var(--transition-medium);
@@ -1633,9 +1671,6 @@
     border-left: 2px solid var(--background-tertiary);
 }
 
-.provider-group .model-selector:first-of-type {
-}
-
 .provider-group .model-selector:last-of-type {
     margin-bottom: 4px;
 }
@@ -1870,6 +1905,83 @@ background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);
   color: #fff;
 }
 
+/* Responses Sources (OpenAI) - matches Google Search Sources style */
+.responses-sources {
+  margin: 1rem 0;
+  padding: 0;
+}
+
+.responses-sources .sources-title {
+  font-size: var(--font-md);
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.responses-sources .sources-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  list-style-type: decimal;
+}
+
+.responses-sources .source-item {
+  margin: 0.25rem 0;
+  padding: 0.125rem 0;
+  line-height: 1.4;
+}
+
+.responses-sources .source-link {
+  color: var(--link-color);
+  text-decoration: none;
+  font-size: var(--font-sm);
+  word-break: break-all;
+}
+
+.responses-sources .source-link:hover {
+  text-decoration: underline;
+}
+
+.responses-sources .source-link strong {
+  font-weight: 600;
+}
+
+/* Source item highlight animation */
+.source-item {
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.source-item.highlighted {
+  background-color: rgba(255, 215, 0, 0.3);
+  transform: scale(1.02);
+}
+
+.lightMode .source-item.highlighted {
+  background-color: rgba(255, 193, 7, 0.4);
+}
+
+.darkMode .source-item.highlighted {
+  background-color: rgba(255, 215, 0, 0.25);
+}
+
+/* Google source link highlighting */
+.source-link {
+  transition: background-color 0.3s ease;
+}
+
+.source-link.highlighted {
+  background-color: rgba(255, 215, 0, 0.3);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.lightMode .source-link.highlighted {
+  background-color: rgba(255, 193, 7, 0.4);
+}
+
+.darkMode .source-link.highlighted {
+  background-color: rgba(255, 215, 0, 0.25);
+}
+
 .inline-citation{
     /* background-color:  red; */
     background-color: var(--panel-main);
@@ -1884,3 +1996,353 @@ background: linear-gradient(90deg, #1f1f1f 15%, #1f1f1f00 100%);
 sup{
     margin: 0 .5rem;
 }
+
+/* AI Status Indicator - Collapsible Log System */
+.ai-status-indicator {
+    margin: 0.75rem 0;
+    border: var(--border-stroke-thin);
+    border-radius: 0.5rem;
+    background-color: var(--panel-secondary);
+    overflow: hidden;
+    font-size: var(--font-sm);
+}
+
+/* Current Status (always visible, clickable) */
+.status-current {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.status-current:hover {
+    background-color: var(--status-panel-hover);
+}
+
+.status-current .status-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Stroke-based icons (checkmark, reasoning, loading) */
+.status-current .status-icon-stroke {
+    stroke: var(--accent-color);
+    fill: none;
+}
+
+/* Fill-based icons (Bootstrap icons: terminal, globe) */
+.status-current .status-icon-fill {
+    fill: var(--accent-color);
+    stroke: none;
+}
+
+/* Spinner next to icon when loading */
+.status-current .status-spinner {
+    width: 1rem;
+    height: 1rem;
+    margin-left: -0.25rem;
+    animation: spin 1s linear infinite;
+}
+
+.status-current .status-text {
+    flex: 1;
+    font-size: var(--font-sm);
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.status-current .status-chevron {
+    width: 1rem;
+    height: 1rem;
+    stroke: currentColor;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    transform: rotate(180deg); /* Default: points down (collapsed) - rotated from up */
+}
+
+.ai-status-indicator[data-expanded="true"] .status-chevron {
+    transform: rotate(0deg); /* Expanded: points up (no rotation) */
+}
+
+/* Status Log (hidden by default, collapsible) */
+.status-log {
+    border-top: var(--border-stroke-thin);
+    padding: 0.5rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, padding 0.3s ease-out;
+}
+
+.ai-status-indicator[data-expanded="true"] .status-log {
+    max-height: 12rem;
+    padding: 0.75rem;
+    overflow-y: auto;
+}
+
+/* Status Log Items */
+.status-log-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+}
+
+.status-log-item:hover {
+    background-color: var(--status-panel-hover);
+}
+
+/* Remove status-number - we use icons directly now */
+.status-log-item .status-number {
+    display: none;
+}
+
+.status-log-item .status-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+/* Stroke-based icons */
+.status-log-item .status-icon-stroke {
+    stroke: var(--status-success-color);
+    fill: none;
+}
+
+/* Fill-based icons */
+.status-log-item .status-icon-fill {
+    fill: var(--status-success-color);
+    stroke: none;
+}
+
+/* Spinner next to icon in log items when in progress */
+.status-log-item .status-spinner {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.25rem;
+    margin-left: -0.25rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.status-log-item .status-label {
+    flex: 1;
+    font-size: var(--font-sm);
+    color: var(--text-color);
+    min-width: 0;
+}
+
+/* Status Details (for reasoning summaries at same level as icon) */
+.status-log-item .status-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.status-log-item .status-details summary {
+    cursor: pointer;
+    font-weight: 500;
+    padding: 0;
+    color: var(--link-color);
+    list-style: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.status-log-item .status-label-clickable {
+    flex: 1;
+    font-size: var(--font-sm);
+    color: var(--link-color);
+    line-height: 1.4;
+}
+
+.status-log-item .status-details summary::-webkit-details-marker {
+    display: none;
+}
+
+.status-log-item .status-details summary:hover {
+    text-decoration: underline;
+}
+
+.status-log-item .status-details .status-chevron {
+    width: 0.875rem;
+    height: 0.875rem;
+    stroke: currentColor;
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.status-log-item .status-details[open] .status-chevron {
+    transform: rotate(-180deg);
+}
+
+.status-log-item .status-details .status-content {
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+    background-color: var(--background-secondary);
+    border-radius: var(--border-radius-tight);
+    font-size: var(--font-sm);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    max-height: 15rem;
+    overflow-y: auto;
+}
+
+/* Static icon colors by type - not dynamic based on status */
+.status-log-item[data-type="processing"] .status-icon-fill {
+    fill: var(--accent-color);
+}
+
+.status-log-item[data-type="processing"] .status-icon-stroke {
+    stroke: var(--accent-color);
+}
+
+.status-log-item[data-type="reasoning"] .status-icon-stroke {
+    stroke: #8b5cf6; /* Purple for reasoning/CPU */
+}
+
+.status-log-item[data-type="reasoning"] .status-icon-fill {
+    fill: #8b5cf6;
+}
+
+.status-log-item[data-type="web_search"] .status-icon-fill {
+    fill: #3b82f6; /* Blue for web search/globe */
+}
+
+.status-log-item[data-type="web_search"] .status-icon-stroke {
+    stroke: #3b82f6;
+}
+
+.status-log-item[data-type="completed"] .status-icon-stroke {
+    stroke: var(--status-success-color);
+}
+
+.status-log-item[data-type="completed"] .status-icon-fill {
+    fill: var(--status-success-color);
+}
+
+/* Error and cancelled items get error color */
+.status-log-item[data-status="error"] .status-icon-stroke,
+.status-log-item[data-status="cancelled"] .status-icon-stroke {
+    stroke: var(--status-error-color, #ef4444);
+}
+
+.status-log-item[data-status="error"] .status-icon-fill,
+.status-log-item[data-status="cancelled"] .status-icon-fill {
+    fill: var(--status-error-color, #ef4444);
+}
+
+.status-icon-error {
+    stroke: var(--status-error-color, #ef4444) !important;
+}
+
+/* LEGACY STYLES - will be removed after migration */
+.ai-status-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    transition: opacity var(--transition-fast);
+}
+
+.ai-status-item.status-complete {
+    opacity: 0.6;
+}
+
+.ai-status-item.status-reasoning_complete .status-icon {
+    stroke: #10b981;
+}
+
+.ai-status-item.status-web_search_complete .status-icon {
+    stroke: #10b981;
+}
+
+.ai-status-item.status-reasoning-summary .status-icon {
+    stroke: #8b5cf6;
+}
+
+.ai-status-item.status-web-search-query .status-icon {
+    stroke: #3b82f6;
+}
+
+/* Reasoning summary collapsible content within status items (LEGACY) */
+.ai-status-item .status-details {
+    display: inline;
+    margin-left: 0;
+}
+
+.ai-status-item .status-summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    font-weight: inherit;
+    list-style: none;
+    user-select: none;
+}
+
+.ai-status-item .status-summary::-webkit-details-marker {
+    display: none;
+}
+
+.ai-status-item .status-summary:hover {
+    opacity: 0.8;
+}
+
+/* Chevron icon for expandable status (LEGACY) */
+.ai-status-item .status-chevron {
+    width: 14px;
+    height: 14px;
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.ai-status-item .status-details[open] .status-chevron {
+    transform: rotate(180deg);
+}
+
+.ai-status-item .status-content {
+    margin-top: 0.5rem;
+    margin-left: 1.5rem;
+    padding: 0.75rem;
+    background-color: var(--background-secondary);
+    border-radius: var(--border-radius-tight);
+    font-size: var(--font-xs);
+    line-height: 1.5;
+    max-height: 10rem;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* SECTION: MATH */
+
+/* Light Mode */
+.lightMode .ai-status-indicator {
+    background-color: #f3f4f6;
+    border-color: #e5e7eb;
+}
+
+.lightMode .ai-status-indicator .status-text {
+    color: #374151;
+}
+
+/* Dark Mode */
+.darkMode .ai-status-indicator {
+    background-color: #1f2937;
+    border-color: #374151;
+}
+
+.darkMode .ai-status-indicator .status-text {
+    color: #d1d5db;
+}
+

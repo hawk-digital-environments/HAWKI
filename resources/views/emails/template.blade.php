@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="x-apple-disable-message-reformatting">
     <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
-    <title>{{ $templateData['subject'] ?? 'HAWKI' }}</title>
+    <title>{{ $templateData['subject'] ?? config('app.name') }}</title>
     
     <!--[if mso]>
     <noscript>
@@ -291,7 +291,7 @@
                     <div class="email-container">
                         <!-- Header -->
                         <div class="email-header">
-                            <div class="logo">{{ $appName ?? 'HAWKI' }}</div>
+                            <div class="logo">{{ $appName ?? config('app.name') }}</div>
                             <div class="tagline">{{ $templateData['tagline'] ?? 'Generative AI für Universitäten' }}</div>
                         </div>
                         
@@ -328,7 +328,7 @@
                                 
                                 <p class="content-text">
                                     Best regards,<br>
-                                    <strong>The {{ $appName ?? 'HAWKI' }} Team</strong>
+                                    <strong>The {{ $appName ?? config('app.name') }} Team</strong>
                                 </p>
                             @endif
                         </div>
@@ -336,7 +336,7 @@
                         <!-- Footer -->
                         <div class="email-footer">
                             <p class="footer-text">
-                                This is an automated message from {{ $appName ?? 'HAWKI' }}. Please do not reply to this email.
+                                This is an automated message from {{ $appName ?? config('app.name') }}. Please do not reply to this email.
                             </p>
                             <div class="footer-links">
                                 @if(config('app.url'))
@@ -348,7 +348,7 @@
                                 <a href="/dataprotection" target="_blank">Privacy Policy</a>
                             </div>
                             <p class="footer-text" style="margin-top: 16px; margin-bottom: 0;">
-                                &copy; {{ date('Y') }} {{ $appName ?? 'HAWKI' }}. All rights reserved.
+                                &copy; {{ date('Y') }} {{ $appName ?? config('app.name') }}. All rights reserved.
                             </p>
                         </div>
                     </div>

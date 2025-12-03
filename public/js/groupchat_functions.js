@@ -7,8 +7,112 @@ let rooms;
 let typingStatusDiv;
 let activeRoom = null;
 let roomCreationAvatarBlob = null;
+
+// Helper function to check if a string starts with an emoji
+function startsWithEmoji(text) {
+    if (!text) return false;
+    // Emoji regex pattern - matches most common emojis
+    const emojiRegex = /^[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{FE00}-\u{FE0F}\u{200D}]/u;
+    return emojiRegex.test(text);
+}
+
+// Helper function to extract first emoji from text
+function extractFirstEmoji(text) {
+    if (!text) return { emoji: null, remainingText: text };
+    const emojiRegex = /([\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{FE00}-\u{FE0F}\u{200D}]+)/u;
+    const match = text.match(emojiRegex);
+    if (match) {
+        const emoji = match[0];
+        const remainingText = text.slice(emoji.length).trim();
+        return { emoji, remainingText };
+    }
+    return { emoji: null, remainingText: text };
+}
+
+// Update GroupChat sidebar notification badge
+function updateGroupChatSidebarBadge(type) {
+    const invitationBadge = document.getElementById('groupchat-invitation-badge');
+    const messageBadge = document.getElementById('groupchat-message-badge');
+    
+    if (!invitationBadge || !messageBadge) return;
+    
+    if (!type) {
+        // Hide both badges
+        invitationBadge.style.display = 'none';
+        messageBadge.style.display = 'none';
+    } else if (type === 'new-room') {
+        // Show red badge only
+        invitationBadge.style.display = 'block';
+        messageBadge.style.display = 'none';
+    } else if (type === 'new-message') {
+        // Show green badge only
+        invitationBadge.style.display = 'none';
+        messageBadge.style.display = 'block';
+    } else if (type === 'both') {
+        // Show both badges
+        invitationBadge.style.display = 'block';
+        messageBadge.style.display = 'block';
+    }
+}
+
+// Check and update sidebar badge based on current rooms state
+function checkAndUpdateSidebarBadge() {
+    if (!rooms || rooms.length === 0) {
+        updateGroupChatSidebarBadge(null);
+        return;
+    }
+    
+    // Check for removed rooms
+    const hasRemovedRooms = rooms.some(room => room.isRemoved);
+    
+    // Check for new room invitations (not removed)
+    const hasNewRooms = rooms.some(room => room.isNewRoom && !room.isRemoved);
+    
+    // Check for unread messages (not removed)
+    const hasUnread = rooms.some(room => room.hasUnreadMessages && !room.isRemoved);
+    
+    // Determine badge state
+    // Priority: (removed OR new invitation) > unread
+    // If both removed/new AND unread exist, show 'both'
+    if ((hasRemovedRooms || hasNewRooms) && hasUnread) {
+        updateGroupChatSidebarBadge('both');
+    } else if (hasRemovedRooms || hasNewRooms) {
+        updateGroupChatSidebarBadge('new-room'); // Red badge
+    } else if (hasUnread) {
+        updateGroupChatSidebarBadge('new-message'); // Green badge
+    } else {
+        updateGroupChatSidebarBadge(null);
+    }
+}
+
 function initializeGroupChatModule(roomsData){
+    
+    // Merge server data with existing rooms (preserve isNewRoom from WebSocket updates)
+    if (rooms && rooms.length > 0) {
+        roomsData.forEach(serverRoom => {
+            const existingRoom = rooms.find(r => r.slug === serverRoom.slug);
+            if (existingRoom) {
+                // Preserve client-side state
+                if (existingRoom.hasUnreadMessages) {
+                    serverRoom.hasUnreadMessages = true;
+                }
+                if (existingRoom.isNewRoom) {
+                    serverRoom.isNewRoom = true;
+                }
+            }
+        });
+        
+        // Add any rooms that exist locally but not on server (e.g., new invitations)
+        rooms.forEach(localRoom => {
+            const existsOnServer = roomsData.find(r => r.slug === localRoom.slug);
+            if (!existsOnServer) {
+                roomsData.push(localRoom);
+            }
+        });
+    }
+    
     rooms = roomsData;
+    
     roomMsgTemp = document.getElementById('message-template');
     roomItemTemplate = document.getElementById('selection-item-template');
     inputField = document.querySelector(".input-field");
@@ -17,12 +121,30 @@ function initializeGroupChatModule(roomsData){
     if(roomsData){
         roomsData.forEach(roomItem => {
             createRoomItem(roomItem);
-            if(roomItem.hasUnreadMessages){
-              flagRoomUnreadMessages(roomItem.slug, true);
+            
+            // Check if room has been removed, is a new invitation, or has unread messages
+            if (roomItem.isRemoved) {
+                // User was removed - red badge
+                flagRoomUnreadMessages(roomItem.slug, true, true);
+                // Don't connect WebSocket - user is removed
+            } else if (roomItem.isNewRoom) {
+                // New room invitation - red badge
+                flagRoomUnreadMessages(roomItem.slug, true, true);
+                // Don't connect WebSocket - user is not a member yet!
+            } else {
+                if (roomItem.hasUnreadMessages) {
+                    // Unread messages - green badge
+                    flagRoomUnreadMessages(roomItem.slug, true, false);
+                }
+                
+                // Connect WebSocket only for rooms where user is a member
+                connectWebSocket(roomItem.slug);
+                connectWhisperSocket(roomItem.slug);
             }
-            connectWebSocket(roomItem.slug);
-            connectWhisperSocket(roomItem.slug)
         });
+        
+        // Update sidebar badge based on initial state
+        checkAndUpdateSidebarBadge();
     }
     document.querySelector('.chatlog').querySelector('.scroll-container').addEventListener('scroll', function() {
         isScrolling = true;
@@ -163,7 +285,18 @@ const connectWebSocket = (roomSlug) => {
                         if(messageData.author.username !== userInfo.username){
                             playSound('out');
                         }
-                        flagRoomUnreadMessages(roomSlug, true);
+                        
+                        // Mark room as having unread messages
+                        const room = rooms.find(r => r.slug === roomSlug);
+                        if (room) {
+                            room.hasUnreadMessages = true;
+                        }
+                        
+                        // Show green dot for new message (false = not new room)
+                        flagRoomUnreadMessages(roomSlug, true, false);
+                        
+                        // Update sidebar badge
+                        checkAndUpdateSidebarBadge();
                     }
                 }
 
@@ -249,6 +382,16 @@ async function handleAIMessage(messageData, slug){
                                                         messageData.content.text.ciphertext,
                                                         messageData.content.text.iv,
                                                         messageData.content.text.tag);
+    
+    // Decrypt auxiliaries if present
+    if (messageData.content.auxiliaries) {
+        const auxiliariesJson = await decryptWithSymKey(aiKey, 
+                                                        messageData.content.auxiliaries.ciphertext,
+                                                        messageData.content.auxiliaries.iv,
+                                                        messageData.content.auxiliaries.tag, false);
+        messageData.content.auxiliaries = JSON.parse(auxiliariesJson);
+        //console.log('[handleAIMessage] Decrypted auxiliaries:', messageData.content.auxiliaries.length);
+    }
 
     // CREATE AND UPDATE MESSAGE
     let element = document.getElementById(messageData.message_id);
@@ -256,7 +399,7 @@ async function handleAIMessage(messageData, slug){
         element = addMessageToChatlog(messageData, true);
         activateMessageControls(element);
     }else{
-        updateMessageElement(element, messageData);
+        updateMessageElement(element, messageData, true);
     }
 
     // Observe unread messages
@@ -284,6 +427,21 @@ async function handleUpdateMessage(messageData, slug){
                                                     messageData.content.text.ciphertext,
                                                     messageData.content.text.iv,
                                                     messageData.content.text.tag);
+    
+    // Debug: Check what we got from server
+    //console.log('[handleUpdateMessage] Message ID:', messageData.message_id);
+    //console.log('[handleUpdateMessage] Has encrypted auxiliaries:', !!messageData.content.auxiliaries);
+    //console.log('[handleUpdateMessage] Full content structure:', Object.keys(messageData.content));
+    
+    // Decrypt auxiliaries if present (for AI messages)
+    if (messageData.message_role === 'assistant' && messageData.content.auxiliaries) {
+        const auxiliariesJson = await decryptWithSymKey(key, 
+                                                        messageData.content.auxiliaries.ciphertext,
+                                                        messageData.content.auxiliaries.iv,
+                                                        messageData.content.auxiliaries.tag, false);
+        messageData.content.auxiliaries = JSON.parse(auxiliariesJson);
+        //console.log('[handleUpdateMessage] Decrypted auxiliaries:', messageData.content.auxiliaries.length);
+    }
 
     let element = document.getElementById(messageData.message_id);
 
@@ -360,7 +518,8 @@ function connectWhisperSocket(roomSlug){
     const webSocketChannel = `Rooms.${roomSlug}`;
     Echo.private(webSocketChannel)
     .listenForWhisper('typing', (e) => {
-        if (activeRoom.slug !== roomSlug) return;
+        // Check if activeRoom exists and matches the room
+        if (!activeRoom || activeRoom.slug !== roomSlug) return;
 
         if (e.typing) {
             // Display the typing indicator for the user
@@ -593,10 +752,15 @@ async function sendInvitation(btn){
 
     await createAndSendInvitations(listOfInvitees, activeRoom.slug);
     closeModal(btn);
+
+    // Reload the room to show newly invited members
+    if (activeRoom && activeRoom.slug) {
+        await loadRoom(null, activeRoom.slug);
+    }
 }
 
 async function createAndSendInvitations(usersList, roomSlug){
-
+    console.log(usersList);
     const roomKey = await keychainGet(roomSlug);
     const invitations = [];
     for (const invitee of usersList) {
@@ -763,12 +927,14 @@ async function finishInvitationHandling(invitation_id, roomKey){
 
     const data = await response.json();
     if(data.success){
-
+        // Save room key
         await keychainSet(data.room.slug, roomKey, true);
-
-        createRoomItem(data.room);
-        connectWebSocket(data.room.slug);
-        connectWhisperSocket(data.room.slug);
+        
+        // Mark room as no longer new (invitation accepted)
+        const roomInArray = rooms.find(r => r.slug === data.room.slug);
+        if (roomInArray) {
+            roomInArray.isNewRoom = false;
+        }
     }
 }
 
@@ -783,6 +949,335 @@ function openInvitationPanel(){
     modal.style.display = 'flex';
 }
 
+function showRoomInvitationModal(room) {
+    const modal = document.getElementById('room-invitation-modal');
+    if (!modal) {
+        return;
+    }
+    
+    const roomNameElement = modal.querySelector('#invitation-room-name');
+    const messageElement = modal.querySelector('#invitation-message');
+    const errorElement = modal.querySelector('#invitation-error');
+    const acceptBtn = modal.querySelector('#accept-invitation-btn');
+    const deleteBtn = modal.querySelector('#delete-invitation-btn');
+    const normalActions = modal.querySelector('#invitation-actions');
+    const errorActions = modal.querySelector('#invitation-error-actions');
+    
+    // Check if all elements exist
+    if (!errorElement || !normalActions || !errorActions || !messageElement || !roomNameElement || !acceptBtn || !deleteBtn) {
+        return;
+    }
+    
+    // Reset modal state
+    errorElement.style.display = 'none';
+    errorElement.textContent = '';
+    normalActions.style.display = 'flex';
+    errorActions.style.display = 'none';
+    messageElement.textContent = translation?.DoYouWantToJoinThisRoom || 'Do you want to join this room?';
+    
+    // Build invitation message
+    let invitationText = `${translation?.Room || 'Room'}: ${room.room_name}`;
+    if (room.invited_by) {
+        invitationText += `<br><small style="color: var(--text-secondary);">${translation?.InvitedBy || 'Invited by'}: ${room.invited_by}</small>`;
+    }
+    roomNameElement.innerHTML = invitationText;
+    
+    // Remove old event listeners and add new ones
+    acceptBtn.replaceWith(acceptBtn.cloneNode(true));
+    deleteBtn.replaceWith(deleteBtn.cloneNode(true));
+    const newAcceptBtn = modal.querySelector('#accept-invitation-btn');
+    const newDeleteBtn = modal.querySelector('#delete-invitation-btn');
+    
+    newAcceptBtn.addEventListener('click', async () => {
+        try {
+            await acceptRoomInvitation(room);
+            modal.style.display = 'none';
+        } catch (error) {
+            // Show error in modal
+            if (error.message?.includes('Room key not found')) {
+                errorElement.textContent = translation?.InvitationErrorNoRoomKey || 'This invitation cannot be accepted because the room key is not available. This usually happens when you were invited as an external user but never joined via the invitation link. Please ask the room administrator to send you a new invitation or delete this one.';
+            } else if (error.name === 'OperationError' || error.message?.includes('decrypt')) {
+                errorElement.textContent = translation?.InvitationErrorExternalUser || 'This invitation was created for an external user and cannot be accepted with your account. Please contact the room administrator or delete this invitation.';
+            } else {
+                errorElement.textContent = translation?.InvitationErrorGeneric || 'Failed to accept invitation. Please try again or delete this invitation.';
+            }
+            
+            errorElement.style.display = 'block';
+            normalActions.style.display = 'none';
+            errorActions.style.display = 'flex';
+            messageElement.textContent = '';
+        }
+    });
+    
+    newDeleteBtn.addEventListener('click', async () => {
+        await deleteRoomInvitation(room);
+        modal.style.display = 'none';
+    });
+    
+    modal.style.display = 'flex';
+}
+
+function showRoomRemovedModal(room) {
+    const modal = document.getElementById('room-removed-modal');
+    if (!modal) {
+        console.error('Room removed modal not found');
+        return;
+    }
+    
+    const roomNameElement = modal.querySelector('#removed-room-name');
+    const acknowledgeBtn = modal.querySelector('#acknowledge-removal-btn');
+    
+    if (!roomNameElement || !acknowledgeBtn) {
+        console.error('Modal elements not found');
+        return;
+    }
+    
+    // Set room name
+    roomNameElement.textContent = `${translation?.Room || 'Room'}: ${room.room_name}`;
+    
+    // Remove old event listener and add new one
+    acknowledgeBtn.replaceWith(acknowledgeBtn.cloneNode(true));
+    const newAcknowledgeBtn = modal.querySelector('#acknowledge-removal-btn');
+    
+    newAcknowledgeBtn.addEventListener('click', async () => {
+        // Actually leave the room (backend call)
+        await leaveRoomAfterRemoval(room.slug);
+        modal.style.display = 'none';
+    });
+    
+    modal.style.display = 'flex';
+}
+
+async function leaveRoomAfterRemoval(slug) {
+    try {
+        const response = await fetch(`/req/room/leaveRoom/${slug}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('Successfully left room:', slug);
+            
+            // Remove room from local array and UI
+            await removeRoomFromList(slug);
+            
+            // Switch to welcome panel if no rooms left
+            const activeRooms = rooms.filter(r => !r.isRemoved);
+            if (activeRooms.length === 0) {
+                history.replaceState(null, '', `/groupchat`);
+                switchDyMainContent('group-welcome-panel');
+            }
+        } else {
+            console.error('Failed to leave room:', data.message);
+        }
+    } catch (error) {
+        console.error('Error leaving room:', error);
+    }
+}
+
+async function removeRoomFromList(slug) {
+    // Remove from rooms array
+    const roomIndex = rooms.findIndex(r => r.slug === slug);
+    if (roomIndex !== -1) {
+        rooms.splice(roomIndex, 1);
+    }
+    
+    // Remove from UI
+    const roomElement = document.querySelector(`.selection-item[slug="${slug}"]`);
+    if (roomElement) {
+        roomElement.remove();
+    }
+    
+    // Update sidebar badge
+    if (typeof checkAndUpdateSidebarBadge === 'function') {
+        checkAndUpdateSidebarBadge();
+    }
+}
+
+async function acceptRoomInvitation(room) {
+    
+    // First, try to get the invitation to check if it's a temp-hash invitation
+    const invitationResponse = await fetch('/req/inv/requestUserInvitations', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+        },
+    });
+    
+    if (!invitationResponse.ok) {
+        throw new Error('Failed to fetch invitations');
+    }
+    
+    const invitationData = await invitationResponse.json();
+    const invitation = invitationData.formattedInvitations?.find(inv => inv.room_slug === room.slug);
+    
+    if (!invitation) {
+        throw new Error('Invitation not found');
+    }
+    
+    // Check if it's a temp-hash invitation (iv and tag are not '0')
+    const isTempHash = invitation.iv !== '0' && invitation.tag !== '0';
+    
+    if (isTempHash) {
+        await convertTempHashInvitation(room.slug, invitation.role);
+    }
+    
+    // Now decrypt and accept the (possibly newly created) invitation
+    await handleUserInvitationsForRoom(room.slug);
+    
+    // Mark as no longer new
+    room.isNewRoom = false;
+    
+    // Remove red badge
+    flagRoomUnreadMessages(room.slug, false);
+    
+    // Update sidebar badge
+    checkAndUpdateSidebarBadge();
+    
+    // Now load the room
+    await loadRoom(null, room.slug);
+}
+
+async function convertTempHashInvitation(roomSlug, role) {
+    try {
+        // Get room key from keychain
+        let roomKey = await keychainGet(roomSlug);
+        
+        if (!roomKey) {
+            throw new Error('Room key not found. You may not have access to this room yet.');
+        }
+        
+        // Export room key to base64
+        const roomKeyBase64 = arrayBufferToBase64(roomKey);
+        
+        // Call backend to convert invitation
+        const response = await fetch('/req/inv/convertTempHashInvitation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                room_slug: roomSlug,
+                encrypted_room_key: roomKeyBase64,
+                role: role
+            })
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Failed to convert invitation');
+        }
+        
+        const data = await response.json();
+        
+        return data;
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function deleteRoomInvitation(room) {
+    try {
+        // Ask for confirmation
+        const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_declineInvitation || 'Do you really want to decline this invitation?');
+        if (!confirmed) {
+            return;
+        }
+        
+        // Call backend to delete invitation
+        const response = await fetch(`/req/inv/deleteInvitation/${room.slug}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to decline invitation');
+        }
+        
+        // Remove room from rooms array
+        const roomIndex = rooms.findIndex(r => r.slug === room.slug);
+        if (roomIndex !== -1) {
+            rooms.splice(roomIndex, 1);
+        }
+        
+        // Remove room item from UI
+        const roomElement = document.querySelector(`.selection-item[slug="${room.slug}"]`);
+        if (roomElement) {
+            roomElement.remove();
+        }
+        
+        // Update sidebar badge
+        checkAndUpdateSidebarBadge();
+        
+        console.log('Invitation declined successfully');
+    } catch (error) {
+        console.error('Error declining invitation:', error);
+        alert(translation.Error_declineInvitation || 'Failed to decline invitation. Please try again.');
+    }
+}
+
+async function handleUserInvitationsForRoom(roomSlug) {
+    try {
+        console.log('[handleUserInvitationsForRoom] Fetching invitations');
+        const response = await fetch('/req/inv/requestUserInvitations', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.formattedInvitations) {
+            const invitations = data.formattedInvitations;
+            
+            const privateKeyBase64 = await keychainGet('privateKey');
+            const privateKey = base64ToArrayBuffer(privateKeyBase64);
+
+            for (const inv of invitations) {
+                // Only process invitation for this specific room
+                if (inv.room_slug === roomSlug) {
+                    try {
+                        const encryptedRoomKeyBuffer = base64ToArrayBuffer(inv.invitation);
+                        const roomKey = await decryptWithPrivateKey(encryptedRoomKeyBuffer, privateKey);
+                        if (roomKey) {
+                            await finishInvitationHandling(inv.invitation_id, roomKey);
+                            return; // Success
+                        }
+                    } catch (error) {
+                        throw error;
+                    }
+                }
+            }
+            throw new Error('No invitation found for this room');
+        } else {
+            throw new Error('No invitations in response');
+        }
+    } catch (error) {
+        throw error;
+    }
+}
 
 
 
@@ -796,14 +1291,49 @@ function createRoomItem(roomData){
     const roomsList = document.getElementById('rooms-list');
 
     const label = roomElement.querySelector('.label');
-    label.textContent = roomData.room_name;
+    
+    // Set room icon or initials
+    const roomIcon = roomElement.querySelector('#room-icon');
+    const roomInitials = roomElement.querySelector('#room-initials');
 
-    roomElement.querySelector('.selection-item').setAttribute('slug', roomData.slug);
+    if (roomData.room_icon) {
+        // Has uploaded icon
+        roomIcon.setAttribute('src', roomData.room_icon);
+        roomIcon.style.display = 'block';
+        label.textContent = roomData.room_name;
+    } else if (roomData.room_name) {
+        // Check if name starts with emoji
+        const { emoji, remainingText } = extractFirstEmoji(roomData.room_name);
+        
+        if (emoji) {
+            // Use emoji as icon, show remaining text as name
+            roomInitials.textContent = emoji;
+            roomInitials.style.display = 'flex';
+            label.textContent = remainingText || roomData.room_name; // Fallback to full name if only emoji
+        } else {
+            // Use first 2 characters as initials
+            roomInitials.textContent = roomData.room_name.slice(0, 2).toUpperCase();
+            roomInitials.style.display = 'flex';
+            label.textContent = roomData.room_name;
+        }
+    }
+
+    const selectionItem = roomElement.querySelector('.selection-item');
+    selectionItem.setAttribute('slug', roomData.slug);
+    
+    // Hide burger menu button for removed rooms (clicking room opens modal instead)
+    if (roomData.isRemoved) {
+        const burgerBtn = roomElement.querySelector('.burger-btn');
+        if (burgerBtn) {
+            burgerBtn.style.display = 'none';
+        }
+    }
+    
     roomsList.insertBefore(roomElement, roomsList.firstChild);
 }
 
 
-async function loadRoom(btn=null, slug=null){
+async function loadRoom(btn=null, slug=null, openControlPanel=false){
     if(rooms.length === 0){
         history.replaceState(null, '', `/groupchat`);
         switchDyMainContent('group-welcome-panel');
@@ -817,6 +1347,20 @@ async function loadRoom(btn=null, slug=null){
     if(!slug) slug = btn.getAttribute('slug');
     if(!btn) btn = document.querySelector(`.selection-item[slug="${slug}"]`);
 
+    // Check if this room has been removed
+    const roomToCheck = rooms.find(r => r.slug === slug);
+    if (roomToCheck && roomToCheck.isRemoved) {
+        // Show removal notification modal
+        showRoomRemovedModal(roomToCheck);
+        return;
+    }
+    
+    // Check if this is a new room invitation
+    if (roomToCheck && roomToCheck.isNewRoom) {
+        // Show invitation modal instead of opening room
+        showRoomInvitationModal(roomToCheck);
+        return;
+    }
 
     let roomData;
     try{
@@ -835,15 +1379,42 @@ async function loadRoom(btn=null, slug=null){
     }
     btn.classList.add('active');
 
-    switchDyMainContent('chat');
+    // Only switch to chat view if we're not opening the control panel directly
+    if (!openControlPanel) {
+        switchDyMainContent('chat');
+    }
     history.replaceState(null, '', `/groupchat/${slug}`);
 
     clearChatlog();
     clearInput();
 
     activeRoom = roomData;
+    activeRoom.currentUserRole = roomData.role; // Store current user's role
     const chatControlPanel = document.querySelector('#room-control-panel');
-    chatControlPanel.querySelector('#chat-name').textContent = roomData.name;
+    
+    // Apply role-based UI restrictions
+    applyRoleBasedUI(roomData.role);
+    
+    // Disable input for Viewers
+    const inputField = document.querySelector('.input-field');
+    if (roomData.role === 'viewer') {
+        inputField.setAttribute('contenteditable', 'false');
+        inputField.style.opacity = '0.5';
+        inputField.style.cursor = 'not-allowed';
+        inputField.textContent = '';
+        inputField.setAttribute('placeholder', 'Nur Admins und Editors dürfen Nachrichten senden');
+    } else {
+        inputField.setAttribute('contenteditable', 'true');
+        inputField.style.opacity = '1';
+        inputField.style.cursor = 'text';
+        inputField.removeAttribute('placeholder');
+    }
+    
+    // Check if name starts with emoji for display
+    const { emoji, remainingText } = extractFirstEmoji(roomData.name);
+    const displayName = (emoji && !roomData.room_icon) ? (remainingText || roomData.name) : roomData.name;
+    
+    chatControlPanel.querySelector('#chat-name').textContent = displayName;
     chatControlPanel.querySelector('#chat-slug').textContent = roomData.slug;
 
     if(roomData.room_icon){
@@ -852,13 +1423,37 @@ async function loadRoom(btn=null, slug=null){
         chatControlPanel.querySelector('#info-panel-chat-icon').setAttribute('src', roomData.room_icon);
     }
     else{
+        // Check if name starts with emoji
+        const { emoji, remainingText } = extractFirstEmoji(roomData.name);
+        
         chatControlPanel.querySelector('#info-panel-chat-icon').style.display = "none";
         chatControlPanel.querySelector('#control-panel-chat-initials').style.display = "block";
-        chatControlPanel.querySelector('#control-panel-chat-initials').innerHTML = roomData.name.slice(0, 2).toUpperCase();
+        
+        if (emoji) {
+            // Use emoji as icon
+            chatControlPanel.querySelector('#control-panel-chat-initials').innerHTML = emoji;
+        } else {
+            // Use first 2 characters as initials
+            chatControlPanel.querySelector('#control-panel-chat-initials').innerHTML = roomData.name.slice(0, 2).toUpperCase();
+        }
+        
         chatControlPanel.querySelector('#info-panel-chat-icon').setAttribute('src', '');
     }
 
     loadRoomMembers(roomData);
+    updateChatHeader(roomData);
+
+    // Mark all messages as read and invitation as accepted when room is opened
+    await markAllMessagesAsRead(slug);
+    
+    // If this was a new room invitation, mark it as no longer new
+    const room = rooms.find(r => r.slug === slug);
+    if (room && room.isNewRoom) {
+        room.isNewRoom = false;
+        // Remove red badge, may still have green badge if unread messages
+        flagRoomUnreadMessages(slug, false);
+        checkAndUpdateSidebarBadge();
+    }
 
     const roomKey = await keychainGet(slug);
     const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
@@ -883,7 +1478,26 @@ async function loadRoom(btn=null, slug=null){
         msgData.content.text = await decryptWithSymKey(key, msgData.content.text.ciphertext,
                                                             msgData.content.text.iv,
                                                             msgData.content.text.tag, false);
+        
+        // Debug: Check if auxiliaries exist in encrypted form
+        //console.log('[DEBUG] Message ID:', msgData.message_id, 'Has encrypted auxiliaries:', !!msgData.content.auxiliaries);
+        
+        // Decrypt auxiliaries if present
+        if (msgData.content.auxiliaries) {
+            const auxiliariesJson = await decryptWithSymKey(key, msgData.content.auxiliaries.ciphertext,
+                                                                 msgData.content.auxiliaries.iv,
+                                                                 msgData.content.auxiliaries.tag, false);
+            msgData.content.auxiliaries = JSON.parse(auxiliariesJson);
+            //console.log('[DEBUG] Decrypted auxiliaries count:', msgData.content.auxiliaries.length);
+        }
     }
+    
+    // Update current chat ID for model selection logic
+    currentChatId = slug;
+    
+    // Set model based on chat context
+    setModel(null, slug);
+    
     filterRoleElements(roomData.role);
     loadMessagesOnGUI(roomData.messagesData);
     scrollToLast(true);
@@ -891,9 +1505,47 @@ async function loadRoom(btn=null, slug=null){
 
 
 
+function updateChatHeader(roomData) {
+    const chatHeader = document.getElementById('group-chat-header');
+    const headerIcon = document.getElementById('chat-header-icon');
+    const headerInitials = document.getElementById('chat-header-initials');
+    const headerName = document.getElementById('chat-header-name');
+
+    // Show the header
+    chatHeader.style.display = 'flex';
+
+    // Set room icon or initials
+    if (roomData.room_icon) {
+        // Has uploaded icon
+        headerIcon.setAttribute('src', roomData.room_icon);
+        headerIcon.style.display = 'block';
+        headerInitials.style.display = 'none';
+        headerName.textContent = roomData.name;
+    } else {
+        // Check if name starts with emoji
+        const { emoji, remainingText } = extractFirstEmoji(roomData.name);
+        
+        if (emoji) {
+            // Use emoji as icon, show remaining text as name
+            headerInitials.textContent = emoji;
+            headerInitials.style.display = 'flex';
+            headerIcon.style.display = 'none';
+            headerName.textContent = remainingText || roomData.name; // Fallback to full name if only emoji
+        } else {
+            // Use first 2 characters as initials
+            headerInitials.textContent = roomData.name.slice(0, 2).toUpperCase();
+            headerInitials.style.display = 'flex';
+            headerIcon.style.display = 'none';
+            headerName.textContent = roomData.name;
+        }
+    }
+}
+
 function loadRoomMembers(roomData) {
     const membersList = document.getElementById('room-control-panel').querySelector('.members-list');
-    // Clear existing members
+    const assistantsList = document.getElementById('room-control-panel').querySelector('.assistants-list');
+    
+    // Clear existing members and assistants
     membersList.innerHTML = `
         <button class="btn-sm add-member-btn admin-only" id="invite-btn" onclick="openInvitationPanel()">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus">
@@ -901,10 +1553,15 @@ function loadRoomMembers(roomData) {
                 <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
         </button>`;
+    assistantsList.innerHTML = '';
 
     roomData.members.forEach(member => {
-        if (member.employeetype === 'system' ||
-            member.employeetype === 'AI') return;
+        // Skip system users except assistants
+        if (member.employeetype === 'system' && member.role !== 'assistant') return;
+        
+        // Determine if this is an assistant
+        const isAssistant = member.role === 'assistant';
+        const targetList = isAssistant ? assistantsList : membersList;
 
         const memberBtnTemp = document.getElementById('member-listBtn-template').content.cloneNode(true);
         const memberBtnIcon = memberBtnTemp.querySelector('#member-icon');
@@ -920,9 +1577,72 @@ function loadRoomMembers(roomData) {
         }
         // Set member object in the button attribute
         memberBtn.setAttribute('memberObj', JSON.stringify(member));
-        // Append to the header and the list
-        membersList.insertBefore(memberBtnTemp, membersList.querySelector('#invite-btn'));
+        
+        // Append to appropriate list
+        if (isAssistant) {
+            targetList.appendChild(memberBtnTemp);
+        } else {
+            // Append to members list before invite button
+            targetList.insertBefore(memberBtnTemp, membersList.querySelector('#invite-btn'));
+        }
     });
+    
+    // If user is Viewer and cannot view all members, show placeholder for hidden members
+    if (roomData.can_view_all_members === false) {
+        const visibleCount = roomData.members.length;
+        const totalMembersCount = roomData.total_members_count || 0;
+        const totalInvitationsCount = (roomData.invitations && roomData.invitations.length) || 0;
+        
+        // Hidden members are: (total members - visible members) + all invitations
+        const hiddenMembersCount = totalMembersCount - visibleCount;
+        const hiddenCount = hiddenMembersCount + totalInvitationsCount;
+        
+        if (hiddenCount > 0) {
+            const placeholderBtn = document.createElement('button');
+            placeholderBtn.className = 'btn-sm';
+            placeholderBtn.style.cssText = 'opacity: 0.6; cursor: default; pointer-events: none;';
+            placeholderBtn.innerHTML = `<div style="font-size: 0.75rem; text-align: center;">+${hiddenCount}</div>`;
+            placeholderBtn.title = `${hiddenCount} weitere Mitglieder und Einladungen (nur für Admins und Editors sichtbar)`;
+            membersList.insertBefore(placeholderBtn, membersList.querySelector('#invite-btn'));
+        }
+    }
+
+    // Add pending invitations (grayed out) - only for Admins and Editors
+    if (roomData.invitations && 
+        roomData.invitations.length > 0 && 
+        roomData.can_view_all_members !== false) {
+        // Clone invitations section template (separator + label)
+        const invitationsSectionTemplate = document.getElementById('invitations-section-template');
+        const invitationsSection = invitationsSectionTemplate.content.cloneNode(true);
+        membersList.insertBefore(invitationsSection, membersList.querySelector('#invite-btn'));
+
+        roomData.invitations.forEach(invitation => {
+            const memberBtnTemp = document.getElementById('member-listBtn-template').content.cloneNode(true);
+            const memberBtnIcon = memberBtnTemp.querySelector('#member-icon');
+            const memberBtnInit = memberBtnTemp.querySelector('#member-init');
+            const memberBtn = memberBtnTemp.querySelector('#member-btn');
+
+            // Style as pending/grayed out
+            memberBtn.style.opacity = '0.5';
+            memberBtn.style.cursor = 'pointer';
+            memberBtn.title = translation.PendingInvitation || 'Pending invitation';
+
+            if (invitation.avatar_url) {
+                memberBtnIcon.setAttribute('src', invitation.avatar_url);
+                memberBtnIcon.style.cursor = 'pointer';
+                memberBtnInit.remove();
+            } else {
+                memberBtnIcon.remove();
+                memberBtnInit.textContent = invitation.name.slice(0, 2).toUpperCase();
+                memberBtnInit.style.cursor = 'pointer';
+            }
+
+            // Set invitation object in the button attribute
+            memberBtn.setAttribute('memberObj', JSON.stringify(invitation));
+            // Append to the header and the list
+            membersList.insertBefore(memberBtnTemp, membersList.querySelector('#invite-btn'));
+        });
+    }
 }
 
 
@@ -1183,7 +1903,10 @@ function openRoomCP(){
 }
 
 function closeRoomCP(){
-    submitInfoField();
+    // Only submit changes if user is Admin
+    if (activeRoom && activeRoom.currentUserRole === 'admin') {
+        submitInfoField();
+    }
     switchDyMainContent('chat');
 }
 
@@ -1380,6 +2103,14 @@ async function leaveRoom(){
 
 
 function removeListItem(slug){
+        // Remove from rooms array
+        const roomIndex = rooms.findIndex(r => r.slug === slug);
+        if (roomIndex !== -1) {
+            rooms.splice(roomIndex, 1);
+            console.log('Room removed from array:', slug);
+        }
+        
+        // Remove from DOM
         const listItem = document.querySelector(`.selection-item[slug="${slug}"]`);
         const list = listItem.parentElement;
         listItem.remove();
@@ -1431,7 +2162,44 @@ async function removeMemberFromRoom(username){
         console.error('Failed to remove user!');
     }
 
+    return false;
 }
+
+async function removeInvitation(username){
+
+    const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_removeMember);
+    if (!confirmed) {
+        return false;
+    }
+
+    const url = `/req/inv/deleteInvitation/${activeRoom.slug}`;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    try {
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({'username': username})
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            console.log(data.message);
+            return true;
+        }
+        console.error(data.message);
+    } catch (error) {
+        console.error('Failed to remove invitation!');
+    }
+
+    return false;
+}
+
+
 
 //#endregion
 
@@ -1441,7 +2209,9 @@ function selectRoomAvatar(btn, upload = false){
 
     const imageElement = btn.parentElement.querySelector('.selectable-image');
     const initials = btn.parentElement.querySelector('#control-panel-chat-initials');
-    openImageSelection(imageElement.getAttribute('src'), async function(croppedImage) {
+    
+    // Define save callback
+    const saveCallback = async function(croppedImage) {
         let url;
         if(upload){
             url = await uploadRoomAvatar(croppedImage);
@@ -1456,7 +2226,14 @@ function selectRoomAvatar(btn, upload = false){
         }
         imageElement.setAttribute('src', url);
         roomCreationAvatarBlob = croppedImage;
-    });
+    };
+    
+    // Define delete callback (only for existing rooms with upload=true)
+    const deleteCallback = (upload && activeRoom && activeRoom.slug) ? async function() {
+        await removeRoomAvatar();
+    } : null;
+    
+    openImageSelection(imageElement.getAttribute('src'), saveCallback, deleteCallback);
 }
 
 async function uploadRoomAvatar(image){
@@ -1481,6 +2258,13 @@ async function uploadRoomAvatar(image){
 
         if (data.success) {
             // console.log('Image Uploaded Successfully');
+            
+            // Update room icon in the chat list
+            updateRoomIconInList(activeRoom.slug, data.url);
+            
+            // Update room icon in the header
+            updateChatHeaderIcon(data.url);
+            
             return data.url;
 
         } else {
@@ -1488,6 +2272,119 @@ async function uploadRoomAvatar(image){
         }
     } catch (error) {
         console.error('Failed to upload image to server!');
+    }
+}
+
+function updateRoomIconInList(slug, iconUrl) {
+    const roomElement = document.querySelector(`.selection-item[slug="${slug}"]`);
+    if (!roomElement) return;
+    
+    const roomIcon = roomElement.querySelector('#room-icon');
+    const roomInitials = roomElement.querySelector('#room-initials');
+    
+    if (roomIcon && roomInitials) {
+        roomIcon.setAttribute('src', iconUrl);
+        roomIcon.style.display = 'block';
+        roomInitials.style.display = 'none';
+    }
+}
+
+function updateChatHeaderIcon(iconUrl) {
+    const headerIcon = document.querySelector('#chat-header-icon');
+    const headerInitials = document.querySelector('#chat-header-initials');
+    
+    if (headerIcon && headerInitials) {
+        headerIcon.setAttribute('src', iconUrl);
+        headerIcon.style.display = 'block';
+        headerInitials.style.display = 'none';
+    }
+}
+
+async function removeRoomAvatar() {
+    if (!activeRoom || !activeRoom.slug) {
+        console.error('No active room');
+        return;
+    }
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const url = `/req/room/removeAvatar/${activeRoom.slug}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            // Update control panel
+            const imageElement = document.querySelector('#info-panel-chat-icon');
+            const initials = document.querySelector('#control-panel-chat-initials');
+            
+            if (imageElement && initials) {
+                imageElement.style.display = 'none';
+                imageElement.setAttribute('src', '');
+                initials.style.display = 'flex';
+                initials.textContent = activeRoom.name.slice(0, 2).toUpperCase();
+            }
+
+            // Update room icon in the chat list
+            removeRoomIconFromList(activeRoom.slug, activeRoom.name);
+            
+            // Update room icon in the header
+            removeChatHeaderIcon(activeRoom.name);
+            
+            console.log('Room avatar removed successfully');
+        } else {
+            console.error('Failed to remove avatar');
+        }
+    } catch (error) {
+        console.error('Error removing room avatar:', error);
+    }
+}
+
+function removeRoomIconFromList(slug, roomName) {
+    // Find room element by slug attribute
+    const allRoomElements = document.querySelectorAll('.selection-item');
+    let roomElement = null;
+    
+    for (let elem of allRoomElements) {
+        if (elem.getAttribute('slug') === slug) {
+            roomElement = elem;
+            break;
+        }
+    }
+    
+    if (!roomElement) {
+        console.warn('Room element not found in list for slug:', slug);
+        return;
+    }
+    
+    const roomIcon = roomElement.querySelector('#room-icon');
+    const roomInitials = roomElement.querySelector('#room-initials');
+    
+    if (roomIcon && roomInitials && roomName) {
+        roomIcon.style.display = 'none';
+        roomIcon.setAttribute('src', '');
+        roomInitials.style.display = 'flex';
+        roomInitials.textContent = roomName.slice(0, 2).toUpperCase();
+        console.log('Room icon removed from list for:', roomName);
+    } else {
+        console.warn('Could not find room icon or initials elements', {roomIcon, roomInitials, roomName});
+    }
+}
+
+function removeChatHeaderIcon(roomName) {
+    const headerIcon = document.querySelector('#chat-header-icon');
+    const headerInitials = document.querySelector('#chat-header-initials');
+    
+    if (headerIcon && headerInitials) {
+        headerIcon.style.display = 'none';
+        headerInitials.style.display = 'flex';
+        headerInitials.textContent = roomName.slice(0, 2).toUpperCase();
     }
 }
 
@@ -1530,6 +2427,77 @@ async function updateRoomInfo(slug, formData){
     catch (error){
         console.error('Error fetching data:', error);
         throw error;
+    }
+}
+
+function applyRoleBasedUI(role) {
+    // Hide/show elements based on role
+    // admin-only: visible for admins only
+    // editor-only: visible for editors and admins
+    
+    const adminOnlyElements = document.querySelectorAll('.admin-only');
+    const editorOnlyElements = document.querySelectorAll('.editor-only');
+    
+    adminOnlyElements.forEach(el => {
+        if (role === 'admin') {
+            // Show element - try both attribute names for compatibility
+            const originalDisplay = el.getAttribute('data-original-display') || 
+                                   el.getAttribute('data-originaldisplay') || 
+                                   el.dataset.originalDisplay || 
+                                   '';
+            el.style.display = originalDisplay || '';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+    
+    editorOnlyElements.forEach(el => {
+        if (role === 'admin' || role === 'editor') {
+            // Show element - try both attribute names for compatibility
+            const originalDisplay = el.getAttribute('data-original-display') || 
+                                   el.getAttribute('data-originaldisplay') || 
+                                   el.dataset.originalDisplay || 
+                                   '';
+            el.style.display = originalDisplay || '';
+        } else {
+            el.style.display = 'none';
+        }
+    });
+}
+
+async function markAllMessagesAsRead(slug) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    try {
+        const response = await fetch(`/req/room/markAllAsRead/${slug}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update local room state
+            const room = rooms.find(r => r.slug === slug);
+            if (room) {
+                room.hasUnreadMessages = false;
+            }
+            
+            // Update badges
+            flagRoomUnreadMessages(slug, false);
+            if (typeof checkAndUpdateSidebarBadge === 'function') {
+                checkAndUpdateSidebarBadge();
+            }
+        }
+        
+        return data.success;
+    } catch (error) {
+        console.error('[markAllMessagesAsRead] Error:', error);
+        return false;
     }
 }
 //#endregion

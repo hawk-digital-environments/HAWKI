@@ -47,6 +47,10 @@ class PrivateMessageHandler extends BaseMessageHandler{
                 }
             }
         }
+        
+        // Update conversation's updated_at timestamp
+        $conv->touch();
+        
         return $message;
     }
 
@@ -67,6 +71,9 @@ class PrivateMessageHandler extends BaseMessageHandler{
             'model' => $data['model'],
             'completion' => $data['completion']
         ]);
+
+        // Update conversation's updated_at timestamp
+        $conv->touch();
 
         return $message;
     }

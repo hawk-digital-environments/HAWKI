@@ -57,11 +57,59 @@ class HomeController extends Controller
             : null;
         $hawkiAvatarUrl = $avatarStorage->getUrl(User::find(1)->avatar_id, 'profile_avatars');
 
+        $totalConvs = $user->conversations()->count();
+        $convsLimit = 20;
+
         $userData = [
             'avatar_url'=> $avatarUrl,
             'hawki_avatar_url'=>$hawkiAvatarUrl,
-            'convs' => $user->conversations()->with('messages')->get(),
-            'rooms' => $user->rooms()->with('messages')->get(),
+            'convs' => $user->conversations()->with('messages')->orderBy('updated_at', 'desc')->limit($convsLimit)->get(),
+            'convs_total' => $totalConvs,
+            'convs_has_more' => $totalConvs > $convsLimit,
+            'rooms' => $user->roomsIncludingRemoved()->with('messages')->orderBy('updated_at', 'desc')->get()->map(function ($room) use ($avatarStorage, $user) {
+                $room->room_icon = $room->room_icon
+                    ? $avatarStorage->getUrl($room->room_icon, 'room_avatars')
+                    : null;
+                
+                // Get the member object for this user in this room
+                $member = $room->members()->where('user_id', $user->id)->first();
+                $room->hasUnreadMessages = $member ? $room->hasUnreadMessagesFor($member) : false;
+                
+                // Check if member is removed
+                $room->isRemoved = $room->pivot->isRemoved ?? false;
+                
+                // Check if this is a new room (invitation still exists = not accepted)
+                $invitation = $user->invitations()->where('room_id', $room->id)->first();
+                $room->isNewRoom = $invitation !== null;
+                
+                return $room;
+            })->concat(
+                // Add rooms with pending invitations (where user is not yet a member)
+                $user->invitations()->with('room')->get()->map(function ($invitation) use ($avatarStorage, $user) {
+                    $room = $invitation->room;
+                    
+                    // Check if user is already a member - if so, skip this invitation
+                    if ($room->isMember($user->id)) {
+                        return null;
+                    }
+                    
+                    $room->room_icon = $room->room_icon
+                        ? $avatarStorage->getUrl($room->room_icon, 'room_avatars')
+                        : null;
+                    $room->hasUnreadMessages = false;
+                    $room->isNewRoom = true;  // Always true for invitations
+                    
+                    // Try to get the first non-HAWKI member as inviter (heuristic)
+                    $inviter = $room->members()
+                        ->where('user_id', '!=', 1)  // Exclude HAWKI
+                        ->with('user')
+                        ->first();
+                    $room->invited_by = $inviter ? $inviter->user->name : 'Unknown';
+                    
+                    return $room;
+                })->filter()  // Remove null entries (where user is already member)
+            ),
+            'hasUnreadInvitations' => $user->hasUnreadInvitations(),
             'hawki_username' => User::find(1)->username,
         ];
 

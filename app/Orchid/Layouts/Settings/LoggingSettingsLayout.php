@@ -22,40 +22,40 @@ class LoggingSettingsLayout
         $loggingGeneralSettings = [];
         $loggingTriggerSettings = [];
 
-        // Quick and dirty: Definiere die gewünschte Reihenfolge der Trigger
-        $triggerOrder = [
-            'logging_triggers.curl_return_object',
-            'logging_triggers.normalized_return_object',
-            'logging_triggers.formatted_stream_chunk',
-            'logging_triggers.translated_return_object',
-            'logging_triggers.default_model',
-            'logging_triggers.usage',
-        ];
-
+        // Sammle alle Trigger-Settings mit ihrer Nummerierung aus der Description
         $triggerSettingsMap = [];
 
         // Sortiere die Logging-Einstellungen nach Typ
         foreach ($loggingSettings as $setting) {
             if (str_starts_with($setting->key, 'logging_triggers.')) {
-                $triggerSettingsMap[$setting->key] = $instance->generateFieldForSetting($setting);
+                // Extrahiere Nummerierung aus Description (z.B. "0. Log raw..." -> 0)
+                $order = 9999; // Default für nicht-nummerierte Trigger
+                if ($setting->description && preg_match('/^(\d+)\./', $setting->description, $matches)) {
+                    $order = (int) $matches[1];
+                }
+                
+                $triggerSettingsMap[] = [
+                    'key' => $setting->key,
+                    'order' => $order,
+                    'field' => $instance->generateFieldForSetting($setting)
+                ];
             } else {
                 $loggingGeneralSettings[] = $instance->generateFieldForSetting($setting);
             }
         }
 
-        // Sortiere Trigger nach der definierten Reihenfolge
-        foreach ($triggerOrder as $triggerKey) {
-            if (isset($triggerSettingsMap[$triggerKey])) {
-                $loggingTriggerSettings[] = $triggerSettingsMap[$triggerKey];
+        // Sortiere Trigger nach Nummerierung (order) und dann alphabetisch nach key
+        usort($triggerSettingsMap, function($a, $b) {
+            if ($a['order'] === $b['order']) {
+                return strcmp($a['key'], $b['key']);
             }
-        }
+            return $a['order'] <=> $b['order'];
+        });
 
-        // Füge alle nicht in der Liste enthaltenen Trigger am Ende hinzu
-        foreach ($triggerSettingsMap as $key => $field) {
-            if (! in_array($key, $triggerOrder)) {
-                $loggingTriggerSettings[] = $field;
-            }
-        }
+        // Extrahiere die sortierten Fields
+        $loggingTriggerSettings = array_map(function($item) {
+            return $item['field'];
+        }, $triggerSettingsMap);
 
         $layouts = [];
 

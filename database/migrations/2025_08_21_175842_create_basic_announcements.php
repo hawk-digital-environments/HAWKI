@@ -48,7 +48,7 @@ return new class extends Migration
                 true,
                 true,
                 null,
-                "FileUpload",
+                'FileUpload',
                 now()->toDateTimeString(),
                 null,
                 true // is_published

@@ -52,9 +52,24 @@ class OpenAiStreamingRequest extends AbstractRequest
             $isDone = true;
         }
         
-        // Extract usage data if available
+        // Extract usage data when available
+        // OpenAI: sends usage in final chunk with finish_reason when stream_options.include_usage is true
+        // LiteLLM: sends finish_reason in one chunk, then usage in a separate subsequent chunk
+        // To support both, we extract usage whenever it's present, regardless of finish_reason
         if (!empty($jsonChunk['usage'])) {
             $usage = $this->extractUsage($model, $jsonChunk);
+            
+            if (config('logging.triggers.usage') && $usage) {
+                \Log::info('Token Usage - OpenAI Compatible Provider', [
+                    'model' => $model->getId(),
+                    'prompt_tokens' => $jsonChunk['usage']['prompt_tokens'] ?? 0,
+                    'completion_tokens' => $jsonChunk['usage']['completion_tokens'] ?? 0,
+                    'total_tokens' => $jsonChunk['usage']['total_tokens'] ?? 0,
+                    'finish_reason' => $jsonChunk['choices'][0]['finish_reason'] ?? 'not_in_chunk',
+                    'has_finish_reason' => isset($jsonChunk['choices'][0]['finish_reason']),
+                    'note' => 'Usage extracted when present (supports OpenAI and LiteLLM behavior)'
+                ]);
+            }
         }
         
         // Extract content if available

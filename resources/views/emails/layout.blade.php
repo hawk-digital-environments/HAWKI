@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="x-apple-disable-message-reformatting">
     <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
-    <title>@yield('title', 'HAWKI')</title>
+    <title>@yield('title', config('app.name'))</title>
     
     <!--[if mso]>
     <noscript>

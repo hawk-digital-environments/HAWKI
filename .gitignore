@@ -26,4 +26,7 @@ docker-compose.override.yml
 .DS_Store
 _docker_production_test
 mcp-server.json
+_docker_production/.env
 phpunit.xml
+_docker
+_docker/*

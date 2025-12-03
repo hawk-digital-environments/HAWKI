@@ -59,6 +59,23 @@ class Message extends Model
         $requestMember = $room->members()->where('user_id', Auth::id())->firstOrFail();
 
         $readStat = $this->isReadBy($requestMember);
+        
+        // Parse content as JSON (contains text and optionally auxiliaries)
+        $contentData = json_decode($this->content, true);
+        
+        // Backwards compatibility: if content is not JSON, treat as legacy ciphertext
+        if ($contentData === null) {
+            $contentData = [
+                'text' => [
+                    'ciphertext'=> $this->content,
+                    'iv' => $this->iv,
+                    'tag' => $this->tag,
+                ]
+            ];
+        }
+        
+        // Add attachments to content
+        $contentData['attachments'] = $this->attachmentsAsArray();
 
         return [
             'member_id' => $member->id,
@@ -77,14 +94,7 @@ class Message extends Model
             ],
             'model' => $this->model,
 
-            'content' => [
-                'text' => [
-                    'ciphertext'=> $this->content,
-                    'iv' => $this->iv,
-                    'tag' => $this->tag,
-                ],
-                'attachments' => $this->attachmentsAsArray(),
-            ],
+            'content' => $contentData,
             'created_at' => $this->created_at->format('Y-m-d+H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d+H:i'),
         ];

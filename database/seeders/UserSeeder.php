@@ -15,15 +15,31 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // System user "AI" - ID=1 (for HAWKI system service)
+        // Always use ID=1 or email to find system user, not username (which can be changed)
+        
+        // Check if system user already exists
+        $existingSystemUser = User::find(1);
+        
+        // Prepare avatar_id - preserve existing UUID avatar, only set default for new users
+        $avatarId = config('hawki.migration.avatar_id');
+        if ($existingSystemUser && $existingSystemUser->avatar_id) {
+            // If existing user has an avatar_id that's a UUID (not the default filename),
+            // preserve it instead of overwriting with config value
+            if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $existingSystemUser->avatar_id)) {
+                $avatarId = $existingSystemUser->avatar_id;
+            }
+        }
+        
         $systemUser = User::updateOrCreate([
-            'username' => 'HAWKI',
+            'id' => 1,
         ], [
-            'email' => 'HAWKI@hawk.de',
-            'name' => 'HAWKI',
-            'employeetype' => 'AI',
+            'username' => config('hawki.migration.username'),
+            'email' => config('hawki.migration.email'),
+            'name' => config('hawki.migration.name'),
+            'employeetype' => config('hawki.migration.employeetype'),
             'auth_type' => 'local',              // System user, marked as local
             'publicKey' => '0',
-            'avatar_id' => 'hawkiAvatar.jpg',
+            'avatar_id' => $avatarId,
             'password' => null, // System user has no login password
         ]);
 

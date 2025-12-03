@@ -169,6 +169,9 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         // Handle Anthropic citations
         if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
             addAnthropicCitations(messageElement, auxiliaries);
+            addResponsesCitations(messageElement, auxiliaries); // OpenAI Responses API citations
+            // Update AI status indicator (thinking, reasoning, web search)
+            updateAiStatusIndicator(messageElement, auxiliaries, false);
         }
     }
 
@@ -204,7 +207,9 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         const threadElement = threadTemplate.content.cloneNode(true);
         threadDiv = threadElement.querySelector('.thread');
         threadDiv.classList.add('branch');
-        threadDiv.querySelector('.model-selector-label').innerHTML = activeModel.label;
+        if(activeModel){
+            threadDiv.querySelector('.model-selector-label').innerHTML = activeModel.label;
+        }
 
         if(messageObj.message_id){
             threadDiv.id = messageObj.message_id.split('.')[0];
@@ -276,6 +281,14 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
         // Store raw content with auxiliaries for multi-turn conversations
         messageElement.dataset.rawContent = messageObj.content.text;
         
+        // Override auxiliaries with content.auxiliaries if present (for group chat)
+        const finalAuxiliaries = messageObj.content.auxiliaries || auxiliaries;
+        
+        // Store auxiliaries separately as JSON for persistence
+        if (finalAuxiliaries && finalAuxiliaries.length > 0) {
+            messageElement.dataset.auxiliaries = JSON.stringify(finalAuxiliaries);
+        }
+        
         if(messageObj.message_role === "user"){
             const filteredContent = detectMentioning(messageText);
             msgTxtElement.innerHTML = filteredContent.modifiedText;
@@ -299,13 +312,22 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             }
             
             // Handle Anthropic citations
-            if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
-                addAnthropicCitations(messageElement, auxiliaries);
+            if (finalAuxiliaries && Array.isArray(finalAuxiliaries) && finalAuxiliaries.length > 0) {
+                
+                addAnthropicCitations(messageElement, finalAuxiliaries);
+                addResponsesCitations(messageElement, finalAuxiliaries); // OpenAI Responses API citations
+                // Update AI status indicator (thinking, reasoning, web search)
+                // Pass isDone=false to keep reasoning summaries visible
+                updateAiStatusIndicator(messageElement, finalAuxiliaries, false);
             } else {
                 // Remove existing Anthropic sources if no auxiliaries
                 if (messageElement.querySelector('.anthropic-sources')) {
                     messageElement.querySelector('.anthropic-sources').remove();
                 }
+                if (messageElement.querySelector('.responses-sources')) {
+                    messageElement.querySelector('.responses-sources').remove();
+                }
+                // DON'T remove AI status indicator during streaming!
             }
         }
 
@@ -345,9 +367,9 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
         const yesterday = new Date();
         yesterday.setDate(today.getDate() - 1);
         if (msgDateObj.toDateString() === today.toDateString()) {
-            dateText = translation.Today;
+            dateText = translation.Today || 'Today';
         } else if (msgDateObj.toDateString() === yesterday.toDateString()) {
-            dateText = translation.Yesterday;
+            dateText = translation.Yesterday || 'Yesterday';
         } else {
             const formattedDate = `${msgDateObj.getDate()}.${msgDateObj.getMonth()+1}.${msgDateObj.getFullYear()}`
             dateText = formattedDate;
@@ -507,7 +529,7 @@ function activateMessageControls(msgElement){
         const code = codeBlocks[i];
         const header = code.querySelector('.hljs-code-header');
 
-        if (!header.querySelector('.copy-btn')) {
+        if (header && !header.querySelector('.copy-btn')) {
             const copyBtnTemp = document.getElementById('copy-btn-template');
             const clone = document.importNode(copyBtnTemp.content, true);
             const copyBtn = clone.querySelector('.copy-btn');
@@ -759,18 +781,30 @@ async function confirmEditMessage(provider){
 async function onRegenerateBtn(btn){
     btn.disabled = true;
     btn.style.opacity = '.2';
+    btn.classList.add('regenerating'); // Add animation class
     const messageElement = btn.closest('.message');
 
     regenerateMessage(messageElement, async(Done)=>{
         btn.disabled = false;
         btn.style.opacity = '1';
+        btn.classList.remove('regenerating'); // Remove animation class
     });
 }
 
 async function regenerateMessage(messageElement, Done = null){
     if(!messageElement.classList.contains('AI')){
+        if(Done) Done(true);
         return;
     }
+    
+    // Check if activeModel is set
+    if(!activeModel){
+        console.error('No active model selected. Cannot regenerate message.');
+        alert('Bitte wählen Sie ein Modell aus, bevor Sie eine Nachricht regenerieren.');
+        if(Done) Done(true);
+        return;
+    }
+    
     const threadIndex = messageElement.closest('.thread').id;
 
     //reset message content
@@ -785,6 +819,21 @@ async function regenerateMessage(messageElement, Done = null){
     // Remove Anthropic citations
     if(messageElement.querySelector('.anthropic-sources')){
         messageElement.querySelector('.anthropic-sources').remove();
+    }
+    
+    // Remove Responses API (OpenAI) citations/sources
+    if(messageElement.querySelector('.responses-sources')){
+        messageElement.querySelector('.responses-sources').remove();
+    }
+    
+    // Remove AI status indicators (Reasoning summaries, Web search queries)
+    if(messageElement.querySelector('.ai-status-indicator')){
+        messageElement.querySelector('.ai-status-indicator').remove();
+    }
+    
+    // Clear status log data from dataset
+    if(messageElement.dataset.statusLog){
+        delete messageElement.dataset.statusLog;
     }
     
     initializeMessageFormating();
@@ -812,7 +861,7 @@ async function regenerateMessage(messageElement, Done = null){
                 'broadcasting': false,
                 'slug': '',
                 'regenerationElement': messageElement,
-                'stream': activeModel.tools.stream ? true : false,
+                'stream': activeModel.tools?.stream ? true : false,
                 'model': activeModel.id,
                 'tools': tools
             }
@@ -840,7 +889,11 @@ async function regenerateMessage(messageElement, Done = null){
                 'model': activeModel.id,
                 'tools': tools
             }
-            buildRequestObject(msgAttributes,  async (updatedText, done) => {});
+            buildRequestObject(msgAttributes,  async (updatedText, done) => {
+                if(done && Done){
+                    Done(true);
+                }
+            });
         break;
     }
 }

@@ -72,21 +72,24 @@ return [
             'api_key' => env('OPENAI_API_KEY'),
             'api_url' => env('OPENAI_URL', 'https://api.openai.com/v1/chat/completions'),
             'ping_url' => env('OPENAI_PING_URL', 'https://api.openai.com/v1/models'),
-            'models' => require __DIR__ . env('OPENAI_MODEL_LIST_DIR', '/model_lists/openai_models.php'),
+            //'models' => require __DIR__ . env('OPENAI_MODEL_LIST_DIR', '/model_lists/openai_models.php'),
+            'models' => [], // Models are managed in database
         ],
         'responses' => [
             'active' => env('RESPONSES_ACTIVE', true),
             'api_key' => env('OPENAI_API_KEY'), // Shares same API key as openAi
             'api_url' => env('RESPONSES_URL', 'https://api.openai.com/v1/responses'),
             'ping_url' => env('RESPONSES_PING_URL', 'https://api.openai.com/v1/models'),
-            'models' => require __DIR__ . env('RESPONSES_MODEL_LIST_DIR', '/model_lists/responses_models.php'),
+            //'models' => require __DIR__ . env('RESPONSES_MODEL_LIST_DIR', '/model_lists/responses_models.php'),
+            'models' => [], // Models are managed in database
         ],
         'gwdg' => [
             'active' => env('GWDG_ACTIVE', true),
             'api_key' => env('GWDG_API_KEY'),
             'api_url' => env('GWDG_API_URL', 'https://chat-ai.academiccloud.de/v1/chat/completions'),
             'ping_url' => env('GWDG_PING_URL', 'https://chat-ai.academiccloud.de/v1/models'),
-            'models' => require __DIR__ . env('GWDG_MODEL_LIST_DIR', '/model_lists/gwdg_models.php'),
+            //'models' => require __DIR__ . env('GWDG_MODEL_LIST_DIR', '/model_lists/gwdg_models.php'),
+            'models' => [], // Models are managed in database
         ],
         'google' => [
             'active' => env('GOOGLE_ACTIVE', true),
@@ -94,27 +97,31 @@ return [
             'api_url' => env('GOOGLE_API_URL', 'https://generativelanguage.googleapis.com/v1beta/models/'),
             'stream_url' => env('GOOGLE_STREAM_URL', 'https://generativelanguage.googleapis.com/v1beta/models/'),
             'ping_url' => env('GOOGLE_PING_URL', 'https://generativelanguage.googleapis.com/v1beta/models'),
-            'models' => require __DIR__ . env('GOOGLE_MODEL_LIST_DIR', '/model_lists/google_models.php'),
+            //'models' => require __DIR__ . env('GOOGLE_MODEL_LIST_DIR', '/model_lists/google_models.php'),
+            'models' => [], // Models are managed in database
         ],
         'ollama' => [
             'active' => env('OLLAMA_ACTIVE', false),
             'api_url' => env('OLLAMA_API_URL', 'http://localhost:11434/api/chat'),
             'ping_url' => env('OLLAMA_API_URL', 'http://localhost:11434/api/tags'),
-            'models' => require __DIR__ . env('OLLAMA_MODEL_LIST_DIR', '/model_lists/ollama_models.php'),
+            //'models' => require __DIR__ . env('OLLAMA_MODEL_LIST_DIR', '/model_lists/ollama_models.php'),
+            'models' => [], // Models are managed in database
         ],
         'openWebUi' => [
             'active' => env('OPEN_WEB_UI_ACTIVE', false),
             'api_key' => env('OPEN_WEB_UI_API_KEY'),
             'api_url' => env('OPEN_WEB_UI_API_URL', 'your_url/api/chat/completions'),
             'ping_url' => env('OPEN_WEB_UI_PING_URL', 'your_url/api/models'),
-            'models' => require __DIR__ . env('OPEN_WEB_UI_MODEL_LIST_DIR', '/model_lists/openwebui_models.php'),
+            //'models' => require __DIR__ . env('OPEN_WEB_UI_MODEL_LIST_DIR', '/model_lists/openwebui_models.php'),
+            'models' => [], // Models are managed in database
         ],
         'anthropic' => [
             'active' => env('ANTHROPIC_ACTIVE', false),
             'api_key' => env('ANTHROPIC_API_KEY'),
             'api_url' => env('ANTHROPIC_API_URL', 'https://api.anthropic.com/v1/messages'),
             'ping_url' => env('ANTHROPIC_PING_URL', 'https://api.anthropic.com/v1/messages'),
-            'models' => require __DIR__ . env('ANTHROPIC_MODEL_LIST_DIR', '/model_lists/anthropic_models.php'),
+            //'models' => require __DIR__ . env('ANTHROPIC_MODEL_LIST_DIR', '/model_lists/anthropic_models.php'),
+            'models' => [], // Models are managed in database
         ]
     ]
 ];

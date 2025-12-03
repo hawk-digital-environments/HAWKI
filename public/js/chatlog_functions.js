@@ -3,6 +3,8 @@ let activeThreadIndex = 0;
 let activeModel;
 let isScrolling = false; // Flag to track if the user is scrolling
 let observer;
+let currentChatId = null; // Track current chat ID for model selection logic
+
 function initializeChatlogFunctions(){
     initializeInputField();
     setSendBtnStatus(SendBtnStatus.SENDABLE);
@@ -86,7 +88,11 @@ async function submitMessageToServer(requestObj, url){
 
         const data = await response.json();
         if (data.success) {
-            return data.messageData;
+            // Return entire response data, including conv_updated_at if present
+            return {
+                ...data.messageData,
+                conv_updated_at: data.conv_updated_at
+            };
             // updateMessageElement(messageElement, data.messageData);
         } else {
             // Handle unexpected response
@@ -113,6 +119,11 @@ async function requestMsgUpdate(messageObj, messageElement, url){
         const data = await response.json();
         if (data.success) {
             updateMessageElement(messageElement, data.messageData);
+            
+            // Update chat timestamp if available
+            if (data.conv_updated_at && typeof updateChatTimestampFromServer === 'function') {
+                updateChatTimestampFromServer(data.conv_updated_at);
+            }
         } else {
             // Handle unexpected response
             console.error('Unexpected response:', data);
@@ -182,7 +193,16 @@ function onThreadButtonEvent(btn){
         thread.classList.remove('visible');
     }else{
         thread.classList.add('visible');
-        thread.querySelector('.input-field').focus();
+        
+        // Apply role-based UI to thread input field
+        if (typeof applyRoleBasedUI === 'function' && typeof activeRoom !== 'undefined' && activeRoom?.currentUserRole) {
+            applyRoleBasedUI(activeRoom.currentUserRole);
+        }
+        
+        // Only focus input if user can send messages
+        if (activeRoom?.currentUserRole === 'admin' || activeRoom?.currentUserRole === 'editor') {
+            thread.querySelector('.input-field')?.focus();
+        }
     }
 }
 
@@ -254,15 +274,45 @@ function checkThreadUnreadMessages(thread) {
     }
 }
 
-function flagRoomUnreadMessages(slug, active){
-    const selector = document.querySelector(`.selection-item[slug="${slug}"`)
+function flagRoomUnreadMessages(slug, active, isNewRoom = false){
+    const selector = document.querySelector(`.selection-item[slug="${slug}"]`);
+    
+    // If element doesn't exist (user in different route), just return
+    if (!selector) {
+        return;
+    }
+    
     if(active){
-        selector.querySelector('#unread-msg-flag').style.display = 'block'
-        document.getElementById('mark-as-read-btn').removeAttribute("disabled");
+        const flag = selector.querySelector('#unread-msg-flag');
+        if (!flag) return; // Safety check
+        
+        flag.style.display = 'block';
+        
+        // Set color based on type
+        if (isNewRoom) {
+            flag.classList.add('new-room');
+            flag.classList.remove('new-message');
+        } else {
+            flag.classList.add('new-message');
+            flag.classList.remove('new-room');
+        }
+        
+        const markAsReadBtn = document.getElementById('mark-as-read-btn');
+        if (markAsReadBtn) {
+            markAsReadBtn.removeAttribute("disabled");
+        }
     }
     else{
-        selector.querySelector('#unread-msg-flag').style.display = 'none';
-        document.getElementById('mark-as-read-btn').setAttribute('disabled', true);
+        const flag = selector.querySelector('#unread-msg-flag');
+        if (!flag) return; // Safety check
+        
+        flag.style.display = 'none';
+        flag.classList.remove('new-room', 'new-message');
+        
+        const markAsReadBtn = document.getElementById('mark-as-read-btn');
+        if (markAsReadBtn) {
+            markAsReadBtn.setAttribute('disabled', true);
+        }
     }
 }
 
@@ -273,6 +323,19 @@ async function markAsSeen(element) {
 
         if(document.querySelectorAll('.message[data-read_stat="false"]').length === 0){
             flagRoomUnreadMessages(activeRoom.slug, false);
+            
+            // Update hasUnreadMessages in rooms array
+            if (typeof rooms !== 'undefined' && activeRoom) {
+                const room = rooms.find(r => r.slug === activeRoom.slug);
+                if (room) {
+                    room.hasUnreadMessages = false;
+                }
+            }
+            
+            // Update sidebar badge
+            if (typeof checkAndUpdateSidebarBadge === 'function') {
+                checkAndUpdateSidebarBadge();
+            }
         }
 
         if(element.id.split('.')[1] !== '000'){
@@ -299,6 +362,19 @@ function markAllAsRead(){
         }
     });
     flagRoomUnreadMessages(activeRoom.slug, false);
+    
+    // Update hasUnreadMessages in rooms array
+    if (typeof rooms !== 'undefined' && activeRoom) {
+        const room = rooms.find(r => r.slug === activeRoom.slug);
+        if (room) {
+            room.hasUnreadMessages = false;
+        }
+    }
+    
+    // Update sidebar badge
+    if (typeof checkAndUpdateSidebarBadge === 'function') {
+        checkAndUpdateSidebarBadge();
+    }
 }
 
 async function sendReadStatToServer(message_id){
@@ -317,10 +393,10 @@ async function sendReadStatToServer(message_id){
         const data = await response.json();
 
         if (!data.success) {
-            console.error('failed to inform server');
+            console.error('[sendReadStatToServer] Server returned success=false');
         }
     } catch (error) {
-        console.error('failed to inform server');
+        console.error('[sendReadStatToServer] Error:', error);
     }
 }
 
@@ -330,69 +406,168 @@ async function sendReadStatToServer(message_id){
 //#region Model
 function selectModel(btn){
     const value = JSON.parse(btn.getAttribute('value'));
+    const selectedModel = value;
+    
+    // Check if the selected model is incompatible with current filters (e.g., web_search)
+    // If user clicks on a filtered-out model, automatically remove conflicting filters
+    if (btn.classList.contains('filtered-out')) {
+        const inputContainer = btn.closest('.input-container');
+        const input = inputContainer ? inputContainer.querySelector('.input') : null;
+        
+        if (input) {
+            // Check which filters are active and incompatible
+            const websearchBtn = inputContainer.querySelector('#websearch-btn');
+            
+            // If web_search is active but model doesn't support it, deactivate it
+            if (websearchBtn && websearchBtn.classList.contains('active') && !selectedModel.tools?.web_search) {
+                websearchBtn.classList.remove('active', 'active-set');
+                removeInputFilter(input.id, 'web_search');
+            }
+            
+            // Add more filter checks here if needed (vision, file_upload, etc.)
+        }
+    }
+    
     setModel(value.id);
+    
+    // Store model selection per chat when forceDefaultModel is enabled
+    if (typeof forceDefaultModel !== 'undefined' && forceDefaultModel === true && currentChatId) {
+        const chatModelKey = `chat_${currentChatId}_model`;
+        localStorage.setItem(chatModelKey, value.id);
+    }
 }
-function setModel(modelID = null){
+
+function setModel(modelID = null, chatId = null){
+    // Check if modelsList is empty or undefined
+    if(!modelsList || modelsList.length === 0){
+        console.error('ModelsList is empty or undefined. No models available.');
+        activeModel = null;
+        
+        // Show user-friendly warning
+        const modelLabel = document.querySelectorAll('.model-selector-label');
+        modelLabel.forEach(label => {
+            label.innerHTML = 'Kein Modell verfügbar';
+            label.style.color = '#ff6b6b';
+        });
+        return;
+    }
+    
     let model;
     if(!modelID){
-        if(localStorage.getItem("definedModel")){
-            model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
+        // Determine model selection based on forceDefaultModel setting
+        if (typeof forceDefaultModel !== 'undefined' && forceDefaultModel === true) {
+            // Force default model mode: use chat-specific or default model
+            if (chatId) {
+                const chatModelKey = `chat_${chatId}_model`;
+                const chatModel = localStorage.getItem(chatModelKey);
+                if (chatModel) {
+                    model = modelsList.find(m => m.id === chatModel);
+                }
+            }
+            // If no chat-specific model, use default model
+            if (!model) {
+                model = modelsList.find(m => m.id === defaultModels?.default_model);
+            }
+        } else {
+            // Legacy behavior: use globally defined model
+            if(localStorage.getItem("definedModel")){
+                model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
+            }
+            // if there is no defined model or the defined model is outdated or corrupted
+            if(!model){
+                model = modelsList.find(m => m.id === defaultModels?.default_model);
+            }
         }
-        // if there is no defined model
-        // or the defined model is outdated or cruppted
-        if(!model){
-            model = modelsList.find(m => m.id === defaultModels.default_model);
+        
+        // If still no model found, use the first available model
+        if(!model && modelsList.length > 0){
+            model = modelsList[0];
+            console.warn('No default model configured. Using first available model:', model.id);
         }
     }
     else{
         model = modelsList.find(m => m.id === modelID);
     }
+    
+    // Check if model exists, if not, return early and show error
+    if(!model){
+        console.error('No valid model found. ModelsList:', modelsList, 'DefaultModels:', defaultModels);
+        activeModel = null;
+        
+        // Show user-friendly warning
+        const modelLabel = document.querySelectorAll('.model-selector-label');
+        modelLabel.forEach(label => {
+            label.innerHTML = 'Kein Modell verfügbar';
+            label.style.color = '#ff6b6b';
+        });
+        return;
+    }
+    
     activeModel = model;
-    localStorage.setItem("definedModel", activeModel.id);
+    
+    // Update localStorage based on forceDefaultModel setting
+    if (typeof forceDefaultModel !== 'undefined' && forceDefaultModel === true) {
+        // Store per-chat model selection
+        if (chatId) {
+            const chatModelKey = `chat_${chatId}_model`;
+            localStorage.setItem(chatModelKey, activeModel.id);
+        }
+    } else {
+        // Legacy behavior: store globally
+        localStorage.setItem("definedModel", activeModel.id);
+    }
 
     //UI UPDATE...
-    const selectors = document.querySelectorAll('.model-selector');
-    selectors.forEach(selector => {
-        //if this is our target model selector
-        if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
+    // Only update UI if activeModel is valid
+    if(activeModel){
+        const selectors = document.querySelectorAll('.model-selector');
+        selectors.forEach(selector => {
+            //if this is our target model selector
+            if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
+                selector.classList.add('active');
 
-            const modelObject = modelsList.find(m => m.id === activeModel.id);
-            selector.classList.add('active');
+                const labels = document.querySelectorAll('.model-selector-label');
 
-            if(modelObject.tools.web_search && modelObject.tools.web_search === true){
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.add('active');
-                })
+                labels.forEach(label => {
+                    const inputContainer = label.closest('.input-container');
+                    const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
+
+                    if (websearchBtn) {
+                        // Check if the model supports web_search tool
+                        // This supports both file-based and DB-based configs
+                        const supportsWebSearch = activeModel.tools?.web_search === true;
+                        const input = inputContainer.querySelector('.input');
+                        
+                        if (supportsWebSearch) {
+                            // Model supports web search
+                            // Only auto-enable if configured AND not already active
+                            if (typeof webSearchAutoEnable !== 'undefined' && webSearchAutoEnable === true) {
+                                if (!websearchBtn.classList.contains('active')) {
+                                    websearchBtn.classList.add('active', 'active-set');
+                                    if (input) {
+                                        addInputFilter(input.id, 'web_search');
+                                    }
+                                }
+                            }
+                            // If auto-enable is false, keep current state (don't change anything)
+                        } else {
+                            // Model doesn't support web search - always deactivate it
+                            if (websearchBtn.classList.contains('active')) {
+                                websearchBtn.classList.remove('active', 'active-set');
+                                if (input) {
+                                    removeInputFilter(input.id, 'web_search');
+                                }
+                            }
+                        }
+                    }
+                    label.innerHTML = activeModel.label;
+                });
             }
             else{
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                })
+                selector.classList.remove('active');
             }
-
-            const labels = document.querySelectorAll('.model-selector-label');
-            labels.forEach(label => {
-                const inputContainer = label.closest('.input-container');
-                const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
-
-                if (websearchBtn) {
-                    // Check if the model supports web_search tool (not if it's the default web search model)
-                    // This supports both file-based and DB-based configs
-                    const supportsWebSearch = activeModel.tools?.web_search === true;
-
-                    if (supportsWebSearch) {
-                        websearchBtn.classList.add('active');
-                    } else {
-                        websearchBtn.classList.remove('active');
-                    }
-                }
-                label.innerHTML = activeModel.label;
-            });
-        }
-        else{
-            selector.classList.remove('active');
-        }
-    });
+        });
+    }
 
 }
 
@@ -402,14 +577,11 @@ function selectWebSearchModel(button) {
     const input = button.parentElement.closest('.input-container').querySelector('.input');
 
     if (isActive) {
-        button.classList.remove('active');
+        button.classList.remove('active', 'active-set');
         removeInputFilter(input.id, 'web_search');
 
     } else {
-        const filterActive = addInputFilter(input.id, 'web_search');
-        if(filterActive){
-            button.classList.add('active');
-        }
+        button.classList.add('active', 'active-set');
         addInputFilter(input.id, 'web_search');
     }
 }

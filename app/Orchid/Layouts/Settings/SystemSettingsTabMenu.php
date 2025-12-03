@@ -27,6 +27,10 @@ class SystemSettingsTabMenu extends TabMenu
                 ->route('platform.settings.api')
                 ->active('platform.settings.api*'),
 
+            Menu::make('Performance')
+                ->route('platform.settings.performance')
+                ->active('platform.settings.performance*'),
+
             Menu::make('Mail Configuration')
                 ->route('platform.settings.mail-configuration')
                 ->active('platform.settings.mail-configuration*'),

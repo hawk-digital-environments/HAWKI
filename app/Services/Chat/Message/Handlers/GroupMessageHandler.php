@@ -18,6 +18,10 @@ class GroupMessageHandler extends BaseMessageHandler{
     {
         $member = $data['member'];
         $nextMessageId = $this->assignID($room, $data['threadId']);
+        
+        // Store entire content as JSON (including auxiliaries if present)
+        $contentToStore = json_encode($data['content']);
+        
         $message = Message::create([
             'room_id' => $room->id,
             'member_id' => $member->id,
@@ -26,7 +30,7 @@ class GroupMessageHandler extends BaseMessageHandler{
             'model' => $data['model'] ?? null,
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
-            'content' => $data['content']['text']['ciphertext'],
+            'content' => $contentToStore,
         ]);
         $message->addReadSignature($member);
 
@@ -52,10 +56,13 @@ class GroupMessageHandler extends BaseMessageHandler{
             throw new AuthorizationException();
         }
 
+        // Store entire content as JSON (including auxiliaries if present)
+        $contentToStore = json_encode($data['content']);
+
         $message->update([
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
-            'content' => $data['content']['text']['ciphertext'],
+            'content' => $contentToStore,
             'model'=> $data['model'] ?? null,
         ]);
 

@@ -3,12 +3,18 @@
 namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppSetting;
+use App\Models\User;
+use App\Notifications\MaintenanceModeEnabled;
 use App\Orchid\Layouts\Settings\SystemSettingsTabMenu;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use App\Services\SettingsService;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
+use Orchid\Support\Facades\Toast;
 
 class SystemSettingsScreen extends Screen
 {
@@ -69,6 +75,13 @@ class SystemSettingsScreen extends Screen
             Button::make('Save')
                 ->icon('bs.check-circle')
                 ->method('saveSettings'),
+
+            Button::make($this->isMaintenanceModeActive() ? 'Unlock System' : 'Lock System')
+                ->icon($this->isMaintenanceModeActive() ? 'bs.lock' : 'bs.unlock')
+                ->confirm($this->isMaintenanceModeActive()
+                    ? 'This will disable the maintenance mode. The website will be available to all users.'
+                    : 'This will put the application into maintenance mode. Only users with bypass access will be able to access the site.')
+                ->method('toggleMaintenanceMode'),
         ];
     }
 
@@ -164,6 +177,73 @@ class SystemSettingsScreen extends Screen
         // }
 
         return $layouts;
+    }
+
+    /**
+     * Check if the application is in maintenance mode
+     */
+    private function isMaintenanceModeActive(): bool
+    {
+        return app()->isDownForMaintenance();
+    }
+
+    /**
+     * Toggle maintenance mode
+     *
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function toggleMaintenanceMode()
+    {
+        if ($this->isMaintenanceModeActive()) {
+            Artisan::call('up');
+            Toast::success('Maintenance mode has been disabled. Site is now accessible to all users.');
+            
+            // Remove notifications for all admins
+            $admins = User::whereHas('roles', function ($query) {
+                $query->where('slug', 'admin')
+                    ->orWhere('slug', 'super-admin');
+            })->get();
+
+            foreach ($admins as $admin) {
+                $admin->notifications()
+                    ->where('type', MaintenanceModeEnabled::class)
+                    ->delete();
+            }
+        } else {
+            // Generate a secret bypass path
+            $secret = 'admin-bypass-'.md5(now());
+
+            Artisan::call('down', [
+                '--refresh' => '15',  // Refresh the page every 15 seconds
+                '--secret' => $secret,  // Secret URL path to bypass maintenance mode
+                '--with-secret' => true,  // Enable secret bypass
+            ]);
+
+            // Generate the full URL for the admin bypass
+            $bypassUrl = url($secret);
+
+            // Send notification to all admin users
+            $admins = User::whereHas('roles', function ($query) {
+                $query->where('slug', 'admin')
+                    ->orWhere('slug', 'super-admin');
+            })->get();
+
+            foreach ($admins as $admin) {
+                $admin->notify(new MaintenanceModeEnabled($bypassUrl, $secret));
+            }
+
+            Toast::info('Maintenance mode enabled!')
+                ->message('Admin panel (/admin/*) remains accessible. Check your notifications (🔔) for the bypass URL.')
+                ->persistent();
+
+            // Log the information
+            Log::info('Maintenance mode enabled', [
+                'bypass_url' => $bypassUrl,
+                'secret' => $secret,
+                'enabled_by' => Auth::user()->email,
+                'admins_notified' => $admins->count(),
+            ]);
+        }
     }
 
     /**

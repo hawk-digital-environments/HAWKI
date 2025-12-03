@@ -24,6 +24,11 @@ class InvitationController extends Controller
     /// Send the email with the signed URL to external invitee
     public function sendExternInvitationEmail(Request $request) {
 
+        // Check if email notifications are enabled
+        if (!config('hawki.send_groupchat_invitation_mails')) {
+            return response()->json(['message' => 'Email notifications are disabled']);
+        }
+
         // Validate the request
         $validatedData = $request->validate([
             'username' => 'required|string|max:255',
@@ -36,7 +41,33 @@ class InvitationController extends Controller
 
         // Check if the user exists
         if (!$user) {
-            return response()->json(['error' => 'user not found']);
+            return response()->json(['error' => 'user not found'], 404);
+        }
+
+        // Get room information
+        $room = Room::where('slug', $validatedData['slug'])->first();
+        if (!$room) {
+            return response()->json(['error' => 'room not found'], 404);
+        }
+
+        // Get inviter (current authenticated user)
+        $inviter = Auth::user();
+
+        // Extract plain text description if encrypted
+        $roomDescription = null;
+        if ($room->room_description) {
+            try {
+                $descriptionData = json_decode($room->room_description, true);
+                // If it's encrypted JSON, we can't decrypt it for email
+                // So we'll skip the description in the email
+                if (is_array($descriptionData) && isset($descriptionData['ciphertext'])) {
+                    $roomDescription = null; // Encrypted, can't show in email
+                } else {
+                    $roomDescription = $room->room_description; // Plain text
+                }
+            } catch (\Exception $e) {
+                $roomDescription = null;
+            }
         }
 
         // Generate a signed URL with the hash
@@ -45,17 +76,18 @@ class InvitationController extends Controller
             'slug' => $validatedData['slug']
         ], now()->addHours(48));
 
-        // Prepare email data
+        // Prepare email data with room and inviter information
         $emailData = [
             'user' => $user,
-            'title' => 'A Generic Email',
-            'message' => 'YOU HAVE BEEN INVITED A THE NEW GROUP...',
-            'url' => $url,  // Include the generated URL if needed in the email
+            'inviter_name' => $inviter->name,
+            'room_name' => $room->room_name,
+            'room_description' => $roomDescription,
+            'url' => $url,
         ];
 
         // Specify the view template and subject line
         $viewTemplate = 'emails.invitation';
-        $subjectLine = 'Invitation';
+        $subjectLine = 'Invitation to ' . $room->room_name;
 
         // Dispatch the email job
         SendEmailJob::dispatch($emailData, $user->email, $subjectLine, $viewTemplate)
@@ -67,7 +99,8 @@ class InvitationController extends Controller
 
     /// store invitation on the database
     public function storeInvitations(Request $request, $slug) {
-        $roomId = Room::where('slug', $slug)->firstOrFail()->id;
+        $room = Room::where('slug', $slug)->firstOrFail();
+        $roomId = $room->id;
         $invitations = $request->input('invitations');
 
         foreach($invitations as $inv) {
@@ -95,7 +128,63 @@ class InvitationController extends Controller
                     'invitation' => $inv['encryptedRoomKey']
                 ]);
             }
+            
+            // Broadcast invitation event to the invited user
+            $eventData = [
+                'type' => 'invitation',
+                'room' => [
+                    'slug' => $room->slug,
+                    'room_name' => $room->room_name,
+                    'room_icon' => $room->room_icon,
+                    'invited_by' => Auth::user()->name,  // Current user is the inviter
+                ]
+            ];
+            
+            event(new \App\Events\RoomInvitationEvent($eventData, $inv['username']));
         }
+    }
+
+    public function convertTempHashInvitation(Request $request) {
+        $validated = $request->validate([
+            'room_slug' => 'required|string',
+            'encrypted_room_key' => 'required|string',
+            'role' => 'required|string|in:admin,editor,viewer'
+        ]);
+
+        $room = Room::where('slug', $validated['room_slug'])->firstOrFail();
+        $user = Auth::user();
+
+        // Check if user is already a member
+        if ($room->isMember($user->id)) {
+            // Delete old temp-hash invitation
+            $oldInvitation = Invitation::where('room_id', $room->id)
+                                        ->where('username', $user->username)
+                                        ->first();
+            
+            if ($oldInvitation) {
+                $oldInvitation->delete();
+            }
+
+            // Create new public-key invitation
+            Invitation::create([
+                'room_id' => $room->id,
+                'username' => $user->username,
+                'role' => $validated['role'],
+                'iv' => '0',  // Public key encryption marker
+                'tag' => '0',
+                'invitation' => $validated['encrypted_room_key']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invitation converted successfully'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'User is not a member of this room'
+        ], 400);
     }
 
 
@@ -212,4 +301,49 @@ class InvitationController extends Controller
 
     }
 
+    /// Delete invitation
+    public function deleteInvitation(Request $request, $slug){
+        $room = Room::where('slug', $slug)->firstOrFail();
+        $currentUser = Auth::user();
+
+        // Check if username parameter is provided
+        if ($request->has('username')) {
+            // Admin/Moderator deleting someone else's invitation
+            $validated = $request->validate([
+                'username' => 'required|string|max:16',
+            ]);
+
+            // Check if user has permission (must be member of the room)
+            if(!$room->isMember($currentUser->id)){
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $targetUsername = $validated['username'];
+        } else {
+            // User declining their own invitation
+            $targetUsername = $currentUser->username;
+        }
+
+        $invitation = Invitation::where('room_id', $room->id)
+                                ->where('username', $targetUsername)
+                                ->first();
+
+        if (!$invitation) {
+            return response()->json(['error' => 'Invitation not found'], 404);
+        }
+
+        // If declining own invitation, verify it belongs to current user
+        if (!$request->has('username') && $invitation->username !== $currentUser->username) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $invitation->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation deleted successfully'
+        ]);
+    }
+
 }
+

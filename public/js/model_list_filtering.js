@@ -68,19 +68,24 @@ function filterModels(fieldId) {
 
 // === Refresh UI: Enable/Disable model selectors ===
 function refreshModelList(fieldId) {
-    const success = selectFallbackModel(fieldId);
-    if(success) {
-        const filteredModels = filterModels(fieldId);
-        const allowedIds = new Set(filteredModels.map(m => m.id));
-        const inputCont = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
-        inputCont.querySelectorAll('.model-selector').forEach(button => {
-            if(button.dataset.status ==='offline'){
-                return;
-            }
-            button.disabled = !allowedIds.has(button.dataset.modelId);
-        });
-    }
-    return success
+    const filteredModels = filterModels(fieldId);
+    const allowedIds = new Set(filteredModels.map(m => m.id));
+    const inputCont = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
+    inputCont.querySelectorAll('.model-selector').forEach(button => {
+        if(button.dataset.status ==='offline'){
+            return;
+        }
+        // Don't disable buttons - just add/remove 'filtered-out' class for visual feedback
+        // Buttons remain clickable and will auto-disable conflicting filters
+        if (!allowedIds.has(button.dataset.modelId)) {
+            button.classList.add('filtered-out');
+        } else {
+            button.classList.remove('filtered-out');
+        }
+    });
+
+    return selectFallbackModel(fieldId);
+
 }
 
 // === Add Input Filter ===
@@ -122,22 +127,18 @@ function selectFallbackModel(fieldId) {
     for (const { filter, fallbackKey } of priorityList) {
         // If the filter is present or we're at default, consider this fallback
         if (!filter || filters.includes(filter)) {
-            if(availableModelIds.has(activeModel.id)){
+            // Check if active model already matches
+            if(activeModel && availableModelIds.has(activeModel.id)){
                 return true;
             }
-
-            let fallbackModelId = defaultModels[fallbackKey];
-
-            if(!fallbackModelId){
-                // find a fallback to fallback model if the fallback model is empty but a capable model exists.
-                fallbackModelId = modelsList.find(m => m.tools.web_search === true).id
-            }
-
+            
+            // Try configured default model first
+            const fallbackModelId = defaultModels[fallbackKey];
             if (availableModelIds.has(fallbackModelId)) {
                 setModel(fallbackModelId);
                 return true;
             }
-
+            
             // If no default configured (e.g., DB-based mode without explicit default),
             // use first available model that matches the filter
             if (filter && filteredModels.length > 0) {

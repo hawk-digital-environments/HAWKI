@@ -14,7 +14,6 @@
  * Generate a cryptographically secure random passkey for system-generated method
  * 
  * System-generated passkeys always use 256 bits of cryptographically secure randomness.
- * This replaces the old passkeySecret system which had security vulnerabilities.
  * 
  * @returns {Promise<string>} - Generated passkey as hex string (64 characters)
  */
@@ -154,7 +153,7 @@ async function verifyPasskeyWithKeychain(passkey) {
 }
 
 /**
- * Verify a generated passkey during OTP authentication flow
+ * Verify a generated passkey
  * 
  * @returns {Promise<void>}
  */
@@ -205,7 +204,7 @@ async function verifyGeneratedPassKey(){
             }
         } else {
             // Verification failed - fallback only in handshake context
-            console.error('Automatic passkey verification failed - falling back to manual entry');
+            //console.error('Automatic passkey verification failed - falling back to manual entry');
             
             // Show appropriate slide based on context
             if (typeof switchSlide === 'function') {

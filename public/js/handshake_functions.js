@@ -64,12 +64,18 @@ async function checkPasskey(){
 
     //Show Repeat Passkey
     if(repeatWrapper.style.display === 'none'){
-        repeatWrapper.style.display = 'flex';
-        repeatWrapper.querySelector('input').focus();
+        repeatWrapper.style.display = 'block';
+        const repeatInput = document.getElementById('passkey-input-repeat');
+        if (repeatInput) repeatInput.focus();
         return;
     }
-    const repeatField = repeatWrapper.querySelector('.passkey-input')
-    const repeatedKey = String(repeatField.dataset.realValue);
+    const repeatField = document.getElementById('passkey-input-repeat');
+    if (!repeatField) {
+        console.error('Repeat passkey input field not found');
+        msg.innerText = "Error: Repeat passkey field not found";
+        return;
+    }
+    const repeatedKey = String(repeatField.dataset.realValue || '');
 
 
     //if repeat passkey is empty
@@ -314,7 +320,8 @@ async function verifyEnteredPassKey(provider){
 
     const slide = provider.closest(".slide");
     const inputField = slide.querySelector("#passkey-input");
-    const enteredKey = String(inputField.value.trim());
+    // Get the real value from dataset, not the masked value
+    const enteredKey = String(inputField.dataset.realValue || inputField.value).trim();
     const errorMessage = slide.querySelector("#alert-message");
 
     if (!enteredKey) {
@@ -399,7 +406,8 @@ function isValidBackupKeyFormat(content) {
 
 async function extractPasskey(){
     const msg = document.querySelector('#backup-alert-message');
-    const backupHash = document.querySelector('#backup-hash-input').value;
+    // Get the real value from dataset, not the masked value
+    const backupHash = getPasskeyRealValue('backup-hash-input');
     
     if(!backupHash){
         msg.innerText = 'Enter backupHash or upload your backup file.';
@@ -430,7 +438,7 @@ async function extractPasskey(){
 
         if(verifyPasskey(passkey)){
             setPassKey(passkey);
-            switchSlide(4);
+            switchSlide(3);
             document.querySelector('#passkey-field').innerText = passkey;
             setTimeout(()=>{
                 document.querySelector('.slide-back-btn').remove();
@@ -562,7 +570,8 @@ function uploadTextFileSystem() {
 
 async function extractPasskeySystem(){
     const msg = document.querySelector('#backup-alert-message-system');
-    const backupHash = document.querySelector('#backup-hash-input-system').value;
+    // Get the real value from dataset, not the masked value
+    const backupHash = getPasskeyRealValue('backup-hash-input-system');
     if(!backupHash){
         msg.innerText = 'Enter backupHash or upload your backup file.';
         return;

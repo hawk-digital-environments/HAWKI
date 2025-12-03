@@ -65,7 +65,7 @@ readonly class GoogleRequestConverter
         $payload['generationConfig'] = $rawPayload['generationConfig'] ?? [
             // 'stopSequences' => ["Title"],
             'temperature' => 1.0,
-            'maxOutputTokens' => 800,
+            'maxOutputTokens' => 8192, // Increased from 800 to support longer responses
             'topP' => 0.8,
             'topK' => 10
         ];

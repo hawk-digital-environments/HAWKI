@@ -20,11 +20,18 @@ function initAnnouncements(announcements){
 function queueAnchoredAnnouncements(targetAnchor){
     // Access the global announcementList declared in home.blade.php
     if (typeof announcementList !== 'undefined' && Array.isArray(announcementList)) {
+        console.log('queueAnchoredAnnouncements called with:', targetAnchor);
+        console.log('Available announcements:', announcementList);
         anchored_queue = announcementList.filter(a => a.anchor === targetAnchor);
+        console.log('Filtered anchored_queue:', anchored_queue);
         if (anchored_queue.length > 0) {
             currentAnchoredAnnouncementIndex = 0;
             renderNextAnnouncementInQueue(anchored_queue);
+        } else {
+            console.log('No announcements found for anchor:', targetAnchor);
         }
+    } else {
+        console.log('announcementList is not defined or not an array');
     }
 }
 

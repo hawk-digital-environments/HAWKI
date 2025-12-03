@@ -3,17 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HAWKI IS UPDATING!</title>
+    <title>{{ config('app.name') }} - UPDATING</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
 </head>
 <body>
+    {{-- 
+    ⚠️ DEPRECATED: This file is no longer actively used.
+    The maintenance page functionality has been moved to: resources/views/errors/503.blade.php
+    
+    Use standard Laravel maintenance mode instead:
+    php artisan down
+    php artisan up
+    --}}
+    
     <div class="container">
         <div class="content">
             <img id="HAWK_logo" src="{{ asset('img/logo.svg')}}" alt="">
-            <h1>Welcome to HAWKI</h1>
+            <h1>Welcome to {{ config('app.name') }}</h1>
             <img src="https://i.pinimg.com/originals/ed/77/47/ed7747ca797333eb6447917b803af306.gif" alt="">
-            <h2>We are updating HAWKI right now!<br>Please try again later :)</h2>
+            <h2>We are updating {{ config('app.name') }} right now!<br>Please try again later :)</h2>
         </div>
     </div>
 

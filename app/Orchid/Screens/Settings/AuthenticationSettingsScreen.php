@@ -110,7 +110,7 @@ class AuthenticationSettingsScreen extends Screen
                 $shouldShowSetting = true;
 
                 // Hide specific settings when passkey_method is not 'system'
-                if (in_array($setting->key, ['auth_passkey_secret', 'auth_passkey_otp', 'auth_passkey_otp_timeout'])) {
+                if (in_array($setting->key, ['auth_passkey_otp', 'auth_passkey_otp_timeout'])) {
                     $passkeyMethod = config('auth.passkey_method', '');
                     $shouldShowSetting = (strtolower($passkeyMethod) === 'system');
                 }
@@ -132,7 +132,7 @@ class AuthenticationSettingsScreen extends Screen
                 Layout::rows($otherAuthSettings),
             ])
                 ->title('Local User Authentication System')
-                ->description('Settings for local user management and authentication flows.');
+                ->description('Local authentication can be used in addition to an external auth method for test users or external guest users.');
         }
 
         // Passkey-Einstellungen als eigenes Layout
@@ -141,7 +141,7 @@ class AuthenticationSettingsScreen extends Screen
                 Layout::rows($passkeySettings),
             ])
                 ->title('Passkey Settings')
-                ->description('Configure passkey authentication for enhanced security.');
+                ->description('Configure passkey authentication for enhanced security. This can be changed later, but could prove inconvenient for your users.');
         }
 
         // Authentifizierungsmethode in separatem Layout, falls vorhanden

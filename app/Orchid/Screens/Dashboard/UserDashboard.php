@@ -39,7 +39,7 @@ class UserDashboard extends Screen
 
         // Wenn die benötigten Tabellen nicht existieren oder leer sind, zeige Platzhalter
         if (! $usersExists || ! $hasUsers || ! $usageRecordsExists || ! $hasUsageRecords) {
-            Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
+            //Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
 
             return $this->getPlaceholderData();
         }
@@ -63,7 +63,6 @@ class UserDashboard extends Screen
         for ($hour = 0; $hour < 24; $hour++) {
             $hourLabels[] = sprintf('%02d:00', $hour);
         }
-        Log::info('BarChart Hour Labels: '.json_encode($hourLabels));
 
         // User Statistics
         $totalUsers = DB::table('users')->count();
@@ -97,7 +96,6 @@ class UserDashboard extends Screen
                 $activeUsersPerDay[$index] = $data->activeUsers;
             }
         }
-        Log::info('Active Users per Day Array: '.json_encode($activeUsersPerDay));
 
         // Neue Log-Ausgabe: Daten für den aktuellen Tag
         $activeUsersToday = $dailyData->firstWhere('day', (int) $currentDay);
@@ -224,7 +222,6 @@ class UserDashboard extends Screen
                 'values' => $requestsPerHourArray,
             ],
         ];
-        Log::info('Users per Hour today: '.json_encode($usersPerHour));
 
         return [
             'dailyActiveUsers' => $dailyActiveUsers,

@@ -48,7 +48,7 @@
                 @endif
 
                 @if($webSearchAvailable)
-                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)">
+                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)" @if(!config('hawki.websearch')) style="display:none;" @endif>
                     <x-icon class="websearch-icon" name="world"/>
                     <div class="tooltip">
                         {{ $translation["WebSearch"] }}

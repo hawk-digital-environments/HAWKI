@@ -23,10 +23,6 @@ class CustomizationTabMenu extends TabMenu
                 ->route('platform.customization.systemtexts')
                 ->active('platform.customization.systemtexts*'),
 
-                Menu::make('Announcements')
-                ->route('platform.customization.announcements')
-                ->active('platform.customization.announcements*'),
-
             Menu::make('Mail Templates')
                 ->route('platform.customization.mailtemplates')
                 ->active('platform.customization.mailtemplates*'),

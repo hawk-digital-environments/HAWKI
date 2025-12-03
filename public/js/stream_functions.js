@@ -3,11 +3,18 @@ let abortCtrl = new AbortController();
 
 
 function buildRequestObject(msgAttributes, onData) {
+    // Check if activeModel is set
+    if(!activeModel){
+        console.error('No active model selected. Cannot build request.');
+        alert('Bitte wählen Sie ein Modell aus, bevor Sie eine Nachricht senden.');
+        return;
+    }
+    
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
     const isUpdate = msgAttributes['regenerationElement'] ? true : false;
     const msgID = msgAttributes['regenerationElement'] ? msgAttributes['regenerationElement'].id : null;
 
-    const stream = activeModel.tools.stream ? msgAttributes['stream'] : false;
+    const stream = activeModel.tools?.stream ? msgAttributes['stream'] : false;
 
     const requestObject = {
         broadcast: msgAttributes['broadcasting'],
@@ -35,7 +42,7 @@ function buildRequestObject(msgAttributes, onData) {
         if (!msgAttributes['broadcasting']) {
             if(stream){
                 if(response === 'AbortError'){
-                    onData('AbortError');
+                    onData?.('AbortError');
                 }
                 // pass stream callback (response) to processStream
                 processStream(response.body, onData);
@@ -43,11 +50,20 @@ function buildRequestObject(msgAttributes, onData) {
             else{
                 processResponse(response, onData);
             }
+        } else {
+            // For broadcasts (groupchat), call onData with done=true after successful POST
+            // Only call if onData callback is provided
+            if (onData) {
+                onData(null, true);
+            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        onData(null, true); // Call onData with done=true if there's an error
+        // Only call onData if callback is provided
+        if (onData) {
+            onData(null, true);
+        }
     });
 }
 
@@ -79,8 +95,7 @@ async function postData(data) {
         return response;
 
     } catch(error){
-        console.log('Error while posting data', data, 'resulted in', error);
-        throw new Error('An error occurred while fetching data.');
+        throw error; // Re-throw the error so calling functions can handle it
     }
 }
 
@@ -102,7 +117,6 @@ async function processStream(stream, onData) {
                 return;
             }
 
-
             // Append the latest chunk to the buffer
             buffer += textDecoder.decode(value, { stream: true });
             // Split the buffer string on newline characters
@@ -113,6 +127,37 @@ async function processStream(stream, onData) {
                 if (part.trim()) {
                     try {
                         const data = JSON.parse(part);
+                        
+                        // Only log response.created events
+                        if (data.content) {
+                            try {
+                                const content = JSON.parse(data.content);
+                                if (content.auxiliaries) {
+                                    const statusAux = content.auxiliaries.find(aux => aux.type === 'status');
+                                    if (statusAux && statusAux.content) {
+                                        const statusData = JSON.parse(statusAux.content);
+                                        if (statusData.message === 'Model is starting...') {
+                                            const frontendMicrotime = Date.now() / 1000;
+                                            
+                                            // Extract backend microtime from debug_timestamp auxiliary
+                                            let backendMicrotime = null;
+                                            let lag = null;
+                                            
+                                            const timestampAux = content.auxiliaries.find(aux => aux.type === 'debug_timestamp');
+                                            if (timestampAux && timestampAux.content) {
+                                                const timestampData = JSON.parse(timestampAux.content);
+                                                backendMicrotime = timestampData.backend_microtime;
+                                                lag = (frontendMicrotime - backendMicrotime).toFixed(3);
+                                            }
+                                            
+                                        }
+                                    }
+                                }
+                            } catch (e) {
+                                // Content is not JSON or doesn't have expected structure
+                            }
+                        }
+                        
                         //send back the data
                         if(data.isDone){
                             onData(data, true);
@@ -131,11 +176,19 @@ async function processStream(stream, onData) {
     }
     catch (error) {
         if (error.name === 'AbortError') {
-            console.log('Fetch aborted while reading response body stream.');
+            
+            // Send abort signal to onData callback WITHOUT message (Frontend derives label)
+            onData({ 
+                status: 'cancelled'
+            }, true);
         } else {
             console.error('Error:', error);
+            
+            // Send error signal to onData callback WITHOUT message (Frontend derives label)
+            onData({ 
+                status: 'error'
+            }, true);
         }
-        onData(null, true);
     }
 
 }
@@ -216,7 +269,7 @@ function createMsgObject(msg){
     if (role === 'assistant' && msg.dataset.rawContent) {
         try {
             const rawContent = JSON.parse(msg.dataset.rawContent);
-
+            
             msgObject = {
                 role: role,
                 content: {
@@ -224,7 +277,7 @@ function createMsgObject(msg){
                     attachments: attachments
                 }
             };
-
+            
             // Include auxiliaries if present
             if (rawContent.auxiliaries && Array.isArray(rawContent.auxiliaries) && rawContent.auxiliaries.length > 0) {
                 msgObject.content.auxiliaries = rawContent.auxiliaries;
@@ -292,7 +345,8 @@ async function requestPromptImprovement(sender, type) {
         },
         broadcast: false,
         threadIndex: '', // Empty string is acceptable
-        slug: '' // Empty string is acceptable
+        slug: '', // Empty string is acceptable
+        assistantKey: 'prompt_improver',
     };
 
     let result = '';
@@ -313,13 +367,11 @@ async function requestPromptImprovement(sender, type) {
 
             }
             if (done) {
-                // console.log('done');
             }
         };
         processStream(response.body, onData);
     })
     .catch((error) => {
-        // console.log(error);
     });
     // write a cool math formula
 
@@ -352,6 +404,7 @@ async function requestChatlogSummary(msgs = null) {
         broadcast: false,
         threadIndex: '',
         slug: '',
+        assistantKey: 'summarizer',
         payload:{
             model: systemModels.summarizer,
             stream: false,
@@ -369,14 +422,12 @@ async function requestChatlogSummary(msgs = null) {
             processResponse(response, onData);
         });
     } catch (error) {
-        // console.log(error);
         throw error; // re-throw the error if you want the caller to handle it
     }
 }
 
 
 function convertMsgObjToLog(messages){
-    // console.log(messages);
     let list = [];
     for(let i = 0; i < messages.length; i++){
         msg = messages[i];

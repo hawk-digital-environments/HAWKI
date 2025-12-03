@@ -70,7 +70,6 @@ class MailPlaceholderService
             '{{current_datetime}}' => 'Current date and time (Y-m-d H:i:s format)',
 
             // Template-specific placeholders
-            '{{otp_code}}' => 'One-time password/authentication code',
             '{{invitation_link}}' => 'Link to join a group chat or room',
             '{{room_name}}' => 'Name of the chat room or group',
             '{{inviter_name}}' => 'Name of the person sending the invitation',
@@ -91,9 +90,6 @@ class MailPlaceholderService
 
         // Template-specific test data
         $templateSpecificData = [
-            'otp' => [
-                '{{otp_code}}' => '123456',
-            ],
             'invitation' => [
                 '{{invitation_link}}' => Config::get('app.url').'/invitation/test-link',
                 '{{room_name}}' => 'Test Group Chat',

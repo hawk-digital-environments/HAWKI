@@ -18,19 +18,19 @@ return [
     */
 
     'anchors' => [
-        'firstupload' => [
+        'FileUpload' => [
             'name' => 'First File Upload',
             'description' => 'Triggered when user clicks file upload button for the first time',
         ],
-        'firstchat' => [
+        'FirstChat' => [
             'name' => 'First Chat Message',
             'description' => 'Triggered when user sends their first chat message',
         ],
-        'firstgroupchat' => [
+        'FirstGroupChat' => [
             'name' => 'First Group Chat',
             'description' => 'Triggered when user joins or creates their first group chat',
         ],
-        'firstmodel' => [
+        'FirstModel' => [
             'name' => 'First Model Selection',
             'description' => 'Triggered when user selects an AI model for the first time',
         ],

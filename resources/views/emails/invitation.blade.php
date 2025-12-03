@@ -27,7 +27,7 @@
 </p>
 
 <div style="text-align: center; margin: 32px 0;">
-    <a href="{{ $emailData['url'] }}" class="btn btn-primary">
+    <a href="{!! $emailData['url'] !!}" class="btn btn-primary">
         Join the Conversation
     </a>
 </div>

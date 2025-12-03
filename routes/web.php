@@ -9,7 +9,6 @@ use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
 use App\Http\Controllers\LocalRegistrationController;
 use App\Http\Controllers\LoginController;
-use App\Http\Controllers\OtpController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
@@ -44,6 +43,7 @@ Route::middleware('prevent_back')->group(function () {
             ->name('web.auth.shibboleth.login');
         Route::post('/req/login-oidc', [AuthenticationController::class, 'handleLogin']);
         Route::get('/req/login-oidc', [AuthenticationController::class, 'handleLogin']);
+        Route::post('/req/login-local', [AuthenticationController::class, 'handleLogin']);
     });
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
@@ -77,10 +77,6 @@ Route::middleware('prevent_back')->group(function () {
 
         Route::get('/handshake', [AuthenticationController::class, 'handshake']);
 
-        // OTP Routes for passkey alternative authentication
-        Route::post('/req/send-otp', [OtpController::class, 'sendOTP']);
-        Route::post('/req/verify-otp', [OtpController::class, 'verifyOTP']);
-
         // AI CONVERSATION ROUTES
         Route::middleware('chatAccess')->group(function () {
             Route::get('/chat', [HomeController::class, 'index']);
@@ -97,9 +93,11 @@ Route::middleware('prevent_back')->group(function () {
 
                 Route::get('/req/conv/{slug?}', [AiConvController::class, 'load']);
                 Route::post('/req/conv/createChat', [AiConvController::class, 'create']);
+                Route::post('/req/conv/loadMore', [AiConvController::class, 'loadMoreConversations']);
                 Route::post('/req/conv/sendMessage/{slug}', [AiConvController::class, 'sendMessage']);
                 Route::post('/req/conv/updateMessage/{slug}', [AiConvController::class, 'updateMessage']);
                 Route::post('/req/conv/updateInfo/{slug}', [AiConvController::class, 'update']);
+                Route::post('/req/conv/updateTitle/{slug}', [AiConvController::class, 'updateTitle']);
                 Route::delete('/req/conv/removeConv/{slug}', [AiConvController::class, 'delete']);
 
                 Route::delete('/req/conv/message/delete/{slug}', [AiConvController::class, 'deleteMessage']);
@@ -125,6 +123,7 @@ Route::middleware('prevent_back')->group(function () {
 
                 Route::delete('/req/room/leaveRoom/{slug}', [RoomController::class, 'leaveRoom']);
                 Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
+                Route::post('/req/room/markAllAsRead/{slug}', [RoomController::class, 'markAllAsRead']);
                 Route::get('/req/room/message/get/{slug}/{messageId}', [RoomController::class, 'retrieveMessage']);
                 Route::get('/req/room/attachment/getLink/{uuid}', [RoomController::class, 'getAttachmentUrl']);
                 Route::get('/files/{uuid}/group/{path}', [RoomController::class, 'downloadAttachment'])
@@ -143,6 +142,7 @@ Route::middleware('prevent_back')->group(function () {
                 Route::middleware('roomAdmin')->group(function () {
                     Route::post('/req/room/updateInfo/{slug}', [RoomController::class, 'update']);
                     Route::post('/req/room/uploadAvatar/{slug}', [RoomController::class, 'uploadAvatar']);
+                    Route::post('/req/room/removeAvatar/{slug}', [RoomController::class, 'removeAvatar']);
                     Route::delete('/req/room/removeRoom/{slug}', [RoomController::class, 'delete']);
                     Route::post('/req/room/addMember/{slug}', [RoomController::class, 'addMember']);
                     Route::delete('/req/room/removeMember/{slug}', [RoomController::class, 'kickMember']);
@@ -160,6 +160,8 @@ Route::middleware('prevent_back')->group(function () {
             Route::post('/req/inv/store-invitations/{slug}', [InvitationController::class, 'storeInvitations']);
             Route::post('/req/inv/sendExternInvitation', [InvitationController::class, 'sendExternInvitationEmail']);
             Route::post('/req/inv/roomInvitationAccept', [InvitationController::class, 'onAcceptInvitation']);
+            Route::post('/req/inv/convertTempHashInvitation', [InvitationController::class, 'convertTempHashInvitation']);
+            Route::delete('/req/inv/deleteInvitation/{slug}', [InvitationController::class, 'deleteInvitation']);
             Route::get('/req/inv/requestInvitation/{slug}', [InvitationController::class, 'getInvitationWithSlug']);
             Route::get('/req/inv/requestUserInvitations', [InvitationController::class, 'getUserInvitations']);
 
@@ -175,6 +177,7 @@ Route::middleware('prevent_back')->group(function () {
         Route::get('/profile', [HomeController::class, 'index']);
         Route::post('/req/profile/update', [ProfileController::class, 'update']);
         Route::post('/req/profile/uploadAvatar', [ProfileController::class, 'uploadAvatar']);
+        Route::post('/req/profile/removeAvatar', [ProfileController::class, 'removeAvatar']);
         Route::get('/req/profile/requestPasskeyBackup', [ProfileController::class, 'requestPasskeyBackup']);
 
         Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileReset']);
