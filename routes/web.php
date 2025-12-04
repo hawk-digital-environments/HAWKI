@@ -183,6 +183,9 @@ Route::middleware('prevent_back')->group(function () {
         Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileReset']);
         Route::post('/req/backupKeychain', [ProfileController::class, 'backupKeychain']);
 
+        // News
+        Route::get('/news', [HomeController::class, 'index']);
+
         // AI RELATED ROUTES
     });
     // NAVIGATION ROUTES

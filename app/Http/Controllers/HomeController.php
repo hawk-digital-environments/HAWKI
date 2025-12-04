@@ -170,6 +170,7 @@ class HomeController extends Controller
                             'webSearchAvailable',
                             'reasoningAvailable',
                             'announcements',
+                            'announcementService',
                             'converterActive',
                         ));
     }

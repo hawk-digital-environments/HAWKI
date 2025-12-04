@@ -6,7 +6,7 @@
     "Logout":"Ausloggen",
     "PromptImprovement":"Promptverbesserung",
     "Upload": "Hochladen",
-
+    "News": "Aktuelles",
 
     "Cnf_deleteConv": "Möchtest du dieses Gespräch wirklich löschen?",
     "Cnf_deleteFile": "Möchtest du diese Datei wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!",
@@ -75,7 +75,7 @@
     "Export": "Exportieren",
     "WebSearch":"Web Suche",
     "SearchSources":"Quellen:",
-    
+
     "Status_Processing": "Anfrage empfangen",
     "Status_Completed": "Verarbeitung abgeschlossen",
     "Status_Reasoning": "Kontext generieren...",
@@ -104,7 +104,7 @@
     "Today": "Heute",
     "Yesterday": "Gestern",
     "LastWeek": "Letzte Woche",
-    
+
     "January": "Januar",
     "February": "Februar",
     "March": "März",
@@ -157,6 +157,7 @@
     "HS-LoginCodeE4": "Fehler beim Generieren des Passkeys",
     "HS-LoginCodeE5": "Fehler bei der Log-in Code-Verifizierung",
     "HS-LoginCodeE6": "Log-in Code ist abgelaufen. Bitte fordern Sie einen neuen an.",
+
 
     "HS-LoginCodeM": "Log-in Code gesendet an",
 
@@ -269,6 +270,7 @@
     "Reg_SL7_H": "Zugang wird geprüft ⏰",
     "Reg_SL7_T": "Ihr Antrag wird überprüft. Sie erhalten eine E-Mail-Benachrichtigung über den Status Ihres Antrags.",
     "Reg_SL7_Contact": "Haben Sie Fragen? Kontaktieren Sie uns unter:",
+
 
     "change_password": "Passwort ändern",
     "change_password_text": "Bitte setzen Sie ein neues Passwort für Ihr Konto.",

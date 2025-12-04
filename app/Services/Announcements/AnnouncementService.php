@@ -50,12 +50,12 @@ class AnnouncementService
 
     public function getUserAnnouncements(){
         $announcements = Auth::user()->unreadAnnouncements();
-        
+
         // Filter to only include published announcements
         $announcements = $announcements->filter(function($announcement) {
             return $announcement->is_published == true;
         });
-        
+
         // Collect force announcements
         $forceAnnouncements = [];
         foreach ($announcements as $announcement) {
@@ -76,7 +76,9 @@ class AnnouncementService
         });
     }
 
-
+    public function getAllNews() {
+        return Announcement::query()->where('type', 'news')->orderByDesc('created_at')->paginate(2);
+    }
 
     /**
      * Find active announcements (system-wide)
@@ -116,7 +118,7 @@ class AnnouncementService
         if (!empty($announcement->target_roles)) {
             $userRoles = $user->getRoles()->pluck('slug')->toArray();
             $targetRoles = $announcement->target_roles;
-            
+
             // Check if user has at least one of the target roles
             return !empty(array_intersect($userRoles, $targetRoles));
         }
@@ -149,34 +151,34 @@ class AnnouncementService
     public function renderAnnouncement(Announcement $announcement): string
     {
         $lang = Session::get('language')['id'];
-        
+
         // Try to get translation from database first
         $translation = $announcement->getTranslation($lang);
-        
+
         if ($translation) {
             return $translation->content;
         }
-        
+
         // Fallback to file-based system for backwards compatibility
         $view = $announcement->view;
         $file = resource_path("announcements/$view/$lang.md");
-        
+
         if (file_exists($file)) {
             return file_get_contents($file);
         }
-        
+
         // If no translation found, try English as fallback
         $translation = $announcement->getTranslation('en_US');
         if ($translation) {
             return $translation->content;
         }
-        
+
         // Last resort: check English file
         $fallbackFile = resource_path("announcements/$view/en_US.md");
         if (file_exists($fallbackFile)) {
             return file_get_contents($fallbackFile);
         }
-        
+
         return "# Content not available\n\nNo translation found for this announcement.";
     }
 

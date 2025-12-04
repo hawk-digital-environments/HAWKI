@@ -7,6 +7,7 @@
     "Logout":"Logout",
     "PromptImprovement":"Prompt Improvement",
     "Upload": "Upload",
+    "News": "News",
 
     "Cnf_deleteConv":"Do you really want to delete this Conversation?",
     "Cnf_deleteFile": "Do you really want to delete this Conversation? This action is not reversible!",
@@ -75,7 +76,7 @@
     "Download": "download",
     "Export": "Export",
     "WebSearch":"Web search",
-    
+
     "Status_Processing": "Processing...",
     "Status_Completed": "Processing completed",
     "Status_Reasoning": "Model is generating context...",
@@ -100,11 +101,11 @@
     "ExtAccToken": "External Access Tokens",
     "General": "General",
     "History": "History",
-    
+
     "Today": "Today",
     "Yesterday": "Yesterday",
     "LastWeek": "Last Week",
-    
+
     "January": "January",
     "February": "February",
     "March": "March",
@@ -117,7 +118,7 @@
     "October": "October",
     "November": "November",
     "December": "December",
-    
+
     "HS_EnterBackupMsg": "Please enter your Recovery Code.",
     "HS_EnterPasskeyMsg": "Please enter your Datakey.",
     "HS_ForgottenPasskey": "Forgotten Datakey?",
@@ -157,6 +158,7 @@
     "HS-LoginCodeE4": "Error generating passkey",
     "HS-LoginCodeE5": "Error verifying log-in code",
     "HS-LoginCodeE6": "Log-in code has expired. Please request a new one.",
+
 
     "HS-LoginCodeM": "Log-in code sent to",
 
@@ -269,7 +271,11 @@
     "Reg_SL7_T": "Your request is being reviewed. You will receive an email notification about the status of your request.",
     "Reg_SL7_Contact": "Have questions? Contact us at:",
 
+
     "change_password": "Change Password",
     "change_password_text": "Please set a new password for your account.",
-    "new_password": "New Password"
+    "new_password": "New Password",
+
+    "News_NextPage": "Older News",
+    "News_PrevPage": "Newer News"
 }

@@ -253,3 +253,35 @@
     opacity: 0.4;
     cursor: not-allowed;
 }
+
+.news-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.news-container {
+    width: min(100%, 75em);
+}
+
+.announcement-card {
+    border-top: var(--border-stroke-thin);
+    padding: 0 .5rem;
+}
+
+.announcement-title {
+    margin-bottom: 0;
+    font-size: var(--font-xl);
+}
+
+.announcement-date {
+    margin-top: 0;
+    font-size: var(--font-sm);
+    font-weight: normal;
+    color: var(--text-faded-color);
+}
+
+.news-pagination {
+    display: flex;
+    justify-content: end;
+}

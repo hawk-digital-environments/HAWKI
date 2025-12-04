@@ -25,6 +25,14 @@
                 </button>
                 @endif
 
+                <button id="news-sb-btn" onclick="onSidebarButtonDown('news')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
+                    <x-icon name="news"/>
+
+                    <div class="label tooltip tt-abs-left">
+                        {{ $translation["News"] }}
+                    </div>
+                </button>
+
                 <button id="profile-sb-btn" onclick="onSidebarButtonDown('profile')" class="btn-sm sidebar-btn tooltip-parent">
                     <div class="profile-icon round-icon">
                         <span class="user-inits" style="display:none"></span>
