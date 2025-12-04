@@ -11,11 +11,10 @@
         @endphp
         @foreach($allAnnouncements as $announcement)
             <div class="announcement-card">
-                <h2 class="announcement-title">{{ $announcement->title }}</h2>
-                <h3 class="announcement-date">{{ $announcement->created_at->format('F j, Y') }}</h3>
                 <div class="announcement-content">
                     {!! \Illuminate\Mail\Markdown::parse($announcementService->renderAnnouncement($announcement)) !!}
                 </div>
+                <h3 class="announcement-date">{{ ($announcement->starts_at ?? $announcement->created_at)->format('F j, Y') }}</h3>
             </div>
         @endforeach
         <div class="news-pagination">
