@@ -89,6 +89,13 @@
     "Status_Cancelled": "Response cancelled by user",
     "Status_Error": "An error occurred",
     "Status_Incomplete": "Incomplete",
+    "Status_IsTyping": "is typing...",
+    "Status_AreTyping": "are typing...",
+    "Status_IsGenerating": "is generating...",
+    "Status_AreGenerating": "are generating...",
+    "Status_Typing": "typing",
+    "Status_Generating": "generating",
+    "Status_Others": "others",
     
     "ExtAccToken": "External Access Tokens",
     "General": "General",

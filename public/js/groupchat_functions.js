@@ -308,11 +308,11 @@ const connectWebSocket = (roomSlug) => {
 
                 if(receivedPacket.type === "status"){
                     if (receivedPacket.data.isGenerating) {
-                        // Display the typing indicator for the user
-                        addUserToTypingList(receivedPacket.data.model);
+                        // Add AI model to generating list (no timeout)
+                        addModelToGeneratingList(receivedPacket.data.model);
                     } else {
-                        // Hide the typing indicator for the user
-                        removeUserFromTypingList(receivedPacket.data.model);
+                        // Remove AI model from generating list
+                        removeModelFromGeneratingList(receivedPacket.data.model);
                     }
                 }
 
@@ -486,6 +486,7 @@ let typingTimer;
 const typingInterval = 1000; // 1 second
 let isTyping = false;
 let typingUsers = {}; // Object to track users who are typing
+let generatingModels = {}; // Object to track AI models that are generating (no timeout)
 const typingTimeout = 5000; // 5 seconds timeout
 
 
@@ -564,20 +565,59 @@ function removeUserFromTypingList(user) {
     updateTypingStatus();
 }
 
+function addModelToGeneratingList(model) {
+    // Add AI model without timeout - stays until explicitly removed
+    generatingModels[model] = true;
+    updateTypingStatus();
+}
+
+function removeModelFromGeneratingList(model) {
+    if (generatingModels[model]) {
+        delete generatingModels[model];
+    }
+    updateTypingStatus();
+}
+
 function updateTypingStatus() {
     const users = Object.keys(typingUsers);
+    const models = Object.keys(generatingModels);
+    const totalCount = users.length + models.length;
 
-    if (users.length === 0) {
+    if (totalCount === 0) {
         typingStatusDiv.textContent = '';
-        typingStatusDiv.style.display = 'none'; // Hide if no one is typing
-    } else if (users.length === 1) {
-        typingStatusDiv.textContent = `${users[0]} is typing...`;
+        typingStatusDiv.style.display = 'none'; // Hide if no one is typing/generating
+    } else if (totalCount === 1) {
+        // Single user or model
+        if (models.length === 1) {
+            const generatingText = translation?.Status_IsGenerating || 'is generating...';
+            typingStatusDiv.textContent = `${models[0]} ${generatingText}`;
+        } else {
+            const typingText = translation?.Status_IsTyping || 'is typing...';
+            typingStatusDiv.textContent = `${users[0]} ${typingText}`;
+        }
         typingStatusDiv.style.display = 'block';
-    } else if (users.length === 2) {
-        typingStatusDiv.textContent = `${users[0]} & ${users[1]} are typing...`;
+    } else if (totalCount === 2) {
+        // Two users/models
+        if (models.length === 2) {
+            const generatingText = translation?.Status_AreGenerating || 'are generating...';
+            typingStatusDiv.textContent = `${models[0]} & ${models[1]} ${generatingText}`;
+        } else if (models.length === 1 && users.length === 1) {
+            const typingText = translation?.Status_IsTyping || 'is typing';
+            const generatingText = translation?.Status_IsGenerating || 'is generating';
+            typingStatusDiv.textContent = `${users[0]} ${typingText} & ${models[0]} ${generatingText}...`;
+        } else {
+            const typingText = translation?.Status_AreTyping || 'are typing...';
+            typingStatusDiv.textContent = `${users[0]} & ${users[1]} ${typingText}`;
+        }
         typingStatusDiv.style.display = 'block';
     } else {
-        typingStatusDiv.textContent = `${users[0]} & others are typing...`;
+        // More than 2
+        const first = models.length > 0 ? models[0] : users[0];
+        const actionText = models.length > 0 
+            ? (translation?.Status_Generating || 'generating') 
+            : (translation?.Status_Typing || 'typing');
+        const othersText = translation?.Status_Others || 'others';
+        typingStatusDiv.textContent = `${first} & ${othersText} are ${actionText}...`;
         typingStatusDiv.style.display = 'block';
     }
 }
@@ -590,6 +630,12 @@ function updateTypingStatus() {
 
 function openRoomCreatorPanel(){
     activeRoom = null;
+    
+    // Reset typing and generating status
+    typingUsers = {};
+    generatingModels = {};
+    updateTypingStatus();
+    
     history.replaceState(null, '', `/groupchat`);
     switchDyMainContent('room-creation');
 
@@ -1397,6 +1443,11 @@ async function loadRoom(btn=null, slug=null, openControlPanel=false){
 
     clearChatlog();
     clearInput();
+    
+    // Reset typing and generating status when switching rooms
+    typingUsers = {};
+    generatingModels = {};
+    updateTypingStatus();
 
     activeRoom = roomData;
     activeRoom.currentUserRole = roomData.role; // Store current user's role

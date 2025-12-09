@@ -89,6 +89,13 @@
     "Status_Cancelled": "Antwort vom Benutzer abgebrochen",
     "Status_Error": "Ein Fehler ist aufgetreten",
     "Status_Incomplete": "Unvollständig",
+    "Status_IsTyping": "schreibt...",
+    "Status_AreTyping": "schreiben...",
+    "Status_IsGenerating": "generiert...",
+    "Status_AreGenerating": "generieren...",
+    "Status_Typing": "schreiben",
+    "Status_Generating": "generieren",
+    "Status_Others": "andere",
     
     "ExtAccToken": "Externe Zugangstoken",
     "General": "Allgemein",
