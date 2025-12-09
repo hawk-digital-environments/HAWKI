@@ -2,28 +2,40 @@
 
 namespace App\Services\Mail;
 
-
-use App\Jobs\SendEmailJob;
-
+use App\Mail\TemplateMail;
+use App\Models\MailTemplate;
+use Illuminate\Support\Facades\Mail;
 
 class MailService{
 
-
     public function sendWelcomeEmail($user)
     {
-        $emailData = [
-            'user' => $user,
-            'message' => 'Welcome to our platform!',
+        // Get the welcome template (prefer German, fallback to English)
+        $template = MailTemplate::where('type', 'welcome')
+            ->where('language', 'de')
+            ->first();
+
+        if (!$template) {
+            $template = MailTemplate::where('type', 'welcome')
+                ->where('language', 'en')
+                ->first();
+        }
+
+        if (!$template) {
+            \Log::error("Welcome template not found in database");
+            return false;
+        }
+
+        // Prepare template data
+        $templateData = [
+            '{{user_name}}' => $user->name,
         ];
 
-        $subjectLine = 'Welcome to Our App!';
-        $viewTemplate = 'emails.welcome';
+        // Create and queue the email using TemplateMail
+        $mail = TemplateMail::fromTemplate($template, $templateData, $user);
+        Mail::to($user->email)->queue($mail);
 
-        // Dispatch the email job to the queue
-        SendEmailJob::dispatch($emailData, $user->email, $subjectLine, $viewTemplate)
-                    ->onQueue('emails');
+        return true;
     }
-
-
 
 }
