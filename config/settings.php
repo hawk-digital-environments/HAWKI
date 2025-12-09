@@ -73,7 +73,7 @@ return [
         'connections.default.ldap_filter' => 'Filter required for authentication based on Username',
         'connections.default.attribute_map.username' => 'Username Key Name Override',
         'connections.default.attribute_map.email' => 'Email Key Name Override',
-        'connections.default.attribute_map.employeetype' => 'Employeetype Key Name Override',
+        'connections.default.attribute_map.employeeType' => 'EmployeeType Key Name Override',
         'connections.default.attribute_map.name' => 'Displayname Key Name Override',
         'connections.default.invert_name' => 'Invert name format for display',
     ],
