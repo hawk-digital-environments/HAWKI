@@ -401,6 +401,11 @@ async function handleAIMessage(messageData, slug){
     }else{
         updateMessageElement(element, messageData, true);
     }
+    
+    // Finalize AI status indicator with "processing completed" if message is complete
+    if (messageData.completion === 1 || messageData.completion === true) {
+        updateAiStatusIndicator(element, messageData.content.auxiliaries || [], true);
+    }
 
     // Observe unread messages
     if(element.dataset.read_stat === 'false'){
@@ -452,6 +457,11 @@ async function handleUpdateMessage(messageData, slug){
     }
 
     updateMessageElement(element, messageData, true);
+    
+    // Finalize AI status indicator with "processing completed" if message is complete and is from AI
+    if (messageData.message_role === 'assistant' && (messageData.completion === 1 || messageData.completion === true)) {
+        updateAiStatusIndicator(element, messageData.content.auxiliaries || [], true);
+    }
 
 
     // Observe unread messages

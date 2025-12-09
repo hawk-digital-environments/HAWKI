@@ -2,6 +2,9 @@
 function addMessageToChatlog(messageObj, isFromServer = false){
 
     const {messageText, groundingMetadata, auxiliaries} = deconstContent(messageObj.content.text);
+    
+    // Override auxiliaries with content.auxiliaries if present (for group chat)
+    const finalAuxiliaries = messageObj.content.auxiliaries || auxiliaries;
 
     /// CLONE
     // clone message element
@@ -166,12 +169,12 @@ function addMessageToChatlog(messageObj, isFromServer = false){
             }
         }
         
-        // Handle Anthropic citations
-        if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
-            addAnthropicCitations(messageElement, auxiliaries);
-            addResponsesCitations(messageElement, auxiliaries); // OpenAI Responses API citations
+        // Handle Anthropic citations and status indicator
+        if (finalAuxiliaries && Array.isArray(finalAuxiliaries) && finalAuxiliaries.length > 0) {
+            addAnthropicCitations(messageElement, finalAuxiliaries);
+            addResponsesCitations(messageElement, finalAuxiliaries); // OpenAI Responses API citations
             // Update AI status indicator (thinking, reasoning, web search)
-            updateAiStatusIndicator(messageElement, auxiliaries, false);
+            updateAiStatusIndicator(messageElement, finalAuxiliaries, false);
         }
     }
 

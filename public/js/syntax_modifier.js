@@ -1067,7 +1067,8 @@ function updateAiStatusIndicator(messageElement, auxiliaries, isDone = false) {
               output_index: entry.output_index ?? null,
               status: entry.status,
               type: entry.type,
-              label: entry.message,
+              // Derive label if message is null/empty, otherwise use message
+              label: entry.message || getStatusLabel(entry.status, entry.type, null, null),
               icon: getStatusIcon(entry.status, entry.type), // Pass type for correct icon
               timestamp: entry.timestamp
             };
