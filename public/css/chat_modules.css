@@ -922,6 +922,33 @@
     background-color: var(--highlight-color);
 }
 
+/* Room icon wrapper with notification badge */
+.selection-item .room-icon-wrapper {
+    position: relative;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.selection-item .notification-badge {
+    display: none;
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--background-main);
+    z-index: 1;
+}
+
+.selection-item .notification-badge.new-room {
+    background-color: #ef4444; /* Red - new room invitation */
+}
+
+.selection-item .notification-badge.new-message {
+    background-color: #10b981; /* Green - new message */
+}
+
 
 
 
