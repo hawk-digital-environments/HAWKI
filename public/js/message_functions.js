@@ -1,6 +1,9 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
 
+    // Remove empty room placeholder when first message is added
+    removeEmptyRoomPlaceholder();
+
     const {messageText, groundingMetadata, auxiliaries} = deconstContent(messageObj.content.text);
     
     // Override auxiliaries with content.auxiliaries if present (for group chat)

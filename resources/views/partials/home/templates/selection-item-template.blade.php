@@ -5,8 +5,8 @@
 		<div class="selection-item" slug="" onclick="loadRoom(this, null)">
 			<div class="room-icon-wrapper">
 				<div class="notification-badge" id="unread-msg-flag"></div>
-				<img class="room-icon" id="room-icon" alt="" style="display: none; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
-				<div class="room-initials" id="room-initials" style="display: none; width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; align-items: center; justify-content: center; background-color: var(--primary-color, #007bff); color: white; font-weight: bold; font-size: 0.85rem;"></div>
+				<img class="room-icon" id="room-icon" alt="">
+				<div class="room-initials" id="room-initials"></div>
 			</div>
 	@endif
 			<div class="label singleLineTextarea"></div>

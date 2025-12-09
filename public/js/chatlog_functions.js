@@ -65,6 +65,37 @@ function clearChatlog(){
     }
 }
 
+function showEmptyRoomPlaceholder(){
+    const trunk = document.querySelector('.trunk');
+    
+    // Remove any existing placeholder first
+    removeEmptyRoomPlaceholder();
+    
+    // Create placeholder element
+    const placeholder = document.createElement('div');
+    placeholder.id = 'empty-room-placeholder';
+    placeholder.className = 'empty-room-placeholder';
+    
+    // Get translation text
+    const placeholderText = translation?.EmptyRoomPlaceholder || 'No messages in this room yet. Send the first message!';
+    
+    placeholder.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; opacity: 0.5;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <p style="margin: 0; font-weight: 500;">${placeholderText}</p>
+    `;
+    
+    trunk.appendChild(placeholder);
+}
+
+function removeEmptyRoomPlaceholder(){
+    const placeholder = document.getElementById('empty-room-placeholder');
+    if (placeholder) {
+        placeholder.remove();
+    }
+}
+
 function clearInput(){
     const input = document.querySelector('.input');
     input.querySelector('.attachments-list').querySelectorAll('.attachment').forEach(atch => {
@@ -233,6 +264,15 @@ function findThreadWithID(threadId){
 
 //CREATE MESSAGE ELEMENT AND PUT IT IN THE CHATLOG
 function loadMessagesOnGUI(messages) {
+    // Check if there are no messages and show placeholder
+    if (!messages || messages.length === 0) {
+        showEmptyRoomPlaceholder();
+        return;
+    }
+    
+    // Remove placeholder if it exists (messages are present)
+    removeEmptyRoomPlaceholder();
+    
     // Sorting messages by ID
     messages.sort((a, b) => {
         return +a.message_id - +b.message_id;
