@@ -77,7 +77,10 @@ class AnnouncementService
     }
 
     public function getAllNews() {
-        return Announcement::query()->where(['type' => 'news', 'is_published' => true])->orderByDesc('starts_at')->paginate(10);
+        return Announcement::query()
+            ->where(['type' => 'news', 'is_published' => true])
+            ->orderByRaw('COALESCE(starts_at, created_at) DESC')
+            ->paginate(10);
     }
 
     /**
