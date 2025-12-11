@@ -51,6 +51,8 @@ use App\Orchid\Screens\Settings\PerformanceSettingsScreen;
 use App\Orchid\Screens\Settings\StorageSettingsScreen;
 use App\Orchid\Screens\Settings\SystemSettingsScreen;
 use App\Orchid\Screens\Settings\UsageDebugScreen;
+use App\Orchid\Screens\SystemSettings\BackupSettingsScreen;
+use App\Orchid\Screens\SystemSettings\ScheduledTasksScreen;
 use App\Orchid\Screens\Testing\MailTestingScreen;
 use App\Orchid\Screens\Testing\TestingSettingsScreen;
 use App\Orchid\Screens\User\UserEditScreen;
@@ -146,6 +148,26 @@ Route::screen('/settings/mail-configuration', MailConfigurationSettingsScreen::c
         return $trail
             ->parent('platform.index')
             ->push('Mail Configuration', route('platform.settings.mail-configuration'));
+    });
+
+Route::screen('/settings/backup', BackupSettingsScreen::class)
+    ->name('platform.systems.settings.backup')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Backup Configuration', route('platform.systems.settings.backup'));
+    });
+
+Route::get('/settings/backup/download/{filename}', [BackupSettingsScreen::class, 'downloadBackup'])
+    ->name('platform.systems.settings.backup.download');
+
+// Settings - Scheduled Tasks
+Route::screen('/settings/scheduled-tasks', ScheduledTasksScreen::class)
+    ->name('platform.systems.settings.scheduled-tasks')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Scheduled Tasks', route('platform.systems.settings.scheduled-tasks'));
     });
 
 // Settings - Log Management
