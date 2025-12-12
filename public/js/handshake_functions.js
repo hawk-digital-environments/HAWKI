@@ -438,6 +438,25 @@ async function extractPasskey(){
 
         if(verifyPasskey(passkey)){
             setPassKey(passkey);
+            
+            // Trigger password manager save prompt by submitting the form
+            const backupForm = document.querySelector('#backup-recovery-form');
+            if (backupForm && typeof PasswordCredential !== 'undefined') {
+                try {
+                    const formData = new FormData(backupForm);
+                    const credential = new PasswordCredential({
+                        id: formData.get('username'),
+                        password: backupHash,
+                        name: 'Backup Recovery Code'
+                    });
+                    navigator.credentials.store(credential).catch(err => {
+                        console.log('Password manager storage not available:', err);
+                    });
+                } catch (e) {
+                    console.log('PasswordCredential API not supported:', e);
+                }
+            }
+            
             switchSlide(3);
             document.querySelector('#passkey-field').innerText = passkey;
             setTimeout(()=>{
@@ -613,6 +632,25 @@ async function extractPasskeySystem(){
         if (verified) {
             console.log('Passkey verified with keychain - restoring access');
             await setPassKey(decryptedPasskey);
+            
+            // Trigger password manager save prompt
+            const backupSystemForm = document.querySelector('#backup-recovery-system-form');
+            if (backupSystemForm && typeof PasswordCredential !== 'undefined') {
+                try {
+                    const formData = new FormData(backupSystemForm);
+                    const credential = new PasswordCredential({
+                        id: formData.get('username'),
+                        password: backupHash,
+                        name: 'Backup Recovery Code (System)'
+                    });
+                    navigator.credentials.store(credential).catch(err => {
+                        console.log('Password manager storage not available:', err);
+                    });
+                } catch (e) {
+                    console.log('PasswordCredential API not supported:', e);
+                }
+            }
+            
             await syncKeychain(serverKeychainCryptoData);
             window.location.href = '/chat';
         } else {

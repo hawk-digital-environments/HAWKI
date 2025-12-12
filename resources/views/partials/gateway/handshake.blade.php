@@ -188,6 +188,27 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         initializePasskeyInputs(false);
+        
+        // Initialize backup hash visibility toggles
+        const backupToggles = document.querySelectorAll('.backup-visibility-toggle');
+        backupToggles.forEach(toggle => {
+            toggle.addEventListener('click', function () {
+                const inputId = this.getAttribute('data-target');
+                const input = document.getElementById(inputId);
+                const eye = this.querySelector('.eye-icon');
+                const eyeOff = this.querySelector('.eye-off-icon');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    eye.style.display = 'none';
+                    eyeOff.style.display = 'inline-block';
+                } else {
+                    input.type = 'password';
+                    eye.style.display = 'inline-block';
+                    eyeOff.style.display = 'none';
+                }
+            });
+        });
     });
 
 

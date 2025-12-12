@@ -204,6 +204,13 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
 function getPasskeyRealValue(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return '';
+    
+    // For backup-hash-inputs (normal password fields), just return the value
+    if (input.classList.contains('backup-hash-input')) {
+        return input.value;
+    }
+    
+    // For passkey-inputs (masked inputs), return the dataset value
     return input.dataset.realValue || input.value;
 }
 
