@@ -9,11 +9,8 @@ class MailTemplateSeeder extends Seeder
 
     public function run(): void
     {
-        // Clear existing templates
-        \DB::table('mail_templates')->truncate();
-
-        // Insert modern mail templates with HAWKI branding
-        \DB::table('mail_templates')->insert([
+        // Use upsert to handle existing templates (update or insert)
+        $templates = [
             // Welcome Templates
             [
                 'type' => 'welcome',
@@ -21,8 +18,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Welcome email for new users',
                 'subject' => 'Welcome to {{app_name}} - Your AI Journey Begins!',
                 'body' => $this->getWelcomeTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'welcome',
@@ -30,8 +25,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Willkommens-E-Mail für neue Benutzer',
                 'subject' => 'Willkommen bei {{app_name}} - Ihre KI-Reise beginnt!',
                 'body' => $this->getWelcomeTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // OTP Templates
@@ -41,8 +34,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Authentication code email',
                 'subject' => 'Your {{app_name}} Authentication Code',
                 'body' => $this->getOtpTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'otp',
@@ -50,8 +41,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Authentifizierungscode E-Mail',
                 'subject' => 'Ihr {{app_name}} Authentifizierungscode',
                 'body' => $this->getOtpTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Invitation Templates
@@ -61,8 +50,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Group chat invitation email',
                 'subject' => 'Group Chat Invitation - {{room_name}}',
                 'body' => $this->getInvitationTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'invitation',
@@ -70,8 +57,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Gruppen-Chat Einladungs-E-Mail',
                 'subject' => 'Gruppen-Chat Einladung - {{room_name}}',
                 'body' => $this->getInvitationTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Notification Templates
@@ -81,8 +66,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'General notification email',
                 'subject' => '{{app_name}} Notification',
                 'body' => $this->getNotificationTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'notification',
@@ -90,8 +73,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Allgemeine Benachrichtigungs-E-Mail',
                 'subject' => '{{app_name}} Benachrichtigung',
                 'body' => $this->getNotificationTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // User Approval Granted Templates
@@ -101,8 +82,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Account approval granted notification',
                 'subject' => 'Your {{app_name}} Account Has Been Approved',
                 'body' => $this->getApprovalGrantedTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'approval_granted',
@@ -110,8 +89,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Benachrichtigung über erteilte Kontogenehmigung',
                 'subject' => 'Ihr {{app_name}}-Account wurde freigeschaltet',
                 'body' => $this->getApprovalGrantedTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Approval Pending Templates
@@ -121,8 +98,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Account pending approval notification',
                 'subject' => 'Your {{app_name}} Account is Pending Approval',
                 'body' => $this->getApprovalPendingTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'approval_pending',
@@ -130,8 +105,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Benachrichtigung über ausstehende Kontogenehmigung',
                 'subject' => 'Ihr {{app_name}}-Account wurde erfolgreich beantragt',
                 'body' => $this->getApprovalPendingTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Approval Revoked Templates
@@ -141,8 +114,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Account approval revoked notification',
                 'subject' => 'Your {{app_name}} Account Access Has Been Revoked',
                 'body' => $this->getApprovalRevokedTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'approval_revoked',
@@ -150,10 +121,22 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Benachrichtigung über widerrufene Kontogenehmigung',
                 'subject' => 'Ihr {{app_name}}-Zugang wurde widerrufen',
                 'body' => $this->getApprovalRevokedTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
-        ]);
+        ];
+
+        // Add timestamps to each template
+        foreach ($templates as &$template) {
+            $template['created_at'] = now();
+            $template['updated_at'] = now();
+        }
+
+        // Use upsert to prevent duplicate entry errors
+        // Updates existing templates, inserts new ones
+        \DB::table('mail_templates')->upsert(
+            $templates,
+            ['type', 'language'], // Unique key columns
+            ['description', 'subject', 'body', 'updated_at'] // Columns to update
+        );
     }
 
     private function getWelcomeTemplateEn(): string
