@@ -20,55 +20,60 @@
 function handleBurgerMenuClick(event, element) {
 	event.stopPropagation();
 	
-	// Get the room slug from the parent selection-item
+	// Get the slug from the parent selection-item
 	const selectionItem = element.closest('.selection-item');
-	const roomSlug = selectionItem ? selectionItem.getAttribute('slug') : null;
+	const slug = selectionItem ? selectionItem.getAttribute('slug') : null;
 	
-	// Find the room object to check its status
-	const room = rooms.find(r => r.slug === roomSlug);
-	const isNewInvitation = room && room.isNewRoom;
-	const isRemoved = room && room.isRemoved;
-	const hasUnreadMessages = room && room.hasUnreadMessages;
+	// Check if we're in groupchat or chat module
+	const isGroupchat = typeof rooms !== 'undefined';
 	
-	// If room is removed, don't open burger menu - clicking room opens modal instead
-	if (isRemoved) {
-		return;
-	}
-	
-	// Store the room slug in the burger menu for later use
-	const burgerMenu = document.getElementById('quick-actions');
-	if (burgerMenu && roomSlug) {
-		burgerMenu.setAttribute('data-room-slug', roomSlug);
+	if (isGroupchat) {
+		// Groupchat logic
+		const room = rooms.find(r => r.slug === slug);
+		const isNewInvitation = room && room.isNewRoom;
+		const isRemoved = room && room.isRemoved;
+		const hasUnreadMessages = room && room.hasUnreadMessages;
 		
-		// Show/hide appropriate buttons based on room status
-		const leaveBtn = burgerMenu.querySelector('#burger-leave-btn');
-		const declineBtn = burgerMenu.querySelector('#burger-decline-btn');
-		const infoBtn = burgerMenu.querySelector('#burger-info-btn');
-		const markReadBtn = burgerMenu.querySelector('#burger-mark-read-btn');
+		// If room is removed, don't open burger menu - clicking room opens modal instead
+		if (isRemoved) {
+			return;
+		}
 		
-		if (isNewInvitation) {
-			// New invitation: show decline, hide leave, info and mark-as-read
-			if (leaveBtn) leaveBtn.style.display = 'none';
-			if (declineBtn) declineBtn.style.display = 'block';
-			if (infoBtn) infoBtn.style.display = 'none';
-			if (markReadBtn) {
-				markReadBtn.style.display = 'none';
-				markReadBtn.disabled = true;
-			}
-		} else {
-			// Normal room: show leave, hide decline
-			if (leaveBtn) leaveBtn.style.display = 'block';
-			if (declineBtn) declineBtn.style.display = 'none';
-			if (infoBtn) infoBtn.style.display = 'block';
+		// Store the room slug in the burger menu for later use
+		const burgerMenu = document.getElementById('quick-actions');
+		if (burgerMenu && slug) {
+			burgerMenu.setAttribute('data-room-slug', slug);
 			
-			// Mark as read: only show if there are unread messages
-			if (markReadBtn) {
-				if (hasUnreadMessages) {
-					markReadBtn.style.display = 'block';
-					markReadBtn.disabled = false;
-				} else {
+			// Show/hide appropriate buttons based on room status
+			const leaveBtn = burgerMenu.querySelector('#burger-leave-btn');
+			const declineBtn = burgerMenu.querySelector('#burger-decline-btn');
+			const infoBtn = burgerMenu.querySelector('#burger-info-btn');
+			const markReadBtn = burgerMenu.querySelector('#burger-mark-read-btn');
+			
+			if (isNewInvitation) {
+				// New invitation: show decline, hide leave, info and mark-as-read
+				if (leaveBtn) leaveBtn.style.display = 'none';
+				if (declineBtn) declineBtn.style.display = 'block';
+				if (infoBtn) infoBtn.style.display = 'none';
+				if (markReadBtn) {
 					markReadBtn.style.display = 'none';
 					markReadBtn.disabled = true;
+				}
+			} else {
+				// Normal room: show leave, hide decline
+				if (leaveBtn) leaveBtn.style.display = 'block';
+				if (declineBtn) declineBtn.style.display = 'none';
+				if (infoBtn) infoBtn.style.display = 'block';
+				
+				// Mark as read: only show if there are unread messages
+				if (markReadBtn) {
+					if (hasUnreadMessages) {
+						markReadBtn.style.display = 'block';
+						markReadBtn.disabled = false;
+					} else {
+						markReadBtn.style.display = 'none';
+						markReadBtn.disabled = true;
+					}
 				}
 			}
 		}

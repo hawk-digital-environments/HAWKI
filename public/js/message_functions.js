@@ -854,6 +854,15 @@ async function regenerateMessage(messageElement, Done = null){
     
     const webSearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
     const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
+    
+    const reasoningBtn = inputContainer ? inputContainer.querySelector('#reasoning-btn') : null;
+    const reasoningActive = reasoningBtn ? reasoningBtn.classList.contains('active') : false;
+    
+    // Get reasoning effort if reasoning is active
+    let reasoningEffort = null;
+    if (reasoningActive) {
+        reasoningEffort = reasoningBtn.dataset.effort || 'medium';
+    }
 
     const tools = {
         'web_search': webSearchActive
@@ -870,6 +879,11 @@ async function regenerateMessage(messageElement, Done = null){
                 'stream': activeModel.tools?.stream ? true : false,
                 'model': activeModel.id,
                 'tools': tools
+            }
+            
+            // Add reasoning_effort if set
+            if (reasoningEffort !== null) {
+                msgAttributes['reasoning_effort'] = reasoningEffort;
             }
 
             await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{

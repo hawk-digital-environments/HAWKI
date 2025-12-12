@@ -332,6 +332,9 @@ async function sendMessageConv(inputField) {
     const webSearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
     const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
     
+    const reasoningBtn = inputContainer ? inputContainer.querySelector('#reasoning-btn') : null;
+    const reasoningActive = reasoningBtn ? reasoningBtn.classList.contains('active') : false;
+    
     // Check if activeModel is set
     if(!activeModel){
         console.error('No active model selected. Cannot send message.');
@@ -342,6 +345,13 @@ async function sendMessageConv(inputField) {
     const tools = {
         'web_search': webSearchActive
     }
+    
+    // Add reasoning_effort parameter if reasoning is active
+    // Get the selected effort level from the button's data attribute (default to 'medium')
+    let reasoningEffort = null;
+    if (reasoningActive) {
+        reasoningEffort = reasoningBtn.dataset.effort || 'medium';
+    }
 
     const msgAttributes = {
         'threadIndex': activeThreadIndex,
@@ -350,6 +360,11 @@ async function sendMessageConv(inputField) {
         'stream': true,
         'model': activeModel.id,
         'tools': tools
+    };
+    
+    // Only add reasoning_effort if it's set (reasoning is active)
+    if (reasoningEffort !== null) {
+        msgAttributes['reasoning_effort'] = reasoningEffort;
     }
 
     buildRequestObjectForAiConv(msgAttributes);
@@ -425,23 +440,20 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             if (data.status === 'error' || data.status === 'cancelled') {
                 // Don't process content, just handle done state below
             } else {
+                // CRITICAL: Reset auxiliaries for each chunk to prevent carryover from previous chunks
+                auxiliaries = [];
+                
                 const {messageText, groundingMetadata, auxiliaries: aux} = deconstContent(data.content);
+                
                 if(groundingMetadata != ""){
                     metadata = groundingMetadata;
                 }
                 if(aux && aux.length > 0){
                     auxiliaries = aux;
                     
-                    // Store auxiliaries IMMEDIATELY in dataset for multi-turn
-                    // This ensures they're available for the next request even without page refresh
-                    if (messageElement) {
-                        const tempContent = JSON.stringify({
-                            text: msg + messageText,
-                            groundingMetadata: metadata,
-                            auxiliaries: auxiliaries
-                        });
-                        messageElement.dataset.rawContent = tempContent;
-                    }
+                    // NOTE: We do NOT store auxiliaries in dataset.rawContent
+                    // Auxiliaries are processed once per chunk and should not be re-processed
+                    // Only text and metadata are persisted for multi-turn conversations
                 }
 
                 // Safety check: ensure messageText is a string, not an object
@@ -450,6 +462,16 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 // Log warning if content is not a string
                 if (typeof messageText !== 'string' && messageText !== undefined && messageText !== null) {
                     console.error('[STREAM ERROR] messageText is not a string:', typeof messageText, messageText);
+                }
+                
+                // Update dataset.rawContent with accumulated text and metadata
+                // Auxiliaries are NOT stored here - they're processed once per chunk
+                if (messageElement && content) {
+                    const tempContent = JSON.stringify({
+                        text: msg + content,
+                        groundingMetadata: metadata
+                    });
+                    messageElement.dataset.rawContent = tempContent;
                 }
                 
                 msg += content;
@@ -492,8 +514,10 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                     if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
                         addAnthropicCitations(messageElement, auxiliaries);
                         addResponsesCitations(messageElement, auxiliaries); // OpenAI Responses API citations
+                        
                         // Update AI status indicator (thinking, reasoning, web search)
-                        updateAiStatusIndicator(messageElement, auxiliaries, false);
+                        // Pass data.isDone to ensure status_log is processed in final chunk
+                        updateAiStatusIndicator(messageElement, auxiliaries, data.isDone || false);
                     }
 
                     if(messageElement.querySelector('.think')){
@@ -508,10 +532,10 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
         if(done){
             setSendBtnStatus(SendBtnStatus.SENDABLE);
             
-            // Finalize status indicator (add final "processing completed" if needed)
-            if (messageElement) {
-                updateAiStatusIndicator(messageElement, auxiliaries || [], true);
-            }
+            // NOTE: We don't call updateAiStatusIndicator(..., true) here anymore
+            // The final "processing completed" status is automatically added by the frontend
+            // when it receives isDone=true from the backend (in the finish_reason chunk)
+            // This happens in updateAiStatusIndicator() → if (isDone) block
             
             // Add status_log from dataset to auxiliaries for persistence
             if (messageElement && messageElement.dataset.statusLog) {

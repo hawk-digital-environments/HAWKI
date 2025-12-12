@@ -33,6 +33,11 @@ function buildRequestObject(msgAttributes, onData) {
             tools: msgAttributes['tools'],
         }
     };
+    
+    // Add reasoning_effort to payload if provided (not null and not undefined)
+    if (msgAttributes['reasoning_effort'] !== null && msgAttributes['reasoning_effort'] !== undefined) {
+        requestObject.payload.reasoning_effort = msgAttributes['reasoning_effort'];
+    }
 
     // POST request to initiate the AI stream or broadcast
     postData(requestObject)

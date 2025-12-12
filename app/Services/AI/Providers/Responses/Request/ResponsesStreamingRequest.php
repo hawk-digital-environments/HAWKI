@@ -157,22 +157,9 @@ class ResponsesStreamingRequest extends AbstractRequest
 
             // Web search completed
             case 'response.web_search_call.completed':
-                $outputIndex = $jsonChunk['output_index'] ?? null;
-                //// \Log::info('[RESPONSES] Event Type: response.web_search_call.completed', [
-                //    'output_index' => $outputIndex
-                //]);
-                
-                // Collect success status (without message - frontend derives label)
-                $this->addStatusToLog('web_search', 'success', null, $outputIndex);
-                
-                $auxiliaries[] = [
-                    'type' => 'status',
-                    'content' => json_encode([
-                        'status' => 'web_search_success',
-                        'output_index' => $outputIndex
-                    ])
-                ];
-                $content = ''; // Ensure status is sent
+                // Don't send status here - wait for response.output_item.done which contains the query
+                // This event comes BEFORE output_item.done, so we don't have the query yet
+                $content = '';
                 break;
 
             // Web search in progress (metadata event)
@@ -193,8 +180,13 @@ class ResponsesStreamingRequest extends AbstractRequest
 
             // Response completed with final data
             case 'response.completed':
-                // \Log::info('[RESPONSES] Event Type: response.completed');
                 $isDone = true;
+                
+                // Collect final "processing completed" status for persistence in status_log
+                // Note: This uses output_index 0 since we don't have multiple outputs in Responses API context
+                // We DON'T send it as a separate status auxiliary because it's included in status_log
+                // and would be overwritten when status_log is processed
+                $this->addStatusToLog('processing', 'completed', null, 0);
                 
                 // Extract usage from final response
                 if (!empty($jsonChunk['response']['usage'])) {
@@ -316,21 +308,6 @@ class ResponsesStreamingRequest extends AbstractRequest
                 // Note: Reasoning summaries and web search queries are also sent individually
                 // AND included here in final response for database persistence
 
-                // Collect final completed status for persistence
-                $this->addStatusToLog('processing', 'completed', null);
-                
-                // \Log::info('[RESPONSES] Added final processing completed status to log');
-
-                // Send final processing completed status WITHOUT message (Frontend derives label)
-                $auxiliaries[] = [
-                    'type' => 'status',
-                    'content' => json_encode([
-                        'status' => 'completed'
-                    ])
-                ];
-                
-                // \Log::info('[RESPONSES] Sending final processing completed status to frontend');
-
                 // Add final status log as auxiliary for persistence
                 if (!empty($this->statusLog)) {
                     // Update reasoning step labels and summaries before saving
@@ -366,9 +343,7 @@ class ResponsesStreamingRequest extends AbstractRequest
                     
                     $auxiliaries[] = [
                         'type' => 'status_log',
-                        'content' => json_encode([
-                            'log' => $this->statusLog
-                        ])
+                        'content' => json_encode(['log' => $this->statusLog])
                     ];
                     //// \Log::info('[RESPONSES] Added status log to final response', [
                     //    'total_entries' => count($this->statusLog),
@@ -388,9 +363,8 @@ class ResponsesStreamingRequest extends AbstractRequest
                     //// \Log::info('[RESPONSES] Added citations to final response', [
                     //    'total_citations' => count($this->citations)
                     //]);
-                } else {
-                    // \Log::info('[RESPONSES] No citations collected');
                 }
+                
                 break;
 
             // Response failed
@@ -723,6 +697,25 @@ class ResponsesStreamingRequest extends AbstractRequest
                     //    'title' => $title,
                     //    'text_preview' => substr($summaryText, 0, 50) . '...'
                     //]);
+                    
+                    // Collect reasoning completed status for persistence
+                    $this->addStatusToLog('reasoning', 'completed', $title, $outputIndex);
+                    
+                    // Send reasoning_complete status to frontend to end reasoning indicator
+                    $statusContent = [
+                        'status' => 'reasoning_complete',
+                        'output_index' => $outputIndex
+                    ];
+                    
+                    // Only add message if it's a custom summary title
+                    if ($title !== 'Reasoning') {
+                        $statusContent['message'] = $title;
+                    }
+                    
+                    $auxiliaries[] = [
+                        'type' => 'status',
+                        'content' => json_encode($statusContent)
+                    ];
                     
                     // Send summary immediately as auxiliary
                     $auxiliaries[] = [

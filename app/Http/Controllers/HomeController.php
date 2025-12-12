@@ -136,10 +136,18 @@ class HomeController extends Controller
         }
         $models = $this->aiService->getAvailableModels()->toArray();
         $webSearchAvailable = false;
+        $reasoningAvailable = false;
 
         foreach ($models['models'] as $model) {
             if (!empty($model['tools']['web_search'])) {
                 $webSearchAvailable = true;
+            }
+            if (!empty($model['tools']['reasoning'])) {
+                $reasoningAvailable = true;
+            }
+            
+            // Early exit if both are found
+            if ($webSearchAvailable && $reasoningAvailable) {
                 break;
             }
         }
@@ -160,6 +168,7 @@ class HomeController extends Controller
                             'activeOverlay',
                             'models',
                             'webSearchAvailable',
+                            'reasoningAvailable',
                             'announcements',
                             'converterActive',
                         ));

@@ -43,24 +43,19 @@ readonly class ResponsesRequestConverter
         // Get available tools from model (used for reasoning and web_search)
         $availableTools = $model->getTools();
 
-        // Add reasoning configuration based on model tools
-        // Admin decides if model supports reasoning via config - no hardcoded model checks
+        // Add reasoning configuration if:
+        // 1. Model supports reasoning
+        // 2. User explicitly requested reasoning via reasoning_effort
         if (isset($availableTools['reasoning']) && $availableTools['reasoning'] === true) {
-            $payload['reasoning'] = [
-                'effort' => $this->getReasoningEffort($modelId, $rawPayload),
-                'summary' => 'auto', // Enable reasoning summaries (defaults to 'detailed' for most models)
-            ];
+            $reasoningEffort = $this->getReasoningEffort($modelId, $rawPayload);
             
-            \Log::info('[RESPONSES] Reasoning enabled', [
-                'model' => $modelId,
-                'effort' => $payload['reasoning']['effort'],
-                'summary' => $payload['reasoning']['summary']
-            ]);
-        } else {
-            \Log::info('[RESPONSES] Reasoning not enabled', [
-                'model' => $modelId,
-                'reasoning_tool' => $availableTools['reasoning'] ?? 'not set'
-            ]);
+            // Only add reasoning if explicitly requested
+            if ($reasoningEffort !== null) {
+                $payload['reasoning'] = [
+                    'effort' => $reasoningEffort,
+                    'summary' => 'auto', // Enable reasoning summaries
+                ];
+            }
         }
 
         // Add text format for structured outputs if specified
@@ -192,17 +187,17 @@ readonly class ResponsesRequestConverter
 
     /**
      * Get reasoning effort level based on model and payload
-     * Admin controls effort via payload, with sensible defaults
+     * Only use reasoning if explicitly enabled via payload
      */
-    private function getReasoningEffort(string $modelId, array $rawPayload): string
+    private function getReasoningEffort(string $modelId, array $rawPayload): ?string
     {
         // Check if reasoning effort is specified in payload
         if (isset($rawPayload['reasoning_effort'])) {
             return $rawPayload['reasoning_effort'];
         }
 
-        // Default effort - admin can override via config/payload
-        return 'medium';
+        // No reasoning if not explicitly requested
+        return null;
     }
 
         /**

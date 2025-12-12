@@ -56,6 +56,35 @@
                 </button>
                 @endif
 
+                @if($reasoningAvailable)
+                <div class="reasoning-controls" style="position: relative; display: inline-block;">
+                    <button id="reasoning-btn" class="btn-xs fast-access-btn" data-effort="medium" onclick="toggleReasoningDropdown(this)">
+                        <x-icon class="reasoning-icon" name="cpu"/>
+                        <div class="reasoning-effort-indicator">
+                            <span class="effort-dot" data-level="1"></span>
+                            <span class="effort-dot active" data-level="2"></span>
+                            <span class="effort-dot active" data-level="3"></span>
+                        </div>
+                        <div class="tooltip">
+                            {{ $translation["Reasoning"] ?? "Reasoning" }}
+                        </div>
+                    </button>
+                    <div class="reasoning-dropdown burger-dropdown anchor-top-right" id="reasoning-dropdown" style="display: none;">
+                        <div class="reasoning-options">
+                            <button class="burger-item reasoning-option" data-effort="low" onclick="selectReasoningEffort(this, 'low')">
+                                <div class="label">Low</div>
+                            </button>
+                            <button class="burger-item reasoning-option selected" data-effort="medium" onclick="selectReasoningEffort(this, 'medium')">
+                                <div class="label">Medium</div>
+                            </button>
+                            <button class="burger-item reasoning-option" data-effort="high" onclick="selectReasoningEffort(this, 'high')">
+                                <div class="label">High</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
 
                 <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)" @if(!config('hawki.file_upload')) style="display:none;" @endif>
                     <x-icon name="paperclip"/>
