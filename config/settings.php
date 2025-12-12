@@ -31,6 +31,7 @@ return [
     'hawki' => [
         'aiHandle' => 'AI assistant handle for group chat (@ will be added automatically)',
         'groupchat_active' => 'Enable group chat',
+        'news_active' => 'Enable news page',
         'file_upload' => 'Enable file upload functionality',
         'websearch' => 'Enable web search functionality',
         'websearch_auto_enable' => 'Automatically enable web search when selecting compatible models',

@@ -184,7 +184,9 @@ Route::middleware('prevent_back')->group(function () {
         Route::post('/req/backupKeychain', [ProfileController::class, 'backupKeychain']);
 
         // News
-        Route::get('/news', [HomeController::class, 'index']);
+        if (config('hawki.news_active')) {
+            Route::get('/news', [HomeController::class, 'index']);
+        }
 
         // AI RELATED ROUTES
     });

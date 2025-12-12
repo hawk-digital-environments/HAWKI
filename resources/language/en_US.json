@@ -278,5 +278,7 @@
 
     "News_NextPage": "Older News",
     "News_PrevPage": "Newer News",
-    "News_ReadBy": "read by"
+    "News_ReadBy": "read by",
+    "News_PublishedIn": "Published for",
+    "News_PublishedGlobally": "Published for everyone"
 }

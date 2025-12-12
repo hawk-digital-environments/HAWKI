@@ -32,6 +32,21 @@
                     {!! $content !!}
                 </div>
                 <div class="announcement-footer">
+                    <div class="announcement-audience">
+                        @if($announcement->is_global)
+                            <span class="announcement-target">{!! $translation["News_PublishedGlobally"] !!}</span>
+                        @elseif(!empty($announcement->target_roles))
+                            @php
+                                $roles = collect($announcement->target_roles)->map(function($slug) {
+                                    $role = \Orchid\Platform\Models\Role::where('slug', $slug)->first();
+                                    return $role ? $role->name : ucfirst($slug);
+                                })->join(', ');
+                            @endphp
+                            <span class="announcement-target">{!! $translation["News_PublishedIn"] !!} {{ $roles }}</span>
+                        @else
+                            <span class="announcement-target">{!! $translation["News_PublishedGlobally"] !!}</span>
+                        @endif
+                    </div>
                     @php
                         $readCount = $announcement->users()->wherePivotNotNull('seen_at')->count();
                     @endphp

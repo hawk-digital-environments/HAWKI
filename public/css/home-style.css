@@ -259,6 +259,7 @@
     flex-direction: column;
     align-items: center;
     height: 100%;
+    background-color: var(--background-secondary);
 }
 
 .news-container {
@@ -298,11 +299,22 @@
 
 .announcement-footer {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     align-items: center;
     margin-top: 1rem;
     padding-top: 0.75rem;
     border-top: var(--border-stroke-thin);
+    gap: 1rem;
+}
+
+.announcement-audience {
+    flex: 1;
+}
+
+.announcement-target {
+    font-size: var(--font-xs);
+    color: var(--text-faded-color);
+    opacity: 0.6;
 }
 
 .announcement-read-count {

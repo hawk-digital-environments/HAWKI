@@ -77,8 +77,24 @@ class AnnouncementService
     }
 
     public function getAllNews() {
+        $user = auth()->user();
+        $userRoles = $user ? $user->getRoles()->pluck('slug')->toArray() : [];
+
         return Announcement::query()
             ->where(['type' => 'news', 'is_published' => true])
+            ->where(function ($query) use ($userRoles) {
+                // Include global announcements
+                $query->where('is_global', true)
+                    // OR announcements with no target roles
+                    ->orWhereNull('target_roles')
+                    ->orWhere('target_roles', '[]')
+                    // OR announcements where user has at least one matching role
+                    ->orWhere(function ($subQuery) use ($userRoles) {
+                        foreach ($userRoles as $role) {
+                            $subQuery->orWhereJsonContains('target_roles', $role);
+                        }
+                    });
+            })
             ->orderByRaw('COALESCE(starts_at, created_at) DESC')
             ->paginate(10);
     }
