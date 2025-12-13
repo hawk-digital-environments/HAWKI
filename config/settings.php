@@ -64,6 +64,7 @@ return [
         'local_needapproval' => 'New local users need admin approval before given access',
         'authentication_method' => 'Authentication method',
         'passkey_method' => 'Method for generating the PassKey',
+        'passkey_webauthn' => 'Enable WebAuthn cross-device passkeys',
     ],
     'ldap' => [
         'logging.enabled' => 'Logging of LDAP queries',

@@ -16,7 +16,14 @@ function switchSlide(targetIndex) {
         target.style.display = "flex";
         const backBtn = document.querySelector('.slide-back-btn');
 
-        if(targetIndex > 1){
+        // Hide back button on slide 6 (backup recovery) to prevent going back
+        if(targetIndex == 6){
+            backBtn.style.opacity = "0";
+            setTimeout( () => {
+                backBtn.style.display = "none";
+            }, 500)
+        }
+        else if(targetIndex > 1){
             backBtn.style.display = "flex";
             setTimeout(() => {
                 backBtn.style.opacity = "1";
@@ -32,6 +39,13 @@ function switchSlide(targetIndex) {
         // Add a small delay before changing the opacity to ensure the display change has been processed
         setTimeout(() => {
             target.style.opacity = "1";
+            
+            // Auto-start WebAuthn authentication on slide 6 if user has passkey
+            if (targetIndex == 6 && typeof hasWebAuthnPasskey !== 'undefined' && hasWebAuthnPasskey) {
+                setTimeout(() => {
+                    autoStartWebAuthnLogin();
+                }, 500);
+            }
         }, 300);
 
         previousSlide = target;
@@ -40,7 +54,15 @@ function switchSlide(targetIndex) {
 }
 
 function switchBackSlide(){
-    const targetIndex = currentSlideIndex - 1;
+    let targetIndex;
+    
+    // Handle special case for sub-slides (e.g., 6.1 should go back to 6)
+    if (currentSlideIndex === '6.1') {
+        targetIndex = 6;
+    } else {
+        targetIndex = currentSlideIndex - 1;
+    }
+    
     switchSlide(targetIndex);
 }
 
@@ -592,18 +614,27 @@ async function extractPasskeySystem(){
     // Get the real value from dataset, not the masked value
     const backupHash = getPasskeyRealValue('backup-hash-input-system');
     if(!backupHash){
-        msg.innerText = 'Enter backupHash or upload your backup file.';
+        if (msg) {
+            msg.innerText = translations['HS-EnterBackupHashError'] || 'Please enter your recovery code.';
+            msg.style.display = 'block';
+        }
         return;
     }
     if(!isValidBackupKeyFormat(backupHash)){
-        msg.innerText = 'Backup key is not valid!';
+        if (msg) {
+            msg.innerText = translations['HS-BackupKeyInvalid'] || 'Backup key is not valid!';
+            msg.style.display = 'block';
+        }
         return;
     }
 
     // Get passkey backup from server.
     const passkeyBackup = await requestPasskeyBackup();
     if(!passkeyBackup){
-        msg.innerText = 'No backup found for this user.';
+        if (msg) {
+            msg.innerText = translations['HS-NoBackupFound'] || 'No backup found for this user.';
+            msg.style.display = 'block';
+        }
         return;
     }
 
@@ -655,7 +686,10 @@ async function extractPasskeySystem(){
             window.location.href = '/chat';
         } else {
             console.error('Backup code is correct, but passkey does not match keychain');
-            msg.innerText = "Backup code is correct, but passkey verification failed. Please reset your profile.";
+            if (msg) {
+                msg.innerText = translations['HS-BackupVerificationFailed'] || "Backup code is correct, but passkey verification failed. Please reset your profile.";
+                msg.style.display = 'block';
+            }
             
             // Optional: Auto-switch to slide 7 (profile reset) after 3 seconds
             setTimeout(() => {
@@ -670,9 +704,15 @@ async function extractPasskeySystem(){
         
         // Check if it's a decryption error (wrong backup code)
         if (error.message && error.message.includes('Decryption failed')) {
-            msg.innerText = 'Incorrect backup code. Please check your backup code and try again.';
+            if (msg) {
+                msg.innerText = translations['HS-IncorrectBackupCode'] || 'Incorrect backup code. Please check your backup code and try again.';
+                msg.style.display = 'block';
+            }
         } else {
-            msg.innerText = 'Error processing backup code: ' + error.message;
+            if (msg) {
+                msg.innerText = (translations['HS-BackupProcessingError'] || 'Error processing backup code: ') + error.message;
+                msg.style.display = 'block';
+            }
         }
     }
 }

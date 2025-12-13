@@ -8,6 +8,7 @@
     - $wrapperClass: Additional CSS classes for the wrapper div (optional)
     - $includeUploadButton: Whether to include upload button (optional, defaults to false)
     - $uploadOnClick: JavaScript function to call when upload button is clicked (optional)
+    - $autocomplete: Autocomplete attribute value (optional, defaults to 'new-password')
 --}}
 
 <div class="backup-hash-row {{ $wrapperClass ?? '' }}">
@@ -16,7 +17,7 @@
             id="{{ $id }}" 
             name="password"
             type="password"
-            autocomplete="new-password"
+            autocomplete="{{ $autocomplete ?? 'new-password' }}"
             placeholder="{{ $placeholder }}"
             class="backup-hash-input"
         />

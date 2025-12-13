@@ -97,7 +97,6 @@ input::placeholder{
 .backup-hash-row{
     display: grid;
     grid-template-columns: 1fr auto auto;
-    column-gap: .5rem;
     /* width: 80%; */
     align-items: center;
 }
@@ -167,4 +166,47 @@ input::placeholder{
 
 .text-success {
     color: var(--success-color, #28a745) !important;
+}
+
+/* Message styles for handshake alerts */
+.red-text {
+    color: var(--error-color, #dc3545);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+.green-text {
+    color: var(--success-color, #28a745);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+/* Passkey section styles */
+.passkey-section {
+    width: 100%;
+    padding: 1.5rem;
+    border-radius: var(--border-radius-normal);
+    background: rgba(102, 126, 234, 0.05);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.passkey-btn {
+    transition: all 0.3s ease;
+}
+
+.passkey-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.passkey-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.info-text {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    text-align: center;
 }

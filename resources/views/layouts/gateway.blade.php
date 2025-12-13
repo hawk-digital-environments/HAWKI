@@ -18,6 +18,7 @@
     <script src="{{ asset('js/encryption.js') }}"></script>
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
+    <script src="{{ asset('js/webauthn_passkey.js') }}"></script>
     <script src="{{ asset('js/passkeyInputs.js') }}"></script>
     @vite('resources/js/app.js')
 
