@@ -27,7 +27,7 @@
 
                 @if(config('hawki.news_active'))
                 <button id="news-sb-btn" onclick="onSidebarButtonDown('news')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
-                    <x-icon name="news"/>
+                    <x-icon name="send"/>
 
                     <div class="label tooltip tt-abs-left">
                         {{ $translation["News"] }}
