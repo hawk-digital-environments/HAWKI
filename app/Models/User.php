@@ -37,6 +37,7 @@ class User extends OrchidUser
         'bio',
         'isRemoved',
         'permissions',
+        'webauthn_pk',
     ];
 
     /**
@@ -58,6 +59,7 @@ class User extends OrchidUser
         'password' => 'hashed',
         'permissions' => 'array',
         'approval' => 'boolean',
+        'webauthn_pk' => 'boolean',
     ];
 
     /**
