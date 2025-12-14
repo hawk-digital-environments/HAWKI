@@ -282,7 +282,7 @@ async function registerNewWebAuthnPasskey() {
     }
 
     // Get the backup hash from input
-    const backupHash = window.getPasskeyRealValue('backup-hash-input-registration');
+    let backupHash = window.getPasskeyRealValue('backup-hash-input-registration');
     
     if (!backupHash) {
         if (errorMsg) {
@@ -292,10 +292,23 @@ async function registerNewWebAuthnPasskey() {
         return;
     }
 
-    // Validate backup hash format
-    if (!window.isValidBackupKeyFormat(backupHash)) {
+    // Trim whitespace and validate
+    const trimmedHash = backupHash.trim();
+    if (trimmedHash !== backupHash) {
+        // Whitespace was removed - update input and warn user
+        document.getElementById('backup-hash-input-registration').value = trimmedHash;
         if (errorMsg) {
-            errorMsg.innerText = window.translations?.['InvalidBackupFormat'] || 'Invalid backup hash format';
+            errorMsg.innerText = window.translations?.['HS-WhitespaceRemoved'] || 'Spaces were automatically removed from your backup code. Please try again.';
+            errorMsg.style.display = 'block';
+        }
+        return; // Stop here and let user retry with trimmed code
+    }
+
+    // Validate backup hash format
+    const validation = window.isValidBackupKeyFormat(backupHash);
+    if (!validation.valid) {
+        if (errorMsg) {
+            errorMsg.innerText = validation.message || window.translations?.['InvalidBackupFormat'] || 'Invalid backup hash format';
             errorMsg.style.display = 'block';
         }
         return;

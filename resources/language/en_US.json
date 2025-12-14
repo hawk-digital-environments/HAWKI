@@ -164,6 +164,8 @@
     "HS-EnterBackupHash": "Enter the last recovery code you received by email during registration or account reset. On your next login, the code will be automatically filled from the passkey you create here.",
     "HS-EnterBackupHashError": "Please enter your recovery code.",
     "HS-BackupKeyInvalid": "Backup key is not valid!",
+    "HS-BackupContainsWhitespace": "Backup code contains spaces. Please remove all spaces.",
+    "HS-WhitespaceRemoved": "Spaces were automatically removed from your backup code. Please try again.",
     "HS-NoBackupFound": "No backup found for this user.",
     "HS-BackupVerificationFailed": "Backup code is correct, but passkey verification failed. Please reset your profile.",
     "HS-IncorrectBackupCode": "Incorrect backup code. Please check your backup code and try again.",

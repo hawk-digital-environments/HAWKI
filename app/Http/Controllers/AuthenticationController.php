@@ -312,7 +312,8 @@ class AuthenticationController extends Controller
                     // Prepare custom data with backup hash if provided
                     $customData = [];
                     if (isset($validatedData['backupHash'])) {
-                        $customData['{{backup_hash}}'] = $validatedData['backupHash'];
+                        // Trim whitespace from backup hash to prevent copy-paste issues
+                        $customData['{{backup_hash}}'] = trim($validatedData['backupHash']);
                     }
 
                     // Send different email based on approval status

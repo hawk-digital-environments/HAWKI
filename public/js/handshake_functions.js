@@ -297,7 +297,7 @@ async function completeRegistration() {
         keychain: keychainData.ciphertext,
         KCIV: keychainData.iv,
         KCTAG: keychainData.tag,
-        backupHash: backupHash, // Include backup hash for email notification
+        backupHash: backupHash.trim(), // Include backup hash for email notification (trimmed)
     };
 
     try {
@@ -406,10 +406,12 @@ function uploadTextFile() {
             // Once the file is read, invoke the callback with the file content
             reader.onload = function(e) {
                 const content = e.target.result;
-                if (isValidBackupKeyFormat(content.trim())) {
-                    document.querySelector('#backup-hash-input').value = content;
+                const trimmedContent = content.trim();
+                const validation = isValidBackupKeyFormat(trimmedContent);
+                if (validation.valid) {
+                    document.querySelector('#backup-hash-input').value = trimmedContent;
                 } else {
-                    msg.innerText = 'The file content does not match the required format.';
+                    msg.innerText = validation.message || 'The file content does not match the required format.';
                 }
             };
             // Read the file as text
@@ -421,22 +423,53 @@ function uploadTextFile() {
     input.click();
 }
 function isValidBackupKeyFormat(content) {
+    // Check for whitespace
+    if (/\s/.test(content)) {
+        return {
+            valid: false,
+            error: 'whitespace',
+            message: window.translations?.['HS-BackupContainsWhitespace'] || 'Backup code contains spaces. Please remove all spaces.'
+        };
+    }
+    
     // Define a regular expression to match the format xxxx-xxxx-xxxx-xxxx
     const pattern = /^[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}$/;
-    return pattern.test(content);
+    
+    if (!pattern.test(content)) {
+        return {
+            valid: false,
+            error: 'format',
+            message: window.translations?.['HS-BackupKeyInvalid'] || 'Backup key is not valid!'
+        };
+    }
+    
+    return { valid: true };
 }
 
 async function extractPasskey(){
     const msg = document.querySelector('#backup-alert-message');
     // Get the real value from dataset, not the masked value
-    const backupHash = getPasskeyRealValue('backup-hash-input');
+    let backupHash = getPasskeyRealValue('backup-hash-input');
     
     if(!backupHash){
         msg.innerText = 'Enter backupHash or upload your backup file.';
         return;
     }
-    if(!isValidBackupKeyFormat(backupHash)){
-        msg.innerText = 'Backup key is not valid!';
+    
+    // Trim whitespace and validate
+    const trimmedHash = backupHash.trim();
+    if (trimmedHash !== backupHash) {
+        // Whitespace was removed - update input and warn user
+        document.getElementById('backup-hash-input').value = trimmedHash;
+        msg.innerText = window.translations?.['HS-WhitespaceRemoved'] || 'Spaces were automatically removed from your backup code. Please try again.';
+        msg.style.display = 'block';
+        return; // Stop here and let user retry with trimmed code
+    }
+    
+    const validation = isValidBackupKeyFormat(backupHash);
+    if(!validation.valid){
+        msg.innerText = validation.message;
+        msg.style.display = 'block';
         return;
     }
 
@@ -594,10 +627,12 @@ function uploadTextFileSystem() {
             // Once the file is read, invoke the callback with the file content
             reader.onload = function(e) {
                 const content = e.target.result;
-                if (isValidBackupKeyFormat(content.trim())) {
-                    document.querySelector('#backup-hash-input-system').value = content;
+                const trimmedContent = content.trim();
+                const validation = isValidBackupKeyFormat(trimmedContent);
+                if (validation.valid) {
+                    document.querySelector('#backup-hash-input-system').value = trimmedContent;
                 } else {
-                    msg.innerText = 'The file content does not match the required format.';
+                    msg.innerText = validation.message || 'The file content does not match the required format.';
                 }
             };
             // Read the file as text
@@ -612,17 +647,31 @@ function uploadTextFileSystem() {
 async function extractPasskeySystem(){
     const msg = document.querySelector('#backup-alert-message-system');
     // Get the real value from dataset, not the masked value
-    const backupHash = getPasskeyRealValue('backup-hash-input-system');
+    let backupHash = getPasskeyRealValue('backup-hash-input-system');
     if(!backupHash){
         if (msg) {
-            msg.innerText = translations['HS-EnterBackupHashError'] || 'Please enter your recovery code.';
+            msg.innerText = window.translations?.['HS-EnterBackupHashError'] || 'Please enter your recovery code.';
             msg.style.display = 'block';
         }
         return;
     }
-    if(!isValidBackupKeyFormat(backupHash)){
+    
+    // Trim whitespace and validate
+    const trimmedHash = backupHash.trim();
+    if (trimmedHash !== backupHash) {
+        // Whitespace was removed - update input and warn user
+        document.getElementById('backup-hash-input-system').value = trimmedHash;
         if (msg) {
-            msg.innerText = translations['HS-BackupKeyInvalid'] || 'Backup key is not valid!';
+            msg.innerText = window.translations?.['HS-WhitespaceRemoved'] || 'Spaces were automatically removed from your backup code. Please try again.';
+            msg.style.display = 'block';
+        }
+        return; // Stop here and let user retry with trimmed code
+    }
+    
+    const validation = isValidBackupKeyFormat(backupHash);
+    if(!validation.valid){
+        if (msg) {
+            msg.innerText = validation.message;
             msg.style.display = 'block';
         }
         return;
@@ -632,7 +681,7 @@ async function extractPasskeySystem(){
     const passkeyBackup = await requestPasskeyBackup();
     if(!passkeyBackup){
         if (msg) {
-            msg.innerText = translations['HS-NoBackupFound'] || 'No backup found for this user.';
+            msg.innerText = window.translations?.['HS-NoBackupFound'] || 'No backup found for this user.';
             msg.style.display = 'block';
         }
         return;
@@ -687,7 +736,7 @@ async function extractPasskeySystem(){
         } else {
             console.error('Backup code is correct, but passkey does not match keychain');
             if (msg) {
-                msg.innerText = translations['HS-BackupVerificationFailed'] || "Backup code is correct, but passkey verification failed. Please reset your profile.";
+                msg.innerText = window.translations?.['HS-BackupVerificationFailed'] || "Backup code is correct, but passkey verification failed. Please reset your profile.";
                 msg.style.display = 'block';
             }
             
@@ -705,12 +754,12 @@ async function extractPasskeySystem(){
         // Check if it's a decryption error (wrong backup code)
         if (error.message && error.message.includes('Decryption failed')) {
             if (msg) {
-                msg.innerText = translations['HS-IncorrectBackupCode'] || 'Incorrect backup code. Please check your backup code and try again.';
+                msg.innerText = window.translations?.['HS-IncorrectBackupCode'] || 'Incorrect backup code. Please check your backup code and try again.';
                 msg.style.display = 'block';
             }
         } else {
             if (msg) {
-                msg.innerText = (translations['HS-BackupProcessingError'] || 'Error processing backup code: ') + error.message;
+                msg.innerText = (window.translations?.['HS-BackupProcessingError'] || 'Error processing backup code: ') + error.message;
                 msg.style.display = 'block';
             }
         }

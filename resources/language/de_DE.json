@@ -163,6 +163,8 @@
     "HS-EnterBackupHash": "Gib den letzten Wiederherstellungscode ein, den du bei deiner Registrierung oder beim Zurücksetzen deines Kontos per Mail erhalten hast. Wenn du dich beim nächsten Mal auf einem unbekannten Gerät einloggst, wird :system diesen Passkey zur Authentifizierung nutzen.",
     "HS-EnterBackupHashError": "Bitte gib deinen Wiederherstellungscode ein.",
     "HS-BackupKeyInvalid": "Backup Hash ist nicht gültig!",
+    "HS-BackupContainsWhitespace": "Wiederherstellungscode enthält Leerzeichen. Bitte entferne alle Leerzeichen.",
+    "HS-WhitespaceRemoved": "Leerzeichen wurden automatisch aus deinem Wiederherstellungscode entfernt. Bitte versuche es erneut.",
     "HS-NoBackupFound": "Kein Backup für diesen Benutzer gefunden.",
     "HS-BackupVerificationFailed": "Backup Hash ist korrekt, aber Passkey-Verifizierung fehlgeschlagen. Bitte setze dein Profil zurück.",
     "HS-IncorrectBackupCode": "Falscher Backup Hash. Bitte überprüfe deinen Backup Hash und versuche es erneut.",
