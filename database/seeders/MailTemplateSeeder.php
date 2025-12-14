@@ -165,7 +165,7 @@ class MailTemplateSeeder extends Seeder
                     <strong style="color: #856404;">Important: Your {{app_name}} Backup Code</strong><br>
                     <span style="color: #856404;">Please save this backup code securely. You will need it to unlock a new device for {{app_name}}:</span><br>
                     <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; text-align: center;">
-<code style="font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: #2c3e50; background: transparent; padding: 0; border: none; display: inline-block; user-select: all; -webkit-user-select: all;">{{backup_hash}}</code>
+<code style="font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: #2c3e50; background: transparent; padding: 0; border: none; display: inline-block; user-select: all; -webkit-user-select: all;">{{backup_hash}}</code>
                     </div>
                     <small style="color: #856404;">Store this code in a safe place. Do not share it with anyone.</small>
                 </div>
@@ -224,7 +224,7 @@ class MailTemplateSeeder extends Seeder
                     <strong style="color: #856404;">Wichtig: Ihr {{app_name}}-Wiederherstellungs-Code</strong><br>
                     <span style="color: #856404;">Bitte speichern Sie diesen Backup-Code sicher. Sie benötigen ihn, um ein neues Gerät für {{app_name}} freizuschalten:</span><br>
                     <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; text-align: center;">
-<code style="font-family: 'Courier New', monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: #2c3e50; background: transparent; padding: 0; border: none; display: inline-block; user-select: all; -webkit-user-select: all;">{{backup_hash}}</code>
+<code style="font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: #2c3e50; background: transparent; padding: 0; border: none; display: inline-block; user-select: all; -webkit-user-select: all;">{{backup_hash}}</code>
                     </div>
                     <small style="color: #856404;">Bewahren Sie diesen Code an einem sicheren Ort auf. Teilen Sie ihn niemals mit anderen.</small>
                 </div>
