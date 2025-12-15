@@ -22,6 +22,22 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check if migration already applied (new keys exist)
+        $bindDnExists = DB::table('app_settings')
+            ->where('key', 'ldap_connections.default.ldap_bind_dn')
+            ->exists();
+            
+        if ($bindDnExists) {
+            // Migration already applied, clean up old keys if they still exist
+            DB::table('app_settings')
+                ->whereIn('key', [
+                    'ldap_connections.default.ldap_base_dn_temp',
+                    'ldap_connections.default.ldap_search_dn',
+                ])
+                ->delete();
+            return;
+        }
+
         // First, create a temporary key to avoid conflicts
         // Move old ldap_base_dn (bind DN) to temporary location
         DB::table('app_settings')

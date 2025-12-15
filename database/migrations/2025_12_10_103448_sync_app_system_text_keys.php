@@ -16,6 +16,12 @@ return new class extends Migration
     public function up(): void
     {
         try {
+            // Check if table exists
+            if (!\Illuminate\Support\Facades\Schema::hasTable('app_system_texts')) {
+                Log::warning('Migration: app_system_texts table does not exist yet, skipping sync');
+                return;
+            }
+            
             $textImportService = new TextImportService;
             
             // Get count before import

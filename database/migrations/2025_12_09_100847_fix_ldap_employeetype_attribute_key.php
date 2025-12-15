@@ -19,6 +19,19 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Check if correct key already exists (migration already applied)
+        $correctKeyExists = DB::table('app_settings')
+            ->where('key', 'ldap_connections.default.attribute_map.employeeType')
+            ->exists();
+            
+        if ($correctKeyExists) {
+            // Migration already applied, clean up old key if it exists
+            DB::table('app_settings')
+                ->where('key', 'ldap_connections.default.attribute_map.employeetype')
+                ->delete();
+            return;
+        }
+
         // Only update if the old lowercase key exists
         // This makes the migration safe for both new and existing installations
         $oldKeySetting = DB::table('app_settings')
