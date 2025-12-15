@@ -22,13 +22,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Check if migration already applied (new keys exist)
+        // Check if migration already applied (both target keys exist)
         $bindDnExists = DB::table('app_settings')
             ->where('key', 'ldap_connections.default.ldap_bind_dn')
             ->exists();
             
-        if ($bindDnExists) {
-            // Migration already applied, clean up old keys if they still exist
+        $baseDnExists = DB::table('app_settings')
+            ->where('key', 'ldap_connections.default.ldap_base_dn')
+            ->exists();
+            
+        if ($bindDnExists && $baseDnExists) {
+            // Migration already applied, clean up old/temp keys if they exist
             DB::table('app_settings')
                 ->whereIn('key', [
                     'ldap_connections.default.ldap_base_dn_temp',
@@ -37,10 +41,15 @@ return new class extends Migration
                 ->delete();
             return;
         }
+        
+        // Clean up temp key from previous failed attempts before starting
+        DB::table('app_settings')
+            ->where('key', 'ldap_connections.default.ldap_base_dn_temp')
+            ->delete();
 
         // First, create a temporary key to avoid conflicts
         // Move old ldap_base_dn (bind DN) to temporary location
-        DB::table('app_settings')
+        $movedRows = DB::table('app_settings')
             ->where('key', 'ldap_connections.default.ldap_base_dn')
             ->update(['key' => 'ldap_connections.default.ldap_base_dn_temp']);
 
@@ -52,13 +61,15 @@ return new class extends Migration
                 'description' => 'Base DN for LDAP searches (search base)',
             ]);
 
-        // Finally, rename temp to ldap_bind_dn
-        DB::table('app_settings')
-            ->where('key', 'ldap_connections.default.ldap_base_dn_temp')
-            ->update([
-                'key' => 'ldap_connections.default.ldap_bind_dn',
-                'description' => 'Distinguished Name (DN) used for bind operation (authentication)',
-            ]);
+        // Finally, rename temp to ldap_bind_dn (only if we moved something to temp)
+        if ($movedRows > 0) {
+            DB::table('app_settings')
+                ->where('key', 'ldap_connections.default.ldap_base_dn_temp')
+                ->update([
+                    'key' => 'ldap_connections.default.ldap_bind_dn',
+                    'description' => 'Distinguished Name (DN) used for bind operation (authentication)',
+                ]);
+        }
     }
 
     /**
