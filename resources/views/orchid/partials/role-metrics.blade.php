@@ -7,7 +7,7 @@
         <div class="d-flex justify-content-between align-items-start">
             <div>
                 <h3 class="text-dark fw-light mb-1">
-                    Users per Role | {{ $monthName }}
+                    Users per Role ({{ $monthName }})
                 </h3>
                 <p class="text-muted small mb-0">
                     Total users and new users per Orchid role with growth metrics.
@@ -121,8 +121,6 @@
     
     function storeOriginalChartData() {
         const chartContainers = document.querySelectorAll('[data-controller="chart"]');
-        let foundCharts = 0;
-        
         chartContainers.forEach(container => {
             const chartParent = container.getAttribute('data-chart-parent');
             if (chartParent && (chartParent.includes('usersPerRole') || chartParent.includes('activeUsersByRole'))) {
@@ -131,43 +129,41 @@
                     if (datasetsAttr) {
                         const datasets = JSON.parse(datasetsAttr);
                         const chartKey = chartParent.replace('#', '');
-                        
-                        // Prüfe, ob das Chart-Element existiert und initialisiert ist
-                        const figure = document.querySelector(chartParent);
-                        if (figure && figure.chart) {
-                            originalChartData[chartKey] = {
-                                container: container,
-                                datasets: JSON.parse(JSON.stringify(datasets)),
-                                figure: figure
-                            };
-                            foundCharts++;
-                        }
+                        originalChartData[chartKey] = {
+                            container: container,
+                            datasets: JSON.parse(JSON.stringify(datasets))
+                        };
                     }
                 } catch (e) {
                     console.error('Error storing chart data:', e);
                 }
             }
         });
-        
-        return foundCharts;
     }
     
     function updateCharts(filterState) {
         Object.keys(originalChartData).forEach(chartKey => {
             const chartData = originalChartData[chartKey];
+            const container = chartData.container;
             
-            if (!chartData || !chartData.figure) return;
+            if (!container) return;
             
             // Filter datasets based on selected roles
             const filteredDatasets = chartData.datasets.filter(dataset => {
                 return filterState[dataset.name] !== false;
             });
             
-            // Get Frappe Chart instance
-            const chartInstance = chartData.figure.chart;
+            // Get chart parent figure
+            const figureId = container.getAttribute('data-chart-parent');
+            const figure = document.querySelector(figureId);
+            if (!figure) return;
+            
+            // Try to find Frappe Chart instance
+            const chartInstance = figure.chart;
             
             if (chartInstance && typeof chartInstance.update === 'function') {
-                const labelsAttr = chartData.container.getAttribute('data-chart-labels');
+                // Update existing Frappe Chart
+                const labelsAttr = container.getAttribute('data-chart-labels');
                 const labels = labelsAttr ? JSON.parse(labelsAttr) : [];
                 
                 try {
@@ -272,37 +268,26 @@
         } else {
             applyFilter(true);
         }
-    // Warte auf Charts mit Retry-Logik
-    function waitForChartsAndInitialize() {
-        const maxRetries = 10;
-        let retryCount = 0;
         
-        function tryInitialize() {
-            const foundCharts = storeOriginalChartData();
-            
-            if (foundCharts > 0 || retryCount >= maxRetries) {
-                initializeFilter();
-            } else {
-                retryCount++;
-                setTimeout(tryInitialize, 300);
-            }
-        }
-        
-        tryInitialize();
+        bindEventListeners();
     }
     
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(waitForChartsAndInitialize, 500);
+            setTimeout(function() {
+                storeOriginalChartData();
+                initializeFilter();
+            }, 1500);
         });
     } else {
-        setTimeout(waitForChartsAndInitialize, 500);
+        setTimeout(function() {
+            storeOriginalChartData();
+            initializeFilter();
+        }, 1500);
     }
     
     // Also listen for turbo:load to re-initialize after page changes
     document.addEventListener('turbo:load', function() {
-        originalChartData = {};
-        setTimeout(waitForChartsAndInitialize, .addEventListener('turbo:load', function() {
         setTimeout(function() {
             storeOriginalChartData();
             initializeFilter();

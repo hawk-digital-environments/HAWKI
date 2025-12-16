@@ -326,15 +326,6 @@ class UserDashboard extends Screen
             }
         }
 
-        // Fallback: Wenn keine Daten vorhanden sind, füge einen Dummy-Eintrag hinzu
-        if (empty($roleData)) {
-            $roleData[] = [
-                'name' => 'No Data',
-                'values' => array_fill(0, $daysToShow, 0),
-                'labels' => $roleLabels,
-            ];
-        }
-
         $usersPerRole = $roleData;
 
         // Active Users pro Tag nach Rolle (für Line Chart)
@@ -393,15 +384,6 @@ class UserDashboard extends Screen
                     'values' => $dailyActiveByRole,
                 ];
             }
-        }
-
-        // Fallback: Wenn keine Daten vorhanden sind, füge einen Dummy-Eintrag hinzu
-        if (empty($activeUsersByRole)) {
-            $activeUsersByRole[] = [
-                'labels' => $labelsForCurrentMonth,
-                'name' => 'No Data',
-                'values' => array_fill(0, $daysInMonth, 0),
-            ];
         }
 
         // Zusammenbauen der Daten für das Barchart
