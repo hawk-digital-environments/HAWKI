@@ -2,13 +2,16 @@
 
 namespace App\Orchid\Screens\Dashboard;
 
+use App\Models\UsageUsersDaily;
 use App\Orchid\Layouts\Charts\BarChart;
+use App\Orchid\Layouts\Charts\LineChart;
 use App\Orchid\Layouts\Charts\PercentageChart;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Orchid\Screen\Fields\DateRange;
+use Orchid\Platform\Models\Role;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
@@ -19,7 +22,7 @@ class UserDashboard extends Screen
      *
      * @return array
      */
-    public function query(): iterable
+    public function query(Request $request): iterable
     {
         // Überprüfen, ob die benötigten Tabellen existieren
         $usersExists = Schema::hasTable('users');
@@ -39,80 +42,367 @@ class UserDashboard extends Screen
 
         // Wenn die benötigten Tabellen nicht existieren oder leer sind, zeige Platzhalter
         if (! $usersExists || ! $hasUsers || ! $usageRecordsExists || ! $hasUsageRecords) {
-            //Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
-
             return $this->getPlaceholderData();
         }
 
         // Labels
         // Dynamisch erstellte Labels für den aktuell ausgewählten Monat mit Carbon
         $now = Carbon::now();
-        $currentYear = $now->year;
-        $currentMonth = $now->month;
-        $currentDay = $now->day;
-        $specificDay = '2025-03-21';
 
-        $daysInMonth = $now->daysInMonth;
+        // Hole den ausgewählten Monat aus dem Request (Format: Y-m, z.B. "2025-12")
+        $selectedMonth = $request->input('monthly_date', $now->format('Y-m'));
+        $monthDate = Carbon::createFromFormat('Y-m', $selectedMonth);
+        $monthName = $monthDate->format('F Y');
+
+        $currentYear = $monthDate->year;
+        $currentMonth = $monthDate->month;
+        $currentDay = $now->day;
+
+        $daysInMonth = $monthDate->daysInMonth;
         $labelsForCurrentMonth = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
             $labelsForCurrentMonth[] = Carbon::create($currentYear, $currentMonth, $d)->format('Y-m-d');
         }
 
-        // Statische Labels für einen 24h-Stunden Tag
+        // Statische Labels für einen 24h-Stunden Tag, beginnend bei 4 Uhr
         $hourLabels = [];
-        for ($hour = 0; $hour < 24; $hour++) {
+        for ($i = 0; $i < 24; $i++) {
+            $hour = ($i + 4) % 24;
             $hourLabels[] = sprintf('%02d:00', $hour);
         }
 
-        // User Statistics
-        $totalUsers = DB::table('users')->count();
-        // Log::info('Total users in System: ' . $totalUsers);
+        // User Statistics - basierend auf dem ausgewählten Monat
+        // Total Users bis zum Ende des ausgewählten Monats
+        $endOfSelectedMonth = Carbon::createFromFormat('Y-m', $selectedMonth)->endOfMonth();
+        $totalUsers = DB::table('users')
+            ->where('created_at', '<=', $endOfSelectedMonth)
+            ->count();
 
-        // $users = DB::table('users');
+        // Total Users bis zum Ende des Vormonats (für Wachstumsberechnung)
+        $endOfPreviousMonth = $monthDate->copy()->subMonth()->endOfMonth();
+        $totalUsersPreviousMonth = DB::table('users')
+            ->where('created_at', '<=', $endOfPreviousMonth)
+            ->count();
 
-        // Anzahl der User, die sich diesen Monat neu angemeldet haben
+        // Berechne prozentuales Wachstum zum Vormonat
+        $totalUsersGrowth = ($totalUsersPreviousMonth > 0)
+            ? round((($totalUsers - $totalUsersPreviousMonth) / $totalUsersPreviousMonth) * 100, 2)
+            : 0;
+
+        // Anzahl der User, die sich im ausgewählten Monat neu angemeldet haben
         $newUsersThisMonth = DB::table('users')
-            ->whereYear('created_at', $now->year)
-            ->whereMonth('created_at', $now->month)
+            ->whereYear('created_at', $currentYear)
+            ->whereMonth('created_at', $currentMonth)
             ->count();
 
         $percentage = round((($totalUsers > 0) ? ($newUsersThisMonth / $totalUsers) * 100 : 0), 2);
-        // Log::info("Prozentsatz neuer User: " . $percentage);
 
-        // Aktive User pro Tag für den ganzen Monat
+        // Aktive User pro Tag für den ganzen Monat - aus usage_users_daily Tabelle
+        // Prüfen, ob die Tabelle existiert
+        $usageUsersDailyExists = Schema::hasTable('usage_users_daily');
 
-        $dailyData = DB::table('usage_records')
-            ->select(DB::raw('DAY(created_at) as day'), DB::raw('count(DISTINCT user_id) as activeUsers'))
-            ->whereYear('created_at', $currentYear)
-            ->whereMonth('created_at', $currentMonth)
-            ->groupBy('day')
-            ->orderBy('day')
-            ->get();
-        // Erstelle ein Array mit 0 als Standardwert für jeden Tag
-        $activeUsersPerDay = array_fill(0, $daysInMonth, 0);
-        foreach ($dailyData as $data) {
-            $index = (int) $data->day - 1;
-            if ($index >= 0 && $index < $daysInMonth) {
-                $activeUsersPerDay[$index] = $data->activeUsers;
+        if ($usageUsersDailyExists) {
+            // Verwende die Model-Methode für bessere Kapselung
+            $activeUsersPerDay = UsageUsersDaily::getDistinctUsersByDay($currentYear, $currentMonth, $daysInMonth);
+
+            // Erstelle $dailyData für Kompatibilität mit bestehenden Berechnungen
+            $dailyData = collect();
+            foreach ($activeUsersPerDay as $day => $count) {
+                $dailyData->push((object) ['day' => $day + 1, 'activeUsers' => $count]);
+            }
+        } else {
+            // Fallback auf usage_records, falls usage_users_daily nicht existiert
+            $dailyData = DB::table('usage_records')
+                ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(DISTINCT user_id) as activeUsers'))
+                ->whereYear('created_at', $currentYear)
+                ->whereMonth('created_at', $currentMonth)
+                ->groupBy('day')
+                ->orderBy('day')
+                ->get();
+
+            // Erstelle ein Array mit 0 als Standardwert für jeden Tag
+            $activeUsersPerDay = array_fill(0, $daysInMonth, 0);
+            foreach ($dailyData as $data) {
+                $index = (int) $data->day - 1;
+                if ($index >= 0 && $index < $daysInMonth) {
+                    $activeUsersPerDay[$index] = $data->activeUsers;
+                }
             }
         }
 
-        // Neue Log-Ausgabe: Daten für den aktuellen Tag
-        $activeUsersToday = $dailyData->firstWhere('day', (int) $currentDay);
-        // Log::info("Aktive Nutzer am heutigen Tag ({$currentDay}): " . ($activeUsersToday ? $activeUsersToday->activeUsers : 0));
+        // Berechne den Durchschnitt der aktiven Nutzer
+        // Für laufenden Monat: nur bisherige Tage | Für vergangene Monate: alle Tage
+        $isCurrentMonth = $currentYear === $now->year && $currentMonth === $now->month;
 
-        // Berechne den Durchschnitt der aktiven Nutzer (activeUsersDelta)
-        $activeUsersDelta = $dailyData->avg('activeUsers');
-        // Log::info("Durchschnitt der aktiven Nutzer (activeUsersDelta): " . $activeUsersDelta);
+        if ($isCurrentMonth) {
+            // Laufender Monat: Durchschnitt nur über bisherige Tage (bis heute)
+            $daysToCalculate = $currentDay;
+            $sumUpToToday = array_sum(array_slice($activeUsersPerDay, 0, $currentDay));
+            $activeUsersDelta = round($sumUpToToday / $daysToCalculate, 2);
+        } else {
+            // Vergangener Monat: Durchschnitt über alle Tage des Monats
+            $activeUsersDelta = round(array_sum($activeUsersPerDay) / $daysInMonth, 2);
+        }
 
-        // Berechne den Prozentsatz, um den $activeUsersToday von $activeUsersDelta abweicht
-        $todayActive = $activeUsersToday ? $activeUsersToday->activeUsers : 0;
-        $activeUsersDeltaDiff = ($activeUsersDelta > 0) ? round((($todayActive - $activeUsersDelta) / $activeUsersDelta) * 100, 2) : 0;
-        // Log::info("Prozentsatzabweichung: " . $activeUsersDeltaDiff . "%");
+        // Berechne Average Daily Active Users für den Vormonat
+        $previousMonth = $monthDate->copy()->subMonth();
+        $previousMonthAvgUsers = 0;
+
+        if ($usageUsersDailyExists) {
+            $previousMonthData = UsageUsersDaily::getDistinctUsersByDay(
+                $previousMonth->year,
+                $previousMonth->month,
+                $previousMonth->daysInMonth
+            );
+            $previousMonthAvgUsers = round(array_sum($previousMonthData) / $previousMonth->daysInMonth, 2);
+        } else {
+            $previousMonthQuery = DB::table('usage_records')
+                ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(DISTINCT user_id) as activeUsers'))
+                ->whereYear('created_at', $previousMonth->year)
+                ->whereMonth('created_at', $previousMonth->month)
+                ->groupBy('day')
+                ->get();
+
+            if ($previousMonthQuery->isNotEmpty()) {
+                $previousMonthAvgUsers = round($previousMonthQuery->avg('activeUsers'), 2);
+            }
+        }
+
+        // Berechne prozentuale Abweichung zum Vormonat
+        $activeUsersDeltaDiff = ($previousMonthAvgUsers > 0)
+            ? round((($activeUsersDelta - $previousMonthAvgUsers) / $previousMonthAvgUsers) * 100, 2)
+            : 0;
+
+        // Berechne Max Users für den ausgewählten Monat
+        $maxUsers = max($activeUsersPerDay);
+        $previousMonthMaxUsers = 0;
+
+        if ($usageUsersDailyExists) {
+            $previousMonthData = UsageUsersDaily::getDistinctUsersByDay(
+                $previousMonth->year,
+                $previousMonth->month,
+                $previousMonth->daysInMonth
+            );
+            $previousMonthMaxUsers = max($previousMonthData);
+        } else {
+            $previousMonthQuery = DB::table('usage_records')
+                ->select(DB::raw('DAY(created_at) as day'), DB::raw('COUNT(DISTINCT user_id) as activeUsers'))
+                ->whereYear('created_at', $previousMonth->year)
+                ->whereMonth('created_at', $previousMonth->month)
+                ->groupBy('day')
+                ->get();
+
+            if ($previousMonthQuery->isNotEmpty()) {
+                $previousMonthMaxUsers = $previousMonthQuery->max('activeUsers');
+            }
+        }
+
+        // Berechne prozentuale Abweichung zum Vormonat
+        $maxUsersDiff = ($previousMonthMaxUsers > 0)
+            ? round((($maxUsers - $previousMonthMaxUsers) / $previousMonthMaxUsers) * 100, 2)
+            : 0;
 
         // Berechnung des Verhältnis von recurringUsers zu newUsers
         $recurringUsers = $totalUsers - $newUsersThisMonth;
         $recurringPercentage = ($newUsersThisMonth > 0) ? round(($recurringUsers / $newUsersThisMonth) * 100, 2) : 0;
+
+        // Users per Role Metrics (für Custom Metrics Element)
+        $roles = Role::with('users')->get();
+        $roleMetrics = [];
+
+        // Berechne User ohne Rolle
+        $usersWithoutRoleCurrent = DB::table('users')
+            ->whereNotIn('id', function ($query) {
+                $query->select('user_id')
+                    ->from('role_users');
+            })
+            ->where('created_at', '<=', $endOfSelectedMonth)
+            ->count();
+
+        $usersWithoutRolePreviousMonth = DB::table('users')
+            ->whereNotIn('id', function ($query) {
+                $query->select('user_id')
+                    ->from('role_users');
+            })
+            ->where('created_at', '<=', $endOfPreviousMonth)
+            ->count();
+
+        // Neue User ohne Rolle diesen Monat
+        $newUsersWithoutRoleThisMonth = DB::table('users')
+            ->whereNotIn('id', function ($query) {
+                $query->select('user_id')
+                    ->from('role_users');
+            })
+            ->whereYear('created_at', $currentYear)
+            ->whereMonth('created_at', $currentMonth)
+            ->count();
+
+        if ($usersWithoutRoleCurrent > 0 || $usersWithoutRolePreviousMonth > 0) {
+            $percentageOfTotal = $totalUsers > 0 ? round(($usersWithoutRoleCurrent / $totalUsers) * 100, 1) : 0;
+            $growthRate = $usersWithoutRolePreviousMonth > 0
+                ? round((($usersWithoutRoleCurrent - $usersWithoutRolePreviousMonth) / $usersWithoutRolePreviousMonth) * 100, 2)
+                : 0;
+
+            $roleMetrics['No Role'] = [
+                'totalCount' => $usersWithoutRoleCurrent,
+                'totalPercentage' => $percentageOfTotal,
+                'newThisMonth' => $newUsersWithoutRoleThisMonth,
+                'growthRate' => $growthRate,
+            ];
+        }
+
+        // Berechne Metriken pro Rolle
+        foreach ($roles as $role) {
+            $userCountCurrent = $role->users()
+                ->where('created_at', '<=', $endOfSelectedMonth)
+                ->count();
+
+            $userCountPreviousMonth = $role->users()
+                ->where('created_at', '<=', $endOfPreviousMonth)
+                ->count();
+
+            // Neue User in dieser Rolle diesen Monat
+            $newUsersThisMonth = $role->users()
+                ->whereYear('created_at', $currentYear)
+                ->whereMonth('created_at', $currentMonth)
+                ->count();
+
+            // Nur Rollen mit aktuellen oder vorherigen Usern anzeigen
+            if ($userCountCurrent > 0 || $userCountPreviousMonth > 0) {
+                $percentageOfTotal = $totalUsers > 0 ? round(($userCountCurrent / $totalUsers) * 100, 1) : 0;
+                $growthRate = $userCountPreviousMonth > 0
+                    ? round((($userCountCurrent - $userCountPreviousMonth) / $userCountPreviousMonth) * 100, 2)
+                    : 0;
+
+                $roleMetrics[$role->name] = [
+                    'totalCount' => $userCountCurrent,
+                    'totalPercentage' => $percentageOfTotal,
+                    'newThisMonth' => $newUsersThisMonth,
+                    'growthRate' => $growthRate,
+                ];
+            }
+        }
+
+        // Users per Role über den ausgewählten Monat (für Line Chart)
+        $roleLabels = [];
+        $roleData = [];
+
+        // Bestimme bis zu welchem Tag Daten gezeigt werden sollen
+        // Für laufenden Monat: nur bis heute | Für vergangene Monate: alle Tage
+        $isCurrentMonth = $currentYear === $now->year && $currentMonth === $now->month;
+        $daysToShow = $isCurrentMonth ? $currentDay : $daysInMonth;
+
+        // Erstelle Tages-Labels für die verfügbaren Daten
+        for ($d = 1; $d <= $daysToShow; $d++) {
+            $roleLabels[] = Carbon::create($currentYear, $currentMonth, $d)->format('M d');
+        }
+
+        // Hole alle Rollen
+        $roles = Role::all();
+
+        // Berechne User pro Rolle für jeden Tag (kumulativ)
+        foreach ($roles as $role) {
+            // Filtere Administrator und Gast aus
+            if (in_array(strtolower($role->name), ['administrator', 'gast'])) {
+                continue;
+            }
+
+            $roleValues = [];
+            for ($d = 1; $d <= $daysToShow; $d++) {
+                $targetDate = Carbon::create($currentYear, $currentMonth, $d)->endOfDay();
+                $count = $role->users()
+                    ->where('created_at', '<=', $targetDate)
+                    ->count();
+                $roleValues[] = $count;
+            }
+
+            // Nur Rollen mit mindestens einem User anzeigen
+            if (array_sum($roleValues) > 0) {
+                $roleData[] = [
+                    'name' => $role->name,
+                    'values' => $roleValues,
+                    'labels' => $roleLabels,
+                ];
+            }
+        }
+
+        // Fallback: Wenn keine Daten vorhanden sind, füge einen Dummy-Eintrag hinzu
+        if (empty($roleData)) {
+            $roleData[] = [
+                'name' => 'No Data',
+                'values' => array_fill(0, $daysToShow, 0),
+                'labels' => $roleLabels,
+            ];
+        }
+
+        $usersPerRole = $roleData;
+
+        // Active Users pro Tag nach Rolle (für Line Chart)
+        $roles = Role::all();
+        $activeUsersByRole = [];
+
+        // Für jede Rolle: Zähle aktive User pro Tag
+        foreach ($roles as $role) {
+            // Filtere Administrator und Gast aus
+            if (in_array(strtolower($role->name), ['administrator', 'gast'])) {
+                continue;
+            }
+            $dailyActiveByRole = array_fill(0, $daysInMonth, 0);
+
+            if ($usageUsersDailyExists) {
+                // Nutze usage_users_daily mit Join auf role_users
+                $dailyRoleData = DB::table('usage_users_daily')
+                    ->join('role_users', 'usage_users_daily.user_id', '=', 'role_users.user_id')
+                    ->select(DB::raw('DAY(usage_users_daily.date) as day'), DB::raw('COUNT(DISTINCT usage_users_daily.user_id) as count'))
+                    ->whereYear('usage_users_daily.date', $currentYear)
+                    ->whereMonth('usage_users_daily.date', $currentMonth)
+                    ->where('role_users.role_id', $role->id)
+                    ->groupBy('day')
+                    ->get();
+
+                foreach ($dailyRoleData as $data) {
+                    $index = (int) $data->day - 1;
+                    if ($index >= 0 && $index < $daysInMonth) {
+                        $dailyActiveByRole[$index] = (int) $data->count;
+                    }
+                }
+            } else {
+                // Fallback auf usage_records
+                $dailyRoleData = DB::table('usage_records')
+                    ->join('role_users', 'usage_records.user_id', '=', 'role_users.user_id')
+                    ->select(DB::raw('DAY(usage_records.created_at) as day'), DB::raw('COUNT(DISTINCT usage_records.user_id) as count'))
+                    ->whereYear('usage_records.created_at', $currentYear)
+                    ->whereMonth('usage_records.created_at', $currentMonth)
+                    ->where('role_users.role_id', $role->id)
+                    ->groupBy('day')
+                    ->get();
+
+                foreach ($dailyRoleData as $data) {
+                    $index = (int) $data->day - 1;
+                    if ($index >= 0 && $index < $daysInMonth) {
+                        $dailyActiveByRole[$index] = (int) $data->count;
+                    }
+                }
+            }
+
+            // Nur Rollen mit aktiven Usern hinzufügen
+            if (array_sum($dailyActiveByRole) > 0) {
+                $activeUsersByRole[] = [
+                    'labels' => $labelsForCurrentMonth,
+                    'name' => $role->name,
+                    'values' => $dailyActiveByRole,
+                ];
+            }
+        }
+
+        // Fallback: Wenn keine Daten vorhanden sind, füge einen Dummy-Eintrag hinzu
+        if (empty($activeUsersByRole)) {
+            $activeUsersByRole[] = [
+                'labels' => $labelsForCurrentMonth,
+                'name' => 'No Data',
+                'values' => array_fill(0, $daysInMonth, 0),
+            ];
+        }
 
         // Zusammenbauen der Daten für das Barchart
         $dailyActiveUsers = [
@@ -123,114 +413,73 @@ class UserDashboard extends Screen
             ],
         ];
 
-        // Log::info($dailyActiveUsers);
+        // Abfrage der durchschnittlichen User pro Stunde für den ausgewählten Monat
+        // Mit Min/Max Werten für Stacked Bar Chart
+        $hourlyStats = DB::table('usage_records')
+            ->select(
+                DB::raw('HOUR(created_at) as hour'),
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('COUNT(DISTINCT user_id) as user_count')
+            )
+            ->whereYear('created_at', $currentYear)
+            ->whereMonth('created_at', $currentMonth)
+            ->groupBy('date', 'hour')
+            ->get()
+            ->groupBy('hour');
 
-        // Request Statistics
-        $totalRequests = DB::table('usage_records')->count();
-        $openAiRequests = DB::table('usage_records')
-            ->where('model', 'gpt-4o')
-            ->get();
+        // Berechne Durchschnitt, Min und Max für jede Stunde
+        $avgPerHour = array_fill(0, 24, 0);
+        $minPerHour = array_fill(0, 24, 0);
+        $maxPerHour = array_fill(0, 24, 0);
 
-        // Lese Modelle aus der Konfiguration - mit verbesserter Absicherung
-        $providers = config('model_providers.providers', []);
-        $allModels = [];
+        foreach ($hourlyStats as $hour => $records) {
+            $counts = $records->pluck('user_count')->toArray();
+            $hourIndex = (int) $hour;
 
-        // Prüfen, ob der providers-Schlüssel existiert und ein Array ist
-        if (is_array($providers)) {
-            foreach ($providers as $providerKey => $provider) {
-                // Prüfen, ob der models-Schlüssel existiert und ein Array ist
-                if (isset($provider['models']) && is_array($provider['models'])) {
-                    foreach ($provider['models'] as $model) {
-                        // Prüfen, ob es sich um ein Array mit id-Schlüssel handelt
-                        if (is_array($model) && isset($model['id'])) {
-                            $allModels[] = $model;
-                        }
-                    }
-                }
+            if ($hourIndex >= 0 && $hourIndex < 24 && count($counts) > 0) {
+                $avgPerHour[$hourIndex] = round(array_sum($counts) / count($counts), 1);
+                $minPerHour[$hourIndex] = min($counts);
+                $maxPerHour[$hourIndex] = max($counts);
             }
         }
 
-        // Führe für jedes Modell eine Datenbankabfrage durch und fasse die Ergebnisse pro Provider zusammen
-        $providerSummary = [];
-        foreach ($providers as $providerKey => $provider) {
-            $totalRequestsForProvider = 0;
-            if (isset($provider['models']) && is_array($provider['models'])) {
-                foreach ($provider['models'] as $model) {
-                    if (isset($model['id'])) {
-                        $count = DB::table('usage_records')
-                            ->where('model', $model['id'])
-                            ->count();
-                        $totalRequestsForProvider += $count;
-                    }
-                }
-            }
-            $providerSummary[$providerKey] = $totalRequestsForProvider;
-        }
-        // Erstelle eine modelSummary, die die Anfragen auf die verschiedenen Modelle aufschlüsselt
-        // $modelSummary = [];
-        // foreach ($allModels as $model) {
-        //    if (isset($model['id'])) {
-        //        $count = DB::table('usage_records')
-        //                   ->where('model', $model['id'])
-        //                   ->count();
-        //        $modelSummary[$model['id']] = $count;
-        //    }
-        // }
+        // Ordne die Arrays neu, um bei Stunde 4 (04:00) zu beginnen
+        $reorderedMin = array_merge(array_slice($minPerHour, 4), array_slice($minPerHour, 0, 4));
+        $reorderedAvg = array_merge(array_slice($avgPerHour, 4), array_slice($avgPerHour, 0, 4));
+        $reorderedMax = array_merge(array_slice($maxPerHour, 4), array_slice($maxPerHour, 0, 4));
 
-        // $specificModel = 'gpt-4o-mini';
-        // $countForSpecificDay = DB::table('usage_records')
-        //                        ->where('model', $specificModel)
-        //                        ->whereDate('created_at', $specificDay)
-        //                        ->count();
-        // Log::info("Aufrufe von Model {$specificModel} am {$specificDay}: " . $countForSpecificDay);
-
-        // Neue Abfrage: Anzahl der Aufrufe eines spezifischen Models im gesamten Monat
-        //    $specificYear = '2025';
-        //    $specificMonth = '03';
-        //    $countForSpecificMonth = DB::table('usage_records')
-        //                               ->where('model', $specificModel)
-        //                               ->whereYear('created_at', $specificYear)
-        //                               ->whereMonth('created_at', $specificMonth)
-        //                               ->count();
-        //    Log::info("Aufrufe von Model {$specificModel} im {$specificYear}-{$specificMonth}: " . $countForSpecificMonth);
-        //
-        //    Log::info('Total requests: ' . $totalRequests);
-        //    Log::info('Requests OpenAI: ' . $openAiRequests->count());
-        //    // Abfrage der Anzahl der Requests für den spezifischen Tag und Erstellen eines Arrays als Werte
-        //    $requestsCountForSpecificDay = DB::table('usage_records')
-        //                                    ->whereDate('created_at', $specificDay)
-        //                                    ->count();
-        //    $requestsPerDayArray = [$requestsCountForSpecificDay];
-
-        // Neuer Code: Abfrage der Requests pro Stunde anhand der created_at-Spalte
-        // zur Ermittlung der distinct active Users pro Stunde
-        $rawRequestsPerHour = DB::table('usage_records')
-            ->select(DB::raw('HOUR(created_at) as hour'), DB::raw('COUNT(DISTINCT user_id) as count'))
-            ->whereDate('created_at', $specificDay)
-            ->groupBy('hour')
-            ->get();
-        $requestsPerHourArray = array_fill(0, 24, 0);
-        foreach ($rawRequestsPerHour as $data) {
-            $hourIndex = (int) $data->hour;
-            $requestsPerHourArray[$hourIndex] = $data->count;
-        }
-
+        // Line Chart mit absoluten Werten für Min, Average und Max
         $usersPerHour = [
             [
                 'labels' => $hourLabels,
-                'name' => 'Users per Hour',
-                'values' => $requestsPerHourArray,
+                'name' => 'Minimum',
+                'values' => $reorderedMin,
+            ],
+            [
+                'labels' => $hourLabels,
+                'name' => 'Average',
+                'values' => $reorderedAvg,
+            ],
+            [
+                'labels' => $hourLabels,
+                'name' => 'Maximum',
+                'values' => $reorderedMax,
             ],
         ];
 
         return [
             'dailyActiveUsers' => $dailyActiveUsers,
+            'activeUsersByRole' => $activeUsersByRole,
             'usersPerHour' => $usersPerHour,
+            'usersPerRole' => $usersPerRole,
+            'roleMetrics' => $roleMetrics,
+            'selectedMonth' => $selectedMonth,
+            'monthName' => $monthName,
             'metrics' => [
-                'totalUsers' => number_format($totalUsers),
+                'totalUsers' => ['value' => number_format($totalUsers), 'diff' => $totalUsersGrowth],
                 'newUsers' => ['value' => number_format($newUsersThisMonth), 'diff' => $percentage],
-                'activeUsersDelta' => number_format($activeUsersDelta),
-                'activeUsersToday' => ['value' => number_format($activeUsersToday ? $activeUsersToday->activeUsers : 0), 'diff' => $activeUsersDeltaDiff],
+                'activeUsersDelta' => ['value' => number_format($activeUsersDelta), 'diff' => $activeUsersDeltaDiff],
+                'maxUsers' => ['value' => number_format($maxUsers), 'diff' => $maxUsersDiff],
             ],
             'percentageChart' => [
                 [
@@ -281,6 +530,13 @@ class UserDashboard extends Screen
                     'values' => $placeholderDailyUsers,
                 ],
             ],
+            'activeUsersByRole' => [
+                [
+                    'labels' => $labelsForCurrentMonth,
+                    'name' => 'No Role',
+                    'values' => $placeholderDailyUsers,
+                ],
+            ],
             'usersPerHour' => [
                 [
                     'labels' => $hourLabels,
@@ -288,6 +544,14 @@ class UserDashboard extends Screen
                     'values' => $placeholderHourlyRequests,
                 ],
             ],
+            'usersPerRole' => [
+                [
+                    'labels' => [],
+                    'name' => 'No Role',
+                    'values' => [],
+                ],
+            ],
+            'roleMetrics' => [],
             'percentageChart' => [
                 [
                     'labels' => ['Recurring Users', 'New Users'],
@@ -295,11 +559,13 @@ class UserDashboard extends Screen
                     'values' => [0, 0],
                 ],
             ],
+            'selectedMonth' => Carbon::now()->format('Y-m'),
+            'monthName' => $now->format('F Y'),
             'metrics' => [
-                'totalUsers' => '0',
+                'totalUsers' => ['value' => '0', 'diff' => 0],
                 'newUsers' => ['value' => '0', 'diff' => 0],
-                'activeUsersDelta' => '0',
-                'activeUsersToday' => ['value' => '0', 'diff' => 0],
+                'activeUsersDelta' => ['value' => '0', 'diff' => 0],
+                'maxUsers' => ['value' => '0', 'diff' => 0],
             ],
             // Chat-Count Platzhalter
             'chatCountToday' => 0,
@@ -383,32 +649,50 @@ class UserDashboard extends Screen
      */
     public function layout(): iterable
     {
+        $selectedMonth = request('monthly_date', Carbon::now()->format('Y-m'));
+        $monthName = Carbon::createFromFormat('Y-m', $selectedMonth)->format('F Y');
+
         $dailyUsersChart = BarChart::make('dailyActiveUsers', 'Daily Users')
             ->title('Daily Active Users')
-            ->description('Overview of users per day, that interacted with an AI model.');
+            ->description('Overview of unique users per day for '.$monthName.' from aggregated daily usage data.');
 
-        $usersPerHourChart = BarChart::make('usersPerHour', 'Users per hour')
-            ->title('Users per Hour')
-            ->description('Overview of active users per hour.');
+        $activeUsersByRoleChart = LineChart::make('activeUsersByRole', 'Active Users by Role')
+            ->title('Daily Active Users by Role')
+            ->description('Daily active users grouped by Orchid role for '.$monthName.' showing activity patterns per user group.');
+
+        $usersPerHourChart = LineChart::make('usersPerHour', 'Users per hour')
+            ->title('Hourly User Activity')
+            ->description('Hourly user activity for '.$monthName.' showing minimum, average, and maximum values as separate lines.');
 
         $percentageChart = PercentageChart::make('percentageChart', 'Recurring vs New Users')
             ->title('Recurring vs New Users')
-            ->description('Das Verhältnis von wiederkehrenden Nutzern zu neuen Nutzern (im ausgewählten Monat).');
+            ->description('The ratio of returning to new users in the selected month.');
 
-        // Entferne den Layout::view() Aufruf für $dailyusersChart
+        $usersPerRoleChart = LineChart::make('usersPerRole', 'Users per Role')
+            ->title('Users per Role Over Time')
+            ->description('Daily cumulative user numbers per Orchid role for '.$monthName.'.');
+
+        $activeUsersByRoleChart = LineChart::make('activeUsersByRole', 'Active Users by Role')
+            ->title('Daily Active Users by Role')
+            ->description('Daily active users grouped by Orchid role for '.$monthName.' showing activity patterns per user group.');
+
         return [
-            Layout::metrics([
-                'Total Users' => 'metrics.totalUsers',
-                'New Users this Month' => 'metrics.newUsers',
-                'Average Daily Active Users' => 'metrics.activeUsersDelta',
-                'Active Today' => 'metrics.activeUsersToday',
-
+            Layout::columns([
+                Layout::view('orchid.partials.month-selector-empty'),
+                Layout::view('orchid.partials.month-selector-empty'),
+                Layout::view('orchid.partials.month-selector-empty'),
+                Layout::view('orchid.partials.month-selector', [
+                    'currentMonth' => request('monthly_date', Carbon::now()->format('Y-m')),
+                    'route' => 'platform.dashboard.users',
+                ]),
             ]),
 
-            // Layout::rows([
-            //    DateRange::make('rangeDate')
-            //        ->title('Range date'),
-            // ]),
+            Layout::metrics([
+                'Total Users' => 'metrics.totalUsers',
+                'New Users' => 'metrics.newUsers',
+                'Average Daily Active Users' => 'metrics.activeUsersDelta',
+                'Max Active Users' => 'metrics.maxUsers',
+            ]),
 
             Layout::columns([
                 $dailyUsersChart,
@@ -420,6 +704,18 @@ class UserDashboard extends Screen
 
             Layout::columns([
                 $percentageChart,
+            ]),
+
+            Layout::view('orchid.partials.role-metrics', [
+                'monthName' => $monthName,
+            ]),
+
+            Layout::columns([
+                $usersPerRoleChart,
+            ]),
+
+            Layout::columns([
+                $activeUsersByRoleChart,
             ]),
         ];
     }
