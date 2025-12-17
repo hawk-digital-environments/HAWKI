@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\RoleAssignmentController;
+use App\Orchid\Screens\Customization\AnnouncementEditScreen;
+use App\Orchid\Screens\Customization\AnnouncementScreen;
 use App\Orchid\Screens\Customization\CssEditScreen;
 use App\Orchid\Screens\Customization\CssRulesScreen;
-use App\Orchid\Screens\Customization\AnnouncementScreen;
-use App\Orchid\Screens\Customization\AnnouncementEditScreen;
 use App\Orchid\Screens\Customization\LocalizedTextScreen;
 use App\Orchid\Screens\Customization\MailTemplateEditScreen;
 use App\Orchid\Screens\Customization\MailTemplatesScreen;
@@ -25,26 +25,26 @@ use App\Orchid\Screens\Examples\ExampleGridScreen;
 use App\Orchid\Screens\Examples\ExampleLayoutsScreen;
 use App\Orchid\Screens\Examples\ExampleScreen;
 use App\Orchid\Screens\Examples\ExampleTextEditorsScreen;
-use App\Orchid\Screens\ModelSettings\ApiFormatEditScreen;
-use App\Orchid\Screens\ModelSettings\ApiFormatSettingsScreen;
 use App\Orchid\Screens\ModelSettings\AiModelEditScreen;
 use App\Orchid\Screens\ModelSettings\AiModelListScreen;
+use App\Orchid\Screens\ModelSettings\ApiFormatEditScreen;
+use App\Orchid\Screens\ModelSettings\ApiFormatSettingsScreen;
+use App\Orchid\Screens\ModelSettings\ApiProvidersScreen;
+use App\Orchid\Screens\ModelSettings\AssistantEditScreen;
+use App\Orchid\Screens\ModelSettings\AssistantsScreen;
+use App\Orchid\Screens\ModelSettings\PromptEditScreen;
+use App\Orchid\Screens\ModelSettings\PromptsScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
 use App\Orchid\Screens\ModelSettings\ProviderEditScreen;
-use App\Orchid\Screens\ModelSettings\ApiProvidersScreen;
-use App\Orchid\Screens\ModelSettings\AssistantsScreen;
-use App\Orchid\Screens\ModelSettings\AssistantEditScreen;
-use App\Orchid\Screens\ModelSettings\PromptsScreen;
-use App\Orchid\Screens\ModelSettings\PromptEditScreen;
 use App\Orchid\Screens\ModelSettings\ToolsScreen;
 use App\Orchid\Screens\PlatformScreen;
 use App\Orchid\Screens\Role\RoleAssignmentEditScreen;
 use App\Orchid\Screens\Role\RoleAssignmentScreen;
 use App\Orchid\Screens\Role\RoleEditScreen;
 use App\Orchid\Screens\Role\RoleListScreen;
-use App\Orchid\Screens\Settings\FeatureSettingsScreen;
 use App\Orchid\Screens\Settings\AuthenticationSettingsScreen;
 use App\Orchid\Screens\Settings\AuthMethodEditScreen;
+use App\Orchid\Screens\Settings\FeatureSettingsScreen;
 use App\Orchid\Screens\Settings\LogScreen;
 use App\Orchid\Screens\Settings\MailConfigurationSettingsScreen;
 use App\Orchid\Screens\Settings\PerformanceSettingsScreen;
@@ -94,6 +94,9 @@ Route::screen('/dashboard/requests', RequestsDashboard::class)
     ->breadcrumbs(fn (Trail $trail) => $trail
         ->parent('platform.index')
         ->push(__('Requests Dashboard'), route('platform.dashboard.requests')));
+
+Route::get('/dashboard/requests/user-details', [RequestsDashboard::class, 'getUserProviderDetails'])
+    ->name('platform.dashboard.requests.user-details');
 
 Route::screen('/dashboard/usage-debug', UsageDebugScreen::class)
     ->name('platform.dashboard.usage.debug')
@@ -356,7 +359,7 @@ Route::screen('/announcements/{announcement}/edit', AnnouncementEditScreen::clas
     ->breadcrumbs(function (Trail $trail, $announcement) {
         return $trail
             ->parent('platform.announcements')
-            ->push('Edit: ' . $announcement->title, route('platform.announcements.edit', $announcement));
+            ->push('Edit: '.$announcement->title, route('platform.announcements.edit', $announcement));
     });
 
 // Models - API Management - Providers

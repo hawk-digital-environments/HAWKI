@@ -92,14 +92,25 @@ class UserListLayout extends Table
                     $isSystemUser = $user->id === 1;
                     $isCurrentUser = $user->id === auth()->id();
 
+                    $userName = addslashes($user->name);
+                    $currentMonth = now()->format('F Y');
+
                     $actions = [
                         Link::make(__('Edit'))
                             ->route('platform.systems.users.edit', $user->id)
                             ->icon('bs.pencil'),
+
+                        Link::make(__('Show Usage'))
+                            ->icon('bs.bar-chart')
+                            ->href('#')
+                            ->set('data-user-usage', 'true')
+                            ->set('data-user-id', $user->id)
+                            ->set('data-user-name', $userName)
+                            ->set('data-month', $currentMonth),
                     ];
 
                     // Only show delete button for non-system users and not for current user
-                    if (!$isSystemUser && !$isCurrentUser) {
+                    if (! $isSystemUser && ! $isCurrentUser) {
                         $actions[] = Button::make(__('Delete'))
                             ->icon('bs.trash3')
                             ->confirm(__('Once the account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.'))

@@ -51,6 +51,10 @@ class UserDashboard extends Screen
 
         // Hole den ausgewählten Monat aus dem Request (Format: Y-m, z.B. "2025-12")
         $selectedMonth = $request->input('monthly_date', $now->format('Y-m'));
+        // Fallback auf aktuellen Monat, wenn leer oder ungültig
+        if (empty($selectedMonth) || ! preg_match('/^\d{4}-\d{2}$/', $selectedMonth)) {
+            $selectedMonth = $now->format('Y-m');
+        }
         $monthDate = Carbon::createFromFormat('Y-m', $selectedMonth);
         $monthName = $monthDate->format('F Y');
 
@@ -659,14 +663,9 @@ class UserDashboard extends Screen
             ->description('Daily active users grouped by Orchid role for '.$monthName.' showing activity patterns per user group.');
 
         return [
-            Layout::columns([
-                Layout::view('orchid.partials.month-selector-empty'),
-                Layout::view('orchid.partials.month-selector-empty'),
-                Layout::view('orchid.partials.month-selector-empty'),
-                Layout::view('orchid.partials.month-selector', [
-                    'currentMonth' => request('monthly_date', Carbon::now()->format('Y-m')),
-                    'route' => 'platform.dashboard.users',
-                ]),
+            Layout::view('orchid.partials.month-selector', [
+                'currentMonth' => request('monthly_date', Carbon::now()->format('Y-m')),
+                'route' => 'platform.dashboard.users',
             ]),
 
             Layout::metrics([

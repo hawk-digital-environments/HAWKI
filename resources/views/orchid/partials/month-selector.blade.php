@@ -14,12 +14,15 @@
     
     // Preserve other query parameters
     $queryParams = request()->except('monthly_date');
+    $queryString = http_build_query($queryParams);
+    $baseUrl = route($routeName);
 @endphp
 
-<div class="mb-3">
+<div id="month-selector" class="mb-3 d-flex justify-content-end">
+<div style="max-width: 400px; width: 100%;">
     <div class="d-flex align-items-center justify-content-between bg-white rounded p-2 border">
         <!-- Previous Month Arrow -->
-        <a href="{{ route($routeName, array_merge($queryParams, ['monthly_date' => $prevMonth])) }}" 
+        <a href="{{ route($routeName, array_merge($queryParams, ['monthly_date' => $prevMonth])) }}#month-selector" 
            class="btn btn-sm btn-link text-decoration-none text-primary p-1"
            title="Previous Month">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -27,18 +30,23 @@
             </svg>
         </a>
 
-        <!-- Current Month Display (clickable to jump to current month) -->
-        <div class="text-center flex-grow-1 px-2">
-            <a href="{{ route($routeName, array_merge($queryParams, ['monthly_date' => $todayMonth])) }}" 
-               class="text-decoration-none text-dark"
-               title="Jump to current month"
-               style="cursor: pointer;">
+        <!-- Current Month Display (clickable to open month picker) -->
+        <div class="text-center flex-grow-1 px-2 position-relative">
+            <div onclick="document.getElementById('month-picker-input').showPicker()" 
+                 class="text-decoration-none text-dark"
+                 title="Click to select month"
+                 style="cursor: pointer;">
                 <strong style="font-size: 0.95rem;">{{ $monthName }}</strong>
-            </a>
+            </div>
+            <input type="month" 
+                   id="month-picker-input" 
+                   value="{{ $currentMonth }}"
+                   style="position: absolute; opacity: 0; pointer-events: none;"
+                   onchange="window.location.href='{{ $baseUrl }}?{{ $queryString }}{{ $queryString ? '&' : '' }}monthly_date=' + this.value + '#month-selector'">
         </div>
 
         <!-- Next Month Arrow -->
-        <a href="{{ route($routeName, array_merge($queryParams, ['monthly_date' => $nextMonth])) }}" 
+        <a href="{{ route($routeName, array_merge($queryParams, ['monthly_date' => $nextMonth])) }}#month-selector" 
            class="btn btn-sm btn-link text-decoration-none text-primary p-1"
            title="Next Month">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
@@ -46,4 +54,5 @@
             </svg>
         </a>
     </div>
+</div>
 </div>
