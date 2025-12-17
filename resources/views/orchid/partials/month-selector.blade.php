@@ -18,8 +18,7 @@
     $baseUrl = route($routeName);
 @endphp
 
-<div id="month-selector" class="mb-3 d-flex justify-content-end">
-<div style="max-width: 400px; width: 100%;">
+<div id="month-selector" class="mb-3">
     <div class="d-flex align-items-center justify-content-between bg-white rounded p-2 border">
         <!-- Previous Month Arrow -->
         <a href="{{ route($routeName, array_merge($queryParams, ['monthly_date' => $prevMonth])) }}#month-selector" 
@@ -54,5 +53,4 @@
             </svg>
         </a>
     </div>
-</div>
 </div>

@@ -771,20 +771,10 @@ class RequestsDashboard extends Screen
             return [];
         }
 
-        Log::debug('parseToolUseData: Raw input', [
-            'length' => strlen($toolUseData),
-            'preview' => substr($toolUseData, 0, 500),
-        ]);
-
         $toolCounts = [];
 
         // Split by custom separator
         $jsonStrings = explode('|||', $toolUseData);
-
-        Log::debug('parseToolUseData: After split', [
-            'count' => count($jsonStrings),
-            'strings' => array_map(fn ($s) => substr($s, 0, 200), $jsonStrings),
-        ]);
 
         foreach ($jsonStrings as $jsonString) {
             $jsonString = trim($jsonString);
@@ -808,11 +798,6 @@ class RequestsDashboard extends Screen
                 }
 
                 if (is_array($tools)) {
-                    Log::debug('parseToolUseData: Found tools array', [
-                        'tools' => $tools,
-                        'is_associative' => array_keys($tools) !== range(0, count($tools) - 1),
-                    ]);
-
                     // Check if it's an associative array (object) or indexed array
                     if (array_keys($tools) !== range(0, count($tools) - 1)) {
                         // It's an associative array/object: {"web_search": 1, "calculator": 2}
@@ -995,15 +980,13 @@ class RequestsDashboard extends Screen
             ->description('Distribution of requests across AI models for '.$monthName.'.');
 
         return [
-            Layout::columns([
-                Layout::view('orchid.partials.month-selector-empty'),
-                Layout::view('orchid.partials.month-selector-empty'),
+            Layout::split([
                 Layout::view('orchid.partials.month-selector-empty'),
                 Layout::view('orchid.partials.month-selector', [
                     'currentMonth' => request('monthly_date', Carbon::now()->format('Y-m')),
                     'route' => 'platform.dashboard.requests',
                 ]),
-            ]),
+            ])->ratio('70/30'),
 
             Layout::metrics([
                 'Total Requests' => 'metrics.totalRequests',
