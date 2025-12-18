@@ -6,37 +6,73 @@
 @endphp
 
 @if(!empty($availableRoles))
-<div class="d-flex justify-content-end mb-3">
-    <div id="role-filter" class="bg-white rounded shadow-sm p-3" style="width: auto;">
-        <div class="d-flex justify-content-between align-items-center gap-3">
-            
-            <div class="btn-group btn-group-sm" role="group">
-            @foreach($availableRoles as $role)
-                @php
-                    $isActive = in_array($role, $selectedRoles);
-                    
-                    // Toggle Role in Array
-                    if ($isActive) {
-                        $newRoles = array_diff($selectedRoles, [$role]);
-                    } else {
-                        $newRoles = array_merge($selectedRoles, [$role]);
-                    }
-                    
-                    $url = route($routeName, array_merge($queryParams, ['roles' => $newRoles])) . '#role-filter';
-                @endphp
-                <a href="{{ $url }}" 
-                   class="btn btn-sm {{ $isActive ? 'btn-primary' : 'btn-outline-primary' }}"
-                   title="{{ $isActive ? 'Hide' : 'Show' }} {{ $role }}">
-                    {{ $role }}
-                </a>
-            @endforeach
+<fieldset class="mb-3">
+    <legend class="text-body-emphasis px-4 mb-0">Role Filter</legend>
+    
+    <div class="row mb-2 g-3 g-mb-4">
+        <div class="col-12">
+            <div class="bg-white rounded p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <small class="text-muted d-block">Select Roles to Display</small>
+                    <div class="btn-group btn-group-sm flex-wrap" role="group">
+                        @foreach($availableRoles as $role)
+                            @php
+                                $isActive = in_array($role, $selectedRoles);
+                            @endphp
+                            <button type="button"
+                                    onclick="toggleRole('{{ $role }}', {{ $isActive ? 'true' : 'false' }})" 
+                                    class="btn {{ $isActive ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                    title="{{ $isActive ? 'Hide' : 'Show' }} {{ $role }}">
+                                {{ $role }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+                
+                @if(empty($selectedRoles))
+                    <div class="alert alert-info mb-0 mt-2">
+                        <i class="me-1">ℹ️</i> No roles selected. Select at least one role to display data.
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
-        @if(empty($selectedRoles))
-            <small class="text-muted d-block mt-2">
-                <i class="me-1">ℹ️</i> No roles selected. Select at least one role to display data.
-            </small>
-        @endif
-    </div>
-</div>
+</fieldset>
+
+<script>
+function toggleRole(role, isActive) {
+    // Speichere aktuelle Scroll-Position
+    sessionStorage.setItem('scrollPosition', window.scrollY);
+    
+    const url = new URL(window.location.href);
+    const currentRoles = url.searchParams.getAll('roles[]');
+    
+    let newRoles;
+    if (isActive) {
+        // Remove role
+        newRoles = currentRoles.filter(r => r !== role);
+    } else {
+        // Add role
+        newRoles = [...currentRoles, role];
+    }
+    
+    // Clear old roles
+    url.searchParams.delete('roles[]');
+    url.searchParams.delete('roles');
+    
+    // Add new roles
+    newRoles.forEach(r => url.searchParams.append('roles[]', r));
+    
+    window.location.href = url.toString();
+}
+
+// Stelle Scroll-Position nach Reload wieder her
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollPosition = sessionStorage.getItem('scrollPosition');
+    if (scrollPosition !== null) {
+        window.scrollTo(0, parseInt(scrollPosition));
+        sessionStorage.removeItem('scrollPosition');
+    }
+});
+</script>
 @endif

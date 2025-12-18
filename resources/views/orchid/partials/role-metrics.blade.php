@@ -2,45 +2,41 @@
     $roleMetrics = $roleMetrics ?? [];
 @endphp
 
-<div class="mb-3">
-    <div class="bg-white rounded shadow-sm p-3 mb-3">
-        <div class="d-flex justify-content-between align-items-start">
-            <div>
-                <h3 class="text-dark fw-light mb-1">
-                    Users per Role ({{ $monthName }})
-                </h3>
-                <p class="text-muted small mb-0">
-                    Total users and new users per Orchid role with growth metrics.
-                </p>
-            </div>
-            @if(count($roleMetrics) > 0)
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-link text-muted" type="button" id="roleFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <x-orchid-icon path="bs.funnel" class="me-1"/>
-                        <span class="d-none d-md-inline">Filter Roles</span>
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="roleFilterDropdown" style="min-width: 200px;">
-                        <div class="mb-2">
-                            <strong class="small">Show/Hide Roles</strong>
-                        </div>
-                        @foreach($roleMetrics as $roleName => $data)
-                            <div class="form-check mb-1">
-                                <input class="form-check-input role-filter-checkbox" type="checkbox" value="{{ $roleName }}" id="role-filter-{{ Str::slug($roleName) }}" {{ in_array(strtolower($roleName), ['no role', 'administrator']) ? '' : 'checked' }}>
-                                <label class="form-check-label small" for="role-filter-{{ Str::slug($roleName) }}">
-                                    {{ $roleName }}
-                                </label>
+<fieldset class="mb-3">
+    <legend class="text-body-emphasis px-4 mb-0">Users per Role ({{ $monthName }})</legend>
+    
+    <div class="row mb-2 g-3 g-mb-4">
+        <div class="col-12">
+            <div class="bg-white rounded p-4 h-100">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <small class="text-muted d-block">Total users and new users per Orchid role with growth metrics.</small>
+                    @if(count($roleMetrics) > 0)
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary" type="button" id="roleFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <x-orchid-icon path="bs.funnel" class="me-1"/>
+                                <span class="d-none d-md-inline">Filter Roles</span>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="roleFilterDropdown" style="min-width: 200px;">
+                                <div class="mb-2">
+                                    <strong class="small">Show/Hide Roles</strong>
+                                </div>
+                                @foreach($roleMetrics as $roleName => $data)
+                                    <div class="form-check mb-1">
+                                        <input class="form-check-input role-filter-checkbox" type="checkbox" value="{{ $roleName }}" id="role-filter-{{ Str::slug($roleName) }}" {{ in_array(strtolower($roleName), ['no role', 'administrator']) ? '' : 'checked' }}>
+                                        <label class="form-check-label small" for="role-filter-{{ Str::slug($roleName) }}">
+                                            {{ $roleName }}
+                                        </label>
+                                    </div>
+                                @endforeach
+                                <hr class="my-2">
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0" id="selectAllRoles">Select All</button>
+                                    <button type="button" class="btn btn-sm btn-link text-muted p-0" id="deselectAllRoles">Deselect All</button>
+                                </div>
                             </div>
-                        @endforeach
-                        <hr class="my-2">
-                        <div class="d-flex justify-content-between">
-                            <button type="button" class="btn btn-sm btn-link text-muted p-0" id="selectAllRoles">Select All</button>
-                            <button type="button" class="btn btn-sm btn-link text-muted p-0" id="deselectAllRoles">Deselect All</button>
                         </div>
-                    </div>
+                    @endif
                 </div>
-            @endif
-        </div>
-    </div>
     
     @if(count($roleMetrics) > 0)
         <div class="row" id="roleMetricsContainer">
@@ -89,11 +85,14 @@
             @endforeach
         </div>
     @else
-        <div class="bg-white rounded shadow-sm p-4">
-            <p class="text-muted text-center mb-0">No role data available for this period.</p>
+        <div class="alert alert-info mb-0 mt-2">
+            No role data available for this period.
         </div>
     @endif
-</div>
+            </div>
+        </div>
+    </div>
+</fieldset>
 
 <script>
 (function() {
