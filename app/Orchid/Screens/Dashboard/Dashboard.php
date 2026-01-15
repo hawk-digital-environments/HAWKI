@@ -293,11 +293,11 @@ class Dashboard extends Screen
     private function checkLdapAuth(): array
     {
         $connection = config('ldap.default', 'default');
-        $host = config("ldap.connections.{$connection}.ldap_host");
+        $hostConfig = config("ldap.connections.{$connection}.ldap_host");
         $port = config("ldap.connections.{$connection}.ldap_port");
         $baseDn = config("ldap.connections.{$connection}.ldap_base_dn");
 
-        if (empty($host)) {
+        if (empty($hostConfig)) {
             return [
                 'status' => 'warning',
                 'message' => 'LDAP host not configured',
@@ -311,21 +311,40 @@ class Dashboard extends Screen
             ];
         }
 
+        // Parse host to handle protocol prefixes (ldap:// or ldaps://)
+        $host = $hostConfig;
+        $protocol = 'tcp';
+        if (str_contains($hostConfig, '://')) {
+            $parts = parse_url($hostConfig);
+            $host = $parts['host'] ?? $hostConfig;
+            $scheme = $parts['scheme'] ?? 'ldap';
+
+            if ($scheme === 'ldaps') {
+                $protocol = 'ssl';
+                $port = $port ?? $parts['port'] ?? 636;
+            } else {
+                $port = $port ?? $parts['port'] ?? 389;
+            }
+        } else {
+            $port = $port ?? 389;
+        }
+
         // Optional: Teste LDAP-Verbindung
         try {
             $timeout = 2;
-            $fp = @fsockopen($host, $port ?? 389, $errno, $errstr, $timeout);
+            $address = ($protocol === 'ssl' ? 'ssl://' : '').$host;
+            $fp = @fsockopen($address, $port, $errno, $errstr, $timeout);
             if ($fp) {
                 fclose($fp);
 
                 return [
                     'status' => 'success',
-                    'message' => "LDAP: {$host}:".($port ?? 389).' (reachable)',
+                    'message' => "LDAP: {$hostConfig} (reachable)",
                 ];
             } else {
                 return [
                     'status' => 'warning',
-                    'message' => "LDAP configured but unreachable: {$host}",
+                    'message' => "LDAP configured but unreachable: {$hostConfig} (Port {$port})",
                 ];
             }
         } catch (\Exception $e) {
