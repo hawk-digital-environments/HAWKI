@@ -293,9 +293,9 @@ class Dashboard extends Screen
     private function checkLdapAuth(): array
     {
         $connection = config('ldap.default', 'default');
-        $host = config("ldap.connections.{$connection}.hosts.0");
-        $port = config("ldap.connections.{$connection}.port");
-        $baseDn = config("ldap.connections.{$connection}.base_dn");
+        $host = config("ldap.connections.{$connection}.ldap_host");
+        $port = config("ldap.connections.{$connection}.ldap_port");
+        $baseDn = config("ldap.connections.{$connection}.ldap_base_dn");
 
         if (empty($host)) {
             return [
