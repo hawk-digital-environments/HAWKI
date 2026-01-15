@@ -4,7 +4,6 @@ namespace App\Orchid\Screens\SystemSettings;
 
 use App\Models\AppSetting;
 use App\Orchid\Layouts\Settings\BackupListLayout;
-use App\Orchid\Layouts\Settings\ScheduleListLayout;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Button;
@@ -36,10 +35,10 @@ class BackupSettingsScreen extends Screen
         // Get list of recent backups
         $backupPath = storage_path('app/HAWKI2');
         $backups = [];
-        
+
         if (is_dir($backupPath)) {
-            $files = glob($backupPath . '/*.zip');
-            
+            $files = glob($backupPath.'/*.zip');
+
             foreach ($files as $file) {
                 $backups[] = [
                     'filename' => basename($file),
@@ -50,20 +49,20 @@ class BackupSettingsScreen extends Screen
                     'created_human' => date('Y-m-d H:i:s', filemtime($file)),
                 ];
             }
-            
+
             // Sort by creation time, newest first
-            usort($backups, function($a, $b) {
+            usort($backups, function ($a, $b) {
                 return $b['created_at'] <=> $a['created_at'];
             });
         }
 
         // Convert to paginator for Orchid Table
         $collection = collect($backups);
-        
+
         $perPage = 10;
         $currentPage = request()->get('page', 1);
         $currentItems = $collection->slice(($currentPage - 1) * $perPage, $perPage)->values();
-        
+
         $fields['backups'] = new \Illuminate\Pagination\LengthAwarePaginator(
             $currentItems,
             $collection->count(),
@@ -84,33 +83,33 @@ class BackupSettingsScreen extends Screen
             // Run artisan schedule:list and parse output
             \Artisan::call('schedule:list');
             $output = \Artisan::output();
-            
+
             $schedules = [];
             $lines = explode("\n", $output);
-            
+
             foreach ($lines as $line) {
                 // Skip header and empty lines
                 if (empty(trim($line)) || str_contains($line, '─')) {
                     continue;
                 }
-                
+
                 // Parse schedule line
                 // Format: "  0 0 * * *  php artisan filestorage:cleanup ....... Next Due: in 10 Stunden"
                 if (preg_match('/^\s*(.+?)\s+(php artisan .+?)\s+\.+\s+Next Due:\s+(.+)$/', $line, $matches)) {
                     $expression = trim($matches[1]);
                     // Remove potential quotes from expression
                     $expression = trim($expression, '"\'');
-                    
+
                     $command = trim($matches[2]);
                     $nextDue = trim($matches[3]);
-                    
+
                     // Convert to human readable
                     $expressionHuman = $this->cronToHuman($expression);
-                    
+
                     // Extract command name for description
                     $description = '';
                     $taskKey = null;
-                    
+
                     if (str_contains($command, 'backup:run')) {
                         $description = 'Database Backup';
                         $taskKey = 'backup.run';
@@ -124,10 +123,10 @@ class BackupSettingsScreen extends Screen
                         $description = 'File Storage Cleanup';
                         $taskKey = 'filestorage.cleanup';
                     }
-                    
+
                     // Check if task is enabled
                     $isEnabled = $this->isScheduleEnabled($taskKey);
-                    
+
                     $schedules[] = [
                         'expression' => $expression,
                         'expression_human' => $expressionHuman,
@@ -139,10 +138,11 @@ class BackupSettingsScreen extends Screen
                     ];
                 }
             }
-            
+
             return $schedules;
         } catch (\Exception $e) {
             \Log::error('Schedule parsing failed', ['error' => $e->getMessage()]);
+
             return [];
         }
     }
@@ -154,64 +154,68 @@ class BackupSettingsScreen extends Screen
     {
         // Normalize whitespace: replace multiple spaces with single space
         $expression = preg_replace('/\s+/', ' ', trim($expression));
-        
+
         $parts = explode(' ', $expression);
         if (count($parts) !== 5) {
             return $expression;
         }
-        
+
         [$minute, $hour, $day, $month, $weekday] = array_map('trim', $parts);
-        
+
         // Every minute: * * * * *
         if ($minute === '*' && $hour === '*' && $day === '*' && $month === '*' && $weekday === '*') {
             return 'Jede Minute';
         }
-        
+
         // Every X minutes: */5 * * * *
         if (preg_match('/^\*\/(\d+)$/', $minute, $matches) && $hour === '*' && $day === '*' && $month === '*' && $weekday === '*') {
-            return 'Alle ' . $matches[1] . ' Minuten';
+            return 'Alle '.$matches[1].' Minuten';
         }
-        
+
         // Hourly: 30 * * * *
         if ($minute !== '*' && $hour === '*' && $day === '*' && $month === '*' && $weekday === '*') {
-            return 'Stündlich (Minute ' . $minute . ')';
+            return 'Stündlich (Minute '.$minute.')';
         }
-        
+
         // Daily at specific time: 37 13 * * *
         if (is_numeric($minute) && is_numeric($hour) && $day === '*' && $month === '*' && $weekday === '*') {
-            $hourInt = (int)$hour;
-            $minuteInt = (int)$minute;
-            return 'Täglich um ' . sprintf('%02d:%02d', $hourInt, $minuteInt) . ' Uhr';
+            $hourInt = (int) $hour;
+            $minuteInt = (int) $minute;
+
+            return 'Täglich um '.sprintf('%02d:%02d', $hourInt, $minuteInt).' Uhr';
         }
-        
+
         // Weekly (specific day): 0 2 * * 0
         if (is_numeric($minute) && is_numeric($hour) && $day === '*' && $month === '*' && is_numeric($weekday)) {
             $days = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
-            $weekdayInt = (int)$weekday;
+            $weekdayInt = (int) $weekday;
             $dayName = $days[$weekdayInt] ?? 'Unbekannt';
-            $hourInt = (int)$hour;
-            $minuteInt = (int)$minute;
-            return $dayName . ' um ' . sprintf('%02d:%02d', $hourInt, $minuteInt) . ' Uhr';
+            $hourInt = (int) $hour;
+            $minuteInt = (int) $minute;
+
+            return $dayName.' um '.sprintf('%02d:%02d', $hourInt, $minuteInt).' Uhr';
         }
-        
+
         // Monthly (specific day): 0 2 1 * *
         if (is_numeric($minute) && is_numeric($hour) && is_numeric($day) && $month === '*' && $weekday === '*') {
-            $hourInt = (int)$hour;
-            $minuteInt = (int)$minute;
-            return 'Monatlich am ' . $day . '. um ' . sprintf('%02d:%02d', $hourInt, $minuteInt) . ' Uhr';
+            $hourInt = (int) $hour;
+            $minuteInt = (int) $minute;
+
+            return 'Monatlich am '.$day.'. um '.sprintf('%02d:%02d', $hourInt, $minuteInt).' Uhr';
         }
-        
+
         // Yearly (specific date): 0 2 1 6 *
         if (is_numeric($minute) && is_numeric($hour) && is_numeric($day) && is_numeric($month) && $weekday === '*') {
-            $months = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
-                      'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
-            $monthInt = (int)$month;
+            $months = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+                'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+            $monthInt = (int) $month;
             $monthName = $months[$monthInt] ?? $month;
-            $hourInt = (int)$hour;
-            $minuteInt = (int)$minute;
-            return 'Jährlich am ' . $day . '. ' . $monthName . ' um ' . sprintf('%02d:%02d', $hourInt, $minuteInt) . ' Uhr';
+            $hourInt = (int) $hour;
+            $minuteInt = (int) $minute;
+
+            return 'Jährlich am '.$day.'. '.$monthName.' um '.sprintf('%02d:%02d', $hourInt, $minuteInt).' Uhr';
         }
-        
+
         // Fallback
         return $expression;
     }
@@ -221,24 +225,24 @@ class BackupSettingsScreen extends Screen
      */
     private function isScheduleEnabled(?string $taskKey): bool
     {
-        if (!$taskKey) {
+        if (! $taskKey) {
             return true;
         }
-        
+
         // Map task keys to config keys
         $configMap = [
-            'backup.run' => 'backup.backup.enabled',
-            'backup.clean' => 'backup.cleanup.enabled',
-            'check.model-status' => 'system.schedule.model_status_check.enabled',
-            'filestorage.cleanup' => 'system.schedule.filestorage_cleanup.enabled',
+            'backup.run' => 'scheduler.backup.enabled',
+            'backup.clean' => 'scheduler.cleanup.enabled',
+            'check.model-status' => 'scheduler.model_status_check.enabled',
+            'filestorage.cleanup' => 'scheduler.filestorage_cleanup.enabled',
         ];
-        
+
         $configKey = $configMap[$taskKey] ?? null;
-        
-        if (!$configKey) {
+
+        if (! $configKey) {
             return true; // No config, always enabled
         }
-        
+
         return config($configKey, true);
     }
 
@@ -249,39 +253,41 @@ class BackupSettingsScreen extends Screen
     {
         // Map task keys to settings keys
         $settingsMap = [
-            'backup.run' => 'backup_backup.enabled',
-            'backup.clean' => 'backup_cleanup.enabled',
-            'check.model-status' => 'system_schedule.model_status_check.enabled',
-            'filestorage.cleanup' => 'system_schedule.filestorage_cleanup.enabled',
+            'backup.run' => 'scheduler_backup.enabled',
+            'backup.clean' => 'scheduler_cleanup.enabled',
+            'check.model-status' => 'scheduler_model_status_check.enabled',
+            'filestorage.cleanup' => 'scheduler_filestorage_cleanup.enabled',
         ];
-        
+
         $settingKey = $settingsMap[$task] ?? null;
-        
-        if (!$settingKey) {
+
+        if (! $settingKey) {
             Toast::error(__('This task cannot be toggled'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
-        
+
         $setting = AppSetting::where('key', $settingKey)->first();
-        
-        if (!$setting) {
+
+        if (! $setting) {
             Toast::error(__('Setting not found'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
-        
+
         $newValue = $action === 'enable' ? 'true' : 'false';
         $setting->value = $newValue;
         $setting->save();
-        
+
         // Clear config cache
         \Artisan::call('config:clear');
-        
-        $message = $action === 'enable' 
-            ? __('Task activated successfully') 
+
+        $message = $action === 'enable'
+            ? __('Task activated successfully')
             : __('Task deactivated successfully');
-        
+
         Toast::success($message);
-        
+
         return redirect()->route('platform.systems.settings.backup');
     }
 
@@ -291,18 +297,16 @@ class BackupSettingsScreen extends Screen
     private function formatBytes(int $bytes, int $precision = 2): string
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        
+
         for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
             $bytes /= 1024;
         }
-        
-        return round($bytes, $precision) . ' ' . $units[$i];
+
+        return round($bytes, $precision).' '.$units[$i];
     }
 
     /**
      * The name of the screen displayed in the header.
-     *
-     * @return string|null
      */
     public function name(): ?string
     {
@@ -311,8 +315,6 @@ class BackupSettingsScreen extends Screen
 
     /**
      * The description of the screen.
-     *
-     * @return string|null
      */
     public function description(): ?string
     {
@@ -344,7 +346,7 @@ class BackupSettingsScreen extends Screen
         $settings = AppSetting::where('group', 'backup')->get()->keyBy('key');
         $backupEnabled = $settings['backup_backup.enabled']->typed_value ?? true;
         $cleanupEnabled = $settings['backup_cleanup.enabled']->typed_value ?? false;
-        
+
         // Build backup schedule fields
         $scheduleFields = [
             Switcher::make('settings.backup_backup__enabled')
@@ -371,14 +373,14 @@ class BackupSettingsScreen extends Screen
                 ])
                 ->value($settings['backup_backup.schedule_interval']->value ?? 'weekly')
                 ->help('How often automatic backups should run');
-            
+
             $scheduleFields[] = Input::make('settings.backup_backup.schedule_time')
                 ->title('Backup Time')
                 ->type('time')
                 ->value($settings['backup_backup.schedule_time']->value ?? '02:00')
                 ->help('Time when backups should run (24-hour format)');
         }
-        
+
         // Build retention fields array
         $retentionFields = [
             Switcher::make('settings.backup_cleanup__enabled')
@@ -397,35 +399,35 @@ class BackupSettingsScreen extends Screen
                     ->min(1)
                     ->value($settings['backup_cleanup.default_strategy.keep_all_backups_for_days']->value ?? 7)
                     ->help('Keep all backups for this many days (minimum 1 day)'),
-                
+
                 Input::make('settings.backup_cleanup.default_strategy.keep_daily_backups_for_days')
                     ->title('Keep Daily Backups For Days')
                     ->type('number')
                     ->min(0)
                     ->value($settings['backup_cleanup.default_strategy.keep_daily_backups_for_days']->value ?? 16)
                     ->help('After the initial period, keep one backup per day for this many days'),
-                
+
                 Input::make('settings.backup_cleanup.default_strategy.keep_weekly_backups_for_weeks')
                     ->title('Keep Weekly Backups For Weeks')
                     ->type('number')
                     ->min(0)
                     ->value($settings['backup_cleanup.default_strategy.keep_weekly_backups_for_weeks']->value ?? 8)
                     ->help('After daily period, keep one backup per week for this many weeks'),
-                
+
                 Input::make('settings.backup_cleanup.default_strategy.keep_monthly_backups_for_months')
                     ->title('Keep Monthly Backups For Months')
                     ->type('number')
                     ->min(0)
                     ->value($settings['backup_cleanup.default_strategy.keep_monthly_backups_for_months']->value ?? 4)
                     ->help('After weekly period, keep one backup per month for this many months'),
-                
+
                 Input::make('settings.backup_cleanup.default_strategy.keep_yearly_backups_for_years')
                     ->title('Keep Yearly Backups For Years')
                     ->type('number')
                     ->min(0)
                     ->value($settings['backup_cleanup.default_strategy.keep_yearly_backups_for_years']->value ?? 2)
                     ->help('After monthly period, keep one backup per year for this many years'),
-                
+
                 Input::make('settings.backup_cleanup.default_strategy.delete_oldest_backups_when_using_more_megabytes_than')
                     ->title('Maximum Storage (MB)')
                     ->type('number')
@@ -434,17 +436,17 @@ class BackupSettingsScreen extends Screen
                     ->help('Delete oldest backups when total size exceeds this limit (minimum 100 MB)'),
             ]);
         }
-        
+
         return [
             \App\Orchid\Layouts\Settings\SystemSettingsTabMenu::class,
-            
+
             Layout::block(Layout::rows([
                 Input::make('settings.backup_backup.destination.filename_prefix')
                     ->title('Backup Filename Prefix')
                     ->placeholder('e.g., prod-, staging-')
                     ->value($settings['backup_backup.destination.filename_prefix']->value ?? '')
                     ->help('Prefix for backup filenames'),
-                
+
                 Switcher::make('settings.backup_backup.include_files')
                     ->title('Include Files in Backup')
                     ->sendTrueOrFalse()
@@ -456,8 +458,8 @@ class BackupSettingsScreen extends Screen
 
             Layout::block(Layout::rows($scheduleFields))
                 ->title(__('Backup Schedule'))
-                ->description($backupEnabled 
-                    ? __('Configure when backups should run automatically') 
+                ->description($backupEnabled
+                    ? __('Configure when backups should run automatically')
                     : __('Enable automatic backups to configure schedule'))
                 ->commands([
                     Button::make(__('Run Backup Now'))
@@ -469,8 +471,8 @@ class BackupSettingsScreen extends Screen
 
             Layout::block(Layout::rows($retentionFields))
                 ->title(__('Retention Policy'))
-                ->description($cleanupEnabled 
-                    ? __('Configure how long backups should be kept') 
+                ->description($cleanupEnabled
+                    ? __('Configure how long backups should be kept')
                     : __('Enable automatic cleanup to configure retention policy'))
                 ->commands($cleanupEnabled ? [
                     Button::make(__('Run Cleanup Now'))
@@ -503,7 +505,7 @@ class BackupSettingsScreen extends Screen
         try {
             // Check if files should be included in backup
             $includeFiles = config('backup.backup.include_files', false);
-            
+
             // Run backup with appropriate flags
             if ($includeFiles) {
                 // Include database + files
@@ -512,7 +514,7 @@ class BackupSettingsScreen extends Screen
                 // Database only
                 \Artisan::call('backup:run', ['--only-db' => true]);
             }
-            
+
             $output = \Artisan::output();
 
             $backupType = $includeFiles ? 'Database + Files' : 'Database only';
@@ -521,7 +523,7 @@ class BackupSettingsScreen extends Screen
             // Send persistent notification to admin
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '✅ Backup Created',
-                $backupType . ' backup created successfully at ' . now()->format('Y-m-d H:i:s'),
+                $backupType.' backup created successfully at '.now()->format('Y-m-d H:i:s'),
                 'success'
             ));
 
@@ -533,7 +535,7 @@ class BackupSettingsScreen extends Screen
             // Send persistent error notification
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '❌ Backup Failed',
-                'Backup failed: ' . $e->getMessage(),
+                'Backup failed: '.$e->getMessage(),
                 'error'
             ));
 
@@ -557,7 +559,7 @@ class BackupSettingsScreen extends Screen
             // Send persistent notification to admin
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '🧹 Cleanup Completed',
-                'Backup cleanup completed successfully at ' . now()->format('Y-m-d H:i:s'),
+                'Backup cleanup completed successfully at '.now()->format('Y-m-d H:i:s'),
                 'success'
             ));
 
@@ -569,7 +571,7 @@ class BackupSettingsScreen extends Screen
             // Send persistent error notification
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '❌ Cleanup Failed',
-                'Backup cleanup failed: ' . $e->getMessage(),
+                'Backup cleanup failed: '.$e->getMessage(),
                 'error'
             ));
 
@@ -580,15 +582,15 @@ class BackupSettingsScreen extends Screen
     /**
      * Download backup file
      *
-     * @param string $filename
      * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
      */
     public function downloadBackup(string $filename)
     {
-        $backupPath = storage_path('app/HAWKI2/' . $filename);
+        $backupPath = storage_path('app/HAWKI2/'.$filename);
 
-        if (!file_exists($backupPath)) {
+        if (! file_exists($backupPath)) {
             Toast::error(__('Backup file not found'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
 
@@ -598,44 +600,45 @@ class BackupSettingsScreen extends Screen
     /**
      * Delete backup file
      *
-     * @param Request $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function deleteBackup(Request $request)
     {
         $filename = $request->get('filename');
-        
+
         if (empty($filename)) {
             Toast::error(__('No filename provided'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
 
         // Sanitize filename to prevent path traversal
         $filename = basename($filename);
-        $backupPath = storage_path('app/HAWKI2/' . $filename);
+        $backupPath = storage_path('app/HAWKI2/'.$filename);
 
-        if (!file_exists($backupPath)) {
+        if (! file_exists($backupPath)) {
             Toast::error(__('Backup file not found'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
 
         try {
             unlink($backupPath);
             Toast::success(__('Backup deleted successfully'));
-            
+
             // Send persistent notification to admin
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '🗑️ Backup Deleted',
-                'Backup deleted: ' . $filename . ' at ' . now()->format('Y-m-d H:i:s'),
+                'Backup deleted: '.$filename.' at '.now()->format('Y-m-d H:i:s'),
                 'success'
             ));
         } catch (\Exception $e) {
             Toast::error(__('Failed to delete backup: :message', ['message' => $e->getMessage()]));
-            
+
             // Send persistent error notification
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '❌ Delete Failed',
-                'Failed to delete backup ' . $filename . ': ' . $e->getMessage(),
+                'Failed to delete backup '.$filename.': '.$e->getMessage(),
                 'error'
             ));
         }
@@ -652,23 +655,26 @@ class BackupSettingsScreen extends Screen
         $password = $request->input('admin_password');
         $filename = $request->input('filename');
 
-        if (!$password) {
+        if (! $password) {
             Toast::error(__('Password is required'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
 
         // Check if password is correct for current user
-        if (!\Hash::check($password, \Auth::user()->password)) {
+        if (! \Hash::check($password, \Auth::user()->password)) {
             Toast::error(__('Incorrect password'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
 
         // Sanitize filename
         $filename = basename($filename);
-        $backupPath = storage_path('app/HAWKI2/' . $filename);
+        $backupPath = storage_path('app/HAWKI2/'.$filename);
 
-        if (!file_exists($backupPath)) {
+        if (! file_exists($backupPath)) {
             Toast::error(__('Backup file not found'));
+
             return redirect()->route('platform.systems.settings.backup');
         }
 
@@ -684,6 +690,7 @@ class BackupSettingsScreen extends Screen
             if ($zip->open($backupPath) !== true) {
                 \Artisan::call('up');
                 Toast::error(__('Failed to open backup file'));
+
                 return redirect()->route('platform.systems.settings.backup');
             }
 
@@ -697,23 +704,24 @@ class BackupSettingsScreen extends Screen
                 }
             }
 
-            if (!$sqlFile) {
+            if (! $sqlFile) {
                 $zip->close();
                 \Artisan::call('up');
                 Toast::error(__('No SQL file found in backup'));
+
                 return redirect()->route('platform.systems.settings.backup');
             }
 
             // Extract SQL file to temp location
             $tempDir = storage_path('app/temp_restore');
-            if (!is_dir($tempDir)) {
+            if (! is_dir($tempDir)) {
                 mkdir($tempDir, 0755, true);
             }
-            
+
             $zip->extractTo($tempDir, $sqlFile);
             $zip->close();
-            
-            $sqlPath = $tempDir . '/' . $sqlFile;
+
+            $sqlPath = $tempDir.'/'.$sqlFile;
 
             // Step 4: Restore database
             $database = config('database.connections.mysql.database');
@@ -747,9 +755,10 @@ class BackupSettingsScreen extends Screen
             if ($returnVar !== 0) {
                 \Log::error('Backup restore failed', [
                     'return_code' => $returnVar,
-                    'output' => implode("\n", $output)
+                    'output' => implode("\n", $output),
                 ]);
                 Toast::error(__('Database restore failed. Please check logs.'));
+
                 return redirect()->route('platform.systems.settings.backup');
             }
 
@@ -759,17 +768,17 @@ class BackupSettingsScreen extends Screen
             \Artisan::call('view:clear');
 
             Toast::success(__('Database restored successfully! Please log in again.'));
-            
+
             // Send persistent notification to admin (before logout)
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '✅ Database Restored',
-                'Database restored successfully from backup: ' . basename($filename) . ' at ' . now()->format('Y-m-d H:i:s'),
+                'Database restored successfully from backup: '.basename($filename).' at '.now()->format('Y-m-d H:i:s'),
                 'success'
             ));
-            
+
             // Logout user as session data might be invalid
             \Auth::logout();
-            
+
             return redirect()->route('platform.login');
 
         } catch (\Exception $e) {
@@ -782,18 +791,18 @@ class BackupSettingsScreen extends Screen
 
             \Log::error('Backup restore failed', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             Toast::error(__('Restore failed: :message', ['message' => $e->getMessage()]));
-            
+
             // Send persistent error notification
             \Auth::user()->notify(new \App\Notifications\BackupOperationNotification(
                 '❌ Restore Failed',
-                'Database restore failed: ' . $e->getMessage() . ' at ' . now()->format('Y-m-d H:i:s'),
+                'Database restore failed: '.$e->getMessage().' at '.now()->format('Y-m-d H:i:s'),
                 'error'
             ));
-            
+
             return redirect()->route('platform.systems.settings.backup');
         }
     }
@@ -803,22 +812,22 @@ class BackupSettingsScreen extends Screen
      */
     private function removeDirectory(string $dir): bool
     {
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             return false;
         }
 
         $items = array_diff(scandir($dir), ['.', '..']);
-        
+
         foreach ($items as $item) {
-            $path = $dir . DIRECTORY_SEPARATOR . $item;
-            
+            $path = $dir.DIRECTORY_SEPARATOR.$item;
+
             if (is_dir($path)) {
                 $this->removeDirectory($path);
             } else {
                 unlink($path);
             }
         }
-        
+
         return rmdir($dir);
     }
 

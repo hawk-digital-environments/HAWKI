@@ -51,8 +51,15 @@ return [
         'stream_disable_apache_gzip' => 'Disable Apache mod_deflate compression for streaming (Impact: Medium)',
         'stream_disable_php_output_buffering' => 'Disable PHP internal output buffering (WARNING: May cause 4s lag, test first!)',
         'stream_disable_zlib_compression' => 'Disable PHP zlib.output_compression for streaming (Impact: Medium)',
-        'schedule.model_status_check.enabled' => 'Enable automatic model status checking',
-        'schedule.filestorage_cleanup.enabled' => 'Enable automatic file storage cleanup',
+    ],
+    'scheduler' => [
+        'model_status_check.enabled' => 'Enable automatic model status checking',
+        'filestorage_cleanup.enabled' => 'Enable automatic file storage cleanup',
+        'backup.enabled' => 'Enable automatic backups',
+        'backup.schedule_interval' => 'Backup schedule interval (daily, weekly, monthly)',
+        'backup.schedule_time' => 'Time when backups should run (HH:MM format, e.g., 02:00)',
+        'backup.include_files' => 'Include user files in backup (avatars, attachments). When disabled, only database is backed up.',
+        'cleanup.enabled' => 'Enable automatic backup cleanup (WARNING: will delete old backups!)',
     ],
     'sanctum' => [
         'allow_external_communication' => 'Allow HAWKI API',
@@ -145,12 +152,6 @@ return [
     ],
 
     'backup' => [
-        'backup.enabled' => 'Enable automatic backups',
-        'backup.schedule_interval' => 'Backup schedule interval (daily, weekly, monthly)',
-        'backup.schedule_time' => 'Time when backups should run (HH:MM format, e.g., 02:00)',
-        'backup.destination.filename_prefix' => 'Backup filename prefix (e.g., prod-, staging-)',
-        'backup.include_files' => 'Include user files in backup (avatars, attachments). When disabled, only database is backed up.',
-        'cleanup.enabled' => 'Enable automatic backup cleanup (WARNING: will delete old backups!)',
         'cleanup.default_strategy.keep_all_backups_for_days' => 'Keep all backups for this many days',
         'cleanup.default_strategy.keep_daily_backups_for_days' => 'Keep daily backups for this many days',
         'cleanup.default_strategy.keep_weekly_backups_for_weeks' => 'Keep weekly backups for this many weeks',
@@ -183,5 +184,6 @@ return [
         'logging' => 'logging',
         'mail' => 'mail',
         'backup' => 'backup',
+        'scheduler' => 'system',
     ],
 ];
