@@ -25,7 +25,7 @@ class BackupSettingsScreen extends Screen
      */
     public function query(): iterable
     {
-        $settings = AppSetting::where('group', 'backup')->get();
+        $settings = AppSetting::whereIn('group', ['backup', 'system'])->get();
 
         $fields = [];
         foreach ($settings as $setting) {
@@ -343,22 +343,22 @@ class BackupSettingsScreen extends Screen
      */
     public function layout(): iterable
     {
-        $settings = AppSetting::where('group', 'backup')->get()->keyBy('key');
-        $backupEnabled = $settings['backup_backup.enabled']->typed_value ?? true;
-        $cleanupEnabled = $settings['backup_cleanup.enabled']->typed_value ?? false;
+        $settings = AppSetting::whereIn('group', ['backup', 'system'])->get()->keyBy('key');
+        $backupEnabled = $settings['scheduler_backup.enabled']->typed_value ?? true;
+        $cleanupEnabled = $settings['scheduler_cleanup.enabled']->typed_value ?? false;
 
         // Build backup schedule fields
         $scheduleFields = [
-            Switcher::make('settings.backup_backup__enabled')
+            Switcher::make('settings.scheduler_backup__enabled')
                 ->title('Enable Automatic Backups')
                 ->sendTrueOrFalse()
-                ->value($settings['backup_backup.enabled']->typed_value ?? true)
+                ->value($settings['scheduler_backup.enabled']->typed_value ?? true)
                 ->help('Enable or disable automatic database backups'),
         ];
 
         // Only add schedule fields if backups are enabled
         if ($backupEnabled) {
-            $scheduleFields[] = Select::make('settings.backup_backup.schedule_interval')
+            $scheduleFields[] = Select::make('settings.scheduler_backup.schedule_interval')
                 ->title('Backup Schedule Interval')
                 ->options([
                     'everyMinute' => 'Every Minute (Testing only!)',
@@ -371,22 +371,22 @@ class BackupSettingsScreen extends Screen
                     'weekly' => 'Weekly (Recommended)',
                     'monthly' => 'Monthly',
                 ])
-                ->value($settings['backup_backup.schedule_interval']->value ?? 'weekly')
+                ->value($settings['scheduler_backup.schedule_interval']->value ?? 'weekly')
                 ->help('How often automatic backups should run');
 
-            $scheduleFields[] = Input::make('settings.backup_backup.schedule_time')
+            $scheduleFields[] = Input::make('settings.scheduler_backup.schedule_time')
                 ->title('Backup Time')
                 ->type('time')
-                ->value($settings['backup_backup.schedule_time']->value ?? '02:00')
+                ->value($settings['scheduler_backup.schedule_time']->value ?? '02:00')
                 ->help('Time when backups should run (24-hour format)');
         }
 
         // Build retention fields array
         $retentionFields = [
-            Switcher::make('settings.backup_cleanup__enabled')
+            Switcher::make('settings.scheduler_cleanup__enabled')
                 ->title('Enable Automatic Backup Cleanup')
                 ->sendTrueOrFalse()
-                ->value($settings['backup_cleanup.enabled']->typed_value ?? false)
+                ->value($settings['scheduler_cleanup.enabled']->typed_value ?? false)
                 ->help('WARNING: When enabled, old backups will be deleted according to the retention policy below'),
         ];
 
@@ -441,16 +441,16 @@ class BackupSettingsScreen extends Screen
             \App\Orchid\Layouts\Settings\SystemSettingsTabMenu::class,
 
             Layout::block(Layout::rows([
-                Input::make('settings.backup_backup.destination.filename_prefix')
+                Input::make('settings.scheduler_backup.destination.filename_prefix')
                     ->title('Backup Filename Prefix')
                     ->placeholder('e.g., prod-, staging-')
-                    ->value($settings['backup_backup.destination.filename_prefix']->value ?? '')
+                    ->value($settings['scheduler_backup.destination.filename_prefix']->value ?? '')
                     ->help('Prefix for backup filenames'),
 
-                Switcher::make('settings.backup_backup.include_files')
+                Switcher::make('settings.scheduler_backup.include_files')
                     ->title('Include Files in Backup')
                     ->sendTrueOrFalse()
-                    ->value($settings['backup_backup.include_files']->typed_value ?? false)
+                    ->value($settings['scheduler_backup.include_files']->typed_value ?? false)
                     ->help('When enabled, backup will include database + user files (attachments, avatars, .env). When disabled, only database will be backed up (--only-db flag).'),
             ]))
                 ->title(__('General Settings'))
@@ -504,7 +504,7 @@ class BackupSettingsScreen extends Screen
     {
         try {
             // Check if files should be included in backup
-            $includeFiles = config('backup.backup.include_files', false);
+            $includeFiles = config('scheduler.backup.include_files', false);
 
             // Run backup with appropriate flags
             if ($includeFiles) {

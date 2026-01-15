@@ -24,6 +24,9 @@ return [
         'schedule_interval' => env('BACKUP_INTERVAL', 'daily'),
         'schedule_time' => env('BACKUP_TIME', '02:00'),
         'include_files' => env('BACKUP_INCLUDE_FILES', false),
+        'destination' => [
+            'filename_prefix' => env('BACKUP_FILENAME_PREFIX', ''),
+        ],
     ],
 
     'cleanup' => [

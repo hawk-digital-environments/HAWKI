@@ -31,7 +31,7 @@ return [
                     storage_path('app/public/room_avatars'),     // Group/Room avatars
                     storage_path('app/data_repo/private'),       // Private chat attachments (1:1)
                     storage_path('app/data_repo/group'),         // Group chat attachments
-                ], function($path) {
+                ], function ($path) {
                     return file_exists($path) && is_dir($path);
                 }),
 
@@ -116,7 +116,7 @@ return [
         /*
          * If specified, the database dumped file name will contain a timestamp (e.g.: 'Y-m-d-H-i-s').
          */
-        'database_dump_file_timestamp_format' => "Y-m-d-H-i-s",
+        'database_dump_file_timestamp_format' => 'Y-m-d-H-i-s',
 
         /*
          * The base of the dump filename, either 'database' or 'connection'
@@ -164,7 +164,7 @@ return [
             /*
              * The filename prefix used for the backup zip file.
              */
-            'filename_prefix' => env('BACKUP_FILENAME_PREFIX', ''),
+            'filename_prefix' => config('scheduler.backup.destination.filename_prefix', env('BACKUP_FILENAME_PREFIX', '')),
 
             /*
              * The disk names on which the backups will be stored.

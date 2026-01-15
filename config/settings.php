@@ -59,6 +59,7 @@ return [
         'backup.schedule_interval' => 'Backup schedule interval (daily, weekly, monthly)',
         'backup.schedule_time' => 'Time when backups should run (HH:MM format, e.g., 02:00)',
         'backup.include_files' => 'Include user files in backup (avatars, attachments). When disabled, only database is backed up.',
+        'backup.destination.filename_prefix' => 'Backup filename prefix (e.g., prod-, staging-)',
         'cleanup.enabled' => 'Enable automatic backup cleanup (WARNING: will delete old backups!)',
     ],
     'sanctum' => [
