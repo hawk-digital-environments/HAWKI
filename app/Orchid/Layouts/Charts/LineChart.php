@@ -50,11 +50,13 @@ class LineChart extends Chart
      * @var array
      */
     protected $lineOptions = [
-        'regionFill' => 0,
+        'regionFill' => 1,
         'hideDots' => 0,
         'hideLine' => 0,
         'heatline' => 0,
         'dotSize' => 3,
-        'spline' => 1,
+        // Spline interpolation is disabled (set to 0) because adjacent data points 
+        // transitioning from n to 0 produce 'NaN' values in the SVG path by Frappe Charts.
+        'spline' => 0,
     ];
 }

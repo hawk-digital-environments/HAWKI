@@ -40,12 +40,20 @@
 </fieldset>
 
 <script>
+const availableRoles = @json($availableRoles);
+
 function toggleRole(role, isActive) {
     // Speichere aktuelle Scroll-Position
     sessionStorage.setItem('scrollPosition', window.scrollY);
     
     const url = new URL(window.location.href);
-    const currentRoles = url.searchParams.getAll('roles[]');
+    let currentRoles = url.searchParams.getAll('roles[]');
+    
+    // If NO roles are in parameters, it means PHP is showing defaults (ALL roles).
+    // We must mirror this state in JS before toggling.
+    if (currentRoles.length === 0 && !url.searchParams.has('roles')) {
+        currentRoles = [...availableRoles];
+    }
     
     let newRoles;
     if (isActive) {
@@ -56,12 +64,14 @@ function toggleRole(role, isActive) {
         newRoles = [...currentRoles, role];
     }
     
-    // Clear old roles
+    // Clear old parameters
     url.searchParams.delete('roles[]');
     url.searchParams.delete('roles');
     
-    // Add new roles
-    newRoles.forEach(r => url.searchParams.append('roles[]', r));
+    // If newRoles contains all available roles, keep URL clean by not adding them
+    if (newRoles.length < availableRoles.length) {
+        newRoles.forEach(r => url.searchParams.append('roles[]', r));
+    }
     
     window.location.href = url.toString();
 }
