@@ -13,7 +13,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD', false),
+            'file_upload' => env('MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD', true),
             'vision'=> env('MODELS_OPENAI_GPT5_TOOLS_VISION', true),
         ],
     ],
@@ -30,7 +30,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT4_1_TOOLS_FILE_UPLOAD', false),
+            'file_upload' => env('MODELS_OPENAI_GPT4_1_TOOLS_FILE_UPLOAD', true),
             'vision'=> env('MODELS_OPENAI_GPT4_1_TOOLS_VISION', true),
 
         ],

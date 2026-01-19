@@ -20,7 +20,7 @@ class OpenAiClient extends AbstractClient
     )
     {
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -30,7 +30,7 @@ class OpenAiClient extends AbstractClient
             $this->converter->convertRequestToPayload($request)
         ))->execute($request->model);
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -41,7 +41,7 @@ class OpenAiClient extends AbstractClient
             $onData
         ))->execute($request->model);
     }
-    
+
     /**
      * @inheritDoc
      */

@@ -70,7 +70,7 @@ return [
         'openAi' => [
             'active' => env('OPENAI_ACTIVE', true),
             'api_key' => env('OPENAI_API_KEY'),
-            'api_url' => env('OPENAI_URL', 'https://api.openai.com/v1/chat/completions'),
+            'api_url' => env('OPENAI_URL', 'https://api.openai.com/v1/responses'),
             'ping_url' => env('OPENAI_PING_URL', 'https://api.openai.com/v1/models'),
             'models' => require __DIR__ . env('OPENAI_MODEL_LIST_DIR', '/model_lists/openai_models.php'),
         ],

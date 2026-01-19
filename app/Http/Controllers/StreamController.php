@@ -159,6 +159,7 @@ class StreamController extends Controller
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
+        header('X-Accel-Buffering: no');
 
         $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
             $flush = static function () {

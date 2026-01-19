@@ -41,15 +41,17 @@ readonly class OpenAiRequestConverter
         // Build payload with common parameters
         $payload = [
             'model' => $modelId,
-            'messages' => $formattedMessages,
-            'stream' => isset($rawPayload['stream']) && $model->hasTool('stream'),
+            'input' => $formattedMessages,
+//            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
+        $payloadJson = json_encode($payload);
+        Log::debug('OpenAI payload size (bytes): ' . strlen($payloadJson));
 
         // Add optional parameters if present in the raw payload
         if (isset($rawPayload['temperature'])) {
             $payload['temperature'] = $rawPayload['temperature'];
         }
-
+        $payload['temperature'] = 1;
         if (isset($rawPayload['top_p'])) {
             $payload['top_p'] = $rawPayload['top_p'];
         }
@@ -63,38 +65,80 @@ readonly class OpenAiRequestConverter
         }
 
         if($modelId === 'gpt-5'){
-            $payload['verbosity'] = "low";
-            $payload["reasoning_effort"] = "minimal";
-
+            $payload["text"]["verbosity"] = "low";
+            $payload["reasoning"]["effort"] = "medium";
         }
-
+//        $payload['tools'] = [
+//            [
+//                "type"=>"mcp",
+//                "server_label"=>"dmcp",
+//                "server_description"=>"A Dungeons and Dragons MCP server to assist with dice rolling.",
+//                "server_url"=>"https://dmcp-server.deno.dev/sse",
+//                "require_approval"=>"always",
+//            ]
+//        ];
         return $payload;
     }
 
-    private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
-    {
+    private function formatMessage(
+        array $message,
+        array $attachmentsMap,
+        AiModel $model
+    ): array {
+        $role = $message['role'];
+
         $formatted = [
-            'role' => $message['role'],
-            'content' => []
+            'role' => $role,
+            'content' => [],
         ];
 
         $content = $message['content'] ?? [];
 
-        // Add text if present
-        if (!empty($content['text'])) {
-            $formatted['content'][] = [
-                'type' => 'text',
-                'text' => $content['text'],
-            ];
+        /**
+         * USER MESSAGES
+         */
+        if ($role === 'user' || $role === 'system') {
+
+            if (!empty($content['text'])) {
+                $formatted['content'][] = [
+                    'type' => 'input_text',
+                    'text' => $content['text'],
+                ];
+            }
+
+            if (!empty($content['attachments'])) {
+                $this->processAttachments(
+                    $content['attachments'],
+                    $attachmentsMap,
+                    $model,
+                    $formatted['content']
+                );
+            }
+
+            return $formatted;
         }
 
-        // Handle attachments with permission checks
-        if (!empty($content['attachments'])) {
-            $this->processAttachments($content['attachments'], $attachmentsMap, $model, $formatted['content']);
+        /**
+         * ASSISTANT MESSAGES (history replay)
+         */
+        if ($role === 'assistant') {
+
+            if (!empty($content['text'])) {
+                $formatted['content'][] = [
+                    'type' => 'output_text',
+                    'text' => $content['text'],
+                ];
+            }
+
+            return $formatted;
         }
 
-        return $formatted;
+        /**
+         * SAFETY FALLBACK
+         */
+        throw new \InvalidArgumentException("Unsupported role: {$role}");
     }
+
 
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
     {
@@ -140,25 +184,25 @@ readonly class OpenAiRequestConverter
         }
     }
 
-    private function processImageAttachment(Attachment $attachment, AttachmentService $attachmentService): array
-    {
-        try {
-            $file = $attachmentService->retrieve($attachment);
-            $imageData = base64_encode($file);
-            return [
-                'type' => 'image_url',
-                'image_url' => [
-                    'url' => "data:{$attachment->mime};base64,{$imageData}",
-                ]
-            ];
-        } catch (\Exception $e) {
-            Log::error('Failed to process image attachment: ' . $e->getMessage());
-            return [
-                'type' => 'text',
-                'text' => '[ERROR: Could not process image attachment: ' . $attachment->name . ']'
-            ];
-        }
+    private function processImageAttachment(
+        Attachment $attachment,
+        AttachmentService $attachmentService
+    ): array {
+        // Retrieve raw binary image data
+        $binary = $attachmentService->retrieve($attachment);
+
+        // Detect mime type (important for vision models)
+        $mime = $attachment->mime_type ?? 'image/png';
+
+        // Encode as base64 data URL
+        $base64 = base64_encode($binary);
+
+        return [
+            'type' => 'input_image',
+            'image_url' => "data:{$mime};base64,{$base64}",
+        ];
     }
+
 
     private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
@@ -166,13 +210,13 @@ readonly class OpenAiRequestConverter
             $fileContent = $attachmentService->retrieve($attachment, 'md');
             $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
             return [
-                'type' => 'text',
+                'type' => 'input_text',
                 'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---"
             ];
         } catch (\Exception $e) {
             Log::error('Failed to process document attachment: ' . $e->getMessage());
             return [
-                'type' => 'text',
+                'type' => 'input_text',
                 'text' => '[ERROR: Could not process document attachment: ' . $attachment->name . ']'
             ];
         }
