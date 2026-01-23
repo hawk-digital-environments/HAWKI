@@ -14,6 +14,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'function_calling' => true,
+            'test_tool' => true,
+            'dmcp_roll_dice' => false
         ],
     ],
     [
@@ -31,6 +34,7 @@ return [
             'stream' => true,
             'file_upload' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_VISION', true),
+
         ],
     ],
     [

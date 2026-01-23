@@ -46,18 +46,22 @@ abstract class AbstractRequest
 
         // Set streaming-specific options
         $this->setStreamingCurlOptions($ch, function (string $chunk) use ($model, $onData, $chunkToResponse) {
-//            \Log::debug($chunk);
             $onData($chunkToResponse($model, $chunk));
         });
 
         // Execute the cURL session
-        curl_exec($ch);
+        $result = curl_exec($ch);
 
         // Handle errors
         if (curl_errno($ch)) {
-            $onData($this->createErrorResponse(curl_error($ch)));
+            $error = curl_error($ch);
+            \Log::error('cURL error in streaming request', ['error' => $error]);
+            $onData($this->createErrorResponse($error));
         }
 
+        if ($result === false) {
+            \Log::error('cURL returned false');
+        }
         curl_close($ch);
     }
 

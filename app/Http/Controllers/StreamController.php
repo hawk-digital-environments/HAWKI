@@ -154,6 +154,11 @@ class StreamController extends Controller
      */
     private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
     {
+        // Disable output buffering
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         // Set headers for SSE
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
@@ -161,13 +166,23 @@ class StreamController extends Controller
         header('Access-Control-Allow-Origin: *');
         header('X-Accel-Buffering: no');
 
+        // Send initial data to establish connection
+//        $messageData = [
+//            'author' => [
+//                'username' => $user->username,
+//                'name' => $user->name,
+//                'avatar_url' => $avatar_url,
+//            ],
+//            'model' => $payload['model'],
+//            'isDone' => false,
+//            'content' => '',
+//            'type' => 'status',
+//            'statusMessage' => 'init',
+//        ];
+//        echo json_encode($messageData) . "\n";
+//        flush();
+
         $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
-            $flush = static function () {
-                if (ob_get_length()) {
-                    ob_flush();
-                }
-                flush();
-            };
 
             $this->usageAnalyzer->submitUsageRecord(
                 $response->usage,
@@ -183,10 +198,12 @@ class StreamController extends Controller
                 'model' => $payload['model'],
                 'isDone' => $response->isDone,
                 'content' => json_encode($response->content),
+                'type' => $response->type,
+                'statusMessage' => $response->statusMessage,
             ];
 
             echo json_encode($messageData) . "\n";
-            $flush();
+            flush();
         };
 
         $this->aiService->sendStreamRequest($payload, $onData);

@@ -45,7 +45,6 @@ readonly class OpenAiRequestConverter
 //            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
         $payloadJson = json_encode($payload);
-        Log::debug('OpenAI payload size (bytes): ' . strlen($payloadJson));
 
         // Add optional parameters if present in the raw payload
         if (isset($rawPayload['temperature'])) {
