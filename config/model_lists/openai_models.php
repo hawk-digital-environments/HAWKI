@@ -39,7 +39,7 @@ return [
             'vision'=> 'native',
 
             'test_tool' => 'function_call',
-//            'dice_roll' => 'mcp',
+            'dice_roll' => 'mcp',
         ],
     ],
     [

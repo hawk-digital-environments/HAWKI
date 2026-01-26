@@ -28,7 +28,8 @@ class DmcpTool extends AbstractMCPTool
     {
         $this->serverConfig = array_merge([
             'url' => self::DEFAULT_SERVER_URL,
-            'label' => 'D&D Dice Roller',
+            'server_label' => 'dnd_dice_roller',  // Machine-readable identifier
+            'description' => 'D&D Dice Roller',    // Human-readable description
             'require_approval' => 'never',
         ], $serverConfig);
     }

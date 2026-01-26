@@ -47,7 +47,8 @@ return [
     'mcp_servers' => [
         'dice_roll' => [
             'url' => env('DMCP_SERVER_URL', 'https://dmcp-server.deno.dev/sse'),
-            'label' => 'D&D Dice Roller',
+            'server_label' => 'dnd_dice_roller',  // Machine-readable: letters, digits, hyphens, underscores only
+            'description' => 'D&D Dice Roller',    // Human-readable description
             'require_approval' => 'never',
         ],
     ],

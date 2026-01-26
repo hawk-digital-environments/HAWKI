@@ -83,7 +83,7 @@ readonly class OpenAiRequestConverter
             foreach ($mcpServers as $mcpConfig) {
                 $tools[] = [
                     'type' => 'mcp',
-                    'server_label' => $mcpConfig['label'] ?? 'mcp_server',
+                    'server_label' => $mcpConfig['server_label'] ?? 'mcp_server',
                     'server_description' => $mcpConfig['description'] ?? '',
                     'server_url' => $mcpConfig['url'],
                     'require_approval' => $mcpConfig['require_approval'] ?? 'always',
