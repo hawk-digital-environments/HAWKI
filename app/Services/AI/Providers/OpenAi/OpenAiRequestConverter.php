@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers\OpenAi;
 
 use App\Models\Attachment;
+use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 #[Singleton]
 readonly class OpenAiRequestConverter
 {
+    use ToolAwareConverter;
+
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
     )
@@ -63,19 +66,40 @@ readonly class OpenAiRequestConverter
             $payload['presence_penalty'] = $rawPayload['presence_penalty'];
         }
 
+        // Add tools if not disabled
+        $disableTools = $this->shouldDisableTools($rawPayload);
+        if (!$disableTools) {
+            $tools = [];
+
+            // Add function call tools (strategy: function_call)
+            // OpenAI Response API uses FLAT structure: {type, name, description, parameters}
+            $functionCallTools = $this->buildFunctionCallTools($model);
+            foreach ($functionCallTools as $toolDef) {
+                $tools[] = $toolDef->toOpenAiResponseFormat();
+            }
+
+            // Add MCP servers (strategy: mcp)
+            $mcpServers = $this->buildMCPServers($model);
+            foreach ($mcpServers as $mcpConfig) {
+                $tools[] = [
+                    'type' => 'mcp',
+                    'server_label' => $mcpConfig['label'] ?? 'mcp_server',
+                    'server_description' => $mcpConfig['description'] ?? '',
+                    'server_url' => $mcpConfig['url'],
+                    'require_approval' => $mcpConfig['require_approval'] ?? 'always',
+                ];
+            }
+
+            if (!empty($tools)) {
+                $payload['tools'] = $tools;
+            }
+        }
+
         if($modelId === 'gpt-5'){
             $payload["text"]["verbosity"] = "low";
             $payload["reasoning"]["effort"] = "medium";
         }
-//        $payload['tools'] = [
-//            [
-//                "type"=>"mcp",
-//                "server_label"=>"dmcp",
-//                "server_description"=>"A Dungeons and Dragons MCP server to assist with dice rolling.",
-//                "server_url"=>"https://dmcp-server.deno.dev/sse",
-//                "require_approval"=>"always",
-//            ]
-//        ];
+
         return $payload;
     }
 
@@ -85,6 +109,39 @@ readonly class OpenAiRequestConverter
         AiModel $model
     ): array {
         $role = $message['role'];
+
+        // Handle tool result messages - Response API requires them as user messages
+        if ($role === 'tool') {
+            return [
+                'role' => 'user',
+                'content' => [
+                    [
+                        'type' => 'input_text',
+                        'text' => 'Tool result for ' . ($message['tool_call_id'] ?? 'unknown') . ': ' . $message['content'],
+                    ]
+                ],
+            ];
+        }
+
+        // Handle assistant messages with tool_calls
+        // Response API doesn't support tool_calls in input, so convert to output_text
+        if ($role === 'assistant' && isset($message['tool_calls'])) {
+            $toolCallSummary = [];
+            foreach ($message['tool_calls'] as $tc) {
+                $functionName = is_array($tc) ? ($tc['function']['name'] ?? 'unknown') : $tc->name;
+                $toolCallSummary[] = 'Called function: ' . $functionName;
+            }
+
+            return [
+                'role' => 'assistant',
+                'content' => [
+                    [
+                        'type' => 'output_text',
+                        'text' => implode(', ', $toolCallSummary),
+                    ]
+                ],
+            ];
+        }
 
         $formatted = [
             'role' => $role,

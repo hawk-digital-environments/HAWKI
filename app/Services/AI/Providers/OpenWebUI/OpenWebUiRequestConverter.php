@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Services\AI\Providers\OpenWebUI;
 
 
+use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Value\AiRequest;
 use Illuminate\Container\Attributes\Singleton;
 
 #[Singleton]
 class OpenWebUiRequestConverter
 {
+    use ToolAwareConverter;
     public function convertRequestToPayload(AiRequest $request): array
     {
         $rawPayload = $request->payload;

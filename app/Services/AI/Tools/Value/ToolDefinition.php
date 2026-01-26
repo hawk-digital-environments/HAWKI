@@ -15,18 +15,31 @@ readonly class ToolDefinition
     }
 
     /**
-     * Convert to OpenAI/GWDG tool format
+     * Convert to OpenAI Response API format (flat structure)
+     * Response API expects: {type: 'function', name: '...', description: '...', parameters: {...}}
      */
-    public function toOpenAiFormat(): array
+    public function toOpenAiResponseFormat(): array
     {
         return [
             'type' => 'function',
-            'function' => [
-                'name' => $this->name,
-                'description' => $this->description,
-                'parameters' => $this->parameters,
-                'strict' => $this->strict,
-            ],
+            'name' => $this->name,
+            'description' => $this->description,
+            'parameters' => $this->parameters,
+        ];
+    }
+
+    /**
+     * Convert to OpenAI Chat Completions API format (nested structure)
+     * Chat API expects function definition to be wrapped by converter
+     * Returns just: {name: '...', description: '...', parameters: {...}, strict: bool}
+     */
+    public function toOpenAiChatFormat(): array
+    {
+        return [
+            'name' => $this->name,
+            'description' => $this->description,
+            'parameters' => $this->parameters,
+            'strict' => $this->strict,
         ];
     }
 

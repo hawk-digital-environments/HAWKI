@@ -6,24 +6,27 @@ namespace App\Services\AI\Tools\Interfaces;
 /**
  * Interface for MCP (Model Context Protocol) tools
  *
- * MCP tools are external tools that can be dynamically registered
- * and communicate via the Model Context Protocol specification.
+ * MCP tools communicate with external MCP servers to execute their logic.
+ * They can be used with:
+ * - ExecutionStrategy::MCP - Model calls MCP server directly
+ * - ExecutionStrategy::FUNCTION_CALL - HAWKI orchestrates via function calling
  */
 interface MCPToolInterface extends ToolInterface
 {
     /**
      * Get the MCP server configuration
      *
-     * @return array The MCP server config (command, args, env)
+     * Must return an array with at least:
+     * - 'url': The MCP server endpoint
+     *
+     * Optional keys:
+     * - 'label': Human-readable server name
+     * - 'require_approval': 'always', 'never', or 'prompt'
+     * - 'timeout': Request timeout in seconds
+     *
+     * @return array The MCP server configuration
      */
     public function getMCPServerConfig(): array;
-
-    /**
-     * Get the MCP tool type/category
-     *
-     * @return string The tool category (e.g., 'filesystem', 'web', 'database')
-     */
-    public function getMCPCategory(): string;
 
     /**
      * Check if the MCP server is running and available

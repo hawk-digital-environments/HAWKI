@@ -12,9 +12,14 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD', true),
-            'vision'=> env('MODELS_OPENAI_GPT5_TOOLS_VISION', true),
+            // Basic features (@deprecated - will migrate to capabilities system)
+            'stream' => 'native',
+            'file_upload' => 'native',
+            'vision'=> 'native',
+
+            // Tool execution strategies
+            'test_tool' => 'function_call',
+            'dice_roll' => 'mcp',  // Model supports MCP protocol
         ],
     ],
     [
@@ -29,10 +34,12 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT4_1_TOOLS_FILE_UPLOAD', true),
-            'vision'=> env('MODELS_OPENAI_GPT4_1_TOOLS_VISION', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
+            'vision'=> 'native',
 
+            'test_tool' => 'function_call',
+//            'dice_roll' => 'mcp',
         ],
     ],
     [
@@ -47,9 +54,10 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT4_1_NANO_TOOLS_FILE_UPLOAD', false),
-            'vision'=> env('MODELS_OPENAI_GPT4_1_NANO_TOOLS_VISION', true),
+            'stream' => 'native',
+            'file_upload' => 'unsupported',
+            'vision'=> 'native',
+
         ],
     ],
     [
@@ -64,9 +72,11 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_O4_MINI_TOOLS_FILE_UPLOAD', false),
-            'vision'=> env('MODELS_OPENAI_O4_MINI_TOOLS_VISION', false),
+            'stream' => 'native',
+            'file_upload' => 'unsupported',
+            'vision'=> 'unsupported',
+
+            'test_tool' => 'function_call',
         ],
     ],
 ];

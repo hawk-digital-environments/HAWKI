@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers\Ollama;
 
 use App\Models\Attachment;
+use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 #[Singleton]
 readonly class OllamaRequestConverter
 {
+    use ToolAwareConverter;
+
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
     )

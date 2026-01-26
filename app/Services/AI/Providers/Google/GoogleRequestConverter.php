@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers\Google;
 
 use App\Models\Attachment;
+use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 #[Singleton]
 readonly class GoogleRequestConverter
 {
+    use ToolAwareConverter;
+
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
     )
@@ -70,43 +73,89 @@ readonly class GoogleRequestConverter
             'topK' => 10
         ];
 
-        // Google Search only works with gemini >= 2.0
-        // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
-        $availableTools = $model->getTools();
-        
-        if (array_key_exists('web_search', $availableTools) && $availableTools['web_search'] == true){
-            // if frontend requested websearch tool
-            if(array_key_exists('tools', $rawPayload) &&
-                array_key_exists('web_search', $rawPayload['tools']) &&
-                $rawPayload['tools']['web_search'] == true){
-                
-                $payload['tools'] =
-                    [
-                        [
-                            "google_search" => new \stdClass()
-                        ]
-                    ];
+        // Build tools from capabilities
+        $disableTools = $this->shouldDisableTools($rawPayload);
+        $tools = [];
+
+        if (!$disableTools) {
+            // Native Google Search (WEB_SEARCH capability)
+            // Google Search only works with gemini >= 2.0
+            // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
+
+            // Check if model supports web_search (handles both boolean and string format)
+            if ($model->hasTool('web_search') && $model->getToolStrategy('web_search') === 'native') {
+                // If frontend requested websearch tool
+                if (array_key_exists('tools', $rawPayload) &&
+                    array_key_exists('web_search', $rawPayload['tools']) &&
+                    $rawPayload['tools']['web_search'] == true) {
+
+                    $tools[] = ["google_search" => new \stdClass()];
+                }
+            } else {
+                // Fallback: websearch always on
+                $tools[] = ["google_search" => new \stdClass()];
             }
-            else{
-                $payload['tools'] = [];
-            }
-        }
-        else{
-            // Fallback: websearch always on
-            $payload['tools'] =
-                [
-                    [
-                        "google_search" => new \stdClass()
+
+            // MCP_DIRECT capabilities (e.g., dice_roll)
+            $mcpServers = $this->buildMCPServers($model);
+            foreach ($mcpServers as $mcpConfig) {
+                // Google Gemini expects tools in their specific format
+                // TODO: Verify Google's MCP integration format
+                $tools[] = [
+                    'mcp_server' => [
+                        'server_url' => $mcpConfig['server_url'],
+                        'server_label' => $mcpConfig['server_label'] ?? 'mcp_server',
+                        'tools' => $mcpConfig['tools'] ?? [],
                     ]
                 ];
+            }
         }
+
+        $payload['tools'] = $tools;
         return $payload;
     }
     
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
+        $role = $message['role'];
+
+        // Handle tool result messages (if Google uses function calling)
+        if ($role === 'tool') {
+            return [
+                'role' => 'function',
+                'parts' => [
+                    [
+                        'functionResponse' => [
+                            'name' => $message['tool_call_id'],
+                            'response' => [
+                                'content' => $message['content']
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+        }
+
+        // Handle assistant messages with tool_calls
+        if ($role === 'assistant' && isset($message['tool_calls'])) {
+            $parts = [];
+            foreach ($message['tool_calls'] as $toolCall) {
+                $parts[] = [
+                    'functionCall' => [
+                        'name' => $toolCall['function']['name'],
+                        'args' => json_decode($toolCall['function']['arguments'], true)
+                    ]
+                ];
+            }
+
+            return [
+                'role' => 'model',
+                'parts' => $parts
+            ];
+        }
+
         $formatted = [
-            'role' => $message['role'] === 'assistant' ? 'model' : 'user',
+            'role' => $role === 'assistant' ? 'model' : 'user',
             'parts' => []
         ];
 

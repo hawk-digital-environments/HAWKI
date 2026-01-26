@@ -3,13 +3,14 @@ declare(strict_types=1);
 
 namespace App\Services\AI\Tools;
 
-use App\Services\AI\Tools\Implementations\DmcpTool;
-use App\Services\AI\Tools\Implementations\TestTool;
+use App\Services\AI\Tools\Interfaces\MCPToolInterface;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 /**
  * Service provider for registering AI tools
+ *
+ * Reads tool configurations from config/tools.php and registers them in the ToolRegistry.
  */
 class ToolServiceProvider extends ServiceProvider
 {
@@ -19,7 +20,6 @@ class ToolServiceProvider extends ServiceProvider
     public function register(): void
     {
         // ToolRegistry is already a Singleton via attribute
-        // No need to bind it here
     }
 
     /**
@@ -31,71 +31,60 @@ class ToolServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register all available tools
+     * Register all available tools from configuration
      */
     private function registerTools(): void
     {
         $registry = app(ToolRegistry::class);
+        $toolClasses = config('tools.available_tools', []);
+        $mcpServers = config('tools.mcp_servers', []);
 
-        // Register built-in tools
-        $this->registerBuiltInTools($registry);
-
-        // Register MCP tools if configured
-        $this->registerMCPTools($registry);
-
-//        Log::info('AI Tools registered', [
-//            'count' => count($registry->getAll()),
-//        ]);
-    }
-
-    /**
-     * Register built-in tools
-     */
-    private function registerBuiltInTools(ToolRegistry $registry): void
-    {
-        // Register TestTool
-        $registry->register(new TestTool());
-
-        // Add more built-in tools here as they are created
-        // Example:
-        // $registry->register(new WeatherTool());
-        // $registry->register(new DatabaseQueryTool());
-    }
-
-    /**
-     * Register MCP tools from configuration
-     *
-     * MCP tools are only available to models with 'mcp' => true in their configuration.
-     * This ensures providers like OpenAI, Google, and Anthropic can use MCP tools,
-     * while providers like GWDG (without MCP support) won't see them.
-     */
-    private function registerMCPTools(ToolRegistry $registry): void
-    {
-        // MCP server configurations
-        // TODO: Move to config/ai.php for easier management
-        $mcpServers = [
-            [
-                'class' => DmcpTool::class,
-                'server_url' => 'https://dmcp-server.deno.dev/sse',
-                'server_label' => 'dmcp',
-                'server_description' => 'D&D dice rolling server',
-            ],
-        ];
-
-        foreach ($mcpServers as $serverConfig) {
+        foreach ($toolClasses as $toolClass) {
             try {
-                $toolClass = $serverConfig['class'] ?? null;
-
-                if ($toolClass && class_exists($toolClass)) {
-                    $tool = new $toolClass($serverConfig);
-                    $registry->register($tool);
+                if (!class_exists($toolClass)) {
+                    Log::warning("Tool class not found: {$toolClass}");
+                    continue;
                 }
+
+                // Check if it's an MCP tool
+                if (is_subclass_of($toolClass, MCPToolInterface::class)) {
+                    $tool = $this->instantiateMCPTool($toolClass, $mcpServers);
+                } else {
+                    $tool = app($toolClass);
+                }
+
+                $registry->register($tool);
+
+//                Log::debug("Registered tool: {$tool->getName()}", [
+//                    'class' => $toolClass,
+//                    'is_mcp' => $tool instanceof MCPToolInterface,
+//                ]);
             } catch (\Exception $e) {
-                Log::error('Failed to register MCP tool', [
-                    'config' => $serverConfig,
+                Log::error("Failed to register tool: {$toolClass}", [
                     'error' => $e->getMessage(),
                 ]);
             }
         }
+
+//        Log::info('AI Tools registered', [
+//            'total_count' => count($registry->getAll()),
+//            'mcp_count' => count($registry->getMCPTools()),
+//        ]);
+    }
+
+    /**
+     * Instantiate an MCP tool with its server configuration
+     */
+    private function instantiateMCPTool(string $toolClass, array $mcpServers): MCPToolInterface
+    {
+        // Create a temporary instance to get the tool name
+        $tempTool = app($toolClass, ['serverConfig' => []]);
+        $toolName = $tempTool->getName();
+
+        // Get server config for this tool
+        $serverConfig = $mcpServers[$toolName] ?? [];
+
+        // Create the actual tool instance with proper config
+        return app($toolClass, ['serverConfig' => $serverConfig]);
     }
 }

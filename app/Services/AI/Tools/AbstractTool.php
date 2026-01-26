@@ -4,59 +4,57 @@ declare(strict_types=1);
 namespace App\Services\AI\Tools;
 
 use App\Services\AI\Tools\Interfaces\ToolInterface;
-use App\Services\AI\Value\AiModel;
+use App\Services\AI\Tools\Value\ToolDefinition;
+use App\Services\AI\Tools\Value\ToolResult;
 
 /**
  * Abstract base class for tools to reduce boilerplate
+ *
+ * Tool availability is now determined by model configuration (model_lists/*.php),
+ * not by the tool itself. Tools should focus solely on their execution logic.
  */
 abstract class AbstractTool implements ToolInterface
 {
     /**
-     * List of provider classes this tool is available for.
-     * Empty array means available for all providers.
-     *
-     * @var array<string>
+     * Get the tool's unique identifier
      */
-    protected array $availableProviders = [];
+    abstract public function getName(): string;
 
     /**
-     * @inheritDoc
+     * Get the tool's definition for model payload
      */
-    public function isAvailableForProvider(string $providerClass): bool
+    abstract public function getDefinition(): ToolDefinition;
+
+    /**
+     * Execute the tool logic
+     */
+    abstract public function execute(array $arguments, string $toolCallId): ToolResult;
+
+    /**
+     * Helper method to create a successful result
+     */
+    protected function success(mixed $result, string $toolCallId): ToolResult
     {
-        // If no providers specified, available for all
-        if (empty($this->availableProviders)) {
-            return true;
-        }
-
-        // Check if the provider is in the list
-        foreach ($this->availableProviders as $provider) {
-            if (str_contains($providerClass, $provider)) {
-                return true;
-            }
-        }
-
-        return false;
+        return new ToolResult(
+            toolCallId: $toolCallId,
+            toolName: $this->getName(),
+            result: $result,
+            success: true,
+            error: null
+        );
     }
 
     /**
-     * @inheritDoc
+     * Helper method to create an error result
      */
-    public function isEnabledForModel(AiModel $model): bool
+    protected function error(string $error, string $toolCallId): ToolResult
     {
-        // Check if model supports function calling
-        if (!$model->hasTool('function_calling')) {
-            return false;
-        }
-
-        // Check if this specific tool is enabled for the model
-        $enabledTools = $model->getTools()['enabled_tools'] ?? [];
-
-        // If enabled_tools is not specified or is empty, all tools are enabled
-        if (empty($enabledTools)) {
-            return true;
-        }
-
-        return in_array($this->getName(), $enabledTools, true);
+        return new ToolResult(
+            toolCallId: $toolCallId,
+            toolName: $this->getName(),
+            result: null,
+            success: false,
+            error: $error
+        );
     }
 }

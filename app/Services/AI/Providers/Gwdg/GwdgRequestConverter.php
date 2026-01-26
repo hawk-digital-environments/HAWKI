@@ -3,7 +3,7 @@
 namespace App\Services\AI\Providers\Gwdg;
 
 use App\Models\Attachment;
-use App\Services\AI\Tools\ToolRegistry;
+use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\Log;
 #[Singleton]
 readonly class GwdgRequestConverter
 {
+    use ToolAwareConverter;
+
     public function __construct(
-        private MessageAttachmentFinder $attachmentFinder,
-        private ToolRegistry $toolRegistry
+        private MessageAttachmentFinder $attachmentFinder
     )
     {
     }
@@ -46,19 +47,26 @@ readonly class GwdgRequestConverter
             'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
 
-        // Add tools from registry if model supports function calling and tools are not disabled
-        $disableTools = $rawPayload['_disable_tools'] ?? false;
+        // Add tools from capabilities if not disabled
+        $disableTools = $this->shouldDisableTools($rawPayload);
 
-        // Check if this is a simple greeting (optional optimization to avoid tool spam)
-        $lastMessage = end($messages);
-        $lastMessageText = $lastMessage['content']['text'] ?? '';
-        $simpleGreetings = ['hi', 'hello', 'hey', 'hallo', 'greetings'];
-        $isSimpleGreeting = in_array(strtolower(trim($lastMessageText)), $simpleGreetings);
+        if (!$disableTools) {
+            // Build tools from function_call strategy
+            // GWDG uses OpenAI Chat Completions format (NESTED structure)
+            $toolDefinitions = $this->buildFunctionCallTools($model);
+            if (!empty($toolDefinitions)) {
+                $payload['tools'] = array_map(fn($toolDef) => [
+                    'type' => 'function',
+                    'function' => $toolDef->toOpenAiChatFormat(),
+                ], $toolDefinitions);
+            }
 
-        if ($model->hasTool('function_calling') && !$disableTools && !$isSimpleGreeting) {
-            $tools = $this->buildToolsArray($model);
-            if (!empty($tools)) {
-                $payload['tools'] = $tools;
+            // MCP servers for MCP_DIRECT (GWDG doesn't support this, but included for consistency)
+            $mcpServers = $this->buildMCPServers($model);
+            if (!empty($mcpServers)) {
+                // Note: GWDG doesn't support MCP_DIRECT, so this will be empty
+                // Other providers (OpenAI, Anthropic) will use this
+                $payload['mcp_servers'] = $mcpServers;
             }
         }
 
@@ -221,18 +229,4 @@ readonly class GwdgRequestConverter
         }
     }
 
-    /**
-     * Build tools array from the ToolRegistry
-     */
-    private function buildToolsArray(AiModel $model): array
-    {
-        $definitions = $this->toolRegistry->getDefinitionsForModel($model);
-        $tools = [];
-
-        foreach ($definitions as $definition) {
-            $tools[] = $definition->toOpenAiFormat();
-        }
-
-        return $tools;
-    }
 }

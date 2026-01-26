@@ -86,8 +86,23 @@ class AiModel implements JsonSerializable
         if (isset($this->raw['streamable']) && $this->raw['streamable'] === true) {
             return true;
         }
-        // Otherwise use the new 'stream' tooling
-        return $this->getTools()['stream'] ?? false;
+
+        // Check 'stream' in tools (supports both old boolean and new string format)
+        $tools = $this->getTools();
+        if (!isset($tools['stream'])) {
+            return false;
+        }
+
+        $stream = $tools['stream'];
+
+        // Old format: boolean
+        if (is_bool($stream)) {
+            return $stream;
+        }
+
+        // New format: string strategy
+        // 'native' means model supports streaming, 'unsupported' means it doesn't
+        return $stream === 'native';
     }
 
     /**
@@ -136,6 +151,15 @@ class AiModel implements JsonSerializable
      * Returns a list of tools that the model can use.
      * Tools are typically used to extend the model's capabilities,
      * like RAG, MCP, or other specialized functions.
+     *
+     * Format:
+     * [
+     *     'stream' => 'native',           // Basic feature
+     *     'file_upload' => 'native',      // Basic feature
+     *     'test_tool' => 'function_call', // Tool with execution strategy
+     *     'dice_roll' => 'mcp',           // MCP tool
+     * ]
+     *
      * @return array
      */
     public function getTools(): array
@@ -144,7 +168,51 @@ class AiModel implements JsonSerializable
     }
 
     /**
+     * Get the execution strategy for a specific tool
+     *
+     * Supports backward compatibility:
+     * - Old format: boolean (true/false) - converts to 'native'/'unsupported'
+     * - New format: string ('native', 'mcp', 'function_call', 'unsupported')
+     *
+     * @param string $toolName The tool name
+     * @return string|null The execution strategy ('native', 'mcp', 'function_call', 'unsupported') or null if not set
+     */
+    public function getToolStrategy(string $toolName): ?string
+    {
+        $tools = $this->getTools();
+
+        if (!isset($tools[$toolName])) {
+            return null;
+        }
+
+        $value = $tools[$toolName];
+
+        // Handle old boolean format for backward compatibility
+        if (is_bool($value)) {
+            return $value ? 'native' : 'unsupported';
+        }
+
+        // Return string strategy as-is
+        return $value;
+    }
+
+    /**
+     * Check if a tool is available for this model
+     * A tool is available if it's configured and not set to 'unsupported'
+     *
+     * @param string $toolName The tool name
+     * @return bool
+     */
+    public function hasToolAvailable(string $toolName): bool
+    {
+        $strategy = $this->getToolStrategy($toolName);
+        return $strategy !== null && $strategy !== 'unsupported';
+    }
+
+    /**
      * Checks if the model has a specific tool enabled.
+     * Supports both old boolean format and new string strategy format.
+     *
      * @param string $tool The tool to check for.
      * @return bool
      * @see AiModel::getTools() to see the list of supported tools by the model.
@@ -152,7 +220,21 @@ class AiModel implements JsonSerializable
     public function hasTool(string $tool): bool
     {
         $tools = $this->getTools();
-        return array_key_exists($tool, $tools) && $tools[$tool] === true;
+
+        if (!array_key_exists($tool, $tools)) {
+            return false;
+        }
+
+        $value = $tools[$tool];
+
+        // Old format: boolean
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        // New format: string strategy
+        // Tool is available if it has any strategy except 'unsupported'
+        return $value !== 'unsupported';
     }
 
     /**

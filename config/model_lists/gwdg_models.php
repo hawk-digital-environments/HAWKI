@@ -12,11 +12,13 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
-            'function_calling' => true,
-            'test_tool' => true,
-            'dmcp_roll_dice' => false
+            // Basic features (@deprecated - will migrate to capabilities system)
+            'stream' => 'native',
+            'file_upload' => 'native',
+
+            // Tool execution strategies
+            'test_tool' => 'function_call',  // HAWKI orchestrates via function calling
+            'dice_roll' => 'function_call',  // HAWKI orchestrates MCP tool via function calling
         ],
     ],
     [
@@ -31,10 +33,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_VISION', true),
-
+            'stream' => 'native',
+            'file_upload' => 'native',
+            'vision' => 'native',
         ],
     ],
     [
@@ -49,8 +50,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN3_32B_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -65,8 +66,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN3_235B_A22B_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -80,8 +81,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_LLAMA_3_3_70B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -97,9 +98,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN2_5_VL_72B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_QWEN2_5_VL_72B_INSTRUCT_TOOLS_VISION', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
+            'vision' => 'native',
         ],
     ],
     [
@@ -114,9 +115,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_VISION', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
+            'vision' => 'native',
         ],
     ],
     [
@@ -131,8 +132,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_QWQ_32B_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -147,8 +148,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_DEEPSEEK_R1_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -163,8 +164,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -178,8 +179,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_MISTRAL_LARGE_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -193,8 +194,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN2_5_CODER_32B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -209,9 +210,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_INTERNVL2_5_8B_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_INTERNVL2_5_8B_TOOLS_VISION', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
+            'vision' => 'native',
         ],
     ],
     [
@@ -225,8 +226,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -240,8 +241,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_CODESTRAL_22B_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -256,8 +257,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_LLAMA_3_1_SAUERKRAUTLM_70B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
     [
@@ -272,8 +273,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => true,
-            'file_upload' => env('MODELS_GWDG_META_LLAMA_3_1_8B_RAG_TOOLS_FILE_UPLOAD', true),
+            'stream' => 'native',
+            'file_upload' => 'native',
         ],
     ],
 ];

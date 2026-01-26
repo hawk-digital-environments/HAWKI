@@ -26,6 +26,7 @@ class OpenAiStreamingRequest extends AbstractRequest
 //        $this->payload['stream_options'] = [
 //            'include_usage' => true,
 //        ];
+        \Log::debug($this->payload);
 
         $this->executeStreamingRequest(
             model: $model,
@@ -37,8 +38,7 @@ class OpenAiStreamingRequest extends AbstractRequest
 
     protected function chunkToResponse(AiModel $model, string $chunk): AiResponse
     {
-//        $jsonChunk = json_decode($chunk, true, 512, JSON_THROW_ON_ERROR);
-
+        \Log::debug($chunk);
         // Parse the event JSON
         $jsonChunk = json_decode($chunk, true);
         if (!$jsonChunk) {
@@ -53,21 +53,8 @@ class OpenAiStreamingRequest extends AbstractRequest
         $content = '';
         $isDone = false;
         $usage = null;
-
-        // Check for the finish_reason flag
-        if (isset($jsonChunk['choices'][0]['finish_reason']) && $jsonChunk['choices'][0]['finish_reason'] === 'stop') {
-            $isDone = true;
-        }
-
-        // Extract usage data if available
-        if (!empty($jsonChunk['usage'])) {
-            $usage = $this->extractUsage($model, $jsonChunk);
-        }
-
-        // Extract content if available
-        if (isset($jsonChunk['choices'][0]['delta']['content'])) {
-            $content = $jsonChunk['choices'][0]['delta']['content'];
-        }
+        $toolCalls = null;
+        $finishReason = null;
 
         switch ($type) {
             // The main streaming text deltas
@@ -75,17 +62,22 @@ class OpenAiStreamingRequest extends AbstractRequest
                 $content = $jsonChunk['delta'] ?? '';
                 break;
 
-            // When the full text part is completed
-//            case 'response.output_text.done':
-//            case 'response.content_part.done':
-//                $content = $jsonChunk['text'] ?? ($jsonChunk['part']['text'] ?? '');
-//                break;
-
             // When the whole response is done
             case 'response.completed':
                 $isDone = true;
-                if (!empty($jsonChunk['response']['usage'])) {
-                    $usage = $this->extractUsage($model, $jsonChunk['response']);
+                $response = $jsonChunk['response'] ?? [];
+
+                // Extract usage
+                if (!empty($response['usage'])) {
+                    $usage = $this->extractUsage($model, $response);
+                }
+
+                // Parse tool calls from output array
+                if (!empty($response['output'])) {
+                    $toolCalls = $this->parseToolCalls($response['output']);
+                    if (!empty($toolCalls)) {
+                        $finishReason = 'tool_calls';
+                    }
                 }
                 break;
 
@@ -95,6 +87,8 @@ class OpenAiStreamingRequest extends AbstractRequest
             case 'response.output_item.added':
             case 'response.output_item.done':
             case 'response.content_part.added':
+            case 'response.function_call_arguments.delta':
+            case 'response.function_call_arguments.done':
                 // No text content, just metadata events
                 break;
 
@@ -102,12 +96,39 @@ class OpenAiStreamingRequest extends AbstractRequest
                 // Unknown or unsupported type — ignore or log it
                 break;
         }
+
         return new AiResponse(
             content: [
                 'text' => $content,
             ],
             usage: $usage,
-            isDone: $isDone
+            isDone: $isDone,
+            toolCalls: $toolCalls,
+            finishReason: $finishReason
         );
+    }
+
+    /**
+     * Parse tool calls from Response API output array
+     */
+    private function parseToolCalls(array $output): array
+    {
+        $toolCalls = [];
+
+        foreach ($output as $item) {
+            if (($item['type'] ?? '') === 'function_call' && ($item['status'] ?? '') === 'completed') {
+                $arguments = json_decode($item['arguments'] ?? '{}', true);
+
+                $toolCalls[] = new \App\Services\AI\Tools\Value\ToolCall(
+                    id: $item['call_id'] ?? $item['id'] ?? 'unknown',
+                    type: 'function',
+                    name: $item['name'] ?? 'unknown',
+                    arguments: $arguments,
+                    index: null
+                );
+            }
+        }
+
+        return $toolCalls;
     }
 }
