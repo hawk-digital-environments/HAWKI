@@ -3,6 +3,7 @@
 namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppSetting;
+use App\Orchid\Layouts\Settings\SessionSettingsLayout;
 use App\Orchid\Layouts\Settings\SystemSettingsTabMenu;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use App\Services\SettingsService;
@@ -92,6 +93,7 @@ class AuthenticationSettingsScreen extends Screen
         $authMethodSetting = null;
         $passkeySettings = [];
         $otherAuthSettings = [];
+        $sessionSettings = [];
 
         // Alle Authentifizierungseinstellungen nach Typ sortieren
         foreach ($this->query()['authentication'] as $setting) {
@@ -105,6 +107,9 @@ class AuthenticationSettingsScreen extends Screen
                       str_starts_with($setting->key, 'shibboleth_')) {
                 // Skip provider-specific settings - they are handled in AuthMethodEditScreen
                 continue;
+            } elseif (str_starts_with($setting->key, 'session_')) {
+                // Session settings - will be rendered separately
+                $sessionSettings[] = $setting;
             } elseif (str_starts_with($setting->key, 'auth_passkey_')) {
                 // Check if we should show conditional passkey settings
                 $shouldShowSetting = true;
@@ -166,6 +171,12 @@ class AuthenticationSettingsScreen extends Screen
             ])
                 ->title('External Authentication Method')
                 ->description('Configure the primary authentication method for external user validation.');
+        }
+
+        // Session Settings Layout (new section)
+        if (! empty($sessionSettings)) {
+            $sessionLayouts = SessionSettingsLayout::build(collect($sessionSettings));
+            $layouts = array_merge($layouts, $sessionLayouts);
         }
 
         return $layouts;

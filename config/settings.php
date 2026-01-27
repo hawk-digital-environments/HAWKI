@@ -108,6 +108,11 @@ return [
         'attribute_map.employeetype' => 'Employeetype Key Name Override,',
         'attribute_map.name' => 'Displayname Key Name Override,',
     ],
+    'session' => [
+        'lifetime' => 'Session lifetime in minutes (how long a session remains active before expiring)',
+        'expire_on_close' => 'Expire session when browser is closed (enhances security)',
+        'encrypt' => 'Encrypt session data for additional security',
+    ],
     'logging' => [
         'default' => 'Default log channel (stack, single, daily, database, stack_with_database, etc.)',
         'channels.stack.channels' => 'Comma-separated list of channels for stack driver',
