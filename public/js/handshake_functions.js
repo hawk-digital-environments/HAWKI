@@ -491,8 +491,22 @@ async function extractPasskey(){
                                                 passkeyBackup.tag,
                                                 false);
 
+        // Set the passkey BEFORE verification so syncKeychain can use it
+        await setPassKey(passkey);
+        
+        // Sync keychain from server to ensure we have the latest keychain matching this passkey
+        console.log('Syncing keychain from server after backup recovery...');
+        try {
+            await syncKeychain(serverKeychainCryptoData);
+            console.log('Keychain synced successfully');
+        } catch (syncError) {
+            console.error('Failed to sync keychain:', syncError);
+            msg.innerText = 'Failed to sync keychain. Please try again.';
+            msg.style.display = 'block';
+            return;
+        }
+
         if(verifyPasskey(passkey)){
-            setPassKey(passkey);
             
             // Trigger password manager save prompt by submitting the form
             const backupForm = document.querySelector('#backup-recovery-form');
@@ -705,13 +719,29 @@ async function extractPasskeySystem(){
         
         console.log('Backup decrypted successfully, verifying with keychain...');
 
+        // Set the passkey BEFORE verification so syncKeychain can use it
+        await setPassKey(decryptedPasskey);
+        
+        // Sync keychain from server to ensure we have the latest keychain matching this passkey
+        console.log('Syncing keychain from server after system backup recovery...');
+        try {
+            await syncKeychain(serverKeychainCryptoData);
+            console.log('Keychain synced successfully');
+        } catch (syncError) {
+            console.error('Failed to sync keychain:', syncError);
+            if (msg) {
+                msg.innerText = 'Failed to sync keychain. Please try again.';
+                msg.style.display = 'block';
+            }
+            return;
+        }
+
         // Verify the decrypted passkey with keychain (method-agnostic)
         // The backup contains the ORIGINAL passkey used during registration
         const verified = await verifyPasskey(decryptedPasskey);
         
         if (verified) {
             console.log('Passkey verified with keychain - restoring access');
-            await setPassKey(decryptedPasskey);
             
             // Trigger password manager save prompt
             const backupSystemForm = document.querySelector('#backup-recovery-system-form');
@@ -731,7 +761,6 @@ async function extractPasskeySystem(){
                 }
             }
             
-            await syncKeychain(serverKeychainCryptoData);
             window.location.href = '/chat';
         } else {
             console.error('Backup code is correct, but passkey does not match keychain');
