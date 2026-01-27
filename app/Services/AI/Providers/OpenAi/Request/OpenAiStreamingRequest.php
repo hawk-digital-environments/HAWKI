@@ -38,7 +38,7 @@ class OpenAiStreamingRequest extends AbstractRequest
 
     protected function chunkToResponse(AiModel $model, string $chunk): AiResponse
     {
-        \Log::debug($chunk);
+//        \Log::debug($chunk);
         // Parse the event JSON
         $jsonChunk = json_decode($chunk, true);
         if (!$jsonChunk) {

@@ -51,22 +51,19 @@ readonly class GwdgRequestConverter
         $disableTools = $this->shouldDisableTools($rawPayload);
 
         if (!$disableTools) {
-            // Build tools from function_call strategy
+            // Build all tools (function_call and mcp strategies)
             // GWDG uses OpenAI Chat Completions format (NESTED structure)
-            $toolDefinitions = $this->buildFunctionCallTools($model);
+            // Laravel orchestrates both: function_call runs local code, mcp calls external servers
+            $toolDefinitions = array_merge(
+                $this->buildFunctionCallTools($model),
+                $this->buildMCPTools($model)
+            );
+
             if (!empty($toolDefinitions)) {
                 $payload['tools'] = array_map(fn($toolDef) => [
                     'type' => 'function',
                     'function' => $toolDef->toOpenAiChatFormat(),
                 ], $toolDefinitions);
-            }
-
-            // MCP servers for MCP_DIRECT (GWDG doesn't support this, but included for consistency)
-            $mcpServers = $this->buildMCPServers($model);
-            if (!empty($mcpServers)) {
-                // Note: GWDG doesn't support MCP_DIRECT, so this will be empty
-                // Other providers (OpenAI, Anthropic) will use this
-                $payload['mcp_servers'] = $mcpServers;
             }
         }
 

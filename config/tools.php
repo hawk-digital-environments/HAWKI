@@ -19,6 +19,7 @@ return [
     'available_tools' => [
         \App\Services\AI\Tools\Implementations\TestTool::class,
         \App\Services\AI\Tools\Implementations\DmcpTool::class,
+        \App\Services\AI\Tools\Implementations\RawkiSearchTool::class,
     ],
 
     /*
@@ -33,6 +34,7 @@ return [
     'tool_descriptions' => [
         'test_tool' => 'Test tool for validating function calling capabilities',
         'dice_roll' => 'D&D style dice roller via MCP server',
+        'web_search' => 'Web search via RAWKI MCP server (Brave or Tavily)',
     ],
 
     /*
@@ -49,6 +51,12 @@ return [
             'url' => env('DMCP_SERVER_URL', 'https://dmcp-server.deno.dev/sse'),
             'server_label' => 'dnd_dice_roller',  // Machine-readable: letters, digits, hyphens, underscores only
             'description' => 'D&D Dice Roller',    // Human-readable description
+            'require_approval' => 'never',
+        ],
+        'web_search' => [
+            'url' => env('RAWKI_MCP_SERVER_URL', 'http://localhost:8080/mcp/rawki'),
+            'server_label' => 'rawki_search',
+            'description' => 'RAWKI Web Search',
             'require_approval' => 'never',
         ],
     ],

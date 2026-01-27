@@ -19,7 +19,8 @@ return [
 
             // Tool execution strategies
             'test_tool' => 'function_call',
-            'dice_roll' => 'mcp',  // Model supports MCP protocol
+            'dice_roll' => 'mcp',      // D&D dice roller via MCP
+            'web_search' => 'mcp',     // RAWKI web search via MCP
         ],
     ],
     [
@@ -39,7 +40,7 @@ return [
             'vision'=> 'native',
 
             'test_tool' => 'function_call',
-            'dice_roll' => 'mcp',
+            'web_search' => 'mcp',
         ],
     ],
     [

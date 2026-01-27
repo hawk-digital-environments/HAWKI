@@ -27,7 +27,7 @@ class GwdgStreamingRequest extends AbstractRequest
     {
         $this->accumulatedToolCalls = [];
         \Log::info('GwdgStreamingRequest starting execution');
-        \Log::debug($this->payload);
+//        \Log::debug($this->payload);
 
         $this->executeStreamingRequest(
             model: $model,

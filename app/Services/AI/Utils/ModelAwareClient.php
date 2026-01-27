@@ -23,12 +23,12 @@ readonly class ModelAwareClient implements ClientInterface
     )
     {
     }
-    
+
     public function getConcreteClient(): ClientInterface
     {
         return $this->concreteClient;
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -36,7 +36,7 @@ readonly class ModelAwareClient implements ClientInterface
     {
         $this->concreteClient->setProvider($provider);
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -47,7 +47,7 @@ readonly class ModelAwareClient implements ClientInterface
         }
         $this->concreteClient->sendStreamRequest($request, $onData);
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -58,7 +58,7 @@ readonly class ModelAwareClient implements ClientInterface
         }
         return $this->concreteClient->sendRequest($request);
     }
-    
+
     /**
      * @inheritDoc
      */

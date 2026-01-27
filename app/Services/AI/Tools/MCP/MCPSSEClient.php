@@ -31,7 +31,7 @@ class MCPSSEClient
      */
     public function request(string $method, array $params = []): array
     {
-        $requestId = uniqid('mcp_', true);
+        $requestId = hexdec( uniqid());
 
         // Build JSON-RPC request
         $request = [
@@ -52,19 +52,28 @@ class MCPSSEClient
         // Initialize cURL for SSE
         $ch = curl_init($this->serverUrl);
 
+//        curl_setopt_array($ch, [
+//            CURLOPT_RETURNTRANSFER => true,
+//            CURLOPT_POST => true,
+//            CURLOPT_POSTFIELDS => $jsonRequest,
+//            CURLOPT_HTTPHEADER => [
+//                'Content-Type: application/json',
+//                'Accept: text/event-stream',
+//            ],
+//            CURLOPT_TIMEOUT => $this->timeout,
+//            CURLOPT_WRITEFUNCTION => function($ch, $data) use (&$responseData) {
+//                $responseData .= $data;
+//                return strlen($data);
+//            },
+//        ]);
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $jsonRequest,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
-                'Accept: text/event-stream',
             ],
             CURLOPT_TIMEOUT => $this->timeout,
-            CURLOPT_WRITEFUNCTION => function($ch, $data) use (&$responseData) {
-                $responseData .= $data;
-                return strlen($data);
-            },
         ]);
 
         $responseData = '';
@@ -83,7 +92,13 @@ class MCPSSEClient
         }
 
         // Parse SSE response
-        $response = $this->parseSSEResponse($responseData, $requestId);
+//        $response = $this->parseSSEResponse($responseData, $requestId);
+
+        $response = json_decode($result, true);
+
+        if (!is_array($response)) {
+            throw new \RuntimeException('Invalid MCP JSON response');
+        }
 
         Log::debug('MCP SSE Response', [
             'method' => $method,

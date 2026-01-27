@@ -21,7 +21,7 @@ readonly class GoogleRequestConverter
     )
     {
     }
-    
+
     public function convertRequestToPayload(AiRequest $request): array
     {
         $rawPayload = $request->payload;
@@ -75,6 +75,7 @@ readonly class GoogleRequestConverter
 
         // Build tools from capabilities
         $disableTools = $this->shouldDisableTools($rawPayload);
+
         $tools = [];
 
         if (!$disableTools) {
@@ -96,25 +97,16 @@ readonly class GoogleRequestConverter
                 $tools[] = ["google_search" => new \stdClass()];
             }
 
-            // MCP_DIRECT capabilities (e.g., dice_roll)
-            $mcpServers = $this->buildMCPServers($model);
-            foreach ($mcpServers as $mcpConfig) {
-                // Google Gemini expects tools in their specific format
-                // TODO: Verify Google's MCP integration format
-                $tools[] = [
-                    'mcp_server' => [
-                        'server_url' => $mcpConfig['server_url'],
-                        'server_label' => $mcpConfig['server_label'] ?? 'mcp_server',
-                        'tools' => $mcpConfig['tools'] ?? [],
-                    ]
-                ];
-            }
+            // TODO: Add custom function calling support for Google Gemini
+            // Google may not support custom function tools or MCP integration yet
+            // When implementing, use buildFunctionCallTools() and buildMCPTools()
+            // and convert to Google's format using toGoogleFormat()
         }
 
         $payload['tools'] = $tools;
         return $payload;
     }
-    
+
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
         $role = $message['role'];
@@ -175,7 +167,7 @@ readonly class GoogleRequestConverter
 
         return $formatted;
     }
-    
+
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$parts): void
     {
         $attachmentService = app(AttachmentService::class);

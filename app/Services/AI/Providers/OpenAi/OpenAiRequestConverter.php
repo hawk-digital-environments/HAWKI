@@ -71,23 +71,16 @@ readonly class OpenAiRequestConverter
         if (!$disableTools) {
             $tools = [];
 
-            // Add function call tools (strategy: function_call)
-            // OpenAI Response API uses FLAT structure: {type, name, description, parameters}
-            $functionCallTools = $this->buildFunctionCallTools($model);
-            foreach ($functionCallTools as $toolDef) {
-                $tools[] = $toolDef->toOpenAiResponseFormat();
-            }
+            // Add all tools with function_call or mcp strategy
+            // Both are sent as 'function' type to OpenAI - Laravel orchestrates execution
+            // The difference is only in execution: function_call runs local code, mcp calls external server
+            $toolDefinitions = array_merge(
+                $this->buildFunctionCallTools($model),
+                $this->buildMCPTools($model)
+            );
 
-            // Add MCP servers (strategy: mcp)
-            $mcpServers = $this->buildMCPServers($model);
-            foreach ($mcpServers as $mcpConfig) {
-                $tools[] = [
-                    'type' => 'mcp',
-                    'server_label' => $mcpConfig['server_label'] ?? 'mcp_server',
-                    'server_description' => $mcpConfig['description'] ?? '',
-                    'server_url' => $mcpConfig['url'],
-                    'require_approval' => $mcpConfig['require_approval'] ?? 'always',
-                ];
+            foreach ($toolDefinitions as $toolDef) {
+                $tools[] = $toolDef->toOpenAiResponseFormat();
             }
 
             if (!empty($tools)) {

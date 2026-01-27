@@ -15,7 +15,7 @@ return [
             'stream' => true,
             'vision' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_VISION', true),
             'file_upload' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_FILE_UPLOAD', false),
-            'web_search'=> env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_WEB_SEARCH', true),
+            'web_search'=> 'native',
         ],
     ],
     [

@@ -47,29 +47,29 @@ trait ToolAwareConverter
             }
 
             $tool = $registry->get($toolName);
-            if ($tool) {
-                $tools[] = $tool->getDefinition();
-                Log::debug("Added function call tool: {$toolName}");
-            } else {
-                Log::warning("Tool not found in registry: {$toolName}");
-            }
+//            if ($tool) {
+//                $tools[] = $tool->getDefinition();
+//                Log::debug("Added function call tool: {$toolName}");
+//            } else {
+//                Log::warning("Tool not found in registry: {$toolName}");
+//            }
         }
 
         return $tools;
     }
 
     /**
-     * Build MCP server configurations (strategy: mcp)
+     * Build MCP tool definitions (strategy: mcp)
      *
-     * Returns MCP server configs that should be added to the model's request payload
-     * for direct MCP communication.
+     * Returns tool definitions for MCP tools that should be sent as function tools.
+     * Laravel acts as the MCP client and orchestrates the calls.
      *
-     * @param AiModel $model The model to build MCP servers for
-     * @return array Array of MCP server configurations
+     * @param AiModel $model The model to build MCP tools for
+     * @return array Array of ToolDefinition objects
      */
-    protected function buildMCPServers(AiModel $model): array
+    protected function buildMCPTools(AiModel $model): array
     {
-        $servers = [];
+        $tools = [];
         $modelTools = $model->getTools();
         $registry = app(ToolRegistry::class);
 
@@ -86,20 +86,21 @@ trait ToolAwareConverter
 
             $tool = $registry->get($toolName);
 
-            // Only MCP tools can be used with MCP strategy
-            if ($tool instanceof MCPToolInterface) {
-                if ($tool->isServerAvailable()) {
-                    $servers[] = $tool->getMCPServerConfig();
-                    Log::debug("Added MCP server: {$toolName}");
-                } else {
+            if ($tool) {
+                // Check if MCP server is available (for MCP tools)
+                if ($tool instanceof MCPToolInterface && !$tool->isServerAvailable()) {
                     Log::warning("MCP server not available: {$toolName}");
+                    continue;
                 }
+
+                $tools[] = $tool->getDefinition();
+                Log::debug("Added MCP tool: {$toolName}");
             } else {
-                Log::warning("Tool is not an MCP tool: {$toolName}");
+                Log::warning("Tool not found in registry: {$toolName}");
             }
         }
 
-        return $servers;
+        return $tools;
     }
 
     /**

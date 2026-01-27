@@ -18,7 +18,7 @@ return [
 
             // Tool execution strategies
             'test_tool' => 'function_call',  // HAWKI orchestrates via function calling
-            'dice_roll' => 'function_call',  // HAWKI orchestrates MCP tool via function calling
+            'web_search' => 'mcp',
         ],
     ],
     [
