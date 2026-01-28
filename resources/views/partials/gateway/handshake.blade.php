@@ -282,8 +282,11 @@
                 console.error('Error syncing keychain with stored passkey:', error);
                 console.warn('Stored passkey is invalid or outdated. Clearing and requesting new authentication.');
                 
-                // Clear invalid passkey from localStorage
-                localStorage.removeItem('passkey');
+                // Clear invalid passkey from localStorage and global variable
+                if (typeof passKey !== 'undefined') {
+                    passKey = undefined;
+                }
+                localStorage.removeItem(`${userInfo.username}PK`);
                 
             // Show appropriate authentication method based on config
             @if(config('auth.passkey_method') === 'system')
