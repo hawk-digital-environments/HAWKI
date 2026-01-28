@@ -727,10 +727,17 @@ function createChatItem(conv = null){
 
 
 async function generateChatName(firstMessage, convItem) {
+    // Truncate input to prevent long processing and reduce token costs
+    // Max 500 characters is sufficient for title generation
+    const truncatedMessage = firstMessage.length > 500 
+        ? firstMessage.substring(0, 500) + "..." 
+        : firstMessage;
+    
     const requestObject = {
         payload: {
             model: systemModels.title_generator,
             stream: true,
+            max_tokens: 10, // Limit to ~3-5 words
             messages: [
                 {
                     role: "system",
@@ -741,7 +748,7 @@ async function generateChatName(firstMessage, convItem) {
                 {
                     role: "user",
                     content: {
-                        text: firstMessage
+                        text: truncatedMessage
                     }
                 }
             ]
@@ -759,11 +766,22 @@ async function generateChatName(firstMessage, convItem) {
             let convName = ""; // Initialize to an empty string
             const onData = (data, done) => {
                 if (data) {
-                    convName += deconstContent(data.content).messageText;
+                    // Replace newlines with spaces to prevent multiline titles
+                    convName += deconstContent(data.content).messageText.replace(/[\n\r]/g, ' ');
+                    
+                    // Check word count and abort after 3 words
+                    const words = convName.trim().split(/\s+/);
+                    if (words.length >= 3) {
+                        const title = words.slice(0, 3).join(" ");
+                        convElement.innerText = title;
+                        abortCtrl.abort(); // Abort stream early to save tokens
+                        resolve(title);
+                        return;
+                    }
                     convElement.innerText = convName;
                 }
                 if (done) {
-                    resolve(convName); // Resolve the promise with convName
+                    resolve(convName.trim()); // Trim whitespace from final title
                 }
             };
             processStream(response.body, onData);
