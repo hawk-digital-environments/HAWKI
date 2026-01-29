@@ -19,6 +19,7 @@ class ResponsesStreamingRequest extends AbstractRequest
     private array $reasoningSummaryContent = []; // Map output_index => summary content
     private array $webSearchQueries = [];
     private array $statusLog = []; // Collect all status updates for persistence
+    private bool $isDoneSent = false; // Track if isDone=true has been sent (fallback flag)
 
     public function __construct(
         private array    $payload,
@@ -68,7 +69,7 @@ class ResponsesStreamingRequest extends AbstractRequest
         $type = $jsonChunk['type'] ?? '';
         
         $content = '';
-        $isDone = false;
+        $isDone = $this->isDoneSent; // Preserve isDone if already sent (fallback flag)
         $usage = null;
         $auxiliaries = [];
 
@@ -81,7 +82,6 @@ class ResponsesStreamingRequest extends AbstractRequest
             // Complete text output - DON'T send to avoid overwriting collected deltas
             // Text completion (metadata event)
             case 'response.output_text.done':
-                // \Log::info('[RESPONSES] Event Type: response.output_text.done');
                 // Just a completion signal, no content to send (deltas are already collected in frontend)
                 break;
 
@@ -181,6 +181,7 @@ class ResponsesStreamingRequest extends AbstractRequest
             // Response completed with final data
             case 'response.completed':
                 $isDone = true;
+                $this->isDoneSent = true; // Mark that isDone has been sent
                 
                 // Collect final "processing completed" status for persistence in status_log
                 // Note: This uses output_index 0 since we don't have multiple outputs in Responses API context
@@ -414,6 +415,7 @@ class ResponsesStreamingRequest extends AbstractRequest
                 // Check if this is a reasoning item completion
                 $item = $jsonChunk['item'] ?? [];
                 $itemType = $item['type'] ?? null;
+                $itemStatus = $item['status'] ?? null;
                 $outputIndex = $jsonChunk['output_index'] ?? null;
                 
                 if ($itemType === 'reasoning') {
@@ -519,8 +521,14 @@ class ResponsesStreamingRequest extends AbstractRequest
                     }
                     
                     $content = '';
+                } elseif ($itemType === 'message') {
+                    // Message item completed (normal conversation output)
+                    // This is a FALLBACK for when response.completed is not received
+                    // (Some API instances don't send it reliably on long responses)
+                    $isDone = true;
+                    $this->isDoneSent = true; // Mark that isDone has been sent
                 } else {
-                    // Generic output_item.done (e.g., message)
+                    // Other output_item types
                     //\Log::info('[RESPONSES] Event Type: response.output_item.done', [
                     //    'item_type' => $itemType ?? 'unknown',
                     //    'output_index' => $outputIndex
