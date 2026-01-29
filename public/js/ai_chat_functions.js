@@ -764,24 +764,48 @@ async function generateChatName(firstMessage, convItem) {
         .then(response => {
             const convElement = convItem.querySelector('.label');
             let convName = ""; // Initialize to an empty string
+            
             const onData = (data, done) => {
-                if (data) {
-                    // Replace newlines with spaces to prevent multiline titles
-                    convName += deconstContent(data.content).messageText.replace(/[\n\r]/g, ' ');
+                if (data && data.content) {
+                    let contentText = '';
                     
-                    // Check word count and abort after 3 words
-                    const words = convName.trim().split(/\s+/);
-                    if (words.length >= 3) {
-                        const title = words.slice(0, 3).join(" ");
-                        convElement.innerText = title;
-                        abortCtrl.abort(); // Abort stream early to save tokens
-                        resolve(title);
-                        return;
+                    try {
+                        // Parse content (comes as JSON string from backend)
+                        const content = typeof data.content === 'string' 
+                            ? JSON.parse(data.content) 
+                            : data.content;
+                        
+                        // Extract text - all providers use {text: "..."} format
+                        contentText = content.text || '';
+                    } catch (e) {
+                        // Fallback if JSON parsing fails
+                        contentText = typeof data.content === 'string' ? data.content : '';
                     }
-                    convElement.innerText = convName;
+                    
+                    // Filter out JSON strings (model returning structured data instead of plain text)
+                    const trimmed = contentText.trim();
+                    const isJsonString = trimmed && (trimmed.startsWith('{') || trimmed.startsWith('['));
+                    
+                    // Only process valid plain text (non-empty and not JSON)
+                    if (trimmed && !isJsonString) {
+                        // Replace newlines with spaces
+                        convName += contentText.replace(/[\n\r]/g, ' ');
+                        
+                        // Abort after 3 words
+                        const words = convName.trim().split(/\s+/).filter(w => w.length > 0);
+                        if (words.length >= 3) {
+                            const title = words.slice(0, 3).join(" ");
+                            convElement.innerText = title;
+                            abortCtrl.abort();
+                            resolve(title);
+                            return;
+                        }
+                        convElement.innerText = convName;
+                    }
                 }
+                
                 if (done) {
-                    resolve(convName.trim()); // Trim whitespace from final title
+                    resolve(convName.trim() || "New Chat");
                 }
             };
             processStream(response.body, onData);
