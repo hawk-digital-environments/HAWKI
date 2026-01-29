@@ -121,7 +121,9 @@ async function sendMessageConv(inputField) {
     messageElement.dataset.rawMsg = submissionData.content.text;
     scrollToLast(true, messageElement);
 
-    const webSearchActive = inputField.closest('.input-container').querySelector('#websearch-btn').classList.contains('active');
+    const webSearchBtn = inputField.closest('.input-container').querySelector('#websearch-btn') ?? null;
+    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
+
     const tools = {
         'web_search': webSearchActive
     }
