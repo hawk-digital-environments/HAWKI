@@ -14,7 +14,7 @@ readonly class AiModelContext
         private AiModel                $model,
         private ModelProviderInterface $provider,
         private \Closure               $clientResolver,
-        private \Closure               $statusResolver
+        private \Closure $statusResolver,
     )
     {
     }

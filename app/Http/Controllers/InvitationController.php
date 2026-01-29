@@ -2,21 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendEmailJob;
+use App\Models\Invitation;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Member;
-use App\Models\Invitation;
-
-use App\Jobs\SendEmailJob;
-
 use Illuminate\Http\Request;
-
-use App\Http\Controllers\RoomController;
-
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-
+use Illuminate\Support\Facades\URL;
 
 class InvitationController extends Controller
 {
@@ -71,6 +64,22 @@ class InvitationController extends Controller
         $invitations = $request->input('invitations');
 
         foreach($invitations as $inv) {
+            // Create a sub-request for sending the email if email data is present
+            // This allows us to reuse the sendExternInvitationEmail method while avoiding
+            // sending two requests from the client side.
+            if (is_array($inv['email'] ?? null)) {
+                $subRequest = new Request([
+                    'username' => $inv['username'],
+                    'hash' => $inv['email']['tempHash'] ?? '',
+                    'slug' => $slug
+                ]);
+                
+                $res = $this->sendExternInvitationEmail($subRequest);
+                if (!empty($res->getData(true)['error'])) {
+                    abort(400, $res->getData(true)['error'] ?? 'Failed to send invitation email.');
+                }
+            }
+            
             // Check if an invitation already exists for this user in this room
             $existingInvitation = Invitation::where('room_id', $roomId)
                                              ->where('username', $inv['username'])

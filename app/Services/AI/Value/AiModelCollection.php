@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\AI\Value;
 
 
+use Illuminate\Support\Collection;
 use Traversable;
 
 readonly class AiModelCollection implements \IteratorAggregate, \Countable
@@ -57,6 +58,11 @@ readonly class AiModelCollection implements \IteratorAggregate, \Countable
     public function count(): int
     {
         return count($this->models);
+    }
+    
+    public function toCollection(): Collection
+    {
+        return collect($this->models);
     }
     
     public function toArray(): array

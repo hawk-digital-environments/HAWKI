@@ -9,10 +9,8 @@ use App\Services\Chat\AiConv\AiConvService;
 use App\Services\Chat\Attachment\AttachmentService;
 use App\Services\Chat\Message\MessageContentValidator;
 use App\Services\Chat\Message\MessageHandlerFactory;
-use App\Services\Storage\FileStorageService;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -156,7 +154,7 @@ class AiConvController extends Controller
 
     public function storeAttachment(Request $request): JsonResponse {
         $validateData = $request->validate([
-            'file' => 'required|file|max:20480'
+            'file' => 'required|file|max:' . ($this->attachmentService->getMaxFileSize() / 1024)
         ]);
         $result = $this->attachmentService->store($validateData['file'], 'private');
         return response()->json($result);
@@ -178,32 +176,6 @@ class AiConvController extends Controller
             'url' => $url
         ]);
     }
-
-
-    public function downloadAttachment(string $uuid, string $path)
-    {
-        try {
-            $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
-            if($attachment->user->isNot(Auth::user())){
-                throw new AuthorizationException();
-            }
-
-            $storageService = app(FileStorageService::class);
-            $stream = $storageService->streamFromSignedPath($path); // returns a resource
-            return response()->streamDownload(function () use ($stream)
-            {
-                fpassthru($stream); // send stream directly to browser
-            },
-                $attachment->filename,
-                [
-                    'Content-Type' => $attachment->mime,
-                ]
-            );
-        } catch (FileNotFoundException $e) {
-            abort(404, 'File not found');
-        }
-    }
-
 
     public function deleteAttachment(Request $request): JsonResponse {
         $validateData = $request->validate([

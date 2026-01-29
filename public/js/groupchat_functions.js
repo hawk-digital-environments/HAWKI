@@ -1,5 +1,3 @@
-
-
 let inputField;
 let roomMsgTemp;
 let roomItemTemplate;
@@ -600,9 +598,10 @@ async function createAndSendInvitations(usersList, roomSlug){
     const invitations = [];
     for (const invitee of usersList) {
         let invitation;
-        if (invitee.publicKey) {
+        const publicKey = invitee.publicKey ?? invitee.public_key;
+        if (publicKey) {
 
-            const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(invitee.publicKey));
+            const encryptedRoomKey = await encryptWithPublicKey(roomKey, base64ToArrayBuffer(publicKey));
 
             invitation = {
                 username: invitee.username,
@@ -689,9 +688,7 @@ async function handleUserInvitations() {
         if(data.formattedInvitations){
 
             const invitations = data.formattedInvitations;
-            const privateKeyBase64 = await keychainGet('privateKey');
-            // Retrieve and convert private key
-            const privateKey = base64ToArrayBuffer(privateKeyBase64);
+            const privateKey = await keychainGet('privateKey');
 
             for (const inv of invitations) {
                 try {
@@ -764,6 +761,8 @@ async function finishInvitationHandling(invitation_id, roomKey){
     if(data.success){
 
         await keychainSet(data.room.slug, roomKey, true);
+
+        rooms.push(data.room);
 
         createRoomItem(data.room);
         connectWebSocket(data.room.slug);
@@ -862,6 +861,7 @@ async function loadRoom(btn=null, slug=null){
     const roomKey = await keychainGet(slug);
     const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
     const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
+    const legacyAiKey = await deriveKey('[object CryptoKey]', slug, aiCryptoSalt);
 
     if(roomData.room_description){
         const descriptObj = JSON.parse(roomData.room_description);
@@ -879,9 +879,16 @@ async function loadRoom(btn=null, slug=null){
 
     for (const msgData of roomData.messagesData) {
         const key = msgData.message_role === 'assistant' ? aiKey : roomKey;
-        msgData.content.text = await decryptWithSymKey(key, msgData.content.text.ciphertext,
-                                                            msgData.content.text.iv,
-                                                            msgData.content.text.tag, false);
+        try {
+            msgData.content.text = await decryptWithSymKey(key, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
+        } catch (error) {
+            if (msgData.message_role === 'assistant') {
+                // If decryption fails for AI messages, try legacy key
+                msgData.content.text = await decryptWithSymKey(legacyAiKey, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
+            } else {
+                throw error;
+            }
+        }
     }
     filterRoleElements(roomData.role);
     loadMessagesOnGUI(roomData.messagesData);
@@ -1373,7 +1380,7 @@ async function leaveRoom(){
             console.error('Room leave was not successful!');
         }
     } catch (error) {
-        console.error('Failed to leave room!');
+        console.error('Failed to leave room!', error);
     }
 }
 

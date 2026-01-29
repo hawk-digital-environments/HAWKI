@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Model;
 
 class Member extends Model
 {
@@ -14,17 +13,17 @@ class Member extends Model
     const ROLE_ASSISTANT = 'assistant';
 
     protected $fillable = [
-        'room_id', 
+        'room_id',
         'user_id',
         'role',
         'last_read',
         'isRemoved'
     ];
 
-    // public function room()
-    // {
-    //     return $this->belongsTo(Room::class);
-    // }
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
 
     public function user()
     {
@@ -37,7 +36,7 @@ class Member extends Model
     }
 
     public function updateRole($role){
-        $this->update(['role', $role]);
+        $this->update(['role' => $role]);
     }
 
     public function updateLastRead(){

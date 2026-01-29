@@ -22,7 +22,7 @@
 
     <script>
 		InitializePreDomSettings(false);
-        UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
+        UpdateSettingsLanguage('<x-current-locale/>');
 	</script>
 
 </head>

@@ -44,7 +44,12 @@ async function fetchGuidelines(){
         const {view, announcement} = await fetchLatestPolicy();
 
         // Render the HTML (MD rendered to HTML string)
-        const renderedHtml = md.render(view, false);
+    let renderedHtml = view;
+    if (typeof md === 'undefined' || !md.render) {
+        console.error('Markdown renderer not initialized properly.');
+    } else {
+        renderedHtml = md.render(view, false);
+    }
 
         // const parent = document.querySelector('')
         // Insert the rendered HTML into the designated container
@@ -123,13 +128,13 @@ function SwitchDarkMode(isSet){
 
     if(darkMode === 'enabled'){
         document.documentElement.className = 'darkMode';
-        icon.setAttribute('src', '/img/moon.svg');
-        tog.classList.add('active');
+        icon && icon.setAttribute('src', '/img/moon.svg');
+        tog && tog.classList.add('active');
     }
     else{
         document.documentElement.className = 'lightMode';
-        icon.setAttribute('src', '/img/sun.svg');
-        tog.classList.remove('active');
+        icon && icon.setAttribute('src', '/img/sun.svg');
+        tog && tog.classList.remove('active');
     }
     setupLoginBackgroud();
 }
@@ -137,6 +142,10 @@ function SwitchDarkMode(isSet){
 async function setupLoginBackgroud(){
     const loginBg = document.querySelector('.image_preview_container');
     const loginBgCredit = document.querySelector('.video-credits')
+
+    if (loginBg == null || loginBgCredit == null) {
+        return;
+    }
 
     const videosUrl = '../bg_videos'
     let videosIndex;
@@ -189,6 +198,9 @@ async function setupLoginBackgroud(){
 /// Change active language button in settings panel.
 function UpdateSettingsLanguage(lang){
     const btn = document.getElementById(lang + '_btn');
+    if (!btn) {
+        return;
+    }
     btn.classList.add('accentText');
     btn.style.fontWeight= '700';
 }

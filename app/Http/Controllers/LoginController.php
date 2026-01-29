@@ -29,7 +29,6 @@ class LoginController extends Controller
             return redirect('/handshake');
         }
 
-
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService())->render();
@@ -54,6 +53,4 @@ class LoginController extends Controller
             'settingsPanel',
             'activeOverlay'));
     }
-
-
 }
