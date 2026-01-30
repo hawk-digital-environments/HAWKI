@@ -3,6 +3,7 @@
 namespace App\Orchid\Screens\Settings;
 
 use App\Models\AppSetting;
+use App\Orchid\Layouts\Settings\SessionSettingsLayout;
 use App\Orchid\Layouts\Settings\SystemSettingsTabMenu;
 use App\Orchid\Traits\OrchidSettingsManagementTrait;
 use App\Services\SettingsService;
@@ -92,6 +93,7 @@ class AuthenticationSettingsScreen extends Screen
         $authMethodSetting = null;
         $passkeySettings = [];
         $otherAuthSettings = [];
+        $sessionSettings = [];
 
         // Alle Authentifizierungseinstellungen nach Typ sortieren
         foreach ($this->query()['authentication'] as $setting) {
@@ -105,12 +107,15 @@ class AuthenticationSettingsScreen extends Screen
                       str_starts_with($setting->key, 'shibboleth_')) {
                 // Skip provider-specific settings - they are handled in AuthMethodEditScreen
                 continue;
+            } elseif (str_starts_with($setting->key, 'session_')) {
+                // Session settings - will be rendered separately
+                $sessionSettings[] = $setting;
             } elseif (str_starts_with($setting->key, 'auth_passkey_')) {
                 // Check if we should show conditional passkey settings
                 $shouldShowSetting = true;
 
                 // Hide specific settings when passkey_method is not 'system'
-                if (in_array($setting->key, ['auth_passkey_secret', 'auth_passkey_otp', 'auth_passkey_otp_timeout'])) {
+                if (in_array($setting->key, ['auth_passkey_otp', 'auth_passkey_otp_timeout'])) {
                     $passkeyMethod = config('auth.passkey_method', '');
                     $shouldShowSetting = (strtolower($passkeyMethod) === 'system');
                 }
@@ -132,7 +137,7 @@ class AuthenticationSettingsScreen extends Screen
                 Layout::rows($otherAuthSettings),
             ])
                 ->title('Local User Authentication System')
-                ->description('Settings for local user management and authentication flows.');
+                ->description('Local authentication can be used in addition to an external auth method for test users or external guest users.');
         }
 
         // Passkey-Einstellungen als eigenes Layout
@@ -141,7 +146,7 @@ class AuthenticationSettingsScreen extends Screen
                 Layout::rows($passkeySettings),
             ])
                 ->title('Passkey Settings')
-                ->description('Configure passkey authentication for enhanced security.');
+                ->description('Configure passkey authentication for enhanced security. This can be changed later, but could prove inconvenient for your users.');
         }
 
         // Authentifizierungsmethode in separatem Layout, falls vorhanden
@@ -166,6 +171,12 @@ class AuthenticationSettingsScreen extends Screen
             ])
                 ->title('External Authentication Method')
                 ->description('Configure the primary authentication method for external user validation.');
+        }
+
+        // Session Settings Layout (new section)
+        if (! empty($sessionSettings)) {
+            $sessionLayouts = SessionSettingsLayout::build(collect($sessionSettings));
+            $layouts = array_merge($layouts, $sessionLayouts);
         }
 
         return $layouts;

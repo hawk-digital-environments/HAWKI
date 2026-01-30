@@ -85,7 +85,7 @@
                     <h1>{{ $translation["Guidelines"] }}</h1>
                 </div>
                 <div class="content-text-container">
-                    {!! $localizedTexts["guidelines_content"] !!}
+                    {{-- Guidelines loaded dynamically from announcements via fetchGuidelines() --}}
                     <br><br><br>
                 </div>
             </div>

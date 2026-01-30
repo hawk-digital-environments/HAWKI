@@ -51,10 +51,22 @@ class BarChart extends Chart
      * @var array
      */
     protected $colors = [
-        '#2274A5',
-        '#F75C03',
+        '#2ec7c9',
         '#F1C40F',
+        '#F75C03',
         '#D90368',
         '#00CC66',
+    ];
+
+    /**
+     * Configuring bar options for stacked bars.
+     *
+     * @var array
+     */
+    protected $barOptions = [
+        'spaceRatio' => 0.5,
+        'stacked' => 1,  // Enable stacked bars
+        'height' => 20,
+        'depth' => 2,
     ];
 }

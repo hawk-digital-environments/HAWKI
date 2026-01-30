@@ -12,6 +12,24 @@ use JsonException;
 
 abstract class AbstractRequest
 {
+    protected bool $wasConnectionAborted = false;
+    
+    /**
+     * Check if the connection was aborted by the client
+     */
+    public function wasConnectionAborted(): bool
+    {
+        return $this->wasConnectionAborted;
+    }
+    
+    /**
+     * Reset the abort status (useful for reusing request objects)
+     */
+    public function resetAbortStatus(): void
+    {
+        $this->wasConnectionAborted = false;
+    }
+    
     /**
      * Executes a streaming request to the AI model.
      *
@@ -34,7 +52,9 @@ abstract class AbstractRequest
         ?int      $timeout = null
     ): void
     {
-        set_time_limit($timeout ?? 120);
+        // Extended timeout for streaming requests (especially for web search & reasoning)
+        // Responses API with web search can take 5+ minutes
+        set_time_limit($timeout ?? 600);
 
         // Initialize cURL
         $ch = curl_init();
@@ -46,14 +66,9 @@ abstract class AbstractRequest
 
         // Set streaming-specific options
         $this->setStreamingCurlOptions($ch, function (string $chunk) use ($model, $onData, $chunkToResponse) {
-            // Log raw cURL response chunk if trigger is enabled
+            // Log the chunk data for debugging (if enabled)
             if (config('logging.triggers.curl_return_object')) {
-                \Log::info('cURL Response Chunk', [
-                    'model' => $model->getId(),
-                    'provider' => $model->getProvider()->getConfig()->getId(),
-                    'chunk_size' => strlen($chunk),
-                    'chunk_preview' => substr($chunk, 0, 200)
-                ]);
+                \Log::info(trim($chunk));
             }
             $onData($chunkToResponse($model, $chunk));
         });
@@ -90,7 +105,8 @@ abstract class AbstractRequest
         ?int      $timeout = null
     ): AiResponse
     {
-        set_time_limit($timeout ?? 120);
+        // Extended timeout for non-streaming requests
+        set_time_limit($timeout ?? 300);
 
         // Initialize cURL
         $ch = curl_init();
@@ -98,17 +114,7 @@ abstract class AbstractRequest
         // Set common cURL options
         $headers = is_callable($getHttpHeaders) ? $getHttpHeaders($model) : $this->getHttpHeaders($model);
         $this->setCommonCurlOptions($ch, $payload, $headers);
-
-        // Log cURL request payload if trigger is enabled
-        if (config('logging.triggers.curl_request_object')) {
-            \Log::info('cURL Request Payload (Non-Streaming)', [
-                'model' => $model->getId(),
-                'provider' => $model->getProvider()->getConfig()->getId(),
-                'url' => $apiUrl ?? $model->getProvider()->getConfig()->getApiUrl(),
-                'payload' => $payload
-            ]);
-        }
-
+        
         // Execute the request
         $response = curl_exec($ch);
 
@@ -121,14 +127,9 @@ abstract class AbstractRequest
 
         curl_close($ch);
 
-        // Log raw cURL response if trigger is enabled
+        // Debug logging for non-streaming responses
         if (config('logging.triggers.curl_return_object')) {
-            \Log::info('cURL Response (Non-Streaming)', [
-                'model' => $model->getId(),
-                'provider' => $model->getProvider()->getConfig()->getId(),
-                'response_size' => strlen($response),
-                'response_preview' => substr($response, 0, 500)
-            ]);
+            \Log::info('[NON-STREAMING] Raw API Response' . $response);
         }
 
         $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
@@ -200,21 +201,34 @@ abstract class AbstractRequest
     protected function setStreamingCurlOptions(\CurlHandle $ch, callable $onData): void
     {
         // Set timeout parameters for streaming
+        // CURLOPT_TIMEOUT = 0: No maximum time limit (allows long-running operations)
+        // LOW_SPEED_LIMIT = 1: Minimum 1 byte/second transfer rate
+        // LOW_SPEED_TIME = 120: Allow up to 2 minutes of inactivity (e.g., during web search/reasoning)
         curl_setopt($ch, CURLOPT_TIMEOUT, 0);
         curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
-        curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 20);
+        curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 120);
 
         $chunkHandler = new StreamChunkHandler($onData);
+        $connectionAborted = false; // Track if connection was aborted
 
         // Process each chunk as it arrives
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, static function ($ch, $data) use ($chunkHandler) {
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, static function ($ch, $data) use ($chunkHandler, &$connectionAborted) {
             if (connection_aborted()) {
+                $connectionAborted = true;
                 return 0;
+            }
+
+            // Log raw CURL data BEFORE StreamChunkHandler processes it
+            if (config('logging.triggers.raw_curl_chunk')) {
+                \Log::info('[RAW] ' . $data);
             }
 
             $chunkHandler->handle($data);
 
             return strlen($data);
         });
+        
+        // Store abort status for later retrieval
+        $this->wasConnectionAborted = &$connectionAborted;
     }
 }

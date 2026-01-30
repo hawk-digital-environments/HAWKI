@@ -97,7 +97,6 @@ input::placeholder{
 .backup-hash-row{
     display: grid;
     grid-template-columns: 1fr auto auto;
-    column-gap: .5rem;
     /* width: 80%; */
     align-items: center;
 }
@@ -122,97 +121,6 @@ input::placeholder{
     border-radius: 50%;
     opacity: 0;
     transition: opacity var(--transition-medium);
-}
-
-/* OTP Digit Input Styling */
-.otp-input-group {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.otp-digit {
-    min-width: 1rem;
-    max-width: 3rem;
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    border: 2px solid var(--border-color, #ddd);
-    border-radius: 8px;
-    background-color: var(--input-bg, #fff);
-    color: var(--text-color, #333);
-    transition: all 0.2s ease;
-    outline: none;
-    padding: 0;
-}
-
-.otp-digit:focus {
-    border-color: var(--accent-color, #007bff);
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-}
-
-.otp-digit:disabled {
-    background-color: var(--disabled-bg, #f5f5f5);
-    color: var(--disabled-text, #999);
-    cursor: not-allowed;
-}
-
-.otp-digit.filled {
-    background-color: var(--accent-color-light, #e3f2fd);
-    border-color: var(--accent-color, #007bff);
-}
-
-.otp-digit.error {
-    border-color: #dc3545;
-    animation: shake 0.5s ease-in-out;
-}
-
-@keyframes shake {
-    0%, 20%, 40%, 60%, 80% { transform: translateX(-2px); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(2px); }
-    100% { transform: translateX(0); }
-}
-
-/* OTP Container Styles */
-#otp-input-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-#otp-send-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-#resend-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-#otp-timer {
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    margin: 10px 0;
-}
-
-/* Responsive Design für kleinere Bildschirme */
-@media (max-width: 480px) {
-    .otp-input-group {
-        gap: 0.5rem;
-    }
-    
-    .otp-digit {
-        width: 2.5rem !important;
-        height: 2.5rem !important;
-        font-size: 1.2rem;
-    }
 }
 
 /* Bootstrap-equivalent Utility Classes */
@@ -258,4 +166,47 @@ input::placeholder{
 
 .text-success {
     color: var(--success-color, #28a745) !important;
+}
+
+/* Message styles for handshake alerts */
+.red-text {
+    color: var(--error-color, #dc3545);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+}
+
+.green-text {
+    color: var(--success-color, #28a745);
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    font-weight: 500;
+}
+
+/* Passkey section styles */
+.passkey-section {
+    width: 100%;
+    padding: 1.5rem;
+    border-radius: var(--border-radius-normal);
+    background: rgba(102, 126, 234, 0.05);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.passkey-btn {
+    transition: all 0.3s ease;
+}
+
+.passkey-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.passkey-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.info-text {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    text-align: center;
 }

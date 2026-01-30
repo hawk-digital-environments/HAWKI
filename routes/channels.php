@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Broadcast;
 //     return true;
 // });
 
+// User-specific channel for invitations and notifications
+Broadcast::channel('User.{username}', function (User $user, string $username) {
+    return $user->username === $username;
+});
+
 Broadcast::channel('Rooms.{roomSlug}', function (User $user, string $roomSlug) {
     $room = Room::where('slug', $roomSlug)->firstOrFail();
 

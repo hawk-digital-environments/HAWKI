@@ -27,6 +27,16 @@ trait OllamaUsageTrait
         $promptTokens = (int)$data['prompt_eval_count'];
         $completionTokens = (int)$data['eval_count']; // eval_count is already the response tokens count
         
+        // Log usage data if trigger is enabled
+        if (config('logging.triggers.usage')) {
+            \Log::info('Token Usage - Ollama', [
+                'model' => $model->getId(),
+                'prompt_eval_count' => $promptTokens,
+                'eval_count' => $completionTokens,
+                'total_tokens' => $promptTokens + $completionTokens
+            ]);
+        }
+        
         return new TokenUsage(
             model: $model,
             promptTokens: $promptTokens,

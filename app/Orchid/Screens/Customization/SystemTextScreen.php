@@ -68,6 +68,11 @@ class SystemTextScreen extends Screen
     public function commandBar(): iterable
     {
         return [
+            Button::make('Update Keys')
+                ->icon('bs.download')
+                ->method('importNewKeys')
+                ->confirm('Import new translation keys from JSON files without modifying existing entries?'),
+
             Button::make('Export')
                 ->icon('bs.upload')
                 ->method('exportSystemTexts')
@@ -325,6 +330,49 @@ class SystemTextScreen extends Screen
         } catch (\Exception $e) {
             Log::error('Error resetting system texts: '.$e->getMessage());
             Toast::error('Error resetting system texts: '.$e->getMessage());
+        }
+
+        return redirect()->route('platform.customization.systemtexts');
+    }
+
+    /**
+     * Import new translation keys from JSON files without modifying existing entries
+     */
+    public function importNewKeys()
+    {
+        try {
+            $beforeCount = AppSystemText::count();
+
+            // Import system texts with forceUpdate = false (only creates new entries)
+            $textImportService = new TextImportService;
+            $importedCount = $textImportService->importSystemTexts(false);
+
+            $afterCount = AppSystemText::count();
+            $newKeysCount = $afterCount - $beforeCount;
+
+            $this->logBatchOperation('import_new', 'system_texts', [
+                'keys_processed' => $importedCount,
+                'new_keys_added' => $newKeysCount,
+                'before_count' => $beforeCount,
+                'after_count' => $afterCount,
+            ]);
+
+            // Clear caches to ensure changes are immediately visible
+            try {
+                \App\Http\Controllers\LanguageController::clearCaches();
+                \App\Http\Controllers\LocalizationController::clearCaches();
+            } catch (\Exception $e) {
+                \Log::error('Error clearing cache after importing new keys: '.$e->getMessage());
+            }
+
+            if ($newKeysCount > 0) {
+                Toast::success("Successfully imported {$newKeysCount} new translation keys from JSON files");
+            } else {
+                Toast::info('No new translation keys found. All keys from JSON files already exist in the database.');
+            }
+        } catch (\Exception $e) {
+            Log::error('Error importing new keys: '.$e->getMessage());
+            Toast::error('Error importing new keys: '.$e->getMessage());
         }
 
         return redirect()->route('platform.customization.systemtexts');

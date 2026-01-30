@@ -8,6 +8,7 @@ use App\Models\Announcements\Announcement;
 use Orchid\Screen\Actions\Button;
 use Orchid\Screen\Actions\DropDown;
 use Orchid\Screen\Actions\Link;
+use Orchid\Screen\Components\Cells\DateTimeSplit;
 use Orchid\Screen\Layouts\Table;
 use Orchid\Screen\TD;
 
@@ -29,7 +30,7 @@ class AnnouncementListLayout extends Table
                 ->cantHide()
                 ->render(function (Announcement $announcement) {
                     return Link::make($announcement->title)
-                        ->route('platform.customization.announcements.edit', $announcement);
+                        ->route('platform.announcements.edit', $announcement);
                 }),
 
             TD::make('type', 'Type')
@@ -45,28 +46,6 @@ class AnnouncementListLayout extends Table
                     return "<span class=\"badge {$badgeClass}\">{$announcement->type}</span>";
                 })
                 ->sort(),
-
-            TD::make('languages', 'Translations')
-                ->render(function (Announcement $announcement) {
-                    $translations = $announcement->translations;
-                    
-                    if ($translations->isEmpty()) {
-                        return '<span class="text-muted">No translations</span>';
-                    }
-
-                    $badges = $translations->map(function ($translation) {
-                        $lang = match($translation->locale) {
-                            'de_DE' => ['code' => 'DE', 'class' => 'bg-primary'],
-                            'en_US' => ['code' => 'EN', 'class' => 'bg-success'],
-                            default => ['code' => strtoupper(substr($translation->locale, 0, 2)), 'class' => 'bg-secondary'],
-                        };
-                        return "<span class=\"badge rounded-pill {$lang['class']} me-1\">{$lang['code']}</span>";
-                    })->implode('');
-
-                    return $badges;
-                })
-                ->align(TD::ALIGN_CENTER)
-                ->width('120px'),
 
             TD::make('is_forced', 'Forced')
                 ->render(function (Announcement $announcement) {
@@ -118,16 +97,35 @@ class AnnouncementListLayout extends Table
                 })
                 ->sort(),
 
-            //TD::make('created_at', 'Created')
-            //    ->render(function (Announcement $announcement) {
-            //        return $announcement->created_at->format('Y-m-d H:i');
-            //    })
-            //    ->sort(),
-
-            TD::make('updated_at', 'Last Updated')
+            TD::make('read_stats', 'Accepted/Read')
                 ->render(function (Announcement $announcement) {
-                    return $announcement->updated_at->format('Y-m-d H:i');
+                    // Get total read count
+                    $readCount = $announcement->users()->wherePivot('seen_at', '!=', null)->count();
+                    
+                    // If not forced, just show read count
+                    if (!$announcement->is_forced) {
+                        return $readCount > 0 ? "<span class=\"text-muted\">{$readCount}</span>" : '-';
+                    }
+                    
+                    // For forced announcements, show accepted/read ratio
+                    $acceptedCount = $announcement->users()
+                        ->wherePivot('accepted_at', '!=', null)
+                        ->count();
+                    
+                    if ($readCount === 0) {
+                        return '-';
+                    }
+                    
+                    $percentage = $readCount > 0 ? round(($acceptedCount / $readCount) * 100) : 0;
+                    $badgeClass = $percentage >= 80 ? 'bg-success' : ($percentage >= 50 ? 'bg-warning' : 'bg-danger');
+                    
+                    return "<span class=\"badge {$badgeClass}\">{$acceptedCount}/{$readCount}</span>";
                 })
+                ->align(TD::ALIGN_CENTER)
+                ->width('140px'),
+
+            TD::make('created_at', 'Created')
+                ->usingComponent(DateTimeSplit::class)
                 ->align(TD::ALIGN_RIGHT)
                 ->sort(),
 
@@ -137,7 +135,7 @@ class AnnouncementListLayout extends Table
                 ->render(function (Announcement $announcement) {
                     $actions = [
                         Link::make('Edit')
-                            ->route('platform.customization.announcements.edit', $announcement)
+                            ->route('platform.announcements.edit', $announcement)
                             ->icon('bs.pencil'),
                     ];
 

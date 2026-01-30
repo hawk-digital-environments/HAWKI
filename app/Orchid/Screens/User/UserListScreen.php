@@ -104,6 +104,8 @@ class UserListScreen extends Screen
                 ->title('Import')
                 ->applyButton('Import Users')
                 ->closeButton('Cancel'),
+
+            Layout::view('orchid.partials.user-usage-modal'),
         ];
     }
 
@@ -135,7 +137,24 @@ class UserListScreen extends Screen
 
     public function remove(Request $request): void
     {
-        User::findOrFail($request->get('id'))->delete();
+        $userId = $request->get('id');
+
+        // Prevent deletion of system user (ID=1)
+        if ($userId == 1) {
+            Toast::error('System user cannot be deleted.');
+
+            return;
+        }
+
+        // Prevent current user from deleting their own account
+        $currentUserId = $request->user()->id;
+        if ($userId == $currentUserId) {
+            Toast::error('You cannot delete your own account.');
+
+            return;
+        }
+
+        User::findOrFail($userId)->delete();
 
         Toast::info(__('User was removed'));
     }
@@ -326,7 +345,7 @@ class UserListScreen extends Screen
         try {
             $authMethod = config('auth.authentication_method', 'LDAP');
             $roleSlug = $this->employeetypeMappingService->mapEmployeetypeToRole($employeetype, $authMethod);
-            
+
             // Service returns 'guest' as fallback
             return $roleSlug;
         } catch (\Exception $e) {
