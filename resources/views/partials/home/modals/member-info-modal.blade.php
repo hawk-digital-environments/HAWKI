@@ -56,9 +56,12 @@
         else{
             panel.querySelector('#youTag').style.display = "none";
             
+            // Check if this is HAWKI assistant - cannot be removed
+            if(data.username === hawkiUsername){
+                panel.querySelector('#remove-member-btn').style.display = "none";
+            }
             // Check if current user has permission to remove members (Admin only)
-            const currentUserRole = activeRoom?.currentUserRole || 'viewer';
-            if (currentUserRole === 'admin') {
+            else if (activeRoom?.currentUserRole === 'admin') {
                 panel.querySelector('#remove-member-btn').style.display = "block";
             } else {
                 panel.querySelector('#remove-member-btn').style.display = "none";

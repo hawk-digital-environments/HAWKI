@@ -45,22 +45,20 @@
 					{!! $translation["group_welcome"] !!}
 					<button class="btn-lg-fill" onclick="openRoomCreatorPanel()">{{ $translation["CreateARoom"] }}</button>
 				</div>
-			</div>
 		</div>
+	</div>
 
-		<div class="dy-main-content" id="chat">
-			<div class="chat-header" id="group-chat-header" style="display: none; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color, #e0e0e0); align-items: center; justify-content: center; gap: 0.75rem; background: var(--background-secondary, #f8f9fa);">
-				<img class="chat-header-icon" id="chat-header-icon" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; display: none;">
-				<div class="chat-header-initials" id="chat-header-initials" style="width: 36px; height: 36px; border-radius: 50%; display: none; align-items: center; justify-content: center; background-color: var(--primary-color, #007bff); color: white; font-weight: bold; font-size: 0.9rem;"></div>
-				<h3 class="chat-header-name" id="chat-header-name" style="margin: 0; font-size: 1rem; font-weight: 500;"></h3>
-				<button class="btn-xs" onclick="openRoomCP()" title="Info" style="background: none; border: none; cursor: pointer; position: absolute; right: 1rem;">
-					<x-icon name="info"/>
-				</button>
-			</div>
-			<div class="chatlog">
-				<div class="chatlog-container ">
-
-					<div class="scroll-container">
+	<div class="dy-main-content" id="chat">
+		<div class="chat-header" id="group-chat-header">
+			<img class="chat-header-icon" id="chat-header-icon" alt="">
+			<div class="chat-header-initials" id="chat-header-initials"></div>
+			<h3 class="chat-header-name" id="chat-header-name"></h3>
+			<button class="btn-xs" onclick="openRoomCP()" title="Info">
+				<x-icon name="info"/>
+			</button>
+		</div>
+		<div class="chatlog">
+			<div class="chatlog-container ">					<div class="scroll-container">
 						<div class="scroll-panel">
 							<div class="thread trunk" id="0">
 

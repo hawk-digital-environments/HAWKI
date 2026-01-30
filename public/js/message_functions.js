@@ -1,7 +1,13 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
 
+    // Remove empty room placeholder when first message is added
+    removeEmptyRoomPlaceholder();
+
     const {messageText, groundingMetadata, auxiliaries} = deconstContent(messageObj.content.text);
+    
+    // Override auxiliaries with content.auxiliaries if present (for group chat)
+    const finalAuxiliaries = messageObj.content.auxiliaries || auxiliaries;
 
     /// CLONE
     // clone message element
@@ -166,12 +172,12 @@ function addMessageToChatlog(messageObj, isFromServer = false){
             }
         }
         
-        // Handle Anthropic citations
-        if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
-            addAnthropicCitations(messageElement, auxiliaries);
-            addResponsesCitations(messageElement, auxiliaries); // OpenAI Responses API citations
+        // Handle Anthropic citations and status indicator
+        if (finalAuxiliaries && Array.isArray(finalAuxiliaries) && finalAuxiliaries.length > 0) {
+            addAnthropicCitations(messageElement, finalAuxiliaries);
+            addResponsesCitations(messageElement, finalAuxiliaries); // OpenAI Responses API citations
             // Update AI status indicator (thinking, reasoning, web search)
-            updateAiStatusIndicator(messageElement, auxiliaries, false);
+            updateAiStatusIndicator(messageElement, finalAuxiliaries, false);
         }
     }
 
@@ -848,6 +854,15 @@ async function regenerateMessage(messageElement, Done = null){
     
     const webSearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
     const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
+    
+    const reasoningBtn = inputContainer ? inputContainer.querySelector('#reasoning-btn') : null;
+    const reasoningActive = reasoningBtn ? reasoningBtn.classList.contains('active') : false;
+    
+    // Get reasoning effort if reasoning is active
+    let reasoningEffort = null;
+    if (reasoningActive) {
+        reasoningEffort = reasoningBtn.dataset.effort || 'medium';
+    }
 
     const tools = {
         'web_search': webSearchActive
@@ -864,6 +879,11 @@ async function regenerateMessage(messageElement, Done = null){
                 'stream': activeModel.tools?.stream ? true : false,
                 'model': activeModel.id,
                 'tools': tools
+            }
+            
+            // Add reasoning_effort if set
+            if (reasoningEffort !== null) {
+                msgAttributes['reasoning_effort'] = reasoningEffort;
             }
 
             await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{

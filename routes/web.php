@@ -48,6 +48,15 @@ Route::middleware('prevent_back')->group(function () {
 
     Route::post('/req/changeLanguage', [LanguageController::class, 'changeLanguage']);
 
+    // WebAuthn passkey management during handshake
+    Route::middleware('auth')->post('/req/user/set-webauthn-pk', function (Illuminate\Http\Request $request) {
+        $user = $request->user();
+        $user->webauthn_pk = $request->input('has_passkey', false);
+        $user->save();
+        
+        return response()->json(['success' => true, 'webauthn_pk' => $user->webauthn_pk]);
+    });
+
     Route::get('/inv/{tempHash}/{slug}', [InvitationController::class, 'openExternInvitation'])->name('open.invitation')->middleware('signed');
 
     Route::get('/dataprotection', [HomeController::class, 'dataprotectionIndex']);
@@ -182,6 +191,11 @@ Route::middleware('prevent_back')->group(function () {
 
         Route::post('/req/profile/reset', [ProfileController::class, 'requestProfileReset']);
         Route::post('/req/backupKeychain', [ProfileController::class, 'backupKeychain']);
+
+        // News
+        if (config('hawki.news_active')) {
+            Route::get('/news', [HomeController::class, 'index']);
+        }
 
         // AI RELATED ROUTES
     });

@@ -332,6 +332,9 @@ async function sendMessageConv(inputField) {
     const webSearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
     const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
     
+    const reasoningBtn = inputContainer ? inputContainer.querySelector('#reasoning-btn') : null;
+    const reasoningActive = reasoningBtn ? reasoningBtn.classList.contains('active') : false;
+    
     // Check if activeModel is set
     if(!activeModel){
         console.error('No active model selected. Cannot send message.');
@@ -342,6 +345,13 @@ async function sendMessageConv(inputField) {
     const tools = {
         'web_search': webSearchActive
     }
+    
+    // Add reasoning_effort parameter if reasoning is active
+    // Get the selected effort level from the button's data attribute (default to 'medium')
+    let reasoningEffort = null;
+    if (reasoningActive) {
+        reasoningEffort = reasoningBtn.dataset.effort || 'medium';
+    }
 
     const msgAttributes = {
         'threadIndex': activeThreadIndex,
@@ -350,6 +360,11 @@ async function sendMessageConv(inputField) {
         'stream': true,
         'model': activeModel.id,
         'tools': tools
+    };
+    
+    // Only add reasoning_effort if it's set (reasoning is active)
+    if (reasoningEffort !== null) {
+        msgAttributes['reasoning_effort'] = reasoningEffort;
     }
 
     buildRequestObjectForAiConv(msgAttributes);
@@ -425,23 +440,20 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             if (data.status === 'error' || data.status === 'cancelled') {
                 // Don't process content, just handle done state below
             } else {
+                // CRITICAL: Reset auxiliaries for each chunk to prevent carryover from previous chunks
+                auxiliaries = [];
+                
                 const {messageText, groundingMetadata, auxiliaries: aux} = deconstContent(data.content);
+                
                 if(groundingMetadata != ""){
                     metadata = groundingMetadata;
                 }
                 if(aux && aux.length > 0){
                     auxiliaries = aux;
                     
-                    // Store auxiliaries IMMEDIATELY in dataset for multi-turn
-                    // This ensures they're available for the next request even without page refresh
-                    if (messageElement) {
-                        const tempContent = JSON.stringify({
-                            text: msg + messageText,
-                            groundingMetadata: metadata,
-                            auxiliaries: auxiliaries
-                        });
-                        messageElement.dataset.rawContent = tempContent;
-                    }
+                    // NOTE: We do NOT store auxiliaries in dataset.rawContent
+                    // Auxiliaries are processed once per chunk and should not be re-processed
+                    // Only text and metadata are persisted for multi-turn conversations
                 }
 
                 // Safety check: ensure messageText is a string, not an object
@@ -450,6 +462,16 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 // Log warning if content is not a string
                 if (typeof messageText !== 'string' && messageText !== undefined && messageText !== null) {
                     console.error('[STREAM ERROR] messageText is not a string:', typeof messageText, messageText);
+                }
+                
+                // Update dataset.rawContent with accumulated text and metadata
+                // Auxiliaries are NOT stored here - they're processed once per chunk
+                if (messageElement && content) {
+                    const tempContent = JSON.stringify({
+                        text: msg + content,
+                        groundingMetadata: metadata
+                    });
+                    messageElement.dataset.rawContent = tempContent;
                 }
                 
                 msg += content;
@@ -492,8 +514,10 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                     if (auxiliaries && Array.isArray(auxiliaries) && auxiliaries.length > 0) {
                         addAnthropicCitations(messageElement, auxiliaries);
                         addResponsesCitations(messageElement, auxiliaries); // OpenAI Responses API citations
+                        
                         // Update AI status indicator (thinking, reasoning, web search)
-                        updateAiStatusIndicator(messageElement, auxiliaries, false);
+                        // Pass data.isDone to ensure status_log is processed in final chunk
+                        updateAiStatusIndicator(messageElement, auxiliaries, data.isDone || false);
                     }
 
                     if(messageElement.querySelector('.think')){
@@ -508,10 +532,10 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
         if(done){
             setSendBtnStatus(SendBtnStatus.SENDABLE);
             
-            // Finalize status indicator (add final "processing completed" if needed)
-            if (messageElement) {
-                updateAiStatusIndicator(messageElement, auxiliaries || [], true);
-            }
+            // NOTE: We don't call updateAiStatusIndicator(..., true) here anymore
+            // The final "processing completed" status is automatically added by the frontend
+            // when it receives isDone=true from the backend (in the finish_reason chunk)
+            // This happens in updateAiStatusIndicator() → if (isDone) block
             
             // Add status_log from dataset to auxiliaries for persistence
             if (messageElement && messageElement.dataset.statusLog) {
@@ -703,10 +727,17 @@ function createChatItem(conv = null){
 
 
 async function generateChatName(firstMessage, convItem) {
+    // Truncate input to prevent long processing and reduce token costs
+    // Max 500 characters is sufficient for title generation
+    const truncatedMessage = firstMessage.length > 500 
+        ? firstMessage.substring(0, 500) + "..." 
+        : firstMessage;
+    
     const requestObject = {
         payload: {
             model: systemModels.title_generator,
             stream: true,
+            max_tokens: 10, // Limit to ~3-5 words
             messages: [
                 {
                     role: "system",
@@ -717,7 +748,7 @@ async function generateChatName(firstMessage, convItem) {
                 {
                     role: "user",
                     content: {
-                        text: firstMessage
+                        text: truncatedMessage
                     }
                 }
             ]
@@ -733,13 +764,48 @@ async function generateChatName(firstMessage, convItem) {
         .then(response => {
             const convElement = convItem.querySelector('.label');
             let convName = ""; // Initialize to an empty string
+            
             const onData = (data, done) => {
-                if (data) {
-                    convName += deconstContent(data.content).messageText;
-                    convElement.innerText = convName;
+                if (data && data.content) {
+                    let contentText = '';
+                    
+                    try {
+                        // Parse content (comes as JSON string from backend)
+                        const content = typeof data.content === 'string' 
+                            ? JSON.parse(data.content) 
+                            : data.content;
+                        
+                        // Extract text - all providers use {text: "..."} format
+                        contentText = content.text || '';
+                    } catch (e) {
+                        // Fallback if JSON parsing fails
+                        contentText = typeof data.content === 'string' ? data.content : '';
+                    }
+                    
+                    // Filter out JSON strings (model returning structured data instead of plain text)
+                    const trimmed = contentText.trim();
+                    const isJsonString = trimmed && (trimmed.startsWith('{') || trimmed.startsWith('['));
+                    
+                    // Only process valid plain text (non-empty and not JSON)
+                    if (trimmed && !isJsonString) {
+                        // Replace newlines with spaces
+                        convName += contentText.replace(/[\n\r]/g, ' ');
+                        
+                        // Abort after 3 words
+                        const words = convName.trim().split(/\s+/).filter(w => w.length > 0);
+                        if (words.length >= 3) {
+                            const title = words.slice(0, 3).join(" ");
+                            convElement.innerText = title;
+                            abortCtrl.abort();
+                            resolve(title);
+                            return;
+                        }
+                        convElement.innerText = convName;
+                    }
                 }
+                
                 if (done) {
-                    resolve(convName); // Resolve the promise with convName
+                    resolve(convName.trim() || "New Chat");
                 }
             };
             processStream(response.body, onData);
@@ -903,13 +969,26 @@ async function RequestConvContent(slug){
 
 
 async function requestDeleteConv() {
+    // First try to get slug from burger menu
+    const burgerMenu = document.getElementById('quick-actions');
+    let targetSlug = burgerMenu ? burgerMenu.getAttribute('data-room-slug') : null;
 
-    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteConv);
+    // Fallback to active conversation if no slug in burger menu
+    if (!targetSlug && typeof activeConv !== 'undefined' && activeConv) {
+        targetSlug = activeConv.slug;
+    }
+
+    if (!targetSlug) {
+        console.error('No conversation target for deletion');
+        return;
+    }
+
+    const confirmed = await openModal(ModalType.WARNING, translation.Cnf_deleteConv);
     if (!confirmed) {
         return;
     }
 
-    const url = `/req/conv/removeConv/${activeConv.slug}`;
+    const url = `/req/conv/removeConv/${targetSlug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
@@ -924,27 +1003,35 @@ async function requestDeleteConv() {
         const data = await response.json();
 
         if (data.success) {
-            const listItem = document.querySelector(`.selection-item[slug="${activeConv.slug}"]`);
+            const listItem = document.querySelector(`.selection-item[slug="${targetSlug}"]`);
+            if (!listItem) {
+                console.error('Could not find list item to remove');
+                return;
+            }
+
+            const wasActive = listItem.classList.contains('active');
             const list = listItem.parentElement;
             listItem.remove();
 
-            if(list.childElementCount > 0){
-                loadConv(list.firstElementChild, null);
-            }
-            else{
-                clearChatlog();
-                clearInput();
-                chatlogElement.classList.remove('active');
-                chatlogElement.classList.add('start-state');
+            // Only load another conversation or clear if we deleted the currently active one
+            if (wasActive) {
+                if (list.childElementCount > 0) {
+                    loadConv(list.firstElementChild, null);
+                }
+                else {
+                    clearChatlog();
+                    clearInput();
+                    chatlogElement.classList.remove('active');
+                    chatlogElement.classList.add('start-state');
 
-                history.replaceState(null, '', `/chat`);
+                    history.replaceState(null, '', `/chat`);
+                }
             }
-
         } else {
             console.error('Conv removal was not successful!');
         }
     } catch (error) {
-        console.error('Failed to remove conv!');
+        console.error('Failed to remove conv!', error);
     }
 }
 

@@ -25,6 +25,16 @@
                 </button>
                 @endif
 
+                @if(config('hawki.news_active'))
+                <button id="news-sb-btn" onclick="onSidebarButtonDown('news')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
+                    <x-icon name="send"/>
+
+                    <div class="label tooltip tt-abs-left">
+                        {{ $translation["News"] }}
+                    </div>
+                </button>
+                @endif
+
                 <button id="profile-sb-btn" onclick="onSidebarButtonDown('profile')" class="btn-sm sidebar-btn tooltip-parent">
                     <div class="profile-icon round-icon">
                         <span class="user-inits" style="display:none"></span>

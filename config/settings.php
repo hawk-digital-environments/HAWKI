@@ -31,6 +31,7 @@ return [
     'hawki' => [
         'aiHandle' => 'AI assistant handle for group chat (@ will be added automatically)',
         'groupchat_active' => 'Enable group chat',
+        'news_active' => 'Enable news page',
         'file_upload' => 'Enable file upload functionality',
         'websearch' => 'Enable web search functionality',
         'websearch_auto_enable' => 'Automatically enable web search when selecting compatible models',
@@ -51,6 +52,16 @@ return [
         'stream_disable_php_output_buffering' => 'Disable PHP internal output buffering (WARNING: May cause 4s lag, test first!)',
         'stream_disable_zlib_compression' => 'Disable PHP zlib.output_compression for streaming (Impact: Medium)',
     ],
+    'scheduler' => [
+        'model_status_check.enabled' => 'Enable automatic model status checking',
+        'filestorage_cleanup.enabled' => 'Enable automatic file storage cleanup',
+        'backup.enabled' => 'Enable automatic backups',
+        'backup.schedule_interval' => 'Backup schedule interval (daily, weekly, monthly)',
+        'backup.schedule_time' => 'Time when backups should run (HH:MM format, e.g., 02:00)',
+        'backup.include_files' => 'Include user files in backup (avatars, attachments). When disabled, only database is backed up.',
+        'backup.destination.filename_prefix' => 'Backup filename prefix (e.g., prod-, staging-)',
+        'cleanup.enabled' => 'Enable automatic backup cleanup (WARNING: will delete old backups!)',
+    ],
     'sanctum' => [
         'allow_external_communication' => 'Allow HAWKI API',
         'allow_user_token' => 'Allow generation of user API tokens',
@@ -61,19 +72,20 @@ return [
         'local_needapproval' => 'New local users need admin approval before given access',
         'authentication_method' => 'Authentication method',
         'passkey_method' => 'Method for generating the PassKey',
+        'passkey_webauthn' => 'Enable WebAuthn cross-device passkeys',
     ],
     'ldap' => [
         'logging.enabled' => 'Logging of LDAP queries',
         'cache.enabled' => 'Caching of LDAP queries',
         'connections.default.ldap_host' => 'Hostname of the LDAP server',
         'connections.default.ldap_port' => 'Port number of the LDAP server',
-        'connections.default.ldap_base_dn' => 'Distinguished Name (DN) used for bind operation',
+        'connections.default.ldap_bind_dn' => 'Distinguished Name (DN) used for bind operation (authentication)',
         'connections.default.ldap_bind_pw' => 'Password to access the LDAP server',
-        'connections.default.ldap_search_dn' => 'Base DN for the LDAP search',
+        'connections.default.ldap_base_dn' => 'Base DN for LDAP searches (search base)',
         'connections.default.ldap_filter' => 'Filter required for authentication based on Username',
         'connections.default.attribute_map.username' => 'Username Key Name Override',
         'connections.default.attribute_map.email' => 'Email Key Name Override',
-        'connections.default.attribute_map.employeetype' => 'Employeetype Key Name Override',
+        'connections.default.attribute_map.employeeType' => 'EmployeeType Key Name Override',
         'connections.default.attribute_map.name' => 'Displayname Key Name Override',
         'connections.default.invert_name' => 'Invert name format for display',
     ],
@@ -95,6 +107,11 @@ return [
         'attribute_map.email' => 'E-Mail Key Name Override,',
         'attribute_map.employeetype' => 'Employeetype Key Name Override,',
         'attribute_map.name' => 'Displayname Key Name Override,',
+    ],
+    'session' => [
+        'lifetime' => 'Session lifetime in minutes (how long a session remains active before expiring)',
+        'expire_on_close' => 'Expire session when browser is closed (enhances security)',
+        'encrypt' => 'Encrypt session data for additional security',
     ],
     'logging' => [
         'default' => 'Default log channel (stack, single, daily, database, stack_with_database, etc.)',
@@ -140,6 +157,15 @@ return [
 
     ],
 
+    'backup' => [
+        'cleanup.default_strategy.keep_all_backups_for_days' => 'Keep all backups for this many days',
+        'cleanup.default_strategy.keep_daily_backups_for_days' => 'Keep daily backups for this many days',
+        'cleanup.default_strategy.keep_weekly_backups_for_weeks' => 'Keep weekly backups for this many weeks',
+        'cleanup.default_strategy.keep_monthly_backups_for_months' => 'Keep monthly backups for this many months',
+        'cleanup.default_strategy.keep_yearly_backups_for_years' => 'Keep yearly backups for this many years',
+        'cleanup.default_strategy.delete_oldest_backups_when_using_more_megabytes_than' => 'Delete oldest backups when using more than this many megabytes',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Mapping of configuration files to UI groups
@@ -163,5 +189,7 @@ return [
         'session' => 'authentication',
         'logging' => 'logging',
         'mail' => 'mail',
+        'backup' => 'backup',
+        'scheduler' => 'system',
     ],
 ];

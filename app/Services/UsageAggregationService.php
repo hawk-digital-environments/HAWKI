@@ -103,6 +103,7 @@ class UsageAggregationService
     {
         return DB::table('usage_records')
             ->whereDate('created_at', $date)
+            ->whereNotNull('user_id')
             ->select([
                 'user_id',
                 DB::raw('DATE(created_at) as date'),
@@ -112,14 +113,14 @@ class UsageAggregationService
                 DB::raw('SUM(CASE WHEN status = "success" THEN 1 ELSE 0 END) as successful_requests'),
                 DB::raw('SUM(CASE WHEN status = "failed" THEN 1 ELSE 0 END) as failed_requests'),
                 DB::raw('SUM(CASE WHEN status = "cancelled" THEN 1 ELSE 0 END) as cancelled_requests'),
-                DB::raw('SUM(prompt_tokens) as prompt_tokens'),
-                DB::raw('SUM(completion_tokens) as completion_tokens'),
-                DB::raw('SUM(total_tokens) as total_tokens'),
-                DB::raw('SUM(cache_read_input_tokens) as cache_read_input_tokens'),
-                DB::raw('SUM(cache_creation_input_tokens) as cache_creation_input_tokens'),
-                DB::raw('SUM(reasoning_tokens) as reasoning_tokens'),
-                DB::raw('SUM(audio_input_tokens) as audio_input_tokens'),
-                DB::raw('SUM(audio_output_tokens) as audio_output_tokens'),
+                DB::raw('SUM(COALESCE(prompt_tokens, 0)) as prompt_tokens'),
+                DB::raw('SUM(COALESCE(completion_tokens, 0)) as completion_tokens'),
+                DB::raw('SUM(COALESCE(prompt_tokens, 0) + COALESCE(completion_tokens, 0)) as total_tokens'),
+                DB::raw('SUM(COALESCE(cache_read_input_tokens, 0)) as cache_read_input_tokens'),
+                DB::raw('SUM(COALESCE(cache_creation_input_tokens, 0)) as cache_creation_input_tokens'),
+                DB::raw('SUM(COALESCE(reasoning_tokens, 0)) as reasoning_tokens'),
+                DB::raw('SUM(COALESCE(audio_input_tokens, 0)) as audio_input_tokens'),
+                DB::raw('SUM(COALESCE(audio_output_tokens, 0)) as audio_output_tokens'),
                 DB::raw('GROUP_CONCAT(server_tool_use) as server_tool_use_json'),
             ])
             ->groupBy('user_id', DB::raw('DATE(created_at)'), 'api_provider', 'model')

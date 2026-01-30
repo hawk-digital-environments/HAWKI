@@ -2,13 +2,10 @@
 
 namespace App\Orchid\Screens\Dashboard;
 
-use App\Orchid\Layouts\Charts\BarChart;
-use App\Orchid\Layouts\Charts\PercentageChart;
-use App\Orchid\Layouts\Charts\PieChart;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 use Orchid\Screen\Screen;
 use Orchid\Support\Facades\Layout;
 
@@ -19,297 +16,99 @@ class Dashboard extends Screen
      *
      * @return array
      */
-    public function query(): iterable
+    public function query(Request $request): iterable
     {
-        // Überprüfen, ob die benötigten Tabellen existieren
-        $usageRecordsExists = Schema::hasTable('usage_records');
-        $conversationsExists = Schema::hasTable('conversations');
-
-        // Überprüfen, ob Daten in der usage_records Tabelle vorhanden sind
-        $hasUsageRecords = false;
-        if ($usageRecordsExists) {
-            $hasUsageRecords = DB::table('usage_records')->exists();
-        }
-
-        // Wenn die benötigten Tabellen nicht existieren oder leer sind, zeige Platzhalter
-        if (! $usageRecordsExists || ! $conversationsExists || ! $hasUsageRecords) {
-            //Log::warning('Required tables do not exist or are empty. Showing placeholder data.');
-
-            return $this->getPlaceholderData();
-        }
-
-        // Labels
-        // Dynamisch erstellte Labels für den aktuell ausgewählten Monat mit Carbon
         $now = Carbon::now();
-        $currentYear = $now->year;
-        $currentMonth = $now->month;
-        $currentDay = $now->day;
-        $specificDay = '2025-03-21';
-        $daysInMonth = $now->daysInMonth;
-        $labelsForCurrentMonth = [];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
-            $labelsForCurrentMonth[] = Carbon::create($currentYear, $currentMonth, $d)->format('Y-m-d');
-        }
 
-        // Statische Labels für einen 24h-Stunden Tag
-        $hourLabels = [];
-        for ($hour = 0; $hour < 24; $hour++) {
-            $hourLabels[] = sprintf('%02d:00', $hour);
-        }
+        // =========================
+        // SYSTEM CONFIGURATION STATUS
+        // =========================
+        $systemConfig = $this->getSystemConfigurationStatus();
 
-        // User Statistics
-        $totalUsers = DB::table('users')->count();
+        // =========================
+        // SYSTEM STATISTIKEN
+        // =========================
+        $systemStats = $this->getSystemStatistics($now, $request);
 
-        // Anzahl der User, die sich diesen Monat neu angemeldet haben
-        $newUsersThisMonth = DB::table('users')
-            ->whereYear('created_at', $now->year)
-            ->whereMonth('created_at', $now->month)
-            ->count();
-        $percentage = round((($totalUsers > 0) ? ($newUsersThisMonth / $totalUsers) * 100 : 0), 2);
+        // =========================
+        // CHAT STATISTIKEN (1:1)
+        // =========================
+        $chatStats = $this->getChatStatistics();
 
-        $dailyData = DB::table('usage_records')
-            ->select(DB::raw('DAY(created_at) as day'), DB::raw('count(DISTINCT user_id) as activeUsers'))
-            ->whereYear('created_at', $currentYear)
-            ->whereMonth('created_at', $currentMonth)
-            ->groupBy('day')
-            ->orderBy('day')
-            ->get();
-        // Erstelle ein Array mit 0 als Standardwert für jeden Tag
-        $activeUsersPerDay = array_fill(0, $daysInMonth, 0);
-        foreach ($dailyData as $data) {
-            $index = (int) $data->day - 1;
-            if ($index >= 0 && $index < $daysInMonth) {
-                $activeUsersPerDay[$index] = $data->activeUsers;
-            }
-        }
+        // =========================
+        // GROUPCHAT STATISTIKEN
+        // =========================
+        $groupchatStats = $this->getGroupchatStatistics($request);
 
-        // Neue Log-Ausgabe: Daten für den aktuellen Tag
-        $activeUsersToday = $dailyData->firstWhere('day', (int) $currentDay);
+        // =========================
+        // SYSTEM ASSISTANTS STATISTIKEN
+        // =========================
+        $assistantStats = $this->getSystemAssistantStatistics();
 
-        // Berechne den Durchschnitt der aktiven Nutzer (activeUsersDelta)
-        $activeUsersDelta = $dailyData->avg('activeUsers');
-
-        // Berechne den Prozentsatz, um den $activeUsersToday von $activeUsersDelta abweicht
-        $todayActive = $activeUsersToday ? $activeUsersToday->activeUsers : 0;
-        $activeUsersDeltaDiff = ($activeUsersDelta > 0) ? round((($todayActive - $activeUsersDelta) / $activeUsersDelta) * 100, 2) : 0;
-
-        // Platzhalter-Array mit fiktiven Nutzerzahlen
-        $fakeUsers = [];
-        for ($i = 0; $i < $daysInMonth; $i++) {
-            $fakeUsers[] = rand(600, 800); // fiktive Nutzerzahlen
-        }
-
-        foreach ($dailyData as $data) {
-            $index = (int) $data->day - 1;
-            if ($index >= 0 && $index < $daysInMonth) {
-                $values[$index] = $data->activeUsers;
-            }
-        }
-        // Zusammenbauen der Daten für das Barchart
-        $dailyActiveUsers = [
-            [
-                'labels' => $labelsForCurrentMonth,
-                'name' => 'Daily Users',
-                'values' => $activeUsersPerDay,
-            ],
-        ];
-
-        // Request Statistics
-        $totalRequests = DB::table('usage_records')->count();
-        $openAiRequests = DB::table('usage_records')
-            ->where('model', 'gpt-4o')
-            ->get();
-
-        // Lese Modelle aus der Konfiguration
-        $providers = config('model_providers.providers');
-        $allModels = [];
-        foreach ($providers as $providerKey => $provider) {
-            if (isset($provider['models'])) {
-                foreach ($provider['models'] as $model) {
-                    $allModels[] = $model;
-                }
-            }
-        }
-
-        // Führe für jedes Modell eine Datenbankabfrage durch und fasse die Ergebnisse pro Provider zusammen
-        $providerSummary = [];
-        foreach ($providers as $providerKey => $provider) {
-            $totalRequestsForProvider = 0;
-            if (isset($provider['models'])) {
-                foreach ($provider['models'] as $model) {
-                    $count = DB::table('usage_records')
-                        ->where('model', $model['id'])
-                        ->count();
-                    $totalRequestsForProvider += $count;
-                }
-            }
-            $providerSummary[$providerKey] = $totalRequestsForProvider;
-        }
-        // Erstelle eine modelSummary, die die Anfragen auf die verschiedenen Modelle aufschlüsselt
-        $modelSummary = [];
-        foreach ($allModels as $model) {
-            if (isset($model['id'])) {
-                $count = DB::table('usage_records')
-                    ->where('model', $model['id'])
-                    ->count();
-                $modelSummary[$model['id']] = $count;
-            }
-        }
-
-        // Neues ProviderData Array basierend auf der auskommentierten Struktur
-        $providerData = [
-            [
-                'labels' => array_keys($providerSummary),
-                'name' => 'Requests per Provider',
-                'values' => array_values($providerSummary),
-            ],
-        ];
-
-        $specificModel = 'gpt-4o-mini';
-        $countForSpecificDay = DB::table('usage_records')
-            ->where('model', $specificModel)
-            ->whereDate('created_at', $specificDay)
-            ->count();
-
-        // Neue Abfrage: Anzahl der Aufrufe eines spezifischen Models im gesamten Monat
-        $specificYear = '2025';
-        $specificMonth = '03';
-        $countForSpecificMonth = DB::table('usage_records')
-            ->where('model', $specificModel)
-            ->whereYear('created_at', $specificYear)
-            ->whereMonth('created_at', $specificMonth)
-            ->count();
-
-        // Abfrage der Anzahl der Requests für den spezifischen Tag und Erstellen eines Arrays als Werte
-        $requestsCountForSpecificDay = DB::table('usage_records')
-            ->whereDate('created_at', $specificDay)
-            ->count();
-        $requestsPerDayArray = [$requestsCountForSpecificDay];
-
-        // Neuer Code: Abfrage der Requests pro Stunde anhand der created_at-Spalte
-        $rawRequestsPerHour = DB::table('usage_records')
-            ->select(DB::raw('HOUR(created_at) as hour'), DB::raw('count(*) as count'))
-            ->whereDate('created_at', $specificDay)
-            ->groupBy('hour')
-            ->get();
-        $requestsPerHourArray = array_fill(0, 24, 0);
-        foreach ($rawRequestsPerHour as $data) {
-            $hourIndex = (int) $data->hour;
-            $requestsPerHourArray[$hourIndex] = $data->count;
-        }
-
-        $requestsPerModel = [
-            [
-                'labels' => array_keys($modelSummary),
-                'name' => 'Requests per Provider',
-                'values' => array_values($modelSummary),
-            ],
-        ];
-
-        // Aktualisierung der Requests per Hour Chart mit dem neuen Array
-        $requestsPerHour = [
-            [
-                'labels' => $hourLabels,
-                'name' => 'Requests per Hour',
-                'values' => $requestsPerHourArray,
-            ],
-        ];
-
-        $models = $this->fetchModels();
-
+        // Strukturiere Daten für verschachtelte Arrays in Views
         return [
-            'dailyActiveUsers' => $dailyActiveUsers,
-            'requestsPerProvider' => $providerData,
-            'requestsPerHour' => $requestsPerHour,
-            'requestsPerModel' => $requestsPerModel,
-            'metrics' => [
-                'totalUsers' => ['value' => number_format($totalUsers), 'icon' => 'people'],
-                'newUsers' => ['value' => number_format($newUsersThisMonth), 'diff' => $percentage, 'icon' => 'bs.graph-up'],
-                'activeUsersDelta' => ['value' => number_format($activeUsersDelta), 'diff' => $percentage, 'icon' => 'bs.chat'],
-                'activeUsersToday' => ['value' => number_format($activeUsersToday ? $activeUsersToday->activeUsers : 0), 'diff' => $activeUsersDeltaDiff, 'icon' => 'bs.currency-euro'],
+            // Config als verschachteltes Array
+            'config' => [
+                'authStatus' => $systemConfig['config.authStatus'],
+                'authMessage' => $systemConfig['config.authMessage'],
+                'backupStatus' => $systemConfig['config.backupStatus'],
+                'backupMessage' => $systemConfig['config.backupMessage'],
+                'providersStatus' => $systemConfig['config.providersStatus'],
+                'providersMessage' => $systemConfig['config.providersMessage'],
+                'providersIssues' => $systemConfig['config.providersIssues'] ?? [],
             ],
-            'modelCards' => $models,
-            'chatCountToday' => $this->getChatCount('today'),
-            'chatCountWeek' => $this->getChatCount('week'),
-            'chatCountMonth' => $this->getChatCount('month'),
-            'chatCountTotal' => $this->getChatCount('total'),
-        ];
-    }
-
-    /**
-     * Liefert Platzhalter-Daten für das Dashboard, wenn keine echten Daten verfügbar sind
-     */
-    private function getPlaceholderData(): array
-    {
-        // Labels für aktuellen Monat erstellen mit Carbon
-        $now = Carbon::now();
-        $currentYear = $now->year;
-        $currentMonth = $now->month;
-        $daysInMonth = $now->daysInMonth;
-
-        $labelsForCurrentMonth = [];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
-            $labelsForCurrentMonth[] = Carbon::create($currentYear, $currentMonth, $d)->format('Y-m-d');
-        }
-
-        // Statische Labels für 24h-Tag
-        $hourLabels = [];
-        for ($hour = 0; $hour < 24; $hour++) {
-            $hourLabels[] = sprintf('%02d:00', $hour);
-        }
-
-        // Platzhalterwerte für Charts
-        $placeholderDailyUsers = array_fill(0, $daysInMonth, 0);
-        $placeholderHourlyRequests = array_fill(0, 24, 0);
-
-        $dailyActiveUsers = [
-            [
-                'labels' => $labelsForCurrentMonth,
-                'name' => 'Daily Users',
-                'values' => $placeholderDailyUsers,
+            // System als verschachteltes Array
+            'system' => [
+                'totalUsers' => $systemStats['system.totalUsers'],
+                'newUsersThisMonth' => $systemStats['system.newUsersThisMonth'],
+                'newUsersPercentage' => $systemStats['system.newUsersPercentage'],
+                'activeProviders' => $systemStats['system.activeProviders'],
+                'top5Providers' => $systemStats['system.top5Providers'],
+                'totalProviderRequests' => $systemStats['system.totalProviderRequests'],
+                'totalInputTokens' => $systemStats['system.totalInputTokens'],
+                'totalOutputTokens' => $systemStats['system.totalOutputTokens'],
+                'activeModels' => $systemStats['system.activeModels'],
+                'top5Models' => $systemStats['system.top5Models'],
+                'excludeSystemModels' => $systemStats['system.excludeSystemModels'],
             ],
-        ];
-
-        $requestsPerHour = [
-            [
-                'labels' => $hourLabels,
-                'name' => 'Requests per Hour',
-                'values' => $placeholderHourlyRequests,
+            // Chat als verschachteltes Array
+            'chat' => [
+                'totalChats' => $chatStats['chat.totalChats'],
+                'totalMessages' => $chatStats['chat.totalMessages'],
+                'totalFiles' => $chatStats['chat.totalFiles'],
             ],
-        ];
-
-        $providerData = [
-            [
-                'labels' => ['OpenAI', 'Google', 'Anthropic'],
-                'name' => 'Requests per Provider',
-                'values' => [0, 0, 0],
+            // Groupchat als verschachteltes Array
+            'groupchat' => [
+                'totalRooms' => $groupchatStats['groupchat.totalRooms'],
+                'totalUsers' => $groupchatStats['groupchat.totalUsers'],
+                'totalMessages' => $groupchatStats['groupchat.totalMessages'],
+                'avgUsersPerRoom' => $groupchatStats['groupchat.avgUsersPerRoom'],
+                'topRooms' => $groupchatStats['groupchat.topRooms'],
+                'sortBy' => $groupchatStats['groupchat.sortBy'],
             ],
-        ];
-
-        $requestsPerModel = [
-            [
-                'labels' => ['GPT-4', 'Gemini', 'Claude'],
-                'name' => 'Requests per Model',
-                'values' => [0, 0, 0],
+            // Assistants als verschachteltes Array
+            'assistants' => [
+                'improvements' => $assistantStats['assistants.improvements'],
+                'summaries' => $assistantStats['assistants.summaries'],
+                'titles' => $assistantStats['assistants.titles'],
             ],
-        ];
-
-        return [
-            'dailyActiveUsers' => $dailyActiveUsers,
-            'requestsPerProvider' => $providerData,
-            'requestsPerHour' => $requestsPerHour,
-            'requestsPerModel' => $requestsPerModel,
-            'metrics' => [
-                'totalUsers' => ['value' => '0', 'icon' => 'bs.people'],
-                'newUsers' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.graph-up'],
-                'activeUsersDelta' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.chat'],
-                'activeUsersToday' => ['value' => '0', 'diff' => 0, 'icon' => 'bs.currency-euro'],
-            ],
-            'modelCards' => [], // Leeres Array für Modellkarten
-            'chatCountToday' => 0,
-            'chatCountWeek' => 0,
-            'chatCountMonth' => 0,
-            'chatCountTotal' => 0,
+            // Für Layout::metrics() benötigen wir die flache Struktur
+            'system.totalUsers' => $systemStats['system.totalUsers'],
+            'system.newUsersThisMonth' => $systemStats['system.newUsersThisMonth'],
+            'system.newUsersPercentage' => $systemStats['system.newUsersPercentage'],
+            'system.activeProviders' => $systemStats['system.activeProviders'],
+            'system.activeModels' => $systemStats['system.activeModels'],
+            'chat.totalChats' => $chatStats['chat.totalChats'],
+            'chat.totalMessages' => $chatStats['chat.totalMessages'],
+            'chat.totalFiles' => $chatStats['chat.totalFiles'],
+            'groupchat.totalRooms' => $groupchatStats['groupchat.totalRooms'],
+            'groupchat.totalUsers' => $groupchatStats['groupchat.totalUsers'],
+            'groupchat.totalMessages' => $groupchatStats['groupchat.totalMessages'],
+            'groupchat.avgUsersPerRoom' => $groupchatStats['groupchat.avgUsersPerRoom'],
+            'assistants.improvements' => $assistantStats['assistants.improvements'],
+            'assistants.summaries' => $assistantStats['assistants.summaries'],
+            'assistants.titles' => $assistantStats['assistants.titles'],
+            'assistants.toolRequests' => $assistantStats['assistants.toolRequests'],
         ];
     }
 
@@ -346,182 +145,752 @@ class Dashboard extends Screen
      */
     public function layout(): iterable
     {
-        $dailyusersChart = BarChart::make('dailyActiveUsers', 'Daily Users')
-            ->title('Daily Active Users')
-            ->description('Overview of Users per day, that interacted with an AI model.');
-
-        $requestsPerHourChart = BarChart::make('requestsPerHour', 'Requests per User')
-            ->title('Requests per Hour')
-            ->description('Overview of LLM Requests per hour.');
-
-        $requestsProviderPieChart = PieChart::make('requestsPerProvider')
-            ->title('Request per Provider')
-            ->description('Overview of Request per Provider.');
-
-        $requestsModelPieChart = PieChart::make('requestsPerModel')
-            ->title('Request per Model')
-            ->description('Overview of Request per Model.');
-
-        $percentageChart = PercentageChart::make('newUsersPercentage')
-            ->title('New Users Percentage')
-            ->description('Percentage of new users relative to total users');
-
-        // Entferne den Layout::view() Aufruf für $dailyusersChart
         return [
+            // =========================
+            // SYSTEM CONFIGURATION STATUS
+            // =========================
+            Layout::view('orchid.dashboard.system-config-status'),
 
+            // =========================
+            // SYSTEM STATISTIKEN (Reihe 1)
+            // =========================
             Layout::metrics([
-                'Total Users' => 'metrics.totalUsers',
-                'Average Active Users per Month' => 'metrics.newUsers',
-                'Average Requests per User' => 'metrics.activeUsersDelta',
-                'Average Cost per User' => 'metrics.activeUsersToday',
-            ])->title('Overview'),
+                'Total Users' => 'system.totalUsers',
+                'New Users This Month' => 'system.newUsersThisMonth',
+                'Growth Rate' => 'system.newUsersPercentage',
+            ])
+                ->title('System Statistics'),
 
-            Layout::columns([
-                $percentageChart,
-            ]),
-            Layout::tabs([
-                'OpenAI' => [
-                    Layout::metrics([
-                        'Requests per Day' => 'metrics.totalUsers',
-                        'Average Input' => 'metrics.newUsers',
-                        'Average Output' => 'metrics.activeUsersDelta',
-                        'Cost Estimate' => 'metrics.activeUsersToday',
+            // =========================
+            // AI INFRASTRUCTURE
+            // =========================
+            Layout::view('orchid.dashboard.ai-overview'),
 
-                    ]),
-                ],
-                'Google' => [
-                    Layout::metrics([
-                        'Requests per Day' => 'metrics.totalUsers',
-                        'Average Input' => 'metrics.newUsers',
-                        'Average Output' => 'metrics.activeUsersDelta',
-                        'Cost Estimate' => 'metrics.activeUsersToday',
+            // =========================
+            // CHAT STATISTIKEN
+            // =========================
+            Layout::metrics([
+                'Total 1:1 Chats' => 'chat.totalChats',
+                'Total Messages' => 'chat.totalMessages',
+                'Uploaded Files' => 'chat.totalFiles',
+            ])
+                ->title('1:1 Chat Statistics'),
 
-                    ]),
+            // =========================
+            // SYSTEM ASSISTANTS
+            // =========================
+            Layout::metrics([
+                'Generated Improvements' => 'assistants.improvements',
+                'Generated Summaries' => 'assistants.summaries',
+                'Generated Titles' => 'assistants.titles',
+                'Tool Requests' => 'assistants.toolRequests',
+            ])
+                ->title('System Assistants'),
 
-                ],
-            ]),
+            // =========================
+            // GROUPCHAT STATISTIKEN
+            // =========================
+            Layout::metrics([
+                'Total Rooms' => 'groupchat.totalRooms',
+                'Total Members' => 'groupchat.totalUsers',
+                'Total Messages' => 'groupchat.totalMessages',
+                'Avg Users/Room' => 'groupchat.avgUsersPerRoom',
+            ])
+                ->title('Groupchat Statistics'),
+
+            // =========================
+            // MOST ACTIVE GROUPCHATS
+            // =========================
+            Layout::view('orchid.dashboard.top-groupchats'),
         ];
     }
 
     /**
-     * Bereitet die Modelldaten für die Anzeige vor
-     *
-     * @param  array  $rawModels  Array mit den Rohdaten der Modelle
-     * @return array Aufbereitete Modelldaten
+     * Holt System Configuration Status Checks
      */
-    private function prepareModelData($rawModels): array
+    private function getSystemConfigurationStatus(): array
     {
-        $models = [];
+        $authConfigured = $this->checkAuthenticationConfiguration();
+        $backupConfigured = $this->checkBackupConfiguration();
+        $providersConfigured = $this->checkModelProvidersConfiguration();
 
-        // Überprüfe, ob Modelldaten existieren, bevor wir sie verarbeiten
-        if (empty($rawModels)) {
-            return $models;
-        }
+        return [
+            'config.authStatus' => $authConfigured['status'],
+            'config.authMessage' => $authConfigured['message'],
+            'config.backupStatus' => $backupConfigured['status'],
+            'config.backupMessage' => $backupConfigured['message'],
+            'config.providersStatus' => $providersConfigured['status'],
+            'config.providersMessage' => $providersConfigured['message'],
+            'config.providersIssues' => $providersConfigured['issues'] ?? [],
+        ];
+    }
 
-        foreach ($rawModels as $model) {
-            // Prüfe, ob alle notwendigen Schlüssel existieren
-            if (! isset($model['id']) || ! isset($model['name'])) {
-                continue; // Überspringe Modelle mit fehlenden erforderlichen Feldern
+    /**
+     * Prüft ob Authentication konfiguriert ist
+     */
+    private function checkAuthenticationConfiguration(): array
+    {
+        try {
+            $authMethod = config('auth.authentication_method');
+
+            if (empty($authMethod)) {
+                return [
+                    'status' => 'danger',
+                    'message' => 'No authentication method set',
+                ];
             }
 
-            $models[] = [
-                'id' => $model['id'] ?? 'unknown',
-                'name' => $model['name'] ?? 'Unbekanntes Modell',
-                'description' => $model['description'] ?? 'Keine Beschreibung verfügbar',
-                'status' => $model['status'] ?? 'unknown',
-                'provider' => $model['provider'] ?? 'unknown',
-                'avatar' => $model['avatar'] ?? null,
-                'provider_model_id' => $model['provider_model_id'] ?? null,
-                'created_at' => isset($model['created_at']) ?
-                    Carbon::parse($model['created_at'])->format('d.m.Y') :
-                    'Unbekannt',
+            // Normalisiere Auth-Methode
+            $authMethodUpper = strtoupper($authMethod);
+
+            switch ($authMethodUpper) {
+                case 'LOCAL_ONLY':
+                    return $this->checkLocalOnlyAuth();
+
+                case 'LDAP':
+                    return $this->checkLdapAuth();
+
+                case 'OIDC':
+                    return $this->checkOidcAuth();
+
+                case 'SHIBBOLETH':
+                    return $this->checkShibbolethAuth();
+
+                case 'CUSTOM':
+                    return $this->checkCustomAuth();
+
+                default:
+                    return [
+                        'status' => 'warning',
+                        'message' => "Unknown auth method: {$authMethod}",
+                    ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Authentication check failed: '.$e->getMessage());
+
+            return [
+                'status' => 'danger',
+                'message' => 'Auth check error: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Prüft LOCAL_ONLY Authentication
+     */
+    private function checkLocalOnlyAuth(): array
+    {
+        // LOCAL_ONLY benötigt keine zusätzliche Konfiguration
+        return [
+            'status' => 'success',
+            'message' => 'Local authentication enabled',
+        ];
+    }
+
+    /**
+     * Prüft LDAP Authentication
+     */
+    private function checkLdapAuth(): array
+    {
+        $connection = config('ldap.default', 'default');
+        $hostConfig = config("ldap.connections.{$connection}.ldap_host");
+        $port = config("ldap.connections.{$connection}.ldap_port");
+        $baseDn = config("ldap.connections.{$connection}.ldap_base_dn");
+
+        if (empty($hostConfig)) {
+            return [
+                'status' => 'warning',
+                'message' => 'LDAP host not configured',
             ];
         }
 
-        return $models;
-    }
+        if (empty($baseDn)) {
+            return [
+                'status' => 'warning',
+                'message' => 'LDAP base DN not configured',
+            ];
+        }
 
-    /**
-     * Holt die Modelldaten aus dem Cache oder der API
-     *
-     * @return array Array mit den Modelldaten
-     */
-    private function fetchModels(): array
-    {
+        // Parse host to handle protocol prefixes (ldap:// or ldaps://)
+        $host = $hostConfig;
+        $protocol = 'tcp';
+        if (str_contains($hostConfig, '://')) {
+            $parts = parse_url($hostConfig);
+            $host = $parts['host'] ?? $hostConfig;
+            $scheme = $parts['scheme'] ?? 'ldap';
+
+            if ($scheme === 'ldaps') {
+                $protocol = 'ssl';
+                $port = $port ?? $parts['port'] ?? 636;
+            } else {
+                $port = $port ?? $parts['port'] ?? 389;
+            }
+        } else {
+            $port = $port ?? 389;
+        }
+
+        // Optional: Teste LDAP-Verbindung
         try {
-            // Prüfen, ob die notwendige Eigenschaft/Service existiert
-            if (! property_exists($this, 'aiHandler') || ! $this->aiHandler) {
-                Log::warning('aiHandler is not available.');
+            $timeout = 2;
+            $address = ($protocol === 'ssl' ? 'ssl://' : '').$host;
+            $fp = @fsockopen($address, $port, $errno, $errstr, $timeout);
+            if ($fp) {
+                fclose($fp);
 
-                return [];
+                return [
+                    'status' => 'success',
+                    'message' => "LDAP: {$hostConfig} (reachable)",
+                ];
+            } else {
+                return [
+                    'status' => 'warning',
+                    'message' => "LDAP configured but unreachable: {$hostConfig} (Port {$port})",
+                ];
             }
-
-            // Prüfen, ob die Methode existiert
-            if (! method_exists($this->aiHandler, 'getAvailableModels')) {
-                Log::warning('getAvailableModels method not available.');
-
-                return [];
-            }
-
-            // Stelle sicher, dass immer ein Array zurückgegeben wird
-            $result = $this->aiHandler->getAvailableModels();
-
-            // Prüfe explizit auf null oder nicht-Array
-            if ($result === null || ! is_array($result)) {
-                Log::warning('getAvailableModels returned a non-array value or null: '.gettype($result));
-
-                return [];
-            }
-
-            return $this->prepareModelData($result);
         } catch (\Exception $e) {
-            Log::error('Error fetching models: '.$e->getMessage());
-
-            return []; // Leeres Array zurückgeben, wenn ein Fehler auftritt
+            return [
+                'status' => 'warning',
+                'message' => "LDAP: {$host} (connection test failed)",
+            ];
         }
     }
 
     /**
-     * Berechnet die Anzahl der Chats für einen bestimmten Zeitraum
-     *
-     * @param  string  $period  Der Zeitraum ('today', 'week', 'month', 'total')
-     * @return int Die Anzahl der Chats
+     * Prüft OIDC Authentication
      */
-    private function getChatCount(string $period): int
+    private function checkOidcAuth(): array
+    {
+        $idp = config('open_id_connect.oidc_idp');
+        $clientId = config('open_id_connect.oidc_client_id');
+        $clientSecret = config('open_id_connect.oidc_client_secret');
+
+        if (empty($idp)) {
+            return [
+                'status' => 'warning',
+                'message' => 'OIDC IdP URL not configured',
+            ];
+        }
+
+        if (empty($clientId)) {
+            return [
+                'status' => 'warning',
+                'message' => 'OIDC Client ID not configured',
+            ];
+        }
+
+        if (empty($clientSecret)) {
+            return [
+                'status' => 'warning',
+                'message' => 'OIDC Client Secret not configured',
+            ];
+        }
+
+        // Parse domain from IdP URL
+        $domain = parse_url($idp, PHP_URL_HOST) ?? $idp;
+
+        return [
+            'status' => 'success',
+            'message' => "OIDC: {$domain}",
+        ];
+    }
+
+    /**
+     * Prüft Shibboleth Authentication
+     */
+    private function checkShibbolethAuth(): array
+    {
+        $loginPath = config('shibboleth.login_path');
+        $usernameVar = config('shibboleth.attribute_map.username');
+
+        if (empty($loginPath)) {
+            return [
+                'status' => 'warning',
+                'message' => 'Shibboleth login path not configured',
+            ];
+        }
+
+        if (empty($usernameVar)) {
+            return [
+                'status' => 'warning',
+                'message' => 'Shibboleth username attribute not configured',
+            ];
+        }
+
+        return [
+            'status' => 'success',
+            'message' => 'Shibboleth: '.$loginPath,
+        ];
+    }
+
+    /**
+     * Prüft Custom Authentication
+     */
+    private function checkCustomAuth(): array
+    {
+        $customClass = config('auth.authentication_method_custom_class');
+
+        if (empty($customClass)) {
+            return [
+                'status' => 'warning',
+                'message' => 'Custom auth class not configured',
+            ];
+        }
+
+        if (! class_exists($customClass)) {
+            return [
+                'status' => 'danger',
+                'message' => "Custom auth class not found: {$customClass}",
+            ];
+        }
+
+        $className = class_basename($customClass);
+
+        return [
+            'status' => 'success',
+            'message' => "Custom: {$className}",
+        ];
+    }
+
+    /**
+     * Prüft Backup Configuration
+     */
+    private function checkBackupConfiguration(): array
     {
         try {
-            if (! Schema::hasTable('conversations')) {
-                return 0;
+            // Suche nach Backups in verschiedenen möglichen Pfaden
+            $possiblePaths = [
+                storage_path('app/HAWKI2'),
+                storage_path('app/backups'),
+                storage_path('app'),
+            ];
+
+            $allFiles = [];
+            $backupPath = null;
+
+            foreach ($possiblePaths as $path) {
+                if (file_exists($path)) {
+                    $files = glob($path.'/*.zip');
+                    if (! empty($files)) {
+                        $allFiles = array_merge($allFiles, $files);
+                        if ($backupPath === null) {
+                            $backupPath = $path;
+                        }
+                    }
+                }
             }
 
-            $query = DB::table('conversations');
-
-            switch ($period) {
-                case 'today':
-                    $query->whereDate('created_at', Carbon::today());
-                    break;
-                case 'week':
-                    $query->whereBetween('created_at', [
-                        Carbon::now()->startOfWeek(),
-                        Carbon::now()->endOfWeek(),
-                    ]);
-                    break;
-                case 'month':
-                    $query->whereYear('created_at', Carbon::now()->year)
-                        ->whereMonth('created_at', Carbon::now()->month);
-                    break;
-                case 'total':
-                    // Keine Einschränkung, alle Chats zählen
-                    break;
-                default:
-                    return 0;
+            if (empty($allFiles)) {
+                return [
+                    'status' => 'warning',
+                    'message' => 'No backup files found',
+                ];
             }
 
-            return $query->count();
+            // Zähle Backups
+            $backupCount = count($allFiles);
+
+            // Finde letztes Backup
+            $lastBackupFile = max(array_map('filemtime', $allFiles));
+            $lastBackupDate = Carbon::createFromTimestamp($lastBackupFile);
+            $daysSinceBackup = $lastBackupDate->diffInDays(now());
+
+            // Status basierend auf Alter des letzten Backups
+            $daysRounded = (int) round($daysSinceBackup);
+
+            if ($daysRounded > 7) {
+                return [
+                    'status' => 'warning',
+                    'message' => "{$backupCount} backups, last: {$daysRounded}d ago",
+                ];
+            } elseif ($daysRounded >= 1) {
+                return [
+                    'status' => 'success',
+                    'message' => "{$backupCount} backups, last: {$daysRounded}d ago",
+                ];
+            } else {
+                // Weniger als 1 Tag = zeige Stunden
+                $hoursSinceBackup = (int) $lastBackupDate->diffInHours(now());
+                if ($hoursSinceBackup < 1) {
+                    return [
+                        'status' => 'success',
+                        'message' => "{$backupCount} backups, last: <1h ago",
+                    ];
+                } else {
+                    return [
+                        'status' => 'success',
+                        'message' => "{$backupCount} backups, last: {$hoursSinceBackup}h ago",
+                    ];
+                }
+            }
         } catch (\Exception $e) {
-            Log::error("Error counting chats for period {$period}: ".$e->getMessage());
+            Log::error('Backup check failed: '.$e->getMessage());
 
-            return 0;
+            return [
+                'status' => 'info',
+                'message' => 'Backup check error',
+            ];
         }
+    }
+
+    /**
+     * Prüft Model Providers Configuration
+     */
+    private function checkModelProvidersConfiguration(): array
+    {
+        try {
+            $activeProviders = DB::table('api_providers')
+                ->where('is_active', 1)
+                ->count();
+
+            $activeModels = DB::table('ai_models')
+                ->where('is_active', 1)
+                ->count();
+
+            $assistants = DB::table('ai_assistants')
+                ->where('status', 'active')
+                ->count();
+
+            if ($activeProviders === 0) {
+                return [
+                    'status' => 'danger',
+                    'message' => 'No active AI providers',
+                ];
+            }
+
+            if ($activeModels === 0) {
+                return [
+                    'status' => 'danger',
+                    'message' => 'No active models',
+                ];
+            }
+
+            // Prüfe auf Konfigurationsprobleme bei System Assistants
+            $systemAssistants = DB::table('ai_assistants')
+                ->leftJoin('users', 'ai_assistants.owner_id', '=', 'users.id')
+                ->where(function ($query) {
+                    $query->where('ai_assistants.owner_id', 1)
+                        ->orWhere('users.employeetype', 'system');
+                })
+                ->get(['ai_assistants.id', 'ai_assistants.key', 'ai_assistants.ai_model', 'ai_assistants.prompt']);
+
+            $configIssues = [];
+
+            // Prüfe zuerst alle Provider auf Connection-Probleme
+            $allProviders = DB::table('api_providers')->where('is_active', true)->get();
+            foreach ($allProviders as $provider) {
+                if ($provider->additional_settings) {
+                    $settings = json_decode($provider->additional_settings, true);
+                    if (isset($settings['last_connection_test'])) {
+                        $test = $settings['last_connection_test'];
+
+                        // Prüfe auf fehlgeschlagene Connection
+                        if (! $test['success']) {
+                            $error = $test['error'] ?? 'Connection failed';
+                            $configIssues[] = 'Provider "'.$provider->provider_name.'": Connection Failed - '.$error;
+                        }
+
+                        // Prüfe auf langsame Response Time (> 1 Sekunde)
+                        if (isset($test['response_time_ms']) && $test['response_time_ms'] > 1000) {
+                            $responseTime = round($test['response_time_ms'] / 1000, 2);
+                            $configIssues[] = 'Provider "'.$provider->provider_name.'": Slow Response - '.$responseTime.'s (> 1s)';
+                        }
+                    }
+                }
+            }
+
+            // Dann prüfe System Assistants
+            foreach ($systemAssistants as $assistant) {
+                $issues = [];
+
+                // Prüfe ob AI Model zugewiesen ist
+                if (! $assistant->ai_model) {
+                    $issues[] = 'No AI Model';
+                } else {
+                    // Prüfe ob AI Model aktiv ist
+                    // Note: ai_model column references system_id in ai_models table
+                    $model = DB::table('ai_models')->where('system_id', $assistant->ai_model)->first();
+                    if ($model) {
+                        if (! $model->is_active) {
+                            $issues[] = 'AI Model Inactive';
+                        }
+
+                        // Prüfe für default_model ob es sichtbar ist
+                        if ($assistant->key === 'default_model' && ! $model->is_visible) {
+                            $issues[] = 'Default Model Must Be Visible';
+                        }
+
+                        // Prüfe ob Provider aktiv ist
+                        if ($model->provider_id) {
+                            $provider = DB::table('api_providers')->where('id', $model->provider_id)->first();
+                            if ($provider && ! $provider->is_active) {
+                                $issues[] = 'Provider Inactive';
+                            }
+                        }
+                    }
+                }
+
+                // Prüfe System Prompt für relevante Assistenten
+                if (in_array($assistant->key, ['default_model', 'title_generator', 'prompt_improver', 'summarizer']) && ! $assistant->prompt) {
+                    $issues[] = 'No System Prompt';
+                }
+
+                if (! empty($issues)) {
+                    $configIssues[] = 'Assistant "'.$assistant->key.'": '.implode(', ', $issues);
+                }
+            }
+
+            // Status basierend auf gefundenen Problemen
+            if (! empty($configIssues)) {
+                $issueCount = count($configIssues);
+
+                return [
+                    'status' => 'warning',
+                    'message' => "{$activeProviders} provider(s), {$activeModels} model(s), {$issueCount} issue(s)",
+                    'issues' => $configIssues, // Detaillierte Issues für Modal
+                ];
+            }
+
+            $message = "{$activeProviders} provider(s), {$activeModels} model(s)";
+            if ($assistants > 0) {
+                $message .= ", {$assistants} assistant(s)";
+            }
+
+            return [
+                'status' => 'success',
+                'message' => $message,
+                'issues' => [], // Keine Issues
+            ];
+        } catch (\Exception $e) {
+            Log::error('Provider check failed: '.$e->getMessage());
+
+            return [
+                'status' => 'danger',
+                'message' => 'Provider check failed',
+            ];
+        }
+    }
+
+    /**
+     * Holt System Statistiken
+     */
+    private function getSystemStatistics(Carbon $now, Request $request): array
+    {
+        // Total Users
+        $totalUsers = DB::table('users')->count();
+
+        // New Users This Month
+        $newUsersThisMonth = DB::table('users')
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
+            ->count();
+
+        $newUsersPercentage = $totalUsers > 0
+            ? round(($newUsersThisMonth / $totalUsers) * 100, 2)
+            : 0;
+
+        // Active Providers
+        $activeProviders = DB::table('api_providers')
+            ->where('is_active', 1)
+            ->count();
+
+        // Top 5 Providers
+        $top5Providers = DB::table('usage_records')
+            ->select('api_provider', DB::raw('COUNT(*) as request_count'))
+            ->whereNotNull('api_provider')
+            ->groupBy('api_provider')
+            ->orderByDesc('request_count')
+            ->limit(5)
+            ->get();
+
+        $top5ProvidersData = [];
+        foreach ($top5Providers as $provider) {
+            $top5ProvidersData[] = [
+                'provider' => $provider->api_provider,
+                'requests' => number_format($provider->request_count),
+            ];
+        }
+
+        // Total Provider Requests
+        $totalProviderRequests = DB::table('usage_records')
+            ->whereNotNull('model')
+            ->count();
+
+        // Total Input Tokens
+        $totalInputTokens = DB::table('usage_records')
+            ->whereNotNull('model')
+            ->sum('prompt_tokens');
+
+        // Total Output Tokens
+        $totalOutputTokens = DB::table('usage_records')
+            ->whereNotNull('model')
+            ->sum('completion_tokens');
+
+        // Active Models
+        $activeModels = DB::table('ai_models')
+            ->where('is_active', 1)
+            ->count();
+
+        // Check if system models should be excluded
+        $excludeSystemModels = $request->input('exclude_system_models', false);
+
+        // Define system assistant types to exclude
+        $systemAssistantTypes = ['title', 'improver', 'summarizer'];
+
+        // Top 5 Models
+        $top5ModelsQuery = DB::table('usage_records')
+            ->select('api_provider', 'model', DB::raw('COUNT(*) as request_count'))
+            ->whereNotNull('model')
+            ->whereNotNull('api_provider');
+
+        // Exclude system assistant requests if filter is active
+        if ($excludeSystemModels) {
+            $top5ModelsQuery->whereNotIn('type', $systemAssistantTypes);
+        }
+
+        $top5Models = $top5ModelsQuery
+            ->groupBy('api_provider', 'model')
+            ->orderByDesc('request_count')
+            ->limit(5)
+            ->get();
+
+        $top5ModelsData = [];
+        foreach ($top5Models as $model) {
+            $top5ModelsData[] = [
+                'provider' => $model->api_provider,
+                'model' => $model->model,
+                'requests' => number_format($model->request_count),
+            ];
+        }
+
+        return [
+            'system.totalUsers' => number_format($totalUsers),
+            'system.newUsersThisMonth' => number_format($newUsersThisMonth),
+            'system.newUsersPercentage' => $newUsersPercentage.'%',
+            'system.activeProviders' => $activeProviders,
+            'system.top5Providers' => $top5ProvidersData,
+            'system.totalProviderRequests' => number_format($totalProviderRequests),
+            'system.totalInputTokens' => number_format($totalInputTokens),
+            'system.totalOutputTokens' => number_format($totalOutputTokens),
+            'system.activeModels' => $activeModels,
+            'system.top5Models' => $top5ModelsData,
+            'system.excludeSystemModels' => $excludeSystemModels,
+        ];
+    }
+
+    /**
+     * Holt 1:1 Chat Statistiken
+     */
+    private function getChatStatistics(): array
+    {
+        // Total 1:1 Chats
+        $totalChats = DB::table('ai_convs')->count();
+
+        // Total Chat Messages
+        $totalChatMessages = DB::table('ai_conv_msgs')->count();
+
+        // Total Uploaded Files (Attachments für ai_conv_msgs)
+        $totalUploadedFiles = DB::table('attachments')
+            ->where('attachable_type', 'App\\Models\\AiConvMsg')
+            ->count();
+
+        return [
+            'chat.totalChats' => number_format($totalChats),
+            'chat.totalMessages' => number_format($totalChatMessages),
+            'chat.totalFiles' => number_format($totalUploadedFiles),
+        ];
+    }
+
+    /**
+     * Holt Groupchat Statistiken
+     */
+    private function getGroupchatStatistics(?Request $request = null): array
+    {
+        // Total Groupchat Rooms
+        $totalRooms = DB::table('rooms')->count();
+
+        // Total Users in Groupchats (unique)
+        $totalUsersInGroupchats = DB::table('members')
+            ->where('isMember', 1)
+            ->distinct('user_id')
+            ->count('user_id');
+
+        // Total Groupchat Messages
+        $totalGroupchatMessages = DB::table('messages')->count();
+
+        // Average Users per Groupchat
+        $avgUsersPerGroupchat = $totalRooms > 0
+            ? round($totalUsersInGroupchats / $totalRooms, 2)
+            : 0;
+
+        // Hole Sortier-Parameter (messages oder users)
+        $sortBy = $request ? $request->input('groupchat_sort_by', 'messages') : 'messages';
+        $orderColumn = $sortBy === 'users' ? 'user_count' : 'message_count';
+
+        // Most Active Groupchats (Top 5) mit User-Count
+        $mostActiveGroupchats = DB::table('messages')
+            ->select(
+                'rooms.room_name',
+                'rooms.id',
+                DB::raw('COUNT(messages.id) as message_count'),
+                DB::raw('(SELECT COUNT(DISTINCT user_id) FROM members WHERE members.room_id = rooms.id AND members.isMember = 1) as user_count')
+            )
+            ->join('rooms', 'messages.room_id', '=', 'rooms.id')
+            ->groupBy('rooms.id', 'rooms.room_name')
+            ->orderByDesc($orderColumn)
+            ->limit(5)
+            ->get();
+
+        $topGroupchats = [];
+        foreach ($mostActiveGroupchats as $room) {
+            $topGroupchats[] = [
+                'name' => $room->room_name,
+                'messages' => number_format($room->message_count),
+                'users' => number_format($room->user_count),
+            ];
+        }
+
+        return [
+            'groupchat.totalRooms' => number_format($totalRooms),
+            'groupchat.totalUsers' => number_format($totalUsersInGroupchats),
+            'groupchat.totalMessages' => number_format($totalGroupchatMessages),
+            'groupchat.avgUsersPerRoom' => $avgUsersPerGroupchat,
+            'groupchat.topRooms' => $topGroupchats,
+            'groupchat.sortBy' => $sortBy,
+        ];
+    }
+
+    /**
+     * Holt System Assistants Statistiken aus usage_records
+     */
+    private function getSystemAssistantStatistics(): array
+    {
+        // Anzahl generierter Verbesserungen
+        $improvementsCount = DB::table('usage_records')
+            ->where('type', 'improvement')
+            ->count();
+
+        // Anzahl generierter Zusammenfassungen
+        $summariesCount = DB::table('usage_records')
+            ->where('type', 'summary')
+            ->count();
+
+        // Anzahl generierter Titel
+        $titlesCount = DB::table('usage_records')
+            ->where('type', 'title')
+            ->count();
+
+        // Anzahl Tool Requests (server_tool_use ist nicht NULL und nicht leer)
+        $toolRequestsCount = DB::table('usage_records')
+            ->whereNotNull('server_tool_use')
+            ->where('server_tool_use', '!=', '[]')
+            ->where('server_tool_use', '!=', '')
+            ->count();
+
+        return [
+            'assistants.improvements' => number_format($improvementsCount),
+            'assistants.summaries' => number_format($summariesCount),
+            'assistants.titles' => number_format($titlesCount),
+            'assistants.toolRequests' => number_format($toolRequestsCount),
+        ];
     }
 }

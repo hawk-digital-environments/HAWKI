@@ -207,6 +207,17 @@ class ResponsesRequest extends AbstractRequest
         // For non-streaming, web search info is already in status_log
         // So we don't create separate web_search_query auxiliaries here
         
+        // Add final "processing completed" status to the log (if log has entries)
+        if (!empty($statusLog)) {
+            $statusLog[] = [
+                'type' => 'processing',
+                'status' => 'completed',
+                'output_index' => null,
+                'message' => null,  // Frontend derives label from status
+                'timestamp' => now()->timestamp * 1000  // Match frontend timestamp format (milliseconds)
+            ];
+        }
+        
         // Add final status log if not empty
         if (!empty($statusLog)) {
             $auxiliaries[] = [

@@ -10,6 +10,7 @@ use App\Orchid\Layouts\User\UserEditLayout;
 use App\Orchid\Layouts\User\UserPasswordLayout;
 use App\Orchid\Layouts\User\UserRoleLayout;
 use App\Orchid\Layouts\User\SystemUserAvatarLayout;
+use App\Orchid\Layouts\User\UserWebAuthnLayout;
 use App\Services\EmployeetypeMappingService;
 use App\Services\Storage\AvatarStorageService;
 use Illuminate\Http\Request;
@@ -128,6 +129,10 @@ class UserEditScreen extends Screen
             $layouts[] = Layout::block(UserPasswordLayout::class)
                 ->title('Password Settings')
                 ->description('Set initial password and password reset requirements for the local user.');
+
+            $layouts[] = Layout::block(UserWebAuthnLayout::class)
+                ->title('WebAuthn Settings')
+                ->description('Manage the user\'s WebAuthn passkey configuration.');
 
             $layouts[] = Layout::block(UserApprovalLayout::class)
                 ->title('User Approval')
@@ -260,6 +265,11 @@ class UserEditScreen extends Screen
                 // For existing users, preserve the reset_pw value from form
                 $userData['reset_pw'] = $request->boolean('user.reset_pw', false);
             }
+        }
+
+        // Handle WebAuthn passkey reset
+        if (!$isSystemUser && $user->exists) {
+            $userData['webauthn_pk'] = $request->boolean('user.webauthn_pk', false);
         }
 
         // Store original approval status to detect changes

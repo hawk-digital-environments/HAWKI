@@ -225,7 +225,7 @@ class TestConfigValueController extends Controller
             'auth.local_authentication' => 'LOCAL_AUTHENTICATION',
             'session.lifetime' => 'SESSION_LIFETIME',
             'ldap.default' => 'LDAP_CONNECTION',
-            'ldap.connections.default.hosts' => 'LDAP_HOST',
+            'ldap.connections.default.ldap_host' => 'LDAP_HOST',
         ];
 
         if (isset($specialCases[$configKey])) {

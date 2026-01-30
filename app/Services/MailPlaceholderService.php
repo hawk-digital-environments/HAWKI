@@ -17,6 +17,11 @@ class MailPlaceholderService
         // Merge custom data with standard placeholders (custom data takes precedence)
         $allPlaceholders = array_merge($placeholders, $customData);
 
+        // Trim all values to prevent whitespace issues in emails
+        $allPlaceholders = array_map(function ($value) {
+            return is_string($value) ? trim($value) : $value;
+        }, $allPlaceholders);
+
         return str_replace(array_keys($allPlaceholders), array_values($allPlaceholders), $text);
     }
 

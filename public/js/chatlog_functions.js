@@ -65,6 +65,37 @@ function clearChatlog(){
     }
 }
 
+function showEmptyRoomPlaceholder(){
+    const trunk = document.querySelector('.trunk');
+    
+    // Remove any existing placeholder first
+    removeEmptyRoomPlaceholder();
+    
+    // Create placeholder element
+    const placeholder = document.createElement('div');
+    placeholder.id = 'empty-room-placeholder';
+    placeholder.className = 'empty-room-placeholder';
+    
+    // Get translation text
+    const placeholderText = translation?.EmptyRoomPlaceholder || 'No messages in this room yet. Send the first message!';
+    
+    placeholder.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; opacity: 0.5;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <p style="margin: 0; font-weight: 500;">${placeholderText}</p>
+    `;
+    
+    trunk.appendChild(placeholder);
+}
+
+function removeEmptyRoomPlaceholder(){
+    const placeholder = document.getElementById('empty-room-placeholder');
+    if (placeholder) {
+        placeholder.remove();
+    }
+}
+
 function clearInput(){
     const input = document.querySelector('.input');
     input.querySelector('.attachments-list').querySelectorAll('.attachment').forEach(atch => {
@@ -233,6 +264,15 @@ function findThreadWithID(threadId){
 
 //CREATE MESSAGE ELEMENT AND PUT IT IN THE CHATLOG
 function loadMessagesOnGUI(messages) {
+    // Check if there are no messages and show placeholder
+    if (!messages || messages.length === 0) {
+        showEmptyRoomPlaceholder();
+        return;
+    }
+    
+    // Remove placeholder if it exists (messages are present)
+    removeEmptyRoomPlaceholder();
+    
     // Sorting messages by ID
     messages.sort((a, b) => {
         return +a.message_id - +b.message_id;
@@ -408,7 +448,7 @@ function selectModel(btn){
     const value = JSON.parse(btn.getAttribute('value'));
     const selectedModel = value;
     
-    // Check if the selected model is incompatible with current filters (e.g., web_search)
+    // Check if the selected model is incompatible with current filters (e.g., web_search, reasoning)
     // If user clicks on a filtered-out model, automatically remove conflicting filters
     if (btn.classList.contains('filtered-out')) {
         const inputContainer = btn.closest('.input-container');
@@ -417,11 +457,18 @@ function selectModel(btn){
         if (input) {
             // Check which filters are active and incompatible
             const websearchBtn = inputContainer.querySelector('#websearch-btn');
+            const reasoningBtn = inputContainer.querySelector('#reasoning-btn');
             
             // If web_search is active but model doesn't support it, deactivate it
             if (websearchBtn && websearchBtn.classList.contains('active') && !selectedModel.tools?.web_search) {
                 websearchBtn.classList.remove('active', 'active-set');
                 removeInputFilter(input.id, 'web_search');
+            }
+            
+            // If reasoning is active but model doesn't support it, deactivate it
+            if (reasoningBtn && reasoningBtn.classList.contains('active') && !selectedModel.tools?.reasoning) {
+                reasoningBtn.classList.remove('active', 'active-set');
+                removeInputFilter(input.id, 'reasoning');
             }
             
             // Add more filter checks here if needed (vision, file_upload, etc.)
@@ -531,6 +578,7 @@ function setModel(modelID = null, chatId = null){
                 labels.forEach(label => {
                     const inputContainer = label.closest('.input-container');
                     const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
+                    const reasoningBtn = inputContainer ? inputContainer.querySelector('#reasoning-btn') : null;
 
                     if (websearchBtn) {
                         // Check if the model supports web_search tool
@@ -560,6 +608,26 @@ function setModel(modelID = null, chatId = null){
                             }
                         }
                     }
+                    
+                    if (reasoningBtn) {
+                        // Check if the model supports reasoning tool
+                        const supportsReasoning = activeModel.tools?.reasoning === true;
+                        const input = inputContainer.querySelector('.input');
+                        
+                        if (supportsReasoning) {
+                            // Model supports reasoning - keep current state (don't auto-enable)
+                            // User must manually activate reasoning
+                        } else {
+                            // Model doesn't support reasoning - always deactivate it
+                            if (reasoningBtn.classList.contains('active')) {
+                                reasoningBtn.classList.remove('active', 'active-set');
+                                if (input) {
+                                    removeInputFilter(input.id, 'reasoning');
+                                }
+                            }
+                        }
+                    }
+                    
                     label.innerHTML = activeModel.label;
                 });
             }
@@ -584,6 +652,95 @@ function selectWebSearchModel(button) {
         button.classList.add('active', 'active-set');
         addInputFilter(input.id, 'web_search');
     }
+}
+
+// Toggle reasoning dropdown
+function toggleReasoningDropdown(button) {
+    const isActive = button.classList.contains('active');
+    const dropdown = button.parentElement.querySelector('#reasoning-dropdown');
+    const input = button.closest('.input-container').querySelector('.input');
+    
+    // If reasoning is active, clicking the button should deactivate it
+    if (isActive) {
+        button.classList.remove('active', 'active-set');
+        removeInputFilter(input.id, 'reasoning');
+        
+        // Close dropdown if open
+        if (dropdown.style.display !== 'none') {
+            dropdown.style.opacity = '0';
+            setTimeout(() => {
+                dropdown.style.display = 'none';
+            }, 300);
+        }
+        return;
+    }
+    
+    // Otherwise, show the dropdown to select effort level
+    const isVisible = dropdown.style.display !== 'none';
+    
+    // Close all burger menus first
+    closeBurgerMenus(null);
+    
+    if (!isVisible) {
+        // Show dropdown
+        dropdown.style.display = 'block';
+        setTimeout(() => {
+            dropdown.style.opacity = '1';
+        }, 10);
+    }
+}
+
+// Select reasoning effort level and activate reasoning
+function selectReasoningEffort(optionButton, effort) {
+    const dropdown = optionButton.closest('#reasoning-dropdown');
+    const reasoningBtn = dropdown.parentElement.querySelector('#reasoning-btn');
+    const input = reasoningBtn.closest('.input-container').querySelector('.input');
+    
+    // Store the selected effort level
+    reasoningBtn.dataset.effort = effort;
+    
+    // Update selected state in dropdown
+    dropdown.querySelectorAll('.reasoning-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    optionButton.classList.add('selected');
+    
+    // Update effort indicator dots
+    updateReasoningEffortIndicator(reasoningBtn, effort);
+    
+    // Activate reasoning with the filter
+    reasoningBtn.classList.add('active', 'active-set');
+    addInputFilter(input.id, 'reasoning');
+    
+    // Close dropdown
+    dropdown.style.opacity = '0';
+    setTimeout(() => {
+        dropdown.style.display = 'none';
+    }, 300);
+}
+
+// Update the visual indicator for reasoning effort level
+function updateReasoningEffortIndicator(button, effort) {
+    const dots = button.querySelectorAll('.effort-dot');
+    const effortLevels = { 'low': 1, 'medium': 2, 'high': 3 };
+    const activeLevel = effortLevels[effort] || 2;
+    
+    // Activate dots from bottom to top
+    // low = only bottom dot (index 2), medium = bottom + middle (index 1,2), high = all (index 0,1,2)
+    dots.forEach((dot, index) => {
+        const dotLevel = parseInt(dot.dataset.level);
+        // Activate dot if its level is greater than (3 - activeLevel)
+        if (dotLevel > (3 - activeLevel)) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+}
+
+// Legacy function for backwards compatibility - now opens dropdown
+function selectReasoningModel(button) {
+    toggleReasoningDropdown(button);
 }
 
 //#endregion

@@ -439,6 +439,95 @@
     font-weight: 400;
 }
 
+/* Empty Room Placeholder */
+.empty-room-placeholder {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    text-align: center;
+    color: var(--text-secondary, #6c757d);
+    font-size: 1rem;
+    opacity: 0.7;
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Room Icons - Selection List */
+.room-icon {
+    display: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.room-initials {
+    display: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-color, #007bff);
+    color: white;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+
+/* Chat Header Icons */
+.chat-header {
+    display: none;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: var(--background-secondary, #f8f9fa);
+}
+
+.chat-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: none;
+}
+
+.chat-header-initials {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-color, #007bff);
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.chat-header-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.chat-header .btn-xs {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+}
+
 /* THREADS */
 .thread{
     display: flex;
@@ -920,6 +1009,33 @@
 
 .selection-item.active{
     background-color: var(--highlight-color);
+}
+
+/* Room icon wrapper with notification badge */
+.selection-item .room-icon-wrapper {
+    position: relative;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.selection-item .notification-badge {
+    display: none;
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid var(--background-main);
+    z-index: 1;
+}
+
+.selection-item .notification-badge.new-room {
+    background-color: #ef4444; /* Red - new room invitation */
+}
+
+.selection-item .notification-badge.new-message {
+    background-color: #10b981; /* Green - new message */
 }
 
 
@@ -1512,6 +1628,73 @@
 }
 #websearch-btn.active .websearch-icon{
     color: var(--accent-color) !important;
+}
+
+#reasoning-btn .reasoning-icon,
+#reasoning-btn svg.reasoning-icon {
+    transition: color 0.2s ease;
+    color: var(--text-color);
+}
+#reasoning-btn.active .reasoning-icon,
+#reasoning-btn.active svg.reasoning-icon,
+button#reasoning-btn.active .reasoning-icon {
+    color: var(--accent-color) !important;
+    stroke: var(--accent-color) !important;
+}
+
+/* Reasoning Dropdown Styles */
+.reasoning-controls {
+    position: relative;
+    display: inline-block;
+}
+
+.reasoning-dropdown {
+    min-width: 8rem;
+    z-index: 1000;
+}
+
+.reasoning-option {
+    cursor: pointer;
+}
+
+.reasoning-option.selected {
+    background-color: var(--background-content);
+    font-weight: 600;
+}
+
+.reasoning-option:hover {
+    background-color: var(--background-hover);
+}
+
+/* Reasoning Effort Indicator */
+.reasoning-effort-indicator {
+    position: absolute;
+    right: 2px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+#reasoning-btn.active .reasoning-effort-indicator {
+    opacity: 1;
+}
+
+.effort-dot {
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background-color: var(--text-color);
+    opacity: 0.3;
+    transition: all 0.2s ease;
+}
+
+.effort-dot.active {
+    background-color: var(--accent-color);
+    opacity: 1;
 }
 
 

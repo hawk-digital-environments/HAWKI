@@ -7,6 +7,7 @@
     "Logout":"Logout",
     "PromptImprovement":"Prompt Improvement",
     "Upload": "Upload",
+    "News": "News",
 
     "Cnf_deleteConv":"Do you really want to delete this Conversation?",
     "Cnf_deleteFile": "Do you really want to delete this Conversation? This action is not reversible!",
@@ -75,7 +76,7 @@
     "Download": "download",
     "Export": "Export",
     "WebSearch":"Web search",
-    
+
     "Status_Processing": "Processing...",
     "Status_Completed": "Processing completed",
     "Status_Reasoning": "Model is generating context...",
@@ -89,15 +90,22 @@
     "Status_Cancelled": "Response cancelled by user",
     "Status_Error": "An error occurred",
     "Status_Incomplete": "Incomplete",
+    "Status_IsTyping": "is typing...",
+    "Status_AreTyping": "are typing...",
+    "Status_IsGenerating": "is generating...",
+    "Status_AreGenerating": "are generating...",
+    "Status_Typing": "typing",
+    "Status_Generating": "generating",
+    "Status_Others": "others",
     
     "ExtAccToken": "External Access Tokens",
     "General": "General",
     "History": "History",
-    
+
     "Today": "Today",
     "Yesterday": "Yesterday",
     "LastWeek": "Last Week",
-    
+
     "January": "January",
     "February": "February",
     "March": "March",
@@ -110,15 +118,12 @@
     "October": "October",
     "November": "November",
     "December": "December",
-    
-    "HS_EnterBackupMsg": "Please enter your Recovery Code.",
-    "HS_EnterPasskeyMsg": "Please enter your Datakey.",
-    "HS_ForgottenPasskey": "Forgotten Datakey?",
-    "HS_ForgottenBackup": "Lost Recovery Code?",
-    "HS_PasskeyIs": "Your Datakey is:",
-    "HS_ResetProfile": "Reset Profile",
 
-    "HS-EnterBackupMsg": "Please enter your Recovery Code.",
+    "HS-PH-EnterDatakey": "Enter your Datakey here",
+    "HS-AllowedPKCharacters": "Allowed characters: A–Z, a–z, 0–9, and ! @ # $ % ^ & * ( ) _ + -",
+
+    "HS-EnterBackupMsg": "You are trying to sign in to :system from an unknown device.",
+    "HS-EnterBackupDescription": "To access your encrypted data on this device, you must enter your recovery code. This was sent to you by email during registration.",
     "HS-EnterPasskeyMsg": "Please enter your Datakey.",
     "HS-ForgottenPasskey": "Forgotten Datakey?",
     "HS-ForgottenBackup": "Lost Recovery Code?",
@@ -127,44 +132,44 @@
     "HS-LostBothT": "Did you lose both your Datakey and Recovery Code?",
     "HS-LostBothB": "Unfortuately if you've lost both your Datakey and Recovery Code, we can't recover your profile data. To continue we need to reset your profile and give you a new access. This will remove all your previous data including all your chats and rooms. Do you want to continue?",
 
-    "HS_RepeatPassKey": "Please repeat the Datakey.",
-    "HS_DifferentEntries": "The entries are not the same!",
-
-    "HS-LoginCodeH": ":system Log-in Code 🔐",
-    "HS-LoginCodeT": "We will send you a log-in code via email for secure authentication.",
-    "HS-LoginCodeB1": "Send log-in code via email",
-    "HS-LoginCodeB2": "Sending email...",
-    "HS-LoginCodeB3": "Verify log-in code",
-    "HS-LoginCodeB4": "Resend log-in code",
-    "HS-LoginCodeB5": "Log-in code sent!",
-    "HS-LoginCodeB6": "Error sending",
-    "HS-LoginCodeB7": "Verifying log-in code...",
-    "HS-LoginCodeB8": "Log-in code verified!",
-    "HS-LoginCodeB9": "Logging in...",
-    "HS-LoginCodeB10": "Invalid log-in code",
-    "HS-LoginCodeB11": "Verification failed",
-
-    "HS-LoginCodeE1": "Please wait before requesting another log-in code.",
-    "HS-LoginCodeE2": "Error sending log-in code",
-    "HS-LoginCodeE3": "Please enter the log-in code",
-    "HS-LoginCodeE4": "Error generating passkey",
-    "HS-LoginCodeE5": "Error verifying log-in code",
-    "HS-LoginCodeE6": "Log-in code has expired. Please request a new one.",
-
-    "HS-LoginCodeM": "Log-in code sent to",
-
-    "HS-LoginCodeT1": "Resend in",
-    "HS-LoginCodeT2": "s possible",
-    "HS-LoginCodeT3": "Log-in code expired",
-
-    "HS-LoginCodePH": "Enter 6-digit log-in code",
-
     "HS-ErrorTitle": "Handshake Error",
     "HS-ErrorMessage": "The handshake process failed. Please try again or log out.",
     "HS-Logout": "Logout",
 
-    "HS_Allowed_PK_Characters": "Allowed characters: A–Z, a–z, 0–9, and ! @ # $ % ^ & * ( ) _ + -",
-
+    "HS-CreatePasskeyTitle": "Create Cross-Device Passkey",
+    "HS-CreatePasskeyDescription": "Sign in to your account easily and securely with a cross-device passkey. Your passkey is securely stored in a password manager on your devices and is never shared with anyone.",
+    "HS-RegisterNewPasskey": "Register New Passkey",
+    "HS-CreatePasskey": "Create Passkey",
+    "HS-PasskeyAlreadyRegistered": "You already have a passkey registered.",
+    "HS-PasskeyResetInfo": "Your old passkey becomes invalid, for example, when you reset your account. After resetting, you will receive a new backup code by email. To create a working passkey, you must always use the most recent backup code.",
+    "HS-AuthenticatingWithPasskey": "Authenticating with Passkey",
+    "HS-PleaseAuthenticate": "Please authenticate with your passkey...",
+    "HS-WebAuthnFailed": "Passkey authentication failed. Please enter your recovery code manually.",
+    "Or": "or",
+    "PasskeyNotSupported": "Passkeys are not supported by this browser",
+    "PasskeyCancelled": "Passkey operation was cancelled",
+    "PasskeyExists": "A passkey already exists for this account",
+    "PasskeyNotFound": "No saved passkey found",
+    "PasskeyLoginSuccess": "Backup hash retrieved successfully!",
+    "PasskeyLoginFailed": "Passkey login failed",
+    "PasskeyLoginError": "Error during passkey login",
+    "PasskeySaveSuccess": "✓ Backup hash saved as passkey! You can use it to login next time.",
+    "PasskeySaveFailed": "Failed to save passkey",
+    "PasskeySaveError": "Error saving passkey",
+    "PasskeyRegistered": "Passkey registered ✓",
+    "EnterBackupFirst": "Please enter your recovery code first",
+    "InvalidBackupFormat": "Invalid backup hash format",
+    "Saving": "Saving...",
+    
+    "HS-EnterBackupHash": "Enter the last recovery code you received by email during registration or account reset. On your next login, the code will be automatically filled from the passkey you create here.",
+    "HS-EnterBackupHashError": "Please enter your recovery code.",
+    "HS-BackupKeyInvalid": "Backup key is not valid!",
+    "HS-BackupContainsWhitespace": "Backup code contains spaces. Please remove all spaces.",
+    "HS-WhitespaceRemoved": "Spaces were automatically removed from your backup code. Please try again.",
+    "HS-NoBackupFound": "No backup found for this user.",
+    "HS-BackupVerificationFailed": "Backup code is correct, but passkey verification failed. Please reset your profile.",
+    "HS-IncorrectBackupCode": "Incorrect backup code. Please check your backup code and try again.",
+    "HS-BackupProcessingError": "Error processing backup code: ",
     "ImgUpload": "Upload Image",
     "ImgUploadDesc": "Select an image or drag it here.<br>Double-click to enter edit mode.",
     "Impressum": "Imprint",
@@ -262,7 +267,14 @@
     "Reg_SL7_T": "Your request is being reviewed. You will receive an email notification about the status of your request.",
     "Reg_SL7_Contact": "Have questions? Contact us at:",
 
+
     "change_password": "Change Password",
     "change_password_text": "Please set a new password for your account.",
-    "new_password": "New Password"
+    "new_password": "New Password",
+
+    "News_NextPage": "Older News",
+    "News_PrevPage": "Newer News",
+    "News_ReadBy": "read by",
+    "News_PublishedIn": "Published for",
+    "News_PublishedGlobally": "Published for everyone"
 }

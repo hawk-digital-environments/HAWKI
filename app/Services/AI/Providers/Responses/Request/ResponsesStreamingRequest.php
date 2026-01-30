@@ -19,6 +19,7 @@ class ResponsesStreamingRequest extends AbstractRequest
     private array $reasoningSummaryContent = []; // Map output_index => summary content
     private array $webSearchQueries = [];
     private array $statusLog = []; // Collect all status updates for persistence
+    private bool $isDoneSent = false; // Track if isDone=true has been sent (fallback flag)
 
     public function __construct(
         private array    $payload,
@@ -68,7 +69,7 @@ class ResponsesStreamingRequest extends AbstractRequest
         $type = $jsonChunk['type'] ?? '';
         
         $content = '';
-        $isDone = false;
+        $isDone = $this->isDoneSent; // Preserve isDone if already sent (fallback flag)
         $usage = null;
         $auxiliaries = [];
 
@@ -81,7 +82,6 @@ class ResponsesStreamingRequest extends AbstractRequest
             // Complete text output - DON'T send to avoid overwriting collected deltas
             // Text completion (metadata event)
             case 'response.output_text.done':
-                // \Log::info('[RESPONSES] Event Type: response.output_text.done');
                 // Just a completion signal, no content to send (deltas are already collected in frontend)
                 break;
 
@@ -157,22 +157,9 @@ class ResponsesStreamingRequest extends AbstractRequest
 
             // Web search completed
             case 'response.web_search_call.completed':
-                $outputIndex = $jsonChunk['output_index'] ?? null;
-                //// \Log::info('[RESPONSES] Event Type: response.web_search_call.completed', [
-                //    'output_index' => $outputIndex
-                //]);
-                
-                // Collect success status (without message - frontend derives label)
-                $this->addStatusToLog('web_search', 'success', null, $outputIndex);
-                
-                $auxiliaries[] = [
-                    'type' => 'status',
-                    'content' => json_encode([
-                        'status' => 'web_search_success',
-                        'output_index' => $outputIndex
-                    ])
-                ];
-                $content = ''; // Ensure status is sent
+                // Don't send status here - wait for response.output_item.done which contains the query
+                // This event comes BEFORE output_item.done, so we don't have the query yet
+                $content = '';
                 break;
 
             // Web search in progress (metadata event)
@@ -193,8 +180,14 @@ class ResponsesStreamingRequest extends AbstractRequest
 
             // Response completed with final data
             case 'response.completed':
-                // \Log::info('[RESPONSES] Event Type: response.completed');
                 $isDone = true;
+                $this->isDoneSent = true; // Mark that isDone has been sent
+                
+                // Collect final "processing completed" status for persistence in status_log
+                // Note: This uses output_index 0 since we don't have multiple outputs in Responses API context
+                // We DON'T send it as a separate status auxiliary because it's included in status_log
+                // and would be overwritten when status_log is processed
+                $this->addStatusToLog('processing', 'completed', null, 0);
                 
                 // Extract usage from final response
                 if (!empty($jsonChunk['response']['usage'])) {
@@ -316,21 +309,6 @@ class ResponsesStreamingRequest extends AbstractRequest
                 // Note: Reasoning summaries and web search queries are also sent individually
                 // AND included here in final response for database persistence
 
-                // Collect final completed status for persistence
-                $this->addStatusToLog('processing', 'completed', null);
-                
-                // \Log::info('[RESPONSES] Added final processing completed status to log');
-
-                // Send final processing completed status WITHOUT message (Frontend derives label)
-                $auxiliaries[] = [
-                    'type' => 'status',
-                    'content' => json_encode([
-                        'status' => 'completed'
-                    ])
-                ];
-                
-                // \Log::info('[RESPONSES] Sending final processing completed status to frontend');
-
                 // Add final status log as auxiliary for persistence
                 if (!empty($this->statusLog)) {
                     // Update reasoning step labels and summaries before saving
@@ -366,9 +344,7 @@ class ResponsesStreamingRequest extends AbstractRequest
                     
                     $auxiliaries[] = [
                         'type' => 'status_log',
-                        'content' => json_encode([
-                            'log' => $this->statusLog
-                        ])
+                        'content' => json_encode(['log' => $this->statusLog])
                     ];
                     //// \Log::info('[RESPONSES] Added status log to final response', [
                     //    'total_entries' => count($this->statusLog),
@@ -388,9 +364,8 @@ class ResponsesStreamingRequest extends AbstractRequest
                     //// \Log::info('[RESPONSES] Added citations to final response', [
                     //    'total_citations' => count($this->citations)
                     //]);
-                } else {
-                    // \Log::info('[RESPONSES] No citations collected');
                 }
+                
                 break;
 
             // Response failed
@@ -440,6 +415,7 @@ class ResponsesStreamingRequest extends AbstractRequest
                 // Check if this is a reasoning item completion
                 $item = $jsonChunk['item'] ?? [];
                 $itemType = $item['type'] ?? null;
+                $itemStatus = $item['status'] ?? null;
                 $outputIndex = $jsonChunk['output_index'] ?? null;
                 
                 if ($itemType === 'reasoning') {
@@ -545,8 +521,14 @@ class ResponsesStreamingRequest extends AbstractRequest
                     }
                     
                     $content = '';
+                } elseif ($itemType === 'message') {
+                    // Message item completed (normal conversation output)
+                    // This is a FALLBACK for when response.completed is not received
+                    // (Some API instances don't send it reliably on long responses)
+                    $isDone = true;
+                    $this->isDoneSent = true; // Mark that isDone has been sent
                 } else {
-                    // Generic output_item.done (e.g., message)
+                    // Other output_item types
                     //\Log::info('[RESPONSES] Event Type: response.output_item.done', [
                     //    'item_type' => $itemType ?? 'unknown',
                     //    'output_index' => $outputIndex
@@ -723,6 +705,25 @@ class ResponsesStreamingRequest extends AbstractRequest
                     //    'title' => $title,
                     //    'text_preview' => substr($summaryText, 0, 50) . '...'
                     //]);
+                    
+                    // Collect reasoning completed status for persistence
+                    $this->addStatusToLog('reasoning', 'completed', $title, $outputIndex);
+                    
+                    // Send reasoning_complete status to frontend to end reasoning indicator
+                    $statusContent = [
+                        'status' => 'reasoning_complete',
+                        'output_index' => $outputIndex
+                    ];
+                    
+                    // Only add message if it's a custom summary title
+                    if ($title !== 'Reasoning') {
+                        $statusContent['message'] = $title;
+                    }
+                    
+                    $auxiliaries[] = [
+                        'type' => 'status',
+                        'content' => json_encode($statusContent)
+                    ];
                     
                     // Send summary immediately as auxiliary
                     $auxiliaries[] = [

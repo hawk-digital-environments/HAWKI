@@ -85,8 +85,7 @@ class StreamController extends Controller
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
                 'payload.messages.*.content.auxiliaries' => 'nullable|array',
-                'payload.tools' => 'nullable|array',
-
+                'payload.tools' => 'nullable|array',                'payload.reasoning_effort' => 'nullable|string|in:low,medium,high',
                 'broadcast' => 'required|boolean',
                 'isUpdate' => 'nullable|boolean',
                 'messageId' => ['nullable', function ($_, $value, $fail) {

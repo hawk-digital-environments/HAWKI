@@ -1046,68 +1046,71 @@ function insertStatusItemInOrder(statusIndicator, newItem) {
  */
 function updateAiStatusIndicator(messageElement, auxiliaries, isDone = false) {
   
-  // First, try to restore status log from auxiliaries (for messages loaded from DB)
-  if (!messageElement.dataset.statusLog || messageElement.dataset.statusLog === '{"steps":[],"currentStep":0}') {
-    const statusLogAux = auxiliaries?.find(aux => aux.type === 'status_log');
-    if (statusLogAux && statusLogAux.content) {
-      try {
-        const logData = JSON.parse(statusLogAux.content);
-        
-        // Reconstruct status log from persisted data
-        const statusLog = {
-          steps: [],
-          currentStep: 0
-        };
-        
-        // Convert persisted log entries to status log steps
-        if (logData.log && Array.isArray(logData.log)) {
-          logData.log.forEach((entry, index) => {
-            const step = {
-              step: index + 1,
-              output_index: entry.output_index ?? null,
-              status: entry.status,
-              type: entry.type,
-              label: entry.message,
-              icon: getStatusIcon(entry.status, entry.type), // Pass type for correct icon
-              timestamp: entry.timestamp
+  // First, try to restore status log from auxiliaries (ONLY for messages loaded from DB)
+  // During streaming, we build the log incrementally via status auxiliaries
+  const hasEmptyStatusLog = !messageElement.dataset.statusLog || messageElement.dataset.statusLog === '{"steps":[],"currentStep":0}';
+  const statusLogAux = auxiliaries?.find(aux => aux.type === 'status_log');
+  
+  // Only restore from status_log if we have NO existing log (DB load case)
+  if (hasEmptyStatusLog && statusLogAux && statusLogAux.content) {
+    try {
+      const logData = JSON.parse(statusLogAux.content);
+      
+      // Reconstruct status log from persisted data
+      const statusLog = {
+        steps: [],
+        currentStep: 0
+      };
+      
+      // Convert persisted log entries to status log steps
+      if (logData.log && Array.isArray(logData.log)) {
+        logData.log.forEach((entry, index) => {
+          const step = {
+            step: index + 1,
+            output_index: entry.output_index ?? null,
+            status: entry.status,
+            type: entry.type,
+            // Derive label if message is null/empty, otherwise use message
+            label: entry.message || getStatusLabel(entry.status, entry.type, null, null),
+            icon: getStatusIcon(entry.status, entry.type), // Pass type for correct icon
+            timestamp: entry.timestamp
+          };
+          
+          // Add reasoning summary details if available
+          if (entry.summary) {
+            step.details = {
+              content: entry.summary
             };
-            
-            // Add reasoning summary details if available
-            if (entry.summary) {
-              step.details = {
-                content: entry.summary
-              };
-            }
-            
-            statusLog.steps.push(step);
-          });
-          
-          // Check if log ended with error/cancellation
-          const hasErrorOrCancelled = statusLog.steps.some(s => 
-            s.status === 'error' || s.status === 'cancelled'
-          );
-          
-          // If error/cancelled, mark all in_progress steps as incomplete
-          if (hasErrorOrCancelled) {
-            statusLog.steps.forEach(step => {
-              if (step.status === 'in_progress') {
-                step.status = 'incomplete';
-              }
-            });
           }
           
-          statusLog.currentStep = statusLog.steps.length;
+          statusLog.steps.push(step);
+        });
+        
+        // Check if log ended with error/cancellation
+        const hasErrorOrCancelled = statusLog.steps.some(s => 
+          s.status === 'error' || s.status === 'cancelled'
+        );
+        
+        // If error/cancelled, mark all in_progress steps as incomplete
+        if (hasErrorOrCancelled) {
+          statusLog.steps.forEach(step => {
+            if (step.status === 'in_progress') {
+              step.status = 'incomplete';
+            }
+          });
         }
         
-        messageElement.dataset.statusLog = JSON.stringify(statusLog);
-        
-        // Render the restored status indicator
-        if (statusLog.steps.length > 0) {
-          renderStatusIndicator(messageElement);
-        }
-      } catch (error) {
-        console.error('[STATUS LOG] Error restoring from auxiliaries:', error);
+        statusLog.currentStep = statusLog.steps.length;
       }
+      
+      messageElement.dataset.statusLog = JSON.stringify(statusLog);
+      
+      // Render the restored status indicator
+      if (statusLog.steps.length > 0) {
+        renderStatusIndicator(messageElement);
+      }
+    } catch (error) {
+      console.error('[STATUS LOG] Error restoring from auxiliaries:', error);
     }
   }
   
@@ -1124,23 +1127,35 @@ function updateAiStatusIndicator(messageElement, auxiliaries, isDone = false) {
       if (statusAux && statusAux.content) {
         try {
           const statusData = JSON.parse(statusAux.content);
-          const { status, message, query, output_index } = statusData;
+          const { status, type: backendType, message, query, output_index } = statusData;
           
           
-          // Map status to status update object
-          const type = getStatusType(status);
+          // Use type from backend if provided, otherwise derive from status
+          // Backend now sends explicit type for disambiguation (e.g., "completed" + "reasoning")
+          const type = backendType || getStatusType(status);
           const normalizedStatus = status.includes('complete') ? 'completed' : 'in_progress';
           
-          const statusUpdate = {
-            output_index: output_index ?? null,
-            status: normalizedStatus,
-            type: type,
-            label: getStatusLabel(normalizedStatus, type, message, query),
-            icon: getStatusIcon(normalizedStatus, type), // Pass type for correct icon
-            timestamp: Date.now()
-          };
+          // Check if this exact status update already exists in the log
+          // This prevents duplicates when auxiliary is processed multiple times during streaming
+          const statusLog = JSON.parse(messageElement.dataset.statusLog || '{"steps":[],"currentStep":0}');
+          const alreadyExists = statusLog.steps.some(step =>
+            step.type === type &&
+            step.status === normalizedStatus &&
+            step.output_index === (output_index ?? null)
+          );
           
-          updateStatusLog(messageElement, statusUpdate);
+          if (!alreadyExists) {
+            const statusUpdate = {
+              output_index: output_index ?? null,
+              status: normalizedStatus,
+              type: type,
+              label: getStatusLabel(normalizedStatus, type, message, query),
+              icon: getStatusIcon(normalizedStatus, type), // Pass type for correct icon
+              timestamp: Date.now()
+            };
+            
+            updateStatusLog(messageElement, statusUpdate);
+          }
         } catch (error) {
           console.error('[STATUS] Error parsing status:', error);
         }
@@ -1188,7 +1203,6 @@ function updateAiStatusIndicator(messageElement, auxiliaries, isDone = false) {
           icon: 'check2-circle',
           timestamp: Date.now()
         });
-      } else if (hasCompletedStep) {
       } else {
         // Re-render to update UI with incomplete steps
         renderStatusIndicator(messageElement);
@@ -1324,22 +1338,34 @@ function updateAiStatusIndicator(messageElement, auxiliaries, isDone = false) {
     try {
       const summaryData = JSON.parse(reasoningSummaryAux.content);
       const summary = summaryData.summary;
+      const outputIndex = summaryData.output_index ?? null;  // Extract output_index from auxiliary
       
       if (summary) {
+        // Check if we already added this reasoning summary to status log
+        // This prevents duplicates when auxiliary is processed multiple times
+        const statusLog = JSON.parse(messageElement.dataset.statusLog || '{"steps":[],"currentStep":0}');
+        const alreadyExists = statusLog.steps.some(step => 
+          step.type === 'reasoning' && 
+          step.status === 'completed' &&
+          step.output_index === outputIndex &&  // Match by output_index for multi-output support
+          step.details?.content === summary
+        );
         
-        // Add as generic reasoning completed step
-        updateStatusLog(messageElement, {
-          output_index: null,
-          status: 'completed',
-          type: 'reasoning',
-          label: translation?.Status_ReasoningComplete || 'Reasoning completed',
-          icon: 'checkmark',
-          details: {
-            title: 'Reasoning Summary',
-            content: summary
-          },
-          timestamp: Date.now()
-        });
+        if (!alreadyExists) {
+          // Add as generic reasoning completed step
+          updateStatusLog(messageElement, {
+            output_index: outputIndex,  // Use output_index from auxiliary
+            status: 'completed',
+            type: 'reasoning',
+            label: translation?.Status_ReasoningComplete || 'Reasoning completed',
+            icon: getStatusIcon('completed', 'reasoning'),  // Use getStatusIcon for correct icon (CPU/reasoning)
+            details: {
+              title: 'Reasoning Summary',
+              content: summary
+            },
+            timestamp: Date.now()
+          });
+        }
       }
     } catch (error) {
       console.error('[REASONING SUMMARY LEGACY] Error parsing summary:', error);
@@ -1783,6 +1809,7 @@ function getIconSvg(iconType, isLoading = false) {
 function getStatusType(status) {
   if (status === 'in_progress') return 'processing';
   if (status === 'completed') return 'processing'; // Final "Processing completed" is type 'processing'
+  if (status === 'processing_completed') return 'processing'; // Chat Completions final status
   if (status.includes('reasoning')) return 'reasoning';
   if (status.includes('web_search')) return 'web_search';
   return 'processing';
@@ -1800,9 +1827,11 @@ function getStatusLabel(status, type, message, query) {
   // 1. Custom message has PRIORITY (Reasoning Summary Title)
   if (message) return message;
   
-  // 2. Web Search with query
-  if (status === 'web_search_complete' && query) {
-    return (translation?.Status_WebSearchComplete || 'Searched for: {query}').replace('{query}', query);
+  // 2. Web Search with query (check type + completed status OR original status)
+  if ((type === 'web_search' && status === 'completed') || status === 'web_search_complete') {
+    if (query) {
+      return (translation?.Status_WebSearchComplete || 'Searched for: {query}').replace('{query}', query);
+    }
   }
   
   // 3. Derive label from status + type (NO MESSAGE from backend!)

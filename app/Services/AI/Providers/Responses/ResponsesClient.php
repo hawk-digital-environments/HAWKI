@@ -45,6 +45,9 @@ class ResponsesClient extends AbstractClient
         // Convert request to payload
         $payload = $this->converter->convertRequestToPayload($request);
         
+        // Debug: Log full payload before sending
+        //\Log::info('[RESPONSES API] Request Payload:', $payload);
+        
         // Track if we should retry without previous_response_id
         $hasPreviousResponseId = isset($payload['previous_response_id']);
         $previousResponseId = $payload['previous_response_id'] ?? null;

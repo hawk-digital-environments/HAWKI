@@ -34,6 +34,14 @@ class SystemSettingsTabMenu extends TabMenu
             Menu::make('Mail Configuration')
                 ->route('platform.settings.mail-configuration')
                 ->active('platform.settings.mail-configuration*'),
+
+            Menu::make('Backup')
+                ->route('platform.systems.settings.backup')
+                ->active('platform.systems.settings.backup*'),
+
+            Menu::make('Schedule')
+                ->route('platform.systems.settings.scheduled-tasks')
+                ->active('platform.systems.settings.scheduled-tasks*'),
         ];
     }
 }
