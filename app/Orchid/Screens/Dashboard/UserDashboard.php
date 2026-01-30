@@ -197,6 +197,21 @@ class UserDashboard extends Screen
             ? round((($maxUsers - $previousMonthMaxUsers) / $previousMonthMaxUsers) * 100, 2)
             : 0;
 
+        // Registrations this month (all new accounts created in selected month)
+        $registrationsThisMonth = DB::table('users')
+            ->whereYear('created_at', $currentYear)
+            ->whereMonth('created_at', $currentMonth)
+            ->count();
+
+        $registrationsPreviousMonth = DB::table('users')
+            ->whereYear('created_at', $previousMonth->year)
+            ->whereMonth('created_at', $previousMonth->month)
+            ->count();
+
+        $registrationsGrowth = ($registrationsPreviousMonth > 0)
+            ? round((($registrationsThisMonth - $registrationsPreviousMonth) / $registrationsPreviousMonth) * 100, 2)
+            : 0;
+
         // =====================================================================
         // NEW vs RECURRING USERS LOGIC
         // =====================================================================
@@ -663,19 +678,26 @@ class UserDashboard extends Screen
             'selectedRoles' => $selectedRoles,
             'metrics' => [
                 'totalUsers' => ['value' => number_format($totalUsers), 'diff' => $totalUsersGrowth],
-                'newUsers' => ['value' => number_format($newUsersThisMonth), 'diff' => $percentage],
+                'registrationsThisMonth' => ['value' => number_format($registrationsThisMonth), 'diff' => $registrationsGrowth],
                 'activeUsersDelta' => ['value' => number_format($activeUsersDelta), 'diff' => $activeUsersDeltaDiff],
                 'maxUsers' => ['value' => number_format($maxUsers), 'diff' => $maxUsersDiff],
                 'distinctActiveUsers' => ['value' => number_format($totalActiveUsersThisMonth), 'diff' => $totalActiveUsersDiff],
-                'recurringActiveUsers' => ['value' => number_format($recurringUsers), 'diff' => $recurringUsersDiff],
+                'newActiveUsers' => ['value' => number_format($newUsersThisMonth), 'diff' => $newUsersDiff],
                 'avgConcurrentUsers' => ['value' => number_format($avgConcurrentUsers, 1), 'diff' => $avgConcurrentUsersDiff],
                 'maxConcurrentUsers' => ['value' => number_format($maxConcurrentUsers), 'diff' => $maxConcurrentUsersDiff],
             ],
             'percentageChart' => [
                 [
-                    'labels' => ['Recurring Users', 'New Users'],
-                    'name' => 'Recurring vs New Users',
+                    'labels' => ['Recurring Active Users', 'New Active Users'],
+                    'name' => 'User Activity Breakdown',
                     'values' => [$recurringUsers, $newUsersThisMonth],
+                ],
+            ],
+            'activeVsTotalChart' => [
+                [
+                    'labels' => ['Inactive Users', 'Active Users'],
+                    'name' => 'Active vs Total Users',
+                    'values' => [max(0, $totalUsers - $totalActiveUsersThisMonth), $totalActiveUsersThisMonth],
                 ],
             ],
             // Füge leere Chat-Counts hinzu
@@ -744,18 +766,29 @@ class UserDashboard extends Screen
             'roleMetrics' => [],
             'percentageChart' => [
                 [
-                    'labels' => ['Recurring Users', 'New Users'],
-                    'name' => 'Recurring vs New Users',
+                    'labels' => ['Recurring Active Users', 'New Active Users'],
+                    'name' => 'User Activity Breakdown',
+                    'values' => [0, 0],
+                ],
+            ],
+            'activeVsTotalChart' => [
+                [
+                    'labels' => ['Inactive Users', 'Active Users'],
+                    'name' => 'Active vs Total Users',
                     'values' => [0, 0],
                 ],
             ],
             'selectedMonth' => Carbon::now()->format('Y-m'),
             'monthName' => $now->format('F Y'),
             'metrics' => [
-                'totalUsers' => ['value' => '0', 'diff' => 0],
-                'newUsers' => ['value' => '0', 'diff' => 0],
-                'activeUsersDelta' => ['value' => '0', 'diff' => 0],
-                'maxUsers' => ['value' => '0', 'diff' => 0],
+                'totalUsers' => ['value' => 0, 'diff' => 0],
+                'registrationsThisMonth' => ['value' => 0, 'diff' => 0],
+                'activeUsersDelta' => ['value' => 0, 'diff' => 0],
+                'maxUsers' => ['value' => 0, 'diff' => 0],
+                'distinctActiveUsers' => ['value' => 0, 'diff' => 0],
+                'newActiveUsers' => ['value' => 0, 'diff' => 0],
+                'avgConcurrentUsers' => ['value' => 0, 'diff' => 0],
+                'maxConcurrentUsers' => ['value' => 0, 'diff' => 0],
             ],
             // Chat-Count Platzhalter
             'chatCountToday' => 0,
@@ -850,9 +883,13 @@ class UserDashboard extends Screen
             ->title('Hourly User Activity')
             ->description('Hourly user activity for '.$monthName.' showing minimum, average, and maximum values as separate lines.');
 
-        $percentageChart = PercentageChart::make('percentageChart', 'Recurring vs New Users')
-            ->title('Recurring vs New Users')
-            ->description('The ratio of returning to new users in the selected month.');
+        $percentageChart = PercentageChart::make('percentageChart', 'User Activity Composition')
+            ->title('User Activity Composition')
+            ->description('Breakdown of recurring and new active users.');
+
+        $activeVsTotalChart = PercentageChart::make('activeVsTotalChart', 'Active vs Total Users')
+            ->title('Active vs Total Users')
+            ->description('Percentage of total users who were active in the selected month.');
 
         $usersPerRoleChart = LineChart::make('usersPerRole', 'Users per Role')
             ->title('Users per Role Over Time')
@@ -869,18 +906,19 @@ class UserDashboard extends Screen
 
             Layout::metrics([
                 'Total Users' => 'metrics.totalUsers',
-                'New Users' => 'metrics.newUsers',
-                'Average Active Users per Day' => 'metrics.activeUsersDelta',
-                'Max Active Users per Day' => 'metrics.maxUsers',
+                'Registrations this Month' => 'metrics.registrationsThisMonth',
+                'Distinct Active Users ' => 'metrics.distinctActiveUsers',
+                'New Active Users' => 'metrics.newActiveUsers',
             ]),
             Layout::metrics([
-                'Distinct Active Users ' => 'metrics.distinctActiveUsers',
-                'Recurring Active Users' => 'metrics.recurringActiveUsers',
-                'Average Concurrent Users per hour' => 'metrics.avgConcurrentUsers',
-                'Max Concurrent Users per hour' => 'metrics.maxConcurrentUsers',
+                'Max Active Users per Day' => 'metrics.maxUsers',
+                'Ø Active Users per Day' => 'metrics.activeUsersDelta',
+                'Max Active per Hour' => 'metrics.maxConcurrentUsers',
+                'Ø Active per Hour' => 'metrics.avgConcurrentUsers',
             ]),
 
-            Layout::columns([
+            Layout::split([
+                $activeVsTotalChart,
                 $percentageChart,
             ]),
 

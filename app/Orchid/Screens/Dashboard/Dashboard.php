@@ -676,11 +676,10 @@ class Dashboard extends Screen
     private function getSystemStatistics(Carbon $now, Request $request): array
     {
         // Total Users
-        $totalUsers = DB::table('users')->where('isRemoved', 0)->count();
+        $totalUsers = DB::table('users')->count();
 
         // New Users This Month
         $newUsersThisMonth = DB::table('users')
-            ->where('isRemoved', 0)
             ->whereYear('created_at', $now->year)
             ->whereMonth('created_at', $now->month)
             ->count();
