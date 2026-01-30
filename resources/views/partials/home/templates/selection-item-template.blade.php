@@ -23,6 +23,12 @@ function handleBurgerMenuClick(event, element) {
 	// Get the slug from the parent selection-item
 	const selectionItem = element.closest('.selection-item');
 	const slug = selectionItem ? selectionItem.getAttribute('slug') : null;
+
+	// Store the slug in the burger menu for later use
+	const burgerMenu = document.getElementById('quick-actions');
+	if (burgerMenu && slug) {
+		burgerMenu.setAttribute('data-room-slug', slug);
+	}
 	
 	// Check if we're in groupchat or chat module
 	const isGroupchat = typeof rooms !== 'undefined';
@@ -39,11 +45,7 @@ function handleBurgerMenuClick(event, element) {
 			return;
 		}
 		
-		// Store the room slug in the burger menu for later use
-		const burgerMenu = document.getElementById('quick-actions');
 		if (burgerMenu && slug) {
-			burgerMenu.setAttribute('data-room-slug', slug);
-			
 			// Show/hide appropriate buttons based on room status
 			const leaveBtn = burgerMenu.querySelector('#burger-leave-btn');
 			const declineBtn = burgerMenu.querySelector('#burger-decline-btn');

@@ -969,13 +969,26 @@ async function RequestConvContent(slug){
 
 
 async function requestDeleteConv() {
+    // First try to get slug from burger menu
+    const burgerMenu = document.getElementById('quick-actions');
+    let targetSlug = burgerMenu ? burgerMenu.getAttribute('data-room-slug') : null;
 
-    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteConv);
+    // Fallback to active conversation if no slug in burger menu
+    if (!targetSlug && typeof activeConv !== 'undefined' && activeConv) {
+        targetSlug = activeConv.slug;
+    }
+
+    if (!targetSlug) {
+        console.error('No conversation target for deletion');
+        return;
+    }
+
+    const confirmed = await openModal(ModalType.WARNING, translation.Cnf_deleteConv);
     if (!confirmed) {
         return;
     }
 
-    const url = `/req/conv/removeConv/${activeConv.slug}`;
+    const url = `/req/conv/removeConv/${targetSlug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
@@ -990,27 +1003,35 @@ async function requestDeleteConv() {
         const data = await response.json();
 
         if (data.success) {
-            const listItem = document.querySelector(`.selection-item[slug="${activeConv.slug}"]`);
+            const listItem = document.querySelector(`.selection-item[slug="${targetSlug}"]`);
+            if (!listItem) {
+                console.error('Could not find list item to remove');
+                return;
+            }
+
+            const wasActive = listItem.classList.contains('active');
             const list = listItem.parentElement;
             listItem.remove();
 
-            if(list.childElementCount > 0){
-                loadConv(list.firstElementChild, null);
-            }
-            else{
-                clearChatlog();
-                clearInput();
-                chatlogElement.classList.remove('active');
-                chatlogElement.classList.add('start-state');
+            // Only load another conversation or clear if we deleted the currently active one
+            if (wasActive) {
+                if (list.childElementCount > 0) {
+                    loadConv(list.firstElementChild, null);
+                }
+                else {
+                    clearChatlog();
+                    clearInput();
+                    chatlogElement.classList.remove('active');
+                    chatlogElement.classList.add('start-state');
 
-                history.replaceState(null, '', `/chat`);
+                    history.replaceState(null, '', `/chat`);
+                }
             }
-
         } else {
             console.error('Conv removal was not successful!');
         }
     } catch (error) {
-        console.error('Failed to remove conv!');
+        console.error('Failed to remove conv!', error);
     }
 }
 
