@@ -736,7 +736,7 @@ async function generateChatName(firstMessage, convItem) {
     const requestObject = {
         payload: {
             model: systemModels.title_generator,
-            stream: true,
+            stream: false, // Use non-streaming for title generation (more efficient for short responses)
             max_tokens: 10, // Limit to ~3-5 words
             messages: [
                 {
@@ -791,14 +791,10 @@ async function generateChatName(firstMessage, convItem) {
                         // Replace newlines with spaces
                         convName += contentText.replace(/[\n\r]/g, ' ');
                         
-                        // Abort after 3 words
+                        // Limit to first 3 words for non-streaming (no early abort needed)
                         const words = convName.trim().split(/\s+/).filter(w => w.length > 0);
-                        if (words.length >= 3) {
-                            const title = words.slice(0, 3).join(" ");
-                            convElement.innerText = title;
-                            abortCtrl.abort();
-                            resolve(title);
-                            return;
+                        if (words.length > 3) {
+                            convName = words.slice(0, 3).join(" ");
                         }
                         convElement.innerText = convName;
                     }
@@ -808,7 +804,9 @@ async function generateChatName(firstMessage, convItem) {
                     resolve(convName.trim() || "New Chat");
                 }
             };
-            processStream(response.body, onData);
+            
+            // Use processResponse for non-streaming (stream: false)
+            processResponse(response, onData);
         })
         .catch(error => reject(error));
     });
