@@ -26,7 +26,7 @@ class OpenAiStreamingRequest extends AbstractRequest
 //        $this->payload['stream_options'] = [
 //            'include_usage' => true,
 //        ];
-        \Log::debug($this->payload);
+//        \Log::debug($this->payload);
 
         $this->executeStreamingRequest(
             model: $model,

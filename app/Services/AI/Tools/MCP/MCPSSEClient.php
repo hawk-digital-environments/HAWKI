@@ -43,11 +43,11 @@ class MCPSSEClient
 
         $jsonRequest = json_encode($request);
 
-        Log::debug('MCP SSE Request', [
-            'url' => $this->serverUrl,
-            'method' => $method,
-            'request' => $request,
-        ]);
+//        Log::debug('MCP SSE Request', [
+//            'url' => $this->serverUrl,
+//            'method' => $method,
+//            'request' => $request,
+//        ]);
 
         // Initialize cURL for SSE
         $ch = curl_init($this->serverUrl);
@@ -111,13 +111,14 @@ class MCPSSEClient
     /**
      * List available tools from the MCP server
      *
-     * @return array Array of tool definitions
+     * @return array Full response including tools array and metadata
      */
     public function listTools(): array
     {
         try {
             $response = $this->request('tools/list');
-            return $response['tools'] ?? [];
+            // Return the result field which contains the tools array
+            return $response['result'] ?? $response;
         } catch (\Exception $e) {
             Log::error('Failed to list MCP tools', [
                 'url' => $this->serverUrl,

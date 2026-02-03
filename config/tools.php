@@ -3,61 +3,89 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Available Tools
+    | Function Calling Tools
     |--------------------------------------------------------------------------
     |
-    | List of tool implementations that should be registered and available
-    | for use by AI models. Each tool must implement ToolInterface.
+    | Tools with LOCAL logic that run within your application.
+    | These are NOT MCP tools - they execute code in your project.
     |
-    | To add a new tool:
-    | 1. Create the tool class in app/Services/AI/Tools/Implementations/
-    | 2. Implement ToolInterface (or extend AbstractTool/AbstractMCPTool)
+    | Use this for:
+    | - Custom business logic tools
+    | - Database queries
+    | - Internal API calls
+    | - Calculations and transformations
+    |
+    | To add a function calling tool:
+    | 1. Create class in app/Services/AI/Tools/Implementations/
+    | 2. Implement ToolInterface (or extend AbstractTool)
     | 3. Add the class to the array below
-    | 4. Configure the tool in model configs (model_lists/*.php)
+    | 4. Configure in model configs (model_lists/*.php)
+    |
+    | Example: DiceRollTool, CalculatorTool, DatabaseQueryTool
     |
     */
     'available_tools' => [
-        \App\Services\AI\Tools\Implementations\TestTool::class,
-        \App\Services\AI\Tools\Implementations\DmcpTool::class,
-        \App\Services\AI\Tools\Implementations\RawkiSearchTool::class,
+        // Add your function calling tools here
+         \App\Services\AI\Tools\Implementations\TestTool::class,
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Tool Descriptions
+    | MCP Servers (Auto-Discovered Tools)
     |--------------------------------------------------------------------------
     |
-    | Optional metadata for documentation purposes.
-    | Maps tool names to human-readable descriptions.
+    | MCP (Model Context Protocol) servers provide tools automatically.
+    | Just add the server URL - tools are discovered and configured for you!
     |
-    */
-    'tool_descriptions' => [
-        'test_tool' => 'Test tool for validating function calling capabilities',
-        'dice_roll' => 'D&D style dice roller via MCP server',
-        'web_search' => 'Web search via RAWKI MCP server (Brave or Tavily)',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | MCP Server Configurations
-    |--------------------------------------------------------------------------
+    | 🚀 To add a new MCP server (3 simple steps):
+    | 1. Add server configuration below with its URL
+    | 2. (Optional) Run `php artisan tools:discover` to test connection
+    | 3. Restart your application - tools are auto-registered!
     |
-    | Default MCP server configurations for tools.
-    | Tools can override these in their getMCPServerConfig() method.
+    | Tool names are prefixed with server_label to avoid conflicts.
+    | Example: "search" from "rawki_search" becomes "rawki_search.search"
+    |
+    | All tools are auto-discovered - no manual classes needed!
     |
     */
     'mcp_servers' => [
-        'dice_roll' => [
-            'url' => env('DMCP_SERVER_URL', 'https://dmcp-server.deno.dev/sse'),
-            'server_label' => 'dnd_dice_roller',  // Machine-readable: letters, digits, hyphens, underscores only
-            'description' => 'D&D Dice Roller',    // Human-readable description
-            'require_approval' => 'never',
-        ],
+        // RAWKI MCP Server - provides web search and knowledge base tools
         'web_search' => [
             'url' => env('RAWKI_MCP_SERVER_URL', 'http://localhost:8080/mcp/rawki'),
-            'server_label' => 'rawki_search',
-            'description' => 'RAWKI Web Search',
+            'server_label' => 'rawki',
+            'description' => 'RAWKI Web Search and Knowledge Base',
             'require_approval' => 'never',
+            'timeout' => 30,  // Timeout for tool execution (seconds)
+            'discovery_timeout' => 5,  // Timeout for tool discovery (seconds)
         ],
+
+        // Example: Add another MCP server
+        // 'my_mcp_server' => [
+        //     'url' => env('MY_MCP_SERVER_URL', 'http://localhost:3000/mcp'),
+        //     'server_label' => 'my_server',
+        //     'description' => 'My Custom MCP Server',
+        //     'require_approval' => 'never',
+        //     'timeout' => 30,
+        //     'discovery_timeout' => 5,
+        // ],
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | MCP Cache TTL
+    |--------------------------------------------------------------------------
+    |
+    | How long to cache discovered MCP tool schemas (in seconds).
+    | Caching improves boot time by avoiding repeated server queries.
+    |
+    | To refresh tools after MCP server changes:
+    | - Run: php artisan tools:discover --force
+    | - Or wait for cache to expire
+    |
+    | Default: 3600 (1 hour)
+    | Set to 0 to disable caching (not recommended for production)
+    |
+    */
+    'mcp_cache_ttl' => env('MCP_CACHE_TTL', 3600),
+
 ];

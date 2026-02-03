@@ -58,7 +58,7 @@ readonly class GwdgRequestConverter
                 $this->buildFunctionCallTools($model),
                 $this->buildMCPTools($model)
             );
-
+            Log::debug($toolDefinitions);
             if (!empty($toolDefinitions)) {
                 $payload['tools'] = array_map(fn($toolDef) => [
                     'type' => 'function',
@@ -75,11 +75,16 @@ readonly class GwdgRequestConverter
         $role = $message['role'];
 
         // Handle tool result messages (role="tool")
+        // Convert to user message for better compatibility with models that don't fully support tool role
         if ($role === 'tool') {
             return [
-                'role' => 'tool',
-                'tool_call_id' => $message['tool_call_id'],
-                'content' => $message['content'], // Already a string
+                'role' => 'user',
+                'content' => [
+                    [
+                        'type' => 'text',
+                        'text' => "Here is the result from the tool call:\n\n" . $message['content'],
+                    ]
+                ],
             ];
         }
 

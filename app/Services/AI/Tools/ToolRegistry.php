@@ -31,11 +31,11 @@ class ToolRegistry
         $name = $tool->getName();
         $this->tools[$name] = $tool;
 
-//        if ($tool instanceof MCPToolInterface) {
-//            Log::debug("Registered MCP tool: {$name}");
-//        } else {
-//            Log::debug("Registered tool: {$name}");
-//        }
+        if ($tool instanceof MCPToolInterface) {
+            Log::debug("Registered MCP tool: {$name}");
+        } else {
+            Log::debug("Registered tool: {$name}");
+        }
     }
 
     /**
@@ -94,13 +94,15 @@ class ToolRegistry
         $tool = $this->get($toolName);
 
         if (!$tool) {
-//            Log::error("Tool not found: {$toolName}");
+            $availableTools = implode(', ', array_keys($this->tools));
+            $errorMessage = "ERROR: Tool '{$toolName}' does not exist. You can ONLY use these tools: {$availableTools}. Please respond to the user's question using only the available tools or your own knowledge.";
+
             return new ToolResult(
                 toolCallId: $toolCallId,
                 toolName: $toolName,
-                result: ['error' => 'Tool not found'],
+                result: ['error' => $errorMessage],
                 success: false,
-                error: "Tool '{$toolName}' is not registered"
+                error: $errorMessage
             );
         }
 

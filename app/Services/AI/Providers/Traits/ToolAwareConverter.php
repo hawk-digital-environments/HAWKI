@@ -20,6 +20,16 @@ use Illuminate\Support\Facades\Log;
  */
 trait ToolAwareConverter
 {
+
+    public function buildTools(AiModel $model): array
+    {
+        $tools = [];
+        $tools[] = $this->buildFunctionCallTools($model);
+        $tools[] = $this->buildMCPTools($model);
+        return $tools;
+    }
+
+
     /**
      * Build tool definitions for function calling (strategy: function_call)
      *
@@ -47,12 +57,9 @@ trait ToolAwareConverter
             }
 
             $tool = $registry->get($toolName);
-//            if ($tool) {
-//                $tools[] = $tool->getDefinition();
-//                Log::debug("Added function call tool: {$toolName}");
-//            } else {
-//                Log::warning("Tool not found in registry: {$toolName}");
-//            }
+            if ($tool) {
+                $tools[] = $tool->getDefinition();
+            }
         }
 
         return $tools;
@@ -89,13 +96,13 @@ trait ToolAwareConverter
             if ($tool) {
                 // Check if MCP server is available (for MCP tools)
                 if ($tool instanceof MCPToolInterface && !$tool->isServerAvailable()) {
-                    Log::warning("MCP server not available: {$toolName}");
                     continue;
                 }
 
                 $tools[] = $tool->getDefinition();
                 Log::debug("Added MCP tool: {$toolName}");
-            } else {
+            }
+            else {
                 Log::warning("Tool not found in registry: {$toolName}");
             }
         }

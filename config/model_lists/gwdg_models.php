@@ -18,7 +18,8 @@ return [
 
             // Tool execution strategies
             'test_tool' => 'function_call',  // HAWKI orchestrates via function calling
-            'web_search' => 'mcp',
+            'rawki.web-search-tool' => 'mcp',
+            'rawki.rawki-query-search' => 'mcp',
         ],
     ],
     [

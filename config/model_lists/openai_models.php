@@ -40,7 +40,7 @@ return [
             'vision'=> 'native',
 
             'test_tool' => 'function_call',
-            'web_search' => 'mcp',
+            'web_search' => 'native',
         ],
     ],
     [

@@ -88,8 +88,21 @@ class ToolExecutionService
         // Execute tools and add results as messages
         $toolResults = $this->executeToolCalls($toolResponse->toolCalls);
 
+        Log::info('Building follow-up request with tool results', [
+            'tool_results_count' => count($toolResults),
+            'messages_before' => count($payload['messages']),
+        ]);
+
         foreach ($toolResults as $result) {
-            $payload['messages'][] = $result->toMessageFormat();
+            $messageFormat = $result->toMessageFormat();
+            $payload['messages'][] = $messageFormat;
+
+            Log::info('Added tool result message', [
+                'role' => $messageFormat['role'],
+                'tool_call_id' => $messageFormat['tool_call_id'],
+                'content_length' => strlen($messageFormat['content']),
+                'content_preview' => substr($messageFormat['content'], 0, 200),
+            ]);
         }
 
         // Mark to disable tools if requested
@@ -97,6 +110,12 @@ class ToolExecutionService
             $payload['_disable_tools'] = true;
             $payload['tools'] = [];
         }
+
+        Log::info('Follow-up request built', [
+            'total_messages' => count($payload['messages']),
+            'has_tools' => isset($payload['tools']) && !empty($payload['tools']),
+            'last_3_message_roles' => array_slice(array_column($payload['messages'], 'role'), -3),
+        ]);
 
         return new AiRequest(
             model: $originalRequest->model,

@@ -83,6 +83,20 @@ readonly class OpenAiRequestConverter
                 $tools[] = $toolDef->toOpenAiResponseFormat();
             }
 
+
+            if ($model->hasTool('web_search') && $model->getToolStrategy('web_search') === 'native') {
+                // If frontend requested websearch tool
+
+                if (array_key_exists('tools', $rawPayload) &&
+                    array_key_exists('web_search', $rawPayload['tools']) &&
+                    $rawPayload['tools']['web_search'] == true) {
+
+                    $tools[] = [
+                        "type"=> "web_search",
+                        "external_web_access"=> true
+                    ];
+                }
+            }
             if (!empty($tools)) {
                 $payload['tools'] = $tools;
             }
