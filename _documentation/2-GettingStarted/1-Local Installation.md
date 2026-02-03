@@ -178,11 +178,20 @@ then navigate to `config/model_lists/ollama_models.php` and add your model attri
 
 >Before hosting models, make sure your system has the minimum required resources.
 
+>**IMPORTANT**
+> 
+>Currently, HAWKI is configured to use Gemini models’ native web search tool. If you want to disable the Google provider, make sure to add the following environment variables to disable the default web search model:
+>``` 
+># Deactivte Google Models
+> GOOGLE_ACTIVE=false
+> # Disable Default Web Search Model
+> DEFAULT_WEBSEARCH_MODEL=""
+> ```
 
 **Authentication**
 
 in the .env file find AUTHENTICATION_METHOD variable.
-Currently, HAWKI supports LDAP, OpenID, and Shibboleth authentication services. A built-in Test User Athentication for internal testing purposes is also available.
+Currently, HAWKI supports LDAP, OpenID, and Shibboleth authentication services. A built-in Test User Authentication for internal testing purposes is also available.
 Since normally external authentication servers are not accessible from your local machine, **set the authentication method to LDAP** and enable "test user login" in order to use test users files.
 
 ```
