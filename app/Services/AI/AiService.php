@@ -145,13 +145,13 @@ readonly class AiService
                 // If this is a tool call completion, don't tell the frontend it's done yet
                 // We'll continue with follow-up requests
                 if ($response->isDone && $response->finishReason === 'tool_calls') {
-                    Log::info('Tool calls detected - masking completion', [
-                        'round' => $round,
-                        'isDone' => $response->isDone,
-                        'finishReason' => $response->finishReason,
-                        'toolCallsCount' => count($response->toolCalls),
-                        'content' => $response->content,
-                    ]);
+//                    Log::info('Tool calls detected - masking completion', [
+//                        'round' => $round,
+//                        'isDone' => $response->isDone,
+//                        'finishReason' => $response->finishReason,
+//                        'toolCallsCount' => count($response->toolCalls),
+//                        'content' => $response->content,
+//                    ]);
 
                     // Create a modified response with isDone=false for the frontend
                     $frontendResponse = new AiResponse(
@@ -168,14 +168,14 @@ readonly class AiService
                     $lastCompleteResponse = $response; // Keep the real response internally
                 } else {
                     // Normal response or final completion - send as is
-                    Log::info('Sending response to frontend', [
-                        'round' => $round,
-                        'isDone' => $response->isDone,
-                        'finishReason' => $response->finishReason,
-                        'contentLength' => strlen($response->content['text'] ?? ''),
-                        'contentPreview' => substr($response->content['text'] ?? '', 0, 100),
-                        'hasToolCalls' => !empty($response->toolCalls),
-                    ]);
+//                    Log::info('Sending response to frontend', [
+//                        'round' => $round,
+//                        'isDone' => $response->isDone,
+//                        'finishReason' => $response->finishReason,
+//                        'contentLength' => strlen($response->content['text'] ?? ''),
+//                        'contentPreview' => substr($response->content['text'] ?? '', 0, 100),
+//                        'hasToolCalls' => !empty($response->toolCalls),
+//                    ]);
 
                     $onData($response);
                     if ($response->isDone) {
@@ -193,10 +193,10 @@ readonly class AiService
                 return;
             }
 
-            Log::info('Tool execution required in stream', [
-                'round' => $round + 1,
-                'tool_count' => count($lastCompleteResponse->toolCalls),
-            ]);
+//            Log::info('Tool execution required in stream', [
+//                'round' => $round + 1,
+//                'tool_count' => count($lastCompleteResponse->toolCalls),
+//            ]);
 
             $round++;
 
@@ -220,15 +220,15 @@ readonly class AiService
                     disableTools: true
                 );
 
-                Log::info('Sending final request without tools', [
-                    'message_count' => count($currentRequest->payload['messages']),
-                    'has_tools' => isset($currentRequest->payload['tools']),
-                ]);
+//                Log::info('Sending final request without tools', [
+//                    'message_count' => count($currentRequest->payload['messages']),
+//                    'has_tools' => isset($currentRequest->payload['tools']),
+//                ]);
 
                 // Send the final request directly and return
                 $model->getClient()->sendStreamRequest($currentRequest, $onData);
 
-                Log::info('Final request completed');
+//                Log::info('Final request completed');
                 return;
             }
 
@@ -236,11 +236,11 @@ readonly class AiService
             $toolNames = array_map(fn($tc) => $tc->name, $lastCompleteResponse->toolCalls);
             $statusMsg = 'Executing ' . implode(', ', $toolNames) . '...';
 
-            Log::info('Sending status message for tool execution', [
-                'round' => $round,
-                'statusMessage' => $statusMsg,
-                'toolNames' => $toolNames,
-            ]);
+//            Log::info('Sending status message for tool execution', [
+//                'round' => $round,
+//                'statusMessage' => $statusMsg,
+//                'toolNames' => $toolNames,
+//            ]);
 
             $onData(new AiResponse(
                 content: ['text' => ''],

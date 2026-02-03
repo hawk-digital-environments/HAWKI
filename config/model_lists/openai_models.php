@@ -16,11 +16,6 @@ return [
             'stream' => 'native',
             'file_upload' => 'native',
             'vision'=> 'native',
-
-            // Tool execution strategies
-            'test_tool' => 'function_call',
-            'dice_roll' => 'mcp',      // D&D dice roller via MCP
-            'web_search' => 'mcp',     // RAWKI web search via MCP
         ],
     ],
     [
@@ -39,8 +34,10 @@ return [
             'file_upload' => 'native',
             'vision'=> 'native',
 
-            'test_tool' => 'function_call',
-            'web_search' => 'native',
+//            'test_tool' => 'function_call',
+//            'web_search' => 'native',
+            'rawki-web-search-tool' => 'bla',
+
         ],
     ],
     [

@@ -733,10 +733,9 @@ button:disabled{
     transform: translateY(-50%);
 }
 .tt-abs-up{
-    right:0;
-    bottom: calc(100% - 1.5rem);
+    top: -1.5rem;
+    right: -150%;
 }
-
 
 
 /* SECTION: EDIT BUTTONS PANEL */

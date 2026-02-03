@@ -194,6 +194,7 @@
         <div class="input-content">
 
             <div class="input-wrapper">
+                <div class="input-scroll-panel">
                 <textarea
                     class="input-field"
                     type="text"
@@ -214,24 +215,47 @@
 
                     onfocus="onInputFieldFocus(this); toggleOffRelativeInputControl(this)"
                     onfocusout="onInputFieldFocusOut(this)"></textarea>
+
+                </div>
+
+                <div class="toolkit-bar">
+
+                    <div class="buttons-bar">
+
+                        <div class="prompt-improvement-btn btn-xs tooltip-parent" onclick="requestPromptImprovement(this, 'input')">
+                            <x-icon name="vector"/>
+                            <div class="label tooltip tt-abs-up">
+                                {{ $translation["PromptImprovement"] }}
+                            </div>
+                        </div>
+
+                        <div class=" btn-xs tooltip-parent" onclick="requestPromptImprovement(this, 'input')">
+                            <x-icon name="plus"/>
+                            <div class="label tooltip tt-abs-up">
+                                {{ $translation["PromptImprovement"] }}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="tools-bar">
+
+                    </div>
+
+                </div>
+
+
+
             </div>
 
-            {{-- <div class="input-main-btn file-upload tooltip-parent">
-                <input type="file" id="file-upload-input" style="display:none;" />
-                <div class="file-upload-btn" onclick="selectFile()">
-                    <x-icon name="paperclip"/>
-                    <div class="label tooltip tt-abs-up">
-                        upload file
-                    </div>
-                </div>
-            </div> --}}
-
             <div class="input-main-btn input-send tooltip-parent">
+                <div id="send-btn"
                 @if($activeModule === 'chat')
-                    <div id="send-btn" onClick="onSendClickConv(this)">
+                    onClick="onSendClickConv(this)"
                 @elseif($activeModule === 'groupchat')
-                    <div id="send-btn" onClick="onSendClickRoom(this)">
+                    onClick="onSendClickRoom(this)"
                 @endif
+                >
                         <div id="send-icon" class="send-btn-icon" >
                             <x-icon name="arrow-up"/>
                         </div>
@@ -252,17 +276,8 @@
             </div>
 
 
-            <div class="prompt-improvement-btn tooltip-parent" onclick="requestPromptImprovement(this, 'input')">
-                <div class="input-main-btn">
-                    <x-icon name="vector"/>
-                    <div class="label tooltip tt-abs-up">
-                        {{ $translation["PromptImprovement"] }}
-                    </div>
-                </div>
-            </div>
 
         </div>
-
 
     </div>
 

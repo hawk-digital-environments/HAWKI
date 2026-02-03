@@ -74,6 +74,10 @@ class HomeController extends Controller
         Session::put('last-route', 'home');
 
         $models = $this->aiService->getAvailableModels()->toArray();
+//        Log::debug($models);
+
+
+
         $webSearchAvailable = false;
 
         foreach ($models['models'] as $model) {

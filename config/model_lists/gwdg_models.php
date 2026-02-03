@@ -17,9 +17,9 @@ return [
             'file_upload' => 'native',
 
             // Tool execution strategies
-            'test_tool' => 'function_call',  // HAWKI orchestrates via function calling
-            'rawki.web-search-tool' => 'mcp',
-            'rawki.rawki-query-search' => 'mcp',
+//            'test_tool' => 'function_call',  // HAWKI orchestrates via function calling
+            'rawki-web-search-tool' => 'mcp',
+//            'rawki.rawki-query-search' => 'mcp',
         ],
     ],
     [

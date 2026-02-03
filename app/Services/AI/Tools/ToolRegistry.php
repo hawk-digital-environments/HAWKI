@@ -32,9 +32,9 @@ class ToolRegistry
         $this->tools[$name] = $tool;
 
         if ($tool instanceof MCPToolInterface) {
-            Log::debug("Registered MCP tool: {$name}");
+//            Log::debug("Registered MCP tool: {$name}");
         } else {
-            Log::debug("Registered tool: {$name}");
+//            Log::debug("Registered tool: {$name}");
         }
     }
 
@@ -80,7 +80,7 @@ class ToolRegistry
     public function unregister(string $name): void
     {
         unset($this->tools[$name]);
-        Log::info("Unregistered tool: {$name}");
+//        Log::info("Unregistered tool: {$name}");
     }
 
     /**
@@ -107,17 +107,17 @@ class ToolRegistry
         }
 
         try {
-//            Log::debug("Executing tool: {$toolName}", [
-//                'is_mcp' => $tool instanceof MCPToolInterface,
-//                'arguments' => $arguments,
-//            ]);
+            Log::debug("Executing tool: {$toolName}", [
+                'is_mcp' => $tool instanceof MCPToolInterface,
+                'arguments' => $arguments,
+            ]);
 
             return $tool->execute($arguments, $toolCallId);
         } catch (\Exception $e) {
-//            Log::error("Tool execution failed: {$toolName}", [
-//                'error' => $e->getMessage(),
-//                'trace' => $e->getTraceAsString(),
-//            ]);
+            Log::error("Tool execution failed: {$toolName}", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return new ToolResult(
                 toolCallId: $toolCallId,

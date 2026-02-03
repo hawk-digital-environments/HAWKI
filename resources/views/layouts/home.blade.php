@@ -58,7 +58,6 @@
 </head>
 <body>
 
-
 	<div class="wrapper">
 
 		@include('partials.home.sidebar')

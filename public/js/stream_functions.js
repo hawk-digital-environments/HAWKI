@@ -229,11 +229,18 @@ async function requestPromptImprovement(sender, type) {
     if(type === 'input'){
         inputField = sender.closest('.input').querySelector('.input-field');
         prompt = inputField.value.trim();
+        if(prompt === ''){
+            return;
+        }
+
         await smoothDeleteWords(inputField, 700)
     }
     if(type === 'message'){
         message = sender.closest('.message').querySelector('.message-content');
         prompt = message.innerText.trim();
+        if(prompt === ''){
+            return;
+        }
     }
 
     const requestObject = {
