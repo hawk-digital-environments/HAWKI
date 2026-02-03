@@ -86,8 +86,9 @@ class DynamicMCPTool extends AbstractMCPTool
     {
         $serverUrl = $this->serverConfig['url'] ?? throw new \RuntimeException('MCP server URL not configured');
         $timeout = $this->serverConfig['timeout'] ?? 30;
+        $apiKey = $this->serverConfig['api_key'] ?? null;
 
-        $client = new MCPSSEClient($serverUrl, $timeout);
+        $client = new MCPSSEClient($serverUrl, $timeout, $apiKey);
         $response = $client->callTool($this->mcpToolName, $arguments);
 
         // Return the result directly, or the full response if no result field

@@ -100,7 +100,7 @@ class ListAllTools extends Command
             $definition = $tool->getDefinition();
 
             // Extract server from tool name (format: server_label.tool_name)
-            $parts = explode('.', $toolName, 2);
+            $parts = explode('-', $toolName, 2);
             $serverLabel = $parts[0] ?? 'unknown';
             $shortName = $parts[1] ?? $toolName;
 

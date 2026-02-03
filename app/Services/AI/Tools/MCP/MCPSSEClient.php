@@ -14,11 +14,13 @@ class MCPSSEClient
 {
     private string $serverUrl;
     private int $timeout;
+    private ?string $apiKey;
 
-    public function __construct(string $serverUrl, int $timeout = 30)
+    public function __construct(string $serverUrl, int $timeout = 30, ?string $apiKey = null)
     {
         $this->serverUrl = $serverUrl;
         $this->timeout = $timeout;
+        $this->apiKey = $apiKey;
     }
 
     /**
@@ -66,13 +68,22 @@ class MCPSSEClient
 //                return strlen($data);
 //            },
 //        ]);
+        // Build headers
+        $headers = [
+            'Content-Type: application/json',
+            'accept: application/json',
+        ];
+
+        // Add Authorization header if API key is provided
+        if ($this->apiKey) {
+            $headers[] = 'Authorization: Bearer ' . $this->apiKey;
+        }
+
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $jsonRequest,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-            ],
+            CURLOPT_HTTPHEADER => $headers,
             CURLOPT_TIMEOUT => $this->timeout,
         ]);
 

@@ -146,7 +146,8 @@ class ToolServiceProvider extends ServiceProvider
                 }
 
                 $timeout = $serverConfig['discovery_timeout'] ?? 5;
-                $client = new MCPSSEClient($serverUrl, $timeout);
+                $apiKey = $serverConfig['api_key'] ?? null;
+                $client = new MCPSSEClient($serverUrl, $timeout, $apiKey);
 
                 // Check server availability
                 if (!$client->isAvailable()) {
@@ -173,7 +174,7 @@ class ToolServiceProvider extends ServiceProvider
                     }
 
                     // Prefix tool name with server label to avoid conflicts
-                    $toolName = "{$serverLabel}.{$mcpToolName}";
+                    $toolName = "{$serverLabel}-{$mcpToolName}";
 
                     $discoveredTools[] = [
                         'name' => $toolName,

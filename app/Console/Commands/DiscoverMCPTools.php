@@ -60,7 +60,8 @@ class DiscoverMCPTools extends Command
 
             try {
                 $timeout = $serverConfig['discovery_timeout'] ?? 5;
-                $client = new MCPSSEClient($serverUrl, $timeout);
+                $apiKey = $serverConfig['api_key'] ?? null;
+                $client = new MCPSSEClient($serverUrl, $timeout, $apiKey);
 
                 // Check server availability
                 if (!$client->isAvailable()) {
@@ -84,7 +85,7 @@ class DiscoverMCPTools extends Command
 
                 foreach ($tools as $toolInfo) {
                     $toolName = $toolInfo['name'] ?? 'unknown';
-                    $prefixedName = "{$serverLabel}.{$toolName}";
+                    $prefixedName = "{$serverLabel}-{$toolName}";
                     $description = $toolInfo['description'] ?? 'No description';
 
                     $this->line("    • <fg=cyan>{$prefixedName}</> - {$description}");

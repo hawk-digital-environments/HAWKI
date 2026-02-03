@@ -42,6 +42,11 @@ return [
     | 2. (Optional) Run `php artisan tools:discover` to test connection
     | 3. Restart your application - tools are auto-registered!
     |
+    | 🔐 Authentication:
+    | - If your MCP server requires authentication, add 'api_key' parameter
+    | - The API key will be sent as: Authorization: Bearer <API_KEY>
+    | - Store API keys in .env file for security
+    |
     | Tool names are prefixed with server_label to avoid conflicts.
     | Example: "search" from "rawki_search" becomes "rawki_search.search"
     |
@@ -50,13 +55,14 @@ return [
     */
     'mcp_servers' => [
         // RAWKI MCP Server - provides web search and knowledge base tools
-        'web_search' => [
+        'rawki' => [
             'url' => env('RAWKI_MCP_SERVER_URL', 'http://localhost:8080/mcp/rawki'),
             'server_label' => 'rawki',
             'description' => 'RAWKI Web Search and Knowledge Base',
             'require_approval' => 'never',
             'timeout' => 30,  // Timeout for tool execution (seconds)
             'discovery_timeout' => 5,  // Timeout for tool discovery (seconds)
+            'api_key' => env('RAWKI_MCP_API_KEY'),  // Optional: API key for authentication
         ],
 
         // Example: Add another MCP server
@@ -67,6 +73,7 @@ return [
         //     'require_approval' => 'never',
         //     'timeout' => 30,
         //     'discovery_timeout' => 5,
+        //     'api_key' => env('MY_MCP_API_KEY'),  // Optional: API key for authentication
         // ],
     ],
 
