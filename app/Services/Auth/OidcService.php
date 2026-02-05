@@ -61,7 +61,7 @@ readonly class OidcService implements AuthServiceInterface, AuthServiceWithLogou
         $oidc->addScope($this->scopes);
 
         // Set PKCE method if configured
-        if (!empty($this->pkceMethod)) {
+        if ($this->pkceMethod !== null) {
             $oidc->setCodeChallengeMethod($this->pkceMethod);
         }
 
