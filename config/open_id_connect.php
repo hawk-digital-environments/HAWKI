@@ -32,7 +32,7 @@ return [
     /**
      * The code challenge method for PKCE (Proof Key for Code Exchange).
      * PKCE adds an additional layer of security to the OAuth2 authorization code flow.
-     * Supported values: 'S256' (SHA-256) or 'plain' (not recommended).
+     * Set to 'S256' to enable PKCE with SHA-256 hashing (recommended).
      * Set to null to disable PKCE (default behavior).
      * Example: 'S256'
      */

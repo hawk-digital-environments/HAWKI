@@ -62,6 +62,9 @@ readonly class OidcService implements AuthServiceInterface, AuthServiceWithLogou
 
         // Set PKCE method if configured
         if ($this->pkceMethod !== null) {
+            if ($this->pkceMethod !== 'S256') {
+                $this->logger->warning("OIDC: PKCE method '{$this->pkceMethod}' is configured. Only 'S256' is recommended for security.");
+            }
             $oidc->setCodeChallengeMethod($this->pkceMethod);
         }
 
