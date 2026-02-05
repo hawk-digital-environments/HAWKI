@@ -47,17 +47,6 @@
                     </button>
                 @endif
 
-                @if($webSearchAvailable)
-                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)">
-                    <x-icon class="websearch-icon" name="world"/>
-                    <div class="tooltip">
-                        {{ $translation["WebSearch"] }}
-                    </div>
-                </button>
-                @endif
-
-
-
                 <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
                     <x-icon name="paperclip"/>
                     <div class="tooltip">
@@ -229,13 +218,14 @@
                             </div>
                         </div>
 
-                        <div class=" btn-xs tooltip-parent" onclick="requestPromptImprovement(this, 'input')">
+                        <div id="tool-selection-btn" class="btn-xs tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true)">
                             <x-icon name="plus"/>
                             <div class="label tooltip tt-abs-up">
-                                {{ $translation["PromptImprovement"] }}
+{{--                                TODO: Add translation--}}
+                                Add Tool
                             </div>
+                            @include('partials.home.components.tools-list')
                         </div>
-
                     </div>
 
                     <div class="tools-bar">

@@ -173,3 +173,70 @@ function showFeedbackMsg(inputfield, type, message) {
         feedbackEl.dataset.type = null
     }, 5000);
 }
+
+
+
+
+function onToolBtn(sender){
+    if(sender.classList.contains('active')){
+        deactivateTool(sender)
+    }
+    else{
+        activateTool(sender);
+    }
+
+}
+
+
+// Activate a tool in an inputfield
+function activateTool(sender){
+
+    const input = sender.closest('.input');
+    const tool = sender.dataset.reference;
+
+    const success = addInputFilter(input.id, tool);
+    if(!success){
+        return;
+    }
+
+    const selector = input.querySelector(
+        `.tool-selection-panel .tool-selector[data-reference="${tool}"]`
+    );
+
+    selector?.classList.add('active');
+
+    const toolsBar = sender.closest('.toolkit-bar').querySelector('.tools-bar');
+    const temp = document.getElementById('active-tool-icon-template');
+    const clone = document.importNode(temp.content, true);
+    const activeIcon = clone.querySelector('.active-tool-icon');
+    activeIcon.querySelector('.label').innerText = sender.dataset.label;
+    activeIcon.querySelector('.remove-btn').addEventListener('click', function(){
+        deactivateTool(activeIcon);
+    })
+    activeIcon.dataset.reference = tool;
+    toolsBar.appendChild(activeIcon);
+
+
+
+}
+function deactivateTool(sender) {
+    const input = sender.closest('.input');
+    const tool = sender.dataset.reference;
+
+    // remove toolbar icon
+    const activeIcon = input
+        .querySelector('.tools-bar')
+        ?.querySelector(`[data-reference="${tool}"]`);
+
+    activeIcon?.remove();
+
+    // deactivate selector
+    const selector = input.querySelector(
+        `.tool-selection-panel .tool-selector[data-reference="${tool}"]`
+    );
+
+    selector?.classList.remove('active');
+
+    removeInputFilter(input.id, tool);
+}
+

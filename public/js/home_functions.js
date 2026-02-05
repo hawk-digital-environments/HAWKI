@@ -154,7 +154,7 @@ document.addEventListener('click', function(event) {
 
 
 
-function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false){
+function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = false){
     let menu;
     if(isRelativeToElement){
         menu = sender.parentElement.querySelector(`#${id}`)

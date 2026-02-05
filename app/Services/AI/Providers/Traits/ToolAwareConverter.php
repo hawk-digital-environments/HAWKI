@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\Services\AI\Providers\Traits;
 
-use App\Services\AI\Tools\Enums\ExecutionStrategy;
 use App\Services\AI\Tools\Interfaces\MCPToolInterface;
 use App\Services\AI\Tools\ToolRegistry;
 use App\Services\AI\Value\AiModel;
@@ -12,102 +11,88 @@ use Illuminate\Support\Facades\Log;
 /**
  * Tool-Aware Converter Trait
  *
- * Provides methods to build tool definitions and MCP server configurations
- * based on model configuration and execution strategies.
- *
- * Replaces the old CapabilityAwareConverter approach with a simpler,
- * config-driven system.
+ * Provides methods to build tool definitions based on model configuration.
+ * Supports:
+ * - Native capabilities: 'capability' => true (model handles natively)
+ * - Tool-based capabilities: 'capability' => 'tool-name' (project handles via tools)
  */
 trait ToolAwareConverter
 {
-
-    public function buildTools(AiModel $model): array
+    /**
+     * Build all tool definitions for the model
+     *
+     * Iterates through model capabilities and builds tool definitions
+     * for non-native capabilities.
+     *
+     * Logic:
+     * - If value is true/'native' → Skip (model handles it)
+     * - If value is false → Skip (not supported)
+     * - If value is string → Look up tool and add definition
+     *
+     * @param AiModel $model The model to build tools for
+     * @return array Array of ToolDefinition objects
+     */
+    protected function buildAllTools(AiModel $model): array
     {
         $tools = [];
-        $tools[] = $this->buildFunctionCallTools($model);
-        $tools[] = $this->buildMCPTools($model);
+        $modelTools = $model->getTools();
+        $registry = app(ToolRegistry::class);
+
+        foreach ($modelTools as $capability => $value) {
+            // Skip native capabilities (bool or 'native' string)
+            if ($value === true || $value === 'native') {
+                continue;
+            }
+
+            // Skip disabled capabilities
+            if ($value === false) {
+                continue;
+            }
+
+            // Value should be a tool name
+            if (!is_string($value)) {
+                Log::warning("Invalid tool value for capability '{$capability}': " . gettype($value));
+                continue;
+            }
+
+            $toolName = $value;
+
+            // Get tool from registry
+            $tool = $registry->get($toolName);
+            if (!$tool) {
+                Log::warning("Tool '{$toolName}' not found in registry for capability '{$capability}'");
+                continue;
+            }
+
+            // Check if MCP server is available (for MCP tools)
+            if ($tool instanceof MCPToolInterface && !$tool->isServerAvailable()) {
+                Log::warning("MCP server not available for tool: {$toolName}");
+                continue;
+            }
+
+            $tools[] = $tool->getDefinition();
+            Log::debug("Added tool for capability '{$capability}': {$toolName}");
+        }
+
         return $tools;
     }
 
-
     /**
-     * Build tool definitions for function calling (strategy: function_call)
-     *
-     * Returns tools that should be added to the model's request payload
-     * for function calling execution.
-     *
-     * @param AiModel $model The model to build tools for
-     * @return array Array of tool definitions in the provider's format
+     * Build tool definitions for function calling
+     * @deprecated Use buildAllTools() instead
      */
     protected function buildFunctionCallTools(AiModel $model): array
     {
-        $tools = [];
-        $modelTools = $model->getTools();
-        $registry = app(ToolRegistry::class);
-
-        foreach ($modelTools as $toolName => $strategy) {
-            // Skip basic features (deprecated boolean values)
-            if (is_bool($strategy)) {
-                continue;
-            }
-
-            // Only include tools with function_call strategy
-            if ($strategy !== ExecutionStrategy::FUNCTION_CALL->value) {
-                continue;
-            }
-
-            $tool = $registry->get($toolName);
-            if ($tool) {
-                $tools[] = $tool->getDefinition();
-            }
-        }
-
-        return $tools;
+        return $this->buildAllTools($model);
     }
 
     /**
-     * Build MCP tool definitions (strategy: mcp)
-     *
-     * Returns tool definitions for MCP tools that should be sent as function tools.
-     * Laravel acts as the MCP client and orchestrates the calls.
-     *
-     * @param AiModel $model The model to build MCP tools for
-     * @return array Array of ToolDefinition objects
+     * Build MCP tool definitions
+     * @deprecated Use buildAllTools() instead
      */
     protected function buildMCPTools(AiModel $model): array
     {
-        $tools = [];
-        $modelTools = $model->getTools();
-        $registry = app(ToolRegistry::class);
-
-        foreach ($modelTools as $toolName => $strategy) {
-            // Skip basic features (deprecated boolean values)
-            if (is_bool($strategy)) {
-                continue;
-            }
-
-            // Only include tools with mcp strategy
-            if ($strategy !== ExecutionStrategy::MCP->value) {
-                continue;
-            }
-
-            $tool = $registry->get($toolName);
-
-            if ($tool) {
-                // Check if MCP server is available (for MCP tools)
-                if ($tool instanceof MCPToolInterface && !$tool->isServerAvailable()) {
-                    continue;
-                }
-
-                $tools[] = $tool->getDefinition();
-                Log::debug("Added MCP tool: {$toolName}");
-            }
-            else {
-                Log::warning("Tool not found in registry: {$toolName}");
-            }
-        }
-
-        return $tools;
+        return [];  // All tools are now built in buildAllTools()
     }
 
     /**
@@ -119,29 +104,5 @@ trait ToolAwareConverter
     protected function shouldDisableTools(array $rawPayload): bool
     {
         return $rawPayload['_disable_tools'] ?? false;
-    }
-
-    /**
-     * Check if model has any tools configured with the given strategy
-     *
-     * @param AiModel $model The model to check
-     * @param ExecutionStrategy $strategy The strategy to check for
-     * @return bool True if model has tools with this strategy
-     */
-    protected function hasToolsWithStrategy(AiModel $model, ExecutionStrategy $strategy): bool
-    {
-        $modelTools = $model->getTools();
-
-        foreach ($modelTools as $toolName => $toolStrategy) {
-            if (is_bool($toolStrategy)) {
-                continue;
-            }
-
-            if ($toolStrategy === $strategy->value) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

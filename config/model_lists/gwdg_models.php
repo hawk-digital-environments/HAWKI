@@ -12,14 +12,13 @@ return [
             "text"
         ],
         'tools' => [
-            // Basic features (@deprecated - will migrate to capabilities system)
-            'stream' => 'native',
-            'file_upload' => 'native',
+            // Native capabilities (model's built-in features)
+            'stream' => true,           // Native streaming support
+            'file_upload' => true,      // Native file upload support
 
-            // Tool execution strategies
-//            'test_tool' => 'function_call',  // HAWKI orchestrates via function calling
-            'rawki-web-search-tool' => 'mcp',
-//            'rawki.rawki-query-search' => 'mcp',
+            // Tool capabilities (capability => tool_name or true/false)
+//            'web_search' => 'rawki-web-search-tool',  // Use RAWKI web search tool
+            'knowledge_base' => 'rawki-rawki-query-search',  // Optional: RAWKI knowledge base
         ],
     ],
     [

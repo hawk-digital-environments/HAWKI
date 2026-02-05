@@ -12,10 +12,10 @@ return [
             "text"
         ],
         'tools' => [
-            // Basic features (@deprecated - will migrate to capabilities system)
-            'stream' => 'native',
-            'file_upload' => 'native',
-            'vision'=> 'native',
+            // Native capabilities
+            'stream' => true,
+            'file_upload' => true,
+            'vision'=> true,
         ],
     ],
     [
@@ -30,14 +30,13 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
-            'vision'=> 'native',
+            // Native capabilities
+            'stream' => true,
+            'file_upload' => true,
+            'vision'=> true,
 
-//            'test_tool' => 'function_call',
-//            'web_search' => 'native',
-            'rawki-web-search-tool' => 'bla',
-
+            // Tool capabilities
+            'web_search' => 'rawki-web-search-tool',
         ],
     ],
     [
@@ -74,7 +73,7 @@ return [
             'file_upload' => 'unsupported',
             'vision'=> 'unsupported',
 
-            'test_tool' => 'function_call',
+//            'test_tool' => 'function_call',
         ],
     ],
 ];

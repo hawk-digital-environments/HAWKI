@@ -43,11 +43,9 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService())->render();
-
 
         // get the first part of the path if there's a slug.
         $requestModule = explode('/', $request->path())[0];
@@ -74,23 +72,22 @@ class HomeController extends Controller
         Session::put('last-route', 'home');
 
         $models = $this->aiService->getAvailableModels()->toArray();
-//        Log::debug($models);
 
-
-
-        $webSearchAvailable = false;
-
+        $toolKit = [];
         foreach ($models['models'] as $model) {
-            if (!empty($model['tools']['web_search'])) {
-                $webSearchAvailable = true;
-                break;
+            if (!empty($model['tools']) && is_array($model['tools'])) {
+                foreach ($model['tools'] as $tool => $value) {
+                    if ($value === true || $value != 'unsupported') {
+                        $toolKit[] = $tool;
+                    }
+                }
             }
         }
+        $toolKit = array_values(array_unique($toolKit));
 
         $announcements = $announcementService->getUserAnnouncements();
 
         $converterActive = FileConverterFactory::converterActive();
-
 
         // Pass translation, authenticationMethod, and authForms to the view
         return view('modules.' . $requestModule,
@@ -102,7 +99,7 @@ class HomeController extends Controller
                             'activeModule',
                             'activeOverlay',
                             'models',
-                            'webSearchAvailable',
+                            'toolKit',
                             'announcements',
                             'converterActive',
                         ));

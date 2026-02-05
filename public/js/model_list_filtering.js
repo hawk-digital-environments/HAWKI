@@ -87,6 +87,7 @@ function refreshModelList(fieldId) {
 function addInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.add(filterName);
+    console.log(filters)
     inputFilters.set(fieldId, Array.from(filters));
     return refreshModelList(fieldId);
 }
@@ -95,6 +96,8 @@ function addInputFilter(fieldId, filterName) {
 function removeInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.delete(filterName);
+    console.log(filters)
+
     inputFilters.set(fieldId, Array.from(filters));
     return refreshModelList(fieldId);
 }
@@ -109,41 +112,73 @@ function clearInputFilters(fieldId) {
 function selectFallbackModel(fieldId) {
     const filters = inputFilters.get(fieldId) || [];
     const filteredModels = filterModels(fieldId);
-    const availableModelIds = new Set(filteredModels.map(model => model.id));
+    const availableModelIds = new Set(filteredModels.map(m => m.id));
 
-    // Define priority order for fallback selection
+    // 1️⃣ keep current model if still valid
+    if (isModelUsable(activeModel, filters, availableModelIds)) {
+        return true;
+    }
+
+    // 2️⃣ priority-based fallback
     const priorityList = [
         { filter: 'web_search', fallbackKey: 'default_web_search_model' },
         { filter: 'vision', fallbackKey: 'default_vision_model' },
         { filter: 'file_upload', fallbackKey: 'default_file_upload_model' },
-        { filter: null, fallbackKey: 'default_model' },  // default fallback
+        { filter: null, fallbackKey: 'default_model' }
     ];
 
     for (const { filter, fallbackKey } of priorityList) {
-        // If the filter is present or we're at default, consider this fallback
-        if (!filter || filters.includes(filter)) {
-            if(availableModelIds.has(activeModel.id)){
-                return true;
-            }
+        if (filter && !filters.includes(filter)) continue;
 
-            let fallbackModelId = defaultModels[fallbackKey];
+        let candidateId = defaultModels[fallbackKey];
+        let candidate = modelsList.find(m => m.id === candidateId);
 
-            if(!fallbackModelId){
-                // find a fallback to fallback model if the fallback model is empty but a capable model exists.
-                fallbackModelId = modelsList.find(m => m.tools.web_search === true).id
-            }
-
-            if (availableModelIds.has(fallbackModelId)) {
-                setModel(fallbackModelId);
-                return true;
-            }
+        if (isModelUsable(candidate, filters, availableModelIds)) {
+            setModel(candidate.id);
+            return true;
         }
     }
 
-    const input = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
-    showFeedbackMsg(input,'error', `${translation.Input_Err_FilterConflict} : ${filters.join(',  ')}`);
-    return false;
+    // 3️⃣ final fallback → first active compatible model
+    const firstAvailable = filteredModels.find(m =>
+        isModelUsable(m, filters, availableModelIds)
+    );
 
+
+    if (firstAvailable) {
+        setModel(firstAvailable.id);
+        return true;
+    }
+
+    // 4️⃣ nothing works → error
+    const input = document
+        .querySelector(`.input[id="${fieldId}"]`)
+        ?.closest('.input-container');
+
+
+    showFeedbackMsg(
+        input,
+        'error',
+        `${translation.Input_Err_FilterConflict} : ${
+            filters.map(formatFilterName).join(', ')
+        }`
+    );
+
+    return false;
+}
+
+function formatFilterName(filter) {
+    return filter
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function isModelUsable(model, filters, availableModelIds) {
+    if (!model) return false;
+    if (!model.active) return false;
+    if (!availableModelIds.has(model.id)) return false;
+
+    return isModelEligible(model, filters);
 }
 
 

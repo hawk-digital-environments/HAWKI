@@ -71,22 +71,19 @@ readonly class OpenAiRequestConverter
         if (!$disableTools) {
             $tools = [];
 
-            // Add all tools with function_call or mcp strategy
-            // Both are sent as 'function' type to OpenAI - Laravel orchestrates execution
-            // The difference is only in execution: function_call runs local code, mcp calls external server
-            $toolDefinitions = array_merge(
-                $this->buildFunctionCallTools($model),
-                $this->buildMCPTools($model)
-            );
+            // Build all tools from model capabilities
+            // Tools are sent as 'function' type to OpenAI - Laravel orchestrates execution
+            $toolDefinitions = $this->buildAllTools($model);
 
             foreach ($toolDefinitions as $toolDef) {
                 $tools[] = $toolDef->toOpenAiResponseFormat();
             }
 
 
-            if ($model->hasTool('web_search') && $model->getToolStrategy('web_search') === 'native') {
-                // If frontend requested websearch tool
-
+            // Check if model has native web_search capability
+            $webSearchValue = $model->getToolStrategy('web_search');
+            if ($webSearchValue === 'native' || $webSearchValue === true) {
+                // Model has native web search - add native tool if frontend requested it
                 if (array_key_exists('tools', $rawPayload) &&
                     array_key_exists('web_search', $rawPayload['tools']) &&
                     $rawPayload['tools']['web_search'] == true) {

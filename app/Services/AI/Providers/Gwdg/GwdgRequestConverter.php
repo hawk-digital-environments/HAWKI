@@ -51,14 +51,10 @@ readonly class GwdgRequestConverter
         $disableTools = $this->shouldDisableTools($rawPayload);
 
         if (!$disableTools) {
-            // Build all tools (function_call and mcp strategies)
+            // Build all tools from model capabilities
             // GWDG uses OpenAI Chat Completions format (NESTED structure)
-            // Laravel orchestrates both: function_call runs local code, mcp calls external servers
-            $toolDefinitions = array_merge(
-                $this->buildFunctionCallTools($model),
-                $this->buildMCPTools($model)
-            );
-            Log::debug($toolDefinitions);
+            $toolDefinitions = $this->buildAllTools($model);
+
             if (!empty($toolDefinitions)) {
                 $payload['tools'] = array_map(fn($toolDef) => [
                     'type' => 'function',
