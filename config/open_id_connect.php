@@ -29,6 +29,15 @@ return [
      */
     'oidc_scopes' => explode(',', env('OIDC_SCOPES', 'profile,email')),
 
+    /**
+     * The code challenge method for PKCE (Proof Key for Code Exchange).
+     * PKCE adds an additional layer of security to the OAuth2 authorization code flow.
+     * Set to 'S256' to enable PKCE with SHA-256 hashing (recommended).
+     * Set to null to disable PKCE (default behavior).
+     * Example: 'S256'
+     */
+    'oidc_pkce_method' => env('OIDC_PKCE_METHOD', null),
+
     'attribute_map' => [
         /**
          * The username attribute.

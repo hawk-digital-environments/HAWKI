@@ -31,6 +31,8 @@ readonly class OidcService implements AuthServiceInterface, AuthServiceWithLogou
         private string          $clientSecret,
         #[Config('open_id_connect.oidc_scopes')]
         private array           $scopes,
+        #[Config('open_id_connect.oidc_pkce_method')]
+        private ?string         $pkceMethod,
         #[Config('open_id_connect.attribute_map.username')]
         private string          $usernameAttribute,
         #[Config('open_id_connect.attribute_map.email')]
@@ -57,6 +59,14 @@ readonly class OidcService implements AuthServiceInterface, AuthServiceWithLogou
 
         $oidc = new OpenIDConnectClient($this->idp, $this->clientId, $this->clientSecret);
         $oidc->addScope($this->scopes);
+
+        // Set PKCE method if configured
+        if ($this->pkceMethod !== null) {
+            if ($this->pkceMethod !== 'S256') {
+                $this->logger->warning("OIDC: PKCE method '{$this->pkceMethod}' is configured. Only 'S256' is recommended for security.");
+            }
+            $oidc->setCodeChallengeMethod($this->pkceMethod);
+        }
 
         try {
             // Attempt to authenticate the user
