@@ -50,11 +50,9 @@ readonly class GwdgRequestConverter
         // Add tools from capabilities if not disabled
         $disableTools = $this->shouldDisableTools($rawPayload);
 
-        if (!$disableTools) {
-            // Build all tools from model capabilities
-            // GWDG uses OpenAI Chat Completions format (NESTED structure)
-            $toolDefinitions = $this->buildAllTools($model);
-
+        // Build selected tools from model capabilities
+        if (!$disableTools && !empty($rawPayload['tools'])) {
+            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
             if (!empty($toolDefinitions)) {
                 $payload['tools'] = array_map(fn($toolDef) => [
                     'type' => 'function',

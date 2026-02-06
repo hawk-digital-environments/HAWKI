@@ -1541,10 +1541,11 @@
 .toolkit-bar{
     position: relative;
     direction: ltr;
-    padding: 0.25rem 1rem;
+    padding: 0.5rem 1rem;
     display: grid;
     grid-template-columns: auto 1fr;
     grid-gap: 1rem;
+    z-index: 1;
 }
 
 
@@ -1606,12 +1607,16 @@
     padding-right: 0;
     stroke: var(--accent-color);
 }
-
+.active-tool-icon .label{
+    padding-top: .1rem;
+    line-height: 1rem;
+}
 
 
 .buttons-bar{
     display: flex;
     flex-direction: row;
+    z-index: 2;
 }
 
 

@@ -114,12 +114,10 @@ async function onSendMessageToRoom(inputField) {
         const aiKeyRaw = await exportSymmetricKey(aiKey);
         const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
 
-        const webSearchBtn = inputField.closest('.input-container').querySelector('#websearch-btn') ?? null;
-        const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
-
-        const tools = {
-            'web_search': webSearchActive
-        }
+        const tools = input
+            ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
+                tog => tog.dataset.reference
+            ): [];
 
         const msgAttributes = {
             'threadIndex': activeThreadIndex,

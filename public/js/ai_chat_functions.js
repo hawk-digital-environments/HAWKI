@@ -63,11 +63,11 @@ function onSendClickConv(btn){
 // SEND MESSAGE FUNCTION
 async function sendMessageConv(inputField) {
     // block empty input field.
-    if (inputField.value.trim() == "") {
+    if (inputField.value.trim() === "") {
         return;
     }
     const input = inputField.closest('.input');
-    inputText = String(escapeHTML(inputField.value.trim()));
+    let inputText = String(escapeHTML(inputField.value.trim()));
 
     setSendBtnStatus(SendBtnStatus.LOADING);
 
@@ -121,12 +121,10 @@ async function sendMessageConv(inputField) {
     messageElement.dataset.rawMsg = submissionData.content.text;
     scrollToLast(true, messageElement);
 
-    const webSearchBtn = inputField.closest('.input-container').querySelector('#websearch-btn') ?? null;
-    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
-
-    const tools = {
-        'web_search': webSearchActive
-    }
+    const tools = input
+        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
+            tog => tog.dataset.reference
+        ): [];
 
     const msgAttributes = {
         'threadIndex': activeThreadIndex,

@@ -152,14 +152,6 @@ class AiModel implements JsonSerializable
      * Tools are typically used to extend the model's capabilities,
      * like RAG, MCP, or other specialized functions.
      *
-     * Format:
-     * [
-     *     'stream' => 'native',           // Basic feature
-     *     'file_upload' => 'native',      // Basic feature
-     *     'test_tool' => 'function_call', // Tool with execution strategy
-     *     'dice_roll' => 'mcp',           // MCP tool
-     * ]
-     *
      * @return array
      */
     public function getTools(): array

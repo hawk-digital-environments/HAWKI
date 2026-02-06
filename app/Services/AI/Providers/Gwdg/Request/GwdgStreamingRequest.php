@@ -26,7 +26,7 @@ class GwdgStreamingRequest extends AbstractRequest
     public function execute(AiModel $model): void
     {
         $this->accumulatedToolCalls = [];
-        \Log::info('GwdgStreamingRequest starting execution');
+//        \Log::info('GwdgStreamingRequest starting execution');
 //        \Log::debug($this->payload);
 
         $this->executeStreamingRequest(
@@ -35,7 +35,7 @@ class GwdgStreamingRequest extends AbstractRequest
             onData: $this->onData,
             chunkToResponse: fn(AiModel $m, string $chunk) => $this->chunkToResponse($m, $chunk)
         );
-        \Log::info('GwdgStreamingRequest execution completed');
+//        \Log::info('GwdgStreamingRequest execution completed');
     }
 
     protected function chunkToResponse(AiModel $model, string $chunk): AiResponse

@@ -36,7 +36,7 @@ return [
             'vision'=> true,
 
             // Tool capabilities
-            'web_search' => 'rawki-web-search-tool',
+            'web_search' => 'native',
         ],
     ],
     [
@@ -51,10 +51,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'unsupported',
-            'vision'=> 'native',
-
+            'stream' => true,
+            'file_upload' => false,
+            'vision'=> false,
         ],
     ],
     [
@@ -69,11 +68,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'unsupported',
-            'vision'=> 'unsupported',
-
-//            'test_tool' => 'function_call',
+            'stream' => true,
+            'file_upload' => false,
+            'vision'=> false,
         ],
     ],
 ];

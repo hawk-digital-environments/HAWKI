@@ -21,75 +21,93 @@ readonly class OllamaRequestConverter
     )
     {
     }
-    
+
     public function convertRequestToPayload(AiRequest $request): array
     {
         $rawPayload = $request->payload;
         $model = $request->model;
         $messages = $rawPayload['messages'];
         $modelId = $rawPayload['model'];
-        
+
         // Handle special cases for specific models
         $messages = $this->handleModelSpecificFormatting($modelId, $messages);
-        
+
         // Load and attach attachment models if any
         $attachmentsMap = $this->attachmentFinder->findAttachmentsOfMessages($messages);
-        
+
         // Format messages for Ollama
         $formattedMessages = [];
         foreach ($messages as $message) {
             $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $model);
         }
-        
+
         // Build payload with common parameters
-        return [
+        $payload = [
             'model' => $modelId,
             'messages' => $formattedMessages,
             'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
+
+        // Add tools from capabilities if not disabled
+        $disableTools = $this->shouldDisableTools($rawPayload);
+
+        // Build selected tools from model capabilities
+        if (!$disableTools && !empty($rawPayload['tools'])) {
+            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
+            if (!empty($toolDefinitions)) {
+                $payload['tools'] = array_map(fn($toolDef) => [
+                    'type' => 'function',
+                    'function' => $toolDef->toOpenAiChatFormat(),
+                ], $toolDefinitions);
+            }
+        }
+
+        return $payload;
+
+
     }
-    
+
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
         $formatted = [
             'role' => $message['role'],
         ];
-        
+
         $content = $message['content'] ?? [];
         $text = '';
         $images = [];
-        
+
         // Add text if present
         if (!empty($content['text'])) {
             $text = $content['text'];
         }
-        
+
         // Handle attachments with permission checks
         if (!empty($content['attachments'])) {
             $this->processAttachments($content['attachments'], $attachmentsMap, $model, $text, $images);
         }
-        
+
         $formatted['content'] = $text;
-        
+
         // Add images if any were processed
         if (!empty($images)) {
             $formatted['images'] = $images;
         }
-        
+
         return $formatted;
     }
-    
+
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, string &$text, array &$images): void
     {
         $attachmentService = app(AttachmentService::class);
         $skippedAttachments = [];
-        
+
         foreach ($attachmentUuids as $uuid) {
             $attachment = $attachmentsMap[$uuid] ?? null;
             if (!$attachment) {
                 continue; // skip invalid
             }
-            
+
             switch ($attachment->type) {
                 case 'image':
                     if ($model->canProcessImage()) {
@@ -101,7 +119,7 @@ readonly class OllamaRequestConverter
                         $skippedAttachments[] = $attachment->name . ' (image not supported)';
                     }
                     break;
-                
+
                 case 'document':
                     if ($model->canProcessDocument()) {
                         $documentText = $this->processDocumentAttachment($attachment, $attachmentService);
@@ -112,20 +130,20 @@ readonly class OllamaRequestConverter
                         $skippedAttachments[] = $attachment->name . ' (file upload not supported)';
                     }
                     break;
-                
+
                 default:
                     Log::warning('Unknown attachment type: ' . $attachment->type);
                     $skippedAttachments[] = $attachment->name . ' (unsupported type)';
                     break;
             }
         }
-        
+
         // Notify about skipped attachments
         if (!empty($skippedAttachments)) {
             $text .= "\n\n[NOTE: The following attachments were not included because this model does not support them: " . implode(', ', $skippedAttachments) . "]";
         }
     }
-    
+
     private function processImageAttachment(Attachment $attachment, AttachmentService $attachmentService): ?string
     {
         try {
@@ -136,7 +154,7 @@ readonly class OllamaRequestConverter
             return null;
         }
     }
-    
+
     private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): ?string
     {
         try {
@@ -148,8 +166,8 @@ readonly class OllamaRequestConverter
             return "[ERROR: Could not process document attachment: {$attachment->name}]";
         }
     }
-    
-    
+
+
     /**
      * Handle special formatting requirements for specific models
      *
@@ -163,7 +181,7 @@ readonly class OllamaRequestConverter
         if ($modelId === 'gemma-3-27b-it' && isset($messages[0]) && $messages[0]['role'] === 'system') {
             $messages[0]['role'] = 'assistant';
         }
-        
+
         return $messages;
     }
 }

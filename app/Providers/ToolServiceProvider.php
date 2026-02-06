@@ -235,7 +235,7 @@ class ToolServiceProvider extends ServiceProvider
             // Check cache age (default: 1 hour)
             $maxAge = config('tools.mcp_cache_ttl', 3600);
             if (time() - $cached['timestamp'] > $maxAge) {
-                Log::debug('MCP tools cache expired, will rebuild');
+//                Log::debug('MCP tools cache expired, will rebuild');
                 return null;
             }
 

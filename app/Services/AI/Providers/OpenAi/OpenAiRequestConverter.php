@@ -45,9 +45,8 @@ readonly class OpenAiRequestConverter
         $payload = [
             'model' => $modelId,
             'input' => $formattedMessages,
-//            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
+            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
-        $payloadJson = json_encode($payload);
 
         // Add optional parameters if present in the raw payload
         if (isset($rawPayload['temperature'])) {
@@ -68,32 +67,25 @@ readonly class OpenAiRequestConverter
 
         // Add tools if not disabled
         $disableTools = $this->shouldDisableTools($rawPayload);
-        if (!$disableTools) {
+        if (!$disableTools && !empty($rawPayload['tools'])) {
             $tools = [];
-
-            // Build all tools from model capabilities
-            // Tools are sent as 'function' type to OpenAI - Laravel orchestrates execution
-            $toolDefinitions = $this->buildAllTools($model);
-
-            foreach ($toolDefinitions as $toolDef) {
-                $tools[] = $toolDef->toOpenAiResponseFormat();
-            }
-
 
             // Check if model has native web_search capability
             $webSearchValue = $model->getToolStrategy('web_search');
-            if ($webSearchValue === 'native' || $webSearchValue === true) {
-                // Model has native web search - add native tool if frontend requested it
-                if (array_key_exists('tools', $rawPayload) &&
-                    array_key_exists('web_search', $rawPayload['tools']) &&
-                    $rawPayload['tools']['web_search'] == true) {
-
+            if ($model->hasTool('web_search') && $webSearchValue === 'native') {
+                if (in_array('web_search', $rawPayload['tools'], true)) {
                     $tools[] = [
                         "type"=> "web_search",
                         "external_web_access"=> true
                     ];
                 }
             }
+
+            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
+            foreach ($toolDefinitions as $toolDef) {
+                $tools[] = $toolDef->toOpenAiResponseFormat();
+            }
+
             if (!empty($tools)) {
                 $payload['tools'] = $tools;
             }
@@ -103,7 +95,6 @@ readonly class OpenAiRequestConverter
             $payload["text"]["verbosity"] = "low";
             $payload["reasoning"]["effort"] = "medium";
         }
-
         return $payload;
     }
 

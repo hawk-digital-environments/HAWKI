@@ -754,19 +754,18 @@ async function regenerateMessage(messageElement, Done = null){
     messageElement.dataset.rawMsg = '';
     initializeMessageFormating();
 
-    let inputContainer;
-    if(threadIndex == 0){
-        inputContainer = document.querySelector(`.input[id="0"]`).closest('.input-container');
+    let input;
+    if(threadIndex === 0){
+        input = document.querySelector(`.input[id="0"]`);
     }
     else{
-        inputContainer = messageElement.closest('.thread').querySelector('.input-container');
+        input = messageElement.closest('.thread').querySelector('.input');
     }
-    const webSearchBtn = inputContainer.querySelector('#websearch-btn') ?? null;
-    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
 
-    const tools = {
-        'web_search': webSearchActive
-    }
+    const tools = input
+        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
+            tog => tog.dataset.reference
+        ): [];
 
     let msgAttributes = {};
     switch(activeModule){

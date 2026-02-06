@@ -107,10 +107,10 @@ class ToolRegistry
         }
 
         try {
-            Log::debug("Executing tool: {$toolName}", [
-                'is_mcp' => $tool instanceof MCPToolInterface,
-                'arguments' => $arguments,
-            ]);
+//            Log::debug("Executing tool: {$toolName}", [
+//                'is_mcp' => $tool instanceof MCPToolInterface,
+//                'arguments' => $arguments,
+//            ]);
 
             return $tool->execute($arguments, $toolCallId);
         } catch (\Exception $e) {

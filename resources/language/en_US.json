@@ -154,9 +154,14 @@
     "PH_AboutMe": "About Me...",
     "PH_ChooseName": "Choose a name",
     "PH_ChooseDescription": "Add Description",
-    "PH_SystemPrompt": "Enter your prefered system prompt",
+    "PH_SystemPrompt": "Enter your preferred system prompt",
     "PH_SearchBar": "Enter Name, Username oder E-Mail Address" ,
     "Api_Warning": "To be able to use the HAWKI language models in other applications, you can generate your own API key. To do this, send an email to your IT department, who will generate the API key for you and send it to you.",
     "UploadFile": "Upload File",
-    "Yesterday": "Yesterday"
+    "Yesterday": "Yesterday",
+
+    "Add_Tool": "Add Tool",
+    "Tool_web_search": "Web Search",
+    "Tool_knowledge_base": "HAWK-Knowledge Base"
+
 }

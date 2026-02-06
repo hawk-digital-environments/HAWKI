@@ -47,12 +47,7 @@
                     </button>
                 @endif
 
-                <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
-                    <x-icon name="paperclip"/>
-                    <div class="tooltip">
-                        {{ $translation["UploadFile"] }}
-                    </div>
-                </button>
+
 
 
             </div>
@@ -211,31 +206,31 @@
 
                     <div class="buttons-bar">
 
-                        <div class="prompt-improvement-btn btn-xs tooltip-parent" onclick="requestPromptImprovement(this, 'input')">
-                            <x-icon name="vector"/>
-                            <div class="label tooltip tt-abs-up">
-                                {{ $translation["PromptImprovement"] }}
+{{--                        <div class="prompt-improvement-btn btn-xs tooltip-parent" onclick="requestPromptImprovement(this, 'input')">--}}
+{{--                            <x-icon name="vector"/>--}}
+{{--                            <div class="label tooltip tt-abs-up">--}}
+{{--                                {{ $translation["PromptImprovement"] }}--}}
+{{--                            </div>--}}
+{{--                        </div>--}}
+                        <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
+                            <x-icon name="paperclip"/>
+                            <div class="tooltip">
+                                {{ $translation["UploadFile"] }}
                             </div>
-                        </div>
+                        </button>
 
-                        <div id="tool-selection-btn" class="btn-xs tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true)">
+
+                        <div id="tool-selection-btn" class="btn-xs tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true, false)">
                             <x-icon name="plus"/>
                             <div class="label tooltip tt-abs-up">
-{{--                                TODO: Add translation--}}
-                                Add Tool
+                                {{ $translation["Add_Tool"] }}
                             </div>
                             @include('partials.home.components.tools-list')
                         </div>
                     </div>
 
-                    <div class="tools-bar">
-
-                    </div>
-
+                    <div class="tools-bar"></div>
                 </div>
-
-
-
             </div>
 
             <div class="input-main-btn input-send tooltip-parent">

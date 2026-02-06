@@ -3,14 +3,13 @@
     @if($tool != 'stream' && $tool != 'file_upload' && $tool != 'vision')
         <button class="burger-item tool-selector"
                 data-reference="{{$tool}}"
-                data-label="{{ucwords(str_replace('_', ' ', $tool))}}"
+                data-label="{{$translation['Tool_' . $tool] }}"
                 onclick="onToolBtn(this)"
         >
             <span class="icon ">
                 <x-icon name="tool_{{$tool}}"/>
             </span>
-{{--            TODO: ADD TRANSLATION--}}
-            <span class="label">{{ucwords(str_replace('_', ' ', $tool))}}</span>
+            <span class="label">{{$translation['Tool_' . $tool] }}</span>
         </button>
     @endif
 @endforeach

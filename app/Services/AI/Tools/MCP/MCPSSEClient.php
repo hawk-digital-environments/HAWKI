@@ -111,10 +111,10 @@ class MCPSSEClient
             throw new \RuntimeException('Invalid MCP JSON response');
         }
 
-        Log::debug('MCP SSE Response', [
-            'method' => $method,
-            'response' => $response,
-        ]);
+//        Log::debug('MCP SSE Response', [
+//            'method' => $method,
+//            'response' => $response,
+//        ]);
 
         return $response;
     }

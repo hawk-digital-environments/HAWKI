@@ -154,7 +154,7 @@ document.addEventListener('click', function(event) {
 
 
 
-function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = false){
+function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = true){
     let menu;
     if(isRelativeToElement){
         menu = sender.parentElement.querySelector(`#${id}`)
@@ -180,7 +180,12 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
     sender.classList.add('active');
 
     if(toggleOnSenderClick && menu.style.display !== 'none'){
-        closeBurgerMenus(null);
+        if(closeMenuOnSelect){
+            closeBurgerMenus(null);
+        }
+        else{
+            closeBurgerMenus(menu);
+        }
     }
     else{
         menu.style.display = `block`;

@@ -71,11 +71,45 @@ trait ToolAwareConverter
             }
 
             $tools[] = $tool->getDefinition();
-            Log::debug("Added tool for capability '{$capability}': {$toolName}");
+//            Log::debug("Added tool for capability '{$capability}': {$toolName}");
         }
 
         return $tools;
     }
+
+    public function buildSelectedTools(AiModel $model, array $capabilities): array
+    {
+        $tools = [];
+        $modelTools = $model->getTools();
+        $registry = app(ToolRegistry::class);
+
+        foreach ($modelTools as $modelCapability => $toolName) {
+            if($toolName === 'native') continue;
+
+            foreach ($capabilities as $capability) {
+                if($modelCapability === $capability) {
+
+                    // Get tool from registry
+                    $tool = $registry->get($toolName);
+                    if (!$tool) {
+                        Log::warning("Tool '{$toolName}' not found in registry for capability '{$capability}'");
+                        continue;
+                    }
+
+                    // Check if MCP server is available (for MCP tools)
+                    if ($tool instanceof MCPToolInterface && !$tool->isServerAvailable()) {
+                        Log::warning("MCP server not available for tool: {$toolName}");
+                        continue;
+                    }
+
+                    $tools[] = $tool->getDefinition();
+                }
+            }
+        }
+        return $tools;
+    }
+
+
 
     /**
      * Build tool definitions for function calling

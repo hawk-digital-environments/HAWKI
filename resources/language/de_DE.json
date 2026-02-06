@@ -157,5 +157,10 @@
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
     "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
     "UploadFile": "Datei hochladen",
-    "Yesterday": "Gestern"
+    "Yesterday": "Gestern",
+
+    "Add_Tool": "Werkzeug Hinzufügen",
+    "Tool_web_search": "Websuche",
+    "Tool_knowledge_base": "HAWK-Wissen"
+
 }

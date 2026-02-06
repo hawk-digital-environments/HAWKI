@@ -78,29 +78,27 @@ readonly class GoogleRequestConverter
 
         $tools = [];
 
-        if (!$disableTools) {
+        if (!$disableTools && !empty($rawPayload['tools'])) {
             // Native Google Search (WEB_SEARCH capability)
             // Google Search only works with gemini >= 2.0
             // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
 
             // Check if model supports web_search (handles both boolean and string format)
-            if ($model->hasTool('web_search') && $model->getToolStrategy('web_search') === 'native') {
-                // If frontend requested websearch tool
-                if (array_key_exists('tools', $rawPayload) &&
-                    array_key_exists('web_search', $rawPayload['tools']) &&
-                    $rawPayload['tools']['web_search'] == true) {
-
+            $webSearchValue = $model->getToolStrategy('web_search');
+            if ($model->hasTool('web_search') && $webSearchValue === 'native') {
+                if (in_array('web_search', $rawPayload['tools'], true)) {
                     $tools[] = ["google_search" => new \stdClass()];
                 }
-            } else {
-                // Fallback: websearch always on
-                $tools[] = ["google_search" => new \stdClass()];
             }
 
             // TODO: Add custom function calling support for Google Gemini
             // Google may not support custom function tools or MCP integration yet
             // When implementing, use buildFunctionCallTools() and buildMCPTools()
             // and convert to Google's format using toGoogleFormat()
+            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
+            foreach ($toolDefinitions as $toolDef) {
+                $tools[] = $toolDef->toGoogleResponseFormat();
+            }
         }
 
         $payload['tools'] = $tools;

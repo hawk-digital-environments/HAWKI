@@ -88,21 +88,21 @@ class ToolExecutionService
         // Execute tools and add results as messages
         $toolResults = $this->executeToolCalls($toolResponse->toolCalls);
 
-        Log::info('Building follow-up request with tool results', [
-            'tool_results_count' => count($toolResults),
-            'messages_before' => count($payload['messages']),
-        ]);
+//        Log::info('Building follow-up request with tool results', [
+//            'tool_results_count' => count($toolResults),
+//            'messages_before' => count($payload['messages']),
+//        ]);
 
         foreach ($toolResults as $result) {
             $messageFormat = $result->toMessageFormat();
             $payload['messages'][] = $messageFormat;
 
-            Log::info('Added tool result message', [
-                'role' => $messageFormat['role'],
-                'tool_call_id' => $messageFormat['tool_call_id'],
-                'content_length' => strlen($messageFormat['content']),
-                'content_preview' => substr($messageFormat['content'], 0, 200),
-            ]);
+//            Log::info('Added tool result message', [
+//                'role' => $messageFormat['role'],
+//                'tool_call_id' => $messageFormat['tool_call_id'],
+//                'content_length' => strlen($messageFormat['content']),
+//                'content_preview' => substr($messageFormat['content'], 0, 200),
+//            ]);
         }
 
         // Mark to disable tools if requested

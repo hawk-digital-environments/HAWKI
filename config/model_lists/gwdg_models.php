@@ -12,13 +12,12 @@ return [
             "text"
         ],
         'tools' => [
-            // Native capabilities (model's built-in features)
-            'stream' => true,           // Native streaming support
-            'file_upload' => true,      // Native file upload support
 
-            // Tool capabilities (capability => tool_name or true/false)
-//            'web_search' => 'rawki-web-search-tool',  // Use RAWKI web search tool
-            'knowledge_base' => 'rawki-rawki-query-search',  // Optional: RAWKI knowledge base
+            'stream' => true,
+            'file_upload' => true,
+
+            'web_search' => 'rawki-web-search-tool',
+            'knowledge_base' => 'rawki-rawki-query-search',
         ],
     ],
     [
@@ -33,9 +32,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
-            'vision' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
+            'vision' => true,
         ],
     ],
     [
@@ -50,8 +49,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -66,8 +65,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -81,8 +80,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -98,9 +97,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
-            'vision' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
+            'vision' => true,
         ],
     ],
     [
@@ -115,9 +114,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
-            'vision' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
+            'vision' => true,
         ],
     ],
     [
@@ -132,8 +131,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -148,8 +147,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -164,8 +163,8 @@ return [
             "thought"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -179,8 +178,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -194,8 +193,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -210,9 +209,9 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
-            'vision' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
+            'vision' => true,
         ],
     ],
     [
@@ -226,8 +225,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -241,8 +240,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -257,8 +256,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
     [
@@ -273,8 +272,8 @@ return [
             "text"
         ],
         'tools' => [
-            'stream' => 'native',
-            'file_upload' => 'native',
+            'stream' => true,
+            'file_upload' =>true,
         ],
     ],
 ];
