@@ -220,10 +220,10 @@ Route::middleware(['prevent_back', 'app_access:declined'])->group(function () {
     // Routes for external apps
     Route::middleware(['external_access:enabled,apps', 'app_access:declined'])
         ->group(static function () {
-            Route::get('/proxy/app-logo/{app_id}', [ExtAppController::class, 'appLogoProxy'])
+            Route::get('/proxy/ext-app-logo/{app_id}', [ExtAppController::class, 'appLogoProxy'])
                 ->name('apps.logo');
 
-            Route::group(['prefix' => 'apps'], static function () {
+            Route::group(['prefix' => 'ext-apps'], static function () {
                 Route::group(['prefix' => 'connect'], static function () {
                     Route::middleware(['auth', 'expiry_check', 'app_user_request_required'])->group(static function () {
                         Route::get('/confirm', [ExtAppController::class, 'confirmAppConnectRequest'])->name('web.apps.confirm');

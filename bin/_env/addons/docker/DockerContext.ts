@@ -3,15 +3,7 @@ import {promisify} from 'util';
 import {exec, execSync} from 'node:child_process';
 import {confirm, select} from '@inquirer/prompts';
 import process from 'node:process';
-import {
-    executeCommand,
-    type ExecuteCommandOptions,
-    type ExecuteCommandResult,
-    type InteractiveCommandResult,
-    type InteractiveExecuteCommandOptions,
-    type NonInteractiveCommandResult,
-    type NonInteractiveExecuteCommandOptions
-} from '@/executeCommand.ts';
+import {executeCommand, type ExecuteCommandOptions, type ExecuteCommandResult, type InteractiveCommandResult, type InteractiveExecuteCommandOptions, type NonInteractiveCommandResult, type NonInteractiveExecuteCommandOptions} from '@/executeCommand.ts';
 import chalk from 'chalk';
 
 const execAsync = promisify(exec);
@@ -263,7 +255,7 @@ export class DockerContext {
             const dockerExecutable = await this.getDockerExecutable();
             const composeVersionResult = await execAsync(`${dockerExecutable} compose version`);
 
-            if (composeVersionResult.stdout.includes('v2')) {
+            if (composeVersionResult.stdout.includes('version v')) {
                 const dockerCompose = 'docker compose';
                 this._dockerComposeExecutable = dockerCompose;
                 return dockerCompose;
