@@ -141,9 +141,9 @@ COPY docker/php/config/php.common.ini /usr/local/etc/php/conf.d/zzz.app.common.i
 COPY docker/php/config/php.prod.ini /usr/local/etc/php/conf.d/zzz.app.prod.ini
 COPY docker/php/config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-COPY --chown=1000:1000 --chmod=+x docker/php/bin /user/bin/app
+COPY --chown=1000:1000 --chmod=+x docker/php/bin /usr/bin/app
 
-ENTRYPOINT ["/user/bin/app/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/app/entrypoint.sh"]
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 
 # -----------------------------------------------------
@@ -193,7 +193,7 @@ RUN groupdel -f www-data || true && \
     echo "www-data ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/www-data && \
     chmod 0440 /etc/sudoers.d/www-data
 
-COPY --chmod=+x docker/php/php.entrypoint.dev.sh /user/bin/app/boot.local.sh
+COPY --chmod=+x docker/php/php.entrypoint.dev.sh /usr/bin/app/boot.local.sh
 COPY --chmod=+x docker/php/dev.command.sh /usr/bin/app/dev.command.sh
 
 USER www-data
@@ -226,6 +226,6 @@ RUN --mount=type=bind,from=composer:2,source=/usr/bin/composer,target=/usr/bin/c
 
 # Create the script that prepares the env variables when the container boots
 COPY docker/php/prepareEnvVariables.php /var/www/prepareEnvVariables.php
-COPY --chmod=+x docker/php/php.entrypoint.prod.sh /user/bin/app/boot.local.sh
+COPY --chmod=+x docker/php/php.entrypoint.prod.sh /usr/bin/app/boot.local.sh
 
 USER root

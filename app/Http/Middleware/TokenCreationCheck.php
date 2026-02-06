@@ -15,13 +15,13 @@ class TokenCreationCheck
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (config('sanctum.allow_user_token', false) === false) {
+        if (config('external_access.allow_user_token', false) === false) {
             return response()->json([
                 'success' => false,
                 'message' => 'Token creation by users is disabled. Please contact your administrator for API access.'
             ], 403);
         }
-        
+
         return $next($request);
     }
 }

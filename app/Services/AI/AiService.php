@@ -13,15 +13,29 @@ use App\Services\AI\Value\AiRequest;
 use App\Services\AI\Value\AiResponse;
 use App\Services\AI\Value\AvailableAiModels;
 use App\Services\AI\Value\ModelUsageType;
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 
 #[Singleton]
 readonly class AiService
 {
     public function __construct(
-        private AiFactory $factory
+        private AiFactory $factory,
+        #[Config('hawki.aiHandle')]
+        private string    $aiHandle
     )
     {
+    }
+    
+    /**
+     * Returns the handle to use for messaging an AI.
+     * The handle is a string stating with "@" followed by the AI's unique identifier, e.g. "@hawki".
+     * This is the trigger to start a conversation with the AI in chat interfaces.
+     * @return string
+     */
+    public function getAiHandle(): string
+    {
+        return '@' . ltrim($this->aiHandle, '@');
     }
     
     /**

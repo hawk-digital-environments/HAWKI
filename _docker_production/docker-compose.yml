@@ -27,7 +27,7 @@ services:
             - ./config/model_lists:/var/www/html/config/model_lists:ro
             - /var/www/html/public
         healthcheck:
-            test: cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
+            test: cgi-fcgi -bind -connect 0.0.0.0:9000 || exit 1
             interval: 10s
             timeout: 5s
             retries: 3
@@ -124,7 +124,7 @@ services:
         volumes:
             - mysql_data:/var/lib/mysql
         ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:${DB_PORT:-3306}:3306
+            - ${DOCKER_PROJECT_IP:-0.0.0.0}:${DB_PORT:-3306}:3306
         healthcheck:
             test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
             start_period: 2s
@@ -141,8 +141,8 @@ services:
         volumes_from:
             - app # This will automatically mount /var/www/html/public, so we can serve the static assets
         ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
+            - ${DOCKER_PROJECT_IP:-0.0.0.0}:80:80
+            - ${DOCKER_PROJECT_IP:-0.0.0.0}:443:443
         depends_on:
             app:
                 condition: service_healthy

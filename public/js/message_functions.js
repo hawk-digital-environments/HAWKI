@@ -1,5 +1,8 @@
 
 function addMessageToChatlog(messageObj, isFromServer = false){
+    if (typeof messageObj.content === 'string' && isValidJson(messageObj.content)) {
+        messageObj.content = JSON.parse(messageObj.content);
+    }
 
     const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
 
