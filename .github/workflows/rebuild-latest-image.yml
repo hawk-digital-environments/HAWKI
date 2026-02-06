@@ -1,0 +1,86 @@
+name: Rebuild Latest Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for the rebuild'
+        required: true
+        default: 'Hotfix for current version'
+
+permissions:
+  packages: write
+  contents: read
+  attestations: write
+  id-token: write
+
+jobs:
+  build-and-publish:
+    name: Rebuild & Publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Read version from config
+        id: get_version
+        run: |
+          # distinct from the node script, we use jq for a quick read without dependency install
+          VERSION=$(jq -r .version config/hawki_version.json)
+
+          if [ -z "$VERSION" ] || [ "$VERSION" == "null" ]; then
+            echo "Error: Could not read version from config/hawki_version.json"
+            exit 1
+          fi
+
+          echo "Detected version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          target: app_prod
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            digitalenvironments/hawki:latest
+            digitalenvironments/hawki:${{ steps.get_version.outputs.version }}
+          cache-from: type=gha,scope=${{ steps.get_version.outputs.version }}
+          cache-to: type=gha,mode=max,scope=${{ steps.get_version.outputs.version }}
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: index.docker.io/digitalenvironments/hawki
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Notify Discord (Rebuild)
+        if: success()
+        uses: ./.github/actions/setup-release-environment
+        working-directory: .github/.release
+        env:
+          INPUT_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
+          # We pass dummy values for release info as there is no new Github Release
+          INPUT_RELEASE_NAME: "Hotfix Rebuild: v${{ steps.get_version.outputs.version }}"
+          INPUT_RELEASE_BODY: "Manual rebuild triggering by workflow dispatch. Reason: ${{ inputs.reason }}"
+          INPUT_RELEASE_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          INPUT_CONTENT: "||@everyone|| ⚠️ **HAWKI v${{ steps.get_version.outputs.version }}** has been rebuilt and republished (Hotfix)."
+        run: node send-discord-notification.js
