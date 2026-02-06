@@ -27,7 +27,6 @@ jobs:
       - name: Read version from config
         id: get_version
         run: |
-          # distinct from the node script, we use jq for a quick read without dependency install
           VERSION=$(jq -r .version config/hawki_version.json)
 
           if [ -z "$VERSION" ] || [ "$VERSION" == "null" ]; then
@@ -72,13 +71,17 @@ jobs:
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
 
+      - name: Setup release environment
+        uses: ./.github/actions/setup-release-environment
+
       - name: Notify Discord (Rebuild)
         if: success()
         uses: ./.github/actions/setup-release-environment
+
+      - name: Send Discord Notification
         working-directory: .github/.release
         env:
           INPUT_WEBHOOK_URL: ${{ secrets.DISCORD_UPDATE_WEBHOOK_URL }}
-          # We pass dummy values for release info as there is no new Github Release
           INPUT_RELEASE_NAME: "Hotfix Rebuild: v${{ steps.get_version.outputs.version }}"
           INPUT_RELEASE_BODY: "Manual rebuild triggering by workflow dispatch. Reason: ${{ inputs.reason }}"
           INPUT_RELEASE_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
