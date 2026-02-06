@@ -169,9 +169,10 @@ class AuthenticationController extends Controller
         }
         Session::put('last-route', 'handshake');
 
+        $allowPaste = config('hawki.security.passkey.allow_paste', true);
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay'));
+        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay', 'allowPaste'));
 
     }
 
@@ -198,9 +199,10 @@ class AuthenticationController extends Controller
         }
         Session::put('last-route', 'register');
 
+        $allowPaste = config('hawki.security.passkey.allow_paste', true);
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay'));
+        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'allowPaste'));
     }
 
 

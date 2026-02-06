@@ -1,4 +1,4 @@
-function initializePasskeyInputs(applyCharacterLimitation = false){
+function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = true){
 
     const inputWrappers = document.querySelectorAll('.password-input-wrapper');
 
@@ -137,10 +137,14 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
         });
 
 
-        // Prevent copy/cut/paste
-        ['copy', 'cut', 'paste'].forEach(evt =>
+        // Prevent copy/cut and conditionally prevent paste
+        ['copy', 'cut'].forEach(evt =>
             input.addEventListener(evt, e => e.preventDefault())
         );
+        
+        if (!allowPaste) {
+            input.addEventListener('paste', e => e.preventDefault());
+        }
 
         // Toggle visibility (unchanged, but will read dataset.realValue)
         toggleBtn.addEventListener('click', function () {

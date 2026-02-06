@@ -23,4 +23,10 @@ return [
     ],
 
     'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
+
+    'security' => [
+        'passkey' => [
+            'allow_paste' => env('APP_SECURITY_PASSKEY_ALLOW_PASTE', true),
+        ],
+    ],
 ];
