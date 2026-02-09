@@ -139,7 +139,7 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
-        initializePasskeyInputs(true, @json($allowPaste));
+        initializePasskeyInputs(true, @json($allowPaste), @json($charLimit));
     });
 
     setTimeout(() => {

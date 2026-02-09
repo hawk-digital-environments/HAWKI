@@ -109,7 +109,7 @@
 
 
     document.addEventListener('DOMContentLoaded', function () {
-        initializePasskeyInputs(false, @json($allowPaste));
+        initializePasskeyInputs(false, @json($allowPaste), @json($charLimit));
     });
 
 
