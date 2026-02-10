@@ -23,6 +23,7 @@ class AiConvMsg extends Model
         'tag',
         'content',
         'completion',
+        'tools'
     ];
 
     // Define the relationship with AiConv
@@ -62,6 +63,7 @@ class AiConvMsg extends Model
                 ],
                 'attachments' => $this->attachmentsAsArray(),
             ],
+            'tools' => $this->tools,
             'completion' => $this->completion,
             'created_at' => $this->created_at->format('Y-m-d+H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d+H:i'),

@@ -94,6 +94,7 @@ class AiConvController extends Controller
             'isAi' => 'required|boolean',
             'threadId' => 'required|integer|min:0',
             'content' => 'required|array',
+            'tools' => 'nullable|array',
             'model' => 'string',
             'completion' => 'required|boolean',
         ]);

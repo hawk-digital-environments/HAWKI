@@ -65,6 +65,7 @@
 			@yield('content')
 		</div>
 	</div>
+    @include('partials.home.components.regenerationControls')
 
 	@include('partials.home.modals.guidelines-modal')
 	@include('partials.home.modals.add-member-modal')

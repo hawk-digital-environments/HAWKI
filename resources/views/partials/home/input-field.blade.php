@@ -56,7 +56,7 @@
                 <div id="model-selectors">
 
                     <div class="burger-dropdown anchor-top-right" id="model-selector-burger">
-                        @include('partials.home.components.models-list')
+                        @include('partials.home.components.models-list', ['selectModel' => true])
                     </div>
 
                     <div class="burger-btn-arrow burger-btn" onclick="openBurgerMenu('model-selector-burger', this, false, true, true)">
@@ -117,7 +117,7 @@
                         </div>
 
                         <div id="models_panel" class="prop-content">
-                            @include('partials.home.components.models-list')
+                            @include('partials.home.components.models-list', ['selectModel' => true])
                         </div>
 
                         <div id="export-panel" class="prop-content">

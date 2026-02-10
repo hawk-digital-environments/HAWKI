@@ -125,6 +125,7 @@ class StreamController extends Controller
                                             $hawki->avatar_id);
 
         if ($validatedData['payload']['stream']) {
+            \Log::debug($validatedData['payload']);
             // Handle streaming response
             $this->handleStreamingRequest($validatedData['payload'], $hawki, $avatar_url);
         } else {
@@ -166,22 +167,6 @@ class StreamController extends Controller
         header('Access-Control-Allow-Origin: *');
         header('X-Accel-Buffering: no');
 
-        // Send initial data to establish connection
-//        $messageData = [
-//            'author' => [
-//                'username' => $user->username,
-//                'name' => $user->name,
-//                'avatar_url' => $avatar_url,
-//            ],
-//            'model' => $payload['model'],
-//            'isDone' => false,
-//            'content' => '',
-//            'type' => 'status',
-//            'statusMessage' => 'init',
-//        ];
-//        echo json_encode($messageData) . "\n";
-//        flush();
-
         $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
 
             $this->usageAnalyzer->submitUsageRecord(
@@ -196,6 +181,7 @@ class StreamController extends Controller
                     'avatar_url' => $avatar_url,
                 ],
                 'model' => $payload['model'],
+                'tools' => $payload['tools']?? null,
                 'isDone' => $response->isDone,
                 'content' => json_encode($response->content),
                 'type' => $response->type,
