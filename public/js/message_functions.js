@@ -821,9 +821,11 @@ let regenerateState = {
     tools: new Set()
 };
 let menu;
+let regenerateButtonRef = null;
 
 function openDropDown(sender){
     menu = document.getElementById('regenerate-controls');
+    regenerateButtonRef = sender;
     const btnRect = sender.getBoundingClientRect();
 
     menu.style.top = `${btnRect.bottom}px`;
@@ -839,14 +841,27 @@ function openDropDown(sender){
     const msgElement = sender.closest(".message");
 
     regenerateState.messageElement = msgElement;
-    regenerateState.model = (msgElement.dataset.model);
-    regenerateState.tools = JSON.parse(msgElement.dataset.tools || '[]');
+    const modelId = msgElement.dataset.model;
+    const model = modelsList.find(m => m.id === modelId);
+    regenerateState.model = model || activeModel;
+    regenerateState.tools = new Set(JSON.parse(msgElement.dataset.tools || '[]'));
+
+    // Initialize regeneration filters based on current tools
+    setRegenerationFilters(Array.from(regenerateState.tools));
 
     initModelSubMenu(regenerateState.model);
     initToolSubMenu(regenerateState.tools);
 
     bindRegenerateMenuEvents();
     updateIndicators();
+
+    // Apply initial model filtering based on current tools
+    refreshModelList(null, 'regeneration');
+
+    // Add outside click listener after a small delay to prevent immediate closing
+    setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+    }, 100);
 }
 
 
@@ -873,18 +888,22 @@ function bindRegenerateMenuEvents(){
         .onclick = handleRegenerateClick;
 }
 function updateIndicators(){
-    console.log(regenerateState.model);
-    console.log(regenerateState.tools);
+    const modelId = typeof regenerateState.model === 'string' ? regenerateState.model : regenerateState.model?.id;
+    const modelLabel = typeof regenerateState.model === 'string'
+        ? modelsList.find(m => m.id === modelId)?.label || modelId
+        : regenerateState.model?.label || modelId;
+
     menu.querySelector('.reg-submenu-btn[reference="models-list"]')
-        .querySelector('.indicator').innerText = regenerateState.model;
+        .querySelector('.indicator').innerText = modelLabel || '';
     menu.querySelector('.reg-submenu-btn[reference="tools-list"]')
         .querySelector('.indicator').innerText = regenerateState.tools.size;
-
 }
 
 
-function initModelSubMenu(modelId) {
+function initModelSubMenu(model) {
     const selectors = menu.querySelectorAll('.model-selector');
+    const modelId = typeof model === 'string' ? model : model?.id;
+
     selectors.forEach(btn => {
         btn.classList.toggle(
             'active',
@@ -895,12 +914,18 @@ function initModelSubMenu(modelId) {
 function handleModelSelection(e){
     const btn = e.currentTarget;
 
+    // Prevent selecting disabled models
+    if (btn.disabled) {
+        return;
+    }
+
     btn.parentElement
         .querySelectorAll('.model-selector.active')
         .forEach(el => el.classList.remove('active'));
 
     btn.classList.add('active');
     regenerateState.model = JSON.parse(btn.value);
+    updateIndicators();
 }
 
 
@@ -921,10 +946,38 @@ function handleToolToggle(e){
 
     if (btn.classList.contains('active')) {
         regenerateState.tools.add(tool);
+        addRegenerationFilter(tool);
     } else {
         regenerateState.tools.delete(tool);
+        removeRegenerationFilter(tool);
     }
-    updateIndicators()
+
+    // Check if current model is still compatible
+    const updatedModel = refreshRegenerationModelList(regenerateState.model);
+
+    if (updatedModel && updatedModel !== regenerateState.model) {
+        // Model was changed to a fallback
+        regenerateState.model = updatedModel;
+        initModelSubMenu(updatedModel);
+    } else if (!updatedModel) {
+        // No compatible models found - revert tool selection
+        btn.classList.toggle('active');
+        if (btn.classList.contains('active')) {
+            regenerateState.tools.add(tool);
+            addRegenerationFilter(tool);
+        } else {
+            regenerateState.tools.delete(tool);
+            removeRegenerationFilter(tool);
+        }
+
+        // Show error message in menu
+        showRegenerationError(translation.Input_Err_FilterConflict || 'No compatible models available for selected tools');
+        return;
+    }
+
+    // Refresh the model list UI (enable/disable buttons)
+    refreshModelList(null, 'regeneration');
+    updateIndicators();
 }
 
 function handleRegenerateClick(){
@@ -938,9 +991,61 @@ function handleRegenerateClick(){
 
     closeRegenerateMenu();
 }
-function closeRegenerateMenu(){
+
+function showRegenerationError(message){
+    // Find or create error message element in menu
+    let errorEl = menu.querySelector('.regeneration-error');
+
+    if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.className = 'regeneration-error';
+        errorEl.style.cssText = 'color: #ff4444; padding: 8px; font-size: 12px; text-align: center;';
+        menu.querySelector('.reg-wrapper').appendChild(errorEl);
+    }
+
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        errorEl.style.display = 'none';
+    }, 3000);
+}
+
+function handleOutsideClick(event){
     const menu = document.getElementById('regenerate-controls');
-    menu.style.display = 'none';
+
+    // Check if menu is visible
+    if (!menu || menu.style.display === 'none') {
+        return;
+    }
+
+    // Check if click is outside both the menu and the regenerate button
+    const isClickInsideMenu = menu.contains(event.target);
+    const isClickOnButton = regenerateButtonRef && regenerateButtonRef.contains(event.target);
+
+    if (!isClickInsideMenu && !isClickOnButton) {
+        closeRegenerateMenu();
+    }
+}
+function closeRegenerateMenu(){
+    menu.style.opacity = '0';
+    closeAllSubMenus();
+    setTimeout(() => {
+        menu.style.display = 'none';
+    }, 150);
+
+    // Remove active state from button
+    if (regenerateButtonRef) {
+        regenerateButtonRef.classList.remove('active');
+        regenerateButtonRef = null;
+    }
+
+    // Clear regeneration filters
+    clearRegenerationFilters();
+
+    // Remove outside click listener
+    document.removeEventListener('click', handleOutsideClick);
 
     regenerateState = {
         messageElement: null,
@@ -952,7 +1057,6 @@ function closeRegenerateMenu(){
 
 
 function toggleSubMenu(id){
-    const menu = document.getElementById('regenerate-controls');
     const subMenus = menu.querySelectorAll('.sub-menu');
     subMenus.forEach((subMenu) => {
         if(subMenu.id === id && !subMenu.classList.contains('active')){
@@ -962,6 +1066,13 @@ function toggleSubMenu(id){
             handlesSubMenuToggle(subMenu, false);
         }
     })
+}
+
+function closeAllSubMenus(){
+    menu.querySelectorAll('.sub-menu').forEach((subMenu) => {
+        handlesSubMenuToggle(subMenu, false);
+    });
+
 }
 
 function handlesSubMenuToggle(menu, active){

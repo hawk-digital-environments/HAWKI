@@ -748,20 +748,14 @@
 
 
 .regenerate-controls{
-    display: block;
-    opacity: 1;
-    height: fit-content;
-    width: fit-content;
-    min-width: 10rem;
-    overflow: visible;
-
     position: absolute;
-
     display: none;
     opacity: 0;
 
-    min-width: 10rem;
-    width: fit-content;
+    width: 15rem;
+    height: fit-content;
+    overflow: visible;
+
     /* padding:  .5rem; */
     background-color: var(--background-main);
     border: var(--border-stroke-thin);
@@ -778,22 +772,33 @@
 }
 .reg-menu-item{
     display: grid;
-    grid-template-columns: 2rem 1fr 1fr 1rem;
+    grid-template-columns: 2rem minmax(0, 1fr) minmax(0, 1fr) 1rem;
     column-gap: .5rem;
     width: 100%;
+    max-width: 100%;
     align-items: center;
+    overflow: hidden;
 }
 .reg-menu-item .icon,
 .reg-menu-item .arrow{
     display: flex;
     align-items: center;
     padding: 0.1rem;
+    flex-shrink: 0;
 }
 .reg-menu-item .label{
     text-align: left;
     margin-bottom: -.2rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .reg-menu-item .indicator{
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     font-size: var(--font-xs);
     color: var(--text-faded-color);
     text-align: right;

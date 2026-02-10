@@ -10,10 +10,12 @@ const FILTER_RULES = {
 
 // === Global Filter State ===
 let inputFilters = new Map();                // Per fieldId => [user filters]
+let regenerationFilters = [];                // Temporary filters for regeneration menu
 
 
 function initModelFilter(){
     inputFilters = new Map();
+    regenerationFilters = [];
 }
 
 
@@ -60,27 +62,39 @@ function isModelEligible(model, filters) {
 }
 
 
-// === Filter Models for a Field ===
-function filterModels(fieldId) {
-    const filters = inputFilters.get(fieldId) || [];
-    return modelsList.filter(model => isModelEligible(model, filters));
+// === Filter Models for a Field or Context ===
+function filterModels(fieldId = null, filters = null) {
+    // If filters are provided directly, use them (for regeneration)
+    // Otherwise, get filters from inputFilters Map (for input fields)
+    const activeFilters = filters !== null ? filters : (inputFilters.get(fieldId) || []);
+    return modelsList.filter(model => isModelEligible(model, activeFilters));
 }
 
 // === Refresh UI: Enable/Disable model selectors ===
-function refreshModelList(fieldId) {
-    const success = selectFallbackModel(fieldId);
+function refreshModelList(fieldId, context = 'input') {
+    const success = selectFallbackModel(fieldId, context);
     if(success) {
-        const filteredModels = filterModels(fieldId);
+        const filters = context === 'regeneration' ? regenerationFilters : (inputFilters.get(fieldId) || []);
+        const filteredModels = filterModels(fieldId, filters);
         const allowedIds = new Set(filteredModels.map(m => m.id));
-        const inputCont = document.querySelector(`.input[id="${fieldId}"]`).closest('.input-container');
-        inputCont.querySelectorAll('.model-selector').forEach(button => {
-            if(button.dataset.status ==='offline'){
-                return;
-            }
-            button.disabled = !allowedIds.has(button.dataset.modelId);
-        });
+
+        let container;
+        if(context === 'regeneration') {
+            container = document.getElementById('regenerate-controls');
+        } else {
+            container = document.querySelector(`.input[id="${fieldId}"]`)?.closest('.input-container');
+        }
+
+        if(container) {
+            container.querySelectorAll('.model-selector').forEach(button => {
+                if(button.dataset.status === 'offline'){
+                    return;
+                }
+                button.disabled = !allowedIds.has(button.dataset.modelId);
+            });
+        }
     }
-    return success
+    return success;
 }
 
 // === Add Input Filter ===
@@ -108,14 +122,17 @@ function clearInputFilters(fieldId) {
     return refreshModelList(fieldId);
 }
 
-// === If the model is to capable, switch to default model ===
-function selectFallbackModel(fieldId) {
-    const filters = inputFilters.get(fieldId) || [];
-    const filteredModels = filterModels(fieldId);
+// === If the model is incapable, switch to default model ===
+function selectFallbackModel(fieldId, context = 'input', currentModel = null) {
+    const filters = context === 'regeneration' ? regenerationFilters : (inputFilters.get(fieldId) || []);
+    const filteredModels = filterModels(fieldId, filters);
     const availableModelIds = new Set(filteredModels.map(m => m.id));
 
+    // For regeneration context, use the provided currentModel; otherwise use activeModel
+    const modelToCheck = context === 'regeneration' ? currentModel : activeModel;
+
     // 1️⃣ keep current model if still valid
-    if (isModelUsable(activeModel, filters, availableModelIds)) {
+    if (isModelUsable(modelToCheck, filters, availableModelIds)) {
         return true;
     }
 
@@ -134,8 +151,12 @@ function selectFallbackModel(fieldId) {
         let candidate = modelsList.find(m => m.id === candidateId);
 
         if (isModelUsable(candidate, filters, availableModelIds)) {
-            setModel(candidate.id);
-            return true;
+            if (context === 'regeneration') {
+                return candidate; // Return the model for regeneration context
+            } else {
+                setModel(candidate.id);
+                return true;
+            }
         }
     }
 
@@ -144,25 +165,29 @@ function selectFallbackModel(fieldId) {
         isModelUsable(m, filters, availableModelIds)
     );
 
-
     if (firstAvailable) {
-        setModel(firstAvailable.id);
-        return true;
+        if (context === 'regeneration') {
+            return firstAvailable;
+        } else {
+            setModel(firstAvailable.id);
+            return true;
+        }
     }
 
     // 4️⃣ nothing works → error
-    const input = document
-        .querySelector(`.input[id="${fieldId}"]`)
-        ?.closest('.input-container');
+    if (context === 'input') {
+        const input = document
+            .querySelector(`.input[id="${fieldId}"]`)
+            ?.closest('.input-container');
 
-
-    showFeedbackMsg(
-        input,
-        'error',
-        `${translation.Input_Err_FilterConflict} : ${
-            filters.map(formatFilterName).join(', ')
-        }`
-    );
+        showFeedbackMsg(
+            input,
+            'error',
+            `${translation.Input_Err_FilterConflict} : ${
+                filters.map(formatFilterName).join(', ')
+            }`
+        );
+    }
 
     return false;
 }
@@ -209,6 +234,48 @@ function getFilterFromMime(mime){
             return 'vision';
         default:
             return null;
+    }
+}
+
+// === Regeneration-specific Functions ===
+
+// Set filters for regeneration context
+function setRegenerationFilters(tools) {
+    regenerationFilters = Array.isArray(tools) ? [...tools] : [];
+}
+
+// Add a filter to regeneration context
+function addRegenerationFilter(filterName) {
+    const filters = new Set(regenerationFilters);
+    filters.add(filterName);
+    regenerationFilters = Array.from(filters);
+}
+
+// Remove a filter from regeneration context
+function removeRegenerationFilter(filterName) {
+    const filters = new Set(regenerationFilters);
+    filters.delete(filterName);
+    regenerationFilters = Array.from(filters);
+}
+
+// Clear regeneration filters
+function clearRegenerationFilters() {
+    regenerationFilters = [];
+}
+
+// Refresh regeneration model list based on current filters
+function refreshRegenerationModelList(currentModel) {
+    const result = selectFallbackModel(null, 'regeneration', currentModel);
+
+    if (result && typeof result === 'object') {
+        // A fallback model was selected
+        return result;
+    } else if (result === true) {
+        // Current model is still valid
+        return currentModel;
+    } else {
+        // No valid models available
+        return null;
     }
 }
 
