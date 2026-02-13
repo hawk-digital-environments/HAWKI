@@ -16,7 +16,6 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     messageElement.dataset.role = messageObj.message_role;
     messageElement.dataset.rawMsg = messageText;
     if(messageObj.tools){
-
         messageElement.dataset.tools = messageObj.tools;
     }
     // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
@@ -236,10 +235,13 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 function updateMessageElement(messageElement, messageObj, updateContent = false){
 
     messageElement.id = messageObj.message_id;
+    if(messageObj.tools){
+        messageElement.dataset.tools = messageObj.tools;
+    }
+
     if(messageElement.querySelector('.thread')){
         messageElement.querySelector('.thread').id = messageObj.message_id.split('.')[0];
         messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0]
-
     }
 
     if(messageElement.classList.contains('me')){
@@ -930,12 +932,10 @@ function handleModelSelection(e){
 
 
 function initToolSubMenu(tools){
+    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('.active')});
     tools.forEach(tool => {
-        const btn = menu.querySelector(
-            `.tool-selector[data-reference="${tool}"]`
-        );
+        const btn = menu.querySelector(`.tool-selector[data-reference="${tool}"]`);
         btn.classList.add('active');
-
     });
 }
 function handleToolToggle(e){

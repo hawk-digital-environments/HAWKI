@@ -124,8 +124,8 @@ class StreamController extends Controller
                                             $hawki->username,
                                             $hawki->avatar_id);
 
+        \Log::debug($validatedData['payload']);
         if ($validatedData['payload']['stream']) {
-            \Log::debug($validatedData['payload']);
             // Handle streaming response
             $this->handleStreamingRequest($validatedData['payload'], $hawki, $avatar_url);
         } else {
@@ -144,6 +144,7 @@ class StreamController extends Controller
                 'model' => $validatedData['payload']['model'],
                 'isDone' => true,
                 'content' => json_encode($response->content),
+                'tools' => $payload['tools']?? null,
             ]);
         }
 
@@ -213,7 +214,7 @@ class StreamController extends Controller
             ]
         ];
         broadcast(new RoomMessageEvent($generationStatus));
-
+        \Log::debug('data payload ', $data['payload']);
         // Process the request
         $response = $this->aiService->sendRequest($data['payload']);
 
@@ -223,7 +224,7 @@ class StreamController extends Controller
             'group',
             $room->id
         );
-
+        \Log::debug($response->content);
         $crypto = new SymmetricCrypto();
         $encryptedData = $crypto->encrypt($response->content['text'],
                                           base64_decode($data['key']));
@@ -242,7 +243,8 @@ class StreamController extends Controller
                         'iv' => base64_encode($encryptedData->iv),
                         'tag' => base64_encode($encryptedData->tag),
                     ]
-                ]
+                ],
+                'tools' => $data['payload']['tools']?? null,
             ]);
         } else {
             $message = $messageHandler->create($room, [
@@ -256,10 +258,11 @@ class StreamController extends Controller
                         'iv' => base64_encode($encryptedData->iv),
                         'tag' => base64_encode($encryptedData->tag),
                     ]
-                ]
+                ],
+                'tools' => $data['payload']['tools']?? null,
             ]);
         }
-
+        \Log::debug($message->toArray());
 
         $broadcastObject = [
             'slug' => $room->slug,

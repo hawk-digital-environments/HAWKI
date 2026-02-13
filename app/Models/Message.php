@@ -29,6 +29,7 @@ class Message extends Model
         'iv',
         'tag',
         'content',
+        'tools',
         'reader_signs'
     ];
 
@@ -85,6 +86,8 @@ class Message extends Model
                 ],
                 'attachments' => $this->attachmentsAsArray(),
             ],
+
+            'tools' => $this->tools,
             'created_at' => $this->created_at->format('Y-m-d+H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d+H:i'),
         ];

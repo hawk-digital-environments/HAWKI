@@ -66,7 +66,8 @@ class PrivateMessageHandler extends BaseMessageHandler{
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'model' => $data['model'],
-            'completion' => $data['completion']
+            'completion' => $data['completion'],
+            'tools' => isset($data['tools']) ? json_encode($data['tools']) : null,
         ]);
 
         return $message;

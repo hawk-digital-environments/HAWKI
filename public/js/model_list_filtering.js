@@ -260,6 +260,8 @@ function removeRegenerationFilter(filterName) {
 
 // Clear regeneration filters
 function clearRegenerationFilters() {
+    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('active')});
+
     regenerationFilters = [];
 }
 
