@@ -223,7 +223,7 @@ function loadMessagesOnGUI(messages) {
     let threads = []
     messages.forEach(messageObj => {
         const addedMsg = addMessageToChatlog(messageObj, true);
-        updateMessageElement(addedMsg, messageObj);
+        updateMessageElement(addedMsg, messageObj, true);
 
 
         // Observe unread messages

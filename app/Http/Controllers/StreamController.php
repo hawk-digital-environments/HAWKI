@@ -214,7 +214,7 @@ class StreamController extends Controller
             ]
         ];
         broadcast(new RoomMessageEvent($generationStatus));
-        \Log::debug('data payload ', $data['payload']);
+
         // Process the request
         $response = $this->aiService->sendRequest($data['payload']);
 
@@ -224,9 +224,17 @@ class StreamController extends Controller
             'group',
             $room->id
         );
-        \Log::debug($response->content);
+
+        $content = $response->content;
+        if(array_key_exists('groundingMetadata', $response->content)){
+            $content = json_encode([
+                'text' => $response->content['text'],
+                'groundingMetadata' => $response->content['groundingMetadata'],
+            ]);
+        }
+
         $crypto = new SymmetricCrypto();
-        $encryptedData = $crypto->encrypt($response->content['text'],
+        $encryptedData = $crypto->encrypt($content,
                                           base64_decode($data['key']));
 
         // Store message
@@ -262,7 +270,6 @@ class StreamController extends Controller
                 'tools' => $data['payload']['tools']?? null,
             ]);
         }
-        \Log::debug($message->toArray());
 
         $broadcastObject = [
             'slug' => $room->slug,

@@ -258,7 +258,7 @@ async function handleAIMessage(messageData, slug){
         element = addMessageToChatlog(messageData, true);
         activateMessageControls(element);
     }else{
-        updateMessageElement(element, messageData);
+        updateMessageElement(element, messageData, true);
     }
 
     // Observe unread messages

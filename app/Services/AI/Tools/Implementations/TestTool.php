@@ -55,7 +55,7 @@ class TestTool extends AbstractTool
 
         // Validate count
         if ($count < 1 || $count > 5) {
-            return $this->error('Invalid count parameter: Count must be between 1 and 5', $toolCallId);
+            return $this->getErrorResult('Invalid count parameter: Count must be between 1 and 5', $toolCallId);
         }
 
         // Build response with clear instruction for the model
@@ -69,6 +69,6 @@ class TestTool extends AbstractTool
             'timestamp' => now()->toIso8601String(),
         ];
 
-        return $this->success($response, $toolCallId);
+        return $this->getSuccessResult($response, $toolCallId);
     }
 }
