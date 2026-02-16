@@ -15,6 +15,9 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     // set dataset attributes
     messageElement.dataset.role = messageObj.message_role;
     messageElement.dataset.rawMsg = messageText;
+    if(messageObj.tools){
+        messageElement.dataset.tools = messageObj.tools;
+    }
     // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
 
     //if date and time is confirmed from the server add them
@@ -232,10 +235,13 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 function updateMessageElement(messageElement, messageObj, updateContent = false){
 
     messageElement.id = messageObj.message_id;
+    if(messageObj.tools){
+        messageElement.dataset.tools = messageObj.tools;
+    }
+
     if(messageElement.querySelector('.thread')){
         messageElement.querySelector('.thread').id = messageObj.message_id.split('.')[0];
         messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0]
-
     }
 
     if(messageElement.classList.contains('me')){
@@ -733,81 +739,20 @@ async function confirmEditMessage(provider){
 //#region MSG_CTL: REGENERATE
 
 async function onRegenerateBtn(btn){
-    btn.disabled = true;
-    btn.style.opacity = '.2';
-    const messageElement = btn.closest('.message');
 
-    regenerateMessage(messageElement, async(Done)=>{
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    });
+    openDropDown(btn);
+
+
+
+    // btn.disabled = true;
+    // btn.style.opacity = '.2';
+    // const messageElement = btn.closest('.message');
+    //
+    // regenerateMessage(messageElement, async(Done)=>{
+    //     btn.disabled = false;
+    //     btn.style.opacity = '1';
+    // });
 }
-
-async function regenerateMessage(messageElement, Done = null){
-    if(!messageElement.classList.contains('AI')){
-        return;
-    }
-    const threadIndex = messageElement.closest('.thread').id;
-
-    //reset message content
-    messageElement.querySelector('.message-text').innerHTML = '';
-    messageElement.dataset.rawMsg = '';
-    initializeMessageFormating();
-
-    let input;
-    if(threadIndex === 0){
-        input = document.querySelector(`.input[id="0"]`);
-    }
-    else{
-        input = messageElement.closest('.thread').querySelector('.input');
-    }
-
-    const tools = input
-        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
-            tog => tog.dataset.reference
-        ): [];
-
-    let msgAttributes = {};
-    switch(activeModule){
-        case('chat'):
-            msgAttributes = {
-                'threadIndex': threadIndex,
-                'broadcasting': false,
-                'slug': '',
-                'regenerationElement': messageElement,
-                'stream': activeModel.tools.stream ? true : false,
-                'model': activeModel.id,
-                'tools': tools
-            }
-
-            await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
-                if(Done){
-                    Done(true);
-                }
-            });
-        break;
-        case('groupchat'):
-            const roomKey = await keychainGet(activeRoom.slug);
-            const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
-            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-            const aiKeyRaw = await exportSymmetricKey(aiKey);
-            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
-
-            msgAttributes = {
-                'threadIndex': threadIndex,
-                'broadcasting': true,
-                'slug': activeRoom.slug,
-                'key': aiKeyBase64,
-                'regenerationElement': messageElement,
-                'stream': false,
-                'model': activeModel.id,
-                'tools': tools
-            }
-            buildRequestObject(msgAttributes,  async (updatedText, done) => {});
-        break;
-    }
-}
-//#endregion
 
 //#region MSG_CTL: TTS
 
@@ -864,6 +809,346 @@ function messageReadAloud(provider) {
     };
 }
 
+
+
+//#endregion
+
+
+
+//#region Regenerate
+
+let regenerateState = {
+    messageElement: null,
+    model: null,
+    tools: new Set()
+};
+let menu;
+let regenerateButtonRef = null;
+
+function openDropDown(sender){
+    menu = document.getElementById('regenerate-controls');
+    regenerateButtonRef = sender;
+    const btnRect = sender.getBoundingClientRect();
+
+    menu.style.top = `${btnRect.bottom}px`;
+    menu.style.left = `${btnRect.left}px`;
+    sender.classList.add('active');
+    menu.style.display = `block`;
+
+    setTimeout(() => {
+        menu.style.width = `${menu.getBoundingClientRect().width + 10}px`;
+        menu.style.opacity = `1`;
+    }, 50);
+
+    const msgElement = sender.closest(".message");
+
+    regenerateState.messageElement = msgElement;
+    const modelId = msgElement.dataset.model;
+    const model = modelsList.find(m => m.id === modelId);
+    regenerateState.model = model || activeModel;
+    regenerateState.tools = new Set(JSON.parse(msgElement.dataset.tools || '[]'));
+
+    // Initialize regeneration filters based on current tools
+    setRegenerationFilters(Array.from(regenerateState.tools));
+
+    initModelSubMenu(regenerateState.model);
+    initToolSubMenu(regenerateState.tools);
+
+    bindRegenerateMenuEvents();
+    updateIndicators();
+
+    // Apply initial model filtering based on current tools
+    refreshModelList(null, 'regeneration');
+
+    // Add outside click listener after a small delay to prevent immediate closing
+    setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+    }, 100);
+}
+
+
+function bindRegenerateMenuEvents(){
+
+    menu.querySelectorAll('.reg-submenu-btn')
+        .forEach(btn => {
+            btn.onclick = () => {
+                toggleSubMenu(btn.getAttribute('reference'));
+            };
+        })
+
+    menu.querySelectorAll('.model-selector')
+        .forEach(btn => {
+            btn.onclick = handleModelSelection;
+        });
+
+    menu.querySelectorAll('.tool-selector')
+        .forEach(btn => {
+            btn.onclick = handleToolToggle;
+        });
+
+    menu.querySelector('.reg-menu-item.confirm')
+        .onclick = handleRegenerateClick;
+}
+function updateIndicators(){
+    const modelId = typeof regenerateState.model === 'string' ? regenerateState.model : regenerateState.model?.id;
+    const modelLabel = typeof regenerateState.model === 'string'
+        ? modelsList.find(m => m.id === modelId)?.label || modelId
+        : regenerateState.model?.label || modelId;
+
+    menu.querySelector('.reg-submenu-btn[reference="models-list"]')
+        .querySelector('.indicator').innerText = modelLabel || '';
+    menu.querySelector('.reg-submenu-btn[reference="tools-list"]')
+        .querySelector('.indicator').innerText = regenerateState.tools.size;
+}
+
+
+function initModelSubMenu(model) {
+    const selectors = menu.querySelectorAll('.model-selector');
+    const modelId = typeof model === 'string' ? model : model?.id;
+
+    selectors.forEach(btn => {
+        btn.classList.toggle(
+            'active',
+            btn.dataset.modelId === modelId
+        );
+    });
+}
+function handleModelSelection(e){
+    const btn = e.currentTarget;
+
+    // Prevent selecting disabled models
+    if (btn.disabled) {
+        return;
+    }
+
+    btn.parentElement
+        .querySelectorAll('.model-selector.active')
+        .forEach(el => el.classList.remove('active'));
+
+    btn.classList.add('active');
+    regenerateState.model = JSON.parse(btn.value);
+    updateIndicators();
+}
+
+
+function initToolSubMenu(tools){
+    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('.active')});
+    tools.forEach(tool => {
+        const btn = menu.querySelector(`.tool-selector[data-reference="${tool}"]`);
+        btn.classList.add('active');
+    });
+}
+function handleToolToggle(e){
+    const btn = e.currentTarget;
+    const tool = btn.dataset.reference;
+
+    btn.classList.toggle('active');
+
+    if (btn.classList.contains('active')) {
+        regenerateState.tools.add(tool);
+        addRegenerationFilter(tool);
+    } else {
+        regenerateState.tools.delete(tool);
+        removeRegenerationFilter(tool);
+    }
+
+    // Check if current model is still compatible
+    const updatedModel = refreshRegenerationModelList(regenerateState.model);
+
+    if (updatedModel && updatedModel !== regenerateState.model) {
+        // Model was changed to a fallback
+        regenerateState.model = updatedModel;
+        initModelSubMenu(updatedModel);
+    } else if (!updatedModel) {
+        // No compatible models found - revert tool selection
+        btn.classList.toggle('active');
+        if (btn.classList.contains('active')) {
+            regenerateState.tools.add(tool);
+            addRegenerationFilter(tool);
+        } else {
+            regenerateState.tools.delete(tool);
+            removeRegenerationFilter(tool);
+        }
+
+        // Show error message in menu
+        showRegenerationError(translation.Input_Err_FilterConflict || 'No compatible models available for selected tools');
+        return;
+    }
+
+    // Refresh the model list UI (enable/disable buttons)
+    refreshModelList(null, 'regeneration');
+    updateIndicators();
+}
+
+function handleRegenerateClick(){
+    const { messageElement, model, tools } = regenerateState;
+
+    regenerateMessage(
+        messageElement,
+        model,
+        Array.from(tools)
+    );
+
+    closeRegenerateMenu();
+}
+
+function showRegenerationError(message){
+    // Find or create error message element in menu
+    let errorEl = menu.querySelector('.regeneration-error');
+
+    if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.className = 'regeneration-error';
+        errorEl.style.cssText = 'color: #ff4444; padding: 8px; font-size: 12px; text-align: center;';
+        menu.querySelector('.reg-wrapper').appendChild(errorEl);
+    }
+
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        errorEl.style.display = 'none';
+    }, 3000);
+}
+
+function handleOutsideClick(event){
+    const menu = document.getElementById('regenerate-controls');
+
+    // Check if menu is visible
+    if (!menu || menu.style.display === 'none') {
+        return;
+    }
+
+    // Check if click is outside both the menu and the regenerate button
+    const isClickInsideMenu = menu.contains(event.target);
+    const isClickOnButton = regenerateButtonRef && regenerateButtonRef.contains(event.target);
+
+    if (!isClickInsideMenu && !isClickOnButton) {
+        closeRegenerateMenu();
+    }
+}
+function closeRegenerateMenu(){
+    menu.style.opacity = '0';
+    closeAllSubMenus();
+    setTimeout(() => {
+        menu.style.display = 'none';
+    }, 150);
+
+    // Remove active state from button
+    if (regenerateButtonRef) {
+        regenerateButtonRef.classList.remove('active');
+        regenerateButtonRef = null;
+    }
+
+    // Clear regeneration filters
+    clearRegenerationFilters();
+
+    // Remove outside click listener
+    document.removeEventListener('click', handleOutsideClick);
+
+    regenerateState = {
+        messageElement: null,
+        model: null,
+        tools: new Set()
+    };
+}
+
+
+
+function toggleSubMenu(id){
+    const subMenus = menu.querySelectorAll('.sub-menu');
+    subMenus.forEach((subMenu) => {
+        if(subMenu.id === id && !subMenu.classList.contains('active')){
+            handlesSubMenuToggle(subMenu, true);
+        }
+        else{
+            handlesSubMenuToggle(subMenu, false);
+        }
+    })
+}
+
+function closeAllSubMenus(){
+    menu.querySelectorAll('.sub-menu').forEach((subMenu) => {
+        handlesSubMenuToggle(subMenu, false);
+    });
+
+}
+
+function handlesSubMenuToggle(menu, active){
+    if(active){
+        menu.style.display = 'block';
+        menu.classList.add('active');
+    }
+    else{
+        menu.classList.remove('active');
+        setTimeout(()=>{
+            menu.style.display = 'none';
+        }, 300)
+    }
+}
+
+
+async function regenerateMessage(messageElement, model, tools, Done = null){
+    if(!messageElement.classList.contains('AI')){
+        return;
+    }
+    const threadIndex = messageElement.closest('.thread').id;
+
+    //reset message content
+    messageElement.querySelector('.message-text').innerHTML = '';
+    messageElement.dataset.rawMsg = '';
+    initializeMessageFormating();
+
+    let input;
+    if(threadIndex === 0){
+        input = document.querySelector(`.input[id="0"]`);
+    }
+    else{
+        input = messageElement.closest('.thread').querySelector('.input');
+    }
+
+    let msgAttributes = {};
+    switch(activeModule){
+        case('chat'):
+            msgAttributes = {
+                'threadIndex': threadIndex,
+                'broadcasting': false,
+                'slug': '',
+                'regenerationElement': messageElement,
+                'stream': !!model.tools.stream,
+                'model': model.id,
+                'tools': tools
+            }
+
+            await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
+                if(Done){
+                    Done(true);
+                }
+            });
+            break;
+        case('groupchat'):
+            const roomKey = await keychainGet(activeRoom.slug);
+            const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+            const aiKeyRaw = await exportSymmetricKey(aiKey);
+            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
+
+            msgAttributes = {
+                'threadIndex': threadIndex,
+                'broadcasting': true,
+                'slug': activeRoom.slug,
+                'key': aiKeyBase64,
+                'regenerationElement': messageElement,
+                'stream': false,
+                'model': model.id,
+                'tools': tools
+            }
+            buildRequestObject(msgAttributes,  async (updatedText, done) => {});
+            break;
+    }
+}
+//#endregion
 
 
 //#endregion

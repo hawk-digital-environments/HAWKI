@@ -16,24 +16,9 @@ use App\Services\AI\Tools\Value\ToolResult;
 abstract class AbstractTool implements ToolInterface
 {
     /**
-     * Get the tool's unique identifier
-     */
-    abstract public function getName(): string;
-
-    /**
-     * Get the tool's definition for model payload
-     */
-    abstract public function getDefinition(): ToolDefinition;
-
-    /**
-     * Execute the tool logic
-     */
-    abstract public function execute(array $arguments, string $toolCallId): ToolResult;
-
-    /**
      * Helper method to create a successful result
      */
-    protected function success(mixed $result, string $toolCallId): ToolResult
+    protected function getSuccessResult(mixed $result, string $toolCallId): ToolResult
     {
         return new ToolResult(
             toolCallId: $toolCallId,
@@ -47,7 +32,7 @@ abstract class AbstractTool implements ToolInterface
     /**
      * Helper method to create an error result
      */
-    protected function error(string $error, string $toolCallId): ToolResult
+    protected function getErrorResult(string $error, string $toolCallId): ToolResult
     {
         return new ToolResult(
             toolCallId: $toolCallId,

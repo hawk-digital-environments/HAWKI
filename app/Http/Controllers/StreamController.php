@@ -124,6 +124,7 @@ class StreamController extends Controller
                                             $hawki->username,
                                             $hawki->avatar_id);
 
+        \Log::debug($validatedData['payload']);
         if ($validatedData['payload']['stream']) {
             // Handle streaming response
             $this->handleStreamingRequest($validatedData['payload'], $hawki, $avatar_url);
@@ -143,6 +144,7 @@ class StreamController extends Controller
                 'model' => $validatedData['payload']['model'],
                 'isDone' => true,
                 'content' => json_encode($response->content),
+                'tools' => $payload['tools']?? null,
             ]);
         }
 
@@ -166,22 +168,6 @@ class StreamController extends Controller
         header('Access-Control-Allow-Origin: *');
         header('X-Accel-Buffering: no');
 
-        // Send initial data to establish connection
-//        $messageData = [
-//            'author' => [
-//                'username' => $user->username,
-//                'name' => $user->name,
-//                'avatar_url' => $avatar_url,
-//            ],
-//            'model' => $payload['model'],
-//            'isDone' => false,
-//            'content' => '',
-//            'type' => 'status',
-//            'statusMessage' => 'init',
-//        ];
-//        echo json_encode($messageData) . "\n";
-//        flush();
-
         $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
 
             $this->usageAnalyzer->submitUsageRecord(
@@ -196,6 +182,7 @@ class StreamController extends Controller
                     'avatar_url' => $avatar_url,
                 ],
                 'model' => $payload['model'],
+                'tools' => $payload['tools']?? null,
                 'isDone' => $response->isDone,
                 'content' => json_encode($response->content),
                 'type' => $response->type,
@@ -238,8 +225,16 @@ class StreamController extends Controller
             $room->id
         );
 
+        $content = $response->content;
+        if(array_key_exists('groundingMetadata', $response->content)){
+            $content = json_encode([
+                'text' => $response->content['text'],
+                'groundingMetadata' => $response->content['groundingMetadata'],
+            ]);
+        }
+
         $crypto = new SymmetricCrypto();
-        $encryptedData = $crypto->encrypt($response->content['text'],
+        $encryptedData = $crypto->encrypt($content,
                                           base64_decode($data['key']));
 
         // Store message
@@ -256,7 +251,8 @@ class StreamController extends Controller
                         'iv' => base64_encode($encryptedData->iv),
                         'tag' => base64_encode($encryptedData->tag),
                     ]
-                ]
+                ],
+                'tools' => $data['payload']['tools']?? null,
             ]);
         } else {
             $message = $messageHandler->create($room, [
@@ -270,10 +266,10 @@ class StreamController extends Controller
                         'iv' => base64_encode($encryptedData->iv),
                         'tag' => base64_encode($encryptedData->tag),
                     ]
-                ]
+                ],
+                'tools' => $data['payload']['tools']?? null,
             ]);
         }
-
 
         $broadcastObject = [
             'slug' => $room->slug,

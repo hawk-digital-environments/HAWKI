@@ -91,7 +91,6 @@ readonly class GoogleRequestConverter
                 }
             }
 
-            // TODO: Add custom function calling support for Google Gemini
             // Google may not support custom function tools or MCP integration yet
             // When implementing, use buildFunctionCallTools() and buildMCPTools()
             // and convert to Google's format using toGoogleFormat()

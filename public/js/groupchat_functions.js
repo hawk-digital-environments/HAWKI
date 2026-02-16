@@ -80,6 +80,11 @@ async function onSendMessageToRoom(inputField) {
     const roomKey = await keychainGet(activeRoom.slug);
     const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
 
+    const tools = input
+        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
+            tog => tog.dataset.reference
+        ): [];
+
     const messageObj = {
         'content': {
             "text": {
@@ -90,6 +95,8 @@ async function onSendMessageToRoom(inputField) {
             "attachments": attachments
         },
         'threadId' : activeThreadIndex,
+        'tools': tools,
+
     };
 
     const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`)
@@ -114,10 +121,7 @@ async function onSendMessageToRoom(inputField) {
         const aiKeyRaw = await exportSymmetricKey(aiKey);
         const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
 
-        const tools = input
-            ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
-                tog => tog.dataset.reference
-            ): [];
+
 
         const msgAttributes = {
             'threadIndex': activeThreadIndex,
@@ -167,6 +171,7 @@ const connectWebSocket = (roomSlug) => {
                 if(receivedPacket.type === "messageUpdate"){
                     const messageData = await requestMessageContent(receivedPacket.data.message_id,
                                                                     receivedPacket.data.slug);
+                    console.log(messageData);
                     await handleUpdateMessage(messageData, roomSlug)
                 }
 
@@ -253,7 +258,7 @@ async function handleAIMessage(messageData, slug){
         element = addMessageToChatlog(messageData, true);
         activateMessageControls(element);
     }else{
-        updateMessageElement(element, messageData);
+        updateMessageElement(element, messageData, true);
     }
 
     // Observe unread messages

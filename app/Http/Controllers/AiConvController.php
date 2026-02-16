@@ -94,6 +94,7 @@ class AiConvController extends Controller
             'isAi' => 'required|boolean',
             'threadId' => 'required|integer|min:0',
             'content' => 'required|array',
+            'tools' => 'nullable|array',
             'model' => 'string',
             'completion' => 'required|boolean',
         ]);
@@ -117,6 +118,7 @@ class AiConvController extends Controller
         $validatedData = $request->validate([
             'isAi' => 'required|boolean',
             'content' => 'required|array',
+            'tools' => 'nullable|array',
             'model' => 'nullable|string',
             'completion' => 'required|boolean',
             'message_id' => 'required|string',
@@ -128,7 +130,7 @@ class AiConvController extends Controller
         $messageData = $message->toArray();
         $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
         $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
-
+        Log::debug($messageData);
         return response()->json([
             'success' => true,
             'messageData' => $messageData,

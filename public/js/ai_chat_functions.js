@@ -125,7 +125,7 @@ async function sendMessageConv(inputField) {
         ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
             tog => tog.dataset.reference
         ): [];
-
+    console.log(tools);
     const msgAttributes = {
         'threadIndex': activeThreadIndex,
         'broadcasting': false,
@@ -166,6 +166,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.content = content;
             messageObj.completion = data.isDone;
             messageObj.model = msgAttributes['model'];
+            messageObj.tools = msgAttributes['tools'];
 
             if (!messageElement) {
                 initializeMessageFormating()
@@ -227,6 +228,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                         'tag': messageObj.tag,
                     }
                 },
+                'tools': messageObj.tools,
                 'model': messageObj.model,
                 'completion': messageObj.completion,
             }

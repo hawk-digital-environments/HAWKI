@@ -46,14 +46,14 @@ abstract class AbstractMCPTool extends AbstractTool implements MCPToolInterface
     final public function execute(array $arguments, string $toolCallId): ToolResult
     {
         if (!$this->isServerAvailable()) {
-            return $this->error('MCP server not available', $toolCallId);
+            return $this->getErrorResult('MCP server not available', $toolCallId);
         }
 
         try {
             $result = $this->executeMCP($arguments);
-            return $this->success($result, $toolCallId);
+            return $this->getSuccessResult($result, $toolCallId);
         } catch (\Exception $e) {
-            return $this->error($e->getMessage(), $toolCallId);
+            return $this->getErrorResult($e->getMessage(), $toolCallId);
         }
     }
 }
