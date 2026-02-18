@@ -124,7 +124,7 @@ class StreamController extends Controller
                                             $hawki->username,
                                             $hawki->avatar_id);
 
-        \Log::debug($validatedData['payload']);
+
         if ($validatedData['payload']['stream']) {
             // Handle streaming response
             $this->handleStreamingRequest($validatedData['payload'], $hawki, $avatar_url);
@@ -169,6 +169,8 @@ class StreamController extends Controller
         header('X-Accel-Buffering: no');
 
         $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
+
+            \Log::debug('AI Response', $response->jsonSerialize());
 
             $this->usageAnalyzer->submitUsageRecord(
                 $response->usage,

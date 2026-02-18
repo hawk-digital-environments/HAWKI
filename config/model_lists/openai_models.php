@@ -37,6 +37,8 @@ return [
 
             // Tool capabilities
             'web_search' => 'native',
+            'knowledge_base' => "hawki-rag-query-search",
+
         ],
     ],
     [

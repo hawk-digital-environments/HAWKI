@@ -155,7 +155,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             }
 
             const {messageText, groundingMetadata} = deconstContent(data.content);
-            if(groundingMetadata != ""){
+            if(groundingMetadata !== ""){
                 metadata = groundingMetadata;
             }
 
@@ -174,6 +174,12 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             }
             messageElement.dataset.rawMsg = msg;
 
+            if(data.type === "status"){
+                createStatusElement(data.statusMessage, messageElement);
+                return;
+            }
+
+
             const msgTxtElement = messageElement.querySelector(".message-text");
 
             msgTxtElement.innerHTML = formatChunk(content, groundingMetadata);
@@ -181,7 +187,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             formatHljs(messageElement);
 
             if (groundingMetadata &&
-                groundingMetadata != '' &&
+                groundingMetadata !== '' &&
                 groundingMetadata.searchEntryPoint &&
                 groundingMetadata.searchEntryPoint.renderedContent) {
 

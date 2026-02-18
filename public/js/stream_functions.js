@@ -20,7 +20,7 @@ function buildRequestObject(msgAttributes, onData) {
         key: msgAttributes['key'],
 
         payload:{
-            model: activeModel.id,
+            model: msgAttributes.model ?? activeModel.id,
             stream: stream,
             messages: msgs,
             tools: msgAttributes['tools'],

@@ -55,14 +55,14 @@ return [
     */
     'mcp_servers' => [
         // RAWKI MCP Server - provides web search and knowledge base tools
-        'rawki' => [
-            'url' => env('RAWKI_MCP_SERVER_URL', 'http://localhost:8080/mcp/rawki'),
-            'server_label' => 'rawki',
-            'description' => 'RAWKI Web Search and Knowledge Base',
+        'hawki-rag' => [
+            'url' => env('HAWKI_RAG_MCP_API_URL', 'http://localhost:8080/mcp/rawki'),
+            'server_label' => 'hawki-rag',
+            'description' => 'HAWKI Web Search and Knowledge Base',
             'require_approval' => 'never',
             'timeout' => 30,  // Timeout for tool execution (seconds)
             'discovery_timeout' => 5,  // Timeout for tool discovery (seconds)
-            'api_key' => env('RAWKI_MCP_API_KEY'),  // Optional: API key for authentication
+            'api_key' => env('HAWKI_RAG_MCP_API_KEY'),  // Optional: API key for authentication
         ],
 
         // Example: Add another MCP server

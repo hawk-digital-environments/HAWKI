@@ -105,6 +105,9 @@ readonly class OpenAiRequestConverter
     ): array {
         $role = $message['role'];
 
+
+        $instructions = 'IMPORTANT: When using the tool results, always mention the references and url as inline citation';
+
         // Handle tool result messages - Response API requires them as user messages
         if ($role === 'tool') {
             return [
@@ -112,7 +115,7 @@ readonly class OpenAiRequestConverter
                 'content' => [
                     [
                         'type' => 'input_text',
-                        'text' => 'Tool result for ' . ($message['tool_call_id'] ?? 'unknown') . ': ' . $message['content'],
+                        'text' => 'Tool result for ' . ($message['tool_call_id'] ?? 'unknown'). $instructions . ': ' . $message['content'],
                     ]
                 ],
             ];

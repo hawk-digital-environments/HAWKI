@@ -15,9 +15,6 @@ return [
 
             'stream' => true,
             'file_upload' => true,
-
-            'web_search' => 'rawki-web-search-tool',
-            'knowledge_base' => 'rawki-rawki-query-search',
         ],
     ],
     [
@@ -35,6 +32,7 @@ return [
             'stream' => true,
             'file_upload' =>true,
             'vision' => true,
+
         ],
     ],
     [
@@ -51,6 +49,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -67,6 +68,8 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
         ],
     ],
     [
@@ -82,6 +85,8 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -100,6 +105,10 @@ return [
             'stream' => true,
             'file_upload' =>true,
             'vision' => true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
+
         ],
     ],
     [
@@ -117,6 +126,10 @@ return [
             'stream' => true,
             'file_upload' =>true,
             'vision' => true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
+
         ],
     ],
     [
@@ -133,6 +146,10 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
+
         ],
     ],
     [
@@ -149,6 +166,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -165,6 +185,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -180,6 +203,10 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
+
         ],
     ],
     [
@@ -195,6 +222,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -212,6 +242,9 @@ return [
             'stream' => true,
             'file_upload' =>true,
             'vision' => true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -227,6 +260,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -242,6 +278,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -258,6 +297,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
     [
@@ -274,6 +316,9 @@ return [
         'tools' => [
             'stream' => true,
             'file_upload' =>true,
+
+            'web_search' => 'hawki-rag-web-search-tool',
+            'knowledge_base' => "hawki-rag-query-search",
         ],
     ],
 ];

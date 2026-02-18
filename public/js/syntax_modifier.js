@@ -85,8 +85,9 @@ function formatMessage(rawContent, groundingMetadata = '') {
     // Crucial: Restore preserved HTML elements before manipulating links!
     finalContent = restoreGoogleCitations(finalContent);
 
-    // Convert bare URLs to <a> where appropriate
+    // Convert bare URLs to <a> where appropriate and wrap all links in special blocks
     finalContent = convertHyperlinksToLinks(finalContent);
+    finalContent = wrapLinksInBlocks(finalContent);
 
     return finalContent;
   } catch (error) {
@@ -266,7 +267,10 @@ function convertHyperlinksToLinks(text) {
   container.innerHTML = text;
 
   const EXCLUDED_TAGS = ['a', 'pre', 'code'];
-  const URL_REGEX = /https?:\/\/[^\s<>"'`]+/g;
+  // Improved URL regex - handles URLs more robustly
+  // Matches: http:// or https:// followed by valid URL characters
+  // Excludes trailing punctuation that's likely not part of the URL
+  const URL_REGEX = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi;
   const PLACEHOLDER_REGEX = /%%HTML_PRESERVED_\d+%%/;
 
   // Process DOM tree to find and convert URLs to links
@@ -287,18 +291,22 @@ function convertHyperlinksToLinks(text) {
       }
 
       // Process text nodes containing URLs
-      if (child.nodeType === Node.TEXT_NODE && child.nodeValue && child.nodeValue.match(URL_REGEX)) {
+      if (child.nodeType === Node.TEXT_NODE && child.nodeValue) {
         // Skip text nodes containing preserved HTML
         if (PLACEHOLDER_REGEX.test(child.nodeValue)) continue;
 
+        // Test if the text contains URLs
+        const urlMatches = child.nodeValue.match(URL_REGEX);
+        if (!urlMatches) continue;
+
         const fragment = document.createDocumentFragment();
         let lastIndex = 0;
+
+        // Reset regex lastIndex
+        URL_REGEX.lastIndex = 0;
         let match;
 
-        // Create a new regex instance for each execution to avoid lastIndex issues
-        const regex = new RegExp(URL_REGEX);
-
-        while ((match = regex.exec(child.nodeValue)) !== null) {
+        while ((match = URL_REGEX.exec(child.nodeValue)) !== null) {
           const url = match[0];
           const index = match.index;
 
@@ -315,6 +323,7 @@ function convertHyperlinksToLinks(text) {
           link.target = '_blank';
           link.rel = 'noopener noreferrer';
           link.textContent = url;
+          link.classList.add('inline-url'); // Add class for identification
           fragment.appendChild(link);
 
           lastIndex = index + url.length;
@@ -334,6 +343,113 @@ function convertHyperlinksToLinks(text) {
   }
 
   processTextNodes(container);
+  return container.innerHTML;
+}
+
+// Wrap all links in special styled blocks using the template
+function wrapLinksInBlocks(text) {
+  const container = document.createElement('div');
+  container.innerHTML = text;
+
+  const EXCLUDED_CONTAINERS = ['pre', 'code'];
+
+  // Get the template once
+  const template = document.getElementById('inline-link-content-template');
+  if (!template) {
+    console.warn('inline-link-content-template not found, links will not be wrapped');
+    return text;
+  }
+
+  // Find all anchor tags that aren't already wrapped
+  function processLinks(node) {
+    if (!node || !node.childNodes) return;
+
+    // Check if we're inside an excluded container
+    let currentNode = node;
+    while (currentNode) {
+      if (currentNode.nodeType === Node.ELEMENT_NODE) {
+        const tagName = currentNode.nodeName.toLowerCase();
+        if (EXCLUDED_CONTAINERS.includes(tagName)) {
+          return; // Don't process links inside code blocks
+        }
+      }
+      currentNode = currentNode.parentNode;
+    }
+
+    const childNodes = Array.from(node.childNodes);
+
+    for (const child of childNodes) {
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        const tagName = child.nodeName.toLowerCase();
+
+        // If it's an anchor tag and not already wrapped
+        if (tagName === 'a' && !child.classList.contains('inline-citation') &&
+            !child.classList.contains('source-link')) {
+
+          // Check if already wrapped in inline-link
+          if (child.parentNode.classList && child.parentNode.classList.contains('inline-link')) {
+            continue;
+          }
+
+          // Clone the template
+          const linkClone = template.content.cloneNode(true);
+          const linkWrapper = linkClone.querySelector('.inline-link');
+
+          // Set the href and target from original link
+          const url = child.getAttribute('href');
+          linkWrapper.setAttribute('href', url);
+          linkWrapper.setAttribute('target', '_blank');
+          linkWrapper.setAttribute('rel', 'noopener noreferrer');
+
+          // Extract domain for display
+          try {
+            const urlObj = new URL(url);
+            const domain = urlObj.hostname.replace(/^www\./, '');
+
+            // Set title - use link text if available, otherwise use domain
+            const titleElement = linkWrapper.querySelector('.title');
+            const linkText = child.textContent.trim();
+
+            // For inline display, keep it concise
+            if (linkText && linkText !== url) {
+              titleElement.textContent = linkText;
+            } else {
+              titleElement.textContent = domain;
+            }
+
+            // Set favicon
+            const favicon = linkWrapper.querySelector('.adr-icon');
+            favicon.setAttribute('src', `https://www.google.com/s2/favicons?domain=${domain}&sz=32`);
+            favicon.setAttribute('alt', domain);
+            favicon.style.display = 'block';
+
+          } catch (e) {
+            // If URL parsing fails, use fallback display
+            console.warn('Failed to parse URL:', url, e);
+
+            const titleElement = linkWrapper.querySelector('.title');
+            const linkText = child.textContent.trim();
+            titleElement.textContent = linkText || url;
+
+            // Hide favicon if URL parsing fails
+            const favicon = linkWrapper.querySelector('.adr-icon');
+            if (favicon) {
+              favicon.style.display = 'none';
+            }
+          }
+
+          // Replace the anchor with the wrapped version
+          child.parentNode.insertBefore(linkWrapper, child);
+          child.remove();
+        } else {
+          // Recursively process children
+          processLinks(child);
+        }
+      }
+    }
+  }
+
+  processLinks(container);
   return container.innerHTML;
 }
 

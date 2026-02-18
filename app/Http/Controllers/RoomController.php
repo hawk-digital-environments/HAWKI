@@ -186,7 +186,7 @@ class RoomController extends Controller
             'tools' => 'nullable|array',
             'message_id' => 'required|string',
         ]);
-        \Log::debug('update message controller', $validatedData);
+
         $messageData = $this->roomService->updateMessage($validatedData, $slug);
         return response()->json([
             'success' => true,

@@ -149,6 +149,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     if(!messageElement.classList.contains('AI')){
         let processedContent = detectMentioning(messageText).modifiedText;
         processedContent = convertHyperlinksToLinks(processedContent);
+        processedContent = wrapLinksInBlocks(processedContent);
         msgTxtElement.innerHTML = processedContent;
     }
     else{
@@ -275,7 +276,10 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
         messageElement.dataset.rawMsg = messageText;
         if(messageObj.message_role === "user"){
             const filteredContent = detectMentioning(messageText);
-            msgTxtElement.innerHTML = filteredContent.modifiedText;
+            let processedContent = filteredContent.modifiedText;
+            processedContent = convertHyperlinksToLinks(processedContent);
+            processedContent = wrapLinksInBlocks(processedContent);
+            msgTxtElement.innerHTML = processedContent;
         }
         else{
 
@@ -983,6 +987,18 @@ function handleToolToggle(e){
 function handleRegenerateClick(){
     const { messageElement, model, tools } = regenerateState;
 
+    if (!model) {
+        console.error('No model selected for regeneration');
+        return;
+    }
+
+    if (!messageElement) {
+        console.error('No message element for regeneration');
+        return;
+    }
+
+    console.log('Regenerate clicked - Model:', model.id, 'Tools:', Array.from(tools));
+
     regenerateMessage(
         messageElement,
         model,
@@ -1093,20 +1109,15 @@ async function regenerateMessage(messageElement, model, tools, Done = null){
     if(!messageElement.classList.contains('AI')){
         return;
     }
+
+    console.log('Regenerating with model:', model.id, 'and tools:', tools);
+
     const threadIndex = messageElement.closest('.thread').id;
 
     //reset message content
     messageElement.querySelector('.message-text').innerHTML = '';
     messageElement.dataset.rawMsg = '';
     initializeMessageFormating();
-
-    let input;
-    if(threadIndex === 0){
-        input = document.querySelector(`.input[id="0"]`);
-    }
-    else{
-        input = messageElement.closest('.thread').querySelector('.input');
-    }
 
     let msgAttributes = {};
     switch(activeModule){
@@ -1116,10 +1127,12 @@ async function regenerateMessage(messageElement, model, tools, Done = null){
                 'broadcasting': false,
                 'slug': '',
                 'regenerationElement': messageElement,
-                'stream': !!model.tools.stream,
+                'stream': !!(model.tools && model.tools.stream),
                 'model': model.id,
                 'tools': tools
             }
+
+            console.log('Request attributes for chat:', msgAttributes);
 
             await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
                 if(Done){
@@ -1150,5 +1163,15 @@ async function regenerateMessage(messageElement, model, tools, Done = null){
 }
 //#endregion
 
-
-//#endregion
+function createStatusElement(status, messageElement){
+    console.log('updating status');
+    let statElement = messageElement.querySelector(`.gen-stat-element`);
+    //create a new element for first status
+    if(!statElement){
+        const statTemp = document.getElementById('gen-stat-template')
+        const statClone = statTemp.content.cloneNode(true);
+        statElement = statClone.querySelector(".gen-stat-element");
+    }
+    statElement.querySelector('.stat-txt').innerText = status;
+    messageElement.querySelector('.message-text').appendChild(statElement);
+}

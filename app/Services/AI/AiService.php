@@ -79,7 +79,7 @@ readonly class AiService
      * @param int $maxToolRounds Maximum number of tool execution rounds to prevent infinite loops
      * @return AiResponse
      */
-    public function sendRequest(array|AiRequest $request, int $maxToolRounds = 5): AiResponse
+    public function sendRequest(array|AiRequest $request, int $maxToolRounds = 2): AiResponse
     {
         [$request, $model] = $this->resolveRequestAndModel($request);
 
