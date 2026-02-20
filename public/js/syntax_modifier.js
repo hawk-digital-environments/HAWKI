@@ -261,19 +261,17 @@ function postprocessContent(content, mathReplacements, thinkReplacements) {
   }
 }
 
-// Efficiently convert URLs to links while respecting excluded areas
+// Efficiently convert URLs and email addresses to links while respecting excluded areas
 function convertHyperlinksToLinks(text) {
   const container = document.createElement('div');
   container.innerHTML = text;
 
   const EXCLUDED_TAGS = ['a', 'pre', 'code'];
-  // Improved URL regex - handles URLs more robustly
-  // Matches: http:// or https:// followed by valid URL characters
-  // Excludes trailing punctuation that's likely not part of the URL
   const URL_REGEX = /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi;
+  const EMAIL_REGEX = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g;
   const PLACEHOLDER_REGEX = /%%HTML_PRESERVED_\d+%%/;
 
-  // Process DOM tree to find and convert URLs to links
+  // Process DOM tree to find and convert URLs and emails to links
   function processTextNodes(node) {
     if (!node || !node.childNodes) return;
 
@@ -290,43 +288,63 @@ function convertHyperlinksToLinks(text) {
         continue;
       }
 
-      // Process text nodes containing URLs
+      // Process text nodes containing URLs or emails
       if (child.nodeType === Node.TEXT_NODE && child.nodeValue) {
         // Skip text nodes containing preserved HTML
         if (PLACEHOLDER_REGEX.test(child.nodeValue)) continue;
 
-        // Test if the text contains URLs
-        const urlMatches = child.nodeValue.match(URL_REGEX);
-        if (!urlMatches) continue;
+        // Collect all URL matches
+        const matches = [];
+        URL_REGEX.lastIndex = 0;
+        let match;
+        while ((match = URL_REGEX.exec(child.nodeValue)) !== null) {
+          matches.push({ type: 'url', value: match[0], index: match.index });
+        }
+
+        // Collect email matches, skipping any that fall inside a URL match
+        EMAIL_REGEX.lastIndex = 0;
+        while ((match = EMAIL_REGEX.exec(child.nodeValue)) !== null) {
+          const insideUrl = matches.some(
+            (m) => m.type === 'url' && match.index >= m.index && match.index < m.index + m.value.length
+          );
+          if (!insideUrl) {
+            matches.push({ type: 'email', value: match[0], index: match.index });
+          }
+        }
+
+        if (matches.length === 0) continue;
+
+        // Process matches in document order
+        matches.sort((a, b) => a.index - b.index);
 
         const fragment = document.createDocumentFragment();
         let lastIndex = 0;
 
-        // Reset regex lastIndex
-        URL_REGEX.lastIndex = 0;
-        let match;
-
-        while ((match = URL_REGEX.exec(child.nodeValue)) !== null) {
-          const url = match[0];
-          const index = match.index;
-
-          // Add text before the URL
-          if (index > lastIndex) {
+        for (const m of matches) {
+          // Add text before this match
+          if (m.index > lastIndex) {
             fragment.appendChild(document.createTextNode(
-              child.nodeValue.substring(lastIndex, index)
+              child.nodeValue.substring(lastIndex, m.index)
             ));
           }
 
           // Create link element
           const link = document.createElement('a');
-          link.href = url;
-          link.target = '_blank';
-          link.rel = 'noopener noreferrer';
-          link.textContent = url;
-          link.classList.add('inline-url'); // Add class for identification
+          link.classList.add('inline-url');
+
+          if (m.type === 'email') {
+            link.href = 'mailto:' + m.value;
+            link.dataset.type = 'email';
+          } else {
+            link.href = m.value;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+          }
+
+          link.textContent = m.value;
           fragment.appendChild(link);
 
-          lastIndex = index + url.length;
+          lastIndex = m.index + m.value.length;
         }
 
         // Add any remaining text
@@ -395,46 +413,59 @@ function wrapLinksInBlocks(text) {
           const linkClone = template.content.cloneNode(true);
           const linkWrapper = linkClone.querySelector('.inline-link');
 
-          // Set the href and target from original link
+          // Set the href from original link
           const url = child.getAttribute('href');
           linkWrapper.setAttribute('href', url);
-          linkWrapper.setAttribute('target', '_blank');
           linkWrapper.setAttribute('rel', 'noopener noreferrer');
 
-          // Extract domain for display
-          try {
-            const urlObj = new URL(url);
-            const domain = urlObj.hostname.replace(/^www\./, '');
+          const isEmail = child.dataset.type === 'email' || url.startsWith('mailto:');
 
-            // Set title - use link text if available, otherwise use domain
+          if (isEmail) {
+            // Email link: no new tab, propagate type, display address without favicon
+            linkWrapper.dataset.type = 'email';
+            const emailAddress = url.replace(/^mailto:/, '');
             const titleElement = linkWrapper.querySelector('.title');
-            const linkText = child.textContent.trim();
-
-            // For inline display, keep it concise
-            if (linkText && linkText !== url) {
-              titleElement.textContent = linkText;
-            } else {
-              titleElement.textContent = domain;
-            }
-
-            // Set favicon
+            titleElement.textContent = emailAddress;
             const favicon = linkWrapper.querySelector('.adr-icon');
-            favicon.setAttribute('src', `https://www.google.com/s2/favicons?domain=${domain}&sz=32`);
-            favicon.setAttribute('alt', domain);
-            favicon.style.display = 'block';
+            if (favicon) favicon.style.display = 'none';
+          } else {
+            linkWrapper.setAttribute('target', '_blank');
 
-          } catch (e) {
-            // If URL parsing fails, use fallback display
-            console.warn('Failed to parse URL:', url, e);
+            // Extract domain for display
+            try {
+              const urlObj = new URL(url);
+              const domain = urlObj.hostname.replace(/^www\./, '');
 
-            const titleElement = linkWrapper.querySelector('.title');
-            const linkText = child.textContent.trim();
-            titleElement.textContent = linkText || url;
+              // Set title - use link text if available, otherwise use domain
+              const titleElement = linkWrapper.querySelector('.title');
+              const linkText = child.textContent.trim();
 
-            // Hide favicon if URL parsing fails
-            const favicon = linkWrapper.querySelector('.adr-icon');
-            if (favicon) {
-              favicon.style.display = 'none';
+              // For inline display, keep it concise
+              if (linkText && linkText !== url) {
+                titleElement.textContent = linkText;
+              } else {
+                titleElement.textContent = domain;
+              }
+
+              // Set favicon
+              const favicon = linkWrapper.querySelector('.adr-icon');
+              favicon.setAttribute('src', `https://www.google.com/s2/favicons?domain=${domain}&sz=32`);
+              favicon.setAttribute('alt', domain);
+              favicon.style.display = 'block';
+
+            } catch (e) {
+              // If URL parsing fails, use fallback display
+              console.warn('Failed to parse URL:', url, e);
+
+              const titleElement = linkWrapper.querySelector('.title');
+              const linkText = child.textContent.trim();
+              titleElement.textContent = linkText || url;
+
+              // Hide favicon if URL parsing fails
+              const favicon = linkWrapper.querySelector('.adr-icon');
+              if (favicon) {
+                favicon.style.display = 'none';
+              }
             }
           }
 

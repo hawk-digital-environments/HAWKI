@@ -42,6 +42,7 @@ function initializeLinkPreview() {
 function handleLinkHover(event) {
     const target = event.target.closest('.inline-link');
     if (!target) return;
+    if (target.dataset.type === 'email') return; // Email links open the mail client natively
 
     // Clear any existing timeout
     if (previewTimeout) {
@@ -60,6 +61,7 @@ function handleLinkHover(event) {
 function handleLinkLeave(event) {
     const target = event.target.closest('.inline-link');
     if (!target) return;
+    if (target.dataset.type === 'email') return;
 
     // Clear timeout if user moves away before 1 second
     if (previewTimeout) {
