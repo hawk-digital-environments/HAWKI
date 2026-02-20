@@ -161,6 +161,9 @@
 
     "Add_Tool": "Werkzeug Hinzufügen",
     "Tool_web_search": "Websuche",
-    "Tool_knowledge_base": "HAWK-Wissen"
+    "Tool_knowledge_base": "HAWK-Wissen",
+
+    "Preview_Loading": "Suche läuft...",
+    "Preview_Unavailable": "Vorschau nicht verfügbar"
 
 }

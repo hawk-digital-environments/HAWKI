@@ -51,7 +51,7 @@ function handleLinkHover(event) {
     // Set new timeout for 1 second
     previewTimeout = setTimeout(() => {
         showLinkPreview(target);
-    }, 1000);
+    }, 200);
 
     currentPreviewLink = target;
 }
@@ -225,6 +225,10 @@ function showPreviewContent(metadata) {
         imgElement.style.display = 'block';
         imgContainer.style.display = 'block';
 
+        imgContainer.addEventListener('click', () => {
+            openLink();
+        })
+
         // Handle image load error
         imgElement.onerror = () => {
             imgContainer.style.display = 'none';
@@ -245,7 +249,9 @@ function showPreviewContent(metadata) {
     }
 
     domainElement.textContent = metadata.domain || new URL(metadata.url).hostname;
-
+    domainElement.addEventListener('click', () => {
+        openLink();
+    })
     // Show content
     previewPanel.querySelector('.preview-loading').style.display = 'none';
     previewPanel.querySelector('.preview-error').style.display = 'none';
@@ -261,6 +267,11 @@ function showPreviewError() {
     previewPanel.querySelector('.preview-content').style.display = 'none';
     previewPanel.querySelector('.preview-error').style.display = 'flex';
     previewPanel.classList.add('visible');
+}
+
+//Open Link in new Tab
+function openLink(){
+    window.open(currentPreviewLink, '_blank').focus();
 }
 
 // Hide preview panel

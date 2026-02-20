@@ -162,6 +162,9 @@
 
     "Add_Tool": "Add Tool",
     "Tool_web_search": "Web Search",
-    "Tool_knowledge_base": "HAWK-Knowledge Base"
+    "Tool_knowledge_base": "HAWK-Knowledge Base",
+
+    "Preview_Loading": "Loading preview...",
+    "Preview_Unavailable": "Preview unavailable"
 
 }

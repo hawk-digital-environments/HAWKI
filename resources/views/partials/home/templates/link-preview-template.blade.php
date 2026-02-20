@@ -2,7 +2,7 @@
     <div class="link-preview-panel">
         <div class="preview-loading">
             <div class="spinner"></div>
-            <span>Loading preview...</span>
+            <span>{{$translation['Preview_Loading']}}</span>
         </div>
         <div class="preview-content" style="display: none;">
             <div class="preview-image-container">
@@ -18,7 +18,7 @@
             </div>
         </div>
         <div class="preview-error" style="display: none;">
-            <span>Preview unavailable</span>
+            <span>{{$translation['Preview_Unavailable']}} 🙁</span>
         </div>
     </div>
 </template>

@@ -170,7 +170,7 @@ class StreamController extends Controller
 
         $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
 
-            \Log::debug('AI Response', $response->jsonSerialize());
+//            \Log::debug('AI Response', $response->jsonSerialize());
 
             $this->usageAnalyzer->submitUsageRecord(
                 $response->usage,

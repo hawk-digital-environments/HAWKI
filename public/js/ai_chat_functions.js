@@ -201,7 +201,9 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
 
             if(messageElement.querySelector('.think')){
-                scrollPanelToLast(messageElement.querySelector('.think').querySelector('.content-container'));
+                messageElement.querySelectorAll('.think').forEach(el => {
+                    scrollPanelToLast(el.querySelector('.content-container'));
+                })
             }
 
             scrollToLast(false, messageElement);
