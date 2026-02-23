@@ -23,10 +23,11 @@
                         autocapitalize="off"
                         spellcheck="false"
                     />
-                    <div class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
+                    <button type="button" class="btn-xs tooltip-parent" id="visibility-toggle" aria-describedby="visibility-tooltip">
+                        <x-icon name="eye" id="eye" aria-hidden="true"/>
+                        <x-icon name="eye-off" id="eye-off" style="display: none" aria-hidden="true"/>
+                        <div class="tooltip tooltip-below" aria-hidden="true" id="visibility-tooltip">{{ $translation["DataKeyShowToolTip"] }}</div>
+                    </button>
                 </div>
             </form>
 
@@ -34,8 +35,7 @@
                 <button id="verifyEnteredPassKey-btn" onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
             <p class="red-text" id="alert-message"></p>
-            <button onclick="switchSlide(2)" class="btn-md">{{ $translation["HS_ForgottenPasskey"] }}</button>
-
+            <button onclick="switchSlide(2)" class="btn-text btn-md">{{ $translation["HS_ForgottenPasskey"] }}</button>
         </div>
 
 
@@ -44,8 +44,9 @@
 
             <div class="backup-hash-row">
                 <input id="backup-hash-input" type="text">
-                <button class="btn-sm border" onclick="uploadTextFile()">
-                    <x-icon name="upload"/>
+                <button class="btn-sm border fast-access-btn tooltip-parent" onclick="uploadTextFile()" aria-describedby="uploadTextFile-tooltip">
+                    <x-icon name="upload" aria-hidden="true"/>
+                    <div class="tooltip" aria-hidden="true" id="uploadTextFile-tooltip">{{ $translation["UploadTextFileTooltip"] }}</div>
                 </button>
             </div>
 
@@ -54,7 +55,7 @@
             </div>
 
             <p class="red-text" id="backup-alert-message"></p>
-            <button onclick="switchSlide(3)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
+            <button onclick="switchSlide(3)" class="btn-md btn-text">{{ $translation["HS_ForgottenBackup"] }}</button>
 
         </div>
 

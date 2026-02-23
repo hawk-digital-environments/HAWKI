@@ -59,6 +59,7 @@
 }
 
 .dy-sidebar .header{
+    margin-top: 2px;
     /* margin-right: calc(.5rem + 3px);
     padding-left: 1rem; */
     position: relative;
@@ -847,6 +848,7 @@
     border-radius: 5px;
     background-color: transparent;
     transition: background-color var(--transition-fast);
+    cursor: pointer;
 }
 .selection-item #unread-msg-flag{
     display: none;
@@ -1016,6 +1018,7 @@
     border: var(--border-stroke-hairline);
     border-radius: 50%;
     box-shadow: var(--shadow);
+    background: none;
 }
 
 .send-btn-icon{
@@ -1070,6 +1073,10 @@
     display: flex;
     width: 4rem;
     border-left: var(--border-stroke-thin);
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-radius: var(--border-radius-normal);
 }
 .prompt-improvement-btn svg{
     width: 1rem;
@@ -1450,6 +1457,11 @@
 }
 .branch .input-controls .minimized-content{
     padding-left: 2rem;
+}
+
+.fast-access-btn-left{
+    left: 100%;
+    transform: translate(-100%, -50%);
 }
 
 .fast-access-btn{

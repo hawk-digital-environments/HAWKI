@@ -27,7 +27,7 @@
                 </p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
+                <button class="btn-lg-fill btn-text" onclick="switchSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
             </div>
         </div>
 
@@ -66,10 +66,10 @@
                         spellcheck="false"
                         name="not_a_password_input"
                     />
-                    <div class="btn-xs" id="visibility-toggle">
+                    <button type="button" class="btn-xs" id="visibility-toggle">
                         <x-icon name="eye" id="eye"/>
                         <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
+                    </button>
                 </div>
 
                 <div id="passkey-repeat" class="password-input-wrapper top-gap-2" style="display:none" >
@@ -84,10 +84,10 @@
                         name="not_a_password_input"
 
                     />
-                    <div class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
+                    <button class="btn-xs" id="visibility-toggle">
+                        <x-icon name="eye" id="eye" aria-hidden="true"/>
+                        <x-icon name="eye-off" id="eye-off" style="display: none" aria-hidden="true"/>
+                    </button>
                 </div>
             </form>
             <p class="slide-subtitle top-gap-2">

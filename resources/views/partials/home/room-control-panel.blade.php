@@ -1,9 +1,9 @@
 <div class="dy-main-content" id="room-control-panel">
     <div class="panel-container">
 
-        <div class="closeButton" onclick="closeRoomCP()">
-            <x-icon name="x"/>
-        </div>
+        <button class="closeButton btn-sm" onclick="closeRoomCP()" aria-label="{{ $translation["Close"] }}">
+            <x-icon name="x" aria-hidden="true"/>
+        </button>
 
         <div class="scroll-container chat-info-panel">
             <div class="scroll-panel">
@@ -24,7 +24,7 @@
                             <div class="chat-name-panel text-cont">
                                 <h1 class="text-field chat-name zero-v-margin" id="chat-name"></h1>
 
-                                @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction'=>'submitInfoField'])
+                                @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditRoomNameToolTip"]])
                             </div>
 
 
@@ -49,7 +49,7 @@
                     <label class="label-header">{{ $translation["Description"] }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="description-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField'])
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditDescriptionToolTip"], 'alignTooltip' => 'left'])
                     </div>
                 </div>
 
@@ -58,7 +58,7 @@
                     <label class="label-header">{{ $translation["SystemPrompt"] }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="system_prompt-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField'])
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditSystemPromptToolTip"], 'alignTooltip' => 'left'])
                     </div>
                 </div>
 

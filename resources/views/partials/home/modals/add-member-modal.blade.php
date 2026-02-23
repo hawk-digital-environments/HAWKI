@@ -2,9 +2,9 @@
     <div class="modal-panel">
         <div class="modal-content-wrapper">
 
-            <div class="closeButton" onclick="closeModal(this)">
+            <button class="closeButton btn-sm" onclick="closeModal(this)" aria-label="{{ $translation["Close"] }}">
                 <x-icon name="x"/>
-            </div>
+            </button>
 
             <div class="modal-content">
                 <h2>{{ $translation["MemberInvite"] }}</h2>
