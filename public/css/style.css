@@ -419,6 +419,10 @@ button:disabled{
     border-radius: var(--border-radius-normal);
 }
 
+.btn-text:hover {
+    text-decoration: underline;
+}
+
 .save-btn{
     display: none;
     justify-self: end;
@@ -438,8 +442,6 @@ button:disabled{
     position: absolute;
     right: 2rem;
     top: 2rem;
-    width: 24px;
-    height: 24px;
     z-index: 99;
     cursor: pointer;
 }
@@ -505,6 +507,8 @@ button:disabled{
     width: fit-content;
     background-color: transparent;
     border-radius: var(--border-radius-tight);
+    cursor: pointer;
+    border: none;
 }
 
 .burger-btn-arrow .icon{
@@ -560,7 +564,7 @@ button:disabled{
     width: 100%;
     height: 2.5rem;
     padding:  0 1rem;
-    border-radius: 5px;
+    border-radius: var(--border-radius-normal);
     background-color: transparent;
     transition: background-color var(--transition-fast);
     border: none;
@@ -568,6 +572,8 @@ button:disabled{
     white-space: nowrap;
     z-index: 99;
     transition: font-weight 0.05s;
+    cursor: pointer;
+    outline-offset: -2px;
 }
 .burger-item:not(:disabled):hover{
     background-color: var(--background-secondary);
@@ -730,6 +736,10 @@ button:disabled{
     background-color: var(--background-secondary);
     border: var(--border-stroke-hairline);
     border-radius: var(--border-radius-tight);
+}
+
+.tooltip-below{
+    top: 2rem;
 }
 
 .tt-abs-left{

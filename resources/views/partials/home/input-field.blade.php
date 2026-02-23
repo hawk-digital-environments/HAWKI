@@ -9,10 +9,11 @@
 
     <div class="input-controls" id="input-controls">
         @if(!$lite)
-        <button class="btn-xs expand-btn" onclick="toggleRelativePanelClass('input-controls', this,'expanded')">
-            <div class="icon">
+        <button class="btn-xs expand-btn fast-access-btn tooltip-parent" onclick="toggleRelativePanelClass('input-controls', this,'expanded')" aria-describedby="more-tooltip">
+            <div class="icon" aria-hidden="true">
                 <x-icon name="chevron-up"/>
             </div>
+            <div class="tooltip" aria-hidden="true" id="more-tooltip">{{ $translation["MoreToolTip"] }}</div>
         </button>
         @endif
 
@@ -20,18 +21,18 @@
             <div class="left">
 
                 @if($activeModule === 'chat')
-                    <button class="btn-xs fast-access-btn" onclick="startNewChat()">
-                        <x-icon name="new"/>
-                        <div class="tooltip">
+                    <button class="btn-xs fast-access-btn" onclick="startNewChat()" aria-describedby="startnewchat-tooltip">
+                        <x-icon name="new" aria-hidden="true"/>
+                        <div class="tooltip" aria-hidden="true" id="startnewchat-tooltip">
                             {{ $translation["StartNewChat"] }}
                         </div>
                     </button>
                 @endif
 
                 @if(!$lite && $activeModule === 'chat')
-                    <button class="btn-xs fast-access-btn" value="system_prompt_panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'system_prompt_panel')">
-                        <x-icon name="sliders"/>
-                        <div class="tooltip">
+                    <button class="btn-xs fast-access-btn" value="system_prompt_panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'system_prompt_panel')" aria-describedby="systemprompt-tooltip">
+                        <x-icon name="sliders" aria-hidden="true"/>
+                        <div class="tooltip" aria-hidden="true" id="systemprompt-tooltip">
                             {{ $translation["SystemPrompt"] }}
                         </div>
                     </button>
@@ -39,9 +40,9 @@
                 @endif
 
                 @if(!$lite)
-                    <button class="btn-xs fast-access-btn" value="export-panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'export-panel')">
-                        <x-icon name="download"/>
-                        <div class="tooltip">
+                    <button class="btn-xs fast-access-btn" value="export-panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'export-panel')" aria-describedby="export-tooltip">
+                        <x-icon name="download" aria-hidden="true"/>
+                        <div class="tooltip" aria-hidden="true" id="export-tooltip">
                             {{ $translation["Export"] }}
                         </div>
                     </button>
@@ -55,17 +56,17 @@
             <div class="right">
                 <div id="model-selectors">
 
-                    <div class="burger-dropdown" id="model-selector-burger">
+                    <div class="burger-dropdown anchor-top-right" id="model-selector-burger">
                         @include('partials.home.components.models-list', ['selectModel' => true])
                     </div>
 
-                    <div class="burger-btn-arrow burger-btn" onclick="openInputModelSelector(this)">
-                        <div class="icon">
+                    <button class="burger-btn-arrow burger-btn" onclick="openInputModelSelector(this)">
+                        <div class="icon" aria-hidden="true">
                             <x-icon name="chevron-up"/>
                         </div>
-                        <div class="label model-selector-label"></div>
-                    </div>
-
+                        <div class="label model-selector-label" aria-hidden="true"></div>
+                        <div class="tooltip" aria-hidden="true" id="modelselector-tooltip">{{ $translation["ModelSelectorToolTip"] }}</div>
+                    </button>
                 </div>
                 <button class="btn-xs model-params-btn" onclick="openMsgParamsControlPanel(this)">
                     <x-icon name="tool"/>
@@ -229,14 +230,12 @@
                 </div>
             </div>
 
-            <div class="input-main-btn input-send tooltip-parent">
-                <div id="send-btn"
+            <div class="input-main-btn input-send tooltip-parent" aria-describedby="send-tooltip">
                 @if($activeModule === 'chat')
-                    onClick="onSendClickConv(this)"
+                    <button id="send-btn" onClick="onSendClickConv(this)" aria-hidden="true">
                 @elseif($activeModule === 'groupchat')
-                    onClick="onSendClickRoom(this)"
+                    <button id="send-btn" onClick="onSendClickRoom(this)" aria-hidden="true">
                 @endif
-                >
                         <div id="send-icon" class="send-btn-icon" >
                             <x-icon name="arrow-up"/>
                         </div>
@@ -248,12 +247,10 @@
                                 <x-icon name="loading"/>
                             </div>
                         </div>
-                </div>
-
-                <div class="label tooltip tt-abs-up">
+                </button>
+                <div class="label tooltip tt-abs-up" aria-hidden="true" id="send-tooltip">
                     {{ $translation["Send"] }}
                 </div>
-
             </div>
 
 

@@ -1,28 +1,28 @@
 <div class="message-controls">
     <div class="controls">
         <div class="buttons">
-            <button id="copy-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="CopyMessageToClipboard(this);" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)">
-                <x-icon name="copy"/>
-                <div class="reaction">{{ $translation["Copied"] }}</div>
-                <div class="tooltip">{{ $translation["CopyToolTip"] }}</div>
+            <button id="copy-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="CopyMessageToClipboard(this);" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)" aria-describedby="copy-tooltip">
+                <x-icon name="copy" aria-hidden="true"/>
+                <div class="reaction" aria-hidden="true">{{ $translation["Copied"] }}</div>
+                <div class="tooltip" aria-hidden="true" id="copy-tooltip">{{ $translation["CopyToolTip"] }}</div>
             </button>
-            <button id="edit-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="editMessage(this)" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)">
-                <x-icon name="edit"/>
-                <div class="tooltip">{{ $translation["EditToolTip"] }}</div>
+            <button id="edit-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="editMessage(this)" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)" aria-describedby="edit-tooltip">
+                <x-icon name="edit" aria-hidden="true"/>
+                <div class="tooltip" aria-hidden="true" id="edit-tooltip">{{ $translation["EditToolTip"] }}</div>
             </button>
-            <button id="speak-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="messageReadAloud(this)" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)">
-                <x-icon name="volume"/>
-                <div class="tooltip">{{ $translation["SpeakToolTip"] }}</div>
+            <button id="speak-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="messageReadAloud(this)" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)" aria-describedby="speak-tooltip">
+                <x-icon name="volume" aria-hidden="true"/>
+                <div class="tooltip" aria-hidden="true" id="speak-tooltip">{{ $translation["SpeakToolTip"] }}</div>
             </button>
-            <button id="regenerate-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent editor-only" onclick="onRegenerateBtn(this)" onmousedown="reactionMouseDown(this)" onmouseup="reactionMouseUp(this);">
-                <x-icon name="rotation"/>
-                <div class="tooltip">{{ $translation["RegenerateToolTip"] }}</div>
+            <button id="regenerate-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent editor-only" onclick="onRegenerateBtn(this)" onmousedown="reactionMouseDown(this)" onmouseup="reactionMouseUp(this);" aria-describedby="regenerate-tooltip">
+                <x-icon name="rotation" aria-hidden="true"/>
+                <div class="tooltip" aria-hidden="true" id="regenerate-tooltip">{{ $translation["RegenerateToolTip"] }}</div>
             </button>
-            <button id="thread-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="onThreadButtonEvent(this)" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)">
-                <x-icon name="message-circle"/>
-                <p class="label" id="comment-count"></p>
-                <div class="dot-lg" id="unread-thread-icon"></div>
-                <div class="tooltip">{{ $translation["ThreadToolTip"] }}</div>
+            <button id="thread-btn" class="btn-xs reaction-button fast-access-btn tooltip-parent" onclick="onThreadButtonEvent(this)" onmousedown="reactionMouseDown(this);" onmouseup="reactionMouseUp(this)" aria-describedby="thread-tooltip">
+                <x-icon name="message-circle" aria-hidden="true"/>
+                <p class="label" aria-hidden="true" id="comment-count"></p>
+                <div class="dot-lg" aria-hidden="true" id="unread-thread-icon"></div>
+                <div class="tooltip" aria-hidden="true" id="thread-tooltip">{{ $translation["ThreadOpenToolTip"] }}</div>
             </button>
         </div>
 
