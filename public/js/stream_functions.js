@@ -23,7 +23,8 @@ function buildRequestObject(msgAttributes, onData) {
             model: msgAttributes.model ?? activeModel.id,
             stream: stream,
             messages: msgs,
-            tools: msgAttributes['tools'],
+            tools: msgAttributes['metadata']?.tools ?? null,
+            params: msgAttributes['metadata']?.params ?? null,
         }
     };
 
@@ -47,7 +48,7 @@ function buildRequestObject(msgAttributes, onData) {
     })
     .catch(error => {
         console.error('Error:', error);
-        onData(null, true); // Call onData with done=true if there's an error
+        if (onData) onData(null, true);
     });
 }
 

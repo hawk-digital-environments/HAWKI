@@ -44,6 +44,7 @@
     <script src="{{ asset('js/model_list_filtering.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
     <script src="{{ asset('js/link_preview.js') }}"></script>
+    <script src="{{ asset('js/model_functions.js') }}"></script>
 
 	@if(config('sanctum.allow_external_communication'))
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
@@ -67,6 +68,7 @@
 		</div>
 	</div>
     @include('partials.home.components.regenerationControls')
+    @include('partials.home.components.model-parameters-controller')
 
 	@include('partials.home.modals.guidelines-modal')
 	@include('partials.home.modals.add-member-modal')

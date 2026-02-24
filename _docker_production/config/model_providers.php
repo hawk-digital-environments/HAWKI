@@ -1,7 +1,7 @@
 <?php
 
 return [
-    
+
     /*
     |--------------------------------------------------------------------------
     |   Default AI Models
@@ -13,10 +13,10 @@ return [
     'default_models' => [
         'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
         'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
-        'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'meta-llama-3.1-8b-instruct'),
-        'default_vision_model' => env('DEFAULT_VISION_MODEL', 'qwen2.5-vl-72b-instruct'),
+        'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'qwen3-omni-30b-a3b-instruct'),
+        'default_vision_model' => env('DEFAULT_VISION_MODEL', 'qwen3-omni-30b-a3b-instruct'),
     ],
-    
+
     /*
      * The default models to use when accessing HAWKI via an external application
      * If null, the general default models are used above (can be useful to prevent high cost models being used by external apps)
@@ -27,7 +27,7 @@ return [
 //        'default_file_upload_model' => null,
 //        'default_vision_model' => null,
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     |   System Models
@@ -44,7 +44,7 @@ return [
         'prompt_improver' => env('PROMPT_IMPROVEMENT_MODEL', 'gpt-4.1-nano'),
         'summarizer' => env('SUMMARIZER_MODEL', 'gpt-4.1-nano'),
     ],
-    
+
     /*
      * The system models to use when accessing HAWKI via an external application
      * If null, the general system models are used above (can be useful to prevent high cost models being used by external apps)
@@ -54,7 +54,7 @@ return [
 //        'prompt_improver' => null,
 //        'summarizer' => null,
     ],
-    
+
     /*
     |--------------------------------------------------------------------------
     |   Model Providers

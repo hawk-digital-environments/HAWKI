@@ -159,9 +159,18 @@
     "UploadFile": "Datei hochladen",
     "Yesterday": "Gestern",
 
+    "Tools": "Werkzeuge",
     "Add_Tool": "Werkzeug Hinzufügen",
     "Tool_web_search": "Websuche",
     "Tool_knowledge_base": "HAWK-Wissen",
+    "Parameters": "Einstellungen",
+    "Temperature": "Temperatur",
+    "Precise" : "Präzise",
+    "Balanced": "Ausgewogen",
+    "Creative": "Kreativ",
+    "ResetToDefault": "Zurücksetzen",
+    "Presets": "Voreinstellungen",
+    "Default": "Standard",
 
     "Preview_Loading": "Suche läuft...",
     "Preview_Unavailable": "Vorschau nicht verfügbar"

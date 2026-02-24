@@ -57,6 +57,14 @@ readonly class GoogleRequestConverter
             'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
 
+        // Add optional parameters if present in the raw payload
+        if (isset($rawPayload['params']['temperature'])) {
+            $payload['temperature'] = $rawPayload['params']['temperature'];
+        }
+        if (isset($rawPayload['params']['top_p'])) {
+            $payload['top_p'] = $rawPayload['params']['top_p'];
+        }
+
         // Set complete optional fields with content (default values if not present in $rawPayload)
         $payload['safetySettings'] = $rawPayload['safetySettings'] ?? [
             [

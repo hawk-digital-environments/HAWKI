@@ -95,8 +95,6 @@ async function onSendMessageToRoom(inputField) {
             "attachments": attachments
         },
         'threadId' : activeThreadIndex,
-        'tools': tools,
-
     };
 
     const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`)
@@ -129,10 +127,13 @@ async function onSendMessageToRoom(inputField) {
             'slug': activeRoom.slug,
             'key': aiKeyBase64,
             'stream': false,
-            'tools': tools
+            'metadata': {
+                'tools': tools,
+                'params': activeModel.params,
+            }
         }
 
-        buildRequestObject(msgAttributes);
+        buildRequestObject(msgAttributes, () => {});
     }
 
 }

@@ -134,7 +134,9 @@ document.addEventListener('click', function(event) {
             clickedElement.classList.contains('burger-item') ){
             return;
         }
-
+        if(clickedElement.classList.contains('params-wrapper')){
+            return;
+        }
         if (clickedElement.id === 'quick-actions' || clickedElement.id === 'quick-actions') {
             //if a input panel is clicked
             clickedBurgerMenu = clickedElement;

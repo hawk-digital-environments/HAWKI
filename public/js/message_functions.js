@@ -15,8 +15,10 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     // set dataset attributes
     messageElement.dataset.role = messageObj.message_role;
     messageElement.dataset.rawMsg = messageText;
-    if(messageObj.tools){
-        messageElement.dataset.tools = messageObj.tools;
+    if(messageObj.metadata){
+        const meta = messageObj.metadata;
+        messageElement.dataset.tools = JSON.stringify(meta.tools ?? []);
+        messageElement.dataset.params = JSON.stringify(meta.params ?? {});
     }
     // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
 
@@ -236,8 +238,10 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 function updateMessageElement(messageElement, messageObj, updateContent = false){
 
     messageElement.id = messageObj.message_id;
-    if(messageObj.tools){
-        messageElement.dataset.tools = messageObj.tools;
+    if(messageObj.metadata){
+        const meta = messageObj.metadata;
+        messageElement.dataset.tools = JSON.stringify(meta.tools ?? []);
+        messageElement.dataset.params = JSON.stringify(meta.params ?? {});
     }
 
     if(messageElement.querySelector('.thread')){
@@ -740,23 +744,7 @@ async function confirmEditMessage(provider){
 
 //#endregion
 
-//#region MSG_CTL: REGENERATE
 
-async function onRegenerateBtn(btn){
-
-    openDropDown(btn);
-
-
-
-    // btn.disabled = true;
-    // btn.style.opacity = '.2';
-    // const messageElement = btn.closest('.message');
-    //
-    // regenerateMessage(messageElement, async(Done)=>{
-    //     btn.disabled = false;
-    //     btn.style.opacity = '1';
-    // });
-}
 
 //#region MSG_CTL: TTS
 
@@ -812,24 +800,25 @@ function messageReadAloud(provider) {
         }
     };
 }
-
-
-
 //#endregion
 
 
+//#region MSG_CTL: REGENERATE
 
-//#region Regenerate
+async function onRegenerateBtn(btn){
+    openRegenerateDropDown(btn);
+}
 
 let regenerateState = {
     messageElement: null,
     model: null,
-    tools: new Set()
+    tools: new Set(),
+    params: []
 };
 let menu;
 let regenerateButtonRef = null;
 
-function openDropDown(sender){
+function openRegenerateDropDown(sender){
     menu = document.getElementById('regenerate-controls');
     regenerateButtonRef = sender;
     const btnRect = sender.getBoundingClientRect();
@@ -851,12 +840,18 @@ function openDropDown(sender){
     const model = modelsList.find(m => m.id === modelId);
     regenerateState.model = model || activeModel;
     regenerateState.tools = new Set(JSON.parse(msgElement.dataset.tools || '[]'));
-
+    const storedParams = JSON.parse(msgElement.dataset.params || '{}');
+    regenerateState.params = {
+        temperature: storedParams.temperature ?? activeModel.params?.temperature ?? null,
+        top_p: storedParams.top_p ?? activeModel.params?.top_p ?? null,
+    };
+    console.log(regenerateState);
     // Initialize regeneration filters based on current tools
     setRegenerationFilters(Array.from(regenerateState.tools));
 
     initModelSubMenu(regenerateState.model);
     initToolSubMenu(regenerateState.tools);
+    initParamsSubMenu(regenerateState.params);
 
     bindRegenerateMenuEvents();
     updateIndicators();
@@ -890,7 +885,7 @@ function bindRegenerateMenuEvents(){
             btn.onclick = handleToolToggle;
         });
 
-    menu.querySelector('.reg-menu-item.confirm')
+    menu.querySelector('.confirm')
         .onclick = handleRegenerateClick;
 }
 function updateIndicators(){
@@ -936,7 +931,7 @@ function handleModelSelection(e){
 
 
 function initToolSubMenu(tools){
-    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('.active')});
+    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('active')});
     tools.forEach(tool => {
         const btn = menu.querySelector(`.tool-selector[data-reference="${tool}"]`);
         btn.classList.add('active');
@@ -984,8 +979,41 @@ function handleToolToggle(e){
     updateIndicators();
 }
 
+
+
+function initParamsSubMenu(params){
+
+    menu.querySelectorAll('input[type="range"]').forEach(el => {
+        el.addEventListener('input', () => {
+            handleSliderInput(el);
+            setParamValues(el)
+        });
+    })
+
+    setSliderValue(
+        menu.querySelector('#temperature-input'),
+        params.temperature
+    );
+    setSliderValue(
+        menu.querySelector('#top-p-input'),
+        params.top_p
+    );
+}
+function setParamValues(el){
+    if(el.dataset.param === 'temperature'){
+        regenerateState.params.temperature = parseFloat(el.value);
+    }
+    if(el.dataset.param === 'top_p'){
+        regenerateState.params.top_p = parseFloat(el.value);
+    }
+    console.log(regenerateState);
+}
+
+
+
+
 function handleRegenerateClick(){
-    const { messageElement, model, tools } = regenerateState;
+    const { messageElement, model, tools , params} = regenerateState;
 
     if (!model) {
         console.error('No model selected for regeneration');
@@ -999,10 +1027,14 @@ function handleRegenerateClick(){
 
     console.log('Regenerate clicked - Model:', model.id, 'Tools:', Array.from(tools));
 
+    const metadata = {
+        'tools': Array.from(tools),
+        'params': params
+    }
     regenerateMessage(
         messageElement,
         model,
-        Array.from(tools)
+        metadata
     );
 
     closeRegenerateMenu();
@@ -1066,7 +1098,8 @@ function closeRegenerateMenu(){
     regenerateState = {
         messageElement: null,
         model: null,
-        tools: new Set()
+        tools: new Set(),
+        params: []
     };
 }
 
@@ -1105,12 +1138,12 @@ function handlesSubMenuToggle(menu, active){
 }
 
 
-async function regenerateMessage(messageElement, model, tools, Done = null){
+async function regenerateMessage(messageElement, model, metadata, Done = null){
     if(!messageElement.classList.contains('AI')){
         return;
     }
 
-    console.log('Regenerating with model:', model.id, 'and tools:', tools);
+    console.log('Regenerating with model:', model.id, 'and metadata:', metadata);
 
     const threadIndex = messageElement.closest('.thread').id;
 
@@ -1129,7 +1162,7 @@ async function regenerateMessage(messageElement, model, tools, Done = null){
                 'regenerationElement': messageElement,
                 'stream': !!(model.tools && model.tools.stream),
                 'model': model.id,
-                'tools': tools
+                'metadata': metadata
             }
 
             console.log('Request attributes for chat:', msgAttributes);
@@ -1155,7 +1188,7 @@ async function regenerateMessage(messageElement, model, tools, Done = null){
                 'regenerationElement': messageElement,
                 'stream': false,
                 'model': model.id,
-                'tools': tools
+                'metadata': metadata
             }
             buildRequestObject(msgAttributes,  async (updatedText, done) => {});
             break;

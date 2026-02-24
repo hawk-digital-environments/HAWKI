@@ -29,8 +29,12 @@ class Message extends Model
         'iv',
         'tag',
         'content',
-        'tools',
+        'metadata',
         'reader_signs'
+    ];
+
+    protected $casts = [
+        'metadata' => 'array',
     ];
 
 
@@ -87,7 +91,7 @@ class Message extends Model
                 'attachments' => $this->attachmentsAsArray(),
             ],
 
-            'tools' => $this->tools,
+            'metadata' => $this->getMetadata(),
             'created_at' => $this->created_at->format('Y-m-d+H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d+H:i'),
         ];
@@ -144,4 +148,14 @@ class Message extends Model
         })->toArray();
     }
 
+
+    public function getMetadata(){
+        return $this->metadata;
+    }
+    public function getTools(){
+        return $this->metadata['tools'];
+    }
+    public function getParameters(){
+        return $this->metadata['params'];
+    }
 }

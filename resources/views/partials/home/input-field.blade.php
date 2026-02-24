@@ -55,11 +55,11 @@
             <div class="right">
                 <div id="model-selectors">
 
-                    <div class="burger-dropdown anchor-top-right" id="model-selector-burger">
+                    <div class="burger-dropdown" id="model-selector-burger">
                         @include('partials.home.components.models-list', ['selectModel' => true])
                     </div>
 
-                    <div class="burger-btn-arrow burger-btn" onclick="openBurgerMenu('model-selector-burger', this, false, true, true)">
+                    <div class="burger-btn-arrow burger-btn" onclick="openInputModelSelector(this)">
                         <div class="icon">
                             <x-icon name="chevron-up"/>
                         </div>
@@ -67,6 +67,9 @@
                     </div>
 
                 </div>
+                <button class="btn-xs model-params-btn" onclick="openMsgParamsControlPanel(this)">
+                    <x-icon name="sliders"/>
+                </button>
             </div>
         </div>
 

@@ -160,11 +160,19 @@
     "UploadFile": "Upload File",
     "Yesterday": "Yesterday",
 
+    "Tools": "Tools",
     "Add_Tool": "Add Tool",
     "Tool_web_search": "Web Search",
     "Tool_knowledge_base": "HAWK-Knowledge Base",
+    "Parameters": "Parameters",
+    "Temperature": "Temperature",
+    "Precise" : "Precise",
+    "Balanced": "Balanced",
+    "Creative": "Creative",
+    "ResetToDefault": "Reset",
+    "Presets": "Presets",
+    "Default": "Default",
 
     "Preview_Loading": "Loading preview...",
     "Preview_Unavailable": "Preview unavailable"
-
 }

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ai_conv_msgs', function (Blueprint $table) {
-            $table->json('tools')->nullable()->after('completion');
+            $table->json('metadata')->nullable()->after('completion');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ai_conv_msg', function (Blueprint $table) {
-            $table->dropColumn('tools');
+        Schema::table('ai_conv_msgs', function (Blueprint $table) {
+            $table->dropColumn('metadata');
         });
     }
 };

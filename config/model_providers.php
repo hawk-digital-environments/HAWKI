@@ -13,8 +13,8 @@ return [
     'default_models' => [
         'default_model' => env('DEFAULT_MODEL', 'gpt-4.1-nano'),
         'default_web_search_model' => env('DEFAULT_WEBSEARCH_MODEL', 'gemini-2.0-flash'),
-        'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'meta-llama-3.1-8b-instruct'),
-        'default_vision_model' =>  env('DEFAULT_VISION_MODEL', 'qwen2.5-vl-72b-instruct'),
+        'default_file_upload_model' => env('DEFAULT_FILEUPLOAD_MODEL', 'qwen3-omni-30b-a3b-instruct'),
+        'default_vision_model' => env('DEFAULT_VISION_MODEL', 'qwen3-omni-30b-a3b-instruct'),
     ],
 
     /*

@@ -163,7 +163,10 @@ class RoomController extends Controller
 
         $validatedData = $request->validate([
             'content' => 'required|array',
-            'tools' => 'nullable|array',
+            'metadata' => 'nullable|array',
+            'metadata.tools' => 'nullable|array',
+            'metadata.params' => 'nullable|array',
+
             'threadId' => 'required|integer'
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
@@ -183,7 +186,10 @@ class RoomController extends Controller
 
         $validatedData = $request->validate([
             'content' => 'required|array',
-            'tools' => 'nullable|array',
+            'metadata' => 'nullable|array',
+            'metadata.tools' => 'nullable|array',
+            'metadata.params' => 'nullable|array',
+
             'message_id' => 'required|string',
         ]);
 

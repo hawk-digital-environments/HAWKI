@@ -86,6 +86,8 @@ async function sendMessageConv(inputField) {
     const iv = cryptoMsg.iv;
     const tag = cryptoMsg.tag;
 
+
+
     /// Submit Message to server.
     const messageObj = {
         'isAi': false,
@@ -125,16 +127,19 @@ async function sendMessageConv(inputField) {
         ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
             tog => tog.dataset.reference
         ): [];
-    console.log(tools);
+
     const msgAttributes = {
         'threadIndex': activeThreadIndex,
         'broadcasting': false,
         'slug': '',
         'stream': true,
         'model': activeModel.id,
-        'tools': tools
+        'metadata': {
+            'tools' : tools,
+            'params': activeModel.params,
+        },
     }
-
+    console.log(msgAttributes);
     buildRequestObjectForAiConv(msgAttributes);
 }
 
@@ -166,7 +171,8 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.content = content;
             messageObj.completion = data.isDone;
             messageObj.model = msgAttributes['model'];
-            messageObj.tools = msgAttributes['tools'];
+            messageObj.tools = msgAttributes['metadata'].tools;
+            messageObj.params = msgAttributes['metadata'].params;
 
             if (!messageElement) {
                 initializeMessageFormating()
@@ -236,16 +242,20 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                         'tag': messageObj.tag,
                     }
                 },
-                'tools': messageObj.tools,
+                'metadata': {
+                    'tools' : messageObj.tools,
+                    'params': msgAttributes['metadata']?.params ?? null,
+                },
+
                 'model': messageObj.model,
                 'completion': messageObj.completion,
             }
+            console.log(requestObj);
             if(isUpdate){
                 requestObj.message_id = messageElement.id;
                 await requestMsgUpdate(requestObj, messageElement, `/req/conv/updateMessage/${activeConv.slug}`)
             }
             else{
-                requestObj.isAi = true;
                 const submittedObj = await submitMessageToServer(requestObj, `/req/conv/sendMessage/${activeConv.slug}`);
 
                 submittedObj.content = cryptoContent;
@@ -457,7 +467,7 @@ async function loadConv(btn=null, slug=null){
     if(!convData){
         return;
     }
-
+    console.log(convData);
     clearChatlog();
     clearInput();
     activeConv = convData;
@@ -478,7 +488,7 @@ async function loadConv(btn=null, slug=null){
         const decryptedContent =  await decryptWithSymKey(convKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
         // msg.content = [];
         msg.content.text = decryptedContent;
-    };
+    }
 
     if(msgs.length > 0){
         chatlogElement.classList.remove('start-state');

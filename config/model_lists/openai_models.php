@@ -40,6 +40,11 @@ return [
             'knowledge_base' => "hawki-rag-query-search",
 
         ],
+        'default_params' => [
+            'temp' => env('MODELS_OPENAI_GPT4_1_PARAMS_TEMP'),
+            'top_p' => env('MODELS_OPENAI_GPT4_1_PARAMS_TOP_P'),
+        ],
+
     ],
     [
         'active'=> env('MODELS_OPENAI_GPT4_1_NANO_ACTIVE', true),

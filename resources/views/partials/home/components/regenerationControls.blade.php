@@ -6,31 +6,44 @@
                     <x-icon name="layers"/>
                 </div>
                 <div class="label">
-                    Model
+                    {{$translation['Models']}}
                 </div>
-                <div class="indicator">123</div>
+                <div class="indicator"></div>
                 <div class="arrow">
                     <x-icon name="chevron-right"/>
                 </div>
             </button>
             <button class="btn-xs reg-menu-item reg-submenu-btn" reference="tools-list">
                 <div class="icon">
-                    <x-icon name="layers"/>
+                    <x-icon name="tool"/>
                 </div>
                 <div class="label">
-                    Tools
+                    {{$translation['Tools']}}
                 </div>
                 <div class="indicator "></div>
                 <div class="arrow">
                     <x-icon name="chevron-right"/>
                 </div>
             </button>
-            <button class="btn-xs reg-menu-item confirm">
+
+            <button class="btn-xs reg-menu-item reg-submenu-btn" reference="params-panel" >
                 <div class="icon">
-                    <x-icon name="rotation"/>
+                    <x-icon name="sliders"/>
                 </div>
                 <div class="label">
-                    Regenerate
+                    {{$translation['Parameters']}}
+                </div>
+                <div class="indicator "></div>
+                <div class="arrow">
+                    <x-icon name="chevron-right"/>
+                </div>
+            </button>
+            <button class="btn-xs confirm">
+{{--                <div class="icon">--}}
+{{--                    <x-icon name="rotation"/>--}}
+{{--                </div>--}}
+                <div class="label">
+                    {{$translation['RegenerateToolTip']}}
                 </div>
             </button>
         </div>
@@ -78,6 +91,25 @@
                     </button>
                 @endif
             @endforeach
+        </div>
+        <div class="sub-menu" id="params-panel">
+            <div class="params-wrapper">
+                <div class="param-section">
+                    <label for="temp-input">{{$translation['Temperature']}}</label>
+                    <div class="param-input">
+                        <input id="temperature-input" data-param="temperature" type="range" step=".1" name="temp-input" min="0" max="1" />
+                        <p class="input-indicator">0.5</p>
+                    </div>
+                </div>
+
+                <div class="param-section">
+                    <label for="top-p-input">Top_P</label>
+                    <div class="param-input" >
+                        <input id="top-p-input" data-param="top_p" type="range" step=".1" name="top-p-input" min="0" max="1" />
+                        <p class="input-indicator">0.5</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

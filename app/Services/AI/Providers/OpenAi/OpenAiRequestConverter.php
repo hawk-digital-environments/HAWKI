@@ -49,12 +49,11 @@ readonly class OpenAiRequestConverter
         ];
 
         // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['temperature'])) {
-            $payload['temperature'] = $rawPayload['temperature'];
+        if (isset($rawPayload['params']['temperature'])) {
+            $payload['temperature'] = $rawPayload['params']['temperature'];
         }
-        $payload['temperature'] = 1;
-        if (isset($rawPayload['top_p'])) {
-            $payload['top_p'] = $rawPayload['top_p'];
+        if (isset($rawPayload['params']['top_p'])) {
+            $payload['top_p'] = $rawPayload['params']['top_p'];
         }
 
         if (isset($rawPayload['frequency_penalty'])) {

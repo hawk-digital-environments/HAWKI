@@ -83,6 +83,7 @@ class StreamController extends Controller
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
                 'payload.tools' => 'nullable|array',
+                'payload.params' => 'nullable|array',
 
                 'broadcast' => 'required|boolean',
                 'isUpdate' => 'nullable|boolean',
@@ -144,7 +145,7 @@ class StreamController extends Controller
                 'model' => $validatedData['payload']['model'],
                 'isDone' => true,
                 'content' => json_encode($response->content),
-                'tools' => $payload['tools']?? null,
+                'tools' => $validatedData['payload']['tools'] ?? null,
             ]);
         }
 
@@ -254,7 +255,10 @@ class StreamController extends Controller
                         'tag' => base64_encode($encryptedData->tag),
                     ]
                 ],
-                'tools' => $data['payload']['tools']?? null,
+                'metadata' => [
+                    'tools' => $data['payload']['tools'] ?? null,
+                    'params' => $data['payload']['params'] ?? null,
+                ],
             ]);
         } else {
             $message = $messageHandler->create($room, [
@@ -269,7 +273,10 @@ class StreamController extends Controller
                         'tag' => base64_encode($encryptedData->tag),
                     ]
                 ],
-                'tools' => $data['payload']['tools']?? null,
+                'metadata' => [
+                    'tools' => $data['payload']['tools'] ?? null,
+                    'params' => $data['payload']['params'] ?? null,
+                ],
             ]);
         }
 

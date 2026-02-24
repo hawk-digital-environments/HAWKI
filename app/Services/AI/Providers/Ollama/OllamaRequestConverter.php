@@ -48,6 +48,14 @@ readonly class OllamaRequestConverter
             'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
         ];
 
+        // Add optional parameters if present in the raw payload
+        if (isset($rawPayload['params']['temperature'])) {
+            $payload['temperature'] = $rawPayload['params']['temperature'];
+        }
+        if (isset($rawPayload['params']['top_p'])) {
+            $payload['top_p'] = $rawPayload['params']['top_p'];
+        }
+
         // Add tools from capabilities if not disabled
         $disableTools = $this->shouldDisableTools($rawPayload);
 
