@@ -16,6 +16,7 @@ return [
             'file_upload' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
+            // Model card best practices: temp=0.7, top_p=0.8
             'temp' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_PARAMS_TEMP', 0.7),
             'top_p' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_PARAMS_TOP_P', 0.8),
         ],
@@ -35,6 +36,7 @@ return [
             'file_upload' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
+            // GWDG recommended values: temp=0.8, top_p=0.9
             'temp' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_PARAMS_TEMP', 0.8),
             'top_p' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_PARAMS_TOP_P', 0.9),
         ],
@@ -54,8 +56,9 @@ return [
             'file_upload' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_PARAMS_TOP_P'),
+            // Mistral recommends temp=0.2 for optimal coding performance; top_p=0.95 is the standard vLLM sampling value
+            'temp' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_PARAMS_TEMP', 0.2),
+            'top_p' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -76,8 +79,9 @@ return [
             'vision' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_PARAMS_TOP_P'),
+            // vLLM examples for Qwen 3 Omni use temp=0.6 and top_p=0.95
+            'temp' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_PARAMS_TEMP', 0.6),
+            'top_p' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -98,8 +102,9 @@ return [
             'vision' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_PARAMS_TOP_P'),
+            // Model card recommends temp=0.6 and top_p=0.95, especially when thinking mode is enabled
+            'temp' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_PARAMS_TEMP', 0.6),
+            'top_p' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -120,8 +125,9 @@ return [
             'vision' => env('MODELS_GWDG_QWEN3_VL_30B_A3B_INSTRUCT_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_QWEN3_VL_30B_A3B_INSTRUCT_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_QWEN3_VL_30B_A3B_INSTRUCT_PARAMS_TOP_P'),
+            // Vision-language variant of Qwen 3 30B; thinking-mode defaults (0.6/0.95) applied per model card
+            'temp' => env('MODELS_GWDG_QWEN3_VL_30B_A3B_INSTRUCT_PARAMS_TEMP', 0.6),
+            'top_p' => env('MODELS_GWDG_QWEN3_VL_30B_A3B_INSTRUCT_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -139,6 +145,7 @@ return [
             'file_upload' => env('MODELS_GWDG_GLM_4_7_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
+            // GWDG recommended values: temp=1.0, top_p=0.95
             'temp' => env('MODELS_GWDG_GLM_4_7_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_GWDG_GLM_4_7_PARAMS_TOP_P', 0.95),
         ],
@@ -160,8 +167,9 @@ return [
             'vision' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_PARAMS_TOP_P'),
+            // GWDG recommends near-deterministic temp (<0.1) for typical tasks; top_p=0.95 is the standard vLLM value
+            'temp' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_PARAMS_TEMP', 0.1),
+            'top_p' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -179,8 +187,9 @@ return [
             'file_upload' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_PARAMS_TOP_P'),
+            // No official sampling recommendations from Meta; API defaults temp=1.0 and top_p=1.0 used
+            'temp' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -198,8 +207,9 @@ return [
             'file_upload' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_PARAMS_TOP_P'),
+            // No official sampling recommendations; OpenAI API defaults temp=1.0 and top_p=1.0 used
+            'temp' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -219,8 +229,9 @@ return [
             'vision' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_GEMMA_3_27B_IT_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_GEMMA_3_27B_IT_PARAMS_TOP_P'),
+            // Google generation_config.json for Gemma 3 27B sets temp=1.0 and top_p=0.96
+            'temp' => env('MODELS_GWDG_GEMMA_3_27B_IT_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_GEMMA_3_27B_IT_PARAMS_TOP_P', 0.96),
         ],
     ],
     [
@@ -239,6 +250,7 @@ return [
             'file_upload' => env('MODELS_GWDG_QWEN3_30B_A3B_THINKING_2507_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
+            // Thinking mode: model card recommends temp=0.6 and top_p=0.95
             'temp' => env('MODELS_GWDG_QWEN3_30B_A3B_THINKING_2507_PARAMS_TEMP', 0.6),
             'top_p' => env('MODELS_GWDG_QWEN3_30B_A3B_THINKING_2507_PARAMS_TOP_P', 0.95),
         ],
@@ -259,8 +271,9 @@ return [
             'file_upload' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_PARAMS_TEMP', 0.6),
-            'top_p' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_PARAMS_TOP_P', 0.95),
+            // Non-thinking mode: model card recommends temp=0.7 and top_p=0.8
+            'temp' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_PARAMS_TEMP', 0.7),
+            'top_p' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_PARAMS_TOP_P', 0.8),
         ],
     ],
     [
@@ -278,8 +291,9 @@ return [
             'file_upload' => env('MODELS_GWDG_QWEN3_32B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_QWEN3_32B_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_QWEN3_32B_PARAMS_TOP_P'),
+            // Generation config sets temp=0.6 and top_p=0.95
+            'temp' => env('MODELS_GWDG_QWEN3_32B_PARAMS_TEMP', 0.6),
+            'top_p' => env('MODELS_GWDG_QWEN3_32B_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -298,6 +312,7 @@ return [
             'file_upload' => env('MODELS_GWDG_QWEN3_235B_A22B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
+            // Thinking mode: model card recommends temp=0.6 and top_p=0.95; greedy decoding is discouraged
             'temp' => env('MODELS_GWDG_QWEN3_235B_A22B_PARAMS_TEMP', 0.6),
             'top_p' => env('MODELS_GWDG_QWEN3_235B_A22B_PARAMS_TOP_P', 0.95),
         ],
@@ -317,6 +332,7 @@ return [
             'file_upload' => env('MODELS_GWDG_LLAMA_3_3_70B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
+            // GWDG recommended values: temp=0.7, top_p=0.8
             'temp' => env('MODELS_GWDG_LLAMA_3_3_70B_INSTRUCT_PARAMS_TEMP', 0.7),
             'top_p' => env('MODELS_GWDG_LLAMA_3_3_70B_INSTRUCT_PARAMS_TOP_P', 0.8),
         ],
@@ -339,8 +355,9 @@ return [
             'vision' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_VISION', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_MEDGEMMA_27B_IT_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_MEDGEMMA_27B_IT_PARAMS_TOP_P'),
+            // vLLM example config for MedGemma 27B Instruct uses temp=0.7 and top_p=0.95
+            'temp' => env('MODELS_GWDG_MEDGEMMA_27B_IT_PARAMS_TEMP', 0.7),
+            'top_p' => env('MODELS_GWDG_MEDGEMMA_27B_IT_PARAMS_TOP_P', 0.95),
         ],
     ],
     [
@@ -358,6 +375,7 @@ return [
             'file_upload' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
+            // GWDG recommended values: temp=0.7, top_p=0.8
             'temp' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_PARAMS_TEMP', 0.7),
             'top_p' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_PARAMS_TOP_P', 0.8),
         ],
@@ -377,8 +395,9 @@ return [
             'file_upload' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_PARAMS_TOP_P'),
+            // No specific recommendations available; API defaults temp=1.0 and top_p=1.0 used
+            'temp' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -396,8 +415,9 @@ return [
             'file_upload' => env('MODELS_GWDG_LLAMA_3_1_SAUERKRAUTLM_70B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            'temp' => env('MODELS_GWDG_LLAMA_3_1_SAUERKRAUTLM_70B_INSTRUCT_PARAMS_TEMP'),
-            'top_p' => env('MODELS_GWDG_LLAMA_3_1_SAUERKRAUTLM_70B_INSTRUCT_PARAMS_TOP_P'),
+            // No official values; community chat script for SauerkrautLM uses temp=0.7 and top_p=0.9
+            'temp' => env('MODELS_GWDG_LLAMA_3_1_SAUERKRAUTLM_70B_INSTRUCT_PARAMS_TEMP', 0.7),
+            'top_p' => env('MODELS_GWDG_LLAMA_3_1_SAUERKRAUTLM_70B_INSTRUCT_PARAMS_TOP_P', 0.9),
         ],
     ],
 ];
