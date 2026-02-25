@@ -235,9 +235,9 @@ class StreamController extends Controller
                 'groundingMetadata' => $response->content['groundingMetadata'],
             ]);
         }
-
+//        \Log::debug($content);
         $crypto = new SymmetricCrypto();
-        $encryptedData = $crypto->encrypt($content,
+        $encryptedData = $crypto->encrypt(json_encode($content),
                                           base64_decode($data['key']));
 
         // Store message

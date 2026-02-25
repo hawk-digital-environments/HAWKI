@@ -223,7 +223,7 @@ class MCPSSEClient
             $this->listTools();
             return true;
         } catch (\Exception $e) {
-            Log::debug('MCP server not available', [
+            Log::warning('MCP server not available', [
                 'url' => $this->serverUrl,
                 'error' => $e->getMessage(),
             ]);

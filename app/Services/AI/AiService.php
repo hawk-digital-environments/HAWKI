@@ -87,7 +87,7 @@ readonly class AiService
         $currentRequest = $request;
         while (true) {
             $response = $model->getClient()->sendRequest($currentRequest);
-
+//            \Log::info($response->content);
             if (!$this->toolExecutionService->requiresToolExecution($response)) {
                 return $response;
             }

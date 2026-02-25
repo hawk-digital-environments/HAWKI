@@ -100,7 +100,7 @@ class AiConvController extends Controller
             'completion' => 'required|boolean',
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
-        Log::debug($validatedData);
+
         // CREATE MESSAGE
         $conv = AiConv::where('slug', $slug)->firstOrFail();
         $message = $this->messageHandler->create($conv, $validatedData);
@@ -125,7 +125,6 @@ class AiConvController extends Controller
             'message_id' => 'required|string',
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
-        Log::debug($validatedData);
         $conv = AiConv::where('slug', $slug)->firstOrFail();
         $message = $this->messageHandler->update($conv, $validatedData);
         $messageData = $message->toArray();
