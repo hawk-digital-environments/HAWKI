@@ -89,7 +89,7 @@
         <div class="expanded-content">
 
             <div class="expanded-left">
-                <div class="controls-container scroll-container">
+                <div class="controls-container scroll-container" tabindex="-1">
 
                     <div class="control-buttons scroll-panel">
                         @if($activeModule === 'chat')
@@ -225,27 +225,27 @@
                 </div>
             </div> --}}
 
-            <div class="input-main-btn input-send tooltip-parent" aria-describedby="send-tooltip">
+            <div class="input-main-btn input-send tooltip-parent">
                 @if($activeModule === 'chat')
-                    <button id="send-btn" onClick="onSendClickConv(this)" aria-hidden="true">
+                    <button id="send-btn" onClick="onSendClickConv(this)" aria-describedby="send-tooltip">
                 @elseif($activeModule === 'groupchat')
-                    <button id="send-btn" onClick="onSendClickRoom(this)" aria-hidden="true">
+                    <button id="send-btn" onClick="onSendClickRoom(this)" aria-describedby="send-tooltip">
                 @endif
-                        <div id="send-icon" class="send-btn-icon" >
+                        <div id="send-icon" class="send-btn-icon" aria-hidden="true">
                             <x-icon name="arrow-up"/>
                         </div>
-                        <div id="stop-icon" class="send-btn-icon" style="display:none">
+                        <div id="stop-icon" class="send-btn-icon" style="display:none" aria-hidden="true">
                             <x-icon name="stop"/>
                         </div>
-                        <div id="loading-icon" class="send-btn-icon loading loading-lg" style="display:none">
+                        <div id="loading-icon" class="send-btn-icon loading loading-lg" style="display:none" aria-hidden="true">
                             <div class="loading">
                                 <x-icon name="loading"/>
                             </div>
                         </div>
+                        <div class="label tooltip tt-abs-up" aria-hidden="true" id="send-tooltip">
+                        {{ $translation["Send"] }}
+                        </div>
                 </button>
-                <div class="label tooltip tt-abs-up" aria-hidden="true" id="send-tooltip">
-                    {{ $translation["Send"] }}
-                </div>
             </div>
 
 

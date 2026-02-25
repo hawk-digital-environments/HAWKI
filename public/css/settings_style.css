@@ -139,7 +139,7 @@
   transition: transform var(--transition-fast);
   margin: 2rem;
   padding: 0 2rem;
-  overflow-y: scroll;
+  overflow-y: auto;
   scrollbar-width: 0px;
   box-sizing: border-box;
   max-height: 90%;
@@ -168,7 +168,7 @@
   transition: transform var(--transition-fast);
   margin: 2rem;
   padding: 0 2rem;
-  overflow-y: scroll;
+  overflow-y: auto;
   scrollbar-width: 0px;
   box-sizing: border-box;
   max-height: 90%;

@@ -21,7 +21,13 @@
     padding: 0 1.5rem;
     z-index: 1;
     overflow: hidden;
+    visibility: hidden;
 }
+
+.dy-sidebar.expanded .dy-sidebar-wrapper{
+    visibility: visible;
+}
+
 .dy-sidebar.expanded{
     width: 20rem;
 }
@@ -79,7 +85,7 @@
 .dy-sidebar-content-panel{
     position: relative;
     height: 100%;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
     margin-right: calc(-1.5rem + 3px);
 }
@@ -408,7 +414,7 @@
 }
 .chatlog.start-state #model-selector-burger{
     max-height: 40vh;
-    overflow-y: scroll;
+    overflow-y: auto;
 }
 
 #start-title{
@@ -849,6 +855,9 @@
     background-color: transparent;
     transition: background-color var(--transition-fast);
     cursor: pointer;
+    width: 100%;
+    text-align: left;
+    outline-offset: -2px;
 }
 .selection-item #unread-msg-flag{
     display: none;
@@ -955,8 +964,7 @@
     box-sizing: border-box;
     overflow: hidden;
     outline: none;
-    overflow-y: scroll;
-
+    overflow-y: auto;
     direction: rtl;
 }
 
@@ -1420,6 +1428,7 @@
     margin-bottom: -5px;
     opacity: 1;
     overflow: visible;
+    visibility: visible;
 }
 
 .input-controls{
@@ -1437,6 +1446,7 @@
 
     border-radius: var(--border-radius-normal) var(--border-radius-normal) 0 0;
     background-color: var(--background-main);
+    visibility: hidden;
 }
 
 
@@ -1459,11 +1469,6 @@
     padding-left: 2rem;
 }
 
-.fast-access-btn-left{
-    left: 100%;
-    transform: translate(-100%, -50%);
-}
-
 .fast-access-btn{
     position: relative;
 }
@@ -1479,6 +1484,10 @@
 }
 .fast-access-btn:hover .tooltip{
     display: block;
+}
+.fast-access-btn-left .tooltip{
+    left: 100%;
+    transform: translate(-100%, -50%);
 }
 #websearch-btn .websearch-icon {
     transition: color 0.2s ease;

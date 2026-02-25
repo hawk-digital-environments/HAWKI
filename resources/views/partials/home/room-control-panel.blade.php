@@ -5,10 +5,8 @@
             <x-icon name="x" aria-hidden="true"/>
         </button>
 
-        <div class="scroll-container chat-info-panel">
+        <div class="scroll-container chat-info-panel" tabindex="-1">
             <div class="scroll-panel">
-
-
                 <div class="row">
                     <div class="prop-panel-grid">
 
@@ -49,7 +47,7 @@
                     <label class="label-header">{{ $translation["Description"] }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="description-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditDescriptionToolTip"], 'alignTooltip' => 'left'])
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditDescriptionToolTip"], 'placement' => 'left'])
                     </div>
                 </div>
 
@@ -58,7 +56,7 @@
                     <label class="label-header">{{ $translation["SystemPrompt"] }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="system_prompt-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditSystemPromptToolTip"], 'alignTooltip' => 'left'])
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditSystemPromptToolTip"], 'placement' => 'left'])
                     </div>
                 </div>
 

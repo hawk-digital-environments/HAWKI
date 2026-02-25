@@ -59,7 +59,7 @@
 }
 #data-protection .modal-content-wrapper{
     direction: rtl;
-    overflow-y: scroll;
+    overflow-y: auto;
     margin-left: 4px;
 }
 #data-protection .modal-content {
@@ -122,4 +122,6 @@ input::placeholder{
     border-radius: 50%;
     opacity: 0;
     transition: opacity var(--transition-medium);
+    background: transparent;
+    z-index: 1;
 }

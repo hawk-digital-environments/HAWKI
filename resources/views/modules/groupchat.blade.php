@@ -20,7 +20,7 @@
 				<h3 class="title">{{ $translation["Rooms"] }}</h3>
 
 			</div>
-			<div class="dy-sidebar-content-panel">
+			<div class="dy-sidebar-content-panel" tabindex="-1">
 				<div class="dy-sidebar-scroll-panel">
 					<div class="selection-list" id="rooms-list">
 
