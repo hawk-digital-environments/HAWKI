@@ -38,8 +38,11 @@
 
         <div class="footerPanel">
 
-            <button class="btn-sm" onclick="toggleSettingsPanel(true)">
-                <x-icon name="settings-icon"/>
+            <button class="btn-sm" onclick="toggleSettingsPanel(true)" aria-describedby="settings-tooltip">
+                <x-icon name="settings-icon" aria-hidden="true"/>
+                 <div class="label tooltip tt-abs-left" aria-hidden="true" id="settings-tooltip">
+                    {{ $translation["Settings"] }}
+                </div>
             </button>
             <div class="impressumPanel">
                 <a href="/dataprotection" target="_blank" class="btn-text">{{ $translation["DataProtection"] }}</a>

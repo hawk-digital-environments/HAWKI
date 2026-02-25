@@ -3,18 +3,19 @@
 @else
 <div class="edit-panel editor-only" data-originalDisplay="flex">
 @endif
-    <button class="btn-xs fast-access-btn tooltip-parent" id="edit-btn" onclick="editTextPanel(this)" aria-describedby="changename-tooltip">
-        <x-icon name="new" aria-hidden="true"/>
-        <div class="tooltip" aria-hidden="true" id="changename-tooltip">{{ $tooltip ?? $translation["EditToolTip"] }}</div>
-    </button>
-    @if($callbackFunction ?? false)
     <button class="btn-xs fast-access-btn tooltip-parent
-    @if(($alignTooltip ?? false) == 'left') fast-access-btn-left @endif
+    @if(($placement ?? false) == 'left') fast-access-btn-left @endif
     "
-    id="edit-confirm" onclick="confirmTextPanelEdit(this);{{ $callbackFunction }}()" aria-describedby="confirm-tooltip">
-    @else
-    <button class="btn-xs fast-access-btn tooltip-parent" id="edit-confirm" onclick="confirmTextPanelEdit(this)" aria-describedby="confirm-tooltip">
+    id="edit-btn" onclick="editTextPanel(this)" aria-describedby="edittext-tooltip">
+        <x-icon name="new" aria-hidden="true"/>
+        <div class="tooltip" aria-hidden="true" id="edittext-tooltip">{{ $tooltip ?? $translation["EditToolTip"] }}</div>
+    </button>
+    <button class="btn-xs fast-access-btn tooltip-parent"
+    id="edit-confirm"
+    @if($callbackFunction ?? false)
+    onclick="confirmTextPanelEdit(this);{{ $callbackFunction }}()"
     @endif
+    aria-describedby="confirm-tooltip">
         <x-icon name="check" aria-hidden="true"/>
         <div class="tooltip" aria-hidden="true" id="confirm-tooltip">{{ $translation["Save"] }}</div>
     </button>

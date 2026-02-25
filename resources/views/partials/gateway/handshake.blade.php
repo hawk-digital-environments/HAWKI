@@ -1,7 +1,9 @@
 @extends('layouts.gateway')
 @section('content')
 
-
+<button class="slide-back-btn" onclick="switchBackSlide()" aria-label="{{ $translation["Back"] }}">
+    <x-icon name="chevron-left" aria-hidden="true"/>
+</button>
 
 <div class="wrapper">
 
@@ -38,7 +40,6 @@
             <button onclick="switchSlide(2)" class="btn-text btn-md">{{ $translation["HS_ForgottenPasskey"] }}</button>
         </div>
 
-
         <div class="slide" data-index="2">
             <h3>{{ $translation["HS_EnterBackupMsg"] }}</h3>
 
@@ -67,7 +68,6 @@
             </div>
         </div>
 
-
         <div class="slide" data-index="4">
             <h2>{{ $translation["HS_PasskeyIs"] }}</h2>
             <h3 id="passkey-field" class="demo-hash"></h3>
@@ -75,15 +75,7 @@
                 <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
         </div>
-
-
-
-
     </div>
-</div>
-
-<div class="slide-back-btn" onclick="switchBackSlide()">
-    <x-icon name="chevron-left"/>
 </div>
 
 <script>
@@ -108,15 +100,8 @@
         }
     });
 
-
     document.addEventListener('DOMContentLoaded', function () {
         initializePasskeyInputs(false, @json($allowPaste), @json($charLimit));
     });
-
-
-
-
 </script>
-
-
 @endsection
