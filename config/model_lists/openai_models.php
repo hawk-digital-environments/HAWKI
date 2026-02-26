@@ -51,7 +51,6 @@ return [
             'temp' => env('MODELS_OPENAI_GPT4_1_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_OPENAI_GPT4_1_PARAMS_TOP_P', 1.0),
         ],
-
     ],
     [
         'active'=> env('MODELS_OPENAI_GPT4_1_NANO_ACTIVE', true),

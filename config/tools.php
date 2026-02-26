@@ -61,7 +61,7 @@ return [
             'description' => 'HAWKI Web Search and Knowledge Base',
             'require_approval' => 'never',
             'timeout' => 30,  // Timeout for tool execution (seconds)
-            'discovery_timeout' => 5,  // Timeout for tool discovery (seconds)
+            'discovery_timeout' => 90,  // Timeout for tool discovery (seconds)
             'api_key' => env('HAWKI_RAG_MCP_API_KEY'),  // Optional: API key for authentication
         ],
 

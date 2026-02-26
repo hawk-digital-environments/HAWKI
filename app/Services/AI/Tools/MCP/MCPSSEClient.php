@@ -106,7 +106,7 @@ class MCPSSEClient
 //        $response = $this->parseSSEResponse($responseData, $requestId);
 
         $response = json_decode($result, true);
-
+        Log::debug($response);
         if (!is_array($response)) {
             throw new \RuntimeException('Invalid MCP JSON response');
         }

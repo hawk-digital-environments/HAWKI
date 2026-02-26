@@ -1,9 +1,7 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Tools;
 
-use App\Services\AI\Tools\Interfaces\MCPToolInterface;
-use App\Services\AI\Tools\MCP\MCPSSEClient;
 use App\Services\AI\Tools\ToolRegistry;
 use Illuminate\Console\Command;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands;
+namespace App\Console\Commands\Tools\Mcp;
 
 use App\Services\AI\Tools\MCP\MCPSSEClient;
 use Illuminate\Console\Command;
