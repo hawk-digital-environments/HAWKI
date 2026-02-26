@@ -68,7 +68,7 @@
 
                 </div>
                 <button class="btn-xs model-params-btn" onclick="openMsgParamsControlPanel(this)">
-                    <x-icon name="sliders"/>
+                    <x-icon name="tool"/>
                 </button>
             </div>
         </div>

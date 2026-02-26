@@ -1802,6 +1802,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: .4rem;
 }
 
 #model-parameters-control-panel{
@@ -1943,8 +1944,10 @@
     color: var(--text-faded-color);
 }
 .reset-section{
-    display: flex;
-    column-gap: 1rem;
+
+    grid-template-columns: repeat(2, 1fr);
+    display: grid;
+    column-gap: 0.5rem;
     align-items: center;
     justify-content: space-between;
     padding: 1rem .5rem 0 .5rem;
@@ -1964,6 +1967,7 @@
     font-size: var(--font-xs);
     color: var(--text-faded-color);
     margin: 0;
+    text-align: right;
 }
 
 /* GOOGLE */
