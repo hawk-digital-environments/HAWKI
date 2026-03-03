@@ -3,24 +3,27 @@
 @else
 <div class="edit-panel editor-only" data-originalDisplay="flex">
 @endif
+    @php $tooltipId = str()->uuid() @endphp
     <button class="btn-xs fast-access-btn tooltip-parent
     @if(($placement ?? false) == 'left') fast-access-btn-left @endif
     "
-    id="edit-btn" onclick="editTextPanel(this)" aria-describedby="edittext-tooltip">
+    id="edit-btn" onclick="editTextPanel(this)" aria-describedby="{{ $tooltipId }}">
         <x-icon name="new" aria-hidden="true"/>
-        <div class="tooltip" aria-hidden="true" id="edittext-tooltip">{{ $tooltip ?? $translation["EditToolTip"] }}</div>
+        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $tooltip ?? $translation["EditToolTip"] }}</div>
     </button>
+    @php $tooltipId = str()->uuid() @endphp
     <button class="btn-xs fast-access-btn tooltip-parent"
     id="edit-confirm"
     @if($callbackFunction ?? false)
     onclick="confirmTextPanelEdit(this);{{ $callbackFunction }}()"
     @endif
-    aria-describedby="confirm-tooltip">
+    aria-describedby="{{ $tooltipId }}">
         <x-icon name="check" aria-hidden="true"/>
-        <div class="tooltip" aria-hidden="true" id="confirm-tooltip">{{ $translation["Save"] }}</div>
+        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["Save"] }}</div>
     </button>
-    <button class="btn-xs fast-access-btn tooltip-parent" id="edit-abort" onclick="abortTextPanelEdit(this)" aria-describedby="abort-tooltip">
+    @php $tooltipId = str()->uuid() @endphp
+    <button class="btn-xs fast-access-btn tooltip-parent" id="edit-abort" onclick="abortTextPanelEdit(this)" aria-describedby="{{ $tooltipId }}">
         <x-icon name="x" aria-hidden="true"/>
-        <div class="tooltip" aria-hidden="true" id="abort-tooltip">{{ $translation["Abort"] }}</div>
+        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["Abort"] }}</div>
     </button>
 </div>

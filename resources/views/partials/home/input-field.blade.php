@@ -9,11 +9,12 @@
 
     <div class="input-controls" id="input-controls">
         @if(!$lite)
-        <button class="btn-xs expand-btn fast-access-btn tooltip-parent" onclick="toggleRelativePanelClass('input-controls', this,'expanded')" aria-describedby="more-tooltip">
+        @php $tooltipId = str()->uuid() @endphp
+        <button class="btn-xs expand-btn fast-access-btn tooltip-parent" onclick="toggleRelativePanelClass('input-controls', this,'expanded')" aria-describedby="{{ $tooltipId }}">
             <div class="icon" aria-hidden="true">
                 <x-icon name="chevron-up"/>
             </div>
-            <div class="tooltip" aria-hidden="true" id="more-tooltip">{{ $translation["MoreToolTip"] }}</div>
+            <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["MoreToolTip"] }}</div>
         </button>
         @endif
 
@@ -21,18 +22,20 @@
             <div class="left">
 
                 @if($activeModule === 'chat')
-                    <button class="btn-xs fast-access-btn" onclick="startNewChat()" aria-describedby="startnewchat-tooltip">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-xs fast-access-btn" onclick="startNewChat()" aria-describedby="{{ $tooltipId }}">
                         <x-icon name="new" aria-hidden="true"/>
-                        <div class="tooltip" aria-hidden="true" id="startnewchat-tooltip">
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                             {{ $translation["StartNewChat"] }}
                         </div>
                     </button>
                 @endif
 
                 @if(!$lite && $activeModule === 'chat')
-                    <button class="btn-xs fast-access-btn" value="system_prompt_panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'system_prompt_panel')" aria-describedby="systemprompt-tooltip">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-xs fast-access-btn" value="system_prompt_panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'system_prompt_panel')" aria-describedby="{{ $tooltipId }}">
                         <x-icon name="sliders" aria-hidden="true"/>
-                        <div class="tooltip" aria-hidden="true" id="systemprompt-tooltip">
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                             {{ $translation["SystemPrompt"] }}
                         </div>
                     </button>
@@ -40,9 +43,10 @@
                 @endif
 
                 @if(!$lite)
-                    <button class="btn-xs fast-access-btn" value="export-panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'export-panel')" aria-describedby="export-tooltip">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-xs fast-access-btn" value="export-panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'export-panel')" aria-describedby="{{ $tooltipId }}">
                         <x-icon name="download" aria-hidden="true"/>
-                        <div class="tooltip" aria-hidden="true" id="export-tooltip">
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                             {{ $translation["Export"] }}
                         </div>
                     </button>
@@ -59,13 +63,13 @@
                     <div class="burger-dropdown anchor-top-right" id="model-selector-burger">
                         @include('partials.home.components.models-list', ['selectModel' => true])
                     </div>
-
-                    <button class="burger-btn-arrow burger-btn" onclick="openInputModelSelector(this)">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="burger-btn-arrow burger-btn" onclick="openInputModelSelector(this)" aria-describedby="{{ $tooltipId }}">
                         <div class="icon" aria-hidden="true">
                             <x-icon name="chevron-up"/>
                         </div>
                         <div class="label model-selector-label" aria-hidden="true"></div>
-                        <div class="tooltip" aria-hidden="true" id="modelselector-tooltip">{{ $translation["ModelSelectorToolTip"] }}</div>
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["ModelSelectorToolTip"] }}</div>
                     </button>
                 </div>
                 <button class="btn-xs model-params-btn" onclick="openMsgParamsControlPanel(this)">
@@ -231,10 +235,11 @@
             </div>
 
             <div class="input-main-btn input-send tooltip-parent">
+                @php $tooltipId = str()->uuid() @endphp
                 @if($activeModule === 'chat')
-                    <button id="send-btn" onClick="onSendClickConv(this)" aria-describedby="send-tooltip">
+                    <button id="send-btn" onClick="onSendClickConv(this)" aria-describedby="{{ $tooltipId }}">
                 @elseif($activeModule === 'groupchat')
-                    <button id="send-btn" onClick="onSendClickRoom(this)" aria-describedby="send-tooltip">
+                    <button id="send-btn" onClick="onSendClickRoom(this)" aria-describedby="{{ $tooltipId }}">
                 @endif
                         <div id="send-icon" class="send-btn-icon" aria-hidden="true">
                             <x-icon name="arrow-up"/>
@@ -247,7 +252,7 @@
                                 <x-icon name="loading"/>
                             </div>
                         </div>
-                        <div class="label tooltip tt-abs-up" aria-hidden="true" id="send-tooltip">
+                        <div class="label tooltip tt-abs-up" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["Send"] }}
                         </div>
                 </button>

@@ -10,12 +10,12 @@
 				<h1>{{ Auth::user()->name }}</h1>
 			</div> -->
 			<div class="header">
-
-				<button class="btn-md-stroke" onclick="openRoomCreatorPanel()" aria-describedby="createroom-label">
+				@php $tooltipId = str()->uuid() @endphp
+				<button class="btn-md-stroke" onclick="openRoomCreatorPanel()" aria-describedby="{{ $tooltipId }}">
 					<div class="icon" aria-hidden="true">
 						<x-icon name="plus"/>
 					</div>
-					<div class="label" aria-hidden="true" id="createroom-label"><strong>{{ $translation["CreateRoom"] }}</strong></div>
+					<div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ $translation["CreateRoom"] }}</strong></div>
 				</button>
 				<h3 class="title">{{ $translation["Rooms"] }}</h3>
 

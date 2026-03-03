@@ -1,40 +1,44 @@
 <div class="main-sidebar">
         <div class="sidebar-content">
             <div class="upper-panel">
-                <button id="chat-sb-btn" onclick="onSidebarButtonDown('chat')" href="chat" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="chat-tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button id="chat-sb-btn" onclick="onSidebarButtonDown('chat')" href="chat" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="{{ $tooltipId }}">
                     <x-icon name="chat-icon" aria-hidden="true"/>
-                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="chat-tooltip">
+                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["Chat"] }}
                     </div>
                 </button>
-                <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="groupchat-tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="{{ $tooltipId }}">
                     <x-icon name="assistant-icon" aria-hidden="true" />
-                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="groupchat-tooltip">
+                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["Groupchat"] }}
                     </div>
                 </button>
-
-                <button id="profile-sb-btn" onclick="onSidebarButtonDown('profile')" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="profile-tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button id="profile-sb-btn" onclick="onSidebarButtonDown('profile')" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="{{ $tooltipId }}">
                     <div class="profile-icon round-icon" aria-hidden="true">
                         <span class="user-inits" style="display:none"></span>
                         <img class="icon-img" alt="">
                     </div>
-                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="profile-tooltip">
+                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["Profile"] }}
                     </div>
                 </button>
             </div>
 
             <div class="lower-panel">
-                <button onclick="logout()" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="logout-tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button onclick="logout()" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="{{ $tooltipId }}">
                     <x-icon name="logout-icon" aria-hidden="true"/>
-                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="logout-tooltip">
+                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["Logout"] }}
                     </div>
                 </button>
-                <button class="btn-sm sidebar-btn tooltip-parent" onclick="toggleSettingsPanel(true)" aria-describedby="settings-tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button class="btn-sm sidebar-btn tooltip-parent" onclick="toggleSettingsPanel(true)" aria-describedby="{{ $tooltipId }}">
                     <x-icon name="settings-icon" aria-hidden="true"/>
-                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="settings-tooltip">
+                    <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["Settings"] }}
                     </div>
                 </button>

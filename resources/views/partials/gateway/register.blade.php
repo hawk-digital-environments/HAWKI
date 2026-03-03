@@ -107,9 +107,10 @@
             </p>
             <div class="backup-hash-row">
                 <h3 id="backup-hash" class="demo-hash"></h3>
-                <button class="btn-sm border" onclick="downloadTextFile()" aria-describedby="downloadTextFile-tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button class="btn-sm border" onclick="downloadTextFile()" aria-describedby="{{ $tooltipId }}">
                     <x-icon name="download" aria-hidden="true"/>
-                    <div class="tooltip" aria-hidden="true" id="downloadTextFile-tooltip">{{ $translation["DownloadTextFileTooltip"] }}</div>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["DownloadTextFileTooltip"] }}</div>
                 </button>
             </div>
             <div class="nav-buttons">
