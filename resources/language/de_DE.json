@@ -15,7 +15,7 @@
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
     "Cnf_checkMembersAdded": "Bitte fügen Sie mindestens ein Mitglied hinzu.",
 
-    "Cnf_tokenMsg1": "Bitte bewahre diesen Token sicher auf und verwende ihn mit Bedacht, um dein Konto zu schützen. Wenn HAWKI verdächtiges Verhalten feststellt, wird diese  Token widerrufen.",
+    "Cnf_tokenMsg1": "Bitte bewahre diesen Token sicher auf und verwende ihn mit Bedacht, um dein Konto zu schützen. Wenn HAWKI verdächtiges Verhalten feststellt, wird dieser Token widerrufen.",
     "Cnf_tokenMsg2": "Sobald du dieses Fenster schließt, kannst du diesen Schlüssel nicht mehr erneut abrufen.",
     "Cnf_tokenMsgSuccess": "Token erfolgreich erstellt",
     "Cnf_tokenRevoke": "Bist du sicher, dass du den Token widerrufen möchtest?",
