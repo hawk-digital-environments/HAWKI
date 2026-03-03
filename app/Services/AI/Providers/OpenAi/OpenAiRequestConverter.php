@@ -114,7 +114,7 @@ readonly class OpenAiRequestConverter
                 'content' => [
                     [
                         'type' => 'input_text',
-                        'text' => 'Tool result for ' . ($message['tool_call_id'] ?? 'unknown'). $instructions . ': ' . $message['content'],
+                        'text' => 'AiTool result for ' . ($message['tool_call_id'] ?? 'unknown'). $instructions . ': ' . $message['content'],
                     ]
                 ],
             ];

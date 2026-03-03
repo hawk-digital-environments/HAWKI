@@ -123,7 +123,7 @@ class GwdgStreamingRequest extends AbstractRequest
                     index: $index
                 );
 
-                \Log::info('Tool call parsed', [
+                \Log::info('AiTool call parsed', [
                     'name' => $accumulated['function']['name'],
                     'arguments' => $arguments,
                 ]);

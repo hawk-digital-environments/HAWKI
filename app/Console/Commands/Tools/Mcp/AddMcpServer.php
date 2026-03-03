@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Tools\Mcp;
 
-use App\Models\Tools\McpServer;
+use App\Models\Ai\Tools\McpServer;
 use Illuminate\Console\Command;
 
 class AddMcpServer extends Command
@@ -117,7 +117,7 @@ class AddMcpServer extends Command
             return null;
         }
 
-        $result = $server->fetchServerTools($discoverTools);
+        $result = $server->fetchServerTools();
         if(!$result['success']){
             $this->error($result['message']);
         }
@@ -157,12 +157,7 @@ class AddMcpServer extends Command
                 $selectedToolData[] = $toolMap[$toolName];
             }
         }
-
-
-
-
-
-
+        // setup tools
     }
 
 

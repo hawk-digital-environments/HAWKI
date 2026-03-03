@@ -225,7 +225,7 @@ class AiModel implements JsonSerializable
         }
 
         // New format: string strategy
-        // Tool is available if it has any strategy except 'unsupported'
+        // AiTool is available if it has any strategy except 'unsupported'
         return $value !== 'unsupported';
     }
 

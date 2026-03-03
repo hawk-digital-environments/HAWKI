@@ -39,12 +39,12 @@ class ToolExecutionService
             $results[] = $result;
 
             if ($result->success) {
-                Log::info('Tool executed successfully', [
+                Log::info('AiTool executed successfully', [
                     'tool' => $toolCall->name,
                     'tool_call_id' => $toolCall->id,
                 ]);
             } else {
-                Log::error('Tool execution failed', [
+                Log::error('AiTool execution failed', [
                     'tool' => $toolCall->name,
                     'tool_call_id' => $toolCall->id,
                     'error' => $result->error,
@@ -61,7 +61,7 @@ class ToolExecutionService
      * This creates a new request that includes:
      * 1. The original messages
      * 2. An assistant message with the tool calls
-     * 3. Tool result messages
+     * 3. AiTool result messages
      *
      * @param AiRequest $originalRequest The original request that triggered tool calls
      * @param AiResponse $toolResponse The response containing tool calls

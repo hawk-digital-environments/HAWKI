@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models\Tools;
+namespace App\Models\Ai\Tools;
 
 use App\Services\AI\Tools\MCP\MCPSSEClient;
 use Illuminate\Database\Eloquent\Model;
@@ -72,6 +72,13 @@ class McpServer extends Model
 
 
     public function setupTools(array $toolData){
+
+        try{
+            AiTool::create();
+
+
+
+        }
 
 
 

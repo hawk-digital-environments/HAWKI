@@ -47,7 +47,7 @@ return [
     | - The API key will be sent as: Authorization: Bearer <API_KEY>
     | - Store API keys in .env file for security
     |
-    | Tool names are prefixed with server_label to avoid conflicts.
+    | AiTool names are prefixed with server_label to avoid conflicts.
     | Example: "search" from "rawki_search" becomes "rawki_search.search"
     |
     | All tools are auto-discovered - no manual classes needed!

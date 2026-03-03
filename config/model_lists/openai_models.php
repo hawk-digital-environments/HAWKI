@@ -40,9 +40,10 @@ return [
             'file_upload' => true,
             'vision'=> true,
 
-            // Tool capabilities
+            // AiTool capabilities
             'web_search' => 'native',
             'knowledge_base' => "hawki-rag-query-search",
+            'knowledge_base' => "native",
             'test_tool' => "test_tool"
 
         ],

@@ -10,7 +10,7 @@ use App\Services\AI\Tools\Value\ToolResult;
 /**
  * Abstract base class for tools to reduce boilerplate
  *
- * Tool availability is now determined by model configuration (model_lists/*.php),
+ * AiTool availability is now determined by model configuration (model_lists/*.php),
  * not by the tool itself. Tools should focus solely on their execution logic.
  */
 abstract class AbstractTool implements ToolInterface

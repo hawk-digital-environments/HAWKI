@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Ai;
 
 use App\Services\AI\Value\ModelOnlineStatus;
 use Illuminate\Database\Eloquent\Model;

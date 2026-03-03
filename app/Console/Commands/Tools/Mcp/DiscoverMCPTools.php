@@ -29,6 +29,7 @@ class DiscoverMCPTools extends Command
         $this->info('Discovering tools from MCP servers...');
         $this->newLine();
 
+        //TODO: REMOVE go to Cache::
         $cachePath = storage_path('framework/cache/mcp-tools.php');
         $force = $this->option('force');
 
