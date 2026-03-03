@@ -3,7 +3,7 @@
         <div class="modal-content-wrapper">
             <div class="modal-content">
                 <button class="closeButton btn-sm" onclick="closeModal(this)" aria-label="{{ $translation["Close"] }}">
-                    <x-icon name="x"/>
+                    <x-icon name="x" aria-hidden="true"/>
                 </button>
                 <h3>{{ $translation["ExtAccToken"] }}</h3>
 
