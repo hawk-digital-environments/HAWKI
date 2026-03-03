@@ -25,10 +25,11 @@
                         autocapitalize="off"
                         spellcheck="false"
                     />
-                    <button type="button" class="btn-xs tooltip-parent" id="visibility-toggle" aria-describedby="visibility-tooltip">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button type="button" class="btn-xs tooltip-parent" id="visibility-toggle" aria-describedby="{{ $tooltipId }}">
                         <x-icon name="eye" id="eye" aria-hidden="true"/>
                         <x-icon name="eye-off" id="eye-off" style="display: none" aria-hidden="true"/>
-                        <div class="tooltip tooltip-below" aria-hidden="true" id="visibility-tooltip">{{ $translation["DataKeyShowToolTip"] }}</div>
+                        <div class="tooltip tooltip-below" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["DataKeyShowToolTip"] }}</div>
                     </button>
                 </div>
             </form>
@@ -45,9 +46,10 @@
 
             <div class="backup-hash-row">
                 <input id="backup-hash-input" type="text">
-                <button class="btn-sm border fast-access-btn tooltip-parent" onclick="uploadTextFile()" aria-describedby="uploadTextFile-tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button class="btn-sm border fast-access-btn tooltip-parent" onclick="uploadTextFile()" aria-describedby="{{ $tooltipId }}">
                     <x-icon name="upload" aria-hidden="true"/>
-                    <div class="tooltip" aria-hidden="true" id="uploadTextFile-tooltip">{{ $translation["UploadTextFileTooltip"] }}</div>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["UploadTextFileTooltip"] }}</div>
                 </button>
             </div>
 
