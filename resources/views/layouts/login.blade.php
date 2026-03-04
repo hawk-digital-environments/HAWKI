@@ -38,7 +38,7 @@
 
         <div class="footerPanel">
             @php $tooltipId = str()->uuid() @endphp
-            <button class="btn-sm" onclick="toggleSettingsPanel(true)" aria-describedby="{{ $tooltipId }}">
+            <button class="btn-sm" onclick="toggleSettingsPanel(true)" aria-labelledby="{{ $tooltipId }}">
                 <x-icon name="settings-icon" aria-hidden="true"/>
                  <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
                     {{ $translation["Settings"] }}

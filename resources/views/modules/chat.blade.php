@@ -8,7 +8,7 @@
 			</div> -->
 			<div class="header">
 				@php $tooltipId = str()->uuid() @endphp
-				<button class="btn-md-stroke" onclick="startNewChat()" aria-describedby="{{ $tooltipId }}">
+				<button class="btn-md-stroke" onclick="startNewChat()" aria-labelledby="{{ $tooltipId }}">
 					<div class="icon" aria-hidden="true">
 						<x-icon name="plus"/>
 					</div>
