@@ -13,6 +13,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -33,6 +34,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => false, // Academic fine-tune; tool-calling capability not confirmed
             'file_upload' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -53,6 +55,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_DEVSTRAL_2_123B_INSTRUCT_2512_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -75,6 +78,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_VISION', true),
         ],
@@ -98,6 +102,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => false, // Vision-focused model; tool-calling not exposed via GWDG API
             'file_upload' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_TOOLS_VISION', true),
         ],
@@ -121,6 +126,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_VL_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_QWEN3_VL_30B_A3B_INSTRUCT_TOOLS_VISION', true),
         ],
@@ -142,6 +148,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_GLM_4_7_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -163,6 +170,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_TOOLS_VISION', true),
         ],
@@ -184,6 +192,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -204,6 +213,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_OPENAI_GPT_OSS_120B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -225,6 +235,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_VISION', true),
         ],
@@ -247,6 +258,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => false, // Thinking-mode variant; tool calling conflicts with chain-of-thought output
             'file_upload' => env('MODELS_GWDG_QWEN3_30B_A3B_THINKING_2507_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -268,6 +280,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -288,6 +301,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_QWEN3_32B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -309,6 +323,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => false, // Thinking-mode variant; tool calling conflicts with chain-of-thought output
             'file_upload' => env('MODELS_GWDG_QWEN3_235B_A22B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -329,6 +344,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_LLAMA_3_3_70B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -351,6 +367,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => false, // Medical fine-tune; specialized task model, tool calling not supported
             'file_upload' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_VISION', true),
         ],
@@ -372,6 +389,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => false, // Reasoning/R1 model; chain-of-thought output is incompatible with tool calling
             'file_upload' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -392,6 +410,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => false, // Specialized German/multilingual research model; tool calling not supported
             'file_upload' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
@@ -412,6 +431,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_LLAMA_3_1_SAUERKRAUTLM_70B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [

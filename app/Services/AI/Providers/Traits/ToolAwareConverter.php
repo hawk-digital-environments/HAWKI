@@ -35,7 +35,7 @@ trait ToolAwareConverter
     protected function buildAllTools(AiModel $model): array
     {
         $tools = [];
-        $modelTools = $model->getTools();
+        $modelTools = $model->getCapabilities();
         $registry = app(ToolRegistry::class);
 
         foreach ($modelTools as $capability => $value) {
@@ -80,7 +80,7 @@ trait ToolAwareConverter
     public function buildSelectedTools(AiModel $model, array $capabilities): array
     {
         $tools = [];
-        $modelTools = $model->getTools();
+        $modelTools = $model->getCapabilities();
         $registry = app(ToolRegistry::class);
 
         foreach ($modelTools as $modelCapability => $toolName) {

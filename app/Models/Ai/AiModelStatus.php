@@ -4,12 +4,13 @@ namespace App\Models\Ai;
 
 use App\Services\AI\Value\ModelOnlineStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AiModelStatus extends Model
 {
-    protected $primaryKey = 'model_id';   // use model_id instead of id
-    public $incrementing = false;         // it's not auto-incrementing
-    protected $keyType = 'string';        // model_id is a string
+    protected $primaryKey   = 'model_id';
+    public $incrementing    = false;
+    protected $keyType      = 'string';
 
     protected $fillable = [
         'model_id',
@@ -17,6 +18,14 @@ class AiModelStatus extends Model
     ];
 
     protected $casts = [
-        'status' => ModelOnlineStatus::class
+        'status' => ModelOnlineStatus::class,
     ];
+
+    /**
+     * The AI model this status record belongs to.
+     */
+    public function aiModel(): BelongsTo
+    {
+        return $this->belongsTo(AiModel::class, 'model_id', 'model_id');
+    }
 }

@@ -1160,7 +1160,7 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
                 'broadcasting': false,
                 'slug': '',
                 'regenerationElement': messageElement,
-                'stream': !!(model.tools && model.tools.stream),
+                'stream': !!(model.capabilities && model.capabilities.stream),
                 'model': model.id,
                 'metadata': metadata
             }

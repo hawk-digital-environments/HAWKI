@@ -57,8 +57,14 @@ function isModelEligible(model, filters) {
         }
     }
 
-    // All required filters must be true in model.tools
-    return expandedFilters.every(f => !!model.tools[f]);
+    // All required capabilities must be present and supported in model.capabilities.
+    // A capability is considered supported when its value is a non-empty, non-false,
+    // non-'unsupported' entry — covering booleans, 'native', and tool-name strings
+    // injected from DB assignments.
+    return expandedFilters.every(f => {
+        const val = model.capabilities?.[f];
+        return val !== undefined && val !== null && val !== false && val !== 'unsupported';
+    });
 }
 
 

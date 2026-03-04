@@ -14,23 +14,29 @@ readonly class AiModelContext
         private AiModel                $model,
         private ModelProviderInterface $provider,
         private \Closure               $clientResolver,
-        private \Closure               $statusResolver
+        private \Closure               $statusResolver,
+        private array                  $dbCapabilities = []
     )
     {
     }
-    
+
     public function getProvider(): ModelProviderInterface
     {
         return $this->provider;
     }
-    
+
     public function getStatus(): ModelOnlineStatus
     {
         return ($this->statusResolver)($this->model);
     }
-    
+
     public function getClient(): ClientInterface
     {
         return ($this->clientResolver)($this->model);
+    }
+
+    public function getDbCapabilities(): array
+    {
+        return $this->dbCapabilities;
     }
 }

@@ -1556,13 +1556,6 @@
 .fast-access-btn:hover .tooltip{
     display: block;
 }
-#websearch-btn .websearch-icon {
-    transition: color 0.2s ease;
-    color: var(--text-color);
-}
-#websearch-btn.active .websearch-icon{
-    color: var(--accent-color) !important;
-}
 
 
 

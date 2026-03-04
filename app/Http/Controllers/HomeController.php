@@ -73,18 +73,33 @@ class HomeController extends Controller
 
         $models = $this->aiService->getAvailableModels()->toArray();
 
+        // Native capability flags describe the model itself; they are not user-selectable tools.
+        $capabilityFlags = ['stream', 'file_upload', 'vision', 'tool_calling'];
+
         $toolKit = [];
         foreach ($models['models'] as $model) {
-            if (!empty($model['tools']) && is_array($model['tools'])) {
-                foreach ($model['tools'] as $tool => $value) {
-                    if ($value === true || $value != 'unsupported') {
-                        $toolKit[] = $tool;
+            if (!empty($model['capabilities']) && is_array($model['capabilities'])) {
+                foreach ($model['capabilities'] as $capability => $value) {
+                    if (in_array($capability, $capabilityFlags, true)) {
+                        continue;
+                    }
+                    if ($value !== false && $value !== 'unsupported') {
+                        $toolKit[] = $capability;
                     }
                 }
             }
         }
         $toolKit = array_values(array_unique($toolKit));
 
+        // Build capability → display label map.
+        // Priority: 1) translation key  2) formatted capability name
+        // Note: AiTool::description is the LLM-facing schema description, not a UI label.
+        $toolKitLabels = [];
+        foreach ($toolKit as $capability) {
+            $toolKitLabels[$capability] = !empty($translation['Tool_' . $capability])
+                ? $translation['Tool_' . $capability]
+                : ucwords(str_replace('_', ' ', $capability));
+        }
         $announcements = $announcementService->getUserAnnouncements();
 
         $converterActive = FileConverterFactory::converterActive();
@@ -100,6 +115,7 @@ class HomeController extends Controller
                             'activeOverlay',
                             'models',
                             'toolKit',
+                            'toolKitLabels',
                             'announcements',
                             'converterActive',
                         ));

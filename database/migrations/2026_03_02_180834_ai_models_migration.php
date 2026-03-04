@@ -6,25 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('ai_models', function (Blueprint $table) {
+        Schema::create('ai_models', function (Blueprint $table) {
+            $table->id();
             $table->boolean('active')->default(true);
             $table->string('model_id')->unique();
-            $table->string('lable');
-            $table->json('input');
-            $table->json('output');
-            $table->json('default_params');
-            $table->timestamp('created_at');
+            $table->string('label');
+            $table->json('input')->nullable();
+            $table->json('output')->nullable();
+            $table->json('tools')->nullable();         // model capability flags (stream, file_upload, etc.)
+            $table->json('default_params')->nullable();
+            $table->foreignId('provider_id')->constrained('ai_providers')->cascadeOnDelete();
+            $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('ai_models');

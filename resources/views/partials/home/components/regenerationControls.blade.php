@@ -79,19 +79,20 @@
         </div>
         <div class="sub-menu" id="tools-list">
             @foreach($toolKit as $tool)
-                @if($tool != 'stream' && $tool != 'file_upload' && $tool != 'vision')
+                @if(!in_array($tool, ['stream', 'file_upload', 'vision', 'tool_calling']))
+                    @php $label = $toolKitLabels[$tool] ?? ucwords(str_replace('_', ' ', $tool)); @endphp
                     <button class="burger-item tool-selector"
                             data-reference="{{$tool}}"
-                            data-label="{{ $translation['Tool_' . $tool] ?? ('Tool_' . $tool) }}"
+                            data-label="{{ $label }}"
                     >
-            <span class="icon ">
-                @php
-                    $icon = 'tool_' . $tool;
-                    $path = resource_path("icons/{$icon}.svg");
-                @endphp
-                <x-icon :name="file_exists($path) ? $icon : 'tool'" />
-            </span>
-                        <span class="label">{{ $translation['Tool_' . $tool] ?? ('Tool_' . $tool) }}</span>
+                        <span class="icon ">
+                            @php
+                                $icon = 'tool_' . $tool;
+                                $path = resource_path("icons/{$icon}.svg");
+                            @endphp
+                            <x-icon :name="file_exists($path) ? $icon : 'tool'" />
+                        </span>
+                        <span class="label">{{ $label }}</span>
                     </button>
                 @endif
             @endforeach

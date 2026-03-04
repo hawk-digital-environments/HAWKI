@@ -30,18 +30,6 @@ function setModel(modelID = null){
 
             const modelObject = modelsList.find(m => m.id === activeModel.id);
             selector.classList.add('active');
-
-            if(modelObject.tools.web_search && modelObject.tools.web_search === true){
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.add('active');
-                })
-            }
-            else{
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                })
-            }
-
             const labels = document.querySelectorAll('.model-selector-label');
             labels.forEach(label => {
                 label.innerHTML = activeModel.label;

@@ -2,200 +2,136 @@
 
 namespace App\Console\Commands\Tools;
 
+use App\Models\Ai\Tools\AiTool;
 use App\Services\AI\Tools\ToolRegistry;
 use Illuminate\Console\Command;
 
 class ListAllTools extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'tools:list {--refresh : Force refresh MCP tool discovery} {--json : Output as JSON}';
+    protected $signature = 'tools:list
+                            {--json : Output as JSON}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'List all available tools (function calling and MCP)';
+    protected $description = 'List all available tools (function-call and MCP)';
 
-    /**
-     * Execute the console command.
-     */
     public function handle(): int
     {
-        $refresh = $this->option('refresh');
-        $jsonOutput = $this->option('json');
+        if ($this->option('json')) {
+            return $this->outputJson();
+        }
 
-        if ($refresh) {
-            $this->info('🔄 Refreshing MCP tool cache...');
-            $cachePath = storage_path('framework/cache/mcp-tools.php');
-            if (file_exists($cachePath)) {
-                unlink($cachePath);
+        return $this->outputFormatted();
+    }
+
+    private function outputFormatted(): int
+    {
+        $registry       = app(ToolRegistry::class);
+        $classBasedTools = config('tools.available_tools', []);
+
+        $this->newLine();
+        $this->info('╔════════════════════════════════════════════════════════════════╗');
+        $this->info('║                    HAWKI TOOLS OVERVIEW                        ║');
+        $this->info('╚════════════════════════════════════════════════════════════════╝');
+        $this->newLine();
+
+        // ── Class-based (function calling) tools ───────────────────────────
+        $this->line('═══════════════════════════════════════════════════════════════');
+        $this->line('📦 <fg=yellow;options=bold>FUNCTION CALLING TOOLS</> (local execution)');
+        $this->line('═══════════════════════════════════════════════════════════════');
+        $this->newLine();
+
+        if (empty($classBasedTools)) {
+            $this->warn('   No function-calling tools configured in config/tools.php');
+        } else {
+            // Index DB records by tool name for O(1) lookup
+            $dbFunctionTools = AiTool::with('models')->where('type', 'function')->get()->keyBy('name');
+
+            foreach ($classBasedTools as $toolClass) {
+                try {
+                    $tool   = app($toolClass);
+                    $def    = $tool->getDefinition();
+                    $dbTool = $dbFunctionTools->get($def->name);
+
+                    $isInRegistry  = $registry->has($def->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
+                    $dbStatus      = $dbTool
+                        ? '<fg=green>✓ registered</>'
+                        : '<fg=yellow>⚠ not in DB — run tools:add-function-tool</>';
+
+                    $this->line("  <fg=green>●</> <fg=cyan>{$def->name}</> [{$isInRegistry}] [{$dbStatus}]");
+                    $this->line("    <fg=gray>Class:</> {$toolClass}");
+                    $this->line("    <fg=gray>Desc:</> {$def->description}");
+
+                    if ($dbTool) {
+                        $capability = $dbTool->capability ?: '<fg=gray>none</>';
+                        $modelList  = $dbTool->models->isEmpty()
+                            ? '<fg=red>no models assigned</>'
+                            : $dbTool->models->map(fn($m) => $m->model_id)->join(', ');
+
+                        $this->line("    <fg=gray>Capability:</> {$capability}");
+                        $this->line("    <fg=gray>Models:</> {$modelList}");
+                    }
+                } catch (\Exception $e) {
+                    $this->warn("  ERROR: {$toolClass}: {$e->getMessage()}");
+                }
+                $this->newLine();
             }
-            // Re-bootstrap to trigger discovery
-            $this->call('cache:clear');
         }
 
-        $allTools = $this->gatherAllTools();
+        // ── DB-backed MCP tools ────────────────────────────────────────────
+        $this->line('═══════════════════════════════════════════════════════════════');
+        $this->line('🌐 <fg=blue;options=bold>MCP TOOLS</> (DB-registered, remote execution)');
+        $this->line('═══════════════════════════════════════════════════════════════');
+        $this->newLine();
 
-        if ($jsonOutput) {
-            $this->line(json_encode($allTools, JSON_PRETTY_PRINT));
-            return Command::SUCCESS;
+        $dbTools = AiTool::with(['server', 'models'])->active()->mcp()->get();
+
+        if ($dbTools->isEmpty()) {
+            $this->warn('   No MCP tools in database. Use <comment>php artisan tools:add-mcp-server</comment>.');
+        } else {
+            $grouped = $dbTools->groupBy(fn($t) => $t->server?->server_label ?? 'unknown');
+            foreach ($grouped as $serverLabel => $serverTools) {
+                $server = $serverTools->first()->server;
+                $this->line("  <fg=magenta>▶</> Server: <fg=magenta;options=bold>{$serverLabel}</> ({$server?->url})");
+                $this->newLine();
+
+                foreach ($serverTools as $tool) {
+                    $modelList = $tool->models->isEmpty()
+                        ? '<fg=red>no models assigned</>'
+                        : $tool->models->map(fn($m) => $m->model_id)->join(', ');
+
+                    $isInRegistry = $registry->has($tool->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
+
+                    $this->line("    <fg=green>●</> <fg=cyan>{$tool->name}</> [{$isInRegistry}]");
+                    $this->line("      <fg=gray>Desc:</> {$tool->description}");
+                    $this->line("      <fg=gray>Models:</> {$modelList}");
+                    $this->newLine();
+                }
+            }
         }
 
-        $this->displayTools($allTools);
+        // ── Summary ─────────────────────────────────────────────────────────
+        $this->line('═══════════════════════════════════════════════════════════════');
+        $registryTools = $registry->getAll();
+        $this->line("Registry: <fg=green>" . count($registryTools) . "</> tools loaded");
+        $this->line("💡 <fg=gray>Register function tools:</> <fg=cyan>tools:add-function-tool</>");
+        $this->line("💡 <fg=gray>Register MCP tools:</> <fg=cyan>tools:add-mcp-server</>");
+        $this->line("💡 <fg=gray>Manage model assignments:</> <fg=cyan>tools:assign</>");
+        $this->newLine();
 
         return Command::SUCCESS;
     }
 
-    /**
-     * Gather all tools from all sources
-     */
-    private function gatherAllTools(): array
+    private function outputJson(): int
     {
-        $tools = [
-            'function_calling' => [],
-            'mcp' => [],
-            'summary' => [
-                'total' => 0,
-                'function_calling_count' => 0,
-                'mcp_count' => 0,
-                'servers_count' => 0,
-            ],
-        ];
+        $tools = AiTool::with(['server', 'models'])->get()->map(fn($t) => [
+            'name'        => $t->name,
+            'type'        => $t->type,
+            'status'      => $t->status,
+            'description' => $t->description,
+            'server'      => $t->server?->server_label,
+            'models'      => $t->models->pluck('model_id')->toArray(),
+        ]);
 
-        // Get function calling tools
-        $availableTools = config('tools.available_tools', []);
-        foreach ($availableTools as $toolClass) {
-            if (class_exists($toolClass)) {
-                try {
-                    $tool = app($toolClass, ['serverConfig' => []]);
-                    $tools['function_calling'][] = [
-                        'name' => $tool->getName(),
-                        'class' => $toolClass,
-                        'description' => $tool->getDefinition()->description,
-                    ];
-                } catch (\Exception $e) {
-                    $tools['function_calling'][] = [
-                        'name' => 'ERROR',
-                        'class' => $toolClass,
-                        'description' => 'Failed to instantiate: ' . $e->getMessage(),
-                    ];
-                }
-            }
-        }
-
-        // Get MCP tools from registry
-        $registry = app(ToolRegistry::class);
-        $mcpTools = $registry->getMCPTools();
-
-        $serverGroups = [];
-        foreach ($mcpTools as $tool) {
-            $toolName = $tool->getName();
-            $definition = $tool->getDefinition();
-
-            // Extract server from tool name (format: server_label.tool_name)
-            $parts = explode('-', $toolName, 2);
-            $serverLabel = $parts[0] ?? 'unknown';
-            $shortName = $parts[1] ?? $toolName;
-
-            if (!isset($serverGroups[$serverLabel])) {
-                $serverGroups[$serverLabel] = [];
-            }
-
-            $serverGroups[$serverLabel][] = [
-                'name' => $toolName,
-                'short_name' => $shortName,
-                'description' => $definition->description,
-                'parameters' => count($definition->parameters['properties'] ?? []),
-            ];
-        }
-
-        $tools['mcp'] = $serverGroups;
-
-        // Calculate summary
-        $tools['summary']['function_calling_count'] = count($tools['function_calling']);
-        $tools['summary']['mcp_count'] = count($mcpTools);
-        $tools['summary']['servers_count'] = count($serverGroups);
-        $tools['summary']['total'] = $tools['summary']['function_calling_count'] + $tools['summary']['mcp_count'];
-
-        return $tools;
-    }
-
-    /**
-     * Display tools in a formatted way
-     */
-    private function displayTools(array $tools): void
-    {
-        $this->newLine();
-        $this->info('╔════════════════════════════════════════════════════════════════╗');
-        $this->info('║              🛠️  HAWKI TOOLS OVERVIEW                          ║');
-        $this->info('╚════════════════════════════════════════════════════════════════╝');
-        $this->newLine();
-
-        // Summary
-        $summary = $tools['summary'];
-        $this->line("📊 <fg=cyan>Summary:</>");
-        $this->line("   Total Tools: <fg=green>{$summary['total']}</>");
-        $this->line("   Function Calling: <fg=yellow>{$summary['function_calling_count']}</>");
-        $this->line("   MCP Tools: <fg=blue>{$summary['mcp_count']}</> (from {$summary['servers_count']} servers)");
-        $this->newLine();
-
-        // Function Calling Tools
-        if (!empty($tools['function_calling'])) {
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->line('📦 <fg=yellow;options=bold>FUNCTION CALLING TOOLS</> (Local Execution)');
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->newLine();
-
-            foreach ($tools['function_calling'] as $tool) {
-                $this->line("  <fg=green>●</> <fg=cyan>{$tool['name']}</>");
-                $this->line("    <fg=gray>Class:</> {$tool['class']}");
-                $this->line("    <fg=gray>Description:</> {$tool['description']}");
-                $this->newLine();
-            }
-        } else {
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->line('📦 <fg=yellow;options=bold>FUNCTION CALLING TOOLS</> (Local Execution)');
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->warn('   No function calling tools configured');
-            $this->newLine();
-        }
-
-        // MCP Tools by Server
-        if (!empty($tools['mcp'])) {
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->line('🌐 <fg=blue;options=bold>MCP TOOLS</> (Remote Execution via MCP Servers)');
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->newLine();
-
-            foreach ($tools['mcp'] as $serverLabel => $serverTools) {
-                $this->line("  <fg=magenta>▶</> Server: <fg=magenta;options=bold>{$serverLabel}</>");
-                $this->line("    <fg=gray>Tools:</> " . count($serverTools));
-                $this->newLine();
-
-                foreach ($serverTools as $tool) {
-                    $this->line("    <fg=green>●</> <fg=cyan>{$tool['name']}</>");
-                    $this->line("      <fg=gray>Description:</> {$tool['description']}");
-                    $this->line("      <fg=gray>Parameters:</> {$tool['parameters']}");
-                    $this->newLine();
-                }
-            }
-        } else {
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->line('🌐 <fg=blue;options=bold>MCP TOOLS</> (Remote Execution via MCP Servers)');
-            $this->line('═══════════════════════════════════════════════════════════════');
-            $this->warn('   No MCP tools discovered. Check your MCP server configuration.');
-            $this->newLine();
-        }
-
-        // Footer
-        $this->line('═══════════════════════════════════════════════════════════════');
-        $this->line('💡 <fg=gray>Tip:</> Use <fg=cyan>--refresh</> to force re-discover MCP tools');
-        $this->line('💡 <fg=gray>Tip:</> Use <fg=cyan>--json</> to output as JSON');
-        $this->newLine();
+        $this->line($tools->toJson(JSON_PRETTY_PRINT));
+        return Command::SUCCESS;
     }
 }
