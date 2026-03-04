@@ -19,7 +19,7 @@
                 <button id="profile-sb-btn" onclick="onSidebarButtonDown('profile')" class="btn-sm sidebar-btn tooltip-parent" aria-describedby="{{ $tooltipId }}">
                     <div class="profile-icon round-icon" aria-hidden="true">
                         <span class="user-inits" style="display:none"></span>
-                        <img class="icon-img" alt="">
+                        <img class="icon-img">
                     </div>
                     <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["Profile"] }}
