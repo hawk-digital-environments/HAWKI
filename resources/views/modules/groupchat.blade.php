@@ -11,7 +11,7 @@
 			</div> -->
 			<div class="header">
 				@php $tooltipId = str()->uuid() @endphp
-				<button class="btn-md-stroke" onclick="openRoomCreatorPanel()" aria-describedby="{{ $tooltipId }}">
+				<button class="btn-md-stroke" onclick="openRoomCreatorPanel()" aria-labelledby="{{ $tooltipId }}">
 					<div class="icon" aria-hidden="true">
 						<x-icon name="plus"/>
 					</div>
