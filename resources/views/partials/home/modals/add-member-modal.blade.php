@@ -3,7 +3,7 @@
         <div class="modal-content-wrapper">
 
             <button class="closeButton btn-sm" onclick="closeModal(this)" aria-label="{{ $translation["Close"] }}">
-                <x-icon name="x"/>
+                <x-icon name="x" aria-hidden="true"/>
             </button>
 
             <div class="modal-content">
