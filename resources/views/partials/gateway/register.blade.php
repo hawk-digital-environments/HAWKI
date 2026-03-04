@@ -83,7 +83,7 @@
                         name="not_a_password_input"
 
                     />
-                    <button class="btn-xs" id="visibility-toggle-repeat">
+                    <button type="button" class="btn-xs" id="visibility-toggle-repeat">
                         <x-icon name="eye" id="eye-repeat" aria-hidden="true"/>
                         <x-icon name="eye-off" id="eye-off-repeat" style="display: none" aria-hidden="true"/>
                     </button>
