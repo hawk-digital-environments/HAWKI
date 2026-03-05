@@ -45,29 +45,15 @@ class MCPSSEClient
 
         $jsonRequest = json_encode($request);
 
-//        Log::debug('MCP SSE Request', [
-//            'url' => $this->serverUrl,
-//            'method' => $method,
-//            'request' => $request,
-//        ]);
+        Log::debug('MCP SSE Request', [
+            'url' => $this->serverUrl,
+            'method' => $method,
+            'request' => $request,
+        ]);
 
         // Initialize cURL for SSE
         $ch = curl_init($this->serverUrl);
 
-//        curl_setopt_array($ch, [
-//            CURLOPT_RETURNTRANSFER => true,
-//            CURLOPT_POST => true,
-//            CURLOPT_POSTFIELDS => $jsonRequest,
-//            CURLOPT_HTTPHEADER => [
-//                'Content-Type: application/json',
-//                'Accept: text/event-stream',
-//            ],
-//            CURLOPT_TIMEOUT => $this->timeout,
-//            CURLOPT_WRITEFUNCTION => function($ch, $data) use (&$responseData) {
-//                $responseData .= $data;
-//                return strlen($data);
-//            },
-//        ]);
         // Build headers
         $headers = [
             'Content-Type: application/json',
@@ -110,13 +96,52 @@ class MCPSSEClient
         if (!is_array($response)) {
             throw new \RuntimeException('Invalid MCP JSON response');
         }
-
-//        Log::debug('MCP SSE Response', [
-//            'method' => $method,
-//            'response' => $response,
-//        ]);
-
         return $response;
+    }
+
+
+    /**
+     * Perform MCP initialize handshake with the server
+     *
+     * @return array Server metadata and capabilities
+     */
+    public function initialize(): array
+    {
+        try {
+            $response = $this->request('initialize', [
+                'protocolVersion' => '2024-11-05',
+                'capabilities' => new \stdClass(), // empty object per MCP spec
+                'clientInfo' => [
+                    'name' => config('app.name'),
+                    'version' => config('app.version'),
+                ],
+            ]);
+
+            return $response['result'] ?? $response;
+
+        } catch (\Exception $e) {
+            Log::error('MCP initialize handshake failed', [
+                'url' => $this->serverUrl,
+                'error' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
+    }
+
+    /**
+     * Get MCP server info (name, version, capabilities)
+     */
+    public function getServerInfo(): array
+    {
+        $init = $this->initialize();
+
+        return [
+            'name' => $init['serverInfo']['name'] ?? null,
+            'version' => $init['serverInfo']['version'] ?? null,
+            'protocolVersion' => $init['protocolVersion'] ?? null,
+            'capabilities' => $init['capabilities'] ?? [],
+        ];
     }
 
     /**

@@ -11,6 +11,8 @@ class McpServer extends Model
     protected $fillable = [
         'url',
         'server_label',
+        'version',
+        'protocolVersion',
         'description',
         'require_approval',
         'timeout',

@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('mcp_servers', function (Blueprint $table) {
             $table->id();
-            $table->string('url');
+            $table->string('url')->unique();
             $table->string('server_label');
+            $table->string('version');
+            $table->string('protocolVersion');
             $table->text('description');
             $table->string('require_approval');
             $table->string('timeout');

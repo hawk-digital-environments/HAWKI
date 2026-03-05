@@ -6,8 +6,7 @@ function buildRequestObject(msgAttributes, onData) {
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
     const isUpdate = msgAttributes['regenerationElement'] ? true : false;
     const msgID = msgAttributes['regenerationElement'] ? msgAttributes['regenerationElement'].id : null;
-
-    const stream = activeModel.tools.stream ? msgAttributes['stream'] : false;
+    const stream = activeModel.capabilities.stream ? msgAttributes['stream'] : false;
 
     const requestObject = {
         broadcast: msgAttributes['broadcasting'],

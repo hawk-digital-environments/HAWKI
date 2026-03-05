@@ -6,7 +6,10 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Ai\Tools\McpServer;
+use App\Services\AI\Tools\MCP\MCPSSEClient;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Http;
+use const http\Client\Curl\Features\HTTP2;
 
 class AddMcpServer extends Command
 {
@@ -203,16 +206,28 @@ class AddMcpServer extends Command
         $discoveryTimeout = $this->option('discovery_timeout');
         $apiKey           = $this->option('api_key');
 
+        if (empty($apiKey)) {
+            $apiKey = $this->secret('Please enter the API key for the MCP server (leave blank if none)') ?: null;
+        }
+
+
+        $client = new MCPSSEClient(
+            $url,
+            (int) 5,
+            "1|Mx1y74lMsg02Npzih1r76jadBKG6iKEiiaG4ncEA4021f614"
+        );
+
+        $info = $client->getServerInfo();
+        $name = $info['name'];
+        $version = $info['version'];
+        $protocolVersion = $info['protocolVersion'];
+
         if (empty($label)) {
-            $label = $this->ask('Please enter a label for the MCP server', 'MCP Server');
+            $label = $this->ask('Please enter a label for the MCP server', $name);
         }
 
         if (empty($description)) {
             $description = $this->ask('Please enter a description for the MCP server', '');
-        }
-
-        if (empty($apiKey)) {
-            $apiKey = $this->secret('Please enter the API key for the MCP server (leave blank if none)') ?: null;
         }
 
         $validApprovalOptions = ['never', 'always', 'auto'];
@@ -229,8 +244,15 @@ class AddMcpServer extends Command
         }
 
         return $this->createMcpServer(
-            $url, $label, $description, $requireApproval,
-            $timeout, $discoveryTimeout, $apiKey
+            $url,
+            $label,
+            $version,
+            $protocolVersion,
+            $description,
+            $requireApproval,
+            $timeout,
+            $discoveryTimeout,
+            $apiKey
         );
     }
 
@@ -338,6 +360,8 @@ class AddMcpServer extends Command
     protected function createMcpServer(
         string  $url,
         string  $label,
+        string  $version,
+        string  $protocolVersion,
         string  $description,
         string  $requireApproval,
         string  $timeout,
@@ -348,6 +372,8 @@ class AddMcpServer extends Command
             $server = McpServer::create([
                 'url'               => $url,
                 'server_label'      => $label,
+                'version'           => $version,
+                'protocolVersion'   => $protocolVersion,
                 'description'       => $description,
                 'require_approval'  => $requireApproval,
                 'timeout'           => (int) $timeout,
