@@ -40,11 +40,22 @@ readonly class ResponsesRequestConverter
             $payload['instructions'] = $instructions;
         }
 
-        // Add reasoning configuration based on model
-        if ($this->supportsReasoning($modelId)) {
-            $payload['reasoning'] = [
-                'effort' => $this->getReasoningEffort($modelId, $rawPayload),
-            ];
+        // Get available tools from model (used for reasoning and web_search)
+        $availableTools = $model->getTools();
+
+        // Add reasoning configuration if:
+        // 1. Model supports reasoning
+        // 2. User explicitly requested reasoning via reasoning_effort
+        if (isset($availableTools['reasoning']) && $availableTools['reasoning'] === true) {
+            $reasoningEffort = $this->getReasoningEffort($modelId, $rawPayload);
+            
+            // Only add reasoning if explicitly requested
+            if ($reasoningEffort !== null) {
+                $payload['reasoning'] = [
+                    'effort' => $reasoningEffort,
+                    'summary' => 'auto', // Enable reasoning summaries
+                ];
+            }
         }
 
         // Add text format for structured outputs if specified
@@ -64,7 +75,6 @@ readonly class ResponsesRequestConverter
 
         // Handle web_search tool (following GoogleRequestConverter pattern)
         // Check if model supports web_search AND frontend has enabled it
-        $availableTools = $model->getTools();
         if (isset($availableTools['web_search']) && $availableTools['web_search'] === true) {
             // Model supports web_search - check if frontend enabled it
             if (isset($rawPayload['tools']['web_search']) && $rawPayload['tools']['web_search'] === true) {
@@ -176,34 +186,18 @@ readonly class ResponsesRequestConverter
     }
 
     /**
-     * Check if model supports reasoning
-     */
-    private function supportsReasoning(string $modelId): bool
-    {
-        // GPT-5 and GPT-4.1 families support reasoning
-        return str_starts_with($modelId, 'gpt-5') || str_starts_with($modelId, 'gpt-4.1');
-    }
-
-    /**
      * Get reasoning effort level based on model and payload
+     * Only use reasoning if explicitly enabled via payload
      */
-    private function getReasoningEffort(string $modelId, array $rawPayload): string
+    private function getReasoningEffort(string $modelId, array $rawPayload): ?string
     {
         // Check if reasoning effort is specified in payload
         if (isset($rawPayload['reasoning_effort'])) {
             return $rawPayload['reasoning_effort'];
         }
 
-        // Default reasoning effort based on model
-        if (str_starts_with($modelId, 'gpt-5')) {
-            return 'medium';
-        }
-
-        if (str_starts_with($modelId, 'gpt-4.1-nano')) {
-            return 'low';
-        }
-
-        return 'low';
+        // No reasoning if not explicitly requested
+        return null;
     }
 
         /**

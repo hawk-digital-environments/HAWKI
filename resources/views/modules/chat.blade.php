@@ -74,7 +74,7 @@
 
 window.addEventListener('DOMContentLoaded', async function (){
 
-	initializeAiChatModule(@json($userData['convs']))
+	initializeAiChatModule(@json($userData['convs']), @json($userData['convs_has_more']))
 
 	const slug = @json($slug);
 

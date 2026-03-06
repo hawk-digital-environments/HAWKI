@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
-
 use App\Models\Message;
+use App\Models\Room;
 use App\Models\User;
 use App\Services\Storage\FileStorageService;
 use Dotenv\Exception\ValidationException;
@@ -55,6 +55,25 @@ class RoomController extends Controller
 
     public function update(Request $request, $slug): JsonResponse
     {
+        $room = Room::where('slug', $slug)->firstOrFail();
+        
+        // Debug: Log current user's role
+        $member = $room->getMemberByUserId(Auth::id());
+        \Log::info('Update room attempt', [
+            'user_id' => Auth::id(),
+            'room_slug' => $slug,
+            'member_role' => $member ? $member->role : 'not a member',
+            'can_modify' => $room->userCanModifyRoom(Auth::id())
+        ]);
+        
+        // Check if user has permission to modify room (Admin or Editor)
+        if (!$room->userCanModifyRoom(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify this room. Only Admins and Editors can change room settings.'
+            ], 403);
+        }
+        
         $validatedData = $request->validate([
             'system_prompt' => 'nullable|string',
             'description' => 'nullable|string',
@@ -71,6 +90,16 @@ class RoomController extends Controller
 
     function uploadAvatar(Request $request, $slug = null): JsonResponse
     {
+        $room = Room::where('slug', $slug)->firstOrFail();
+        
+        // Check if user has permission to modify room (Admin or Editor)
+        if (!$room->userCanModifyRoom(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify room avatar. Only Admins and Editors can change room settings.'
+            ], 403);
+        }
+        
         $validatedData = $request->validate([
             'image' => 'required|file|max:20480'
         ]);
@@ -85,7 +114,37 @@ class RoomController extends Controller
         ]);
     }
 
+    function removeAvatar($slug = null): JsonResponse
+    {
+        $room = Room::where('slug', $slug)->firstOrFail();
+        
+        // Check if user has permission to modify room (Admin or Editor)
+        if (!$room->userCanModifyRoom(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to remove room avatar. Only Admins and Editors can change room settings.'
+            ], 403);
+        }
+        
+        $this->roomService->removeAvatar($slug);
+
+        return response()->json([
+            "success" => true,
+            "message" => "Avatar removed successfully"
+        ]);
+    }
+
     public function delete($slug): JsonResponse{
+        $room = Room::where('slug', $slug)->firstOrFail();
+        
+        // Check if user has permission to delete room (Admin only)
+        if (!$room->userCanDeleteRoom(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to delete this room. Only Admins can delete rooms.'
+            ], 403);
+        }
+        
         $this->roomService->delete($slug);
         return response()->json([
             'success' => true,
@@ -97,10 +156,30 @@ class RoomController extends Controller
     // SECTION: MEMBER
     public function addMember(Request $request, $slug): JsonResponse
     {
+        $room = Room::where('slug', $slug)->firstOrFail();
+        
+        // Check if user has permission to add members (Admin or Editor)
+        if (!$room->userCanAddMembers(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to add members. Only Admins and Editors can add members.'
+            ], 403);
+        }
+        
         $validatedData = $request->validate([
             'invitee' => 'string',
             'role'=>'string'
         ]);
+        
+        // Check if Editor is trying to assign Admin role
+        $currentMember = $room->getMemberByUserId(Auth::id());
+        if ($currentMember && $currentMember->isEditor() && $validatedData['role'] === \App\Models\Member::ROLE_ADMIN) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Editors cannot assign Admin roles. Only Admins can create other Admins.'
+            ], 403);
+        }
+        
         $members = $this->roomService->add($slug, $validatedData);
         return response()->json($members);
     }
@@ -116,6 +195,16 @@ class RoomController extends Controller
 
 
     public function kickMember(Request $request, $slug): JsonResponse{
+        $room = Room::where('slug', $slug)->firstOrFail();
+        
+        // Check if user has permission to remove members (Admin only)
+        if (!$room->userCanRemoveMembers(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to remove members. Only Admins can remove members.'
+            ], 403);
+        }
+        
         $validatedData = $request->validate([
             'username' => 'string|max:16',
         ]);
@@ -160,6 +249,16 @@ class RoomController extends Controller
 
     // SECTION: MESSAGE
     public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator): JsonResponse {
+        
+        $room = Room::where('slug', $slug)->firstOrFail();
+        
+        // Check if user has permission to send messages (Admin or Editor only)
+        if (!$room->userCanSendMessages(Auth::id())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to send messages. Viewers can only read messages.'
+            ], 403);
+        }
 
         $validatedData = $request->validate([
             'content' => 'required|array',
@@ -208,6 +307,13 @@ class RoomController extends Controller
             'message_id' => 'required|string',
         ]);
         $this->roomService->markAsRead($validatedData, $slug);
+        return response()->json([
+            'success' => true,
+        ]);
+    }
+
+    public function markAllAsRead($slug){
+        $this->roomService->markAllAsRead($slug);
         return response()->json([
             'success' => true,
         ]);

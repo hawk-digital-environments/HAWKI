@@ -12,11 +12,25 @@
                 @endif
 
                 @if(Auth::user()->hasAccess('groupchat.access') && config('hawki.groupchat_active', false))
-                <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent">
+                <button id="groupchat-sb-btn" onclick="onSidebarButtonDown('groupchat')" class="btn-sm sidebar-btn tooltip-parent" style="position: relative;">
                     <x-icon name="assistant-icon"/>
+                    <!-- Red badge for new invitations (top-right) -->
+                    <div class="notification-badge new-room" id="groupchat-invitation-badge"></div>
+                    <!-- Green badge for new messages (bottom-right) -->
+                    <div class="notification-badge new-message" id="groupchat-message-badge"></div>
 
                     <div class="label tooltip tt-abs-left">
                         {{ $translation["Groupchat"] }}
+                    </div>
+                </button>
+                @endif
+
+                @if(config('hawki.news_active'))
+                <button id="news-sb-btn" onclick="onSidebarButtonDown('news')" href="chat" class="btn-sm sidebar-btn tooltip-parent">
+                    <x-icon name="send"/>
+
+                    <div class="label tooltip tt-abs-left">
+                        {{ $translation["News"] }}
                     </div>
                 </button>
                 @endif

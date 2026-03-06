@@ -56,6 +56,71 @@ class TextImportService
     }
 
     /**
+     * Analyze system texts from JSON files without importing
+     * Returns statistics about what would be imported
+     *
+     * @param  bool  $forceUpdate  Whether to consider force update mode
+     * @return array Analysis results with statistics
+     */
+    public function analyzeSystemTexts(bool $forceUpdate = false): array
+    {
+        $languagePath = resource_path('language/');
+        $supportedLanguages = ['de_DE', 'en_US'];
+        
+        $analysis = [
+            'languages' => [],
+            'total_keys' => 0,
+            'new_keys' => 0,
+            'existing_keys' => 0,
+        ];
+
+        foreach ($supportedLanguages as $language) {
+            $jsonFile = $languagePath.$language.'.json';
+            
+            $analysis['languages'][$language] = [
+                'new' => 0,
+                'existing' => 0,
+                'total' => 0,
+            ];
+
+            if (File::exists($jsonFile)) {
+                try {
+                    $jsonContent = File::get($jsonFile);
+                    $textData = json_decode($jsonContent, true);
+
+                    if ($textData && is_array($textData)) {
+                        foreach ($textData as $key => $value) {
+                            if (! is_string($value) || empty($value)) {
+                                continue;
+                            }
+
+                            $analysis['languages'][$language]['total']++;
+                            $analysis['total_keys']++;
+
+                            // Check if key exists in database
+                            $exists = AppSystemText::where('content_key', $key)
+                                ->where('language', $language)
+                                ->exists();
+
+                            if ($exists) {
+                                $analysis['languages'][$language]['existing']++;
+                                $analysis['existing_keys']++;
+                            } else {
+                                $analysis['languages'][$language]['new']++;
+                                $analysis['new_keys']++;
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Error analyzing {$jsonFile}: ".$e->getMessage());
+                }
+            }
+        }
+
+        return $analysis;
+    }
+
+    /**
      * Import localized texts from HTML files
      *
      * @param  bool  $forceUpdate  Whether to update existing entries

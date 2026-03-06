@@ -17,8 +17,27 @@ class StreamChunkHandler
     
     public function handle(string $data): void
     {
-        if (!str_starts_with(trim($data), 'data: ')) {
+        // Check if data already has SSE format (OpenAI uses plain JSON, others use "data: " prefix)
+        $hasDataPrefix = str_starts_with(trim($data), 'data: ');
+        
+        // If data is already valid JSON (OpenAI Responses API), process immediately without buffering
+        if (!$hasDataPrefix && json_validate(trim($data))) {
+            ($this->onChunk)($data);
+            return;
+        }
+        
+        // Otherwise, use buffer normalization for incomplete chunks
+        if (!$hasDataPrefix) {
             $data = $this->normalizeDataChunk($data);
+            
+            // Log normalized/assembled data after buffer processing (complete JSON objects)
+            if (config('logging.triggers.normalized_return_object')) {
+                \Log::info('2. StreamChunkHandler - Assembled JSON', [
+                    'data_size' => strlen($data),
+                    'data_preview' => substr($data, 0, 300),
+                    'note' => 'Incomplete JSON objects have been assembled via buffer'
+                ]);
+            }
         }
         
         foreach (explode("data: ", $data) as $chunk) {
@@ -28,6 +47,14 @@ class StreamChunkHandler
             
             if (empty($chunk) || !json_validate($chunk)) {
                 continue;
+            }
+            
+            // Log formatted chunk before passing to provider-specific parsing
+            if (config('logging.triggers.formatted_stream_chunk')) {
+                \Log::info('2. StreamChunkHandler - Valid JSON Chunk', [
+                    'chunk_size' => strlen($chunk),
+                    'chunk_data' => json_decode($chunk, true)
+                ]);
             }
             
             ($this->onChunk)($chunk);

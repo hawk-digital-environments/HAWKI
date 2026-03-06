@@ -9,8 +9,13 @@
                 <h2 class="header">{{ $translation['ImgUpload'] }}</h2>
                 <p>{!! $translation['ImgUploadDesc'] !!}</p>
 
-                <div class="image-container edit" id="image-container">
-                    <div id="image-field-placeholder"></div>
+                <div style="position: relative;">
+                    <div class="image-container edit" id="image-container">
+                        <div id="image-field-placeholder"></div>
+                    </div>
+                    <button class="btn-icon-only delete-btn image-delete-overlay" id="remove-image-btn" onclick="removeCurrentImage()" style="display: none;" title="{{ $translation['Delete'] ?? 'Löschen' }}">
+                        <x-icon name="trash"/>
+                    </button>
                 </div>
 
                 <div class="modal-buttons-bar top-gap-1">

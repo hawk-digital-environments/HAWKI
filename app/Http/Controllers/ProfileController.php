@@ -48,6 +48,15 @@ class ProfileController extends Controller
         ]);
     }
 
+    public function removeAvatar(ProfileService $profileService): JsonResponse
+    {
+        $profileService->removeAvatar();
+        return response()->json([
+            'success' => true,
+            'message' => 'Avatar removed successfully'
+        ]);
+    }
+
 
     public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse{
         $profileService->resetProfile();

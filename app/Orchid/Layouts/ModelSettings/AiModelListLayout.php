@@ -86,47 +86,80 @@ class AiModelListLayout extends Table
             TD::make('capabilities', 'Capabilities')
                 ->render(function (AiModel $model) {
                     $tools = $model->settings['tools'] ?? [];
-                    $icons = [];
+                    $html = '<div class="d-flex align-items-center gap-1">';
 
-                    // File Upload capability
-                    if (!empty($tools['file_upload'])) {
-                        $icons[] = '<span class="badge bg-primary rounded-circle me-1" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="File Upload Support">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-paperclip" viewBox="0 0 16 16">
-                                          <path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0z"/>
-                                        </svg>
-                                     </span>';
+                    // Define all capabilities with their icons and colors (using Feather SVG icons)
+                    $capabilities = [
+                        'file_upload' => [
+                            'title' => 'File Upload',
+                            'color' => 'primary',
+                            'svg' => '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>'
+                        ],
+                        'vision' => [
+                            'title' => 'Vision/Image Analysis',
+                            'color' => 'warning',
+                            'svg' => '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>'
+                        ],
+                        'web_search' => [
+                            'title' => 'Web Search',
+                            'color' => 'success',
+                            'svg' => '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3.6 9h16.8"></path><path d="M3.6 15h16.8"></path><path d="M11.5 3a17 17 0 0 0 0 18"></path><path d="M12.5 3a17 17 0 0 1 0 18"></path></svg>'
+                        ],
+                        'reasoning' => [
+                            'title' => 'Reasoning',
+                            'color' => 'info',
+                            'svg' => '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>'
+                        ],
+                    ];
+
+                    // Render all capability icons as clickable badges
+                    foreach ($capabilities as $capabilityKey => $capability) {
+                        $isActive = !empty($tools[$capabilityKey]);
+                        $badgeClass = $isActive ? "bg-{$capability['color']}" : 'bg-secondary';
+                        $opacity = $isActive ? '0.9' : '0.4';
+                        
+                        // Create Orchid button with raw SVG content
+                        $button = Button::make('')
+                            ->method('toggleCapability')
+                            ->parameters([
+                                'id' => $model->id,
+                                'capability' => $capabilityKey,
+                            ])
+                            ->class("{$badgeClass} border-0 capability-toggle")
+                            ->style("width: 26px; height: 26px; opacity: {$opacity}; cursor: pointer; transition: opacity 0.2s ease; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; padding: 0;");
+                        
+                        // Render button and inject SVG into it
+                        $buttonHtml = (string) $button->render();
+                        $buttonHtml = str_replace('</button>', $capability['svg'] . '</button>', $buttonHtml);
+                        // Add tooltip title attribute to the button
+                        $buttonHtml = str_replace('<button', '<button title="' . htmlspecialchars($capability['title']) . '"', $buttonHtml);
+                        
+                        $html .= $buttonHtml;
                     }
 
-                    // Vision capability
-                    if (!empty($tools['vision'])) {
-                        $icons[] = '<span class="badge bg-warning rounded-circle me-1" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="Vision/Image Analysis">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
-                                          <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
-                                          <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-                                        </svg>
-                                     </span>';
+                    $html .= '</div>';
+                    
+                    // Add CSS for hover effect and loading state (only add once)
+                    if (!isset($GLOBALS['capability_toggle_css'])) {
+                        $GLOBALS['capability_toggle_css'] = true;
+                        $html .= '<style>
+                            /* Capability icons - always round */
+                            .capability-toggle, .capability-toggle * { border-radius: 50% !important; }
+                            .capability-toggle:hover { opacity: 1 !important; }
+                            .capability-toggle.disabled, .capability-toggle:disabled, .capability-toggle[disabled], .capability-toggle.btn-loading { width: 26px !important; height: 26px !important; min-width: 26px !important; min-height: 26px !important; max-width: 26px !important; max-height: 26px !important; padding: 0 !important; }
+                            .capability-toggle .spinner-border, .capability-toggle .spinner-border-sm { width: 14px !important; height: 14px !important; min-width: 14px !important; min-height: 14px !important; max-width: 14px !important; max-height: 14px !important; border-width: 2px !important; border-color: white !important; border-right-color: transparent !important; }
+                            .capability-toggle svg { stroke: white !important; }
+                            .capability-toggle svg path, .capability-toggle svg circle, .capability-toggle svg polygon, .capability-toggle svg polyline { stroke: white !important; }
+                            
+                            /* Badge buttons - always pill-shaped */
+                            .badge.rounded-pill, .badge.rounded-pill *, button.badge.rounded-pill, button.badge.rounded-pill * { border-radius: 50rem !important; }
+                            
+                            /* Remove wait cursor on all buttons */
+                            button.disabled, button:disabled, button[disabled], button.btn-loading, .badge.disabled, .badge:disabled, .badge[disabled], .badge.btn-loading, .capability-toggle.disabled *, .capability-toggle:disabled *, .capability-toggle[disabled] *, .capability-toggle.btn-loading *, .badge.rounded-pill.disabled *, .badge.rounded-pill:disabled *, .badge.rounded-pill[disabled] *, .badge.rounded-pill.btn-loading * { cursor: pointer !important; }
+                        </style>';
                     }
-
-                    // Web Search capability
-                    if (!empty($tools['web_search'])) {
-                        $icons[] = '<span class="badge bg-success rounded-circle me-1" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="Web Search Integration">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-globe" viewBox="0 0 16 16">
-                                          <path d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855A8 8 0 0 0 5.145 4H7.5zM4.09 4a9.3 9.3 0 0 1 .64-1.539 7 7 0 0 1 .597-.933A7.0 7.0 0 0 0 2.255 4zm-.582 3.5c.03-.877.138-1.718.312-2.5H1.674a7 7 0 0 0-.656 2.5zM4.847 5a12.5 12.5 0 0 0-.338 2.5H7.5V5zM8.5 5v2.5h2.99a12.5 12.5 0 0 0-.337-2.5zM4.51 8.5a12.5 12.5 0 0 0 .337 2.5H7.5V8.5zm3.99 0V11h2.653c.187-.765.306-1.608.338-2.5zM5.145 12q.208.58.468 1.068c.552 1.035 1.218 1.65 1.887 1.855V12zm.182 2.472a7 7 0 0 1-.597-.933A9.3 9.3 0 0 1 4.09 12H2.255a7 7 0 0 0 3.072 2.472M3.82 11a13.7 13.7 0 0 1-.312-2.5h-2.49c.062.89.291 1.733.656 2.5zm6.853 3.472A7 7 0 0 0 13.745 12H11.91a9.3 9.3 0 0 1-.64 1.539 7 7 0 0 1-.597.933M8.5 12v2.923c.67-.204 1.335-.82 1.887-1.855q.26-.487.468-1.068zm3.68-1h2.146c.365-.767.594-1.61.656-2.5h-2.49a13.7 13.7 0 0 1-.312 2.5m2.802-3.5a7 7 0 0 0-.656-2.5H12.18c.174.782.282 1.623.312 2.5zM11.27 2.461c.247.464.462.98.64 1.539h1.835a7 7 0 0 0-3.072-2.472c.218.284.418.598.597.933M10.855 4a8 8 0 0 0-.468-1.068C9.835 1.897 9.17 1.282 8.5 1.077V4z"/>
-                                        </svg>
-                                     </span>';
-                    }
-
-                    // If no capabilities, show default icon
-                    if (empty($icons)) {
-                        return '<span class="badge bg-secondary rounded-circle" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="Text Only">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="bi bi-chat-text" viewBox="0 0 16 16">
-                                      <path d="M2.678 11.894a1 1 0 0 1 .287.801 11 11 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8 8 0 0 0 8 14c3.996 0 7-2.807 7-6s-3.004-6-7-6-7 2.808-7 6c0 1.468.617 2.83 1.678 3.894m-.493 3.905a22 22 0 0 1-.713.129c-.2.032-.352-.176-.273-.362a10 10 0 0 0 .244-.637l.003-.01c.248-.72.45-1.548.524-2.319C.743 11.37 0 9.76 0 8c0-3.866 3.582-7 8-7s8 3.134 8 7-3.582 7-8 7a9 9 0 0 1-2.347-.306c-.52.263-1.639.742-3.468 1.105"/>
-                                      <path d="M4 5.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5M4 8a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 8m0 2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5"/>
-                                    </svg>
-                                </span>';
-                    }
-
-                    return implode('', $icons);
+                    
+                    return $html;
                 }),
 
             TD::make('created_at', 'Created')

@@ -162,5 +162,6 @@ return [
     'passkey_method' => env('PASSKEY_METHOD', 'user'),
     'passkey_otp' => env('PASSKEY_OTP', false),
     'passkey_otp_timeout' => env('PASSKEY_OTP_TIMEOUT', 300),
+    'passkey_webauthn' => env('PASSKEY_WEBAUTHN', false),
 
 ];

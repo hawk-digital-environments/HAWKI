@@ -63,6 +63,7 @@ function initFileUploader(inputField) {
     if (fileInput) {
         fileInput.addEventListener('change', function(e) {
             handleSelectedFiles(this.files, input);
+            queueAnchoredAnnouncements('FileUpload');
             this.value = '';
         });
     }
@@ -326,7 +327,7 @@ function removeAtchFromList(fileId, queueId){
     setAttachmentsFilter(queueId);
 
     // If no more attachments, remove container
-    const input = document.querySelector(`.input[id="${queueId}"`);
+    const input = document.querySelector(`.input[id="${queueId}"]`);
     const list = input.querySelector('.attachments-list');
     if (list && list.children.length === 0) {
         list.closest('.file-attachments').classList.remove('active');
@@ -436,7 +437,7 @@ async function uploadAttachmentQueue(queueId, category, slug = null) {
         const upload = uploadFileToServer(attachment.fileData, url, (tempId, status, percent, fileUrl = null) => {
             updateFileStatus(attachment.fileData.tempId, status, fileUrl);
             if(status === 'error'){
-                const inputField = document.querySelector(`.input[id=${queueId}`);
+                const inputField = document.querySelector(`.input[id="${queueId}"]`);
                 showFeedbackMsg(inputField, 'error', translation.Input_Err_UploadFailed);
             }
         });

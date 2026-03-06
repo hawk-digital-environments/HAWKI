@@ -22,6 +22,7 @@ class UserEditLayout extends Rows
         /** @var \App\Models\User $user */
         $user = $this->query->get('user');
         $exists = $user && $user->exists;
+        $isSystemUser = $exists && $user->id === 1;
 
         // Build employeetype options
         // Include all self-assignable roles PLUS the current user's employeetype (if it exists)
@@ -47,18 +48,24 @@ class UserEditLayout extends Rows
                 ->required()
                 ->title('Username')
                 ->placeholder('Username')
-                ->help($exists
-                    ? 'Username cannot be changed after creation'
-                    : 'Unique identifier for the user'
+                ->help($isSystemUser
+                    ? 'System user username (editable)'
+                    : ($exists
+                        ? 'Username cannot be changed after creation'
+                        : 'Unique identifier for the user')
                 )
-                ->disabled($exists),
+                ->disabled($exists && !$isSystemUser), // Editable for system user, disabled for others
 
             Select::make('user.employeetype')
                 ->options($employeetypeOptions)
                 ->empty('Select Employee Type...', '')
                 ->required()
                 ->title('Employee Type')
-                ->help('Select the employee type/role for this user'),
+                ->help($isSystemUser
+                    ? 'System user employee type (cannot be changed)'
+                    : 'Select the employee type/role for this user'
+                )
+                ->disabled($isSystemUser), // Readonly for system user
         ];
     }
 

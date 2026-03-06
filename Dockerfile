@@ -3,7 +3,7 @@
 # =====================================================
 # NODE - ROOT
 # -----------------------------------------------------
-FROM node:24-bookworm AS node_root
+FROM node:23-bookworm AS node_root
 
 ARG APP_ENV=prod
 
@@ -68,6 +68,11 @@ USER www-data
 # NODE - BUILDER
 # -----------------------------------------------------
 FROM node_root AS node_builder
+
+# Build timestamp to invalidate cache and force rebuild
+# MUST be before COPY to invalidate the copy layer
+ARG CACHEBUST=1
+RUN echo "Building frontend assets (cache bust: $CACHEBUST)"
 
 # Build args for Vite frontend
 ARG VITE_APP_NAME=HAWKI2
@@ -143,6 +148,12 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     libwebp-dev \
     # Install fcgi for healthcheck
     libfcgi-bin \
+    # LDAP dependencies for Debian Bookworm
+    libldap-dev \
+    libldap-2.5-0 \
+    libldap-common \
+    # MySQL client for database backups (mysqldump)
+    default-mysql-client \
     && apt-get clean
 
 RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
@@ -162,6 +173,14 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
         redis \
         pcntl \
         ldap
+
+# LDAP installation with dynamic architecture detection
+RUN docker-php-ext-configure ldap --with-libdir=lib/$(dpkg-architecture -qDEB_HOST_MULTIARCH) \
+    && docker-php-ext-install ldap \
+    && docker-php-ext-enable ldap
+
+# Verify LDAP installation
+RUN php -m | grep ldap || echo "WARNING: LDAP extension not loaded"
 
 # Add additional port for reverb
 EXPOSE 8080

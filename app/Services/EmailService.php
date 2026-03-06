@@ -57,16 +57,6 @@ class EmailService
     }
 
     /**
-     * Send OTP email
-     */
-    public function sendOtpEmail(User $user, string $otpCode): bool
-    {
-        $customData = ['{{otp_code}}' => $otpCode];
-
-        return $this->sendTemplatedEmail('otp', $user->email, $customData, $user);
-    }
-
-    /**
      * Send invitation email
      */
     public function sendInvitationEmail(

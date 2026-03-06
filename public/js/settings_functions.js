@@ -40,24 +40,36 @@ function toggleSettingsPanel(activation){
 }
 
 async function fetchGuidelines(){
-            // Assume fetchLatestPolicy() returns an object {view, announcement}
-        const {view, announcement} = await fetchLatestPolicy();
+        try {
+            // Fetch guidelines from announcements (single source of truth)
+            const {view, announcement} = await fetchLatestPolicy();
 
-        // Render the HTML (MD rendered to HTML string)
-        const renderedHtml = md.render(view, false);
+            // Render the HTML (MD rendered to HTML string)
+            const renderedHtml = md.render(view, false);
 
-        // const parent = document.querySelector('')
-        // Insert the rendered HTML into the designated container
-        const settingsModal = document.querySelector('.settings-modal');
-        const policyContentBox = settingsModal.querySelector('#policy-content');
-        policyContentBox.innerHTML = renderedHtml;
+            // Insert the rendered HTML into the guidelines section in settings panel
+            const settingsModal = document.querySelector('.settings-modal');
+            if (!settingsModal) {
+                console.warn('Settings modal not found');
+                return;
+            }
 
-        // Add target and rel attributes for external links (XSS-protection best practice)
-        policyContentBox.querySelectorAll('a').forEach(a => {
-            a.setAttribute('target', '_blank');
-            a.setAttribute("rel", "noopener noreferrer");
-        });
-        policyContentBox.querySelector('h1').style.textAlign ='center';
+            const guidelineContent = settingsModal.querySelector('.guideline-content .content-text-container');
+            if (!guidelineContent) {
+                console.warn('Guideline content container not found');
+                return;
+            }
+
+            guidelineContent.innerHTML = renderedHtml;
+
+            // Add target and rel attributes for external links (XSS-protection best practice)
+            guidelineContent.querySelectorAll('a').forEach(a => {
+                a.setAttribute('target', '_blank');
+                a.setAttribute("rel", "noopener noreferrer");
+            });
+        } catch (error) {
+            console.error('Error fetching guidelines:', error);
+        }
 }
 
 /// Toggle about us in the settings panel.

@@ -320,14 +320,16 @@ class AiConfigService
                 // Get adapter name from API format's client_adapter field
                 $adapter = $this->getAdapterFromApiFormat($apiProvider);
                 
-                $providers[$apiProvider->provider_name] = [
+                // Use unique_name as the key for consistent provider identification
+                $providers[$apiProvider->unique_name] = [
                     'active' => $apiProvider->is_active,
                     'adapter' => $adapter, // Map to existing client classes
                     'api_key' => $apiProvider->api_key,
                     'api_url' => $apiUrl,
                     'stream_url' => $streamUrl,
                     'ping_url' => $pingUrl,
-                    'models' => $modelConfigs
+                    'models' => $modelConfigs,
+                    'provider_name' => $apiProvider->provider_name, // Keep display name for reference
                 ];
             }
             

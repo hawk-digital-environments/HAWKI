@@ -18,7 +18,8 @@ class Member extends Model
         'user_id',
         'role',
         'last_read',
-        'isRemoved'
+        'isRemoved',
+        'isMember'
     ];
 
     // public function room()
@@ -35,9 +36,60 @@ class Member extends Model
     {
         return $this->role === $role;
     }
+    
+    public function isAdmin()
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+    
+    public function isEditor()
+    {
+        return $this->role === self::ROLE_EDITOR;
+    }
+    
+    public function isViewer()
+    {
+        return $this->role === self::ROLE_VIEWER;
+    }
+    
+    public function canSendMessages()
+    {
+        // Admins and Editors can send messages, Viewers cannot
+        return $this->isAdmin() || $this->isEditor();
+    }
+    
+    public function canModifyRoom()
+    {
+        // Only Admins can modify room settings
+        return $this->isAdmin();
+    }
+    
+    public function canAddMembers()
+    {
+        // Only Admins can add members
+        return $this->isAdmin();
+    }
+    
+    public function canRemoveMembers()
+    {
+        // Only Admins can remove members
+        return $this->isAdmin();
+    }
+    
+    public function canDeleteRoom()
+    {
+        // Only Admins can delete room
+        return $this->isAdmin();
+    }
+    
+    public function canViewAllMembers()
+    {
+        // Admins and Editors can view all members, Viewers cannot
+        return $this->isAdmin() || $this->isEditor();
+    }
 
     public function updateRole($role){
-        $this->update(['role', $role]);
+        $this->update(['role' => $role]);
     }
 
     public function updateLastRead(){
@@ -48,7 +100,18 @@ class Member extends Model
         $this->update(['isRemoved'=> 1]);
     }
 
-    public function recreateMembership(){
-        $this->update(['isRemoved'=> 0]);
+    public function recreateMembership($role = null){
+        // Re-invite user: reset both isMember and isRemoved
+        $updates = [
+            'isMember' => true,
+            'isRemoved' => false
+        ];
+        
+        // Optionally update role if provided
+        if ($role !== null) {
+            $updates['role'] = $role;
+        }
+        
+        $this->update($updates);
     }
 }

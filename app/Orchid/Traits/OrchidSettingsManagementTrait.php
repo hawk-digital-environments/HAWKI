@@ -529,25 +529,6 @@ trait OrchidSettingsManagementTrait
                 ->widthColumns('1fr 1fr');
         }
 
-        // Special handling for passkey secret dropdown
-        if ($key === 'auth_passkey_secret') {
-            return \Orchid\Screen\Fields\Group::make([
-                \Orchid\Screen\Fields\Label::make("label_{$key}")
-                    ->title($setting->description)
-                    ->help($displayKey),
-                \Orchid\Screen\Fields\Select::make($inputName)
-                    ->options([
-                        'username' => 'Username',
-                        
-                        'random' => 'Random (Cryptographically Secure)',
-                        'default' => 'Default',
-                    ])
-                    ->value($setting->value),
-            ])
-                ->alignCenter()
-                ->widthColumns('1fr 1fr');
-        }
-
         // Special handling for mail driver selection
         if ($key === 'mail_default' || $key === 'mail_mailer') {
             return \Orchid\Screen\Fields\Group::make([

@@ -6,7 +6,7 @@
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
 
-    <title>{{ env('APP_NAME') }}</title>
+    <title>{{ config('app.name') }}</title>
 
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/handshake_style.css') }}">
@@ -18,6 +18,7 @@
     <script src="{{ asset('js/encryption.js') }}"></script>
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
+    <script src="{{ asset('js/webauthn_passkey.js') }}"></script>
     <script src="{{ asset('js/passkeyInputs.js') }}"></script>
     @vite('resources/js/app.js')
 

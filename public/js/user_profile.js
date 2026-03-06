@@ -28,7 +28,8 @@ async function selectProfileAvatar(btn){
     const imageElement = btn.querySelector('.selectable-image');
     const initials = btn.querySelector('.user-inits');
 
-    openImageSelection(imageElement.getAttribute('src'), async function(croppedImage) {
+    // Define save callback
+    const saveCallback = async function(croppedImage) {
         const imageUrl = await uploadProfileAvatar(croppedImage);
 
         imageElement.style.display = 'block';
@@ -43,7 +44,70 @@ async function selectProfileAvatar(btn){
                   .setAttribute('src', imageUrl);
         sidebarBtn.querySelector('.user-inits').style.display = 'none';
         sidebarBtn.querySelector('.icon-img').style.display = 'flex';
-    });
+    };
+
+    // Define delete callback (only if user has an avatar)
+    const currentSrc = imageElement.getAttribute('src');
+    const deleteCallback = currentSrc ? async function() {
+        await removeProfileAvatar(imageElement, initials);
+    } : null;
+
+    openImageSelection(currentSrc, saveCallback, deleteCallback);
+}
+
+async function removeProfileAvatar(imageElement, initials) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const url = `/req/profile/removeAvatar`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            }
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            // Update profile avatar
+            if (imageElement && initials) {
+                imageElement.style.display = 'none';
+                imageElement.setAttribute('src', '');
+                initials.style.display = 'flex';
+                
+                // Get user initials from profile name
+                const profileName = document.getElementById('profile-name');
+                if (profileName && profileName.textContent) {
+                    initials.textContent = profileName.textContent.slice(0, 2).toUpperCase();
+                }
+            }
+
+            // Update sidebar avatar
+            const sidebarBtn = document.getElementById('profile-sb-btn');
+            if (sidebarBtn) {
+                const sidebarIcon = sidebarBtn.querySelector('.icon-img');
+                const sidebarInitials = sidebarBtn.querySelector('.user-inits');
+                
+                if (sidebarIcon && sidebarInitials) {
+                    sidebarIcon.style.display = 'none';
+                    sidebarIcon.setAttribute('src', '');
+                    sidebarInitials.style.display = 'flex';
+                    
+                    const profileName = document.getElementById('profile-name');
+                    if (profileName && profileName.textContent) {
+                        sidebarInitials.textContent = profileName.textContent.slice(0, 2).toUpperCase();
+                    }
+                }
+            }
+            
+            console.log('Profile avatar removed successfully');
+        } else {
+            console.error('Failed to remove avatar');
+        }
+    } catch (error) {
+        console.error('Error removing profile avatar:', error);
+    }
 }
 
 async function uploadProfileAvatar(image){

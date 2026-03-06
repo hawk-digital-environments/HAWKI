@@ -47,7 +47,7 @@ readonly class UserDb
                 'avatar_id' => null,
                 'bio' => null,
                 'isRemoved' => false,
-                'approval' => $forceApproval || $this->config->get('auth.local_needapproval') === true,
+                'approval' => $forceApproval || !$this->config->get('auth.local_needapproval'),
             ]);
 
             $this->logger->debug('Created local user "' . $user->username . '" for guest request', [

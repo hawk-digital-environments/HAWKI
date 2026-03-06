@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Services\AI\Providers\Responses;
 
 use App\Services\AI\Providers\AbstractClient;
+use App\Services\AI\Providers\Responses\Request\ResponsesRequest;
 use App\Services\AI\Providers\Responses\Request\ResponsesStreamingRequest;
 use App\Services\AI\Value\AiModelStatusCollection;
 use App\Services\AI\Value\AiRequest;
@@ -18,15 +19,17 @@ class ResponsesClient extends AbstractClient
     }
 
     /**
-     * Execute non-streaming request (NOT SUPPORTED for Responses API)
+     * Execute non-streaming request
      * 
-     * Responses API only supports streaming mode
-     * 
-     * @throws \Exception
+     * Uses Responses API with stream=false for direct, complete responses
      */
     protected function executeRequest(AiRequest $request): AiResponse
     {
-        throw new \Exception('Non-streaming mode is not supported for Responses API. Use streaming only.');
+        // Convert request to payload
+        $payload = $this->converter->convertRequestToPayload($request);
+        
+        // Execute non-streaming request
+        return (new ResponsesRequest($payload))->execute($request->model);
     }
 
     /**
@@ -41,6 +44,9 @@ class ResponsesClient extends AbstractClient
     {
         // Convert request to payload
         $payload = $this->converter->convertRequestToPayload($request);
+        
+        // Debug: Log full payload before sending
+        //\Log::info('[RESPONSES API] Request Payload:', $payload);
         
         // Track if we should retry without previous_response_id
         $hasPreviousResponseId = isset($payload['previous_response_id']);

@@ -8,16 +8,24 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('announcements', static function (Blueprint $table) {
-            $table->json('target_roles')->nullable();
-            $table->boolean('is_published')->default(false);
+            if (!Schema::hasColumn('announcements', 'target_roles')) {
+                $table->json('target_roles')->nullable();
+            }
+            if (!Schema::hasColumn('announcements', 'is_published')) {
+                $table->boolean('is_published')->default(false);
+            }
         });
     }
 
     public function down(): void
     {
         Schema::table('announcements', function (Blueprint $table) {
-            $table->dropColumn('target_roles');
-            $table->dropColumn('is_published');
+            if (Schema::hasColumn('announcements', 'target_roles')) {
+                $table->dropColumn('target_roles');
+            }
+            if (Schema::hasColumn('announcements', 'is_published')) {
+                $table->dropColumn('is_published');
+            }
         });
     }
 };

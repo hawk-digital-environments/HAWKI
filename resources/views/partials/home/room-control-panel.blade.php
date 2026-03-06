@@ -44,6 +44,14 @@
                     </div>
                 </div>
 
+                <div class="row" id="assistants-panel">
+                    <h4 class="label-header">Assistenten</h4>
+                    <div class="assistants-list dynamic-grid">
+
+
+                    </div>
+                </div>
+
                 <div class="row top-gap-3" id="description-panel">
 
                     <label class="label-header">{{ $translation["Description"] }}</label>

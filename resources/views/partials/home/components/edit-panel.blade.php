@@ -1,7 +1,7 @@
 @if($rightOut ?? false)
 <div class="edit-panel stick-right-out admin-only" data-original-display="flex">
 @else
-<div class="edit-panel editor-only" data-originalDisplay="flex">
+<div class="edit-panel admin-only" data-original-display="flex">
 @endif
     <button class="btn-xs" id="edit-btn" onclick="editTextPanel(this)">
         <x-icon name="new"/>

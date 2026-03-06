@@ -20,8 +20,9 @@ class AssistantAccessPermissionsLayout extends Rows
         $assistant = $this->query->get('assistant');
         $isNew = !$assistant || !$assistant->exists;
         
-        // Check if this is a system assistant (owner = HAWKI) for warning system - MOVED UP
-        $isSystemAssistant = !$isNew && $assistant->owner && $assistant->owner->name === 'HAWKI';
+        // Check if this is a system assistant (owner_id = 1 or employeetype = 'system') for warning system
+        $isSystemAssistant = !$isNew && ($assistant->owner_id === 1 || 
+                                        ($assistant->owner && $assistant->owner->employeetype === 'system'));
         $configurationWarnings = [];
         
         if ($isSystemAssistant) {
@@ -38,10 +39,12 @@ class AssistantAccessPermissionsLayout extends Rows
 
         // Owner Display - only show for existing assistants (owner is always the creator)
         if (!$isNew) {
-            // Check if owner is HAWKI (system user) and display as "System"
+            // Check if owner is system user (ID 1 or employeetype 'system') and display as "System"
+            $isSystemOwner = $assistant->owner_id === 1 || 
+                           ($assistant->owner && $assistant->owner->employeetype === 'system');
             $ownerName = $assistant->owner->name ?? '';
-            $displayName = ($ownerName === 'HAWKI') ? 'System' : $ownerName;
-            $badgeClass = ($ownerName === 'HAWKI') ? 'bg-primary-subtle text-primary-emphasis' : 'bg-secondary-subtle text-secondary-emphasis';
+            $displayName = $isSystemOwner ? 'System' : $ownerName;
+            $badgeClass = $isSystemOwner ? 'bg-primary-subtle text-primary-emphasis' : 'bg-secondary-subtle text-secondary-emphasis';
             
             $fields[] = BadgeField::make('creator_display')
                 ->title('Creator')
@@ -69,38 +72,65 @@ class AssistantAccessPermissionsLayout extends Rows
 
         // Status field with warning for system assistants
         $statusHelp = 'Current status of the assistant';
-        if ($isSystemAssistant && !empty($configurationWarnings)) {
-            $statusHelp .= ' - ⚠️ Configuration incomplete: ' . implode(', ', $configurationWarnings);
+        if ($isSystemAssistant) {
+            $statusHelp = '⚠️ System assistants must always be active and cannot have their status changed.';
+            if (!empty($configurationWarnings)) {
+                $statusHelp .= ' Configuration incomplete: ' . implode(', ', $configurationWarnings);
+            }
         }
 
-        $fields = array_merge($fields, [
-            Select::make('assistant.status')
-                ->title('Status')
-                ->options([
-                    'draft' => 'Draft',
-                    'active' => 'Active',
-                    'archived' => 'Archived',
-                ])
-                ->help($statusHelp)
-                ->required(),
+        $statusField = Select::make('assistant.status')
+            ->title('Status')
+            ->options([
+                'draft' => 'Draft',
+                'active' => 'Active',
+                'archived' => 'Archived',
+            ])
+            ->help($statusHelp)
+            ->required();
+        
+        // Disable status field for system assistants
+        if ($isSystemAssistant) {
+            $statusField->disabled();
+        }
+        
+        $fields[] = $statusField;
 
-            Select::make('assistant.visibility')
-                ->title('Visibility')
-                ->options([
-                    'private' => 'Private',
-                    'group' => 'Group (Role-based)',
-                    'public' => 'Public',
-                ])
-                ->help('Who can access this assistant')
-                ->required(),
-        ]);
+        // Visibility field
+        $visibilityHelp = 'Who can access this assistant';
+        if ($isSystemAssistant) {
+            $visibilityHelp = '⚠️ System assistants must always be public and cannot have their visibility changed.';
+        }
+        
+        $visibilityField = Select::make('assistant.visibility')
+            ->title('Visibility')
+            ->options([
+                'private' => 'Private',
+                'group' => 'Group (Role-based)',
+                'public' => 'Public',
+            ])
+            ->help($visibilityHelp)
+            ->required();
+        
+        // Disable visibility field for system assistants
+        if ($isSystemAssistant) {
+            $visibilityField->disabled();
+        }
+        
+        $fields[] = $visibilityField;
 
-        // Required Role field
-        $fields[] = Select::make('assistant.required_role')
+        // Required Role field (always disabled for system assistants)
+        $roleField = Select::make('assistant.required_role')
             ->title('Required Role')
             ->fromQuery(Role::query(), 'name', 'slug')
             ->empty('Select Role')
             ->help('Only users with this role can access the assistant (only applies when visibility is "Group")');
+        
+        if ($isSystemAssistant) {
+            $roleField->disabled();
+        }
+        
+        $fields[] = $roleField;
 
         return $fields;
     }

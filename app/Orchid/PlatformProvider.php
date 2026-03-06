@@ -54,7 +54,20 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('Requests')
                         ->route('platform.dashboard.requests')
                         ->icon('bs.bar-chart'),
+                    Menu::make('Usage Debug')
+                        ->route('platform.dashboard.usage.debug')
+                        ->permission('platform.systems.usage.debug')
+                        ->icon('bs.table'),
                 ]),
+
+            Menu::make('')
+                ->title(__('Content'))
+                ->permission('platform.systems.settings'),
+
+            Menu::make('Announcements')
+                ->icon('bs.megaphone')
+                ->route('platform.announcements')
+                ->permission('platform.systems.settings'),
 
             Menu::make('')
                 ->title(__('Configuration'))
@@ -69,7 +82,7 @@ class PlatformProvider extends OrchidServiceProvider
                     Menu::make('Settings')
                         ->route('platform.settings.system')
                         ->icon('bs.gear')
-                        ->active(['platform.settings.system', 'platform.settings.authentication', 'platform.settings.api', 'platform.settings.mail-configuration']),
+                        ->active(['platform.settings.system', 'platform.settings.authentication', 'platform.settings.api', 'platform.settings.mail-configuration', 'platform.systems.settings.backup']),
                     Menu::make('Customization')
                         ->route('platform.customization.localizedtexts')
                         ->icon('bs.paint-bucket')
@@ -133,17 +146,7 @@ class PlatformProvider extends OrchidServiceProvider
             Menu::make('')
                 ->divider(),
 
-            Menu::make('Documentation')
-                ->title('Docs')
-                ->icon('bs.box-arrow-up-right')
-                ->url('https://orchid.software/en/docs')
-                ->target('_blank'),
-
-            Menu::make('Changelog')
-                ->icon('bs.box-arrow-up-right')
-                ->url('https://github.com/orchidsoftware/platform/blob/master/CHANGELOG.md')
-                ->target('_blank')
-                ->badge(fn () => Dashboard::version(), Color::DARK),
+            
         ];
     }
 
@@ -186,7 +189,8 @@ class PlatformProvider extends OrchidServiceProvider
 
             ItemPermission::group(__('System Settings'))
                 ->addPermission('platform.systems.settings', __('System Settings'))
-                ->addPermission('platform.systems.log', __('Log Management')),
+                ->addPermission('platform.systems.log', __('Log Management'))
+                ->addPermission('platform.systems.usage.debug', __('Usage Debug')),
 
             ItemPermission::group(__('Model Configuration'))
                 ->addPermission('platform.modelsettings.settings', __('Model Settings Management'))

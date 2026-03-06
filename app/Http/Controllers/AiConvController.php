@@ -104,9 +104,14 @@ class AiConvController extends Controller
         $message = $this->messageHandler->create($conv, $validatedData);
 
         $messageData = $message->createMessageObject();
+        
+        // Reload conversation to get updated timestamp
+        $conv->refresh();
+        
         return response()->json([
             'success' => true,
-            'messageData'=> $messageData
+            'messageData'=> $messageData,
+            'conv_updated_at' => $conv->updated_at->toISOString()
         ]);
     }
 
@@ -129,9 +134,13 @@ class AiConvController extends Controller
         $messageData['created_at'] = $message->created_at->format('Y-m-d+H:i');
         $messageData['updated_at'] = $message->updated_at->format('Y-m-d+H:i');
 
+        // Reload conversation to get updated timestamp
+        $conv->refresh();
+
         return response()->json([
             'success' => true,
             'messageData' => $messageData,
+            'conv_updated_at' => $conv->updated_at->toISOString()
         ]);
     }
 
@@ -234,5 +243,42 @@ class AiConvController extends Controller
             throw $e;
 
         }
+    }
+
+    public function updateTitle(Request $request, $slug): JsonResponse
+    {
+        $validatedData = $request->validate(['title' => 'required|string|max:25']);
+        $conv = AiConv::where('slug', $slug)->firstOrFail();
+        if ($conv->user_id !== Auth::id()) {
+            return response()->json(['error' => 'Access denied'], 403);
+        }
+        $conv->update(['conv_name' => $validatedData['title']]);
+        return response()->json(['success' => true]);
+    }
+    
+    public function loadMoreConversations(Request $request): JsonResponse
+    {
+        $validatedData = $request->validate([
+            'offset' => 'required|integer|min:0',
+            'limit' => 'integer|min:1|max:50'
+        ]);
+        
+        $offset = $validatedData['offset'];
+        $limit = $validatedData['limit'] ?? 20;
+        
+        $user = Auth::user();
+        $conversations = $user->conversations()
+            ->orderBy('updated_at', 'desc')
+            ->offset($offset)
+            ->limit($limit)
+            ->get();
+        
+        $hasMore = $user->conversations()->count() > ($offset + $limit);
+        
+        return response()->json([
+            'success' => true,
+            'conversations' => $conversations,
+            'hasMore' => $hasMore
+        ]);
     }
 }

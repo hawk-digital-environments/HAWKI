@@ -10,11 +10,13 @@ return new class extends Migration
     {
         Schema::create('announcements', function (Blueprint $table) {
             $table->id();
+            $table->boolean('is_published')->default(false);
             $table->string('title');
             $table->string('view');
             $table->enum('type', ['policy', 'news', 'system', 'event', 'info'])->default('info');
             $table->boolean('is_forced')->default(false);
             $table->boolean('is_global')->default(true);
+            $table->json('target_roles')->nullable();
             $table->string('anchor')->nullable();
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('expires_at')->nullable();

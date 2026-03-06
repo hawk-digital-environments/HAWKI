@@ -507,9 +507,18 @@ async function backupKeychainOnServer(encKeychainData){
 
 
 async function syncKeychain(serverKeychainData) {
+    if (!serverKeychainData) {
+        console.warn('No server keychain data provided - skipping sync');
+        return;
+    }
+    
     const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainData);
 
     const passKey = await getPassKey();
+    if (!passKey) {
+        throw new Error('No passkey available for keychain sync');
+    }
+    
     const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
     const keychainEncryptor = await deriveKey(passKey, "keychain_encryptor", udSalt);
 
@@ -522,7 +531,13 @@ async function syncKeychain(serverKeychainData) {
         throw error; // Prevent further sync attempts with corrupted server data
     }
 
-    const localKeychain = await openKeychain();
+    let localKeychain;
+    try {
+        localKeychain = await openKeychain();
+    } catch (error) {
+        console.warn("Failed to open local keychain, will use server keychain:", error);
+        localKeychain = null;
+    }
 
     if (!localKeychain || (serverKeychain['time-signature'] > (localKeychain['time-signature'] || 0))) {
         console.log("Updating local keychain with server data.");

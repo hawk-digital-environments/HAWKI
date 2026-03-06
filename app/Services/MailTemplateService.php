@@ -51,7 +51,6 @@ class MailTemplateService
 
         $specific = match ($templateType) {
             'welcome' => [],
-            'otp' => ['otp' => 'One-time password code'],
             'invitation' => [
                 'room_name' => 'Name of the chat room',
                 'inviter_name' => 'Name of the person sending invitation',
@@ -95,7 +94,7 @@ class MailTemplateService
 
         // If no specific types provided, reset all templates
         if ($templateTypes === null) {
-            $templateTypes = ['welcome', 'otp', 'invitation', 'notification', 'approval', 'approval_pending'];
+            $templateTypes = ['welcome', 'invitation', 'notification', 'approval', 'approval_pending'];
         } elseif (is_string($templateTypes)) {
             $templateTypes = [$templateTypes];
         }
@@ -174,7 +173,6 @@ class MailTemplateService
     {
         return match ($templateType) {
             'welcome' => 'Welcome email for new users',
-            'otp' => 'Authentication code email',
             'invitation' => 'Group chat invitation email',
             'notification' => 'General notification email',
             'approval_granted' => 'Account approval granted notification',
@@ -202,8 +200,6 @@ class MailTemplateService
         $templateMethods = [
             'welcome_en' => 'getWelcomeTemplateEn',
             'welcome_de' => 'getWelcomeTemplateDe',
-            'otp_en' => 'getOtpTemplateEn',
-            'otp_de' => 'getOtpTemplateDe',
             'invitation_en' => 'getInvitationTemplateEn',
             'invitation_de' => 'getInvitationTemplateDe',
             'notification_en' => 'getNotificationTemplateEn',
@@ -245,8 +241,6 @@ class MailTemplateService
         $subjects = [
             'welcome_en' => 'Welcome to {{app_name}} - Your AI Journey Begins!',
             'welcome_de' => 'Willkommen bei {{app_name}} - Ihre KI-Reise beginnt!',
-            'otp_en' => 'Your {{app_name}} Authentication Code',
-            'otp_de' => 'Ihr {{app_name}} Authentifizierungscode',
             'invitation_en' => 'You\'re invited to join a {{app_name}} Group Chat',
             'invitation_de' => 'Einladung zu einem {{app_name}} Gruppen-Chat',
             'notification_en' => '{{app_name}} Notification',
@@ -267,7 +261,6 @@ class MailTemplateService
     {
         return match ($templateType) {
             'welcome' => 'Welcome to {{app_name}} - Your AI Journey Begins!',
-            'otp' => 'Your {{app_name}} Authentication Code',
             'invitation' => 'You\'re invited to join a {{app_name}} Group Chat',
             'notification' => '{{app_name}} Notification',
             'approval' => 'Account Created Successfully - Welcome to {{app_name}}!',
@@ -283,7 +276,6 @@ class MailTemplateService
     {
         return match ($templateType) {
             'welcome' => '<p>Hello {{user_name}}, welcome to {{app_name}}!</p>',
-            'otp' => '<p>Your authentication code: <strong>{{otp}}</strong></p>',
             'invitation' => '<p>You have been invited to {{room_name}}!</p>',
             'notification' => '<p>Hello {{user_name}}, you have a new notification from {{app_name}}.</p>',
             'approval' => '<p>Hello {{user_name}}, your account has been successfully created!</p>',

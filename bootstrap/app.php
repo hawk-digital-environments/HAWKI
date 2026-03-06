@@ -29,6 +29,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'chatAccess' => \App\Http\Middleware\ChatAccess::class,
             'groupChatAccess' => \App\Http\Middleware\GroupChatAccess::class,
         ]);
+
+        // Configure maintenance mode to allow certain users
+        $middleware->preventRequestsDuringMaintenance(except: [
+            'admin/*',  // Allow all admin routes
+            'up',       // Health check
+        ]);
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
