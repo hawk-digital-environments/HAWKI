@@ -7,10 +7,10 @@ use App\Services\AI\Tools\Value\ToolDefinition;
 use App\Services\AI\Tools\Value\ToolResult;
 
 /**
- * Tool Interface
+ * AiTool Interface
  *
  * Defines the contract for all AI tools.
- * Tool availability is determined by model configuration (model_lists/*.php),
+ * AiTool availability is determined by model configuration (model_lists/*.php),
  * not by the tool itself.
  */
 interface ToolInterface
@@ -26,6 +26,12 @@ interface ToolInterface
      * Used to build the tool payload for model requests
      */
     public function getDefinition(): ToolDefinition;
+
+    /**
+     * Get the capability key for this tool (used when syncing to DB).
+     * Defaults to snake_case of the tool name.
+     */
+    public function getCapability(): string;
 
     /**
      * Execute the tool with given arguments

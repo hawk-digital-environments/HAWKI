@@ -14,6 +14,7 @@ return [
         'tools' => [
             // Native capabilities
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => true,
             'vision'=> true,
         ],
@@ -37,21 +38,18 @@ return [
         'tools' => [
             // Native capabilities
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => true,
             'vision'=> true,
 
-            // Tool capabilities
+            // AiTool capabilities
             'web_search' => 'native',
-            'knowledge_base' => "hawki-rag-query-search",
-            'test_tool' => "test_tool"
-
         ],
         'default_params' => [
             // OpenAI API defaults: temp=1.0, top_p=1.0
             'temp' => env('MODELS_OPENAI_GPT4_1_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_OPENAI_GPT4_1_PARAMS_TOP_P', 1.0),
         ],
-
     ],
     [
         'active'=> env('MODELS_OPENAI_GPT4_1_NANO_ACTIVE', true),
@@ -66,6 +64,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => false,
             'vision'=> false,
         ],
@@ -88,6 +87,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'file_upload' => false,
             'vision'=> false,
         ],

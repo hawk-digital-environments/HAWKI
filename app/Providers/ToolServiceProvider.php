@@ -3,305 +3,100 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Models\Ai\Tools\AiTool;
 use App\Services\AI\Tools\Implementations\DynamicMCPTool;
-use App\Services\AI\Tools\Interfaces\MCPToolInterface;
-use App\Services\AI\Tools\MCP\MCPSSEClient;
 use App\Services\AI\Tools\ToolRegistry;
 use App\Services\AI\Tools\Value\ToolDefinition;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
 /**
- * Service provider for registering AI tools
+ * Loads all active tools from the database into the ToolRegistry at boot.
  *
- * Reads tool configurations from config/tools.php and registers them in the ToolRegistry.
+ * The database is the single source of truth at runtime.
+ * Config files (config/tools.php) are only read during deployment via `tools:sync`.
  */
 class ToolServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services
-     */
     public function register(): void
     {
-        // ToolRegistry is already a Singleton via attribute
+        // ToolRegistry is already a Singleton via its #[Singleton] attribute.
     }
 
-    /**
-     * Bootstrap services
-     */
     public function boot(): void
     {
-        $this->registerTools();
+        $this->loadDbTools(app(ToolRegistry::class));
     }
 
-    /**
-     * Register all available tools from configuration
-     */
-    private function registerTools(): void
+    private function loadDbTools(ToolRegistry $registry): void
     {
-        $registry = app(ToolRegistry::class);
-        $toolClasses = config('tools.available_tools', []);
-        $mcpServers = config('tools.mcp_servers', []);
+        try {
+            // Always respect the user's active toggle.
+            // Optionally also filter by server reachability status.
+            $query = AiTool::with('server')->where('active', true);
 
-        // Register class-based tools
-        foreach ($toolClasses as $toolClass) {
-            try {
-                if (!class_exists($toolClass)) {
-                    Log::warning("Tool class not found: {$toolClass}");
-                    continue;
-                }
-
-                // Check if it's an MCP tool
-                if (is_subclass_of($toolClass, MCPToolInterface::class)) {
-                    $tool = $this->instantiateMCPTool($toolClass, $mcpServers);
-                } else {
-                    $tool = app($toolClass);
-                }
-
-                $registry->register($tool);
-            } catch (\Exception $e) {
-                Log::error("Failed to register tool: {$toolClass}", [
-                    'error' => $e->getMessage(),
-                ]);
+            if (config('tools.check_tool_status', true)) {
+                $query->active(); // also requires status = 'active'
             }
-        }
 
-        // Discover and register dynamic MCP tools
-        $this->discoverAndRegisterMCPTools($registry, $mcpServers);
-
-//        Log::info('AI Tools registered', [
-//            'total_count' => count($registry->getAll()),
-//            'mcp_count' => count($registry->getMCPTools()),
-//        ]);
-    }
-
-    /**
-     * Instantiate an MCP tool with its server configuration
-     */
-    private function instantiateMCPTool(string $toolClass, array $mcpServers): MCPToolInterface
-    {
-        // Create a temporary instance to get the tool name
-        $tempTool = app($toolClass, ['serverConfig' => []]);
-        $toolName = $tempTool->getName();
-
-        // Get server config for this tool
-        $serverConfig = $mcpServers[$toolName] ?? [];
-
-        // Create the actual tool instance with proper config
-        return app($toolClass, ['serverConfig' => $serverConfig]);
-    }
-
-    /**
-     * Discover tools from MCP servers and register them dynamically
-     */
-    private function discoverAndRegisterMCPTools(ToolRegistry $registry, array $mcpServers): void
-    {
-        $cachePath = storage_path('framework/cache/mcp-tools.php');
-
-        // Try to load from cache
-        $discoveredTools = $this->loadToolsFromCache($cachePath);
-
-        if ($discoveredTools === null) {
-            // Cache miss or expired - discover from servers
-            $discoveredTools = $this->discoverToolsFromServers($mcpServers);
-            $this->saveToolsToCache($cachePath, $discoveredTools);
-        }
-
-        // Register discovered tools
-        foreach ($discoveredTools as $toolData) {
-            try {
-                $tool = new DynamicMCPTool(
-                    $toolData['name'],
-                    $toolData['definition'],
-                    $toolData['mcp_tool_name'],
-                    $toolData['server_config']
-                );
-
-                $registry->register($tool);
-
-//                Log::debug("Registered dynamic MCP tool: {$toolData['name']}", [
-//                    'server' => $toolData['server_key'],
-//                ]);
-            } catch (\Exception $e) {
-                Log::error("Failed to register dynamic MCP tool: {$toolData['name']}", [
-                    'error' => $e->getMessage(),
-                ]);
+            foreach ($query->get() as $tool) {
+                match ($tool->type) {
+                    'function' => $this->registerFunctionTool($tool, $registry),
+                    'mcp'      => $this->registerMcpTool($tool, $registry),
+                    default    => null,
+                };
             }
+        } catch (\Exception $e) {
+            // DB may not be available yet (e.g. during initial migrate).
+            Log::debug('Could not load DB tools: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Discover tools from all configured MCP servers
-     */
-    private function discoverToolsFromServers(array $mcpServers): array
+    private function registerFunctionTool(AiTool $tool, ToolRegistry $registry): void
     {
-        $discoveredTools = [];
+        $class = $tool->class_name;
 
-        foreach ($mcpServers as $serverKey => $serverConfig) {
-            try {
-                $serverUrl = $serverConfig['url'] ?? null;
-                if (!$serverUrl) {
-                    Log::warning("MCP server {$serverKey} has no URL configured");
-                    continue;
-                }
-
-                $timeout = $serverConfig['discovery_timeout'] ?? 5;
-                $apiKey = $serverConfig['api_key'] ?? null;
-                $client = new MCPSSEClient($serverUrl, $timeout, $apiKey);
-
-                // Check server availability
-                if (!$client->isAvailable()) {
-                    Log::warning("MCP server not available: {$serverKey} at {$serverUrl}");
-                    continue;
-                }
-
-                // List tools from the server
-                $response = $client->listTools();
-                $tools = $response['tools'] ?? [];
-
-                if (empty($tools)) {
-                    Log::info("No tools found on MCP server: {$serverKey}");
-                    continue;
-                }
-
-                $serverLabel = $serverConfig['server_label'] ?? $serverKey;
-
-                foreach ($tools as $toolInfo) {
-                    $mcpToolName = $toolInfo['name'] ?? null;
-                    if (!$mcpToolName) {
-                        Log::warning("Tool without name from MCP server: {$serverKey}");
-                        continue;
-                    }
-
-                    // Prefix tool name with server label to avoid conflicts
-                    $toolName = "{$serverLabel}-{$mcpToolName}";
-
-                    $discoveredTools[] = [
-                        'name' => $toolName,
-                        'definition' => $this->convertToToolDefinition($toolInfo, $toolName),
-                        'mcp_tool_name' => $mcpToolName,
-                        'server_config' => $serverConfig,
-                        'server_key' => $serverKey,
-                    ];
-                }
-
-//                Log::info("Discovered " . count($tools) . " tools from MCP server: {$serverKey}", [
-//                    'server' => $serverKey,
-//                    'url' => $serverUrl,
-//                ]);
-            } catch (\Exception $e) {
-                Log::warning("Failed to discover tools from MCP server {$serverKey}: {$e->getMessage()}");
-            }
+        if (!$class || !class_exists($class)) {
+            Log::warning("ToolServiceProvider: class_name missing or not found for tool '{$tool->name}' ({$class}), skipping.");
+            return;
         }
 
-        return $discoveredTools;
+        try {
+            $registry->register(app($class));
+        } catch (\Exception $e) {
+            Log::error("ToolServiceProvider: failed to register function tool '{$tool->name}': " . $e->getMessage());
+        }
     }
 
-    /**
-     * Convert MCP tool info to ToolDefinition
-     */
-    private function convertToToolDefinition(array $toolInfo, string $toolName): ToolDefinition
+    private function registerMcpTool(AiTool $tool, ToolRegistry $registry): void
     {
-        $description = $toolInfo['description'] ?? "Tool from MCP server";
-        $inputSchema = $toolInfo['inputSchema'] ?? ['type' => 'object', 'properties' => []];
+        if (!$tool->server) {
+            Log::warning("ToolServiceProvider: AiTool '{$tool->name}' has no associated MCP server, skipping.");
+            return;
+        }
 
-        return new ToolDefinition(
-            name: $toolName,
-            description: $description,
-            parameters: $inputSchema
+        $server = $tool->server;
+
+        $definition = new ToolDefinition(
+            name: $tool->name,
+            description: $tool->description ?? '',
+            parameters: $tool->inputSchema ?? ['type' => 'object', 'properties' => []]
         );
-    }
 
-    /**
-     * Load discovered tools from cache
-     *
-     * @return array|null Array of tool data or null if cache miss
-     */
-    private function loadToolsFromCache(string $cachePath): ?array
-    {
-        if (!file_exists($cachePath)) {
-            return null;
-        }
+        // Derive the raw MCP tool name by stripping the server_label prefix.
+        $prefix      = $server->server_label . '-';
+        $mcpToolName = str_starts_with($tool->name, $prefix)
+            ? substr($tool->name, strlen($prefix))
+            : $tool->name;
 
-        try {
-            $cached = require $cachePath;
+        $serverConfig = [
+            'url'              => $server->url,
+            'server_label'     => $server->server_label,
+            'require_approval' => $server->require_approval,
+            'timeout'          => (int) $server->timeout,
+            'api_key'          => $server->api_key ?: null,
+        ];
 
-            // Validate cache structure
-            if (!is_array($cached) || !isset($cached['version'], $cached['timestamp'], $cached['tools'])) {
-                Log::warning('Invalid MCP tools cache structure, will rebuild');
-                return null;
-            }
-
-            // Check cache age (default: 1 hour)
-            $maxAge = config('tools.mcp_cache_ttl', 3600);
-            if (time() - $cached['timestamp'] > $maxAge) {
-//                Log::debug('MCP tools cache expired, will rebuild');
-                return null;
-            }
-
-            // Reconstruct ToolDefinition objects
-            foreach ($cached['tools'] as &$toolData) {
-                $def = $toolData['definition'];
-                $toolData['definition'] = new ToolDefinition(
-                    name: $def['name'],
-                    description: $def['description'],
-                    parameters: $def['parameters']
-                );
-            }
-
-//            Log::debug('Loaded MCP tools from cache', [
-//                'count' => count($cached['tools']),
-//                'age' => time() - $cached['timestamp'],
-//            ]);
-
-            return $cached['tools'];
-        } catch (\Exception $e) {
-            Log::warning('Failed to load MCP tools cache: ' . $e->getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * Save discovered tools to cache
-     */
-    private function saveToolsToCache(string $cachePath, array $tools): void
-    {
-        try {
-            // Ensure directory exists
-            $dir = dirname($cachePath);
-            if (!is_dir($dir)) {
-                mkdir($dir, 0755, true);
-            }
-
-            // Prepare data for caching (serialize ToolDefinition)
-            $cacheData = [
-                'version' => 1,
-                'timestamp' => time(),
-                'tools' => array_map(function ($toolData) {
-                    return [
-                        'name' => $toolData['name'],
-                        'definition' => [
-                            'name' => $toolData['definition']->name,
-                            'description' => $toolData['definition']->description,
-                            'parameters' => $toolData['definition']->parameters,
-                        ],
-                        'mcp_tool_name' => $toolData['mcp_tool_name'],
-                        'server_config' => $toolData['server_config'],
-                        'server_key' => $toolData['server_key'],
-                    ];
-                }, $tools),
-            ];
-
-            // Write cache file
-            $content = '<?php return ' . var_export($cacheData, true) . ';';
-            file_put_contents($cachePath, $content, LOCK_EX);
-
-//            Log::debug('Saved MCP tools to cache', [
-//                'count' => count($tools),
-//                'path' => $cachePath,
-//            ]);
-        } catch (\Exception $e) {
-            Log::warning('Failed to save MCP tools cache: ' . $e->getMessage());
-        }
+        $registry->register(new DynamicMCPTool($tool->name, $definition, $mcpToolName, $serverConfig));
     }
 }

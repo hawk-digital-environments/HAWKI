@@ -9,12 +9,12 @@ use App\Services\AI\Value\AiModel;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Tool-Aware Converter Trait
+ * AiTool-Aware Converter Trait
  *
  * Provides methods to build tool definitions based on model configuration.
  * Supports:
  * - Native capabilities: 'capability' => true (model handles natively)
- * - Tool-based capabilities: 'capability' => 'tool-name' (project handles via tools)
+ * - AiTool-based capabilities: 'capability' => 'tool-name' (project handles via tools)
  */
 trait ToolAwareConverter
 {
@@ -35,7 +35,7 @@ trait ToolAwareConverter
     protected function buildAllTools(AiModel $model): array
     {
         $tools = [];
-        $modelTools = $model->getTools();
+        $modelTools = $model->getCapabilities();
         $registry = app(ToolRegistry::class);
 
         foreach ($modelTools as $capability => $value) {
@@ -60,7 +60,7 @@ trait ToolAwareConverter
             // Get tool from registry
             $tool = $registry->get($toolName);
             if (!$tool) {
-                Log::warning("Tool '{$toolName}' not found in registry for capability '{$capability}'");
+                Log::warning("AiTool '{$toolName}' not found in registry for capability '{$capability}'");
                 continue;
             }
 
@@ -80,7 +80,7 @@ trait ToolAwareConverter
     public function buildSelectedTools(AiModel $model, array $capabilities): array
     {
         $tools = [];
-        $modelTools = $model->getTools();
+        $modelTools = $model->getCapabilities();
         $registry = app(ToolRegistry::class);
 
         foreach ($modelTools as $modelCapability => $toolName) {
@@ -92,7 +92,7 @@ trait ToolAwareConverter
                     // Get tool from registry
                     $tool = $registry->get($toolName);
                     if (!$tool) {
-                        Log::warning("Tool '{$toolName}' not found in registry for capability '{$capability}'");
+                        Log::warning("AiTool '{$toolName}' not found in registry for capability '{$capability}'");
                         continue;
                     }
 

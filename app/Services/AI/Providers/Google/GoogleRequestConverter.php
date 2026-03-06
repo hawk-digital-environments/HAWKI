@@ -54,7 +54,7 @@ readonly class GoogleRequestConverter
             'model' => $modelId,
             'system_instruction' => $systemInstruction,
             'contents' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
+            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
         ];
 
         // Add optional parameters if present in the raw payload
@@ -92,8 +92,8 @@ readonly class GoogleRequestConverter
             // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
 
             // Check if model supports web_search (handles both boolean and string format)
-            $webSearchValue = $model->getToolStrategy('web_search');
-            if ($model->hasTool('web_search') && $webSearchValue === 'native') {
+            $webSearchValue = $model->getCapabilityStrategy('web_search');
+            if ($model->hasCapability('web_search') && $webSearchValue === 'native') {
                 if (in_array('web_search', $rawPayload['tools'], true)) {
                     $tools[] = ["google_search" => new \stdClass()];
                 }

@@ -88,12 +88,12 @@ class AiModel implements JsonSerializable
         }
 
         // Check 'stream' in tools (supports both old boolean and new string format)
-        $tools = $this->getTools();
-        if (!isset($tools['stream'])) {
+        $caps = $this->getCapabilities();
+        if (!isset($caps['stream'])) {
             return false;
         }
 
-        $stream = $tools['stream'];
+        $stream = $caps['stream'];
 
         // Old format: boolean
         if (is_bool($stream)) {
@@ -148,84 +148,88 @@ class AiModel implements JsonSerializable
     }
 
     /**
-     * Returns a list of tools that the model can use.
-     * Tools are typically used to extend the model's capabilities,
-     * like RAG, MCP, or other specialized functions.
+     * Returns the capability map for this model.
+     * Merges DB-assigned capabilities (from context) with config-defined ones.
+     * Config-defined entries take precedence on key collision.
+     *
+     * Format: [ capability_name => 'native' | tool_name | true | false ]
+     * e.g.  [ 'web_search' => 'native', 'knowledge_base' => 'hawki-rag', 'stream' => true ]
      *
      * @return array
      */
-    public function getTools(): array
+    public function getCapabilities(): array
     {
-        return $this->raw['tools'] ?? [];
+        // Config files still use the 'tools' key; read from there for backward compat.
+        $configCaps = $this->raw['tools'] ?? [];
+        if ($this->context !== null) {
+            return array_merge($this->context->getDbCapabilities(), $configCaps);
+        }
+        return $configCaps;
     }
 
     /**
-     * Get the execution strategy for a specific tool
+     * Get the execution strategy for a specific capability.
      *
      * Supports backward compatibility:
-     * - Old format: boolean (true/false) - converts to 'native'/'unsupported'
-     * - New format: string ('native', 'mcp', 'function_call', 'unsupported')
+     * - Old format: boolean (true/false) → 'native'/'unsupported'
+     * - New format: string ('native', tool-name, 'unsupported')
      *
-     * @param string $toolName The tool name
-     * @return string|null The execution strategy ('native', 'mcp', 'function_call', 'unsupported') or null if not set
+     * @param string $capability The capability name (e.g. 'web_search', 'stream')
+     * @return string|null  The strategy, or null if not configured
      */
-    public function getToolStrategy(string $toolName): ?string
+    public function getCapabilityStrategy(string $capability): ?string
     {
-        $tools = $this->getTools();
+        $caps = $this->getCapabilities();
 
-        if (!isset($tools[$toolName])) {
+        if (!isset($caps[$capability])) {
             return null;
         }
 
-        $value = $tools[$toolName];
+        $value = $caps[$capability];
 
         // Handle old boolean format for backward compatibility
         if (is_bool($value)) {
             return $value ? 'native' : 'unsupported';
         }
 
-        // Return string strategy as-is
         return $value;
     }
 
     /**
-     * Check if a tool is available for this model
-     * A tool is available if it's configured and not set to 'unsupported'
+     * Check if a capability is available (configured and not 'unsupported').
      *
-     * @param string $toolName The tool name
+     * @param string $capability The capability name
      * @return bool
      */
-    public function hasToolAvailable(string $toolName): bool
+    public function hasCapabilityAvailable(string $capability): bool
     {
-        $strategy = $this->getToolStrategy($toolName);
+        $strategy = $this->getCapabilityStrategy($capability);
         return $strategy !== null && $strategy !== 'unsupported';
     }
 
     /**
-     * Checks if the model has a specific tool enabled.
+     * Checks if the model supports a specific capability.
      * Supports both old boolean format and new string strategy format.
      *
-     * @param string $tool The tool to check for.
+     * @param string $capability The capability name (e.g. 'stream', 'vision', 'web_search')
      * @return bool
-     * @see AiModel::getTools() to see the list of supported tools by the model.
      */
-    public function hasTool(string $tool): bool
+    public function hasCapability(string $capability): bool
     {
-        $tools = $this->getTools();
+        $caps = $this->getCapabilities();
 
-        if (!array_key_exists($tool, $tools)) {
+        if (!array_key_exists($capability, $caps)) {
             return false;
         }
 
-        $value = $tools[$tool];
+        $value = $caps[$capability];
 
         // Old format: boolean
         if (is_bool($value)) {
             return $value;
         }
 
-        // New format: string strategy
-        // Tool is available if it has any strategy except 'unsupported'
+        // String strategy — anything except 'unsupported' means it's supported
         return $value !== 'unsupported';
     }
 
@@ -235,7 +239,7 @@ class AiModel implements JsonSerializable
      */
     public function canProcessDocument(): bool
     {
-        return $this->hasTool('file_upload');
+        return $this->hasCapability('file_upload');
     }
 
     /**
@@ -244,7 +248,7 @@ class AiModel implements JsonSerializable
      */
     public function canProcessImage(): bool
     {
-        return $this->hasInputMethod('image') && $this->hasTool('vision');
+        return $this->hasInputMethod('image') && $this->hasCapability('vision');
     }
 
     /**
@@ -313,6 +317,8 @@ class AiModel implements JsonSerializable
     public function toArray(): array
     {
         $out = $this->raw;
+        $out['capabilities'] = $this->getCapabilities();
+        unset($out['tools']); // config stores as 'tools'; expose as 'capabilities'
         $out['status'] = ModelOnlineStatus::UNKNOWN->value;
         if(isset($this->context)){
             $out['status'] = $this->context->getStatus()->value;

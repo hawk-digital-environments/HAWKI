@@ -90,9 +90,7 @@ class DynamicMCPTool extends AbstractMCPTool
 
         $client = new MCPSSEClient($serverUrl, $timeout, $apiKey);
         $response = $client->callTool($this->mcpToolName, $arguments);
-//        \Log::debug('REPSONSE: ');
-//        \Log::debug($response);
-        // Return the result directly, or the full response if no result field
+
         return $response['result'] ?? $response;
     }
 }

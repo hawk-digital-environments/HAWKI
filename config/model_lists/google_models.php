@@ -13,6 +13,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'vision' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_VISION', true),
             'file_upload' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_TOOLS_FILE_UPLOAD', false),
 
@@ -37,6 +38,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'vision' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_LITE_TOOLS_VISION', false),
             'file_upload' => env('MODELS_GOOGLE_GEMINI_2_0_FLASH_LITE_TOOLS_FILE_UPLOAD', false),
         ],
@@ -59,6 +61,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
+            'tool_calling' => true,
             'vision' => env('MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_VISION', true),
             'file_upload' => env('MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_FILE_UPLOAD', false),
 

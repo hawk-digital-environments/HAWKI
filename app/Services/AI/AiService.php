@@ -92,7 +92,7 @@ readonly class AiService
                 return $response;
             }
 
-            Log::info('Tool execution required', [
+            Log::info('AiTool execution required', [
                 'round' => $round + 1,
                 'tool_count' => count($response->toolCalls),
             ]);
@@ -145,7 +145,7 @@ readonly class AiService
                 // If this is a tool call completion, don't tell the frontend it's done yet
                 // We'll continue with follow-up requests
                 if ($response->isDone && $response->finishReason === 'tool_calls') {
-//                    Log::info('Tool calls detected - masking completion', [
+//                    Log::info('AiTool calls detected - masking completion', [
 //                        'round' => $round,
 //                        'isDone' => $response->isDone,
 //                        'finishReason' => $response->finishReason,
@@ -193,7 +193,7 @@ readonly class AiService
                 return;
             }
 
-//            Log::info('Tool execution required in stream', [
+//            Log::info('AiTool execution required in stream', [
 //                'round' => $round + 1,
 //                'tool_count' => count($lastCompleteResponse->toolCalls),
 //            ]);

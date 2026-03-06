@@ -10,10 +10,10 @@ use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Tool Registry
+ * AiTool Registry
  *
  * Manages tool registration and execution.
- * Tool availability is determined by model configuration, not by the registry.
+ * AiTool availability is determined by model configuration, not by the registry.
  */
 #[Singleton]
 class ToolRegistry
@@ -30,12 +30,6 @@ class ToolRegistry
     {
         $name = $tool->getName();
         $this->tools[$name] = $tool;
-
-        if ($tool instanceof MCPToolInterface) {
-//            Log::debug("Registered MCP tool: {$name}");
-        } else {
-//            Log::debug("Registered tool: {$name}");
-        }
     }
 
     /**
@@ -95,7 +89,7 @@ class ToolRegistry
 
         if (!$tool) {
             $availableTools = implode(', ', array_keys($this->tools));
-            $errorMessage = "ERROR: Tool '{$toolName}' does not exist. You can ONLY use these tools: {$availableTools}. Please respond to the user's question using only the available tools or your own knowledge.";
+            $errorMessage = "ERROR: AiTool '{$toolName}' does not exist. You can ONLY use these tools: {$availableTools}. Please respond to the user's question using only the available tools or your own knowledge.";
 
             return new ToolResult(
                 toolCallId: $toolCallId,
@@ -114,7 +108,7 @@ class ToolRegistry
 
             return $tool->execute($arguments, $toolCallId);
         } catch (\Exception $e) {
-            Log::error("Tool execution failed: {$toolName}", [
+            Log::error("AiTool execution failed: {$toolName}", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);

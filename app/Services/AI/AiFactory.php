@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\AI;
 
 
+use App\Models\Ai\AiModel as EloquentAiModel;
 use App\Services\AI\Db\ModelStatusDb;
 use App\Services\AI\Exception\InvalidClientClassException;
 use App\Services\AI\Exception\MissingRequiredAiServiceClassException;
@@ -62,12 +63,14 @@ class AiFactory
                     $builder->addSystemModelName($modelType, ModelUsageType::EXTERNAL_APP, $modelName);
                 }
 
+                $capabilitiesMap = EloquentAiModel::capabilitiesMap();
+
                 foreach ($this->createProviderList() as $provider) {
                     foreach ($provider->getModels() as $model) {
                         $builder->addModel(
                             AiModel::bindContext(
                                 $model,
-                                $this->createModelContext($provider, $model)
+                                $this->createModelContext($provider, $model, $capabilitiesMap[$model->getId()] ?? [])
                             )
                         );
                     }
@@ -98,7 +101,7 @@ class AiFactory
         }
     }
 
-    private function createModelContext(ModelProviderInterface $provider, AiModel $model): AiModelContext
+    private function createModelContext(ModelProviderInterface $provider, AiModel $model, array $dbCapabilities = []): AiModelContext
     {
         $status = null;
 
@@ -121,7 +124,8 @@ class AiFactory
                     $status = $this->container->get(ModelStatusDb::class)->getStatus($model);
                 }
                 return $status;
-            }
+            },
+            $dbCapabilities
         );
     }
 

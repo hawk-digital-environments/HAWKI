@@ -105,7 +105,9 @@
 	const modelsList = @json($models).models;
 	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
-
+    console.log(modelsList);
+	const toolKit = @json($toolKit);
+	const toolKitLabels = @json($toolKitLabels);
 	const aiHandle = "{{ config('hawki.aiHandle') }}";
 
     const announcementList = @json($announcements);

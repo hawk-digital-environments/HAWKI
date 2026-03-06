@@ -45,7 +45,7 @@ readonly class OpenAiRequestConverter
         $payload = [
             'model' => $modelId,
             'input' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
+            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
         ];
 
         // Add optional parameters if present in the raw payload
@@ -70,8 +70,8 @@ readonly class OpenAiRequestConverter
             $tools = [];
 
             // Check if model has native web_search capability
-            $webSearchValue = $model->getToolStrategy('web_search');
-            if ($model->hasTool('web_search') && $webSearchValue === 'native') {
+            $webSearchValue = $model->getCapabilityStrategy('web_search');
+            if ($model->hasCapability('web_search') && $webSearchValue === 'native') {
                 if (in_array('web_search', $rawPayload['tools'], true)) {
                     $tools[] = [
                         "type"=> "web_search",
@@ -114,7 +114,7 @@ readonly class OpenAiRequestConverter
                 'content' => [
                     [
                         'type' => 'input_text',
-                        'text' => 'Tool result for ' . ($message['tool_call_id'] ?? 'unknown'). $instructions . ': ' . $message['content'],
+                        'text' => 'AiTool result for ' . ($message['tool_call_id'] ?? 'unknown'). $instructions . ': ' . $message['content'],
                     ]
                 ],
             ];

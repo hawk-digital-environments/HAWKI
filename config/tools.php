@@ -9,24 +9,18 @@ return [
     | Tools with LOCAL logic that run within your application.
     | These are NOT MCP tools - they execute code in your project.
     |
-    | Use this for:
-    | - Custom business logic tools
-    | - Database queries
-    | - Internal API calls
-    | - Calculations and transformations
+    | DEPLOYMENT ONLY: This list is read by `php artisan tools:sync` to
+    | populate the ai_tools table. It is NOT read at runtime.
     |
-    | To add a function calling tool:
-    | 1. Create class in app/Services/AI/Tools/Implementations/
+    | To add a function-calling tool:
+    | 1. Create a class in app/Services/AI/Tools/Implementations/
     | 2. Implement ToolInterface (or extend AbstractTool)
     | 3. Add the class to the array below
-    | 4. Configure in model configs (model_lists/*.php)
-    |
-    | Example: DiceRollTool, CalculatorTool, DatabaseQueryTool
+    | 4. Run: php artisan tools:sync --function-only
     |
     */
     'available_tools' => [
-        // Add your function calling tools here
-         \App\Services\AI\Tools\Implementations\TestTool::class,
+        \App\Services\AI\Tools\Implementations\TestTool::class,
     ],
 
     /*
@@ -34,65 +28,64 @@ return [
     | MCP Servers (Auto-Discovered Tools)
     |--------------------------------------------------------------------------
     |
-    | MCP (Model Context Protocol) servers provide tools automatically.
-    | Just add the server URL - tools are discovered and configured for you!
+    | MCP (Model Context Protocol) servers that provide tools automatically.
     |
-    | 🚀 To add a new MCP server (3 simple steps):
+    | DEPLOYMENT ONLY: This list is read by `php artisan tools:sync` to
+    | connect to each server, discover its tools, and store them in the DB.
+    | It is NOT read at runtime.
+    |
+    | To add a new MCP server:
     | 1. Add server configuration below with its URL
-    | 2. (Optional) Run `php artisan tools:discover` to test connection
-    | 3. Restart your application - tools are auto-registered!
+    | 2. Run: php artisan tools:sync --mcp-only
+    |    (or use: php artisan tools:add-mcp-server for interactive setup)
     |
-    | 🔐 Authentication:
+    | Authentication:
     | - If your MCP server requires authentication, add 'api_key' parameter
     | - The API key will be sent as: Authorization: Bearer <API_KEY>
     | - Store API keys in .env file for security
     |
     | Tool names are prefixed with server_label to avoid conflicts.
-    | Example: "search" from "rawki_search" becomes "rawki_search.search"
-    |
-    | All tools are auto-discovered - no manual classes needed!
+    | Example: "search" from "hawki-rag" becomes "hawki-rag-search"
     |
     */
     'mcp_servers' => [
         // RAWKI MCP Server - provides web search and knowledge base tools
         'hawki-rag' => [
-            'url' => env('HAWKI_RAG_MCP_API_URL', 'http://localhost:8080/mcp/rawki'),
-            'server_label' => 'hawki-rag',
-            'description' => 'HAWKI Web Search and Knowledge Base',
-            'require_approval' => 'never',
-            'timeout' => 30,  // Timeout for tool execution (seconds)
-            'discovery_timeout' => 5,  // Timeout for tool discovery (seconds)
-            'api_key' => env('HAWKI_RAG_MCP_API_KEY'),  // Optional: API key for authentication
+            'url'               => env('HAWKI_RAG_MCP_API_URL', 'http://localhost:8080/mcp/rawki'),
+            'server_label'      => 'hawki-rag',
+            'description'       => 'HAWKI Web Search and Knowledge Base',
+            'require_approval'  => 'never',
+            'timeout'           => 30,
+            'discovery_timeout' => 90,
+            'api_key'           => env('HAWKI_RAG_MCP_API_KEY'),
         ],
 
         // Example: Add another MCP server
         // 'my_mcp_server' => [
-        //     'url' => env('MY_MCP_SERVER_URL', 'http://localhost:3000/mcp'),
-        //     'server_label' => 'my_server',
-        //     'description' => 'My Custom MCP Server',
-        //     'require_approval' => 'never',
-        //     'timeout' => 30,
+        //     'url'               => env('MY_MCP_SERVER_URL', 'http://localhost:3000/mcp'),
+        //     'server_label'      => 'my_server',
+        //     'description'       => 'My Custom MCP Server',
+        //     'require_approval'  => 'never',
+        //     'timeout'           => 30,
         //     'discovery_timeout' => 5,
-        //     'api_key' => env('MY_MCP_API_KEY'),  // Optional: API key for authentication
+        //     'api_key'           => env('MY_MCP_API_KEY'),
         // ],
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | MCP Cache TTL
+    | Tool Status Filtering
     |--------------------------------------------------------------------------
     |
-    | How long to cache discovered MCP tool schemas (in seconds).
-    | Caching improves boot time by avoiding repeated server queries.
+    | When enabled, only tools whose status is 'active' in the database will
+    | be registered in the ToolRegistry and made available to AI models.
+    | Tools marked 'inactive' (e.g. by the tools:check-status command) will
+    | be silently skipped.
     |
-    | To refresh tools after MCP server changes:
-    | - Run: php artisan tools:discover --force
-    | - Or wait for cache to expire
-    |
-    | Default: 3600 (1 hour)
-    | Set to 0 to disable caching (not recommended for production)
+    | Set to false to load all tools regardless of their status field.
+    | Useful during development or when the status command is not scheduled.
     |
     */
-    'mcp_cache_ttl' => env('MCP_CACHE_TTL', 3600),
+    'check_tool_status' => env('CHECK_TOOL_STATUS', true),
 
 ];
