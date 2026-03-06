@@ -255,6 +255,46 @@ php artisan migrate:fresh
 
 ---
 
+### AI Tools Setup
+
+HAWKI supports two types of AI tools: **function tools** (built-in PHP classes) and **MCP tools** (external servers via the Model Context Protocol).
+
+**Function tools** are synced automatically on first run — no action needed. When you start the application or run any artisan/hawki command, HAWKI detects an empty `ai_tools` table and populates it from `config/tools.php` automatically.
+
+To sync manually (or force a re-sync after changing `config/tools.php`):
+
+```
+php hawki tools sync
+# or with --force to overwrite existing entries
+php hawki tools sync --force
+```
+
+**MCP servers** are not auto-synced because they require network access. Register an MCP server interactively:
+
+```
+php hawki tools add-mcp-server https://your-mcp-server.example.com
+```
+
+You will be prompted for a label, description, API key (stored encrypted), and timeouts. HAWKI will connect to the server, discover its tools, and assign them to compatible models.
+
+To view all registered tools:
+
+```
+php hawki tools list
+```
+
+To manage tool attributes (capability, description, active state):
+
+```
+php hawki tools configure
+```
+
+To enable or disable a tool without removing it, use the `active` toggle in `tools:configure`. Inactive tools are excluded from all model requests until re-enabled.
+
+> **Tip:** Run `php hawki tools help` to see the full list of tool management commands.
+
+---
+
 
 **Create Storage Link**
 

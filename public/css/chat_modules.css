@@ -1012,6 +1012,7 @@
     border: var(--border-stroke-thin);
     border-radius: var(--border-radius-normal);
     background-color: var(--background-main);
+    z-index: 2;
 }
 .input-content{
     display: flex;
@@ -1635,13 +1636,15 @@
 .tool-selection-panel {
     display: none;
     position: absolute;
-    top: -300% !important;
-    left: 0;
+    /*top: -300% !important;*/
+    bottom: 100%;
+    left: 0 !important;
     width: fit-content;
     overflow: hidden;
     border-radius: var(--border-radius-normal);
     border: var(--border-stroke-thin);
     background-color: var(--background-main);
+    z-index: 99;
 }
 .tool-selector{
     display: grid;

@@ -12,6 +12,7 @@ use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
 use App\Services\AI\Db\AiModelSyncService;
+use App\Services\AI\Db\ToolSyncService;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\StorageServiceFactory;
@@ -36,9 +37,9 @@ class AppServiceProvider extends ServiceProvider
         $this->registerMiddlewareAliases();
         $this->registerStorageServices();
 
-        // Register the AI model sync service as a singleton so it can be
-        // resolved anywhere (commands, service provider boot, etc.).
+        // Register sync services as singletons so they can be resolved anywhere.
         $this->app->singleton(AiModelSyncService::class);
+        $this->app->singleton(ToolSyncService::class);
     }
 
     /**
@@ -48,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->bootWebdavStorage();
         $this->bootAiModelSync();
+        $this->bootToolSync();
     }
 
     /**
@@ -73,6 +75,31 @@ class AppServiceProvider extends ServiceProvider
             // Only sync when the table is empty (first install or after truncation).
             if (!$syncService->isSynced()) {
                 $syncService->sync();
+            }
+        } catch (\Exception) {
+            // Silently skip — DB or tables may not exist yet (e.g. during migrate).
+        }
+    }
+
+    /**
+     * On the very first artisan run, automatically populate ai_tools from config
+     * so operators do not have to run `php artisan tools:sync` manually.
+     *
+     * Only function tools are auto-synced; MCP servers require network access and
+     * must be synced explicitly via `php artisan tools:sync`.
+     */
+    protected function bootToolSync(): void
+    {
+        if (!$this->app->runningInConsole()) {
+            return;
+        }
+
+        try {
+            /** @var ToolSyncService $syncService */
+            $syncService = $this->app->make(ToolSyncService::class);
+
+            if (!$syncService->isSynced()) {
+                $syncService->syncFunctionTools();
             }
         } catch (\Exception) {
             // Silently skip — DB or tables may not exist yet (e.g. during migrate).

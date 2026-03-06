@@ -6,6 +6,7 @@ namespace App\Services\AI\Tools;
 use App\Services\AI\Tools\Interfaces\ToolInterface;
 use App\Services\AI\Tools\Value\ToolDefinition;
 use App\Services\AI\Tools\Value\ToolResult;
+use Illuminate\Support\Str;
 
 /**
  * Abstract base class for tools to reduce boilerplate
@@ -15,6 +16,11 @@ use App\Services\AI\Tools\Value\ToolResult;
  */
 abstract class AbstractTool implements ToolInterface
 {
+    public function getCapability(): string
+    {
+        return Str::snake($this->getName());
+    }
+
     /**
      * Helper method to create a successful result
      */

@@ -357,6 +357,60 @@ If you ran `php hawki init` these variables are already populated with random ha
 
 
 
+## AI Tools Setup
+
+HAWKI supports built-in **function tools** and external **MCP tools** (Model Context Protocol servers).
+
+**Function tools** are synced automatically on first CLI run when the `ai_tools` table is empty. If you prefer to run the sync explicitly after deployment:
+
+```
+php hawki tools sync
+```
+
+Use `--force` to re-sync after editing `config/tools.php`:
+
+```
+php hawki tools sync --force
+```
+
+**MCP servers** must be registered manually because they require a live network connection to discover tools. Register a server interactively:
+
+```
+php hawki tools add-mcp-server https://your-mcp-server.example.com \
+  --label="My MCP Server" \
+  --api_key="your-key"
+```
+
+The API key is stored **encrypted** in the database using Laravel's `APP_KEY`. Ensure `APP_KEY` is set before registering MCP servers, and never rotate `APP_KEY` without re-entering API keys (they will become unreadable).
+
+After registering, verify tools are discovered and assigned:
+
+```
+php hawki tools list
+php hawki tools list-mcp-servers
+```
+
+**Scheduled status checks** — HAWKI automatically pings registered MCP servers every 15 minutes (via the schedule worker) to update tool availability. Tools from unreachable servers are marked offline and excluded from model requests until the server recovers. The schedule worker must be running (see Services section below) for this to work.
+
+To manually trigger a status check:
+
+```
+php hawki tools check-status
+```
+
+To configure tool attributes or disable a tool without removing it:
+
+```
+php hawki tools configure         # configure a tool (capability, description, active state)
+php hawki tools configure-server  # configure an MCP server (URL, timeouts, API key, etc.)
+```
+
+> **Security note:** MCP server API keys are stored encrypted using Laravel's `APP_KEY`. Treat your `APP_KEY` with the same care as any master secret — if it changes, re-enter all MCP API keys via `php hawki tools configure-server`.
+
+Run `php hawki tools help` for the full command reference.
+
+---
+
 ## Broadcasting & Workers
 
 HAWKI uses [Laravel Reverb](https://reverb.laravel.com/) for real-time communication between client and server.

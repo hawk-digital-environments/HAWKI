@@ -20,6 +20,12 @@ class McpServer extends Model
         'api_key',
     ];
 
+    protected $casts = [
+        // api_key is stored encrypted in the DB using APP_KEY.
+        // Encryption/decryption is transparent via Eloquent.
+        'api_key' => 'encrypted',
+    ];
+
     // -------------------------------------------------------------------------
     // Relationships
     // -------------------------------------------------------------------------

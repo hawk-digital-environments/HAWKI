@@ -16,10 +16,12 @@ This document describes the architecture of HAWKI's AI model registry and tool s
    - [Model Online Status](#model-online-status)
    - [Value Object vs Eloquent Model](#value-object-vs-eloquent-model)
 3. [Tool System](#tool-system)
+   - [Architecture: DB-First](#architecture-db-first)
    - [Tool Types](#tool-types)
    - [Tool Registry](#tool-registry)
    - [Function-Calling Tools](#function-calling-tools)
    - [MCP Tools](#mcp-tools)
+   - [Tool Status vs Active State](#tool-status-vs-active-state)
 4. [Model–Tool Assignments](#modeltool-assignments)
 5. [Database Schema](#database-schema)
 6. [Service Providers](#service-providers)
@@ -34,11 +36,10 @@ HAWKI's AI model and tool system is split into two complementary layers:
 
 | Layer | Source of truth | Purpose |
 |---|---|---|
-| **Config** | `config/model_providers.php` + `config/model_lists/*.php` | Defines available models, their capabilities, and provider settings |
-| **Database** | `ai_providers`, `ai_models`, `ai_tools`, `ai_model_tools` tables | Persists model registry, online status, MCP tools, and tool–model assignments |
+| **Config** | `config/model_providers.php` + `config/model_lists/*.php` + `config/tools.php` | Defines available models, providers, and tool classes. Used **only at deployment time** to populate the database. |
+| **Database** | `ai_providers`, `ai_models`, `ai_tools`, `mcp_servers`, `ai_model_tools` | Single source of truth **at runtime**. Persists model registry, online status, all tools, and tool–model assignments. |
 
-The config layer drives the service layer at runtime — it is never replaced by the database.
-The database layer mirrors the config, tracks live model status, and is the single source of truth for MCP tools and tool–model assignments.
+Config files are **never read at runtime** for tools. After running `tools:sync`, the database contains everything the application needs to start.
 
 ---
 
@@ -78,7 +79,7 @@ Defines global defaults, system models, and a list of providers:
 ]
 ```
 
-API keys are **never** stored in the database; they always come from environment variables.
+Provider API keys are **never** stored in the database; they always come from environment variables.
 
 #### Model list files — `config/model_lists/*.php`
 
@@ -94,13 +95,14 @@ return [
         'input'         => ['text', 'image'],
         'output'        => ['text'],
         'tools' => [
-            'stream'       => true,
-            'file_upload'  => true,
-            'vision'       => true,
-            'web_search'   => 'native',
+            'stream'         => true,
+            'file_upload'    => true,
+            'vision'         => true,
+            'tool_calling'   => true,       // set false to exclude from tool assignments
+            'web_search'     => 'native',
             'knowledge_base' => 'native',
         ],
-        'default_params'=> [
+        'default_params' => [
             'temp'  => env('MODELS_OPENAI_GPT4_1_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_OPENAI_GPT4_1_PARAMS_TOP_P', 1.0),
         ],
@@ -113,14 +115,13 @@ return [
 
 | Key | Values | Meaning |
 |---|---|---|
-| `stream` | `true` / `false` / `'native'` / `'unsupported'` | Whether the model supports streaming |
+| `stream` | `true` / `false` | Whether the model supports streaming |
 | `file_upload` | `true` / `false` | Whether the model can receive uploaded files |
 | `vision` | `true` / `false` | Whether the model can process images |
+| `tool_calling` | `true` / `false` | Whether the model supports function/tool calling. Omitting defaults to `true`. Set to `false` to exclude the model from all tool assignments. |
 | `web_search` | `'native'` / `'unsupported'` | Whether the provider handles web search natively |
 | `knowledge_base` | `'native'` / `string` | Strategy for knowledge-base retrieval |
-| `<tool_name>` | `string` | Name of a registered tool the model may invoke |
-
-Old boolean values (`true`/`false`) are supported for backward compatibility and are mapped to `'native'` / `'unsupported'` internally.
+| `<capability_key>` | `string` | Name of a registered tool capability the model may invoke |
 
 ---
 
@@ -143,52 +144,39 @@ The three relevant Eloquent models are:
 #### Eloquent relationships
 
 ```
-AiProvider  ──< hasMany   ── AiModel
-AiModel     ──  hasOne    ── AiModelStatus   (via model_id string)
-AiModel     ──< BelongsToMany >── AiTool     (pivot: ai_model_tools)
+AiProvider  ──< hasMany     ── AiModel
+AiModel     ──  hasOne      ── AiModelStatus   (via model_id string)
+AiModel     ──< BelongsToMany >── AiTool       (pivot: ai_model_tools)
+AiTool      ──  belongsTo   ── McpServer        (nullable for function tools)
+McpServer   ──< hasMany     ── AiTool
 ```
 
 ---
 
 ### Model Sync
 
-Because the database registry must reflect the configuration, a dedicated service keeps both layers in sync.
-
 #### `AiModelSyncService`
 
 Location: `app/Services/AI/Db/AiModelSyncService.php`
 
 ```php
-// Sync all providers and models from config into the database
-$syncService->sync();
-
-// Returns true when at least one model row already exists
-$syncService->isSynced();
+$syncService->sync();      // sync all providers + models from config → DB
+$syncService->isSynced();  // true when ai_models table has at least one row
 ```
 
 Sync rules:
 - Providers and models are **created or updated** (`updateOrCreate`).
-- Existing database records are **never deleted** — an operator may deactivate a model in the DB independently of config.
-- The `active` flag is **always overridden from config** so that environment-variable changes (e.g. `MODELS_OPENAI_GPT5_ACTIVE=false`) take effect on the next sync.
+- Existing database records are **never deleted** — operators may deactivate a model in the DB independently of config.
+- The `active` flag is **always overridden from config** so that environment-variable changes take effect on the next sync.
 
 #### Automatic first-run sync
 
-`AppServiceProvider::boot()` calls the sync automatically **once** when running in a CLI context and the `ai_models` table is empty (i.e. fresh installation after migrations):
+`AppServiceProvider::boot()` calls the sync automatically **once** when running in a CLI context and the `ai_models` table is empty:
 
 ```
-php artisan migrate          # tables created, boot() runs → models synced
+php artisan migrate          # tables created, boot() runs → models synced automatically
 php artisan models:sync      # explicit re-sync at any time
 php artisan models:sync --force  # force re-sync even if models already exist
-```
-
-This ensures that after a fresh `migrate`, no additional manual step is required.
-
-#### Manual sync command
-
-```bash
-php artisan models:sync           # sync if not yet synced
-php artisan models:sync --force   # always re-sync
-php artisan models:list           # review results
 ```
 
 ---
@@ -203,9 +191,7 @@ Each model's availability is tracked in `ai_model_statuses` with three possible 
 | `OFFLINE` | Provider API unreachable or returned an error |
 | `UNKNOWN` | Status has never been checked |
 
-**`ModelStatusDb`** (`app/Services/AI/Db/ModelStatusDb.php`) is the service-layer interface for reading and writing model status. It batch-loads all statuses on first access to avoid N+1 queries.
-
-The scheduled command `check:model-status` runs every 15 minutes and updates the database:
+The scheduled command `check:model-status` runs every 15 minutes:
 
 ```bash
 php artisan check:model-status
@@ -219,49 +205,62 @@ The codebase contains **two** classes named `AiModel` that serve different purpo
 
 | Class | Location | Role |
 |---|---|---|
-| `App\Services\AI\Value\AiModel` | Service layer | **Value object** — wraps a raw config array. Used by `AiFactory`, `AiService`, all providers and request converters. Exposes `getTools()`, `getClient()`, `getStatus()`, etc. |
+| `App\Services\AI\Value\AiModel` | Service layer | **Value object** — wraps a raw config array. Used by `AiFactory`, `AiService`, all providers and request converters. |
 | `App\Models\Ai\AiModel` | Eloquent layer | **Database model** — maps to the `ai_models` table. Used for DB persistence, admin commands, and tool assignments. |
 
-The service layer **never** uses the Eloquent `AiModel` directly; it always works with the value object constructed from config. The Eloquent model is used exclusively for:
-
-1. Persisting model metadata (via `AiModelSyncService`)
-2. Tool–model assignment management (pivot `ai_model_tools`)
-3. Admin commands (`models:list`, `tools:assign`, etc.)
+The service layer **never** uses the Eloquent `AiModel` directly.
 
 ---
 
 ## Tool System
 
+### Architecture: DB-First
+
+The tool system follows a strict deployment-time / runtime separation:
+
+```
+DEPLOYMENT TIME  (once, per install or when adding new tools)
+  config/tools.php
+       │
+  php artisan tools:sync
+       │
+       ├─ ai_tools  (type=function, class_name=FQCN)
+       └─ mcp_servers + ai_tools  (type=mcp)
+
+RUNTIME  (every request)
+  ToolServiceProvider::boot()
+       │
+  AiTool::where('active', true)...  ← DB only, config never read
+       ├─ type=function  → instantiate by class_name  → ToolRegistry
+       └─ type=mcp       → DynamicMCPTool wrapper      → ToolRegistry
+```
+
+`config/tools.php` is **only** read by the `tools:sync` command and is never consulted at runtime.
+
+---
+
 ### Tool Types
 
-HAWKI supports two categories of tools that AI models can invoke:
+HAWKI supports two categories of tools:
 
-| Type | Config key | Storage | Execution |
+| Type | Storage | Execution | Identified by |
 |---|---|---|---|
-| **Function-calling** | `config/tools.available_tools` | In-memory (no DB) | Runs locally in the PHP process |
-| **MCP** | `ai_tools` table | Database | Proxied to an external MCP server over HTTP |
+| **Function-calling** | `ai_tools` (type=`function`, class_name=FQCN) | Runs locally in the PHP process | `class_name` column |
+| **MCP** | `ai_tools` (type=`mcp`) + `mcp_servers` | Proxied to an external MCP server over HTTP | `server_id` FK |
 
 ---
 
 ### Tool Registry
 
-`App\Services\AI\Tools\ToolRegistry` is a singleton that holds all registered tool instances in memory, keyed by tool name. It is populated during application boot by `ToolServiceProvider`.
+`App\Services\AI\Tools\ToolRegistry` is a singleton populated during application boot by `ToolServiceProvider`. It holds all active, enabled tool instances in memory keyed by tool name.
 
 ```php
 $registry = app(ToolRegistry::class);
 
-// Check if a tool is available
-$registry->has('test_tool');          // bool
-
-// Execute a tool by name
-$result = $registry->execute('test_tool', $arguments, $toolCallId);
-
-// List all registered tools
-$registry->getAll();    // array<string, ToolInterface>
-$registry->getMCPTools();  // array<string, MCPToolInterface>
+$registry->has('test_tool');                               // bool
+$result = $registry->execute('test_tool', $args, $callId); // ToolResult
+$registry->getAll();                                        // array<string, ToolInterface>
 ```
-
-Tool availability per model request is determined by the model's `tools` capability flags in the config, **not** by the registry alone. The registry is the execution engine; the model config is the permission layer.
 
 ---
 
@@ -274,18 +273,20 @@ These are PHP classes that implement `ToolInterface` and run entirely inside the
 ```php
 interface ToolInterface
 {
-    public function getName(): string;          // unique identifier
-    public function getDefinition(): ToolDefinition;  // JSON schema for the model
+    public function getName(): string;
+    public function getDefinition(): ToolDefinition;
+    public function getCapability(): string;   // defaults to Str::snake(getName())
     public function execute(array $arguments, string $toolCallId): ToolResult;
 }
 ```
+
+`getCapability()` returns the key that appears in the model's `tools` array (e.g. `web_search`, `knowledge_base`). The default implementation in `AbstractTool` returns `Str::snake($this->getName())`. Override it in your tool class when you need a specific capability key.
 
 #### Creating a new function-calling tool
 
 **1. Create the class** in `app/Services/AI/Tools/Implementations/`:
 
 ```php
-<?php
 namespace App\Services\AI\Tools\Implementations;
 
 use App\Services\AI\Tools\AbstractTool;
@@ -294,10 +295,7 @@ use App\Services\AI\Tools\Value\ToolResult;
 
 class MyCustomTool extends AbstractTool
 {
-    public function getName(): string
-    {
-        return 'my_custom_tool';
-    }
+    public function getName(): string { return 'my_custom_tool'; }
 
     public function getDefinition(): ToolDefinition
     {
@@ -305,28 +303,26 @@ class MyCustomTool extends AbstractTool
             name: 'my_custom_tool',
             description: 'Describe what this tool does for the model.',
             parameters: [
-                'type' => 'object',
+                'type'       => 'object',
                 'properties' => [
-                    'query' => [
-                        'type'        => 'string',
-                        'description' => 'The input value',
-                    ],
+                    'query' => ['type' => 'string', 'description' => 'The input value'],
                 ],
-                'required' => ['query'],
+                'required'   => ['query'],
             ]
         );
     }
 
     public function execute(array $arguments, string $toolCallId): ToolResult
     {
-        $query  = $arguments['query'] ?? '';
-        $result = ['answer' => "Processed: {$query}"];
+        $result = ['answer' => 'Processed: ' . ($arguments['query'] ?? '')];
         return $this->getSuccessResult($result, $toolCallId);
     }
 }
 ```
 
-**2. Register it** in `config/tools.php`:
+> `getCapability()` is inherited from `AbstractTool` and will return `my_custom_tool` by default. Override it if you need a different key.
+
+**2. Add it to `config/tools.php`:**
 
 ```php
 'available_tools' => [
@@ -334,13 +330,29 @@ class MyCustomTool extends AbstractTool
 ],
 ```
 
-**3. Enable it on a model** by adding the tool name to the model's `tools` array in the relevant model list file:
+**3. Sync to the database:**
+
+```bash
+php artisan tools:sync --function-only
+# or via HAWKI CLI:
+php hawki tools sync --function-only
+```
+
+**4. Assign it to models:**
+
+```bash
+php artisan tools:assign --tool=my_custom_tool
+# or via HAWKI CLI:
+php hawki tools assign --tool=my_custom_tool
+```
+
+**5. Enable it in the model's config** by adding the capability key to the model's `tools` array:
 
 ```php
 // config/model_lists/openai_models.php
 'tools' => [
     'stream'         => true,
-    'my_custom_tool' => 'my_custom_tool',  // tool name must match getName()
+    'my_custom_tool' => 'my_custom_tool',  // key must match getCapability()
 ],
 ```
 
@@ -348,55 +360,86 @@ class MyCustomTool extends AbstractTool
 
 ### MCP Tools
 
-MCP (Model Context Protocol) tools communicate with external HTTP servers that expose a JSON-RPC tool interface. HAWKI orchestrates tool calls by acting as an MCP client.
+MCP (Model Context Protocol) tools communicate with external HTTP servers. HAWKI acts as an MCP client and proxies tool calls to the remote server.
 
 #### MCP Server record
 
-Each MCP server is stored in the `mcp_servers` table via the `McpServer` Eloquent model:
+Each server is stored in the `mcp_servers` table:
 
 | Field | Description |
 |---|---|
-| `url` | HTTP endpoint of the MCP server |
+| `url` | HTTP endpoint (unique) |
 | `server_label` | Short identifier used to prefix tool names (e.g. `hawki-rag`) |
 | `description` | Human-readable description |
 | `require_approval` | `never` / `always` / `auto` |
-| `timeout` | Execution timeout in seconds |
-| `discovery_timeout` | Timeout used during initial tool discovery |
-| `api_key` | Optional Bearer token for the server |
+| `timeout` | Execution timeout (seconds) |
+| `discovery_timeout` | Timeout used during tool discovery |
+| `api_key` | Optional Bearer token — **stored encrypted** using Laravel's `Crypt` (AES-256-CBC via `APP_KEY`) |
+
+> **Security note:** MCP server API keys are never stored in plaintext. The `McpServer` Eloquent model declares `'api_key' => 'encrypted'` in its `$casts`, so encryption and decryption are fully transparent. Rotating the `APP_KEY` will invalidate stored keys — re-enter them via `php artisan tools:configure-server` after a key rotation.
 
 #### AiTool record
 
-Each tool exposed by an MCP server is stored in the `ai_tools` table via the `AiTool` Eloquent model:
+Each tool exposed by an MCP server is stored in the `ai_tools` table:
 
 | Field | Description |
 |---|---|
 | `name` | Prefixed tool name: `{server_label}-{mcp_tool_name}` |
+| `class_name` | `null` for MCP tools (only populated for function tools) |
 | `description` | Tool description from the MCP server |
-| `inputSchema` | JSON Schema defining the tool's parameters |
-| `server_id` | Foreign key to `mcp_servers` |
-| `type` | Always `mcp` for MCP tools |
-| `status` | `active` / `inactive` |
+| `inputSchema` | JSON Schema for the tool's parameters |
+| `capability` | Capability key exposed to the model config |
+| `server_id` | FK to `mcp_servers` |
+| `type` | `mcp` |
+| `status` | `active` / `inactive` — system-managed, set by `tools:check-status` |
+| `active` | `true` / `false` — user-managed toggle, set via `tools:configure` |
 
 #### Adding an MCP server
 
-Use the interactive command:
+**Option A — Interactive command (recommended for first-time setup):**
 
 ```bash
 php artisan tools:add-mcp-server https://my-mcp-server.example.com/mcp
+# or:
+php hawki tools add-mcp-server https://my-mcp-server.example.com/mcp
 ```
 
 The command will:
 1. Prompt for label, description, approval mode, timeouts, and optional API key.
 2. Create a `McpServer` record.
 3. Connect to the server and list all available tools.
-4. Let you select which tools to register as `AiTool` records.
-5. Let you select which active AI models may use those tools (creates `ai_model_tools` pivot rows).
+4. Let you select which tools to register as `AiTool` records and assign a meaningful capability key to each.
+5. Optionally assign those tools to AI models.
 
-After the command completes, restart the application so that `ToolServiceProvider` loads the new tools from the database.
+**Option B — Config-driven sync (recommended for deployment pipelines):**
+
+Add the server to `config/tools.php`:
+
+```php
+'mcp_servers' => [
+    'my-server' => [
+        'url'               => env('MY_MCP_SERVER_URL', 'https://my-mcp-server.example.com/mcp'),
+        'server_label'      => 'my-server',
+        'description'       => 'My MCP Server',
+        'require_approval'  => 'never',
+        'timeout'           => 30,
+        'discovery_timeout' => 90,
+        'api_key'           => env('MY_MCP_API_KEY'),
+    ],
+],
+```
+
+Then run:
+
+```bash
+php artisan tools:sync --mcp-only
+# or:
+php hawki tools sync --mcp-only
+```
+
+> **Capability warning:** When syncing via config, capability keys are auto-generated from tool names. The sync command will print a warning listing all affected tools and prompt you to set meaningful capabilities using `php artisan tools:configure`.
 
 #### MCP execution flow
-
-When an AI model invokes a registered MCP tool:
 
 ```
 AiService
@@ -408,23 +451,40 @@ AiService
                            └─ MCPSSEClient::callTool()  →  HTTP JSON-RPC  →  MCP Server
 ```
 
-The `MCPSSEClient` (`app/Services/AI/Tools/MCP/MCPSSEClient.php`) sends a `tools/call` JSON-RPC request and returns the result.
-
 #### Tool naming convention
 
-To avoid name collisions across MCP servers, all tool names are prefixed with the server label:
+All MCP tool names are prefixed with the server label to avoid collisions:
 
 ```
 {server_label}-{mcp_tool_name}
+
+Example: "search" on server "hawki-rag" → "hawki-rag-search"
 ```
 
-Example: a tool named `search` on server `hawki-rag` becomes `hawki-rag-search`.
+---
+
+### Tool Status vs Active State
+
+Every tool in `ai_tools` has two independent boolean signals:
+
+| Field | Type | Managed by | Meaning |
+|---|---|---|---|
+| `status` | `'active'` / `'inactive'` | System (scheduler) | Whether the tool's MCP server is currently reachable. Set automatically by `tools:check-status`. Function tools always remain `active`. |
+| `active` | `true` / `false` | Operator | Whether the tool is intentionally enabled. Set manually via `tools:configure`. Disabling here removes the tool from the registry without deleting it. |
+
+**Both conditions must be satisfied** for a tool to be loaded into the `ToolRegistry` at boot:
+
+```
+loaded = (active = true) AND (status = 'active' OR check_tool_status = false)
+```
+
+The `check_tool_status` config flag (`.env: CHECK_TOOL_STATUS`) can be set to `false` to skip the status filter entirely — useful during development when MCP servers may be temporarily offline.
 
 ---
 
 ## Model–Tool Assignments
 
-The `ai_model_tools` pivot table links specific AI models to the tools they are permitted to use. This is independent of the model's `tools` capability flags in the config — those flags describe *what kind* of tool calling the model supports at the protocol level, while the pivot records describe *which specific MCP tools* are available to each model.
+The `ai_model_tools` pivot table links specific AI models to the tools they are permitted to use. Only models with `tool_calling` set to `true` (or unset, which defaults to `true`) in their config are eligible for tool assignments.
 
 ### Pivot columns
 
@@ -438,17 +498,18 @@ The `ai_model_tools` pivot table links specific AI models to the tools they are 
 ### Managing assignments
 
 ```bash
-# View current assignments
-php artisan tools:assign --list
+php artisan tools:assign --list                                        # view all assignments
+php artisan tools:assign                                               # interactive
+php artisan tools:assign --tool=hawki-rag-search --model=gpt-4.1      # direct assignment
+php artisan tools:assign --tool=hawki-rag-search --provider=openAi    # assign to all OpenAI models
+php artisan tools:assign --tool=hawki-rag-search --model=gpt-4.1 --detach  # remove assignment
+```
 
-# Assign a tool to one or more models interactively
-php artisan tools:assign
+Via HAWKI CLI:
 
-# Assign by name directly
-php artisan tools:assign --tool=hawki-rag-search --model=gpt-4.1
-
-# Remove an assignment
-php artisan tools:assign --tool=hawki-rag-search --model=gpt-4.1 --detach
+```bash
+php hawki tools assign --list
+php hawki tools assign --tool=hawki-rag-search --model=gpt-4.1
 ```
 
 ---
@@ -466,38 +527,43 @@ ai_providers
 
 ai_models
 ├── id (PK)
-├── model_id   (unique string, e.g. "gpt-4.1")
+├── model_id    (unique string, e.g. "gpt-4.1")
 ├── label
-├── active (bool)
-├── input      (json — ["text","image"])
-├── output     (json — ["text"])
-├── tools      (json — capability flags map)
+├── active      (bool)
+├── input       (json — ["text","image"])
+├── output      (json — ["text"])
+├── tools       (json — capability flags map)
 ├── default_params (json — {temp, top_p})
 └── provider_id (FK → ai_providers.id)
 
 ai_model_statuses
-├── model_id   (PK string, FK-like ref to ai_models.model_id)
-└── status     (enum: ONLINE | OFFLINE | UNKNOWN)
+├── model_id    (PK string, references ai_models.model_id)
+└── status      (enum: ONLINE | OFFLINE | UNKNOWN)
 
 mcp_servers
 ├── id (PK)
+├── url               (unique)
 ├── server_label
-├── url
+├── version
+├── protocolVersion
 ├── description
-├── require_approval
+├── require_approval  ('never' | 'always' | 'auto')
 ├── timeout
 ├── discovery_timeout
-└── api_key
+└── api_key           (TEXT — stored encrypted via Laravel Crypt)
 
 ai_tools
 ├── id (PK)
-├── name       (unique — "{server_label}-{tool_name}")
+├── name        (unique — "{server_label}-{tool_name}" for MCP; tool name for function)
+├── class_name  (nullable — FQCN for function tools, null for MCP tools)
 ├── description
-├── inputSchema (json — JSON Schema)
-├── capability
-├── type       ("mcp" | "function")
-├── status     ("active" | "inactive")
-└── server_id  (FK → mcp_servers.id, nullable)
+├── inputSchema (json — JSON Schema for parameters)
+├── outputSchema (json — optional)
+├── capability  (string — capability key referenced in model configs)
+├── type        ('mcp' | 'function')
+├── status      ('active' | 'inactive' — system-managed, set by tools:check-status)
+├── active      (bool — user-managed toggle, set by tools:configure)
+└── server_id   (FK → mcp_servers.id, nullable — null for function tools)
 
 ai_model_tools  (pivot)
 ├── id (PK)
@@ -515,24 +581,48 @@ ai_model_tools  (pivot)
 
 Located at `app/Providers/AppServiceProvider.php`.
 
-- **`register()`** — Binds `AiModelSyncService` as a singleton.
-- **`boot()`** — When running in a CLI context (`runningInConsole()`), checks if `ai_models` is empty and automatically runs a sync. This makes the initial install seamless: after `php artisan migrate`, the model registry is populated without any manual step.
+- **`register()`** — Binds `AiModelSyncService` and `ToolSyncService` as singletons.
+- **`bootAiModelSync()`** — When running CLI and `ai_models` is empty, automatically runs `AiModelSyncService::sync()`.
+- **`bootToolSync()`** — When running CLI and `ai_tools` is empty, automatically runs `ToolSyncService::syncFunctionTools()`. This ensures function tools are populated on first install without requiring a manual step. MCP servers are **not** auto-synced here (they require network access) — run `tools:sync --mcp-only` manually.
 
 ### `ToolServiceProvider`
 
 Located at `app/Providers/ToolServiceProvider.php`.
 
-Loads tools into the `ToolRegistry` in three steps on every boot:
+Loads tools from the database into the `ToolRegistry` on every boot:
 
-1. **Class-based tools** — iterates `config/tools.available_tools` and instantiates each class.
-2. **DB MCP tools** — queries `ai_tools` where `status = active` and `type = mcp`, eager-loads the related `mcp_servers` row, and creates a `DynamicMCPTool` instance for each.
-3. **Legacy config MCP discovery** — runs `McpToolDiscoveryHandler` against `config/tools.mcp_servers` as a fallback for servers that have not yet been migrated to the database.
+```php
+AiTool::with('server')
+    ->where('active', true)           // always applied — user's kill switch
+    ->active()                         // conditionally: status = 'active'
+    ->get()
+    ->each(fn($tool) => match($tool->type) {
+        'function' => register via class_name,
+        'mcp'      => register as DynamicMCPTool,
+    });
+```
 
-If the database is unavailable (e.g. during the initial `migrate` run), step 2 is silently skipped.
+If the database is unavailable (e.g. during initial `migrate`), the entire block is silently skipped.
+
+### `ToolSyncService`
+
+Located at `app/Services/AI/Db/ToolSyncService.php`.
+
+Mirrors the `AiModelSyncService` pattern for tools:
+
+```php
+$syncService->syncFunctionTools();  // reads config/tools.available_tools → ai_tools
+$syncService->syncMcpServers();     // reads config/tools.mcp_servers → mcp_servers + ai_tools
+$syncService->isSynced();           // true when ai_tools has at least one row
+```
+
+MCP servers that are unreachable during `syncMcpServers()` are skipped — they are not written to the database. The return value includes a `servers_failed` array with the reason for each skipped server.
 
 ---
 
 ## Artisan Commands Reference
+
+All commands are also available via `php hawki` — see [HAWKI CLI](#hawki-cli-equivalents) below.
 
 ### Model commands
 
@@ -546,26 +636,64 @@ If the database is unavailable (e.g. during the initial `migrate` run), step 2 i
 | `models:list --json` | Output as JSON |
 | `check:model-status` | Check and update live status of all models (runs every 15 min) |
 
-### MCP server commands
+### Tool sync commands
 
 | Command | Description |
 |---|---|
-| `tools:add-mcp-server {url}` | Add an MCP server, discover its tools, and assign to models |
-| `tools:list-mcp-servers` | List all registered MCP servers |
-| `tools:remove-mcp-server` | Remove an MCP server and its tools |
-| `tools:remove-mcp-server {id} --force` | Remove without confirmation prompt |
+| `tools:sync` | Sync all tools from config into the database |
+| `tools:sync --force` | Re-sync even when tools already exist |
+| `tools:sync --function-only` | Only sync function-calling tools |
+| `tools:sync --mcp-only` | Only sync MCP servers and their tools |
 
 ### Tool management commands
 
 | Command | Description |
 |---|---|
-| `tools:list` | List all tools (class-based + DB MCP) with model assignments |
+| `tools:list` | List all tools from DB with active/status and model assignments |
 | `tools:list --json` | Output as JSON |
+| `tools:configure` | Interactively configure a tool (capability, description, active toggle) |
+| `tools:configure --tool={name}` | Configure a specific tool directly |
 | `tools:assign` | Interactively assign/detach tools to models |
 | `tools:assign --list` | Show all current tool–model assignments |
-| `tools:assign --tool={name} --model={model_id}` | Assign directly by name |
-| `tools:assign --detach --tool={name} --model={model_id}` | Remove an assignment |
-| `tools:discover` | (Legacy) Discover tools from `config/tools.mcp_servers` |
+| `tools:assign --tool={name} --model={id}` | Assign directly by name |
+| `tools:assign --tool={name} --provider={id}` | Assign to all eligible models in a provider |
+| `tools:assign --detach --tool={name} --model={id}` | Remove an assignment |
+| `tools:check-status` | Ping all MCP servers, update tool `status` field (runs every 15 min) |
+
+### MCP server commands
+
+| Command | Description |
+|---|---|
+| `tools:add-mcp-server {url}` | Add an MCP server, discover tools, assign to models |
+| `tools:configure-server` | Interactively configure a server's attributes |
+| `tools:configure-server --server={label\|id}` | Configure a specific server directly |
+| `tools:list-mcp-servers` | List all registered MCP servers |
+| `tools:list-mcp-servers --json` | Output as JSON |
+| `tools:remove-mcp-server` | Remove an MCP server and cascade-delete its tools |
+| `tools:remove-mcp-server {id} --force` | Remove without confirmation prompt |
+
+### HAWKI CLI equivalents
+
+Every artisan tool and model command is available via `php hawki` using the subcommand pattern:
+
+```bash
+php hawki tools sync [--force] [--function-only] [--mcp-only]
+php hawki tools list [--json]
+php hawki tools configure [--tool=name]
+php hawki tools configure-server [--server=label]
+php hawki tools add-mcp-server {url} [options]
+php hawki tools remove-mcp-server [id] [--force]
+php hawki tools list-mcp-servers [--json]
+php hawki tools assign [options]
+php hawki tools check-status
+
+php hawki models sync [--force]
+php hawki models list [--provider=id] [--active] [--json]
+
+# Show full help for each group:
+php hawki tools help
+php hawki models help
+```
 
 ---
 
@@ -574,65 +702,101 @@ If the database is unavailable (e.g. during the initial `migrate` run), step 2 i
 ### Add a new AI provider
 
 1. Create `config/model_lists/myprovider_models.php` following the structure of the existing list files.
-2. Add the provider entry to `config/model_providers.php`:
-   ```php
-   'myprovider' => [
-       'active'   => env('MYPROVIDER_ACTIVE', false),
-       'api_key'  => env('MYPROVIDER_API_KEY'),
-       'api_url'  => env('MYPROVIDER_API_URL'),
-       'ping_url' => env('MYPROVIDER_PING_URL'),
-       'models'   => require __DIR__ . '/model_lists/myprovider_models.php',
-   ],
-   ```
-3. Implement the provider adapter in `app/Services/AI/Providers/Myprovider/` (see the [Model Connection](6-Model%20Connection.md) document).
-4. Run `php artisan models:sync --force` to persist the new provider and its models.
+2. Add the provider entry to `config/model_providers.php`.
+3. Implement the provider adapter in `app/Services/AI/Providers/Myprovider/`.
+4. Run `php artisan models:sync --force` (or `php hawki models sync --force`).
 
 ### Activate or deactivate a model without touching source code
-
-Set the environment variable and re-sync:
 
 ```bash
 # In .env
 MODELS_OPENAI_GPT5_ACTIVE=false
 
-# Then
+# Then re-sync:
 php artisan config:clear
 php artisan models:sync --force
 ```
 
-### Register an MCP server and its tools
+### Add a function-calling tool
+
+1. Create the class extending `AbstractTool` in `app/Services/AI/Tools/Implementations/`.
+2. Add it to `config/tools.available_tools`.
+3. Run `php hawki tools sync --function-only`.
+4. Assign it to models: `php hawki tools assign`.
+5. Add the capability key to the model's `tools` array in the model list config.
+
+### Add an MCP server interactively
 
 ```bash
-php artisan tools:add-mcp-server https://my-server.example.com/mcp \
-    --label=my-server \
-    --require_approval=never \
-    --timeout=30
+php hawki tools add-mcp-server https://my-server.example.com/mcp
 ```
 
-Follow the interactive prompts to select which tools to register and which models may use them.
+Follow the prompts to set the label, timeouts, API key (stored encrypted), and assign tools to models.
 
-### Deactivate an MCP tool without deleting it
+### Add an MCP server via config (CI/CD pipeline)
 
-Directly update the record in the database:
+1. Add the server to `config/tools.mcp_servers` with the URL in `.env`.
+2. Run `php hawki tools sync --mcp-only`.
+3. Update capability keys: `php hawki tools configure --tool={name}` for each tool that shows a capability warning.
+4. Assign tools to models: `php hawki tools assign`.
 
-```sql
-UPDATE ai_tools SET status = 'inactive' WHERE name = 'my-server-my-tool';
-```
-
-Or remove the assignment without deleting the tool:
+### Disable a tool temporarily without deleting it
 
 ```bash
-php artisan tools:assign --detach --tool=my-server-my-tool --model=gpt-4.1
+php hawki tools configure --tool=my-server-my-tool
+# Toggle "active state" when prompted → set to disabled
+```
+
+The tool remains in the database but is excluded from the `ToolRegistry` on the next boot.
+
+### Re-enable a disabled tool
+
+```bash
+php hawki tools configure --tool=my-server-my-tool
+# Toggle "active state" → set to enabled
+```
+
+### Update an MCP server's API key
+
+```bash
+php hawki tools configure-server --server=my-server
+# Choose "Update API key?" → enter the new key (stored encrypted automatically)
+```
+
+### Update an MCP server's URL
+
+```bash
+php hawki tools configure-server --server=my-server
+# Choose "Update URL?" → enter the new URL
+# The command will warn that existing tools may need re-discovery
+# Then re-discover tools:
+php hawki tools sync --mcp-only --force
 ```
 
 ### Verify which tools a model will receive in a request
 
 The provider-side request converters (`ToolAwareConverter` trait) build the tools list by:
 1. Reading the `tools` capability map from the model's config.
-2. Looking up each named tool in the `ToolRegistry`.
+2. Looking up each named capability in the `ToolRegistry`.
 3. Passing the `ToolDefinition` (name, description, JSON schema) to the provider API.
 
 Only tools that are both listed in the model config **and** present in the `ToolRegistry` are sent to the API.
+
+```bash
+# Check what's in the registry and assigned to models:
+php hawki tools list
+php hawki tools assign --list
+```
+
+### Rotate APP_KEY (re-encrypt MCP API keys)
+
+If you rotate `APP_KEY`, stored MCP API keys become unreadable. Re-enter them for each server:
+
+```bash
+php hawki tools list-mcp-servers
+php hawki tools configure-server --server={label}
+# Update API key for each server that has one
+```
 
 ---
 

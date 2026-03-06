@@ -28,6 +28,12 @@ interface ToolInterface
     public function getDefinition(): ToolDefinition;
 
     /**
+     * Get the capability key for this tool (used when syncing to DB).
+     * Defaults to snake_case of the tool name.
+     */
+    public function getCapability(): string;
+
+    /**
      * Execute the tool with given arguments
      *
      * @param array $arguments The arguments passed by the model

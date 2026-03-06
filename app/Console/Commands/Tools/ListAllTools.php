@@ -24,8 +24,7 @@ class ListAllTools extends Command
 
     private function outputFormatted(): int
     {
-        $registry       = app(ToolRegistry::class);
-        $classBasedTools = config('tools.available_tools', []);
+        $registry = app(ToolRegistry::class);
 
         $this->newLine();
         $this->info('╔════════════════════════════════════════════════════════════════╗');
@@ -33,74 +32,72 @@ class ListAllTools extends Command
         $this->info('╚════════════════════════════════════════════════════════════════╝');
         $this->newLine();
 
-        // ── Class-based (function calling) tools ───────────────────────────
+        $allTools = AiTool::with(['server', 'models'])->get();
+
+        if ($allTools->isEmpty()) {
+            $this->warn('No tools in database. Run <comment>php artisan tools:sync</comment> to populate.');
+            $this->newLine();
+            return Command::SUCCESS;
+        }
+
+        // ── Function tools ─────────────────────────────────────────────────────
+        $functionTools = $allTools->where('type', 'function');
+
         $this->line('═══════════════════════════════════════════════════════════════');
         $this->line('📦 <fg=yellow;options=bold>FUNCTION CALLING TOOLS</> (local execution)');
         $this->line('═══════════════════════════════════════════════════════════════');
         $this->newLine();
 
-        if (empty($classBasedTools)) {
-            $this->warn('   No function-calling tools configured in config/tools.php');
+        if ($functionTools->isEmpty()) {
+            $this->warn('   No function-calling tools in database. Run <comment>php artisan tools:sync --function-only</comment>.');
         } else {
-            // Index DB records by tool name for O(1) lookup
-            $dbFunctionTools = AiTool::with('models')->where('type', 'function')->get()->keyBy('name');
+            foreach ($functionTools as $tool) {
+                $isInRegistry = $registry->has($tool->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
+                $classOk      = $tool->class_name && class_exists($tool->class_name)
+                    ? '<fg=green>✓ exists</>'
+                    : '<fg=red>✗ class missing</>';
+                $activeLabel  = $tool->active ? '<fg=green>enabled</>' : '<fg=red>disabled</>';
+                $statusLabel  = $tool->status === 'active' ? '<fg=green>online</>' : '<fg=yellow>offline</>';
 
-            foreach ($classBasedTools as $toolClass) {
-                try {
-                    $tool   = app($toolClass);
-                    $def    = $tool->getDefinition();
-                    $dbTool = $dbFunctionTools->get($def->name);
+                $modelList = $tool->models->isEmpty()
+                    ? '<fg=red>no models assigned</>'
+                    : $tool->models->map(fn($m) => $m->model_id)->join(', ');
 
-                    $isInRegistry  = $registry->has($def->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
-                    $dbStatus      = $dbTool
-                        ? '<fg=green>✓ registered</>'
-                        : '<fg=yellow>⚠ not in DB — run tools:add-function-tool</>';
-
-                    $this->line("  <fg=green>●</> <fg=cyan>{$def->name}</> [{$isInRegistry}] [{$dbStatus}]");
-                    $this->line("    <fg=gray>Class:</> {$toolClass}");
-                    $this->line("    <fg=gray>Desc:</> {$def->description}");
-
-                    if ($dbTool) {
-                        $capability = $dbTool->capability ?: '<fg=gray>none</>';
-                        $modelList  = $dbTool->models->isEmpty()
-                            ? '<fg=red>no models assigned</>'
-                            : $dbTool->models->map(fn($m) => $m->model_id)->join(', ');
-
-                        $this->line("    <fg=gray>Capability:</> {$capability}");
-                        $this->line("    <fg=gray>Models:</> {$modelList}");
-                    }
-                } catch (\Exception $e) {
-                    $this->warn("  ERROR: {$toolClass}: {$e->getMessage()}");
-                }
+                $this->line("  <fg=green>●</> <fg=cyan>{$tool->name}</> [{$activeLabel}] [{$statusLabel}] [{$isInRegistry}]");
+                $this->line("    <fg=gray>Class:</> {$tool->class_name} [{$classOk}]");
+                $this->line("    <fg=gray>Desc:</> {$tool->description}");
+                $this->line("    <fg=gray>Capability:</> " . ($tool->capability ?: '<fg=gray>none</>'));
+                $this->line("    <fg=gray>Models:</> {$modelList}");
                 $this->newLine();
             }
         }
 
-        // ── DB-backed MCP tools ────────────────────────────────────────────
+        // ── MCP tools ──────────────────────────────────────────────────────────
+        $mcpTools = $allTools->where('type', 'mcp');
+
         $this->line('═══════════════════════════════════════════════════════════════');
         $this->line('🌐 <fg=blue;options=bold>MCP TOOLS</> (DB-registered, remote execution)');
         $this->line('═══════════════════════════════════════════════════════════════');
         $this->newLine();
 
-        $dbTools = AiTool::with(['server', 'models'])->active()->mcp()->get();
-
-        if ($dbTools->isEmpty()) {
+        if ($mcpTools->isEmpty()) {
             $this->warn('   No MCP tools in database. Use <comment>php artisan tools:add-mcp-server</comment>.');
         } else {
-            $grouped = $dbTools->groupBy(fn($t) => $t->server?->server_label ?? 'unknown');
+            $grouped = $mcpTools->groupBy(fn($t) => $t->server?->server_label ?? 'unknown');
             foreach ($grouped as $serverLabel => $serverTools) {
                 $server = $serverTools->first()->server;
                 $this->line("  <fg=magenta>▶</> Server: <fg=magenta;options=bold>{$serverLabel}</> ({$server?->url})");
                 $this->newLine();
 
                 foreach ($serverTools as $tool) {
-                    $modelList = $tool->models->isEmpty()
+                    $isInRegistry = $registry->has($tool->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
+                    $activeLabel  = $tool->active ? '<fg=green>enabled</>' : '<fg=red>disabled</>';
+                    $statusLabel  = $tool->status === 'active' ? '<fg=green>online</>' : '<fg=yellow>offline</>';
+                    $modelList    = $tool->models->isEmpty()
                         ? '<fg=red>no models assigned</>'
                         : $tool->models->map(fn($m) => $m->model_id)->join(', ');
 
-                    $isInRegistry = $registry->has($tool->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
-
-                    $this->line("    <fg=green>●</> <fg=cyan>{$tool->name}</> [{$isInRegistry}]");
+                    $this->line("    <fg=green>●</> <fg=cyan>{$tool->name}</> [{$activeLabel}] [{$statusLabel}] [{$isInRegistry}]");
                     $this->line("      <fg=gray>Desc:</> {$tool->description}");
                     $this->line("      <fg=gray>Models:</> {$modelList}");
                     $this->newLine();
@@ -108,12 +105,11 @@ class ListAllTools extends Command
             }
         }
 
-        // ── Summary ─────────────────────────────────────────────────────────
+        // ── Summary ────────────────────────────────────────────────────────────
         $this->line('═══════════════════════════════════════════════════════════════');
-        $registryTools = $registry->getAll();
-        $this->line("Registry: <fg=green>" . count($registryTools) . "</> tools loaded");
-        $this->line("💡 <fg=gray>Register function tools:</> <fg=cyan>tools:add-function-tool</>");
-        $this->line("💡 <fg=gray>Register MCP tools:</> <fg=cyan>tools:add-mcp-server</>");
+        $this->line("Registry: <fg=green>" . count($registry->getAll()) . "</> tools loaded");
+        $this->line("💡 <fg=gray>Sync tools from config:</> <fg=cyan>tools:sync</>");
+        $this->line("💡 <fg=gray>Add MCP server:</> <fg=cyan>tools:add-mcp-server</>");
         $this->line("💡 <fg=gray>Manage model assignments:</> <fg=cyan>tools:assign</>");
         $this->newLine();
 
@@ -126,6 +122,7 @@ class ListAllTools extends Command
             'name'        => $t->name,
             'type'        => $t->type,
             'status'      => $t->status,
+            'class_name'  => $t->class_name,
             'description' => $t->description,
             'server'      => $t->server?->server_label,
             'models'      => $t->models->pluck('model_id')->toArray(),

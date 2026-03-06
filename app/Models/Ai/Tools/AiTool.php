@@ -3,24 +3,30 @@
 namespace App\Models\Ai\Tools;
 
 use App\Models\Ai\AiModel;
+use App\Services\AI\Tools\MCP\MCPSSEClient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Log;
 
 class AiTool extends Model
 {
     protected $fillable = [
-        'name',
-        'description',
-        'inputSchema',
-        'capability',
-        'server_id',
         'type',
+        'name',
+        'class_name',
+        'server_id',
+        'description',
+        'capability',
+        'inputSchema',
+        'outputSchema',
         'status',
+        'active',
     ];
 
     protected $casts = [
         'inputSchema' => 'array',
+        'active'      => 'boolean',
     ];
 
     // -------------------------------------------------------------------------
@@ -57,5 +63,43 @@ class AiTool extends Model
     public function scopeMcp($query)
     {
         return $query->where('type', 'mcp');
+    }
+
+    // -------------------------------------------------------------------------
+    // Status Check
+    // -------------------------------------------------------------------------
+
+    /**
+     * Check whether this tool's MCP server is reachable and update status accordingly.
+     *
+     * Returns true when the server is available (status set to 'active'),
+     * false otherwise (status set to 'inactive').
+     */
+    public function checkStatus(): bool
+    {
+        if (!$this->relationLoaded('server')) {
+            $this->load('server');
+        }
+
+        if (!$this->server) {
+            Log::warning("AiTool '{$this->name}' has no associated MCP server — marking inactive.");
+            $this->update(['status' => 'inactive']);
+            return false;
+        }
+
+        $server = $this->server;
+
+        try {
+            $client      = new MCPSSEClient($server->url, (int) $server->timeout, $server->api_key ?: null);
+            $isAvailable = $client->isAvailable();
+        } catch (\Exception $e) {
+            Log::warning("AiTool '{$this->name}' status check failed: " . $e->getMessage());
+            $isAvailable = false;
+        }
+
+        $newStatus = $isAvailable ? 'active' : 'inactive';
+        $this->update(['status' => $newStatus]);
+
+        return $isAvailable;
     }
 }

@@ -15,12 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('url')->unique();
             $table->string('server_label');
-            $table->string('version');
-            $table->string('protocolVersion');
-            $table->text('description');
-            $table->string('require_approval');
-            $table->string('timeout');
-            $table->string('discovery_timeout');
+            $table->string('version')->nullable();
+            $table->string('protocolVersion')->nullable();
+            $table->text('description')->nullable();
+            $table->string('require_approval')->default('never');
+            $table->string('timeout')->default('10');
+            $table->string('discovery_timeout')->default('10');
             $table->string('api_key');
             $table->timestamps();
         });

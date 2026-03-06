@@ -30,12 +30,6 @@ class ToolRegistry
     {
         $name = $tool->getName();
         $this->tools[$name] = $tool;
-
-        if ($tool instanceof MCPToolInterface) {
-//            Log::debug("Registered MCP tool: {$name}");
-        } else {
-//            Log::debug("Registered tool: {$name}");
-        }
     }
 
     /**

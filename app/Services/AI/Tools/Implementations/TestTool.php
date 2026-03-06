@@ -43,6 +43,11 @@ class TestTool extends AbstractTool
         );
     }
 
+    public function getCapability(): string
+    {
+        return 'test';
+    }
+
     public function execute(array $arguments, string $toolCallId): ToolResult
     {
         Log::info('TestTool executed', [
