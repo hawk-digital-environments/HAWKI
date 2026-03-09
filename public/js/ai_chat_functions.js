@@ -467,7 +467,7 @@ async function loadConv(btn=null, slug=null){
     if(!convData){
         return;
     }
-    console.log(convData);
+
     clearChatlog();
     clearInput();
     activeConv = convData;
@@ -486,7 +486,6 @@ async function loadConv(btn=null, slug=null){
     const msgs = convData.messages;
     for (const msg of msgs) {
         const decryptedContent =  await decryptWithSymKey(convKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-        // msg.content = [];
         msg.content.text = decryptedContent;
     }
 

@@ -158,6 +158,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         let markdownProcessed = formatMessage(messageText, groundingMetadata);
         msgTxtElement.innerHTML = markdownProcessed;
         formatMathFormulas(msgTxtElement);
+        formatHljs(messageElement);
 
         if (groundingMetadata &&
             groundingMetadata != '' &&
@@ -290,6 +291,7 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
             let markdownProcessed = formatMessage(messageText, groundingMetadata);
             msgTxtElement.innerHTML = markdownProcessed;
             formatMathFormulas(msgTxtElement);
+            formatHljs(messageElement);
             if (groundingMetadata &&
                 groundingMetadata != '' &&
                 groundingMetadata.searchEntryPoint &&
@@ -843,7 +845,6 @@ function openRegenerateDropDown(sender){
     let tools = [];
     let missingTools = [];
     msgTools.forEach(msgTool => {
-        console.log(msgTool);
         if(toolKit.includes(msgTool)){
             tools.push(msgTool);
         }
@@ -868,7 +869,6 @@ function openRegenerateDropDown(sender){
         temperature: storedParams.temperature ?? activeModel.params?.temperature ?? null,
         top_p: storedParams.top_p ?? activeModel.params?.top_p ?? null,
     };
-    console.log(regenerateState);
     // Initialize regeneration filters based on current tools
     setRegenerationFilters(Array.from(regenerateState.tools));
 
@@ -1029,7 +1029,6 @@ function setParamValues(el){
     if(el.dataset.param === 'top_p'){
         regenerateState.params.top_p = parseFloat(el.value);
     }
-    console.log(regenerateState);
 }
 
 
@@ -1047,9 +1046,6 @@ function handleRegenerateClick(){
         console.error('No message element for regeneration');
         return;
     }
-
-    console.log('Regenerate clicked - Model:', model.id, 'Tools:', Array.from(tools));
-
     const metadata = {
         'tools': Array.from(tools),
         'params': params
@@ -1166,8 +1162,6 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
         return;
     }
 
-    console.log('Regenerating with model:', model.id, 'and metadata:', metadata);
-
     const threadIndex = messageElement.closest('.thread').id;
 
     //reset message content
@@ -1187,8 +1181,6 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
                 'model': model.id,
                 'metadata': metadata
             }
-
-            console.log('Request attributes for chat:', msgAttributes);
 
             await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
                 if(Done){
@@ -1238,7 +1230,7 @@ function createStatusElement(status, messageElement){
         statElement = statClone.querySelector(".gen-stat-element");
         messageElement.querySelector('.message-text').appendChild(statElement);
     }
-    // console.log( status.value.hasOwnProperty('web_search'));
+
     statElement.querySelector('video').src = GEN_STAT_VIDEO_URL
 
     // const list = JSON.parse(status);

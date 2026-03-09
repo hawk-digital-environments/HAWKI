@@ -223,7 +223,7 @@
                         </button>
 
 
-                        <div id="tool-selection-btn" class="btn-xs tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true, false)">
+                        <div id="tool-selection-btn" class="btn-xs tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true, true)">
                             <x-icon name="plus"/>
                             <div class="label tooltip tt-abs-up">
                                 {{ $translation["Add_Tool"] }}

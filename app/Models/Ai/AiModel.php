@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class AiModel extends Model
 {
@@ -116,24 +117,29 @@ class AiModel extends Model
     public static function capabilitiesMap(): array
     {
         return Cache::remember('ai_model_capabilities', now()->addHour(), function () {
-            $models = self::with(['assignedTools' => fn($q) => $q->where('status', 'active')])
-                ->where('active', true)
+            // Query directly from the pivot table so only tools WITH an assignment
+            // can appear — no eager-load ambiguity, no unassigned tools leaking in.
+            $rows = DB::table('ai_model_tools')
+                ->join('ai_tools', 'ai_model_tools.ai_tool_id', '=', 'ai_tools.id')
+                ->join('ai_models', 'ai_model_tools.ai_model_id', '=', 'ai_models.id')
+                ->where('ai_tools.active', true)
+                ->where('ai_tools.status', 'active')
+                ->where('ai_models.active', true)
+                ->select('ai_models.model_id', 'ai_tools.name', 'ai_tools.capability')
                 ->get();
 
             $map = [];
-            foreach ($models as $model) {
-                foreach ($model->assignedTools as $tool) {
-                    $capability = ($tool->capability !== null && $tool->capability !== '')
-                        ? $tool->capability
-                        : $tool->name;
+            foreach ($rows as $row) {
+                $capability = ($row->capability !== null && $row->capability !== '')
+                    ? $row->capability
+                    : $row->name;
 
-                    $map[$model->model_id][$capability] = $tool->name;
-                }
+                $map[$row->model_id][$capability] = $row->name;
             }
+
             return $map;
         });
     }
-
     /**
      * Invalidate the capabilities cache — call this after assigning or detaching tools.
      */
