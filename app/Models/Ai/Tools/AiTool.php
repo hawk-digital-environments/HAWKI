@@ -60,6 +60,14 @@ class AiTool extends Model
         return $query->where('status', 'active');
     }
 
+    public function scopeActiveAndInUse($query)
+    {
+        return $query
+            ->where('active', true)
+            ->where('status', 'active')
+            ->whereHas('models');
+    }
+
     public function scopeMcp($query)
     {
         return $query->where('type', 'mcp');

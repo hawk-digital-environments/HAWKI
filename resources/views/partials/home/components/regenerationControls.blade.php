@@ -96,6 +96,11 @@
                     </button>
                 @endif
             @endforeach
+                <div class="red-text" id="expired-tool-warning">
+                    <span class="preset">{{$translation['MissingToolMsg']}}<br></span>
+                    <span class="expired-tool-name"></span>
+                </div>
+
         </div>
         <div class="sub-menu" id="params-panel">
             <div class="params-wrapper">

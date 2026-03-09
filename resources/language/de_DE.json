@@ -163,6 +163,10 @@
     "Add_Tool": "Werkzeug Hinzufügen",
     "Tool_web_search": "Websuche",
     "Tool_knowledge_base": "HAWK-Wissen",
+    "Exec_prefix": "Durchsuche",
+    "The_web_search": "das Web",
+    "The_knowledge_base": "die Vektordatenbank",
+
     "Parameters": "Einstellungen",
     "Temperature": "Temperatur",
     "Precise" : "Präzise",
@@ -172,6 +176,7 @@
     "Presets": "Voreinstellungen",
     "Default": "Standard",
 
+    "MissingToolMsg" : "Diese Nachricht wurde mit einem veralteten Tool erstellt: ",
     "Preview_Loading": "Suche läuft...",
     "Preview_Unavailable": "Vorschau nicht verfügbar"
 

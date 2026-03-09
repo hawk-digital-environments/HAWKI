@@ -164,6 +164,10 @@
     "Add_Tool": "Add Tool",
     "Tool_web_search": "Web Search",
     "Tool_knowledge_base": "HAWK-Knowledge Base",
+    "Exec_prefix": "Searching",
+    "The_web_search": "the Web",
+    "The_knowledge_base": "the Vector Database",
+
     "Parameters": "Parameters",
     "Temperature": "Temperature",
     "Precise" : "Precise",
@@ -173,6 +177,7 @@
     "Presets": "Presets",
     "Default": "Default",
 
+    "MissingToolMsg" : "This message was generated with an obsolete tool: ",
     "Preview_Loading": "Loading preview...",
     "Preview_Unavailable": "Preview unavailable"
 }

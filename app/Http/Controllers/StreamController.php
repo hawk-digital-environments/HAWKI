@@ -189,7 +189,7 @@ class StreamController extends Controller
                 'isDone' => $response->isDone,
                 'content' => json_encode($response->content),
                 'type' => $response->type,
-                'statusMessage' => $response->statusMessage,
+                'status' => $response->status,
             ];
 
             echo json_encode($messageData) . "\n";

@@ -839,7 +839,30 @@ function openRegenerateDropDown(sender){
     const modelId = msgElement.dataset.model;
     const model = modelsList.find(m => m.id === modelId);
     regenerateState.model = model || activeModel;
-    regenerateState.tools = new Set(JSON.parse(msgElement.dataset.tools || '[]'));
+    const msgTools = JSON.parse(msgElement.dataset.tools);
+    let tools = [];
+    let missingTools = [];
+    msgTools.forEach(msgTool => {
+        console.log(msgTool);
+        if(toolKit.includes(msgTool)){
+            tools.push(msgTool);
+        }
+        else{
+            missingTools.push(msgTool);
+        }
+    })
+    regenerateState.tools = new Set(tools);
+
+    if(missingTools.length > 0){
+        menu.querySelector('#expired-tool-warning').style.display = 'block';
+        menu.querySelector('#expired-tool-warning')
+            .querySelector('.expired-tool-name').innerText = missingTools.join(', ');
+    }
+    else{
+        menu.querySelector('#expired-tool-warning').style.display = 'none';
+    }
+
+
     const storedParams = JSON.parse(msgElement.dataset.params || '{}');
     regenerateState.params = {
         temperature: storedParams.temperature ?? activeModel.params?.temperature ?? null,
@@ -1195,16 +1218,49 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
     }
 }
 //#endregion
+let GEN_STAT_VIDEO_URL = null;
+document.addEventListener("DOMContentLoaded", async () => {
+    const src = darkMode === 'disabled'
+                                ? '/animations/DocSearch-lightMode.webm'
+                                : '/animations/DocSearch-darkMode.webm';
+    const response = await fetch(src);
+    const blob = await response.blob();
+    GEN_STAT_VIDEO_URL = URL.createObjectURL(blob);
+
+});
 
 function createStatusElement(status, messageElement){
-    console.log('updating status');
     let statElement = messageElement.querySelector(`.gen-stat-element`);
     //create a new element for first status
     if(!statElement){
         const statTemp = document.getElementById('gen-stat-template')
         const statClone = statTemp.content.cloneNode(true);
         statElement = statClone.querySelector(".gen-stat-element");
+        messageElement.querySelector('.message-text').appendChild(statElement);
     }
-    statElement.querySelector('.stat-txt').innerText = status;
-    messageElement.querySelector('.message-text').appendChild(statElement);
+    // console.log( status.value.hasOwnProperty('web_search'));
+    statElement.querySelector('video').src = GEN_STAT_VIDEO_URL
+
+    // const list = JSON.parse(status);
+    const formatter = new Intl.ListFormat(activeLocale.label, {
+        style: "long",
+        type: "conjunction"
+    });
+
+    const value = status.value;
+    const toolNames = value.map(tool => {
+        const key = `The_${tool}`;
+
+        if (translation.hasOwnProperty(key)) {
+            return translation[key];
+        }
+
+        // fallback: web_search -> Web Search
+        return tool
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    });
+    const list = formatter.format(toolNames);
+    statElement.querySelector('.stat-txt').innerText = `${translation.Exec_prefix} ${list}`;
 }

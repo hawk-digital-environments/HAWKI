@@ -181,7 +181,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageElement.dataset.rawMsg = msg;
 
             if(data.type === "status"){
-                createStatusElement(data.statusMessage, messageElement);
+                createStatusElement(data.status, messageElement);
                 return;
             }
 

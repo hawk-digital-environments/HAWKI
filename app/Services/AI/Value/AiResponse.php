@@ -22,7 +22,7 @@ readonly class AiResponse implements \JsonSerializable
         public ?array      $toolCalls = null,     // Array of ToolCall objects
         public ?string     $finishReason = null,  // 'stop', 'tool_calls', 'length', etc.
         public string      $type = 'message',     // 'content', 'tool_call', 'tool_result', 'status'
-        public ?string     $statusMessage = null  // Optional message for status type
+        public ?array      $status = null  // Optional message for status type
     )
     {
     }
@@ -52,7 +52,7 @@ readonly class AiResponse implements \JsonSerializable
             'toolCalls' => $this->toolCalls,
             'finishReason' => $this->finishReason,
             'type' => $this->type,
-            'statusMessage' => $this->statusMessage,
+            'status' => $this->status,
         ];
     }
 
