@@ -27,7 +27,8 @@ class OpenAiStreamingRequest extends AbstractRequest
             model: $model,
             payload: $this->payload,
             onData: $this->onData,
-            chunkToResponse: [$this, 'chunkToResponse']
+            chunkToResponse: [$this, 'chunkToResponse'],
+            timeout: 360
         );
     }
 
@@ -50,6 +51,9 @@ class OpenAiStreamingRequest extends AbstractRequest
         $usage = null;
         $toolCalls = null;
         $finishReason = null;
+        $status = null;
+        $statusKey = null;
+        $responseType = 'message';
 
         switch ($type) {
             // The main streaming text deltas
@@ -79,8 +83,15 @@ class OpenAiStreamingRequest extends AbstractRequest
             // Optional: handle created/in_progress etc. for logging/debugging
             case 'response.created':
             case 'response.in_progress':
+                $responseType = 'status';
+                $status = 'in_progress';
+                $statusKey = 'reasoning';
+                break;
             case 'response.output_item.added':
             case 'response.output_item.done':
+                $responseType = 'status';
+                $status = $jsonChunk['item.type'] ?? '';
+                $statusKey = 'reasoning';
             case 'response.content_part.added':
             case 'response.function_call_arguments.delta':
             case 'response.function_call_arguments.done':
@@ -99,7 +110,13 @@ class OpenAiStreamingRequest extends AbstractRequest
             usage: $usage,
             isDone: $isDone,
             toolCalls: $toolCalls,
-            finishReason: $finishReason
+            finishReason: $finishReason,
+            type: $responseType,
+            status: [
+                        'key' => $statusKey,
+                        'value' => $status,
+                    ],
+
         );
     }
 

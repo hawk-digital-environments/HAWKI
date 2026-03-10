@@ -76,7 +76,6 @@ class ToolSyncService
         $capabilityWarnings = [];
 
         foreach (config('tools.mcp_servers', []) as $key => $cfg) {
-            Log::debug($key);
             $url = $cfg['url'] ?? null;
             if (!$url) {
                 $serversFailed[$key] = 'No URL configured';

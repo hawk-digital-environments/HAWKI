@@ -212,7 +212,7 @@ readonly class AiService
                 $tool = AiTool::where('name', $toolName)->firstOrFail();
                 $capabilities[] = $tool->capability;
             }
-            \Log::debug($capabilities);
+            \Log::info($capabilities);
             $onData(new AiResponse(
                 content: ['text' => ''],
                 isDone: false,

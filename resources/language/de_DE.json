@@ -166,6 +166,7 @@
     "Exec_prefix": "Durchsuche",
     "The_web_search": "das Web",
     "The_knowledge_base": "die Vektordatenbank",
+    "Reasoning_Msg": "Vergleiche mögliche Optionen",
 
     "Parameters": "Einstellungen",
     "Temperature": "Temperatur",
@@ -175,6 +176,8 @@
     "ResetToDefault": "Zurücksetzen",
     "Presets": "Voreinstellungen",
     "Default": "Standard",
+    "TT_Temp": "Steuert die Kreativität der Antworten der KI. Höhere Werte (z. B. 0,8) führen zu vielfältigeren und einfallsreicheren Ergebnissen; niedrigere Werte (z. B. 0,2) machen die Antworten fokussierter und vorhersehbarer.",
+    "TT_Top_P": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
 
     "MissingToolMsg" : "Diese Nachricht wurde mit einem veralteten Tool erstellt: ",
     "Preview_Loading": "Suche läuft...",

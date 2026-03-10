@@ -50,7 +50,6 @@
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
 
-    <link rel="preload" href="animations/DocSearch-Dark.webm" as="video" type="video/webm">
 	{!! $settingsPanel !!}
     <script>
 		SwitchDarkMode(false);
@@ -100,7 +99,6 @@
     const hawkiUsername = @json($userData['hawki_username'])
 
     const activeLocale = {!! json_encode(Session::get('language')) !!};
-    console.log(activeLocale);
 	const translation = @json($translation);
 
 	const modelsList = @json($models).models;

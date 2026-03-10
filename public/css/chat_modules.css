@@ -2127,8 +2127,9 @@ sup{
 }
 .gen-stat-element video{
     height: 5rem;
+    object-fit: contain;
+    margin-left: -1.5rem;
 }
-
 
 /* Inline Link Styling */
 .inline-link {

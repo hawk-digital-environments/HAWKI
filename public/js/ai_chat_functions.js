@@ -154,7 +154,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
     buildRequestObject(msgAttributes, async (data, done) => {
 
         if(data){
-
+            console.log(data);
             if(!msgAttributes['broadcasting'] && msgAttributes['stream']){
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }

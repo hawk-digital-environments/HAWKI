@@ -45,11 +45,11 @@ class MCPSSEClient
 
         $jsonRequest = json_encode($request);
 
-        Log::debug('MCP SSE Request', [
-            'url' => $this->serverUrl,
-            'method' => $method,
-            'request' => $request,
-        ]);
+//        Log::debug('MCP SSE Request', [
+//            'url' => $this->serverUrl,
+//            'method' => $method,
+//            'request' => $request,
+//        ]);
 
         // Initialize cURL for SSE
         $ch = curl_init($this->serverUrl);

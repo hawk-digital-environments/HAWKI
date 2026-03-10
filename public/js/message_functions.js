@@ -1219,9 +1219,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     const blob = await response.blob();
     GEN_STAT_VIDEO_URL = URL.createObjectURL(blob);
 
+    const gridDotData = await fetch('/animations/Reasoning.mp4');
+    const girdBlob = await gridDotData.blob();
+    GRID_VIDEO_URL = URL.createObjectURL(girdBlob);
+
 });
 
 function createStatusElement(status, messageElement){
+
     let statElement = messageElement.querySelector(`.gen-stat-element`);
     //create a new element for first status
     if(!statElement){
@@ -1231,28 +1236,64 @@ function createStatusElement(status, messageElement){
         messageElement.querySelector('.message-text').appendChild(statElement);
     }
 
-    statElement.querySelector('video').src = GEN_STAT_VIDEO_URL
 
-    // const list = JSON.parse(status);
-    const formatter = new Intl.ListFormat(activeLocale.label, {
-        style: "long",
-        type: "conjunction"
-    });
+    let statusText = '';
+    console.log(status.key);
+    console.log(status.value);
+    if(status.key === 'tool_call' || status.key === 'max_execution'){
+        console.log('tool_calling');
+        statElement.querySelector('#grid-animation-block').classList.remove('active');
+        statElement.querySelector('video').src = GEN_STAT_VIDEO_URL
+        statElement.querySelector('video').style.display = 'flex';
 
-    const value = status.value;
-    const toolNames = value.map(tool => {
-        const key = `The_${tool}`;
+        // const list = JSON.parse(status);
+        const formatter = new Intl.ListFormat(activeLocale.label, {
+            style: "long",
+            type: "conjunction"
+        });
+        const value = status.value;
+        const uniqueTools = [...new Set(value)];
 
-        if (translation.hasOwnProperty(key)) {
-            return translation[key];
-        }
+        const toolNames = uniqueTools.map(tool => {
+            const key = `The_${tool}`;
 
-        // fallback: web_search -> Web Search
-        return tool
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
-    });
-    const list = formatter.format(toolNames);
-    statElement.querySelector('.stat-txt').innerText = `${translation.Exec_prefix} ${list}`;
+            if (translation.hasOwnProperty(key)) {
+                return translation[key];
+            }
+
+            // fallback: web_search -> Web Search
+            return tool
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        });
+        const list = formatter.format(toolNames);
+        statusText = `${translation.Exec_prefix} ${list}`;
+    }
+    if(status.key === 'reasoning'){
+        console.log('reasoning');
+        statElement.querySelector('video').style.display = 'none';
+        statElement.querySelector('#grid-animation-block').classList.add('active');
+        statusText = translation['Reasoning_Msg'];
+    }
+    statElement.querySelector('.stat-txt').innerText = statusText;
+    // tripleDotAnime(statElement, statusText)
+}
+
+
+function tripleDotAnime(statElement, status){
+    // ---- Clear any existing interval ----
+    if (statElement._dotsIntervalId) {
+        clearInterval(statElement._dotsIntervalId);
+    }
+
+    const textEl = statElement.querySelector('.stat-txt');
+    let frame = 0;
+    const frames = [" ", " .", " ..", " ..."];
+
+    // ---- Start new interval and store its id ----
+    setInterval(()=> {
+        textEl.innerText = status + frames[frame];
+        frame = (frame + 1) % frames.length;
+    }, 500);
 }

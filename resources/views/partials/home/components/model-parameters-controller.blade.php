@@ -10,7 +10,7 @@
                     </button>
                 </div>
                 <div class="hint-box" id="temp-hint">
-                    Controls the creativity of the AI's responses. Higher values (e.g., 0.8) make output more diverse and inventive; lower values (e.g., 0.2) make responses more focused and predictable.
+                    {{ $translation['TT_Temp'] }}
                 </div>
             </div>
             <div class="param-input">
@@ -29,7 +29,7 @@
                     </button>
                 </div>
                 <div class="hint-box" id="top-p-hint">
-                    Limits the AI’s choices to the most probable words whose total probability does not exceed this value. Lower Top_P (e.g., 0.7) results in more conservative responses; higher values (e.g., 0.9) allow for greater variety.
+                    {{ $translation['TT_Top_P'] }}
                 </div>
             </div>
             <div class="param-input" >

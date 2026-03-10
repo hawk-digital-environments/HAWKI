@@ -48,7 +48,7 @@ class ToolServiceProvider extends ServiceProvider
             }
         } catch (\Exception $e) {
             // DB may not be available yet (e.g. during initial migrate).
-            Log::debug('Could not load DB tools: ' . $e->getMessage());
+            Log::error('Could not load DB tools: ' . $e->getMessage());
         }
     }
 

@@ -17,6 +17,7 @@ return [
             'tool_calling' => true,
             'file_upload' => true,
             'vision'=> true,
+//            'web_search' => 'native',
         ],
         'default_params' => [
             // OpenAI API defaults: temp=1.0, top_p=1.0
