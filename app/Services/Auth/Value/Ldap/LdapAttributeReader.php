@@ -102,12 +102,23 @@ readonly class LdapAttributeReader
             throw new LdapException('The LDAP entry is empty. Looks like the LDAP query did not return any results.');
         }
         if (empty($ldapEntry[0][$attribute][0])) {
-            $this->logger?->debug('LDAP misses attribute value', [
-                'attribute' => $attribute,
-                'attribute_node' => $ldapEntry[0][$attribute] ?? null,
-                'available_attributes' => array_keys($ldapEntry[0] ?? [])
-            ]);
-            throw new LdapException("The LDAP entry does not contain an attribute called: '{$attribute}' that has a value.");
+            // Try lowercase version of the attribute before failing
+            $lowercaseAttribute = strtolower($attribute);
+            if ($lowercaseAttribute !== $attribute && !empty($ldapEntry[0][$lowercaseAttribute][0])) {
+                $this->logger?->debug('LDAP attribute found in lowercase - possible misconfiguration', [
+                    'expected_attribute' => $attribute,
+                    'found_attribute' => $lowercaseAttribute,
+                    'message' => 'LDAP server returned attributes in lowercase. Consider updating configuration to use lowercase attribute names.'
+                ]);
+                $attribute = $lowercaseAttribute;
+            } else {
+                $this->logger?->debug('LDAP misses attribute value', [
+                    'attribute' => $attribute,
+                    'attribute_node' => $ldapEntry[0][$attribute] ?? null,
+                    'available_attributes' => array_keys($ldapEntry[0] ?? [])
+                ]);
+                throw new LdapException("The LDAP entry does not contain an attribute called: '{$attribute}' that has a value.");
+            }
         }
         if (!is_string($ldapEntry[0][$attribute][0])) {
             $this->logger?->debug('LDAP attribute value is not a string', [

@@ -10,7 +10,7 @@
 
 ### Bugfix
 
-- List of bugs that have been fixed in this version.
+- Fixed LDAP authentication to gracefully handle attributes returned in lowercase by the LDAP server.
 
 ### Deprecation
 
