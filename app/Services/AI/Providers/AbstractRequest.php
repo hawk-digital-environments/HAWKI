@@ -176,9 +176,11 @@ abstract class AbstractRequest
     protected function setStreamingCurlOptions(\CurlHandle $ch, callable $onData): void
     {
         // Set timeout parameters for streaming
+        // LOW_SPEED_TIME is set high (120s) to accommodate reasoning models that may
+        // silently think for an extended period before streaming any output.
         curl_setopt($ch, CURLOPT_TIMEOUT, 0);
         curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
-        curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 20);
+        curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 120);
 
         $chunkHandler = new StreamChunkHandler($onData);
 
