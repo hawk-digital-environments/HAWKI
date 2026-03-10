@@ -1,8 +1,8 @@
-import {type EnvFileState, loadEnvFileState} from './EnvFileState.ts';
-import {EnvFileLine} from './EnvFileLine.ts';
-import {ensureEnvFileExists, envFileHashChanged} from './util.ts';
-import {EnvFileMigrator} from './EnvFileMigrator.ts';
-import type {Context} from '../Context.ts';
+import {type EnvFileState, loadEnvFileState} from './EnvFileState.js';
+import {EnvFileLine} from './EnvFileLine.js';
+import {ensureEnvFileExists, envFileHashChanged} from './util.js';
+import {EnvFileMigrator} from './EnvFileMigrator.js';
+import type {Context} from '../Context.js';
 
 export class EnvFile {
     private readonly _state: EnvFileState;
@@ -22,6 +22,9 @@ export class EnvFile {
         }
         throw new Error(`Required env variable ${key} not found`);
     }
+
+    public getGlobal(key: string, fallback: string): string;
+    public getGlobal(key: string, fallback?: string): string | undefined;
 
     /**
      * Get the value of an env variable from the local env file or from the global env variables
@@ -66,6 +69,11 @@ export class EnvFile {
     public isEmpty(key: string): boolean {
         const line = this._state.getFirstLineForKey(key);
         return line === undefined || line.value === undefined || line.value === '';
+    }
+
+    public isEmptyGlobal(key: string): boolean {
+        const value = this.getGlobal(key);
+        return value === undefined || value === '';
     }
 
     public set(key: string, value: string): this {

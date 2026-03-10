@@ -49,7 +49,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .command('dev')
             .description('starts both the queue and the websocket server in the current shell')
             .action(async () => {
-                await context.docker.executeCommandInService('app', ['/usr/bin/app/dev.command.sh'], {interactive: true});
+                await context.docker.executeCommandInService('app', ['/usr/bin/dev.command.sh'], {interactive: true});
             });
 
         program

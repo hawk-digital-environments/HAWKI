@@ -23,7 +23,8 @@
         "league/flysystem-aws-s3-v3": "^3.30.1",
         "league/flysystem-sftp-v3": "^3.30.0",
         "league/flysystem-webdav": "^3.30.0",
-        "spatie/laravel-backup": "^9.3.4"
+        "spatie/laravel-backup": "^9.3.4",
+        "ext-pdo": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
