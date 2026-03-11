@@ -82,6 +82,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function bootSchedulerMacros(): void
     {
+        $app = $this->app;
         Schedule::macro(
             'commandWithDynamicInterval',
             /**
@@ -94,13 +95,13 @@ class AppServiceProvider extends ServiceProvider
              * @param mixed|null $intervalArgs Optional arguments for the scheduling method, which can be a JSON string, a single numeric value, or a simple string.
              * @return Event|null Returns the scheduled Event if successful, or null if there was an error in scheduling due to invalid interval or arguments.
              */
-            function (
+            static function (
                 string     $command,
                 array|null $parameters = null,
                 mixed      $interval = ScheduleWithDynamicIntervalFactory::NEVER_INTERVAL,
                 mixed      $intervalArgs = null
-            ): Event|null {
-                return $this->app->make(ScheduleWithDynamicIntervalFactory::class)->makeJob(
+            ) use ($app): Event|null {
+                return $app->make(ScheduleWithDynamicIntervalFactory::class)->makeJob(
                     command: $command,
                     parameters: $parameters,
                     interval: $interval,

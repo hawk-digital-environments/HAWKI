@@ -15,11 +15,49 @@ fi
 # without overriding any values that are already set in the environment.
 if [ -f "/var/www/html/.env.example" ]; then
     echo "[ENTRYPOINT] Loading environment variables from /var/www/html/.env.example..."
-    # Read valid KEY=VALUE lines; skip comments and blank lines.
-    # Only export a key when it is not already present in the environment.
-    while IFS='=' read -r key value; do
-        [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] && [ -z "${!key+x}" ] && export "$key=$value"
-    done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' /var/www/html/.env.example)
+    # Parse dotenv-style KEY=VALUE lines with proper normalization:
+    #   - Skip blank lines and comment lines.
+    #   - Split only on the first '=' so values containing '=' are preserved.
+    #   - Strip surrounding single or double quotes from the value.
+    #   - Remove inline comments (unquoted ' #...' suffixes).
+    #   - Trim leading/trailing whitespace from both key and value.
+    #   - Only export a key when it is not already present in the environment.
+    while IFS= read -r line; do
+        # Skip blank lines and comment lines
+        [[ "$line" =~ ^[[:space:]]*$ || "$line" =~ ^[[:space:]]*# ]] && continue
+
+        # Skip lines without '='
+        [[ "$line" != *=* ]] && continue
+
+        # Split on the first '=' only
+        key="${line%%=*}"
+        value="${line#*=}"
+
+        # Trim whitespace from the key
+        key="${key#"${key%%[![:space:]]*}"}"
+        key="${key%"${key##*[![:space:]]}"}"
+
+        # Validate key name
+        [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+
+        # Trim leading whitespace from value
+        value="${value#"${value%%[![:space:]]*}"}"
+
+        # Strip surrounding double or single quotes (dotenv style),
+        # also discarding any trailing inline comment after the closing quote.
+        if [[ "$value" =~ ^\"(.*)\"[[:space:]]*(#.*)?$ ]]; then
+            value="${BASH_REMATCH[1]}"
+        elif [[ "$value" =~ ^\'(.*)\'[[:space:]]*(#.*)?$ ]]; then
+            value="${BASH_REMATCH[1]}"
+        else
+            # Unquoted value: strip trailing inline comment and whitespace
+            value="${value%%[[:space:]]#*}"
+            value="${value%"${value##*[![:space:]]}"}"
+        fi
+
+        # Only export if the variable is not already set in the environment
+        [ -z "${!key+x}" ] && export "$key=$value"
+    done < /var/www/html/.env.example
 else
     echo "[ENTRYPOINT] Warning: /var/www/html/.env.example file not found. Skipping loading environment variables from it."
 fi
