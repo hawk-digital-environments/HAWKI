@@ -69,11 +69,12 @@ readonly class HealthChecker
                 responseTime: $responseTime
             );
         } catch (\Throwable $e) {
+            $this->logger->error('Quick database health check failed: ' . $e->getMessage(), ['exception' => $e]);
             $this->timer->markAsFailed();
             return new HealthCheckResult(
                 checkName: self::CHECK_NAME_DB_QUICK,
                 status: HealthCheckResult::STATUS_ERROR,
-                message: 'Quick database check failed: ' . $e->getMessage()
+                message: 'Quick database check failed'
             );
         }
     }

@@ -45,7 +45,7 @@ HAWKI uses a database to save chats and other data. For this a relation SQL data
 |-------------------------|--------------------|----------------------------------------------------------------------------------------------------------|
 | DB_CONNECTION           | mysql              | Database server type: "mysql", "sqlite", "mariadb", "pgsql", "sqlsrv" (see config/database.php)          |
 | DB_BACKUP_INTERVAL      | daily              | Automatic database backup interval: "daily", "weekly", etc. **can be set to `never` to disable backups** |
-| DB_BACKUP_INTERVAL_DATA |                    | Some intervals accept additional constraints (see below)                                                 |
+| DB_BACKUP_INTERVAL_ARGS |                    | Some intervals accept additional constraints (see below)                                                 |
 | DB_URL                  |                    | Database connection URL (instead of host and port)                                                       |
 | DB_HOST                 | localhost          | Database server host name                                                                                |
 | DB_PORT                 | 3306               | Database server port number                                                                              |
@@ -67,9 +67,9 @@ HAWKI uses a database to save chats and other data. For this a relation SQL data
 >
 > Example:
 >
-> - DB_BACKUP_INTERVAL="cron", DB_BACKUP_INTERVAL_DATA="0 0 * * *" for daily backup at midnight
-> - DB_BACKUP_INTERVAL="dailyAt", DB_BACKUP_INTERVAL_DATA="20:00" for daily backup at 8pm
-> - DB_BACKUP_INTERVAL="daysOfMonth", DB_BACKUP_INTERVAL_DATA="[1, 13, 28]" for backup on the 1st, 13th and 28th of each month, etc.
+> - DB_BACKUP_INTERVAL="cron", DB_BACKUP_INTERVAL_ARGS="0 0 * * *" for daily backup at midnight
+> - DB_BACKUP_INTERVAL="dailyAt", DB_BACKUP_INTERVAL_ARGS="20:00" for daily backup at 8pm
+> - DB_BACKUP_INTERVAL="daysOfMonth", DB_BACKUP_INTERVAL_ARGS="[1, 13, 28]" for backup on the 1st, 13th and 28th of each month, etc.
 >
 
 ## HAWKI Profile Configuration
