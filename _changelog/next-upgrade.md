@@ -361,7 +361,7 @@ The application now exposes a `/health` endpoint. The `app` container includes a
 polls this endpoint. No action is required unless you have external monitoring or load-balancer probes configured — in
 that case update them to use `GET /health`.
 
-See the new [Health Check documentation](_documentation/5-Deployment/Health-Check.md) for full details.
+See the new [Health Check documentation](../_documentation/5-Deployment/6-Health-Check.md) for full details.
 
 ### Summary checklist
 

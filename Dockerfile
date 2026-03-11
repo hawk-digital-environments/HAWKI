@@ -57,7 +57,6 @@ COPY --chown=www-data:www-data docker/app /container/custom
 COPY --chown=www-data:www-data ./composer.json ./composer.json
 COPY --chown=www-data:www-data ./composer.lock ./composer.lock
 
-# Replace exec /usr/bin/_composer "$@" with "id -u && exit 1" to check the user permissions and prevent composer from running as root, which can cause permission issues with the installed dependencies
 RUN composer install --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader
 
 # Add the app sources

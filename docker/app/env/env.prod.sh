@@ -15,9 +15,11 @@ fi
 # without overriding any values that are already set in the environment.
 if [ -f "/var/www/html/.env.example" ]; then
     echo "[ENTRYPOINT] Loading environment variables from /var/www/html/.env.example..."
-    set -o allexport
-    source <(grep -v '^#' /var/www/html/.env.example | xargs -d '\n' -I {} sh -c 'if [ -z "${!{}}" ]; then echo export {}; fi')
-    set +o allexport
+    # Read valid KEY=VALUE lines; skip comments and blank lines.
+    # Only export a key when it is not already present in the environment.
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] && [ -z "${!key+x}" ] && export "$key=$value"
+    done < <(grep -E '^[A-Za-z_][A-Za-z0-9_]*=' /var/www/html/.env.example)
 else
     echo "[ENTRYPOINT] Warning: /var/www/html/.env.example file not found. Skipping loading environment variables from it."
 fi

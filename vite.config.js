@@ -6,13 +6,15 @@ export default defineConfig({
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true,
-        }),
+            refresh: true
+        })
     ],
     server: {
         cors: true,
         port: 3000,
-        origin: `${process.env.DOCKER_PROJECT_PROTOCOL}://${process.env.DOCKER_PROJECT_HOST}:3000`,
+        origin: process.env.DOCKER_PROJECT_PROTOCOL && process.env.DOCKER_PROJECT_HOST ?
+            `${process.env.DOCKER_PROJECT_PROTOCOL}://${process.env.DOCKER_PROJECT_HOST}:3000`
+            : undefined,
         host: true,
         strictPort: false,
         https: process.env.DOCKER_PROJECT_PROTOCOL === 'https' ? {

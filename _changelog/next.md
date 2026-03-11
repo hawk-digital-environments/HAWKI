@@ -11,7 +11,7 @@
 ### Quality of Life
 
 - Allow `DB_BACKUP_INTERVAL` to be set to `never`, to disable automatic database backups. This is useful for users who want to manage their own backup strategy or do not want to use the built-in backup functionality.
-- Adds a new `DB_BACKUP_INTERVAL_DATA` environment variable, that works in tandem with `DB_BACKUP_INTERVAL`, to allow more fine-grained control over the database backup process. Read more in the [Dot Env documentation](../_documentation/3-architecture/10-dot Env.md)
+- Adds a new `DB_BACKUP_INTERVAL_DATA` environment variable, that works in tandem with `DB_BACKUP_INTERVAL`, to allow more fine-grained control over the database backup process. Read more in the [Dot Env documentation](../_documentation/3-architecture/10-dot%20Env.md)
 
 ### Bugfix
 

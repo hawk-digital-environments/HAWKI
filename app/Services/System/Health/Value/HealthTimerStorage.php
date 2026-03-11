@@ -167,7 +167,19 @@ class HealthTimerStorage
             'quick_test_counter' => $this->quickTestCounter,
         ];
 
-        file_put_contents($this->filePath, json_encode($data, JSON_THROW_ON_ERROR));
-        $this->fileLastModified = filemtime($this->filePath);
+        $bytesWritten = @file_put_contents(
+            $this->filePath,
+            json_encode($data, JSON_THROW_ON_ERROR),
+            LOCK_EX
+        );
+
+        if ($bytesWritten === false) {
+            return;
+        }
+
+        $lastModified = @filemtime($this->filePath);
+        if ($lastModified !== false) {
+            $this->fileLastModified = $lastModified;
+        }
     }
 }
