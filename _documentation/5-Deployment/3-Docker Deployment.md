@@ -35,9 +35,7 @@ A few things to consider:
   with automatic SSL redirection. Check the `nginx.default.conf` file for more details and adapt it to your needs.
 * Authentication - To authenticate users you can use LDAP, OpenID Connect or SAML, adjust the `.env` file as described
   in the `Setup Authentication Methods` section of the [Apache Deployment](1-Apache%20Server.md) guide.
-* Model configuration - You find a default `model_providers.php` file in the `_docker_production` directory, you
-  which will be mounted to the HAWKI container. Please adjust it as described in the `Adding API Keys` section of the
-  [Apache Deployment](1-Apache%20Server.md) guide.
+* Model configuration - API keys and provider settings are configured via environment variables in the `.env` file in the `_docker_production` directory. Set `OPENAI_API_KEY`, `GWDG_API_KEY`, `GOOGLE_API_KEY`, and the corresponding `*_ACTIVE` flags for the providers you want to use. After the containers start, models and tools are synced to the database automatically on first run. See the [AI Models & Tools](../3-architecture/10.2-AI%20Models%20and%20Tools.md) guide for full details on model and tool management.
 
 ### What's in the box
 

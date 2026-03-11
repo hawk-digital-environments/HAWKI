@@ -235,7 +235,7 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'tool_calling' => true,
+            'tool_calling' => false,
             'file_upload' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_FILE_UPLOAD', true),
             'vision' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_VISION', true),
         ],

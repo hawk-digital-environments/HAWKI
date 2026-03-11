@@ -68,7 +68,7 @@ readonly class GwdgRequestConverter
             }
         }
 
-        \Log::info($payload);
+//        \Log::info($payload);
         return $payload;
     }
 

@@ -215,6 +215,13 @@ then navigate to `config/model_lists/ollama_models.php` and add your model varia
 ],
 ```
 
+After adding or editing a model in the config file, sync it to the database:
+
+```
+php hawki clear-cache
+php hawki models sync --force
+```
+
 >Before hosting models, make sure your system has the minimum required resources.
 
 >**IMPORTANT**
@@ -317,8 +324,21 @@ php artisan migrate
 php artisan migrate:fresh
 ```
 
-At this stage, the database tables should be set up and operational.
-You should now be able to see empty tables created on your database.
+At this stage, the database tables should be set up and operational. HAWKI automatically syncs AI providers, models, and function tools from your config files the first time a CLI command runs against an empty database — so models and built-in tools will be registered immediately.
+
+Verify the sync completed:
+
+```
+php hawki models list
+php hawki tools list
+```
+
+If the lists are empty or incomplete, trigger sync manually:
+
+```
+php hawki models sync
+php hawki tools sync
+```
 
 
 **Create Storage Link**

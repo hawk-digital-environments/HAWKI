@@ -176,6 +176,12 @@ then navigate to `config/model_lists/ollama_models.php` and add your model attri
 ],
 ```
 
+After adding or editing a model in the config file, sync it to the database:
+
+```
+php hawki models sync --force
+```
+
 >Before hosting models, make sure your system has the minimum required resources.
 
 >**IMPORTANT**

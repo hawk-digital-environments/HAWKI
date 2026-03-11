@@ -50,8 +50,9 @@ function handleModelsCommand(array $flags): void
     $remaining  = array_slice($flags, 1);
 
     $map = [
-        'sync' => 'models:sync',
-        'list' => 'models:list',
+        'sync'         => 'models:sync',
+        'list'         => 'models:list',
+        'check-status' => 'check:model-status',
     ];
 
     if ($subCommand === 'help') {
@@ -135,5 +136,6 @@ function showModelsHelp(): void
     echo "    --provider={id}               - Filter by provider" . PHP_EOL;
     echo "    --active                      - Only show active models" . PHP_EOL;
     echo "    --json                        - Output as JSON" . PHP_EOL;
+    echo "  check-status                    - Check and update live status of all models" . PHP_EOL;
     echo PHP_EOL;
 }
