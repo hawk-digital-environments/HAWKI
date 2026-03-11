@@ -138,11 +138,11 @@ services:
     # Just make sure that your local MySQL instance is configured to accept connections from the Docker network (e.g., by binding to 0.0.0.0) and that the credentials match those defined in your .env file.
     mysql:
         container_name: ${PROJECT_NAME}-mysql
-        image: mysql:9.0
+        image: mysql:8.4
         command:
             - --max_connections=2000
         environment:
-            MYSQL_RANDOM_ROOT_PASSWORD: '1'
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
             MYSQL_DATABASE: $DB_DATABASE
             MYSQL_USER: $DB_USERNAME
             MYSQL_PASSWORD: $DB_PASSWORD
@@ -175,17 +175,8 @@ services:
         # It first changes the permissions of the storage directory to ensure that the web server user (www-data) has the necessary access to read and write files.
         # Then it uses gosu to switch to the www-data user and runs the Laravel Artisan command to execute database migrations with the --force flag,
         # which allows migrations to run in a non-interactive environment (like a Docker container) without prompting for confirmation.
-        command: >
-            sh -c "
-                mkdir -p /var/www/html/storage &&
-                mkdir -p /var/www/html/storage/framework &&
-                mkdir -p /var/www/html/storage/framework/cache &&
-                mkdir -p /var/www/html/storage/framework/sessions &&
-                mkdir -p /var/www/html/storage/framework/testing &&
-                mkdir -p /var/www/html/storage/framework/views &&
-                chmod -R 777 /var/www/html/storage &&
-                gosu www-data php artisan migrate --force
-            "
+        environment:
+            ENVIRONMENT: migrate
         # We can only run the migrator once the MySQL service is healthy, as it needs to connect to the database to run the migrations.
         depends_on:
             mysql:

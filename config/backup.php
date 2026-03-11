@@ -10,6 +10,31 @@ return [
         'name' => env('APP_NAME', 'hawki-backup'),
 
         'schedule_interval' => env('DB_BACKUP_INTERVAL', 'weekly'),
+        'schedule_interval_data' => (static function (): array {
+            $value = env('DB_BACKUP_INTERVAL_DATA');
+            if ($value === null) {
+                return [];
+            }
+
+            try {
+                $parsedJson = json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($parsedJson)) {
+                    return [];
+                }
+                return $parsedJson;
+            } catch (\JsonException) {
+                if (is_numeric($value)) {
+                    if (str_contains($value, '.')) {
+                        return [(float)$value];
+                    }
+                    return [(int)$value];
+                }
+                if (empty($value)) {
+                    return [];
+                }
+                return [(string)$value];
+            }
+        })(),
 
         'source' => [
             'files' => [

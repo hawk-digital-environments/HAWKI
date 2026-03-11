@@ -49,6 +49,7 @@
     },
     "scripts": {
         "hawki": "php hawki",
+        "whoami": "id",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

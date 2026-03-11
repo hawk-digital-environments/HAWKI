@@ -10,10 +10,10 @@ use App\Services\System\Health\Exception\HealthcheckFailedException;
 use App\Services\System\Health\Value\HealthCheckResult;
 use App\Services\System\Health\Value\HealthCheckResultCollection;
 use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Events\Dispatcher;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
-use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 
 #[Singleton]
@@ -27,7 +27,7 @@ readonly class HealthChecker
 
     public function __construct(
         private LoggerInterface          $logger,
-        private EventDispatcherInterface $eventDispatcher,
+        private Dispatcher $eventDispatcher,
         private HealthTimer              $timer
     )
     {
@@ -43,8 +43,7 @@ readonly class HealthChecker
     public function check(): HealthCheckResultCollection
     {
         if ($this->timer->getTestType() === HealthTimer::TEST_TYPE_QUICK) {
-            $result = $this->quickCheck();
-            return new HealthCheckResultCollection(...$result);
+            return new HealthCheckResultCollection($this->quickCheck());
         }
 
         return $this->deepCheck();
@@ -85,17 +84,16 @@ readonly class HealthChecker
      */
     public function deepCheck(): HealthCheckResultCollection
     {
-        /** @var HealthCheckEvent $e */
-        $e = $this->eventDispatcher->dispatch(
-            new HealthCheckEvent(
-                new HealthCheckResultCollection(
-                    $this->checkDatabase(),
-                    $this->checkCache(),
-                    $this->checkRedis(),
-                    $this->checkStorage()
-                )
+        $e = new HealthCheckEvent(
+            new HealthCheckResultCollection(
+                $this->checkDatabase(),
+                $this->checkCache(),
+                $this->checkRedis(),
+                $this->checkStorage()
             )
         );
+
+        $this->eventDispatcher->dispatch($e);
 
         $results = $e->getResults();
 
@@ -201,6 +199,7 @@ readonly class HealthChecker
     }
 
     /**
+     * Check if the storage directory is writable by attempting to create and delete a temporary file.
      */
     private function checkStorage(): HealthCheckResult
     {

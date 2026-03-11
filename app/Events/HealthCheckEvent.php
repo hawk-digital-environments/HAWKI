@@ -7,7 +7,6 @@ namespace App\Events;
 
 use App\Services\System\Health\Value\HealthCheckResult;
 use App\Services\System\Health\Value\HealthCheckResultCollection;
-use Illuminate\Foundation\Events\Dispatchable;
 
 /**
  * Dispatched when a "deep" health check is performed,
@@ -15,8 +14,6 @@ use Illuminate\Foundation\Events\Dispatchable;
  */
 class HealthCheckEvent
 {
-    use Dispatchable;
-
     public function __construct(
         private HealthCheckResultCollection $results
     )
@@ -43,6 +40,6 @@ class HealthCheckEvent
     {
         $newList = iterator_to_array($this->results, true);
         $newList[$result->checkName] = $result;
-        $this->results = new HealthCheckResultCollection(...$newList);
+        $this->results = new HealthCheckResultCollection(...array_values($newList));
     }
 }

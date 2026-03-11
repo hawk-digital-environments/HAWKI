@@ -21,7 +21,7 @@ services:
         # The volumes section mounts directories from the host machine into the container, allowing for live code changes and access to custom configurations and certificates.
         volumes:
             # This mounts the PHP customization directory, which allows us to extend the base PHP image (https://github.com/Neunerlei/docker-images/blob/main/docs/php-nginx.md)
-            - ./docker/php:/container/custom
+            - ./docker/app:/container/custom
             # The certificates directory is mounted to allow the use of custom SSL certificates for development, which is especially useful when working with HTTPS locally.
             # By mounting this directory and setting "DOCKER_PROJECT_PROTOCOL" to "https", the container will automatically use the provided certificates for secure connections,
             # enabling a more realistic development environment that closely mimics production settings.
@@ -29,6 +29,10 @@ services:
             # This is the main code volume, which mounts the entire project directory into the container. This allows for live code changes without needing to rebuild the image,
             # as any changes made to the code on the host machine will be reflected inside the container immediately.
             - ./:/var/www/html
+        env_file:
+            # As a baseline, we use the .env file in the project root to provide environment variables to the container.
+            # The "environment" section below can be used to set additional environment variables or override those defined in the .env file if needed.
+            - .env
         environment:
             # This environment variable tells the base image to use the development configuration, which also sets the APP_ENV variable inside the container to "dev".
             # This is used by HAWKI to load development-specific configurations, enable debugging features, or perform other environment-specific logic.
@@ -91,12 +95,12 @@ services:
             # Not strictly required here, but does no harm and allows you to connect to services running on the host machine from the Node environment using the "host.docker.internal" hostname, which can be useful for various development purposes.
             - host.docker.internal:host-gateway
         ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:8000:8000
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:3000:3000
     # The File converter is used to extract text from files, which is a common requirement for HAWKI when processing user-uploaded documents
     # or other file types. By using a dedicated container for this service, we can isolate its dependencies and resource usage from the main application,
     # ensuring better performance and scalability.
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.3.0
+        image: digitalenvironments/hawki-toolkit-file-converter:1.2.0
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
@@ -125,12 +129,12 @@ services:
     # Just make sure that your local MySQL instance is configured to accept connections from the Docker network (e.g., by binding to 0.0.0.0) and that the credentials match those defined in your .env file.
     mysql:
         container_name: ${PROJECT_NAME}-mysql
-        image: mysql:9.0
+        image: mysql:8.4
         platform: linux/amd64
         command:
             - --max_connections=2000
         environment:
-            MYSQL_ROOT_PASSWORD: password
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-password}
             MYSQL_DATABASE: $DB_DATABASE
             MYSQL_USER: $DB_USERNAME
             MYSQL_PASSWORD: $DB_PASSWORD

@@ -6,8 +6,7 @@ FROM neunerlei/node-nginx:25 AS node_builder
 # Add the app sources
 COPY --chown=www-data:www-data . .
 
-RUN rm -rf ./.env
-RUN npm install && npm run build
+RUN npm ci && npm run build
 
 # =====================================================
 # APP service
@@ -44,27 +43,32 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     && docker-php-ext-enable xdebug
 
 # Install dev.command.sh
-COPY --chmod=755 --chown=www-data:www-data ./docker/php/dev.command.sh /usr/bin/dev.command.sh
+COPY --chmod=755 --chown=www-data:www-data docker/app/dev.command.sh /usr/bin/dev.command.sh
 
 # -----------------------------------------------------
 # APP - PROD
 # -----------------------------------------------------
 FROM app_root AS app_prod
 
-COPY --chown=www-data,www-data ./docker/php /container/custom
+COPY --chown=www-data:www-data docker/app /container/custom
 
 # Install the composer dependencies, without running any scripts, this allows us to install the dependencies
 # in a single layer and caching them even if the source files are changed
 COPY --chown=www-data:www-data ./composer.json ./composer.json
-COPY --chown=www-data,www-data ./composer.lock ./composer.lock
+COPY --chown=www-data:www-data ./composer.lock ./composer.lock
+
+# Replace exec /usr/bin/_composer "$@" with "id -u && exit 1" to check the user permissions and prevent composer from running as root, which can cause permission issues with the installed dependencies
 RUN composer install --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader
 
 # Add the app sources
 COPY --chown=www-data:www-data . .
 COPY --from=node_builder --chown=www-data:www-data /var/www/html/public/build /var/www/html/public/build
 
-# Remove the hot directory, as it is only used for development and can cause issues in production, if it is still present
-RUN rm -rf /var/www/html/hot
+RUN mkdir -p /var/www/html/storage/framework/cache && chown www-data:www-data /var/www/html/storage/framework/cache \
+    && mkdir -p /var/www/html/storage/framework/sessions && chown www-data:www-data /var/www/html/storage/framework/sessions \
+    && mkdir -p /var/www/html/storage/framework/views && chown www-data:www-data /var/www/html/storage/framework/views \
+    && mkdir -p /var/www/html/storage/logs && chown www-data:www-data /var/www/html/storage/logs \
+    && mkdir -p /var/www/html/storage/app/public && chown www-data:www-data /var/www/html/storage/app/public
 
 # Dump the autoload file and run the matching scripts, after all the project files are in the image
 RUN composer dump-autoload --no-dev --optimize --no-interaction --verbose --no-cache

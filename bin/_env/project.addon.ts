@@ -128,7 +128,8 @@ export const addon: AddonEntrypoint = async (context) => ({
 
         program
             .command('start-docker-production-test')
+            .option('--no-pull', 'do not pull the latest docker images, use the ones available locally')
             .description('Creates a running system of the `_docker_production` directory for testing purposes')
-            .action(async () => startDockerProductionTest(context));
+            .action(async (options) => startDockerProductionTest(context, options.pull));
     }
 });

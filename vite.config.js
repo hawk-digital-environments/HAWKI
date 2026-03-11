@@ -12,8 +12,13 @@ export default defineConfig({
     server: {
         cors: true,
         port: 3000,
-        origin: `${process.env.DOCKER_PROJECT_PROTOCOL}://${process.env.DOCKER_PROJECT_HOST}`,
+        origin: `${process.env.DOCKER_PROJECT_PROTOCOL}://${process.env.DOCKER_PROJECT_HOST}:3000`,
         host: true,
-        strictPort: false
+        strictPort: false,
+        https: process.env.DOCKER_PROJECT_PROTOCOL === 'https' ? {
+            key: '/etc/ssl/certs/custom/key.pem',
+            cert: '/etc/ssl/certs/custom/cert.pem'
+        } : false
     }
+
 });
