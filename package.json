@@ -8,7 +8,6 @@
     },
     "devDependencies": {
         "concurrently": "^9.2.1",
-        "laravel-echo": "^2.2.4",
         "laravel-vite-plugin": "^2.1.0",
         "pusher-js": "^8.4.0",
         "shelljs": "^0.10.0",
