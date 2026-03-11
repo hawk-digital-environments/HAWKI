@@ -18,5 +18,4 @@ if ! [[ -f /var/www/html/storage/app/test_users.json ]]; then
     chown www-data:www-data /var/www/html/storage/app/test_users.json
 fi
 
-php artisan migrate
-php artisan db:seed
+gosu www-data php artisan migrate

@@ -125,7 +125,7 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
         })
         .define('HAWKI_FILE_CONVERTER_API_URL', {
             help: 'The URL to use for the HAWKI file converter service.',
-            default: 'http://file-converter:8001/extract'
+            default: 'http://file-converter/extract'
         })
         .define('HAWKI_FILE_CONVERTER_API_KEY', {
             help: 'The API key to use for the HAWKI file converter service.',

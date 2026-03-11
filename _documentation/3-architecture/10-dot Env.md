@@ -13,8 +13,7 @@ Additionally, Laravel reads the contents of a .env file in the project root dire
 This file is a template for the .env file. It documents all relevant settings, their allowed values and their defaults. Simply copy this file (don't just rename it) to a new file called .env and change the values as needed. The pre-set values will provide a sensible configuration for a "localhost deployment" for developers. Commented out settings are not strictly needed and usually contain the default values found in the config/*.php files.
 
 
->**Important:** the .env example file includes several unused variables which are left in the file only for future development plans or as guidelines for community developers (such as AWS, Redis, Pusher and many more attributes). These variables can be ignored or removed if you prefer so.
-
+> **Important:** the .env example file includes several unused variables which are left in the file only for future development plans or as guidelines for community developers (such as AWS, Redis, Pusher and many more attributes). These variables can be ignored or removed if you prefer so.
 
 ## Global Application Settings
 
@@ -36,41 +35,48 @@ This file is a template for the .env file. It documents all relevant settings, t
 | APP_CACHE_BUSTER       |                       | Custom version string to include when generating the cache buster hash for JS/CSS assets. This is OPTIONAL -> helps if you build your own HAWKI version and want to ensure users get the latest assets. |
 | AI_MENTION_HANDLE      | hawki                 | Handle to mention AI in group chats (without @ symbol)                                                                                                                                                  |
 
-
-
-
-
 ## Database Server
 
 HAWKI uses a database to save chats and other data. For this a relation SQL database like MariaDB (MySQL) or Postgres should be used in production. For local development SQLite provides a zero-config default solution (but note that SQLite is single-user only and stores all data in a single file).
 
->***IMPORTANT:*** When using a database other than SQLite set DB_DATABASE to a sensible value. Because the default value in config/database.php is "laravel" which is less clear and could at least in theory already be in use by other applications.
+> ***IMPORTANT:*** When using a database other than SQLite set DB_DATABASE to a sensible value. Because the default value in config/database.php is "laravel" which is less clear and could at least in theory already be in use by other applications.
 
-| Variable           | Default Value      | Description                                                                                     |
-|--------------------|--------------------|-------------------------------------------------------------------------------------------------|
-| DB_CONNECTION      | mysql              | Database server type: "mysql", "sqlite", "mariadb", "pgsql", "sqlsrv" (see config/database.php) |
-| DB_BACKUP_INTERVAL | daily              | Automatic database backup interval: "daily", "weekly", etc.                                     |
-| DB_URL             |                    | Database connection URL (instead of host and port)                                              |
-| DB_HOST            | localhost          | Database server host name                                                                       |
-| DB_PORT            | 3306               | Database server port number                                                                     |
-| DB_SOCKET          |                    | Unix domain socket instead of URL, host and port (MySQL and MariaDB only)                       |
-| DB_DATABASE        | HAWKI2             | Database name (please change for your installation!)                                            |
-| DB_USERNAME        | root               | Username to access the database server                                                          |
-| DB_PASSWORD        |                    | Password to access the database server                                                          |
-| DB_CHARSET         | utf8mb4            | Character encoding of the database                                                              |
-| DB_COLLATION       | utf8mb4_unicode_ci | Database collation (MySQL and MariaDB only)                                                     |
-| MYSQL_ATTR_SSL_CA  |                    | SSL Certificate Authority file for MySQL SSL connections                                        |
+| Variable                | Default Value      | Description                                                                                              |
+|-------------------------|--------------------|----------------------------------------------------------------------------------------------------------|
+| DB_CONNECTION           | mysql              | Database server type: "mysql", "sqlite", "mariadb", "pgsql", "sqlsrv" (see config/database.php)          |
+| DB_BACKUP_INTERVAL      | daily              | Automatic database backup interval: "daily", "weekly", etc. **can be set to `never` to disable backups** |
+| DB_BACKUP_INTERVAL_ARGS |                    | Some intervals accept additional constraints (see below)                                                 |
+| DB_URL                  |                    | Database connection URL (instead of host and port)                                                       |
+| DB_HOST                 | localhost          | Database server host name                                                                                |
+| DB_PORT                 | 3306               | Database server port number                                                                              |
+| DB_SOCKET               |                    | Unix domain socket instead of URL, host and port (MySQL and MariaDB only)                                |
+| DB_DATABASE             | HAWKI2             | Database name (please change for your installation!)                                                     |
+| DB_USERNAME             | root               | Username to access the database server                                                                   |
+| DB_PASSWORD             |                    | Password to access the database server                                                                   |
+| DB_CHARSET              | utf8mb4            | Character encoding of the database                                                                       |
+| DB_COLLATION            | utf8mb4_unicode_ci | Database collation (MySQL and MariaDB only)                                                              |
+| MYSQL_ATTR_SSL_CA       |                    | SSL Certificate Authority file for MySQL SSL connections                                                 |
 
-
-
-
-
+> A word on `DB_BACKUP_INTERVAL`
+>
+> Under the hood we are using a [PHP class](https://github.com/illuminate/console/blob/master/Scheduling/ManagesFrequencies.php), to manage the frequency. This class supports a wide range of frequencies, which can be set with the `DB_BACKUP_INTERVAL` variable.
+> Some of them are simple, fixed frequencies like `daily` or `weekly`, while others are more flexible and allow for additional constraints, such as `dailyAt` (which allows you to specify the time of day for the backup) or `weeklyOn` (which allows you to specify the day of the week and time for the backup).
+>
+> So, to configure them to your needs, you can use this variable to pass along additional parameters as either a single string value, or a single numeric value (e.g. "20:00" or "20")
+> Or an JSON array to pass multiple values (e.g. ["sunday", "12:31"] or ["20:00", "wednesday", "15:00"])
+>
+> Example:
+>
+> - DB_BACKUP_INTERVAL="cron", DB_BACKUP_INTERVAL_ARGS="0 0 * * *" for daily backup at midnight
+> - DB_BACKUP_INTERVAL="dailyAt", DB_BACKUP_INTERVAL_ARGS="20:00" for daily backup at 8pm
+> - DB_BACKUP_INTERVAL="daysOfMonth", DB_BACKUP_INTERVAL_ARGS="[1, 13, 28]" for backup on the 1st, 13th and 28th of each month, etc.
+>
 
 ## HAWKI Profile Configuration
 
 Configuration for the HAWKI AI assistant profile and system user.
 
->**Note:** These migration attributes cannot be changed after running the database migration. If you want to change the HAWKI_AVATAR, place the file in `/public/img` folder and update the name here before migration.
+> **Note:** These migration attributes cannot be changed after running the database migration. If you want to change the HAWKI_AVATAR, place the file in `/public/img` folder and update the name here before migration.
 
 | Variable       | Default Value   | Description                                                |
 |----------------|-----------------|------------------------------------------------------------|
@@ -82,7 +88,7 @@ Configuration for the HAWKI AI assistant profile and system user.
 
 Configuration for AI provider API keys and endpoints. Add your AI provider API keys here to enable AI functionality.
 
->**Note:** For complete provider configuration and advanced model settings, refer to the HAWKI Documentation and the `config/model_providers.php` file.
+> **Note:** For complete provider configuration and advanced model settings, refer to the HAWKI Documentation and the `config/model_providers.php` file.
 
 | Variable            | Default Value | Description                                           |
 |---------------------|---------------|-------------------------------------------------------|
@@ -95,7 +101,7 @@ Configuration for AI provider API keys and endpoints. Add your AI provider API k
 
 Configuration for document conversion services. Choose between HAWIK's built-in converter or GWDG's Docling service.
 
->**Note:** To use GWDG Docling converter, you'll need a valid GWDG_API_KEY.
+> **Note:** To use GWDG Docling converter, you'll need a valid GWDG_API_KEY.
 
 | Variable                     | Default Value                                         | Description                                           |
 |------------------------------|-------------------------------------------------------|-------------------------------------------------------|
@@ -108,7 +114,7 @@ Configuration for document conversion services. Choose between HAWIK's built-in 
 
 Uploaded media files are typically stored on disk and served from an asset web server. However, to simplify the setup the uploaded files will be served by PHP by default, though this is not optimal for performance. Alternatively, Amazon S3, Nextcloud, or SFTP can be used.
 
->**NOTE:** If you want to serve media files with your web server, choose "public" for FILESYSTEM_DISK. In this case make the server serve the files from the "storage/app/public" directory. The HTTP address must be your APP_URL followed by "/storage".
+> **NOTE:** If you want to serve media files with your web server, choose "public" for FILESYSTEM_DISK. In this case make the server serve the files from the "storage/app/public" directory. The HTTP address must be your APP_URL followed by "/storage".
 
 | Variable                  | Default Value      | Description                                                        |
 |---------------------------|--------------------|--------------------------------------------------------------------|
@@ -118,6 +124,7 @@ Uploaded media files are typically stored on disk and served from an asset web s
 | REMOVE_FILES_AFTER_MONTHS | 6                  | Automatic file cleanup after X months                              |
 
 ### S3 Configuration
+
 | Variable          | Default Value | Description            |
 |-------------------|---------------|------------------------|
 | S3_ACCESS_KEY     |               | S3 access key          |
@@ -127,6 +134,7 @@ Uploaded media files are typically stored on disk and served from an asset web s
 | S3_DEFAULT_BUCKET |               | Default S3 bucket name |
 
 ### Nextcloud Configuration
+
 | Variable            | Default Value | Description                                |
 |---------------------|---------------|--------------------------------------------|
 | NEXTCLOUD_BASE_URL  |               | Base URL of your Nextcloud instance        |
@@ -135,6 +143,7 @@ Uploaded media files are typically stored on disk and served from an asset web s
 | NEXTCLOUD_PASSWORD  |               | Nextcloud password or app token            |
 
 ### SFTP Configuration
+
 | Variable       | Default Value | Description              |
 |----------------|---------------|--------------------------|
 | SFTP_HOST      |               | SFTP server hostname     |
@@ -143,13 +152,9 @@ Uploaded media files are typically stored on disk and served from an asset web s
 | SFTP_PASSWORD  |               | SFTP password            |
 | SFTP_BASE_PATH |               | Base path on SFTP server |
 
-
-
 ## Session Configuration
 
-
 These are essential Laravel default variables for session management, and they must be present and active to ensure proper session handling within the application.
-
 
 | Variable                | Default Value | Description                                                                                                                                                                                           |
 |-------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -160,11 +165,7 @@ These are essential Laravel default variables for session management, and they m
 | SESSION_DOMAIN          | null          | Specifies the domain that the session cookie is available to. Use "null" to default to the current domain.                                                                                            |
 | SESSION_EXPIRE_ON_CLOSE | true          | Defines whether the session should expire when the browser is closed. Set to "true" to expire sessions on browser close, enhancing session security.                                                  |
 
-
-
-
 ## Event Broadcasting
-
 
 Laravel contains an internal mechanism to broadcast events amongst servers. Normally you shouldn't need to change the settings here. Just use the values below and only change them if you really know what you are doing.
 
@@ -172,7 +173,6 @@ Laravel contains an internal mechanism to broadcast events amongst servers. Norm
 |----------------------|----------------------------------|
 | BROADCAST_CONNECTION | Broadcasting mechanism: "reverb" |
 | BROADCAST_DRIVER     | Broadcasting mechanism: "reverb" |
-
 
 For websocket connectivity Laravel provides a special server called Reverb. This must be set up for HAWKI since many features rely on real-time communication via web sockets.
 
@@ -191,13 +191,9 @@ For websocket connectivity Laravel provides a special server called Reverb. This
 | REVERB_SCALING_ENABLED      | false                 | "true" or "false"                                                           |
 | REVERB_SCALING_CHANNEL      | reverb                | "reverb"                                                                    |
 
-
-
-
-
 ## SSL Certificate Configuration
 
-These environment variables are used to specify the SSL certificate and the corresponding private key that are essential for establishing secure TLS/SSL connections in certain  broadcasting setups. This is particularly crucial when using Reverb or similar services  with encrypted connections, ensuring data is securely transmitted over HTTPS.
+These environment variables are used to specify the SSL certificate and the corresponding private key that are essential for establishing secure TLS/SSL connections in certain broadcasting setups. This is particularly crucial when using Reverb or similar services with encrypted connections, ensuring data is securely transmitted over HTTPS.
 
 | Variable            | Description                                                                                                                                                                         |
 |---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -206,13 +202,7 @@ These environment variables are used to specify the SSL certificate and the corr
 
 In the broadcasting configuration, these variables are used to configure the Guzzle HTTP client with appropriate SSL settings. By providing these files, you enable SSL/TLS encryption for broadcast services, enhancing the security of data in transit.
 
-
-
-
-
-
 ## Vite Environment Configuration
-
 
 These Vite environment variables are used to configure the front-end build system and its integration with services such as Reverb for real-time functionality within the application.
 
@@ -225,9 +215,6 @@ These Vite environment variables are used to configure the front-end build syste
 | VITE_REVERB_PORT        | Specifies the port that the Reverb service will run on, consistent with the setup from the backend environment variable REVERB_PORT.                            |
 | VITE_REVERB_SCHEME      | Defines the protocol scheme used by the Reverb service, such as "http" or "https", typically mirroring the REVERB_SCHEME variable from the backend.             |
 
-
-
-
 ## Queue Worker Configuration
 
 This configuration setting is used to specify the queue connection that should be used by the Laravel application. This is essential for managing asynchronous tasks such as sending emails, processing uploads, or any other task that can be handled in the background.
@@ -235,19 +222,17 @@ This configuration setting is used to specify the queue connection that should b
 |---|---|
 | QUEUE_CONNECTION| Defines the queue connection that the Laravel application will use. Options include "sync", "database", "redis", etc. The "database" connection is typically used to store jobs in a database table, which is useful for tracking, retrying, or monitoring queued jobs effectively.|
 
-
-
 ## Authentication and Authorization
-
 
 Access to HAWKI is restricted for registered users. In a production environment, you usually want to connect to your LDAP directory, OpenID provider, or Shibboleth service to make HAWKI available to your staff and/or students. For simpler setups (e.g., a small project setup for a single course), you can use the built-in Test User Authentication mechanism. This allows defining a small set of pre-allocated users in the local database (set up in advance by you).
 
->***NOTE:*** If you want a small setup with fixed users but want to allow the users to change their passwords, you can install LDAP (https://github.com/lldap/lldap) on the same machine as HAWKI.
+> ***NOTE:*** If you want a small setup with fixed users but want to allow the users to change their passwords, you can install LDAP (https://github.com/lldap/lldap) on the same machine as HAWKI.
 
 Supported authentication methods:
-  - LDAP
-  - OIDC (OpenID Connect)
-  - Shibboleth
+
+- LDAP
+- OIDC (OpenID Connect)
+- Shibboleth
 
 Set the AUTHENTICATION_METHOD variable to one of the following:
 
@@ -277,15 +262,10 @@ These settings control API access to HAWKI models and user token creation capabi
 | ALLOW_EXTERNAL_COMMUNICATION | false         | Master switch for external API access. When "true", API requests through external endpoints are permitted. When "false", all external API requests are blocked.                                                                            |
 | ALLOW_USER_TOKEN_CREATION    | false         | Controls whether users can create their own API tokens via the web interface. When "true", users can create, view, and revoke tokens through the profile page. When "false", only administrators can create tokens via command line tools. |
 
->**Security Note:** Both settings must be considered for managing API access:
+> **Security Note:** Both settings must be considered for managing API access:
 >- `ALLOW_EXTERNAL_COMMUNICATION=true` and `ALLOW_USER_TOKEN_CREATION=true`: Users can create tokens and use the API
->- `ALLOW_EXTERNAL_COMMUNICATION=true` and `ALLOW_USER_TOKEN_CREATION=false`: Only admin-created tokens can use the API  
+>- `ALLOW_EXTERNAL_COMMUNICATION=true` and `ALLOW_USER_TOKEN_CREATION=false`: Only admin-created tokens can use the API
 >- `ALLOW_EXTERNAL_COMMUNICATION=false`: No API access regardless of token creation setting
-
-
-
-
-
 
 ## Caching
 
@@ -297,13 +277,15 @@ The following settings allow use a dedicated cache server to speed up some often
 | CACHE_PREFIX |               | Prefix for cache keys (by default calculated from the app name)                                                    |
 
 ### Database Cache Configuration
+
 | Variable                 | Default Value | Description                           |
 |--------------------------|---------------|---------------------------------------|
 | DB_CACHE_TABLE           | cache         | Database table name for cache storage |
 | DB_CACHE_CONNECTION      |               | Database connection for cache         |
 | DB_CACHE_LOCK_CONNECTION |               | Database connection for cache locks   |
 
-### Memcached Configuration  
+### Memcached Configuration
+
 | Variable                | Default Value | Description                            |
 |-------------------------|---------------|----------------------------------------|
 | MEMCACHED_HOST          | 127.0.0.1     | Memcached server hostname              |
@@ -313,12 +295,14 @@ The following settings allow use a dedicated cache server to speed up some often
 | MEMCACHED_PERSISTENT_ID |               | Persistent connection ID for Memcached |
 
 ### Redis Cache Configuration
+
 | Variable                    | Default Value | Description                      |
 |-----------------------------|---------------|----------------------------------|
 | REDIS_CACHE_CONNECTION      | cache         | Redis connection name for cache  |
 | REDIS_CACHE_LOCK_CONNECTION | default       | Redis connection for cache locks |
 
 ### DynamoDB Configuration
+
 | Variable             | Default Value | Description                   |
 |----------------------|---------------|-------------------------------|
 | DYNAMODB_CACHE_TABLE | cache         | DynamoDB table name for cache |
@@ -340,16 +324,11 @@ Redis configuration is used for Reverb scaling (when `REVERB_SCALING_ENABLED=tru
 | REDIS_CLUSTER  | redis         | Redis cluster configuration                                 |
 | REDIS_PREFIX   |               | Prefix for Redis keys (by default calculated from app name) |
 
-
-
-
-
-
 ## Email Configuration
 
 The email configuration settings allow the application to send invitation emails to users, enabling them to invite other users to group chats. This feature is currently in beta testing. Ensure that the mail server settings are correctly configured to enable email functionality.
 
->**Note:** For development and testing, you can use `MAIL_MAILER=log` to log emails instead of sending them.
+> **Note:** For development and testing, you can use `MAIL_MAILER=log` to log emails instead of sending them.
 
 | Variable          | Default Value | Description                                                                                            |
 |-------------------|---------------|--------------------------------------------------------------------------------------------------------|
@@ -362,14 +341,11 @@ The email configuration settings allow the application to send invitation emails
 | MAIL_FROM_ADDRESS |               | The email address that will appear as the sender of the invitation emails                              |
 | MAIL_FROM_NAME    | HAWKI         | The display name that will appear as the sender of the invitation emails                               |
 
-
-
-
 ## Encryption Configuration
 
 For enhanced security, HAWKI utilizes individual salts for each component to ensure that data is encrypted uniquely. While not mandatory, using unique hash keys for each component is recommended to maximize the security of user data, invitations, AI components, passkeys, and backups.
 
->**Security Note:** All salt values should be base64-encoded random strings. Generate new salts for each installation to ensure maximum security.
+> **Security Note:** All salt values should be base64-encoded random strings. Generate new salts for each installation to ensure maximum security.
 
 | Variable                 | Default Format                 | Description                                                                                        |
 |--------------------------|--------------------------------|----------------------------------------------------------------------------------------------------|
@@ -378,11 +354,6 @@ For enhanced security, HAWKI utilizes individual salts for each component to ens
 | AI_CRYPTO_SALT           | base64:someVeryCoolSalt==      | Used to generate a derived key for the AI messages in the group chat                               |
 | PASSKEY_SALT             | base64:somePrettyAwesomeSalt== | The salt used for encrypting passkey data, contributing to robust password and credential security |
 | BACKUP_SALT              | base64:someLegendarySalt==     | The salt used to encrypt backup data, ensuring their security during storage and transfer          |
-
-
-
-
-
 
 ## Links
 

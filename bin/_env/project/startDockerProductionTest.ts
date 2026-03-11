@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import {executeCommand} from '@/executeCommand.js';
 
-export async function startDockerProductionTest(context: Context) {
+export async function startDockerProductionTest(context: Context, pull: boolean) {
     const testDirectory = path.join(context.paths.projectDir, '_docker_production_test');
     if (fs.existsSync(testDirectory)) {
         console.log(`Shutting down existing test environment in ${testDirectory}...`);
@@ -64,7 +64,11 @@ LDAP_FILTER="(|(uid=username))"
     if (!deployScript.includes(dockerCommand)) {
         throw new Error('Unexpected deploy.sh content, cannot rewrite for test mode.');
     }
-    deployScript = deployScript.replace(dockerCommand, 'docker compose up --pull always');
+    let replacedDockerCommand = 'docker compose up';
+    if (pull) {
+        replacedDockerCommand += ' --pull always';
+    }
+    deployScript = deployScript.replace(dockerCommand, replacedDockerCommand);
     fs.writeFileSync(path.join(testDirectory, 'deploy.sh'), deployScript, 'utf-8');
 
     await executeCommand('chmod', ['+x', './deploy.sh'], {cwd: testDirectory, foreground: true});

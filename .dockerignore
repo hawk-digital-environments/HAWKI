@@ -5,11 +5,9 @@
 /vendor
 /public/build
 /public/hot
+/hot
 /public/storage
-/storage/*.key
-/storage/logs/laravel.log#
-/storage/framework/views/*.php
-/storage/app/test_users.json
+/storage
 /.env
 /.env.private
 /.gitattributes
