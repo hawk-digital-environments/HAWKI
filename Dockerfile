@@ -66,9 +66,8 @@ COPY --chown=www-data:www-data ./composer.lock ./composer.lock
 # However, since the "laravel-backup" package is not really well suited for a docker container environment,
 # we drop it directly after installing the dependencies. This way we can keep it in the "composer.json" for on-host
 # installations, but it won't be included in the final image.
-RUN composer install --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader \
-    && composer remove --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader \
-        spatie/laravel-backup \
+RUN composer remove --no-cache --no-progress --no-interaction --verbose --no-scripts spatie/laravel-backup \
+    && composer install --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader \
     && composer clear-cache
 
 # Add the app sources
