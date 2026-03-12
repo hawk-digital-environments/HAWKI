@@ -139,7 +139,6 @@ async function sendMessageConv(inputField) {
             'params': activeModel.params,
         },
     }
-    console.log(msgAttributes);
     buildRequestObjectForAiConv(msgAttributes);
 }
 
@@ -154,7 +153,6 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
     buildRequestObject(msgAttributes, async (data, done) => {
 
         if(data){
-            console.log(data);
             if(!msgAttributes['broadcasting'] && msgAttributes['stream']){
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }
@@ -216,6 +214,12 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
         }
 
         if(done){
+
+            const msgTxtElement = messageElement.querySelector(".message-text");
+            msgTxtElement.innerHTML = formatMessage(messageElement.dataset.rawMsg, metadata);
+            formatMathFormulas(msgTxtElement);
+            formatHljs(messageElement);
+
             setSendBtnStatus(SendBtnStatus.SENDABLE);
 
             const cryptoContent = JSON.stringify({
@@ -250,7 +254,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                 'model': messageObj.model,
                 'completion': messageObj.completion,
             }
-            console.log(requestObj);
+
             if(isUpdate){
                 requestObj.message_id = messageElement.id;
                 await requestMsgUpdate(requestObj, messageElement, `/req/conv/updateMessage/${activeConv.slug}`)

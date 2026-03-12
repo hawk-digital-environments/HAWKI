@@ -1426,7 +1426,6 @@ async function removeMemberFromRoom(username){
         const data = await response.json();
 
         if (data.success) {
-            console.log(data.message);
             return true;
         }
         console.error(data.message);

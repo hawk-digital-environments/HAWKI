@@ -253,7 +253,6 @@ function setRegenerationFilters(tools) {
 // Add a filter to regeneration context
 function addRegenerationFilter(filterName) {
     const filters = new Set(regenerationFilters);
-    console.log(filters);
     filters.add(filterName);
     regenerationFilters = Array.from(filters);
 }
@@ -287,4 +286,3 @@ function refreshRegenerationModelList(currentModel) {
         return null;
     }
 }
-

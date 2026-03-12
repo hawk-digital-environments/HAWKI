@@ -448,7 +448,6 @@ async function uploadAttachmentQueue(queueId, category, slug = null) {
 
         return upload.promise
             .then(data => {
-                console.log(data)
                 attachment.fileData.uuid = data.uuid;
                 uploadedFiles.push({
                     uuid: data.uuid,
