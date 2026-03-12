@@ -1,7 +1,9 @@
 @extends('layouts.gateway')
 @section('content')
 
-
+<button class="slide-back-btn" onclick="switchBackSlide()" aria-label="{{ $translation["Back"] }}">
+    <x-icon name="chevron-left" aria-hidden="true"/>
+</button>
 
 <div class="wrapper">
 
@@ -23,10 +25,12 @@
                         autocapitalize="off"
                         spellcheck="false"
                     />
-                    <div class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button type="button" class="btn-xs tooltip-parent" id="visibility-toggle" aria-labelledby="{{ $tooltipId }}">
+                        <x-icon name="eye" id="eye" aria-hidden="true"/>
+                        <x-icon name="eye-off" id="eye-off" style="display: none" aria-hidden="true"/>
+                        <div class="tooltip tooltip-below" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["DataKeyShowToolTip"] }}</div>
+                    </button>
                 </div>
             </form>
 
@@ -34,18 +38,18 @@
                 <button id="verifyEnteredPassKey-btn" onclick="verifyEnteredPassKey(this)" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
             <p class="red-text" id="alert-message"></p>
-            <button onclick="switchSlide(2)" class="btn-md">{{ $translation["HS_ForgottenPasskey"] }}</button>
-
+            <button onclick="switchSlide(2)" class="btn-text btn-md">{{ $translation["HS_ForgottenPasskey"] }}</button>
         </div>
-
 
         <div class="slide" data-index="2">
             <h3>{{ $translation["HS_EnterBackupMsg"] }}</h3>
 
             <div class="backup-hash-row">
                 <input id="backup-hash-input" type="text">
-                <button class="btn-sm border" onclick="uploadTextFile()">
-                    <x-icon name="upload"/>
+                @php $tooltipId = str()->uuid() @endphp
+                <button class="btn-sm border fast-access-btn tooltip-parent" onclick="uploadTextFile()" aria-labelledby="{{ $tooltipId }}">
+                    <x-icon name="upload" aria-hidden="true"/>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["UploadTextFileTooltip"] }}</div>
                 </button>
             </div>
 
@@ -54,7 +58,7 @@
             </div>
 
             <p class="red-text" id="backup-alert-message"></p>
-            <button onclick="switchSlide(3)" class="btn-md">{{ $translation["HS_ForgottenBackup"] }}</button>
+            <button onclick="switchSlide(3)" class="btn-md btn-text">{{ $translation["HS_ForgottenBackup"] }}</button>
 
         </div>
 
@@ -66,7 +70,6 @@
             </div>
         </div>
 
-
         <div class="slide" data-index="4">
             <h2>{{ $translation["HS_PasskeyIs"] }}</h2>
             <h3 id="passkey-field" class="demo-hash"></h3>
@@ -74,15 +77,7 @@
                 <button onclick="redirectToChat()" class="btn-lg-fill align-end">{{ $translation["Continue"] }}</button>
             </div>
         </div>
-
-
-
-
     </div>
-</div>
-
-<div class="slide-back-btn" onclick="switchBackSlide()">
-    <x-icon name="chevron-left"/>
 </div>
 
 <script>
@@ -107,15 +102,8 @@
         }
     });
 
-
     document.addEventListener('DOMContentLoaded', function () {
         initializePasskeyInputs(false, @json($allowPaste), @json($charLimit));
     });
-
-
-
-
 </script>
-
-
 @endsection

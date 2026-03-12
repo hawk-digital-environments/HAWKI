@@ -10,25 +10,25 @@
 				<h1>{{ Auth::user()->name }}</h1>
 			</div> -->
 			<div class="header">
-				
-				<button class="btn-md-stroke" onclick="openRoomCreatorPanel()">
-					<div class="icon">
+				@php $tooltipId = str()->uuid() @endphp
+				<button class="btn-md-stroke" onclick="openRoomCreatorPanel()" aria-labelledby="{{ $tooltipId }}">
+					<div class="icon" aria-hidden="true">
 						<x-icon name="plus"/>
 					</div>
-					<div class="label"><strong>{{ $translation["CreateRoom"] }}</strong></div>
+					<div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ $translation["CreateRoom"] }}</strong></div>
 				</button>
 				<h3 class="title">{{ $translation["Rooms"] }}</h3>
 
 			</div>
-			<div class="dy-sidebar-content-panel">
+			<div class="dy-sidebar-content-panel" tabindex="-1">
 				<div class="dy-sidebar-scroll-panel">
 					<div class="selection-list" id="rooms-list">
-				
-						
+
+
 					</div>
 				</div>
 			</div>
-		
+
 			<div class="dy-sidebar-expand-btn" onclick="togglePanelClass('chat-sidebar', 'expanded')">
 				<x-icon name="chevron-right"/>
 			</div>
@@ -39,7 +39,7 @@
 	<div class="dy-main-panel">
 
 		<div class="dy-main-content" id="group-welcome-panel">
-			
+
 			<div class="scroll-container" id="welcome-content">
 				<div class="group-welcome-wrapper scroll-panel">
 					{!! $translation["_GroupWelcome"] !!}
@@ -60,7 +60,7 @@
 						</div>
 
 					</div>
-					
+
 				</div>
 				@include('partials.home.input-field', ['lite' => false])
 			</div>
@@ -77,9 +77,9 @@
 <script>
 
 window.addEventListener('DOMContentLoaded', async function (){
-	
+
 	initializeGroupChatModule(@json($userData['rooms']));
-	
+
 	const slug = @json($slug);
 	if (slug){
 		await loadRoom(null, slug);
@@ -87,7 +87,7 @@ window.addEventListener('DOMContentLoaded', async function (){
 	else{
         switchDyMainContent('group-welcome-panel');
 	}
-	
+
 });
 
 

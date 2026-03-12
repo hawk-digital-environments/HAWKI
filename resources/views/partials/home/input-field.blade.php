@@ -9,10 +9,12 @@
 
     <div class="input-controls" id="input-controls">
         @if(!$lite)
-        <button class="btn-xs expand-btn" onclick="toggleRelativePanelClass('input-controls', this,'expanded')">
-            <div class="icon">
+        @php $tooltipId = str()->uuid() @endphp
+        <button class="btn-xs expand-btn fast-access-btn tooltip-parent" onclick="toggleRelativePanelClass('input-controls', this,'expanded')" aaria-labelledby="{{ $tooltipId }}">
+            <div class="icon" aria-hidden="true">
                 <x-icon name="chevron-up"/>
             </div>
+            <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["MoreToolTip"] }}</div>
         </button>
         @endif
 
@@ -20,18 +22,20 @@
             <div class="left">
 
                 @if($activeModule === 'chat')
-                    <button class="btn-xs fast-access-btn" onclick="startNewChat()">
-                        <x-icon name="new"/>
-                        <div class="tooltip">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-xs fast-access-btn" onclick="startNewChat()" aria-labelledby="{{ $tooltipId }}">
+                        <x-icon name="new" aria-hidden="true"/>
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                             {{ $translation["StartNewChat"] }}
                         </div>
                     </button>
                 @endif
 
                 @if(!$lite && $activeModule === 'chat')
-                    <button class="btn-xs fast-access-btn" value="system_prompt_panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'system_prompt_panel')">
-                        <x-icon name="sliders"/>
-                        <div class="tooltip">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-xs fast-access-btn" value="system_prompt_panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'system_prompt_panel')" aria-labelledby="{{ $tooltipId }}">
+                        <x-icon name="sliders" aria-hidden="true"/>
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                             {{ $translation["SystemPrompt"] }}
                         </div>
                     </button>
@@ -39,28 +43,30 @@
                 @endif
 
                 @if(!$lite)
-                    <button class="btn-xs fast-access-btn" value="export-panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'export-panel')">
-                        <x-icon name="download"/>
-                        <div class="tooltip">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-xs fast-access-btn" value="export-panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'export-panel')" aria-labelledby="{{ $tooltipId }}">
+                        <x-icon name="download" aria-hidden="true"/>
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                             {{ $translation["Export"] }}
                         </div>
                     </button>
                 @endif
 
                 @if($webSearchAvailable)
-                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)">
-                    <x-icon class="websearch-icon" name="world"/>
-                    <div class="tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)" aria-labelledby="{{ $tooltipId }}">
+                    <x-icon class="websearch-icon" name="world" aria-hidden="true"/>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["WebSearch"] }}
                     </div>
                 </button>
                 @endif
 
 
-
-                <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
-                    <x-icon name="paperclip"/>
-                    <div class="tooltip">
+                @php $tooltipId = str()->uuid() @endphp
+                <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)" aria-labelledby="{{ $tooltipId }}">
+                    <x-icon name="paperclip" aria-hidden="true"/>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["UploadFile"] }}
                     </div>
                 </button>
@@ -70,18 +76,17 @@
 
             <div class="right">
                 <div id="model-selectors">
-
                     <div class="burger-dropdown anchor-top-right" id="model-selector-burger">
                         @include('partials.home.components.models-list')
                     </div>
-
-                    <div class="burger-btn-arrow burger-btn" onclick="openBurgerMenu('model-selector-burger', this, false, true, true)">
-                        <div class="icon">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="burger-btn-arrow burger-btn fast-access-btn tooltip-parent" onclick="openBurgerMenu('model-selector-burger', this, false, true, true)" aria-labelledby="{{ $tooltipId }}">
+                        <div class="icon" aria-hidden="true">
                             <x-icon name="chevron-up"/>
                         </div>
-                        <div class="label model-selector-label"></div>
-                    </div>
-
+                        <div class="label model-selector-label" aria-hidden="true"></div>
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["ModelSelectorToolTip"] }}</div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -90,7 +95,7 @@
         <div class="expanded-content">
 
             <div class="expanded-left">
-                <div class="controls-container scroll-container">
+                <div class="controls-container scroll-container" tabindex="-1">
 
                     <div class="control-buttons scroll-panel">
                         @if($activeModule === 'chat')
@@ -227,39 +232,38 @@
             </div> --}}
 
             <div class="input-main-btn input-send tooltip-parent">
+                @php $tooltipId = str()->uuid() @endphp
                 @if($activeModule === 'chat')
-                    <div id="send-btn" onClick="onSendClickConv(this)">
+                    <button id="send-btn" onClick="onSendClickConv(this)" aria-labelledby="{{ $tooltipId }}">
                 @elseif($activeModule === 'groupchat')
-                    <div id="send-btn" onClick="onSendClickRoom(this)">
+                    <button id="send-btn" onClick="onSendClickRoom(this)" aria-labelledby="{{ $tooltipId }}">
                 @endif
-                        <div id="send-icon" class="send-btn-icon" >
+                        <div id="send-icon" class="send-btn-icon" aria-hidden="true">
                             <x-icon name="arrow-up"/>
                         </div>
-                        <div id="stop-icon" class="send-btn-icon" style="display:none">
+                        <div id="stop-icon" class="send-btn-icon" style="display:none" aria-hidden="true">
                             <x-icon name="stop"/>
                         </div>
-                        <div id="loading-icon" class="send-btn-icon loading loading-lg" style="display:none">
+                        <div id="loading-icon" class="send-btn-icon loading loading-lg" style="display:none" aria-hidden="true">
                             <div class="loading">
                                 <x-icon name="loading"/>
                             </div>
                         </div>
-                </div>
-
-                <div class="label tooltip tt-abs-up">
-                    {{ $translation["Send"] }}
-                </div>
-
+                        <div class="label tooltip tt-abs-up" aria-hidden="true" id="{{ $tooltipId }}">
+                        {{ $translation["Send"] }}
+                        </div>
+                </button>
             </div>
 
-
-            <div class="prompt-improvement-btn tooltip-parent" onclick="requestPromptImprovement(this, 'input')">
+            @php $tooltipId = str()->uuid() @endphp
+            <button class="prompt-improvement-btn tooltip-parent" onclick="requestPromptImprovement(this, 'input')" aria-labelledby="{{ $tooltipId }}">
                 <div class="input-main-btn">
-                    <x-icon name="vector"/>
-                    <div class="label tooltip tt-abs-up">
+                    <x-icon name="vector" aria-hidden="true"/>
+                    <div class="label tooltip tt-abs-up" aria-hidden="true" id="{{ $tooltipId }}">
                         {{ $translation["PromptImprovement"] }}
                     </div>
                 </div>
-            </div>
+            </button>
 
         </div>
 

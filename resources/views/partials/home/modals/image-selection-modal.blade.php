@@ -1,9 +1,9 @@
 <div class="modal" id="image-selection-modal">
     <div class="modal-panel">
         <div class="modal-content-wrapper">
-            <div class="closeButton" onclick="closeImageSelector()">
-                <x-icon name="x"/>
-            </div>
+            <button class="closeButton btn-sm" onclick="closeImageSelector()" aria-label="{{ $translation["Close"] }}">
+                <x-icon name="x" aria-hidden="true"/>
+            </button>
             <div class="modal-content">
 
                 <h2 class="header">{{ $translation['ImgUpload'] }}</h2>

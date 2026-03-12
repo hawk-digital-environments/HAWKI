@@ -1,6 +1,9 @@
 @extends('layouts.gateway')
 @section('content')
 
+<button class="slide-back-btn" onclick="switchBackSlide()" aria-label="{{ $translation["Back"] }}">
+    <x-icon name="chevron-left" aria-hidden="true"/>
+</button>
 
 <div class="wrapper">
 
@@ -35,8 +38,6 @@
             @include('partials.home.modals.guidelines-modal')
         </div>
 
-
-
         <div class="slide" data-index="4">
             <h1>{{ $translation["Reg_SL4_H"] }}</h1>
             <div class="slide-content">
@@ -48,8 +49,6 @@
                 <button class="btn-lg-fill" onclick="switchSlide(5)">{{ $translation["Reg_SL4_B"] }}</button>
             </div>
         </div>
-
-
 
         <div class="slide" data-index="5">
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
@@ -66,10 +65,10 @@
                         spellcheck="false"
                         name="not_a_password_input"
                     />
-                    <div class="btn-xs" id="visibility-toggle">
+                    <button type="button" class="btn-xs" id="visibility-toggle">
                         <x-icon name="eye" id="eye"/>
                         <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
+                    </button>
                 </div>
 
                 <div id="passkey-repeat" class="password-input-wrapper top-gap-2" style="display:none" >
@@ -84,10 +83,10 @@
                         name="not_a_password_input"
 
                     />
-                    <div class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
+                    <button type="button" class="btn-xs" id="visibility-toggle-repeat">
+                        <x-icon name="eye" id="eye-repeat" aria-hidden="true"/>
+                        <x-icon name="eye-off" id="eye-off-repeat" style="display: none" aria-hidden="true"/>
+                    </button>
                 </div>
             </form>
             <p class="slide-subtitle top-gap-2">
@@ -108,8 +107,10 @@
             </p>
             <div class="backup-hash-row">
                 <h3 id="backup-hash" class="demo-hash"></h3>
-                <button class="btn-sm border" onclick="downloadTextFile()">
-                    <x-icon name="download"/>
+                @php $tooltipId = str()->uuid() @endphp
+                <button class="btn-sm border" onclick="downloadTextFile()" aria-labelledby="{{ $tooltipId }}">
+                    <x-icon name="download" aria-hidden="true"/>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["DownloadTextFileTooltip"] }}</div>
                 </button>
             </div>
             <div class="nav-buttons">
@@ -120,13 +121,7 @@
     </div>
 
 </div>
-<div class="slide-back-btn" onclick="switchBackSlide()">
-    <x-icon name="chevron-left"/>
-</div>
 @include('partials.home.modals.confirm-modal')
-
-
-
 
 <script>
     let userInfo = @json($userInfo);
@@ -148,11 +143,5 @@
         }
     }, 100);
 </script>
-
-
-
-
-
-
 
 @endsection
