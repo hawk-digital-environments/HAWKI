@@ -1,6 +1,7 @@
 // @ts-check
 import {themes as prismThemes} from 'prism-react-renderer';
 import {changelogSorter} from './changelogSorter.js';
+import remarkRewriteCrossDocLinks from './remarkRewriteCrossDocLinks.js';
 
 // The "x" is there, because the docs are stored in the parent directory, which confuses docusaurus
 // It will be automatically be stripped out by docusaurus
@@ -37,6 +38,7 @@ const config = {
                 id: 'changelog',
                 sidebarPath: require.resolve('./sidebars-changelog.js'),
                 editUrl: editUrl,
+                beforeDefaultRemarkPlugins: [remarkRewriteCrossDocLinks],
                 async sidebarItemsGenerator({docs}) {
                     return changelogSorter(docs, githubOrganization, githubProject);
                 }
@@ -53,7 +55,8 @@ const config = {
                     path: '../_documentation',
                     routeBasePath: '/',
                     sidebarPath: require.resolve('./sidebars-docs.js'),
-                    editUrl: editUrl
+                    editUrl: editUrl,
+                    beforeDefaultRemarkPlugins: [remarkRewriteCrossDocLinks]
                 },
                 theme: {
                     customCss: require.resolve('./custom.css')
