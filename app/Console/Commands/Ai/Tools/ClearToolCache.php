@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tools;
+namespace App\Console\Commands\Ai\Tools;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -12,7 +12,7 @@ class ClearToolCache extends Command
      *
      * @var string
      */
-    protected $signature = 'tools:clear';
+    protected $signature = 'ai:tools:clear';
 
     /**
      * The console command description.

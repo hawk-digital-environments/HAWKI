@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tools;
+namespace App\Console\Commands\Ai\Tools;
 
 use App\Models\Ai\Tools\AiTool;
 use App\Services\AI\Tools\ToolRegistry;
@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class ListAllTools extends Command
 {
-    protected $signature = 'tools:list
+    protected $signature = 'ai:tools:list
                             {--json : Output as JSON}';
 
     protected $description = 'List all available tools (function-call and MCP)';

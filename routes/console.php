@@ -7,6 +7,6 @@ Schedule::commandWithDynamicInterval(
     interval: config('backup.backup.schedule_interval'),
     intervalArgs: config('backup.backup.schedule_interval_args')
 );
-Schedule::command('check:model-status')->everyFifteenMinutes();
-Schedule::command('tools:check-status')->everyFifteenMinutes();
+Schedule::command('ai:models:check-status')->everyFifteenMinutes();
+Schedule::command('ai:tools:check-status ')->everyFifteenMinutes();
 Schedule::command('filestorage:cleanup')->daily();

@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Console\Commands\Models;
+namespace App\Console\Commands\Ai;
 
 use App\Services\AI\Db\AiModelSyncService;
 use Illuminate\Console\Command;
 
-class SyncAiModels extends Command
+class SyncModels extends Command
 {
-    protected $signature = 'models:sync
+    protected $signature = 'ai:models:sync
                             {--force : Re-sync even if models already exist in DB}';
 
     protected $description = 'Sync AI models and providers from config files into the database';

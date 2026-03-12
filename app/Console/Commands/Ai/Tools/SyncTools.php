@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Console\Commands\Tools;
+namespace App\Console\Commands\Ai\Tools;
 
 use App\Services\AI\Db\ToolSyncService;
 use Illuminate\Console\Command;
 
 class SyncTools extends Command
 {
-    protected $signature = 'tools:sync
+    protected $signature = 'ai:tools:sync
                             {--force         : Re-sync even if tools already exist in DB}
                             {--function-only : Only sync function-calling tools}
                             {--mcp-only      : Only sync MCP servers}';

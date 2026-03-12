@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Console\Commands\Tools\Mcp;
+namespace App\Console\Commands\Ai\Tools\Mcp;
 
 use App\Models\Ai\Tools\McpServer;
 use Illuminate\Console\Command;
 
 class RemoveMcpServer extends Command
 {
-    protected $signature = 'tools:remove-mcp-server
+    protected $signature = 'ai:tools:mcp:remove
                             {id? : The ID of the MCP server to remove}
                             {--force : Skip confirmation prompt}';
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tools;
+namespace App\Console\Commands\Ai\Tools;
 
 use App\Models\Ai\Tools\McpServer;
 use App\Services\AI\Tools\MCP\MCPSSEClient;
@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Log;
 
 class CheckAiToolStatus extends Command
 {
-    protected $signature = 'tools:check-status';
+    protected $signature = 'ai:tools:check-status';
 
     protected $description = 'Check the reachability of all registered MCP servers and update the status of their tools accordingly.';
 

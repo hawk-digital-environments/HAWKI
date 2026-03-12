@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tools\Mcp;
+namespace App\Console\Commands\Ai\Tools\Mcp;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
@@ -8,12 +8,10 @@ use App\Models\Ai\Tools\AiTool;
 use App\Models\Ai\Tools\McpServer;
 use App\Services\AI\Tools\MCP\MCPSSEClient;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
-use const http\Client\Curl\Features\HTTP2;
 
 class AddMcpServer extends Command
 {
-    protected $signature = 'tools:add-mcp-server
+    protected $signature = 'ai:tools:mcp:add
                             {url}
                             {--label=}
                             {--description=}

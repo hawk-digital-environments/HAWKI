@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tools;
+namespace App\Console\Commands\Ai\Tools;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 
 class AssignToolToModel extends Command
 {
-    protected $signature = 'tools:assign
+    protected $signature = 'ai:tools:assign
                             {--tool=     : Tool name (or partial match) to assign}
                             {--model=    : Model ID to assign the tool to}
                             {--provider= : Provider ID to assign the tool to all eligible models}

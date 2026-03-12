@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Console\Commands\Models;
+namespace App\Console\Commands\Ai;
 
 use App\Models\Ai\AiModel;
-use App\Models\Ai\AiProvider;
 use Illuminate\Console\Command;
 
-class ListAiModels extends Command
+class ListModels extends Command
 {
-    protected $signature = 'models:list
+    protected $signature = 'ai:models:list
                             {--provider= : Filter by provider_id (e.g. openAi, gwdg)}
                             {--active    : Show only active models}
                             {--json      : Output as JSON}';

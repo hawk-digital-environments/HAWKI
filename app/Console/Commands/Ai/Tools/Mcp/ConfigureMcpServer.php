@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Console\Commands\Tools\Mcp;
+namespace App\Console\Commands\Ai\Tools\Mcp;
 
 use App\Models\Ai\Tools\McpServer;
 use Illuminate\Console\Command;
 
 class ConfigureMcpServer extends Command
 {
-    protected $signature = 'tools:configure-server
+    protected $signature = 'ai:tools:mcp:configure
                             {--server= : Server label or ID to configure (skips interactive selection)}';
 
     protected $description = 'Configure an MCP server\'s attributes (URL, label, timeouts, API key, etc.)';

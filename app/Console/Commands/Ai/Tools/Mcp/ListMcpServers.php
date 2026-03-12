@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Console\Commands\Tools\Mcp;
+namespace App\Console\Commands\Ai\Tools\Mcp;
 
 use App\Models\Ai\Tools\McpServer;
 use Illuminate\Console\Command;
 
 class ListMcpServers extends Command
 {
-    protected $signature = 'tools:list-mcp-servers
+    protected $signature = 'ai:tools:mcp:list
                             {--json : Output as JSON}';
 
     protected $description = 'List all registered MCP servers';

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Console\Commands\Tools;
+namespace App\Console\Commands\Ai\Tools;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\Tools\AiTool;
@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class ConfigureTool extends Command
 {
-    protected $signature = 'tools:configure
+    protected $signature = 'ai:tools:configure
                             {--tool= : Tool name to configure (skips interactive selection)}';
 
     protected $description = 'Configure an AI tool\'s attributes (capability, description, active state)';
