@@ -215,6 +215,13 @@ then navigate to `config/model_lists/ollama_models.php` and add your model varia
 ],
 ```
 
+After adding or editing a model in the config file, sync it to the database:
+
+```
+php hawki clear-cache
+php hawki models sync --force
+```
+
 >Before hosting models, make sure your system has the minimum required resources.
 
 >**IMPORTANT**
@@ -317,9 +324,27 @@ php artisan migrate
 php artisan migrate:fresh
 ```
 
-At this stage, the database tables should be set up and operational.
-You should now be able to see empty tables created on your database.
+At this stage, the database tables should be set up and operational. HAWKI automatically syncs AI providers, models, and function tools from your config files the first time a CLI command runs against an empty database — so models and built-in tools will be registered immediately.
 
+Verify the sync completed:
+
+```
+php hawki models list
+php hawki tools list
+```
+
+If the lists are empty or incomplete, trigger sync manually:
+
+```
+php hawki models sync
+php hawki tools sync
+```
+
+**Database Backup** 
+
+By default, HAWKI is configured to create daily database backups using the `php artisan backup:run command`.
+To ensure this command runs correctly, the `mysqldump` binary for MySQL/MariaDB must be installed on the system.
+If the binary is not available in your system’s `PATH`, you can specify its location by setting the `.env` variable `DB_BACKUP_DUMPER_BINARY_DIR` to the directory that contains the `mysqldump` executable.
 
 **Create Storage Link**
 
@@ -356,6 +381,60 @@ If you ran `php hawki init` these variables are already populated with random ha
 | BACKUP_SALT              | base64:RandomHash== |
 
 
+
+## AI Tools Setup
+
+HAWKI supports built-in **function tools** and external **MCP tools** (Model Context Protocol servers).
+
+**Function tools** are synced automatically on first CLI run when the `ai_tools` table is empty. If you prefer to run the sync explicitly after deployment:
+
+```
+php hawki tools sync
+```
+
+Use `--force` to re-sync after editing `config/tools.php`:
+
+```
+php hawki tools sync --force
+```
+
+**MCP servers** must be registered manually because they require a live network connection to discover tools. Register a server interactively:
+
+```
+php hawki tools add-mcp-server https://your-mcp-server.example.com \
+  --label="My MCP Server" \
+  --api_key="your-key"
+```
+
+The API key is stored **encrypted** in the database using Laravel's `APP_KEY`. Ensure `APP_KEY` is set before registering MCP servers, and never rotate `APP_KEY` without re-entering API keys (they will become unreadable).
+
+After registering, verify tools are discovered and assigned:
+
+```
+php hawki tools list
+php hawki tools list-mcp-servers
+```
+
+**Scheduled status checks** — HAWKI automatically pings registered MCP servers every 15 minutes (via the schedule worker) to update tool availability. Tools from unreachable servers are marked offline and excluded from model requests until the server recovers. The schedule worker must be running (see Services section below) for this to work.
+
+To manually trigger a status check:
+
+```
+php hawki tools check-status
+```
+
+To configure tool attributes or disable a tool without removing it:
+
+```
+php hawki tools configure         # configure a tool (capability, description, active state)
+php hawki tools configure-server  # configure an MCP server (URL, timeouts, API key, etc.)
+```
+
+> **Security note:** MCP server API keys are stored encrypted using Laravel's `APP_KEY`. Treat your `APP_KEY` with the same care as any master secret — if it changes, re-enter all MCP API keys via `php hawki tools configure-server`.
+
+Run `php hawki tools help` for the full command reference.
+
+---
 
 ## Broadcasting & Workers
 

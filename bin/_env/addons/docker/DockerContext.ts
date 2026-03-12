@@ -1,17 +1,9 @@
-import type {Context} from '@/Context.ts';
+import type {Context} from '@/Context.js';
 import {promisify} from 'util';
 import {exec, execSync} from 'node:child_process';
-import {confirm, select} from '@inquirer/prompts';
+import {confirm, input, select} from '@inquirer/prompts';
 import process from 'node:process';
-import {
-    executeCommand,
-    type ExecuteCommandOptions,
-    type ExecuteCommandResult,
-    type InteractiveCommandResult,
-    type InteractiveExecuteCommandOptions,
-    type NonInteractiveCommandResult,
-    type NonInteractiveExecuteCommandOptions
-} from '@/executeCommand.ts';
+import {executeCommand, type ExecuteCommandOptions, type ExecuteCommandResult, type InteractiveCommandResult, type InteractiveExecuteCommandOptions, type NonInteractiveCommandResult, type NonInteractiveExecuteCommandOptions} from '@/executeCommand.js';
 import chalk from 'chalk';
 
 const execAsync = promisify(exec);
@@ -19,6 +11,10 @@ const execAsync = promisify(exec);
 interface UpOptions {
     // Basically the opposite of -d, if true it will follow the output, by default it will run in detached mode
     follow?: boolean;
+    // If true, builds the images before starting the containers (This includes a build --pull, so the latest base images are used)
+    build?: boolean;
+    // If true, builds the images without cache - only works if build is set
+    buildNoCache?: boolean;
     // Additional arguments to pass to docker-compose
     args?: string[];
 }
@@ -34,58 +30,143 @@ export class DockerContext {
         this._context = context;
     }
 
+    /**
+     * Returns true if the project is installed (using bin/env install).
+     * This is true ALL the following environment variables are set and not empty:
+     * DOCKER_PROJECT_DOMAIN, DOCKER_PROJECT_IP, DOCKER_PROJECT_PROTOCOL
+     */
     public get isInstalled(): boolean {
-        return this._context.env.getGlobal('DOCKER_PROJECT_INSTALLED') === 'true';
+        const vars = ['DOCKER_PROJECT_DOMAIN', 'DOCKER_PROJECT_IP', 'DOCKER_PROJECT_PROTOCOL'];
+        return vars.every(v => !this._context.env.isEmptyGlobal(v));
     }
 
+    /**
+     * Returns the name of the docker compose service to use by default.
+     * This is determined by the DOCKER_PROJECT_DEFAULT_SERVICE environment variable.
+     */
     public get defaultServiceName(): string {
-        return this._context.env.getGlobal('SERVICE_NAME', 'app');
+        return this._context.env.getGlobal('DOCKER_PROJECT_DEFAULT_SERVICE', 'app')!;
     }
 
+    /**
+     * Returns the user id that should be used inside the docker container.
+     * This reflects to the `DOCKER_UID` build arg of the containers.
+     */
     public get defaultUid(): string {
-        return this._context.env.getGlobal('ENV_UID', '1000');
+        return this._context.env.getGlobal('DOCKER_PROJECT_UID', '1000')!;
     }
 
+    /**
+     * Returns the group id that should be used inside the docker container.
+     * This reflects to the `DOCKER_GID` build arg of the containers.
+     */
     public get defaultGid(): string {
-        return this._context.env.getGlobal('ENV_GID', '1000');
+        return this._context.env.getGlobal('DOCKER_PROJECT_GID', '1000')!;
     }
 
-    public get projectDomainSuffix(): string {
-        return this._context.env.getGlobal('DOCKER_PROJECT_DOMAIN_SUFFIX', '.dev.local');
+    /**
+     * When the `bin/env install` command is run, a new host will be generated.
+     * This host is the `PROJECT_NAME` appended with the suffix defined in the
+     * `DOCKER_PROJECT_HOST_SUFFIX` environment variable.
+     * This method returns the suffix or the `.dev.local` default.
+     */
+    public get projectHostSuffix(): string {
+        return this._context.env.getGlobal('DOCKER_PROJECT_HOST_SUFFIX', '.dev.local')!;
     }
 
-    public get projectDomain(): string {
-        return this._context.env.getGlobal('DOCKER_PROJECT_DOMAIN', 'localhost');
-    }
-
-    public get projectIp(): string {
-        return this._context.env.getGlobal('DOCKER_PROJECT_IP', '127.0.0.1');
-    }
-
-    public get projectPort(): string {
-        return this._context.env.getGlobal('DOCKER_PROJECT_PORT', '80');
-    }
-
+    /**
+     * Returns the configured host of the project.
+     * The host is the unique domain name used to access the project.
+     */
     public get projectHost(): string {
-        const expectedPort = this.projectProtocol === 'http' ? '80' : '443';
-        const port = this.projectPort === expectedPort ? '' : `:${this.projectPort}`;
-        return `${this.projectProtocol}://${this.projectDomain}${port}`;
+        return this._context.env.getGlobal(
+            'DOCKER_PROJECT_HOST',
+            // Legacy fallback to project domain
+            this._context.env.getGlobal('DOCKER_PROJECT_DOMAIN', 'localhost')
+        );
     }
 
+    /**
+     * Returns the configured ip of the project.
+     * If not set, it will default to `127.0.0.1`.
+     */
+    public get projectIp(): string {
+        return this._context.env.getGlobal('DOCKER_PROJECT_IP', '127.0.0.1')!;
+    }
+
+    /**
+     * Returns the configured port of the project.
+     * If not set, it will default to `80` for http and `443` for https.
+     */
+    public get projectPort(): string {
+        return this._context.env.getGlobal('DOCKER_PROJECT_PORT', this.isSsl ? '443' : '80')!;
+    }
+
+    /**
+     * If the project runs in a subdirectory, this method returns the path.
+     * By default, this is `/`.
+     */
+    public get projectPath(): string {
+        return this._context.env.getGlobal('DOCKER_PROJECT_PATH', '/')!;
+    }
+
+    /**
+     * Returns the full url of the project without the path.
+     * E.g. https://my-project.dev.local:8080
+     */
+    public get projectUrlWithoutPath(): string {
+        const projectPort = this.projectPort;
+        const port = ['80', '443'].includes(projectPort) ? '' : `:${projectPort}`;
+        return `${this.projectProtocol}://${this.projectHost}${port}`;
+    }
+
+    /**
+     * Returns the full url of the project including the path.
+     * E.g. https://my-project.dev.local:8080/my-path
+     */
+    public get projectUrl(): string {
+        const path = this.projectPath.startsWith('/') ? this.projectPath : `/${this.projectPath}`;
+        return this.projectUrlWithoutPath + path;
+    }
+
+    /**
+     * Returns the unique name of this project (url-safe).
+     * It is determined by the `COMPOSE_PROJECT_NAME` environment variable.
+     */
     public get projectName(): string {
-        return this._context.env.getGlobalRequired('PROJECT_NAME');
+        return this._context.env.getGlobalRequired('COMPOSE_PROJECT_NAME');
     }
 
+    /**
+     * Returns the configured protocol of the project.
+     * This is either `http` or `https` and is determined by the `DOCKER_PROJECT_PROTOCOL` environment variable,
+     * or if not set by the `DOCKER_PROJECT_PORT` environment variable.
+     */
     public get projectProtocol(): string {
-        return this._context.env.getGlobal('DOCKER_PROJECT_PROTOCOL', 'http');
+        return this._context.env.getGlobal('DOCKER_PROJECT_PROTOCOL', this.isSsl ? 'https' : 'http')!;
     }
 
+    /**
+     * Checks if the project is using ssl based on the DOCKER_PROJECT_PORT and DOCKER_PROJECT_PROTOCOL
+     * environment variables
+     */
+    public get isSsl(): boolean {
+        if (this._context.env.getGlobal('DOCKER_PROJECT_PORT') === '443') {
+            return true;
+        }
+        return this._context.env.getGlobal('DOCKER_PROJECT_PROTOCOL') === 'https';
+    }
+
+    /**
+     * Returns a list of possible shell options to try when entering a container
+     * By default, bash, sh, zsh, dash and ksh are used. The first one that works will be used.
+     * The list is determined by the `DOCKER_SHELLS_TO_USE` environment variable, which is a comma separated list.
+     */
     public get shellsToUse(): string[] {
-        return this._context.env.getGlobal('DOCKER_SHELLS_TO_USE', 'bash,sh,zsh,dash,ksh')
+        return this._context.env.getGlobal('DOCKER_SHELLS_TO_USE', 'bash,sh,zsh,dash,ksh')!
             .split(',')
             .map((shell: string) => shell.trim());
     }
-
 
     public async executeDockerCommand(command: Array<string>, opt: NonInteractiveExecuteCommandOptions): Promise<NonInteractiveCommandResult>;
     public async executeDockerCommand(command: Array<string>, opt: InteractiveExecuteCommandOptions): Promise<InteractiveCommandResult>;
@@ -243,7 +324,21 @@ export class DockerContext {
         }
 
         try {
-            // Check for docker-compose
+            // Check for docker compose v2
+            const dockerExecutable = await this.getDockerExecutable();
+            const composeVersionResult = await execAsync(`${dockerExecutable} compose version`);
+
+            if (composeVersionResult.stdout.includes('version v')) {
+                const dockerCompose = 'docker compose';
+                this._dockerComposeExecutable = dockerCompose;
+                return dockerCompose;
+            }
+        } catch (error) {
+            // docker compose v2+ not found
+        }
+
+        try {
+            // Check for docker-compose (legacy)
             const composeResult = await execAsync('command -v docker-compose');
             const composePath = composeResult.stdout.trim();
 
@@ -258,19 +353,6 @@ export class DockerContext {
             // docker-compose not found, continue to next check
         }
 
-        try {
-            // Check for docker compose v2
-            const dockerExecutable = await this.getDockerExecutable();
-            const composeVersionResult = await execAsync(`${dockerExecutable} compose version`);
-
-            if (composeVersionResult.stdout.includes('v2')) {
-                const dockerCompose = 'docker compose';
-                this._dockerComposeExecutable = dockerCompose;
-                return dockerCompose;
-            }
-        } catch (error) {
-            // docker compose v2 not found
-        }
 
         throw new Error('Sorry, but I did not find docker-compose or \'docker compose\' on your system');
     }
@@ -332,7 +414,7 @@ export class DockerContext {
             if (doStart === 'all') {
                 await this.up();
             } else {
-                await this.up({args: [doStart]});
+                await this.up({args: [doStart!]});
             }
         }
     }
@@ -391,6 +473,34 @@ I can try to let docker compose create the containers (without starting them) fo
         }
         args.add('--remove-orphans');
 
+        if (opt?.build === true) {
+            const cmd = ['build', '--pull'];
+            if (opt?.buildNoCache === true) {
+                cmd.push('--no-cache');
+            }
+            const result = await this.executeComposeCommand(cmd, {interactive: true});
+
+            if (result.code !== 0) {
+                console.log(chalk.red('Docker build failed. Should I try again without pulling the latest images?'));
+                const retryWithoutPull = await confirm({
+                    message: 'Retry build without pulling the latest images?',
+                    default: true
+                });
+
+                if (retryWithoutPull) {
+                    cmd.splice(cmd.indexOf('--pull'), 1);
+                    const retryResult = await this.executeComposeCommand(cmd, {interactive: true});
+                    if (retryResult.code !== 0) {
+                        throw new Error('Docker build failed again.');
+                    }
+                } else {
+                    return;
+                }
+            }
+        } else if (opt?.buildNoCache === true) {
+            throw new Error('The "buildNoCache" option requires the "build" option to be set as well.');
+        }
+
         await this._context.events.trigger('docker:up:before', {args});
         await this.executeComposeCommand(['up', ...args], {interactive: true});
     }
@@ -422,6 +532,51 @@ I can try to let docker compose create the containers (without starting them) fo
      */
     public async down(args?: string[]) {
         await this.executeComposeCommand(['down', ...(args ?? [])], {interactive: true});
+    }
+
+    /**
+     * Builds the app container in the current Dockerfile
+     * @param options
+     */
+    public async build(options?: {
+        imageName?: string;
+        tag?: string;
+        target?: string;
+        args?: Array<string>;
+    }) {
+        let imageName = options?.imageName;
+        if (!imageName) {
+            imageName = await input({
+                message: 'How should the image be named?',
+                default: this.projectName + '-app'
+            });
+        }
+        let tag = options?.tag;
+        if (!tag) {
+            tag = await input({
+                message: 'What tag should the image be tagged with?',
+                default: 'latest'
+            });
+        }
+
+        const args = Array.isArray(options?.args) ? options.args : [];
+        let buildTarget = options?.target;
+        if (!buildTarget) {
+            buildTarget = 'app_prod';
+        }
+
+        await this.executeDockerCommand(
+            [
+                'build',
+                '--target',
+                buildTarget,
+                '-t',
+                `${imageName}:${tag}`,
+                this._context.paths.projectDir,
+                ...args
+            ],
+            {foreground: true}
+        );
     }
 
     /**
@@ -487,8 +642,8 @@ I can try to let docker compose create the containers (without starting them) fo
         const result = execSync(`${composeExecutable} ${command} --help`).toString();
 
         // Remove everything before the "options" section
-        const resultTrimmed = result.substring(result.indexOf('Options:'));
-        return `\n  Inherited "${command}" docker compose command ${resultTrimmed}`;
+        const resultTrimmed = result.substring(result.indexOf('Options:') + 1);
+        return `\n  Inherited "${command}" Docker Compose o${resultTrimmed}`;
     }
 
     /**

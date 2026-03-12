@@ -152,6 +152,7 @@
   text-align: center;
   margin-bottom: 2rem;
   text-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .contributor-title{
@@ -169,7 +170,7 @@
   margin: 2rem;
   padding: 0 2rem;
   overflow-y: scroll;
-  scrollbar-width: 0px;
+  scrollbar-width: none;
   box-sizing: border-box;
   max-height: 90%;
   max-width: 90%;

@@ -80,6 +80,11 @@ async function onSendMessageToRoom(inputField) {
     const roomKey = await keychainGet(activeRoom.slug);
     const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
 
+    const tools = input
+        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
+            tog => tog.dataset.reference
+        ): [];
+
     const messageObj = {
         'content': {
             "text": {
@@ -114,12 +119,7 @@ async function onSendMessageToRoom(inputField) {
         const aiKeyRaw = await exportSymmetricKey(aiKey);
         const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
 
-        const webSearchBtn = inputField.closest('.input-container').querySelector('#websearch-btn') ?? null;
-        const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
 
-        const tools = {
-            'web_search': webSearchActive
-        }
 
         const msgAttributes = {
             'threadIndex': activeThreadIndex,
@@ -127,10 +127,13 @@ async function onSendMessageToRoom(inputField) {
             'slug': activeRoom.slug,
             'key': aiKeyBase64,
             'stream': false,
-            'tools': tools
+            'metadata': {
+                'tools': tools,
+                'params': activeModel.params,
+            }
         }
 
-        buildRequestObject(msgAttributes);
+        buildRequestObject(msgAttributes, () => {});
     }
 
 }
@@ -169,6 +172,7 @@ const connectWebSocket = (roomSlug) => {
                 if(receivedPacket.type === "messageUpdate"){
                     const messageData = await requestMessageContent(receivedPacket.data.message_id,
                                                                     receivedPacket.data.slug);
+                    console.log(messageData);
                     await handleUpdateMessage(messageData, roomSlug)
                 }
 
@@ -255,7 +259,7 @@ async function handleAIMessage(messageData, slug){
         element = addMessageToChatlog(messageData, true);
         activateMessageControls(element);
     }else{
-        updateMessageElement(element, messageData);
+        updateMessageElement(element, messageData, true);
     }
 
     // Observe unread messages
@@ -1422,7 +1426,6 @@ async function removeMemberFromRoom(username){
         const data = await response.json();
 
         if (data.success) {
-            console.log(data.message);
             return true;
         }
         console.error(data.message);

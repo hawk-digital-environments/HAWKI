@@ -43,11 +43,12 @@
     <script src="{{ asset('js/attachment_handler.js') }}"></script>
     <script src="{{ asset('js/model_list_filtering.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
+    <script src="{{ asset('js/link_preview.js') }}"></script>
+    <script src="{{ asset('js/model_functions.js') }}"></script>
 
 	@if(config('sanctum.allow_external_communication'))
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
-
 
 	{!! $settingsPanel !!}
     <script>
@@ -58,7 +59,6 @@
 </head>
 <body>
 
-
 	<div class="wrapper">
 
 		@include('partials.home.sidebar')
@@ -66,6 +66,8 @@
 			@yield('content')
 		</div>
 	</div>
+    @include('partials.home.components.regenerationControls')
+    @include('partials.home.components.model-parameters-controller')
 
 	@include('partials.home.modals.guidelines-modal')
 	@include('partials.home.modals.add-member-modal')
@@ -102,7 +104,8 @@
 	const modelsList = @json($models).models;
 	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
-
+	const toolKit = @json($toolKit);
+	const toolKitLabels = @json($toolKitLabels);
 	const aiHandle = "{{ config('hawki.aiHandle') }}";
 
     const announcementList = @json($announcements);

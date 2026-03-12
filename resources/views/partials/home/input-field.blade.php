@@ -47,23 +47,7 @@
                     </button>
                 @endif
 
-                @if($webSearchAvailable)
-                <button id="websearch-btn" class="btn-xs fast-access-btn" onclick="selectWebSearchModel(this)">
-                    <x-icon class="websearch-icon" name="world"/>
-                    <div class="tooltip">
-                        {{ $translation["WebSearch"] }}
-                    </div>
-                </button>
-                @endif
 
-
-
-                <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
-                    <x-icon name="paperclip"/>
-                    <div class="tooltip">
-                        {{ $translation["UploadFile"] }}
-                    </div>
-                </button>
 
 
             </div>
@@ -71,11 +55,11 @@
             <div class="right">
                 <div id="model-selectors">
 
-                    <div class="burger-dropdown anchor-top-right" id="model-selector-burger">
-                        @include('partials.home.components.models-list')
+                    <div class="burger-dropdown" id="model-selector-burger">
+                        @include('partials.home.components.models-list', ['selectModel' => true])
                     </div>
 
-                    <div class="burger-btn-arrow burger-btn" onclick="openBurgerMenu('model-selector-burger', this, false, true, true)">
+                    <div class="burger-btn-arrow burger-btn" onclick="openInputModelSelector(this)">
                         <div class="icon">
                             <x-icon name="chevron-up"/>
                         </div>
@@ -83,6 +67,9 @@
                     </div>
 
                 </div>
+                <button class="btn-xs model-params-btn" onclick="openMsgParamsControlPanel(this)">
+                    <x-icon name="tool"/>
+                </button>
             </div>
         </div>
 
@@ -133,7 +120,7 @@
                         </div>
 
                         <div id="models_panel" class="prop-content">
-                            @include('partials.home.components.models-list')
+                            @include('partials.home.components.models-list', ['selectModel' => true])
                         </div>
 
                         <div id="export-panel" class="prop-content">
@@ -194,6 +181,7 @@
         <div class="input-content">
 
             <div class="input-wrapper">
+                <div class="input-scroll-panel">
                 <textarea
                     class="input-field"
                     type="text"
@@ -214,24 +202,41 @@
 
                     onfocus="onInputFieldFocus(this); toggleOffRelativeInputControl(this)"
                     onfocusout="onInputFieldFocusOut(this)"></textarea>
+
+                </div>
+
+                <div class="toolkit-bar">
+
+                    <div class="buttons-bar">
+                        <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
+                            <x-icon name="paperclip"/>
+                            <div class="tooltip">
+                                {{ $translation["UploadFile"] }}
+                            </div>
+                        </button>
+
+
+                        <div id="tool-selection-btn" class="btn-xs tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true, true)">
+                            <x-icon name="plus"/>
+                            <div class="label tooltip" style="right: -60%; top: -2.25rem;">
+                                {{ $translation["Add_Tool"] }}
+                            </div>
+                            @include('partials.home.components.tools-list')
+                        </div>
+                    </div>
+
+                    <div class="tools-bar"></div>
+                </div>
             </div>
 
-            {{-- <div class="input-main-btn file-upload tooltip-parent">
-                <input type="file" id="file-upload-input" style="display:none;" />
-                <div class="file-upload-btn" onclick="selectFile()">
-                    <x-icon name="paperclip"/>
-                    <div class="label tooltip tt-abs-up">
-                        upload file
-                    </div>
-                </div>
-            </div> --}}
-
             <div class="input-main-btn input-send tooltip-parent">
+                <div id="send-btn"
                 @if($activeModule === 'chat')
-                    <div id="send-btn" onClick="onSendClickConv(this)">
+                    onClick="onSendClickConv(this)"
                 @elseif($activeModule === 'groupchat')
-                    <div id="send-btn" onClick="onSendClickRoom(this)">
+                    onClick="onSendClickRoom(this)"
                 @endif
+                >
                         <div id="send-icon" class="send-btn-icon" >
                             <x-icon name="arrow-up"/>
                         </div>
@@ -252,17 +257,8 @@
             </div>
 
 
-            <div class="prompt-improvement-btn tooltip-parent" onclick="requestPromptImprovement(this, 'input')">
-                <div class="input-main-btn">
-                    <x-icon name="vector"/>
-                    <div class="label tooltip tt-abs-up">
-                        {{ $translation["PromptImprovement"] }}
-                    </div>
-                </div>
-            </div>
 
         </div>
-
 
     </div>
 

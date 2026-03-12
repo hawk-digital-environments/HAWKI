@@ -12,14 +12,14 @@ use App\Services\AI\Value\AiResponse;
 class GoogleStreamingRequest extends AbstractRequest
 {
     use GoogleRequestTrait;
-    
+
     public function __construct(
         private readonly array    $payload,
         private readonly \Closure $onData
     )
     {
     }
-    
+
     public function execute(AiModel $model): void
     {
         $this->executeStreamingRequest(
@@ -36,27 +36,28 @@ class GoogleStreamingRequest extends AbstractRequest
 
     public function chunkToResponse(AiModel $model, string $chunk): AiResponse
     {
+//        \Log::debug($chunk);
         $jsonChunk = json_decode($chunk, true, 512, JSON_THROW_ON_ERROR);
         $content = '';
         $groundingMetadata = '';
         $isDone = false;
-        
+
         // Extract content if available
         if (isset($jsonChunk['candidates'][0]['content']['parts'][0]['text'])) {
             $content = $jsonChunk['candidates'][0]['content']['parts'][0]['text'];
         }
-        
+
         // Add search results
         if (isset($jsonChunk['candidates'][0]['groundingMetadata'])) {
             $groundingMetadata = $jsonChunk['candidates'][0]['groundingMetadata'];
         }
-        
+
         // Check for completion
         if (isset($jsonChunk['candidates'][0]['finishReason']) &&
             $jsonChunk['candidates'][0]['finishReason'] !== 'FINISH_REASON_UNSPECIFIED') {
             $isDone = true;
         }
-        
+
         return new AiResponse(
             content: [
                 'text' => $content,

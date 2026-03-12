@@ -1,6 +1,19 @@
 <?php
 
 use Illuminate\Support\Str;
+use Pdo\Mysql;
+
+/**
+ * In PHP 8.4+ the `Pdo::MYSQL_ATTR_SSL_CA` constant has been deprecated in favor of `Mysql::ATTR_SSL_CA`.
+ * This function is a workaround to detect the correct constant based on existence of the `Pdo\Mysql` class
+ * @return mixed
+ */
+$getSslCaConstant = static function () {
+    if (class_exists(Mysql::class)) {
+        return Mysql::ATTR_SSL_CA;
+    }
+    return PDO::MYSQL_ATTR_SSL_CA;
+};
 
 return [
 
@@ -47,12 +60,13 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                $getSslCaConstant() => env('MYSQL_ATTR_SSL_CA')
             ]) : [],
             'dump' => [
-                'dump_binary_path' => '/opt/homebrew/opt/mysql-client/bin', // 👈 this is key
+                'dump_binary_path' => getenv('DB_BACKUP_DUMPER_BINARY_DIR'),
                 'use_single_transaction',
                 'timeout' => 60 * 5,
+                'addExtraOption' => '--ssl-verify-server-cert=false',
             ],
         ],
 
@@ -80,7 +94,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                $getSslCaConstant() => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 

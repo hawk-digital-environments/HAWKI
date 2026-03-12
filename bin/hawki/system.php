@@ -168,5 +168,8 @@ function clearCache() {
     echo YELLOW . "Running optimize:clear..." . RESET . PHP_EOL;
     passthru('php artisan optimize:clear --ansi');
 
+    echo YELLOW . "Removing Tools Cache..." . RESET . PHP_EOL;
+
+
     echo GREEN . "✓ All caches have been cleared" . RESET . PHP_EOL;
 }

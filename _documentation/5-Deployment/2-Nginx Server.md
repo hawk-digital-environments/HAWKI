@@ -291,6 +291,13 @@ then navigate to `config/model_lists/ollama_models.php` and add your model varia
 ],
 ```
 
+After adding or editing a model in the config file, sync it to the database:
+
+```
+php hawki clear-cache
+php hawki models sync --force
+```
+
 >Before hosting models, make sure your system has the minimum required resources.
 
 
@@ -385,8 +392,27 @@ php artisan migrate
 php artisan migrate:fresh
 ```
 
-At this stage, the database tables should be set up and operational.
-You should now be able to see empty tables created on your database.
+At this stage, the database tables should be set up and operational. HAWKI automatically syncs AI providers, models, and function tools from your config files the first time a CLI command runs against an empty database.
+
+Verify the sync completed:
+
+```
+php hawki models list
+php hawki tools list
+```
+
+If the lists are empty or incomplete, trigger sync manually:
+
+```
+php hawki models sync
+php hawki tools sync
+```
+
+**Database Backup**
+
+By default, HAWKI is configured to create daily database backups using the `php artisan backup:run command`.
+To ensure this command runs correctly, the `mysqldump` binary for MySQL/MariaDB must be installed on the system.
+If the binary is not available in your system’s `PATH`, you can specify its location by setting the `.env` variable `DB_BACKUP_DUMPER_BINARY_DIR` to the directory that contains the `mysqldump` executable.
 
 
 **Create Storage Link**
@@ -501,50 +527,109 @@ format.
 
 ### Adding API Keys
 
-Navigate to config folder. There you'll find model_providers.php.example. Rename it to model_providers.php.
-Open the file and update the configuration as you need. HAWKI currently supports OpenAI, GWDG, and Google.
-
-You can also use the HAWKI CLI to configure AI model providers interactively:
+API keys are configured in your `.env` file — never directly in config source files. Add your key(s) for the providers you want to use:
 
 ```
-php hawki setup-models
+OPENAI_API_KEY=""
+GWDG_API_KEY=""
+GOOGLE_API_KEY=""
+OPEN_WEB_UI_API_KEY=""
 ```
 
-This command will allow you to:
-- Activate or deactivate AI providers
-- Set API keys for each active provider
-- Configure the default model
-- Set models for system tasks (title generation, prompt improvement, etc.)
+Enable or disable providers with:
 
-Alternatively, edit the configuration file manually:
-
-```js
-// The Default Model (use the id of one of model you wish)
-'defaultModel' => 'gpt-4o',
-
-// The model which generates the chat names.
-'titleGenerationModel' => 'gpt-4o-mini',
-
-'providers' =>[
-    'openai' => [
-        'id' => 'openai',
-        'active' => true, //set to false if you want to disable the provider
-        'api_key' => ' ** YOUR SECRET API KEY ** ',
-        'api_url' => 'https://api.openai.com/v1/chat/completions',
-        'ping_url' => 'https://api.openai.com/v1/models',
-        'models' => [
-            [
-                'id' => 'gpt-4o',
-                'label' => 'OpenAI GPT 4o',
-                'streamable' => true,
-            ],
-            ...
-        ]
-    ],
-    ...
-]
+```
+OPENAI_ACTIVE=true
+GWDG_ACTIVE=true
+GOOGLE_ACTIVE=true
+OLLAMA_ACTIVE=false
 ```
 
+Set your default models:
+
+```
+DEFAULT_MODEL=gpt-4.1-nano
+DEFAULT_WEBSEARCH_MODEL=gemini-2.0-flash
+DEFAULT_FILEUPLOAD_MODEL=qwen3-omni-30b-a3b-instruct
+DEFAULT_VISION_MODEL=qwen3-omni-30b-a3b-instruct
+```
+
+You can also use the HAWKI CLI interactive setup:
+
+```
+php hawki setup
+```
+
+After editing `.env`, clear the cache and sync so the database reflects your changes:
+
+```
+php hawki clear-cache
+php hawki models sync --force
+```
+
+Verify models are registered:
+
+```
+php hawki models list --active
+```
+
+If you use self-hosted Ollama models, add them to `config/model_lists/ollama_models.php` and run `php hawki models sync --force` afterwards.
+
+>**IMPORTANT**
+>
+>Currently, HAWKI is configured to use Gemini models' native web search tool. If you want to disable the Google provider, make sure to add the following environment variables to disable the default web search model:
+>```
+># Deactivate Google Models
+>GOOGLE_ACTIVE=false
+># Disable Default Web Search Model
+>DEFAULT_WEBSEARCH_MODEL=""
+>```
+>Then run `php hawki clear-cache && php hawki models sync --force`.
+
+
+### AI Tools Setup
+
+HAWKI supports built-in **function tools** and external **MCP tools** (Model Context Protocol servers).
+
+**Function tools** are synced automatically on first CLI run when the `ai_tools` table is empty. To sync explicitly after deployment:
+
+```
+php hawki tools sync
+```
+
+Use `--force` to re-sync after editing `config/tools.php`:
+
+```
+php hawki tools sync --force
+```
+
+**MCP servers** must be registered manually because they require a live network connection to discover tools. Register a server interactively:
+
+```
+php hawki tools add-mcp-server https://your-mcp-server.example.com
+```
+
+After registering, verify tools are discovered and assigned:
+
+```
+php hawki tools list
+php hawki tools list-mcp-servers
+```
+
+**Scheduled status checks** — HAWKI pings registered MCP servers every 15 minutes (via the schedule worker) to update tool availability. Tools from unreachable servers are marked offline until the server recovers. The schedule worker must be running for this to work.
+
+To configure tool attributes or disable a tool without removing it:
+
+```
+php hawki tools configure         # configure a tool (capability, description, active state)
+php hawki tools configure-server  # configure an MCP server (URL, timeouts, API key, etc.)
+```
+
+> **Security note:** MCP server API keys are stored encrypted using Laravel's `APP_KEY`. If you rotate `APP_KEY`, re-enter all MCP API keys via `php hawki tools configure-server`.
+
+Run `php hawki tools help` for the full command reference.
+
+---
 
 ### Broadcasting & Workers
 

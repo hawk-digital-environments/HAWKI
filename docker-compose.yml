@@ -1,65 +1,133 @@
+# This docker compose file defines the services required to run the HAWKI application in a development environment.
+# --> THIS IS NOT THE PRODUCTION DOCKER COMPOSE FILE! <--
+# --> Check the _docker_production/docker-compose.yml file for the production setup <--
+# This file mounts the hosts file system into the container and uses the dedicated configuration in the `docker`
+# subdirectory for configuration and flow control.
 services:
-    node:
-        container_name: ${PROJECT_NAME}-node
-        image: ${PROJECT_NAME}-node:dev
-        build:
-            context: .
-            target: node_dev
-            args:
-                - DOCKER_RUNTIME=${DOCKER_RUNTIME:-docker}
-                - DOCKER_GID=${DOCKER_GID:-1000}
-                - DOCKER_UID=${DOCKER_UID:-1000}
-        restart: no
-        volumes:
-            - ./docker/certs:/var/www/certs
-            - ./:/var/www/html
-        environment:
-            - DOCKER_PROJECT_INSTALLED=${DOCKER_PROJECT_INSTALLED:-"false"}
-            - DOCKER_PROJECT_DOMAIN=${DOCKER_PROJECT_DOMAIN:-localhost}
-        extra_hosts:
-            - host.docker.internal:host-gateway
-        ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:8000:8000
+    # The app service is your HAWKI application running in a development environment.
+    # It includes all necessary tools and configurations for development, such as Xdebug for debugging and additional volumes for custom configuration and certificates.
+    # The app service depends on the mysql service, ensuring that the database is healthy before the app starts.
     app:
         container_name: ${PROJECT_NAME}-app
         image: ${PROJECT_NAME}-app:dev
+        # Enables building the image from the Dockerfile in the current directory, targeting the 'app_dev' stage.
+        # If you want to check, open the Dockerfile and look for an "FROM ... AS app_dev" statement, which defines the app_dev stage.
+        # This allows you to have different configurations for development and production environments within the same Dockerfile, and easily switch between them using the build target.
         build:
             context: .
             target: app_dev
-            args:
-                - DOCKER_RUNTIME=${DOCKER_RUNTIME:-docker}
-                - DOCKER_GID=${DOCKER_GID:-1000}
-                - DOCKER_UID=${DOCKER_UID:-1000}
+        # On a dev environment you normally do not want to restart the container (e.g. when rebooting the machine)
         restart: no
+        # The volumes section mounts directories from the host machine into the container, allowing for live code changes and access to custom configurations and certificates.
         volumes:
-            - php_socket:/var/run/php
+            # This mounts the PHP customization directory, which allows us to extend the base PHP image (https://github.com/Neunerlei/docker-images/blob/main/docs/php-nginx.md)
+            - ./docker/app:/container/custom
+            # The certificates directory is mounted to allow the use of custom SSL certificates for development, which is especially useful when working with HTTPS locally.
+            # By mounting this directory and setting "DOCKER_PROJECT_PROTOCOL" to "https", the container will automatically use the provided certificates for secure connections,
+            # enabling a more realistic development environment that closely mimics production settings.
+            - ./docker/certs:/container/custom/certs
+            # This is the main code volume, which mounts the entire project directory into the container. This allows for live code changes without needing to rebuild the image,
+            # as any changes made to the code on the host machine will be reflected inside the container immediately.
             - ./:/var/www/html
-        healthcheck:
-            test: cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
-            interval: 10s
-            timeout: 5s
-            retries: 3
-            start_period: 30s
+            # Ensures that the laravel 404 handling is used when a file is not found by nginx.
+            # We are overriding a dedicated nginx configuration snippet here, which is included in the base image, to ensure that 404 errors are handled by PHP/Laravel instead of nginx
+            - ./docker/app/errors.nginx.conf:/container/templates/nginx/snippets/errors.nginx.conf
+        env_file:
+            # As a baseline, we use the .env file in the project root to provide environment variables to the container.
+            # The "environment" section below can be used to set additional environment variables or override those defined in the .env file if needed.
+            - .env
+        environment:
+            # This environment variable tells the base image to use the development configuration, which also sets the APP_ENV variable inside the container to "dev".
+            # This is used by HAWKI to load development-specific configurations, enable debugging features, or perform other environment-specific logic.
+            - ENVIRONMENT=dev
+            # The next two variables set the user and group IDs for the container processes,
+            # This means that when the container boots the "www-data" user inside the container will have the same UID and GID as the user on the host machine,
+            # which helps to avoid permission issues when working with mounted volumes.
+            - PUID=${DOCKER_UID:-1000}
+            - PGID=${DOCKER_GID:-1000}
+            # The public hostname for your application (available for your app).
+            - DOCKER_PROJECT_HOST=${DOCKER_PROJECT_HOST:-localhost}
+            # The public root path of the entire project. Officially, we currently only support running at "/", because
+            # Laravel's routing and asset handling is not designed to work in a subdirectory. PRs to support this are welcome, but for now,
+            # if you want to run in a subdirectory, you will have to set this to "/" and handle the subdirectory logic yourself (e.g., via nginx configuration or Laravel routing).
+            - DOCKER_PROJECT_PATH=${DOCKER_PROJECT_PATH:-/}
+            # The public protocol for your application, either "http" or "https".
+            # If you set this to "https" you should also provide valid SSL certificates in the "./docker/certs" directory,
+            # otherwise the container will create self-signed certificates on boot, which will cause browser warnings but allow you to test HTTPS locally.
+            - DOCKER_PROJECT_PROTOCOL=${DOCKER_PROJECT_PROTOCOL:-http}
+        # The image contains a built-in web server (nginx) that listens on ports 80 and 443.
+        # The ports section maps these container ports to the host machine's ports, allowing you to access the application via localhost:80 or localhost:443.
+        ports:
+            # Notice how we bind on 127.0.0.1 by default, which means the application will only be accessible from the host machine and not from other machines on the network.
+            # If you want to propagate the application to other machines (e.g., for testing on mobile devices), you can change this to
+            # 0.0.0.0, which will bind the ports to all network interfaces, making the application accessible from other devices on the same network via the host machine's IP address.
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
         extra_hosts:
+            # While not necessarily required, adding this line, allows you to configure HAWKI to connect to your local LLM provider running on the host machine via the special hostname "host.docker.internal".
             - host.docker.internal:host-gateway
         depends_on:
             mysql:
                 condition: service_healthy
+        # By connecting the app container to both the "hawki_hawk_net" and "default" networks,
+        # we ensure that it can communicate with other HAWKI-related services that are connected to the "hawki_hawk_net"
+        # (e.g., for microservices or additional tools) while still being able to access services defined in this docker-compose file via the default network.
+        networks:
+            - hawki_hawk_net
+            - default
+        # This healthcheck configuration allows Docker to monitor the health of the app container by periodically sending a request to the /health endpoint.
+        healthcheck:
+            test: curl --fail ${DOCKER_PROJECT_PROTOCOL:-http}://localhost/health || exit 1
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+    # Node is required only for dev and production. Why? Because we want to build our assets using vite, which requires a node
+    # environment. In production, we build the assets in the pipeline and just serve them via nginx, but in development,
+    # we want to have a live-reloading environment where changes to our frontend code are immediately reflected in the browser
+    # without needing to rebuild the assets manually.
+    node:
+        container_name: ${PROJECT_NAME}-node
+        image: docker.io/neunerlei/node-nginx:25
+        restart: no
+        volumes:
+            # Notice how we mount the same certificates directory as the app container. This allows us to use the same SSL certificates for both the PHP and Node environments, ensuring consistency when accessing the application via HTTPS in development.
+            - ./docker/certs:/container/custom/certs
+            - ./:/var/www/html
+        environment:
+            - ENVIRONMENT=dev
+            - PUID=${DOCKER_UID:-1000}
+            - PGID=${DOCKER_GID:-1000}
+            - DOCKER_PROJECT_HOST=${DOCKER_PROJECT_HOST:-localhost}
+            - DOCKER_PROJECT_PATH=${DOCKER_PROJECT_PATH:-/}
+            - DOCKER_PROJECT_PROTOCOL=${DOCKER_PROJECT_PROTOCOL:-http}
+            # This environment variable is used by the base image to determine which command to run when the container starts.
+            # By setting it to "npm run dev", we tell the container to start the Vite development server, which will watch for changes in the frontend code and automatically reload the browser when changes are detected.
+            - NODE_WEB_COMMAND=npm run dev
+        extra_hosts:
+            # Not strictly required here, but does no harm and allows you to connect to services running on the host machine from the Node environment using the "host.docker.internal" hostname, which can be useful for various development purposes.
+            - host.docker.internal:host-gateway
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:3000:3000
+    # The File converter is used to extract text from files, which is a common requirement for HAWKI when processing user-uploaded documents
+    # or other file types. By using a dedicated container for this service, we can isolate its dependencies and resource usage from the main application,
+    # ensuring better performance and scalability.
     file-converter:
         image: digitalenvironments/hawki-toolkit-file-converter:1.2.0
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
+            # Defines the API key for the file converter service, which is used for authentication when the main HAWKI application communicates with the file converter.
+            # This is set by the "HAWKI_FILE_CONVERTER_API_KEY" environment variable in your .env file, so both the app and file converter can share the same API key for secure communication.
+            # If the variable is not set, it will default to an empty string, which may cause authentication to fail, so make sure to set this variable in your .env file for proper functionality.
             - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
-        healthcheck:
-            test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 40s
+    # HAWKI in docker is configured to use Redis for efficient caching.
+    # While you can not disable Redis easily, if you have your own Redis instance running on the host machine, you can simply point the REDIS_HOST variable in your .env file to "host.docker.internal",
+    # which will allow the app container to connect to the Redis instance running on your host machine instead of the one defined here.
+    # Just make sure that your local Redis instance is configured to accept connections from the Docker network.
     redis:
         container_name: ${PROJECT_NAME}-redis
-        image: redis:8-bookworm
+        image: redis:8-trixie
         restart: always
         volumes:
             - redis_data:/root/redis
@@ -67,15 +135,19 @@ services:
             - REDIS_PASSWORD=password
             - REDIS_PORT=6379
             - REDIS_DATABASES=16
+    # The MySQL service provides the database for HAWKI. It is configured with a high max_connections setting to allow for a large number of concurrent connections, which can be beneficial
+    # during development when you might have multiple services or tools connecting to the database simultaneously.
+    # If you already have a MySQL instance running on your host machine and want to use that instead, you can simply drop this service and point the DB_HOST variable in your .env file to "host.docker.internal",
+    # which will allow the app container to connect to the MySQL instance running on your host machine.
+    # Just make sure that your local MySQL instance is configured to accept connections from the Docker network (e.g., by binding to 0.0.0.0) and that the credentials match those defined in your .env file.
     mysql:
         container_name: ${PROJECT_NAME}-mysql
-        image: mysql:8.0
+        image: mysql:8.4
         platform: linux/amd64
         command:
-            - --default-authentication-plugin=mysql_native_password
             - --max_connections=2000
         environment:
-            MYSQL_ROOT_PASSWORD: password
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-password}
             MYSQL_DATABASE: $DB_DATABASE
             MYSQL_USER: $DB_USERNAME
             MYSQL_PASSWORD: $DB_PASSWORD
@@ -94,25 +166,10 @@ services:
             timeout: 20s
             interval: 5s
             retries: 10
-    nginx:
-        image: nginx:1.27-alpine
-        container_name: ${PROJECT_NAME}-nginx
-        volumes:
-            - ./docker/certs:/etc/nginx/certs
-            - ./docker/nginx/config/nginx.dev${DOCKER_PROJECT_SSL_MARKER:-}.conf:/etc/nginx/nginx.conf:ro
-            - ./public:/var/www/html/public
-            - ./storage/app/public:/var/www/html/storage
-        ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
-        depends_on:
-            - app
-        healthcheck:
-            test: curl --fail http://localhost || exit 1
-            interval: 10s
-            timeout: 3s
-            retries: 3
-            start_period: 10s
+    # Mailhog is a simple email testing tool that captures outgoing emails and provides a web interface to view them.
+    # This is especially useful in development environments, as it allows you to test email functionality without
+    # sending real emails to actual email addresses. By using Mailhog, you can ensure that your email-related features are working correctly without the risk of spamming real users during development.
+    # To open the Mailhog web interface, simply navigate to http://localhost:${MAILHOG_PORT:-8025} in your browser, where you can view and inspect any emails sent by the application during development.
     mailhog:
         container_name: ${PROJECT_NAME}-mailhog
         image: mailhog/mailhog:v1.0.1
@@ -121,8 +178,16 @@ services:
             - ${DOCKER_PROJECT_IP:-127.0.0.1}:1025:1025
             - ${DOCKER_PROJECT_IP:-127.0.0.1}:${MAILHOG_PORT:-8025}:8025
 volumes:
-    php_socket: { }
     mysql_data:
         driver: local
     redis_data:
         driver: local
+networks:
+    # This network allows other HAWKI related projects to connect to this project's nginx service,
+    # which acts as the main entry point for HAWKI. Simply add the other project's container to this network,
+    # and access nginx using the container name 'hawki.hawk.docker' on port 80 or 443.
+    # Note: This is a docker internal network only, not exposed to the host machine; so you will have to access
+    # HAWKI differently from your host machine (e.g., via localhost:80).
+    hawki_hawk_net:
+        name: hawki_hawk_net
+        driver: bridge

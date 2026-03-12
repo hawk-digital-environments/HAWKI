@@ -1,88 +1,117 @@
+# This docker compose file defines the services for the production environment of the Hawki application.
+# It includes a migrator service to run database migrations, the main application service, a queue worker, a reverb service, a scheduler, a file converter, and the necessary Redis and MySQL services.
+# Each service is configured with appropriate environment variables, volumes, health checks, and dependencies to ensure proper startup and operation.
 services:
-    migrator:
-        container_name: ${PROJECT_NAME}-migrator
-        image: ${PROJECT_HAWKI_IMAGE}
-        env_file:
-            - .env
-        command: >
-            sh -c "
-                chmod -R 777 /var/www/html/storage &&
-                su -s /bin/sh www-data -c 'php artisan migrate --force' &&
-                su -s /bin/sh www-data -c 'php artisan db:seed --force'
-            "
-        depends_on:
-            mysql:
-                condition: service_healthy
-        volumes:
-            - ./storage/app:/var/www/html/storage/app
-            - ./storage/logs:/var/www/html/storage/logs
-        restart: "no"
+    # The app service is your HAWKI application in a production environment. It is responsible for serving the web application to users.
+    # It includes a web server (nginx) and a PHP-FPM process to handle PHP requests.
     app:
         container_name: ${PROJECT_NAME}-app
+        # By default, we are pulling the official HAWKI image from Docker Hub, but you can also build your own image by setting the PROJECT_HAWKI_IMAGE environment variable to a custom image name or build context.
         image: ${PROJECT_HAWKI_IMAGE}
-        restart: no
+        # In comparison to the development environment, we WANT the container to automatically restart if it crashes or stops unexpectedly, which is why we set restart to always.
+        # This ensures that the application remains available and minimizes downtime in a production environment.
+        restart: always
         volumes:
+            # Like in development, we are mounting the certificate directory to allow your own SSL certificates to be used in production.
+            # Keep in mind to name them `cert.pem` and `key.pem` and place them in the `certs` directory at the root of your project, otherwise the application will generate self-signed certificates on startup.
+            - ./certs:/container/custom/certs
+            # The next two lines mount the storage directories for the application, allowing the application to read and write files as needed.
+            # Those directories are your persistent storage for things like file uploads, logs, and other data that the application needs to function properly.
+            # If you want, you can also use a "volume" instead of a bind mount for those directories, but using bind mounts allows you to easily access the files on your host machine and makes it easier to manage them.
             - ./storage/app:/var/www/html/storage/app
+            - ./storage/logs:/var/www/html/storage/logs
+            # As all of your application is already bundled in the Docker image, we only need to mount the configuration files for model providers and lists, which allows you to easily customize those configurations without having to rebuild the Docker image.
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
-            - /var/www/html/public
-        healthcheck:
-            test: cgi-fcgi -bind -connect 127.0.0.1:9000 || exit 1
-            interval: 10s
-            timeout: 5s
-            retries: 3
-            start_period: 30s
+        # Instead of "mounting" the .env file to configure HAWKI, we simply tell Docker Compose to read the environment variables from the .env file and pass them to the container.
         env_file:
             - .env
         environment:
-            REVERB_HOST: $APP_URL
+            # The public hostname for your application (available for your app).
+            DOCKER_PROJECT_HOST: ${APP_HOST}
+            # The public protocol for your application, either "http" or "https".
+            # If you set this to "https" you should also provide valid SSL certificates in the "./docker/certs" directory,
+            # otherwise the container will create self-signed certificates on boot, which will cause browser warnings but allow you to test HTTPS locally.
+            DOCKER_PROJECT_PROTOCOL: ${APP_PROTOCOL:-http}
+        ports:
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
+            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
+        # In order for HAWKI to run without issues we require a certain state of your Mysql database.
+        # The migrator service is responsible for ensuring that the database is in the correct state by running the necessary migrations before the main application starts.
+        # Only after it completes successfully, the main application will start up.
         depends_on:
             migrator:
                 condition: service_completed_successfully
+        # This healthcheck configuration allows Docker to monitor the health of the app container by periodically sending a request to the /health endpoint.
+        healthcheck:
+            test: curl --fail ${DOCKER_PROJECT_PROTOCOL:-http}://localhost/health || exit 1
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+    # The queue service is responsible for processing background jobs in HAWKI, such as sending emails, processing messages, and other tasks that can be performed asynchronously.
+    # It is basically a clone of the main application container, but instead of running the web server and PHP-FPM,
+    # it runs a Laravel queue worker that listens to the specified queues and processes jobs as they come in.
+    # You can increase the number of queue workers by scaling this service, for example by running "docker-compose up --scale queue=3" to run 3 instances of the queue worker,
+    # which can help to process jobs faster if you have a high volume of background tasks.
     queue:
         container_name: ${PROJECT_NAME}-queue
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
         volumes:
             - ./storage/app:/var/www/html/storage/app
+            - ./storage/logs:/var/www/html/storage/logs
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
         env_file:
             - .env
         environment:
-            REVERB_HOST: reverb
-        command: [ 'php artisan queue:work --queue=default,mails,message_broadcast --tries=3 --timeout=90' ]
+            # This environment variable tells the container to not boot up an entire web server, but instead to run the specified command to start the Laravel queue worker.
+            # Feel free to customize the command and the queues it listens to based on your needs, for example if you want to have a separate queue worker for processing only emails,
+            # you could create a new service with a different command that only listens to the "mails" queue.
+            PHP_WORKER_COMMAND: "php artisan queue:work --queue=default,mails,message_broadcast --tries=3 --timeout=90"
         depends_on:
             migrator:
                 condition: service_completed_successfully
+    # The reverb service is responsible for running the HAWKI Reverb, which is a component of HAWKI that handles real-time communication and message broadcasting.
+    # Similar to the queue worker, it is a clone of the main application container, but instead of running the web server and PHP-FPM, it runs a Laravel command to start the Reverb service.
     reverb:
         container_name: ${PROJECT_NAME}-reverb
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
         volumes:
             - ./storage/app:/var/www/html/storage/app
+            - ./storage/logs:/var/www/html/storage/logs
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
+        environment:
+            PHP_WORKER_COMMAND: "php artisan reverb:start"
         env_file:
             - .env
-        command: [ 'php artisan reverb:start' ]
         depends_on:
             migrator:
                 condition: service_completed_successfully
+    # The scheduler service is responsible for running scheduled tasks in HAWKI, such as periodic cleanups, data synchronization, and other recurring tasks that need to be executed at specific intervals.
+    # Like the queue and reverb services, it is a clone of the main application container
     scheduler:
         container_name: ${PROJECT_NAME}-scheduler
         image: ${PROJECT_HAWKI_IMAGE}
         restart: always
+        environment:
+            PHP_WORKER_COMMAND: "php artisan schedule:work"
         volumes:
             - ./storage/app:/var/www/html/storage/app
+            - ./storage/logs:/var/www/html/storage/logs
             - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
             - ./config/model_lists:/var/www/html/config/model_lists:ro
         env_file:
             - .env
-        command: [ 'php artisan schedule:work' ]
         depends_on:
             migrator:
                 condition: service_completed_successfully
+    # The File converter is used to extract text from files, which is a common requirement for HAWKI when processing user-uploaded documents
+    # or other file types. By using a dedicated container for this service, we can isolate its dependencies and resource usage from the main application,
+    # ensuring better performance and scalability.
     file-converter:
         image: digitalenvironments/hawki-toolkit-file-converter:1.2.0
         container_name: ${PROJECT_NAME}-file-converter
@@ -95,9 +124,13 @@ services:
             timeout: 10s
             retries: 3
             start_period: 40s
+    # HAWKI in docker is configured to use Redis for efficient caching.
+    # While you can not disable Redis easily, if you have your own Redis instance running on the host machine, you can simply point the REDIS_HOST variable in your .env file to "host.docker.internal",
+    # which will allow the app container to connect to the Redis instance running on your host machine instead of the one defined here.
+    # Just make sure that your local Redis instance is configured to accept connections from the Docker network.
     redis:
         container_name: ${PROJECT_NAME}-redis
-        image: redis:8-bookworm
+        image: redis:8-trixie
         restart: always
         volumes:
             - redis_data:/root/redis
@@ -105,14 +138,18 @@ services:
             REDIS_PASSWORD: $REDIS_PASSWORD
             REDIS_PORT: $REDIS_PORT
             REDIS_DATABASES: 16
+    # The MySQL service provides the database for HAWKI. It is configured with a high max_connections setting to allow for a large number of concurrent connections, which can be beneficial
+    # during development when you might have multiple services or tools connecting to the database simultaneously.
+    # If you already have a MySQL instance running on your host machine and want to use that instead, you can simply drop this service and point the DB_HOST variable in your .env file to "host.docker.internal",
+    # which will allow the app container to connect to the MySQL instance running on your host machine.
+    # Just make sure that your local MySQL instance is configured to accept connections from the Docker network (e.g., by binding to 0.0.0.0) and that the credentials match those defined in your .env file.
     mysql:
         container_name: ${PROJECT_NAME}-mysql
-        image: mysql:8.0
+        image: mysql:8.4
         command:
-            - --default-authentication-plugin=mysql_native_password
             - --max_connections=2000
         environment:
-            MYSQL_RANDOM_ROOT_PASSWORD: '1'
+            MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
             MYSQL_DATABASE: $DB_DATABASE
             MYSQL_USER: $DB_USERNAME
             MYSQL_PASSWORD: $DB_PASSWORD
@@ -131,29 +168,33 @@ services:
             timeout: 20s
             interval: 5s
             retries: 10
-    nginx:
-        container_name: ${PROJECT_NAME}-nginx
-        image: nginx:1.29-alpine
-        volumes:
-            - ./certs:/etc/nginx/certs
-            - ./nginx.default.conf:/etc/nginx/nginx.conf:ro
-            - ./storage/app/public:/var/www/html/storage
-        volumes_from:
-            - app # This will automatically mount /var/www/html/public, so we can serve the static assets
-        ports:
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:80:80
-            - ${DOCKER_PROJECT_IP:-127.0.0.1}:443:443
+    # The migrator service is responsible for running database migrations before the main application and other dependent services start.
+    # It ensures that the database schema is up to date with the application's requirements.
+    # It only runs once when you start the application stack, and it will not restart automatically if it fails, however "app"
+    # and other services that depend on it will not start until it has completed successfully.
+    # This ensures that the application does not run with an outdated database schema, which could lead to errors or inconsistent behavior.
+    migrator:
+        container_name: ${PROJECT_NAME}-migrator
+        image: ${PROJECT_HAWKI_IMAGE}
+        env_file:
+            - .env
+        # The command defines what is actually happening in the migrator service.
+        # It first changes the permissions of the storage directory to ensure that the web server user (www-data) has the necessary access to read and write files.
+        # Then it uses gosu to switch to the www-data user and runs the Laravel Artisan command to execute database migrations with the --force flag,
+        # which allows migrations to run in a non-interactive environment (like a Docker container) without prompting for confirmation.
+        environment:
+            ENVIRONMENT: migrate
+        # We can only run the migrator once the MySQL service is healthy, as it needs to connect to the database to run the migrations.
         depends_on:
-            app:
+            mysql:
                 condition: service_healthy
-        healthcheck:
-            test: curl --fail http://localhost || exit 1
-            interval: 10s
-            timeout: 3s
-            retries: 3
-            start_period: 10s
+        volumes:
+            - ./storage/app:/var/www/html/storage/app
+            - ./storage/logs:/var/www/html/storage/logs
+            - ./config/model_providers.php:/var/www/html/config/model_providers.php:ro
+            - ./config/model_lists:/var/www/html/config/model_lists:ro
+        restart: "no"
 volumes:
-    php_socket: { }
     mysql_data:
         driver: local
     redis_data:

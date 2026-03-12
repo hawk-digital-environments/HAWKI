@@ -83,6 +83,7 @@ class StreamController extends Controller
                 'payload.messages.*.content.text' => 'nullable|string',
                 'payload.messages.*.content.attachments' => 'nullable|array',
                 'payload.tools' => 'nullable|array',
+                'payload.params' => 'nullable|array',
 
                 'broadcast' => 'required|boolean',
                 'isUpdate' => 'nullable|boolean',
@@ -124,6 +125,7 @@ class StreamController extends Controller
                                             $hawki->username,
                                             $hawki->avatar_id);
 
+
         if ($validatedData['payload']['stream']) {
             // Handle streaming response
             $this->handleStreamingRequest($validatedData['payload'], $hawki, $avatar_url);
@@ -143,6 +145,7 @@ class StreamController extends Controller
                 'model' => $validatedData['payload']['model'],
                 'isDone' => true,
                 'content' => json_encode($response->content),
+                'tools' => $validatedData['payload']['tools'] ?? null,
             ]);
         }
 
@@ -154,19 +157,21 @@ class StreamController extends Controller
      */
     private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
     {
+        // Disable output buffering
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+
         // Set headers for SSE
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
         header('Access-Control-Allow-Origin: *');
+        header('X-Accel-Buffering: no');
 
         $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
-            $flush = static function () {
-                if (ob_get_length()) {
-                    ob_flush();
-                }
-                flush();
-            };
+
+//            \Log::debug('AI Response', $response->jsonSerialize());
 
             $this->usageAnalyzer->submitUsageRecord(
                 $response->usage,
@@ -180,12 +185,15 @@ class StreamController extends Controller
                     'avatar_url' => $avatar_url,
                 ],
                 'model' => $payload['model'],
+                'tools' => $payload['tools']?? null,
                 'isDone' => $response->isDone,
                 'content' => json_encode($response->content),
+                'type' => $response->type,
+                'status' => $response->status,
             ];
 
             echo json_encode($messageData) . "\n";
-            $flush();
+            flush();
         };
 
         $this->aiService->sendStreamRequest($payload, $onData);
@@ -220,8 +228,16 @@ class StreamController extends Controller
             $room->id
         );
 
+        $content = $response->content;
+        if(array_key_exists('groundingMetadata', $response->content)){
+            $content = json_encode([
+                'text' => $response->content['text'],
+                'groundingMetadata' => $response->content['groundingMetadata'],
+            ]);
+        }
+//        \Log::debug($content);
         $crypto = new SymmetricCrypto();
-        $encryptedData = $crypto->encrypt($response->content['text'],
+        $encryptedData = $crypto->encrypt(json_encode($content),
                                           base64_decode($data['key']));
 
         // Store message
@@ -238,7 +254,11 @@ class StreamController extends Controller
                         'iv' => base64_encode($encryptedData->iv),
                         'tag' => base64_encode($encryptedData->tag),
                     ]
-                ]
+                ],
+                'metadata' => [
+                    'tools' => $data['payload']['tools'] ?? null,
+                    'params' => $data['payload']['params'] ?? null,
+                ],
             ]);
         } else {
             $message = $messageHandler->create($room, [
@@ -252,10 +272,13 @@ class StreamController extends Controller
                         'iv' => base64_encode($encryptedData->iv),
                         'tag' => base64_encode($encryptedData->tag),
                     ]
-                ]
+                ],
+                'metadata' => [
+                    'tools' => $data['payload']['tools'] ?? null,
+                    'params' => $data['payload']['params'] ?? null,
+                ],
             ]);
         }
-
 
         $broadcastObject = [
             'slug' => $room->slug,

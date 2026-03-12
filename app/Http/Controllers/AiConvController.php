@@ -94,6 +94,8 @@ class AiConvController extends Controller
             'isAi' => 'required|boolean',
             'threadId' => 'required|integer|min:0',
             'content' => 'required|array',
+            'metadata' => 'nullable|array',
+
             'model' => 'string',
             'completion' => 'required|boolean',
         ]);
@@ -117,12 +119,12 @@ class AiConvController extends Controller
         $validatedData = $request->validate([
             'isAi' => 'required|boolean',
             'content' => 'required|array',
+            'metadata' => 'nullable|array',
             'model' => 'nullable|string',
             'completion' => 'required|boolean',
             'message_id' => 'required|string',
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
-
         $conv = AiConv::where('slug', $slug)->firstOrFail();
         $message = $this->messageHandler->update($conv, $validatedData);
         $messageData = $message->toArray();

@@ -73,6 +73,7 @@ Next, you need to configure the OIDC connection parameters. The following enviro
 | OIDC_CLIENT_SECRET |                 | is the client secret registered with your OIDC IdP. (Provided by your IdP)                                                                                                                                      |                           |
 | OIDC_LOGOUT_URI    |                 | is the logout endpoint of your OIDC IdP; that gets called when the user logs out of HAWKI. If possible HAWKI will also pass a `post_logout_redirect_uri` and `id_token_hint` parameters to the logout endpoint. |                           |
 | OIDC_SCOPES        | `email,profile` | is a comma separated list of scopes to request during authentication.                                                                                                                                           |                           |
+| OIDC_PKCE_METHOD   |                 | is the code challenge method for PKCE (Proof Key for Code Exchange). Set to `S256` to enable PKCE with SHA-256 for enhanced security. Leave empty or unset to disable PKCE.                                     | `S256`                    |
 
 As with the other authentication methods, you need to tell HAWKI how to interpret the OIDC claims.
 The following environment variables are available for this and MUST be set according to your OIDC provider's
