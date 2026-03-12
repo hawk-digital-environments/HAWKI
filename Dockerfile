@@ -63,14 +63,18 @@ RUN composer install --no-dev --no-cache --no-progress --no-interaction --verbos
 COPY --chown=www-data:www-data . .
 COPY --from=node_builder --chown=www-data:www-data /var/www/html/public/build /var/www/html/public/build
 
+# Dump the autoload file and run the matching scripts, after all the project files are in the image
+# Laravel commands require some directories to be writeable by the web server user, so we need to create them and set the permissions before running the composer scripts
+# however we remove them directly afterwards, to not have them in the final image.
 RUN mkdir -p /var/www/html/storage/framework/cache && chown www-data:www-data /var/www/html/storage/framework/cache \
     && mkdir -p /var/www/html/storage/framework/sessions && chown www-data:www-data /var/www/html/storage/framework/sessions \
     && mkdir -p /var/www/html/storage/framework/views && chown www-data:www-data /var/www/html/storage/framework/views \
     && mkdir -p /var/www/html/storage/logs && chown www-data:www-data /var/www/html/storage/logs \
-    && mkdir -p /var/www/html/storage/app/public && chown www-data:www-data /var/www/html/storage/app/public
+    && mkdir -p /var/www/html/storage/app/public && chown www-data:www-data /var/www/html/storage/app/public \
+    && composer dump-autoload --no-dev --optimize --no-interaction --verbose --no-cache \
+    && rm -rf /var/www/html/storage \
+    && mkdir -p /var/www/html/storage \
+    && chown www-data:www-data /var/www/html/storage
 
-# Dump the autoload file and run the matching scripts, after all the project files are in the image
-RUN composer dump-autoload --no-dev --optimize --no-interaction --verbose --no-cache
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost/health || exit 1
+# Copy our container overrides
+COPY docker/app/errors.nginx.conf /container/templates/nginx/snippets/errors.nginx.conf
