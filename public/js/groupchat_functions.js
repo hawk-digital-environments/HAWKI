@@ -172,6 +172,7 @@ const connectWebSocket = (roomSlug) => {
                 if(receivedPacket.type === "messageUpdate"){
                     const messageData = await requestMessageContent(receivedPacket.data.message_id,
                                                                     receivedPacket.data.slug);
+                    console.log(messageData);
                     await handleUpdateMessage(messageData, roomSlug)
                 }
 

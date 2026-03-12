@@ -6,6 +6,7 @@ namespace App\Services\AI\Db;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use Illuminate\Config\Repository;
+use Illuminate\Container\Attributes\Singleton;
 
 /**
  * Syncs AI model & provider configuration (model_providers.php + model_lists/*.php)
@@ -17,6 +18,7 @@ use Illuminate\Config\Repository;
  * - The `active` flag is always overridden from config so that env-variable changes
  *   take effect on the next sync.
  */
+#[Singleton]
 class AiModelSyncService
 {
     public function __construct(

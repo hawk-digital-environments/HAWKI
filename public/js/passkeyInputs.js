@@ -1,4 +1,4 @@
-function initializePasskeyInputs(applyCharacterLimitation = false){
+function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = true, charLimit = false){
 
     const inputWrappers = document.querySelectorAll('.password-input-wrapper');
 
@@ -14,23 +14,7 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
         // Initialize the real value in a dataset
         input.dataset.realValue = '';
 
-        if(applyCharacterLimitation){
-            // Input filter for allowed characters
-            input.addEventListener('beforeinput', function (event) {
-                if (event.inputType.startsWith('insert')) {
-                    if (!/^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(event.data)) {
-                        event.preventDefault();
-                        showAllowedCharactersMessage();
-                        input.parentElement.style.border = '1px solid red'
 
-                        setTimeout(() => {
-                            input.parentElement.style.border = 'var(--border-stroke-thin)';
-                        }, 200);
-                    }
-                }
-            });
-
-        }
 
         // Handle Enter key
         input.addEventListener('keypress', function (event) {
@@ -42,6 +26,24 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
 
         // Mask input and store real value
         input.addEventListener('beforeinput', function (e) {
+
+            if(applyCharacterLimitation){
+                // Input filter for allowed characters
+                if (event.inputType.startsWith('insert')) {
+                    if (charLimit && !/^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(event.data)) {
+                        event.preventDefault();
+                        showAllowedCharactersMessage();
+                        input.parentElement.style.border = '1px solid red'
+
+                        setTimeout(() => {
+                            input.parentElement.style.border = 'var(--border-stroke-thin)';
+                        }, 200);
+                        return;
+                    }
+                }
+            }
+
+
             // current true value
             const real = input.dataset.realValue || '';
             // selection BEFORE the change
@@ -136,10 +138,22 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
         });
 
 
-        // Prevent copy/cut/paste
-        ['copy', 'cut', 'paste'].forEach(evt =>
-            input.addEventListener(evt, e => e.preventDefault())
-        );
+        // Prevent copy/cut and conditionally prevent paste
+
+        if (!allowPaste) {
+            ['copy', 'cut', 'paste'].forEach(evt => {
+                input.addEventListener(evt, e => e.preventDefault());
+            });
+        } else {
+            ['copy', 'cut'].forEach(evt => {
+                input.addEventListener(evt, e => {
+                    e.preventDefault();
+                    navigator.clipboard.writeText(input.dataset.realValue);
+                });
+            });
+        }
+
+
 
         // Toggle visibility (unchanged, but will read dataset.realValue)
         toggleBtn.addEventListener('click', function () {

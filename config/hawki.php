@@ -23,4 +23,11 @@ return [
     ],
 
     'aiHandle' => '@'. env('AI_MENTION_HANDLE', 'hawki'),
+
+    'security' => [
+        'passkey' => [
+            'allow_paste' => filter_var(env('APP_SECURITY_PASSKEY_ALLOW_PASTE', true), FILTER_VALIDATE_BOOLEAN),
+            'char_limitation'=> filter_var(env('APP_SECURITY_PASSKEY_CHAR_LIMITATION', true), FILTER_VALIDATE_INT),
+        ],
+    ],
 ];

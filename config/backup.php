@@ -10,6 +10,7 @@ return [
         'name' => env('APP_NAME', 'hawki-backup'),
 
         'schedule_interval' => env('DB_BACKUP_INTERVAL', 'weekly'),
+        'schedule_interval_args' => env('DB_BACKUP_INTERVAL_ARGS'),
 
         'source' => [
             'files' => [

@@ -4,7 +4,12 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
+/**
+ * @deprecated This command is deprecated and should not be used.
+ * @todo remove this in version 3.0
+ */
 class CheckGWDGModels extends Command
 {
     /**
@@ -26,6 +31,7 @@ class CheckGWDGModels extends Command
      */
     public function handle()
     {
+        Log::warning('The command "app:list-gwdg" is deprecated and should not be used.');
         $list = $this->checkAllModelsStatus();
         $jsonString = json_encode($list, JSON_PRETTY_PRINT);
         $this->info($jsonString);

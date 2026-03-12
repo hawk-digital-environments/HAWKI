@@ -3,6 +3,7 @@
 use App\Http\Controllers\AiConvController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AuthenticationController;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
@@ -13,6 +14,8 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\StreamController;
 use Illuminate\Support\Facades\Route;
 
+// Health check routes (no authentication required for Docker health checks)
+Route::get('/health', [HealthController::class, 'check'])->name('health.check');
 
 Route::middleware('prevent_back')->group(function () {
 

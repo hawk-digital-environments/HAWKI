@@ -6,6 +6,7 @@ namespace App\Services\AI\Db;
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Ai\Tools\McpServer;
 use App\Services\AI\Tools\Interfaces\ToolInterface;
+use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Log;
  * The DB is the single source of truth at runtime.
  * Config is only read during deployment via this service.
  */
+#[Singleton]
 class ToolSyncService
 {
     /**
