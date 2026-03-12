@@ -49,16 +49,16 @@ return [
     |
     */
     'mcp_servers' => [
-        // RAWKI MCP Server - provides web search and knowledge base tools
-        'hawki-rag' => [
-            'url'               => env('HAWKI_RAG_MCP_API_URL', 'http://localhost:8080/mcp/rawki'),
-            'server_label'      => 'hawki-rag',
-            'description'       => 'HAWKI Web Search and Knowledge Base',
-            'require_approval'  => 'never',
-            'timeout'           => 30,
-            'discovery_timeout' => 90,
-            'api_key'           => env('HAWKI_RAG_MCP_API_KEY'),
-        ],
+        // HAWKI RAG MCP Server - provides web search and knowledge base tools
+//        'hawki-rag' => [
+//            'url'               => env('HAWKI_RAG_MCP_API_URL', 'http://localhost:8080/mcp/rawki'),
+//            'server_label'      => 'hawki-rag',
+//            'description'       => 'HAWKI Web Search and Knowledge Base',
+//            'require_approval'  => 'never',
+//            'timeout'           => 30,
+//            'discovery_timeout' => 30,
+//            'api_key'           => env('HAWKI_RAG_MCP_API_KEY'),
+//        ],
 
         // Example: Add another MCP server
         // 'my_mcp_server' => [
