@@ -29,7 +29,7 @@ class ListModels extends Command
         $models = $query->orderBy('provider_id')->orderBy('model_id')->get();
 
         if ($models->isEmpty()) {
-            $this->warn('No models found. Run <comment>php artisan models:sync</comment> first.');
+            $this->warn('No models found. Run <comment>php artisan ai:models:sync</comment> first.');
             return Command::SUCCESS;
         }
 

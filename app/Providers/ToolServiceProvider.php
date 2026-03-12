@@ -14,7 +14,7 @@ use Illuminate\Support\ServiceProvider;
  * Loads all active tools from the database into the ToolRegistry at boot.
  *
  * The database is the single source of truth at runtime.
- * Config files (config/tools.php) are only read during deployment via `tools:sync`.
+ * Config files (config/tools.php) are only read during deployment via `ai:tools:sync`.
  */
 class ToolServiceProvider extends ServiceProvider
 {

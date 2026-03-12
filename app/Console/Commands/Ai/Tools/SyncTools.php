@@ -56,7 +56,7 @@ class SyncTools extends Command
                     $this->line("      • <fg=yellow>{$toolName}</>");
                 }
                 $this->newLine();
-                $this->line("  → Run <comment>php artisan tools:configure</comment> to set meaningful capability keys.");
+                $this->line("  → Run <comment>php artisan ai:tools:configure</comment> to set meaningful capability keys.");
             }
 
             $this->newLine();

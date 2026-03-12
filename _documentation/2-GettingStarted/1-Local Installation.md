@@ -295,7 +295,7 @@ To manage tool attributes (capability, description, active state):
 php hawki tools configure
 ```
 
-To enable or disable a tool without removing it, use the `active` toggle in `tools:configure`. Inactive tools are excluded from all model requests until re-enabled.
+To enable or disable a tool without removing it, use the `active` toggle in `ai:tools:configure`. Inactive tools are excluded from all model requests until re-enabled.
 
 > **Tip:** Run `php hawki tools help` to see the full list of tool management commands.
 

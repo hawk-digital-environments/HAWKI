@@ -135,7 +135,7 @@ class AddMcpServer extends Command
         $assignNow = $this->confirm('Do you want to assign these tools to AI models now?', true);
 
         if (!$assignNow) {
-            $this->info('You can assign tools later with: <comment>php artisan tools:assign</comment>');
+            $this->info('You can assign tools later with: <comment>php artisan ai:tools:assign</comment>');
             return Command::SUCCESS;
         }
 
@@ -259,7 +259,7 @@ class AddMcpServer extends Command
         $providers = AiProvider::withCount('models')->get();
 
         if ($providers->isEmpty()) {
-            $this->warn('No providers found in database. Run <comment>php artisan models:sync</comment> first.');
+            $this->warn('No providers found in database. Run <comment>php artisan ai:models:sync</comment> first.');
             return;
         }
 
@@ -309,7 +309,7 @@ class AddMcpServer extends Command
             ->filter(fn($m) => ($m->tools ?: [])['tool_calling'] ?? true);
 
         if ($models->isEmpty()) {
-            $this->warn('No active tool-capable models found. Run <comment>php artisan models:sync</comment> first.');
+            $this->warn('No active tool-capable models found. Run <comment>php artisan ai:models:sync</comment> first.');
             return;
         }
 

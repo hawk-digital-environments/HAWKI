@@ -408,6 +408,12 @@ php hawki models sync
 php hawki tools sync
 ```
 
+**Database Backup**
+
+By default, HAWKI is configured to create daily database backups using the `php artisan backup:run command`.
+To ensure this command runs correctly, the `mysqldump` binary for MySQL/MariaDB must be installed on the system.
+If the binary is not available in your system’s `PATH`, you can specify its location by setting the `.env` variable `DB_BACKUP_DUMPER_BINARY_DIR` to the directory that contains the `mysqldump` executable.
+
 
 **Create Storage Link**
 

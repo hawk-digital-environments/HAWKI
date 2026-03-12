@@ -201,7 +201,7 @@ class AssignToolToModel extends Command
         $providers = AiProvider::withCount('models')->get();
 
         if ($providers->isEmpty()) {
-            $this->warn('No providers found. Run <comment>php artisan models:sync</comment> first.');
+            $this->warn('No providers found. Run <comment>php artisan ai:models:sync</comment> first.');
             return [];
         }
 
@@ -253,7 +253,7 @@ class AssignToolToModel extends Command
             ->filter(fn($m) => ($m->tools ?: [])['tool_calling'] ?? true);
 
         if ($allModels->isEmpty()) {
-            $this->warn('No active tool-capable models found. Run <comment>php artisan models:sync</comment> first.');
+            $this->warn('No active tool-capable models found. Run <comment>php artisan ai:models:sync</comment> first.');
             return [];
         }
 

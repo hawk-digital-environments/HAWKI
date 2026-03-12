@@ -21,55 +21,34 @@ class ConfigureTool extends Command
             return Command::FAILURE;
         }
 
-        $this->newLine();
-        $this->showToolSummary($tool);
-        $this->newLine();
-
         $changed = false;
 
-        // ── Active toggle ──────────────────────────────────────────────────────
-        $currentActive = $tool->active ? 'enabled' : 'disabled';
-        if ($this->confirm("Toggle active state? (currently <fg=cyan>{$currentActive}</>)", false)) {
-            $tool->active = !$tool->active;
-            $changed = true;
-            $newState = $tool->active ? 'enabled' : 'disabled';
-            $this->info("  ✓ Active state → <fg=cyan>{$newState}</>");
-        }
+        while (true) {
+            $this->newLine();
+            $this->showToolSummary($tool);
+            $this->newLine();
 
-        // ── Capability ────────────────────────────────────────────────────────
-        $this->line("  Current capability: <fg=yellow>{$tool->capability}</>");
-        if ($this->confirm("Update capability?", false)) {
-            $existing = AiTool::whereNotNull('capability')
-                ->where('capability', '!=', '')
-                ->where('id', '!=', $tool->id)
-                ->distinct()
-                ->pluck('capability')
-                ->toArray();
+            $activeLabel = $tool->active ? 'enabled' : 'disabled';
+            $choices = [
+                "0  Active:      {$activeLabel}",
+                "1  Capability:  {$tool->capability}",
+                "2  Description: {$tool->description}",
+                '3  Done',
+            ];
 
-            $newOption = '[+ Enter a new capability]';
-            $choices   = array_merge([$newOption], $existing);
-            $choice    = $this->choice('Select or enter a capability', $choices, 0);
+            $selected = $this->choice('Select a field to edit', $choices, '3  Done');
 
-            if ($choice === $newOption) {
-                $default = $tool->capability;
-                $choice  = $this->ask('Enter capability name (snake_case, e.g. knowledge_base)', $default);
-                $choice  = trim($choice) ?: $default;
+            if ($selected === '3  Done') {
+                break;
             }
 
-            $tool->capability = $choice;
-            $changed = true;
-            $this->info("  ✓ Capability → <fg=cyan>{$choice}</>");
-        }
+            $field = (int) $selected[0];
 
-        // ── Description ───────────────────────────────────────────────────────
-        $this->line("  Current description: <fg=gray>{$tool->description}</>");
-        if ($this->confirm("Update description?", false)) {
-            $desc = $this->ask('Enter new description', $tool->description);
-            if ($desc !== null && $desc !== $tool->description) {
-                $tool->description = $desc;
-                $changed = true;
-                $this->info("  ✓ Description updated.");
-            }
+            match ($field) {
+                0 => $changed = $this->editActive($tool) || $changed,
+                1 => $changed = $this->editCapability($tool) || $changed,
+                2 => $changed = $this->editDescription($tool) || $changed,
+            };
         }
 
         if (!$changed) {
@@ -85,6 +64,64 @@ class ConfigureTool extends Command
         $this->line('  Restart the application (or reload) for registry changes to take effect.');
 
         return Command::SUCCESS;
+    }
+
+    private function editActive(AiTool $tool): bool
+    {
+        $current = $tool->active ? 'enabled' : 'disabled';
+        $new     = $tool->active ? 'disabled' : 'enabled';
+        if ($this->confirm("Toggle active state from <fg=cyan>{$current}</> to <fg=cyan>{$new}</>?", true)) {
+            $tool->active = !$tool->active;
+            $this->info("  ✓ Active → <fg=cyan>{$new}</>");
+            return true;
+        }
+        return false;
+    }
+
+    private function editCapability(AiTool $tool): bool
+    {
+        $existing = AiTool::whereNotNull('capability')
+            ->where('capability', '!=', '')
+            ->where('id', '!=', $tool->id)
+            ->distinct()
+            ->pluck('capability')
+            ->toArray();
+
+        $newOption = '[+ Enter a new capability]';
+        $choices   = array_merge([$newOption], $existing);
+        $choice    = $this->choice(
+            "Select or enter a capability  <fg=gray>(current: {$tool->capability}</>)",
+            $choices,
+            0
+        );
+
+        if ($choice === $newOption) {
+            $choice = trim($this->ask('Enter capability name (snake_case, e.g. knowledge_base)', $tool->capability))
+                ?: $tool->capability;
+        }
+
+        if ($choice === $tool->capability) {
+            $this->line('  No change.');
+            return false;
+        }
+
+        $tool->capability = $choice;
+        $this->info("  ✓ Capability → <fg=cyan>{$choice}</>");
+        return true;
+    }
+
+    private function editDescription(AiTool $tool): bool
+    {
+        $desc = $this->ask('Enter new description', $tool->description);
+
+        if ($desc === null || $desc === $tool->description) {
+            $this->line('  No change.');
+            return false;
+        }
+
+        $tool->description = $desc;
+        $this->info('  ✓ Description updated.');
+        return true;
     }
 
     private function resolveTool(): ?AiTool
@@ -103,7 +140,7 @@ class ConfigureTool extends Command
         $tools = AiTool::orderBy('type')->orderBy('name')->get();
 
         if ($tools->isEmpty()) {
-            $this->warn('No tools registered. Run <comment>php artisan tools:sync</comment> first.');
+            $this->warn('No tools registered. Run <comment>php artisan ai:tools:sync</comment> first.');
             return null;
         }
 
@@ -127,8 +164,8 @@ class ConfigureTool extends Command
 
         $this->line('  <fg=cyan;options=bold>' . $tool->name . '</>');
         $this->line("  Type:        {$tool->type}");
-        $this->line("  Active:      {$activeLabel}");
         $this->line("  Status:      {$statusLabel}");
+        $this->line("  Active:      {$activeLabel}");
         $this->line("  Capability:  <fg=yellow>{$tool->capability}</>");
         $this->line("  Description: {$tool->description}");
 

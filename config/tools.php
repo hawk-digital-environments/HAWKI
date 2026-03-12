@@ -9,14 +9,14 @@ return [
     | Tools with LOCAL logic that run within your application.
     | These are NOT MCP tools - they execute code in your project.
     |
-    | DEPLOYMENT ONLY: This list is read by `php artisan tools:sync` to
+    | DEPLOYMENT ONLY: This list is read by `php artisan ai:tools:sync` to
     | populate the ai_tools table. It is NOT read at runtime.
     |
     | To add a function-calling tool:
     | 1. Create a class in app/Services/AI/Tools/Implementations/
     | 2. Implement ToolInterface (or extend AbstractTool)
     | 3. Add the class to the array below
-    | 4. Run: php artisan tools:sync --function-only
+    | 4. Run: php artisan ai:tools:sync --function-only
     |
     */
     'available_tools' => [
@@ -30,13 +30,13 @@ return [
     |
     | MCP (Model Context Protocol) servers that provide tools automatically.
     |
-    | DEPLOYMENT ONLY: This list is read by `php artisan tools:sync` to
+    | DEPLOYMENT ONLY: This list is read by `php artisan ai:tools:sync` to
     | connect to each server, discover its tools, and store them in the DB.
     | It is NOT read at runtime.
     |
     | To add a new MCP server:
     | 1. Add server configuration below with its URL
-    | 2. Run: php artisan tools:sync --mcp-only
+    | 2. Run: php artisan ai:tools:sync --mcp-only
     |    (or use: php artisan tools:add-mcp-server for interactive setup)
     |
     | Authentication:
@@ -79,7 +79,7 @@ return [
     |
     | When enabled, only tools whose status is 'active' in the database will
     | be registered in the ToolRegistry and made available to AI models.
-    | Tools marked 'inactive' (e.g. by the tools:check-status command) will
+    | Tools marked 'inactive' (e.g. by the ai:tools:check-status command) will
     | be silently skipped.
     |
     | Set to false to load all tools regardless of their status field.

@@ -12,7 +12,7 @@ return new class extends Migration
     {
         // ── 1. Add user-controlled active flag to ai_tools ─────────────────────
         Schema::table('ai_tools', function (Blueprint $table) {
-            // 'status' is system-managed (set by tools:check-status based on reachability).
+            // 'status' is system-managed (set by ai:tools:check-status based on reachability).
             // 'active' is user-managed — lets operators disable a tool without deleting it.
             $table->boolean('active')->default(true)->after('status');
         });

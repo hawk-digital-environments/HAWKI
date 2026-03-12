@@ -26,7 +26,7 @@ class SyncModels extends Command
         $this->info("  ✓ Providers synced: {$stats['providers_synced']}");
         $this->info("  ✓ Models synced:    {$stats['models_synced']}");
         $this->newLine();
-        $this->info('Done. Run <comment>php artisan models:list</comment> to review the results.');
+        $this->info('Done. Run <comment>php artisan ai:models:list</comment> to review the results.');
 
         return Command::SUCCESS;
     }

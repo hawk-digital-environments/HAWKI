@@ -35,7 +35,7 @@ class ListAllTools extends Command
         $allTools = AiTool::with(['server', 'models'])->get();
 
         if ($allTools->isEmpty()) {
-            $this->warn('No tools in database. Run <comment>php artisan tools:sync</comment> to populate.');
+            $this->warn('No tools in database. Run <comment>php artisan ai:tools:sync</comment> to populate.');
             $this->newLine();
             return Command::SUCCESS;
         }
@@ -49,7 +49,7 @@ class ListAllTools extends Command
         $this->newLine();
 
         if ($functionTools->isEmpty()) {
-            $this->warn('   No function-calling tools in database. Run <comment>php artisan tools:sync --function-only</comment>.');
+            $this->warn('   No function-calling tools in database. Run <comment>php artisan ai:tools:sync --function-only</comment>.');
         } else {
             foreach ($functionTools as $tool) {
                 $isInRegistry = $registry->has($tool->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
@@ -108,7 +108,7 @@ class ListAllTools extends Command
         // ── Summary ────────────────────────────────────────────────────────────
         $this->line('═══════════════════════════════════════════════════════════════');
         $this->line("Registry: <fg=green>" . count($registry->getAll()) . "</> tools loaded");
-        $this->line("💡 <fg=gray>Sync tools from config:</> <fg=cyan>tools:sync</>");
+        $this->line("💡 <fg=gray>Sync tools from config:</> <fg=cyan>ai:tools:sync</>");
         $this->line("💡 <fg=gray>Add MCP server:</> <fg=cyan>tools:add-mcp-server</>");
         $this->line("💡 <fg=gray>Manage model assignments:</> <fg=cyan>tools:assign</>");
         $this->newLine();

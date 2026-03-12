@@ -16,15 +16,15 @@ function handleToolsCommand(array $flags): void
     $remaining  = array_slice($flags, 1);
 
     $map = [
-        'sync'              => 'tools:sync',
-        'list'              => 'tools:list',
-        'configure'         => 'tools:configure',
-        'configure-server'  => 'tools:configure-server',
-        'add-mcp-server'    => 'tools:add-mcp-server',
-        'remove-mcp-server' => 'tools:remove-mcp-server',
-        'list-mcp-servers'  => 'tools:list-mcp-servers',
-        'assign'            => 'tools:assign',
-        'check-status'      => 'tools:check-status',
+        'sync'              => 'ai:tools:sync',
+        'list'              => 'ai:tools:list',
+        'configure'         => 'ai:tools:configure',
+        'configure-server'  => 'ai:tools:configure-server',
+        'add-mcp-server'    => 'ai:tools:add-mcp-server',
+        'remove-mcp-server' => 'ai:tools:remove-mcp-server',
+        'list-mcp-servers'  => 'ai:tools:list-mcp-servers',
+        'assign'            => 'ai:tools:assign',
+        'check-status'      => 'ai:tools:check-status',
     ];
 
     if ($subCommand === 'help') {
@@ -50,8 +50,8 @@ function handleModelsCommand(array $flags): void
     $remaining  = array_slice($flags, 1);
 
     $map = [
-        'sync'         => 'models:sync',
-        'list'         => 'models:list',
+        'sync'         => 'ai:models:sync',
+        'list'         => 'ai:models:list',
         'check-status' => 'check:model-status',
     ];
 

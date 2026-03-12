@@ -35,7 +35,7 @@ class ConfigureMcpServer extends Command
                 $changed = true;
                 $this->info("  ✓ URL → <fg=cyan>{$newUrl}</>");
                 $this->warn("  ⚠ URL changed — existing tools may no longer match this server.");
-                $this->line("    Run <comment>php artisan tools:sync --mcp-only --force</comment> to re-discover tools.");
+                $this->line("    Run <comment>php artisan ai:tools:sync --mcp-only --force</comment> to re-discover tools.");
             }
         }
 
