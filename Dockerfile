@@ -50,6 +50,10 @@ COPY --chmod=755 --chown=www-data:www-data docker/app/dev.command.sh /usr/bin/de
 # -----------------------------------------------------
 FROM app_root AS app_prod
 
+# Allow the build process to inject a custom cache buster
+ARG CACHE_BUSTER=default
+ENV APP_CACHE_BUSTER=${CACHE_BUSTER}
+
 COPY --chown=www-data:www-data docker/app /container/custom
 
 # Install the composer dependencies, without running any scripts, this allows us to install the dependencies
