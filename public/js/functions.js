@@ -66,3 +66,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Observe the entire body for added nodes
     observer.observe(document.body, { childList: true, subtree: true });
 });
+
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".hint-btn").forEach(el => {
+        el.addEventListener("click", function (e) {
+            const hintBox = document.getElementById(el.dataset.hintId);
+            hintBox.classList.toggle('active');
+        })
+    })
+})

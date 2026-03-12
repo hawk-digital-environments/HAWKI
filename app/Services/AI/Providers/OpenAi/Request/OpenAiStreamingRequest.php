@@ -12,62 +12,135 @@ use App\Services\AI\Value\AiResponse;
 class OpenAiStreamingRequest extends AbstractRequest
 {
     use OpenAiUsageTrait;
-    
+
     public function __construct(
         private array    $payload,
         private \Closure $onData
     )
     {
     }
-    
+
     public function execute(AiModel $model): void
     {
         $this->payload['stream'] = true;
-        $this->payload['stream_options'] = [
-            'include_usage' => true,
-        ];
-        
         $this->executeStreamingRequest(
             model: $model,
             payload: $this->payload,
             onData: $this->onData,
-            chunkToResponse: [$this, 'chunkToResponse']
+            chunkToResponse: [$this, 'chunkToResponse'],
+            timeout: 360
         );
     }
-    
+
     protected function chunkToResponse(AiModel $model, string $chunk): AiResponse
     {
-        $jsonChunk = json_decode($chunk, true, 512, JSON_THROW_ON_ERROR);
-        
+
+        // Parse the event JSON
+        $jsonChunk = json_decode($chunk, true);
+        if (!$jsonChunk) {
+            return $this->createErrorResponse('Invalid JSON chunk received.');
+        }
+
         if (isset($jsonChunk['error'])) {
             return $this->createErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
         }
-        
+        $type = $jsonChunk['type'] ?? '';
+
         $content = '';
         $isDone = false;
         $usage = null;
-        
-        // Check for the finish_reason flag
-        if (isset($jsonChunk['choices'][0]['finish_reason']) && $jsonChunk['choices'][0]['finish_reason'] === 'stop') {
-            $isDone = true;
+        $toolCalls = null;
+        $finishReason = null;
+        $status = null;
+        $statusKey = null;
+        $responseType = 'message';
+
+        switch ($type) {
+            // The main streaming text deltas
+            case 'response.output_text.delta':
+                $content = $jsonChunk['delta'] ?? '';
+                break;
+
+            // When the whole response is done
+            case 'response.completed':
+                $isDone = true;
+                $response = $jsonChunk['response'] ?? [];
+
+                // Extract usage
+                if (!empty($response['usage'])) {
+                    $usage = $this->extractUsage($model, $response);
+                }
+
+                // Parse tool calls from output array
+                if (!empty($response['output'])) {
+                    $toolCalls = $this->parseToolCalls($response['output']);
+                    if (!empty($toolCalls)) {
+                        $finishReason = 'tool_calls';
+                    }
+                }
+                break;
+
+            // Optional: handle created/in_progress etc. for logging/debugging
+            case 'response.created':
+            case 'response.in_progress':
+                $responseType = 'status';
+                $status = 'in_progress';
+                $statusKey = 'reasoning';
+                break;
+            case 'response.output_item.added':
+            case 'response.output_item.done':
+                $responseType = 'status';
+                $status = $jsonChunk['item.type'] ?? '';
+                $statusKey = 'reasoning';
+            case 'response.content_part.added':
+            case 'response.function_call_arguments.delta':
+            case 'response.function_call_arguments.done':
+                // No text content, just metadata events
+                break;
+
+            default:
+                // Unknown or unsupported type — ignore or log it
+                break;
         }
-        
-        // Extract usage data if available
-        if (!empty($jsonChunk['usage'])) {
-            $usage = $this->extractUsage($model, $jsonChunk);
-        }
-        
-        // Extract content if available
-        if (isset($jsonChunk['choices'][0]['delta']['content'])) {
-            $content = $jsonChunk['choices'][0]['delta']['content'];
-        }
-        
+
         return new AiResponse(
             content: [
                 'text' => $content,
             ],
             usage: $usage,
-            isDone: $isDone
+            isDone: $isDone,
+            toolCalls: $toolCalls,
+            finishReason: $finishReason,
+            type: $responseType,
+            status: [
+                        'key' => $statusKey,
+                        'value' => $status,
+                    ],
+
         );
+    }
+
+    /**
+     * Parse tool calls from Response API output array
+     */
+    private function parseToolCalls(array $output): array
+    {
+        $toolCalls = [];
+
+        foreach ($output as $item) {
+            if (($item['type'] ?? '') === 'function_call' && ($item['status'] ?? '') === 'completed') {
+                $arguments = json_decode($item['arguments'] ?? '{}', true);
+
+                $toolCalls[] = new \App\Services\AI\Tools\Value\ToolCall(
+                    id: $item['call_id'] ?? $item['id'] ?? 'unknown',
+                    type: 'function',
+                    name: $item['name'] ?? 'unknown',
+                    arguments: $arguments,
+                    index: null
+                );
+            }
+        }
+
+        return $toolCalls;
     }
 }

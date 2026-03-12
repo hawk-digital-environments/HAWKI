@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers\OpenAi;
 
 use App\Models\Attachment;
+use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 #[Singleton]
 readonly class OpenAiRequestConverter
 {
+    use ToolAwareConverter;
+
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
     )
@@ -41,17 +44,16 @@ readonly class OpenAiRequestConverter
         // Build payload with common parameters
         $payload = [
             'model' => $modelId,
-            'messages' => $formattedMessages,
-            'stream' => isset($rawPayload['stream']) && $model->hasTool('stream'),
+            'input' => $formattedMessages,
+            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
         ];
 
         // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['temperature'])) {
-            $payload['temperature'] = $rawPayload['temperature'];
+        if (isset($rawPayload['params']['temperature'])) {
+            $payload['temperature'] = $rawPayload['params']['temperature'];
         }
-
-        if (isset($rawPayload['top_p'])) {
-            $payload['top_p'] = $rawPayload['top_p'];
+        if (isset($rawPayload['params']['top_p'])) {
+            $payload['top_p'] = $rawPayload['params']['top_p'];
         }
 
         if (isset($rawPayload['frequency_penalty'])) {
@@ -62,39 +64,134 @@ readonly class OpenAiRequestConverter
             $payload['presence_penalty'] = $rawPayload['presence_penalty'];
         }
 
-        if($modelId === 'gpt-5'){
-            $payload['verbosity'] = "low";
-            $payload["reasoning_effort"] = "minimal";
+        // Add tools if not disabled
+        $disableTools = $this->shouldDisableTools($rawPayload);
+        if (!$disableTools && !empty($rawPayload['tools'])) {
+            $tools = [];
 
+            // Check if model has native web_search capability
+            $webSearchValue = $model->getCapabilityStrategy('web_search');
+            if ($model->hasCapability('web_search') && $webSearchValue === 'native') {
+                if (in_array('web_search', $rawPayload['tools'], true)) {
+                    $tools[] = [
+                        "type"=> "web_search",
+                        "external_web_access"=> true
+                    ];
+                }
+            }
+
+            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
+            foreach ($toolDefinitions as $toolDef) {
+                $tools[] = $toolDef->toOpenAiResponseFormat();
+            }
+
+            if (!empty($tools)) {
+                $payload['tools'] = $tools;
+            }
         }
 
+        if($modelId === 'gpt-5'){
+            $payload["text"]["verbosity"] = "low";
+            $payload["reasoning"]["effort"] = "medium";
+        }
         return $payload;
     }
 
-    private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
-    {
+    private function formatMessage(
+        array $message,
+        array $attachmentsMap,
+        AiModel $model
+    ): array {
+        $role = $message['role'];
+
+
+        $instructions = 'IMPORTANT: When using the tool results, always mention the references and url as inline citation';
+
+        // Handle tool result messages - Response API requires them as user messages
+        if ($role === 'tool') {
+            return [
+                'role' => 'user',
+                'content' => [
+                    [
+                        'type' => 'input_text',
+                        'text' => 'AiTool result for ' . ($message['tool_call_id'] ?? 'unknown'). $instructions . ': ' . $message['content'],
+                    ]
+                ],
+            ];
+        }
+
+        // Handle assistant messages with tool_calls
+        // Response API doesn't support tool_calls in input, so convert to output_text
+        if ($role === 'assistant' && isset($message['tool_calls'])) {
+            $toolCallSummary = [];
+            foreach ($message['tool_calls'] as $tc) {
+                $functionName = is_array($tc) ? ($tc['function']['name'] ?? 'unknown') : $tc->name;
+                $toolCallSummary[] = 'Called function: ' . $functionName;
+            }
+
+            return [
+                'role' => 'assistant',
+                'content' => [
+                    [
+                        'type' => 'output_text',
+                        'text' => implode(', ', $toolCallSummary),
+                    ]
+                ],
+            ];
+        }
+
         $formatted = [
-            'role' => $message['role'],
-            'content' => []
+            'role' => $role,
+            'content' => [],
         ];
 
         $content = $message['content'] ?? [];
 
-        // Add text if present
-        if (!empty($content['text'])) {
-            $formatted['content'][] = [
-                'type' => 'text',
-                'text' => $content['text'],
-            ];
+        /**
+         * USER MESSAGES
+         */
+        if ($role === 'user' || $role === 'system') {
+
+            if (!empty($content['text'])) {
+                $formatted['content'][] = [
+                    'type' => 'input_text',
+                    'text' => $content['text'],
+                ];
+            }
+
+            if (!empty($content['attachments'])) {
+                $this->processAttachments(
+                    $content['attachments'],
+                    $attachmentsMap,
+                    $model,
+                    $formatted['content']
+                );
+            }
+
+            return $formatted;
         }
 
-        // Handle attachments with permission checks
-        if (!empty($content['attachments'])) {
-            $this->processAttachments($content['attachments'], $attachmentsMap, $model, $formatted['content']);
+        /**
+         * ASSISTANT MESSAGES (history replay)
+         */
+        if ($role === 'assistant') {
+
+            if (!empty($content['text'])) {
+                $formatted['content'][] = [
+                    'type' => 'output_text',
+                    'text' => $content['text'],
+                ];
+            }
+
+            return $formatted;
         }
 
-        return $formatted;
+        /**
+         * SAFETY FALLBACK
+         */
+        throw new \InvalidArgumentException("Unsupported role: {$role}");
     }
+
 
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
     {
@@ -140,25 +237,25 @@ readonly class OpenAiRequestConverter
         }
     }
 
-    private function processImageAttachment(Attachment $attachment, AttachmentService $attachmentService): array
-    {
-        try {
-            $file = $attachmentService->retrieve($attachment);
-            $imageData = base64_encode($file);
-            return [
-                'type' => 'image_url',
-                'image_url' => [
-                    'url' => "data:{$attachment->mime};base64,{$imageData}",
-                ]
-            ];
-        } catch (\Exception $e) {
-            Log::error('Failed to process image attachment: ' . $e->getMessage());
-            return [
-                'type' => 'text',
-                'text' => '[ERROR: Could not process image attachment: ' . $attachment->name . ']'
-            ];
-        }
+    private function processImageAttachment(
+        Attachment $attachment,
+        AttachmentService $attachmentService
+    ): array {
+        // Retrieve raw binary image data
+        $binary = $attachmentService->retrieve($attachment);
+
+        // Detect mime type (important for vision models)
+        $mime = $attachment->mime_type ?? 'image/png';
+
+        // Encode as base64 data URL
+        $base64 = base64_encode($binary);
+
+        return [
+            'type' => 'input_image',
+            'image_url' => "data:{$mime};base64,{$base64}",
+        ];
     }
+
 
     private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
@@ -166,13 +263,13 @@ readonly class OpenAiRequestConverter
             $fileContent = $attachmentService->retrieve($attachment, 'md');
             $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
             return [
-                'type' => 'text',
+                'type' => 'input_text',
                 'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---"
             ];
         } catch (\Exception $e) {
             Log::error('Failed to process document attachment: ' . $e->getMessage());
             return [
-                'type' => 'text',
+                'type' => 'input_text',
                 'text' => '[ERROR: Could not process document attachment: ' . $attachment->name . ']'
             ];
         }

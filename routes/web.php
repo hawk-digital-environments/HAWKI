@@ -7,6 +7,7 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\LinkPreviewController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
@@ -105,6 +106,8 @@ Route::middleware('prevent_back')->group(function () {
             Route::delete('/req/conv/attachment/delete', [AiConvController::class, 'deleteAttachment']);
             Route::post('/req/streamAI', [StreamController::class, 'handleAiConnectionRequest']);
 
+            // LINK PREVIEW
+            Route::post('/api/link-preview', [LinkPreviewController::class, 'getPreview']);
 
             // GROUPCHAT ROUTES
             Route::get('/groupchat/{slug?}', [HomeController::class, 'index']);

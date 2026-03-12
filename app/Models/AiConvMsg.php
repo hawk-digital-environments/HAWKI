@@ -23,6 +23,10 @@ class AiConvMsg extends Model
         'tag',
         'content',
         'completion',
+        'metadata'
+    ];
+    protected $casts = [
+        'metadata' => 'array',
     ];
 
     // Define the relationship with AiConv
@@ -62,6 +66,7 @@ class AiConvMsg extends Model
                 ],
                 'attachments' => $this->attachmentsAsArray(),
             ],
+            'metadata' => $this->metadata,
             'completion' => $this->completion,
             'created_at' => $this->created_at->format('Y-m-d+H:i'),
             'updated_at' => $this->updated_at->format('Y-m-d+H:i'),
@@ -100,4 +105,9 @@ class AiConvMsg extends Model
         })->toArray();
     }
 
+
+    public function getMetadata(): ?array
+    {
+        return $this->metadata;
+    }
 }

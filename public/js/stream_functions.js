@@ -6,8 +6,7 @@ function buildRequestObject(msgAttributes, onData) {
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
     const isUpdate = msgAttributes['regenerationElement'] ? true : false;
     const msgID = msgAttributes['regenerationElement'] ? msgAttributes['regenerationElement'].id : null;
-
-    const stream = activeModel.tools.stream ? msgAttributes['stream'] : false;
+    const stream = activeModel.capabilities.stream ? msgAttributes['stream'] : false;
 
     const requestObject = {
         broadcast: msgAttributes['broadcasting'],
@@ -20,10 +19,11 @@ function buildRequestObject(msgAttributes, onData) {
         key: msgAttributes['key'],
 
         payload:{
-            model: activeModel.id,
+            model: msgAttributes.model ?? activeModel.id,
             stream: stream,
             messages: msgs,
-            tools: msgAttributes['tools'],
+            tools: msgAttributes['metadata']?.tools ?? null,
+            params: msgAttributes['metadata']?.params ?? null,
         }
     };
 
@@ -47,7 +47,7 @@ function buildRequestObject(msgAttributes, onData) {
     })
     .catch(error => {
         console.error('Error:', error);
-        onData(null, true); // Call onData with done=true if there's an error
+        if (onData) onData(null, true);
     });
 }
 
@@ -229,11 +229,18 @@ async function requestPromptImprovement(sender, type) {
     if(type === 'input'){
         inputField = sender.closest('.input').querySelector('.input-field');
         prompt = inputField.value.trim();
+        if(prompt === ''){
+            return;
+        }
+
         await smoothDeleteWords(inputField, 700)
     }
     if(type === 'message'){
         message = sender.closest('.message').querySelector('.message-content');
         prompt = message.innerText.trim();
+        if(prompt === ''){
+            return;
+        }
     }
 
     const requestObject = {

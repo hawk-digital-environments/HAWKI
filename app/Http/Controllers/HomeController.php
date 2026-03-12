@@ -43,11 +43,9 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-
         // Call getTranslation method from LanguageController
         $translation = $this->languageController->getTranslation();
         $settingsPanel = (new SettingsService())->render();
-
 
         // get the first part of the path if there's a slug.
         $requestModule = explode('/', $request->path())[0];
@@ -74,19 +72,37 @@ class HomeController extends Controller
         Session::put('last-route', 'home');
 
         $models = $this->aiService->getAvailableModels()->toArray();
-        $webSearchAvailable = false;
 
+        // Native capability flags describe the model itself; they are not user-selectable tools.
+        $capabilityFlags = ['stream', 'file_upload', 'vision', 'tool_calling'];
+
+        $toolKit = [];
         foreach ($models['models'] as $model) {
-            if (!empty($model['tools']['web_search'])) {
-                $webSearchAvailable = true;
-                break;
+            if (!empty($model['capabilities']) && is_array($model['capabilities'])) {
+                foreach ($model['capabilities'] as $capability => $value) {
+                    if (in_array($capability, $capabilityFlags, true)) {
+                        continue;
+                    }
+                    if ($value !== false && $value !== 'unsupported') {
+                        $toolKit[] = $capability;
+                    }
+                }
             }
         }
+        $toolKit = array_values(array_unique($toolKit));
 
+        // Build capability → display label map.
+        // Priority: 1) translation key  2) formatted capability name
+        // Note: AiTool::description is the LLM-facing schema description, not a UI label.
+        $toolKitLabels = [];
+        foreach ($toolKit as $capability) {
+            $toolKitLabels[$capability] = !empty($translation['Tool_' . $capability])
+                ? $translation['Tool_' . $capability]
+                : ucwords(str_replace('_', ' ', $capability));
+        }
         $announcements = $announcementService->getUserAnnouncements();
 
         $converterActive = FileConverterFactory::converterActive();
-
 
         // Pass translation, authenticationMethod, and authForms to the view
         return view('modules.' . $requestModule,
@@ -98,7 +114,8 @@ class HomeController extends Controller
                             'activeModule',
                             'activeOverlay',
                             'models',
-                            'webSearchAvailable',
+                            'toolKit',
+                            'toolKitLabels',
                             'announcements',
                             'converterActive',
                         ));

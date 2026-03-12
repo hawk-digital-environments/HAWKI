@@ -63,11 +63,11 @@ function onSendClickConv(btn){
 // SEND MESSAGE FUNCTION
 async function sendMessageConv(inputField) {
     // block empty input field.
-    if (inputField.value.trim() == "") {
+    if (inputField.value.trim() === "") {
         return;
     }
     const input = inputField.closest('.input');
-    inputText = String(escapeHTML(inputField.value.trim()));
+    let inputText = String(escapeHTML(inputField.value.trim()));
 
     setSendBtnStatus(SendBtnStatus.LOADING);
 
@@ -85,6 +85,8 @@ async function sendMessageConv(inputField) {
     const ciphertext = cryptoMsg.ciphertext;
     const iv = cryptoMsg.iv;
     const tag = cryptoMsg.tag;
+
+
 
     /// Submit Message to server.
     const messageObj = {
@@ -121,12 +123,10 @@ async function sendMessageConv(inputField) {
     messageElement.dataset.rawMsg = submissionData.content.text;
     scrollToLast(true, messageElement);
 
-    const webSearchBtn = inputField.closest('.input-container').querySelector('#websearch-btn') ?? null;
-    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
-
-    const tools = {
-        'web_search': webSearchActive
-    }
+    const tools = input
+        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
+            tog => tog.dataset.reference
+        ): [];
 
     const msgAttributes = {
         'threadIndex': activeThreadIndex,
@@ -134,9 +134,12 @@ async function sendMessageConv(inputField) {
         'slug': '',
         'stream': true,
         'model': activeModel.id,
-        'tools': tools
+        'metadata': {
+            'tools' : tools,
+            'params': activeModel.params,
+        },
     }
-
+    console.log(msgAttributes);
     buildRequestObjectForAiConv(msgAttributes);
 }
 
@@ -151,13 +154,13 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
     buildRequestObject(msgAttributes, async (data, done) => {
 
         if(data){
-
+            console.log(data);
             if(!msgAttributes['broadcasting'] && msgAttributes['stream']){
                 setSendBtnStatus(SendBtnStatus.STOPPABLE);
             }
 
             const {messageText, groundingMetadata} = deconstContent(data.content);
-            if(groundingMetadata != ""){
+            if(groundingMetadata !== ""){
                 metadata = groundingMetadata;
             }
 
@@ -168,12 +171,20 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             messageObj.content = content;
             messageObj.completion = data.isDone;
             messageObj.model = msgAttributes['model'];
+            messageObj.tools = msgAttributes['metadata'].tools;
+            messageObj.params = msgAttributes['metadata'].params;
 
             if (!messageElement) {
                 initializeMessageFormating()
                 messageElement = addMessageToChatlog(messageObj, false);
             }
             messageElement.dataset.rawMsg = msg;
+
+            if(data.type === "status"){
+                createStatusElement(data.status, messageElement);
+                return;
+            }
+
 
             const msgTxtElement = messageElement.querySelector(".message-text");
 
@@ -182,7 +193,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
             formatHljs(messageElement);
 
             if (groundingMetadata &&
-                groundingMetadata != '' &&
+                groundingMetadata !== '' &&
                 groundingMetadata.searchEntryPoint &&
                 groundingMetadata.searchEntryPoint.renderedContent) {
 
@@ -196,7 +207,9 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
 
             if(messageElement.querySelector('.think')){
-                scrollPanelToLast(messageElement.querySelector('.think').querySelector('.content-container'));
+                messageElement.querySelectorAll('.think').forEach(el => {
+                    scrollPanelToLast(el.querySelector('.content-container'));
+                })
             }
 
             scrollToLast(false, messageElement);
@@ -229,15 +242,20 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
                         'tag': messageObj.tag,
                     }
                 },
+                'metadata': {
+                    'tools' : messageObj.tools,
+                    'params': msgAttributes['metadata']?.params ?? null,
+                },
+
                 'model': messageObj.model,
                 'completion': messageObj.completion,
             }
+            console.log(requestObj);
             if(isUpdate){
                 requestObj.message_id = messageElement.id;
                 await requestMsgUpdate(requestObj, messageElement, `/req/conv/updateMessage/${activeConv.slug}`)
             }
             else{
-                requestObj.isAi = true;
                 const submittedObj = await submitMessageToServer(requestObj, `/req/conv/sendMessage/${activeConv.slug}`);
 
                 submittedObj.content = cryptoContent;
@@ -468,9 +486,8 @@ async function loadConv(btn=null, slug=null){
     const msgs = convData.messages;
     for (const msg of msgs) {
         const decryptedContent =  await decryptWithSymKey(convKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-        // msg.content = [];
         msg.content.text = decryptedContent;
-    };
+    }
 
     if(msgs.length > 0){
         chatlogElement.classList.remove('start-state');

@@ -374,6 +374,7 @@ button:disabled{
     text-align: start;
     overflow: hidden;
     text-wrap: nowrap;
+    white-space: nowrap;
 }
 
 .btn-md-txt{
@@ -499,7 +500,7 @@ button:disabled{
     align-items: center;
     justify-content: end;
     height: 100%;
-    padding: .2rem 2rem;
+    padding: .2rem 1rem .2rem .5rem;
     box-sizing: border-box;
     width: fit-content;
     background-color: transparent;
@@ -523,6 +524,7 @@ button:disabled{
     font-size: var(--font-xs);
     text-align: end;
     text-wrap: nowrap;
+    white-space: nowrap;
     align-content: center;
     box-sizing: border-box;
 }
@@ -563,6 +565,7 @@ button:disabled{
     transition: background-color var(--transition-fast);
     border: none;
     text-wrap: nowrap;
+    white-space: nowrap;
     z-index: 99;
     transition: font-weight 0.05s;
 }
@@ -593,6 +596,7 @@ button:disabled{
 .menu-item .label{
     flex: 1;
     text-wrap: nowrap;
+    white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
 }
@@ -721,6 +725,7 @@ button:disabled{
     line-height: 0;
     padding: 0 1rem;
     text-wrap: nowrap;
+    white-space: nowrap;
     cursor: none;
     background-color: var(--background-secondary);
     border: var(--border-stroke-hairline);
@@ -733,10 +738,9 @@ button:disabled{
     transform: translateY(-50%);
 }
 .tt-abs-up{
-    right:0;
-    bottom: calc(100% - 1.5rem);
+    top: -1.5rem;
+    right: -150%;
 }
-
 
 
 /* SECTION: EDIT BUTTONS PANEL */

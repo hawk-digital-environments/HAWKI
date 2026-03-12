@@ -15,6 +15,11 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     // set dataset attributes
     messageElement.dataset.role = messageObj.message_role;
     messageElement.dataset.rawMsg = messageText;
+    if(messageObj.metadata){
+        const meta = messageObj.metadata;
+        messageElement.dataset.tools = JSON.stringify(meta.tools ?? []);
+        messageElement.dataset.params = JSON.stringify(meta.params ?? {});
+    }
     // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
 
     //if date and time is confirmed from the server add them
@@ -146,12 +151,14 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     if(!messageElement.classList.contains('AI')){
         let processedContent = detectMentioning(messageText).modifiedText;
         processedContent = convertHyperlinksToLinks(processedContent);
+        processedContent = wrapLinksInBlocks(processedContent);
         msgTxtElement.innerHTML = processedContent;
     }
     else{
         let markdownProcessed = formatMessage(messageText, groundingMetadata);
         msgTxtElement.innerHTML = markdownProcessed;
         formatMathFormulas(msgTxtElement);
+        formatHljs(messageElement);
 
         if (groundingMetadata &&
             groundingMetadata != '' &&
@@ -232,10 +239,15 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 function updateMessageElement(messageElement, messageObj, updateContent = false){
 
     messageElement.id = messageObj.message_id;
+    if(messageObj.metadata){
+        const meta = messageObj.metadata;
+        messageElement.dataset.tools = JSON.stringify(meta.tools ?? []);
+        messageElement.dataset.params = JSON.stringify(meta.params ?? {});
+    }
+
     if(messageElement.querySelector('.thread')){
         messageElement.querySelector('.thread').id = messageObj.message_id.split('.')[0];
         messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0]
-
     }
 
     if(messageElement.classList.contains('me')){
@@ -269,13 +281,17 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
         messageElement.dataset.rawMsg = messageText;
         if(messageObj.message_role === "user"){
             const filteredContent = detectMentioning(messageText);
-            msgTxtElement.innerHTML = filteredContent.modifiedText;
+            let processedContent = filteredContent.modifiedText;
+            processedContent = convertHyperlinksToLinks(processedContent);
+            processedContent = wrapLinksInBlocks(processedContent);
+            msgTxtElement.innerHTML = processedContent;
         }
         else{
 
             let markdownProcessed = formatMessage(messageText, groundingMetadata);
             msgTxtElement.innerHTML = markdownProcessed;
             formatMathFormulas(msgTxtElement);
+            formatHljs(messageElement);
             if (groundingMetadata &&
                 groundingMetadata != '' &&
                 groundingMetadata.searchEntryPoint &&
@@ -730,85 +746,7 @@ async function confirmEditMessage(provider){
 
 //#endregion
 
-//#region MSG_CTL: REGENERATE
 
-async function onRegenerateBtn(btn){
-    btn.disabled = true;
-    btn.style.opacity = '.2';
-    const messageElement = btn.closest('.message');
-
-    regenerateMessage(messageElement, async(Done)=>{
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    });
-}
-
-async function regenerateMessage(messageElement, Done = null){
-    if(!messageElement.classList.contains('AI')){
-        return;
-    }
-    const threadIndex = messageElement.closest('.thread').id;
-
-    //reset message content
-    messageElement.querySelector('.message-text').innerHTML = '';
-    messageElement.dataset.rawMsg = '';
-    initializeMessageFormating();
-
-    let inputContainer;
-    if(threadIndex == 0){
-        inputContainer = document.querySelector(`.input[id="0"]`).closest('.input-container');
-    }
-    else{
-        inputContainer = messageElement.closest('.thread').querySelector('.input-container');
-    }
-    const webSearchBtn = inputContainer.querySelector('#websearch-btn') ?? null;
-    const webSearchActive = webSearchBtn ? webSearchBtn.classList.contains('active') : false;
-
-    const tools = {
-        'web_search': webSearchActive
-    }
-
-    let msgAttributes = {};
-    switch(activeModule){
-        case('chat'):
-            msgAttributes = {
-                'threadIndex': threadIndex,
-                'broadcasting': false,
-                'slug': '',
-                'regenerationElement': messageElement,
-                'stream': activeModel.tools.stream ? true : false,
-                'model': activeModel.id,
-                'tools': tools
-            }
-
-            await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
-                if(Done){
-                    Done(true);
-                }
-            });
-        break;
-        case('groupchat'):
-            const roomKey = await keychainGet(activeRoom.slug);
-            const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
-            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-            const aiKeyRaw = await exportSymmetricKey(aiKey);
-            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
-
-            msgAttributes = {
-                'threadIndex': threadIndex,
-                'broadcasting': true,
-                'slug': activeRoom.slug,
-                'key': aiKeyBase64,
-                'regenerationElement': messageElement,
-                'stream': false,
-                'model': activeModel.id,
-                'tools': tools
-            }
-            buildRequestObject(msgAttributes,  async (updatedText, done) => {});
-        break;
-    }
-}
-//#endregion
 
 //#region MSG_CTL: TTS
 
@@ -864,7 +802,498 @@ function messageReadAloud(provider) {
         }
     };
 }
-
-
-
 //#endregion
+
+
+//#region MSG_CTL: REGENERATE
+
+async function onRegenerateBtn(btn){
+    openRegenerateDropDown(btn);
+}
+
+let regenerateState = {
+    messageElement: null,
+    model: null,
+    tools: new Set(),
+    params: []
+};
+let menu;
+let regenerateButtonRef = null;
+
+function openRegenerateDropDown(sender){
+    menu = document.getElementById('regenerate-controls');
+    regenerateButtonRef = sender;
+    const btnRect = sender.getBoundingClientRect();
+
+    menu.style.top = `${btnRect.bottom}px`;
+    menu.style.left = `${btnRect.left}px`;
+    sender.classList.add('active');
+    menu.style.display = `block`;
+
+    setTimeout(() => {
+        menu.style.width = `${menu.getBoundingClientRect().width + 10}px`;
+        menu.style.opacity = `1`;
+    }, 50);
+
+    const msgElement = sender.closest(".message");
+
+    regenerateState.messageElement = msgElement;
+    const modelId = msgElement.dataset.model;
+    const model = modelsList.find(m => m.id === modelId);
+    regenerateState.model = model || activeModel;
+    const msgTools = JSON.parse(msgElement.dataset.tools);
+    let tools = [];
+    let missingTools = [];
+    msgTools.forEach(msgTool => {
+        if(toolKit.includes(msgTool)){
+            tools.push(msgTool);
+        }
+        else{
+            missingTools.push(msgTool);
+        }
+    })
+    regenerateState.tools = new Set(tools);
+
+    if(missingTools.length > 0){
+        menu.querySelector('#expired-tool-warning').style.display = 'block';
+        menu.querySelector('#expired-tool-warning')
+            .querySelector('.expired-tool-name').innerText = missingTools.join(', ');
+    }
+    else{
+        menu.querySelector('#expired-tool-warning').style.display = 'none';
+    }
+
+
+    const storedParams = JSON.parse(msgElement.dataset.params || '{}');
+    regenerateState.params = {
+        temperature: storedParams.temperature ?? activeModel.params?.temperature ?? null,
+        top_p: storedParams.top_p ?? activeModel.params?.top_p ?? null,
+    };
+    // Initialize regeneration filters based on current tools
+    setRegenerationFilters(Array.from(regenerateState.tools));
+
+    initModelSubMenu(regenerateState.model);
+    initToolSubMenu(regenerateState.tools);
+    initParamsSubMenu(regenerateState.params);
+
+    bindRegenerateMenuEvents();
+    updateIndicators();
+
+    // Apply initial model filtering based on current tools
+    refreshModelList(null, 'regeneration');
+
+    // Add outside click listener after a small delay to prevent immediate closing
+    setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+    }, 100);
+}
+
+
+function bindRegenerateMenuEvents(){
+
+    menu.querySelectorAll('.reg-submenu-btn')
+        .forEach(btn => {
+            btn.onclick = () => {
+                toggleSubMenu(btn.getAttribute('reference'));
+            };
+        })
+
+    menu.querySelectorAll('.model-selector')
+        .forEach(btn => {
+            btn.onclick = handleModelSelection;
+        });
+
+    menu.querySelectorAll('.tool-selector')
+        .forEach(btn => {
+            btn.onclick = handleToolToggle;
+        });
+
+    menu.querySelector('.confirm')
+        .onclick = handleRegenerateClick;
+}
+function updateIndicators(){
+    const modelId = typeof regenerateState.model === 'string' ? regenerateState.model : regenerateState.model?.id;
+    const modelLabel = typeof regenerateState.model === 'string'
+        ? modelsList.find(m => m.id === modelId)?.label || modelId
+        : regenerateState.model?.label || modelId;
+
+    menu.querySelector('.reg-submenu-btn[reference="models-list"]')
+        .querySelector('.indicator').innerText = modelLabel || '';
+    menu.querySelector('.reg-submenu-btn[reference="tools-list"]')
+        .querySelector('.indicator').innerText = regenerateState.tools.size;
+}
+
+
+function initModelSubMenu(model) {
+    const selectors = menu.querySelectorAll('.model-selector');
+    const modelId = typeof model === 'string' ? model : model?.id;
+
+    selectors.forEach(btn => {
+        btn.classList.toggle(
+            'active',
+            btn.dataset.modelId === modelId
+        );
+    });
+}
+function handleModelSelection(e){
+    const btn = e.currentTarget;
+
+    // Prevent selecting disabled models
+    if (btn.disabled) {
+        return;
+    }
+
+    btn.parentElement
+        .querySelectorAll('.model-selector.active')
+        .forEach(el => el.classList.remove('active'));
+
+    btn.classList.add('active');
+    regenerateState.model = JSON.parse(btn.value);
+    updateIndicators();
+}
+
+
+function initToolSubMenu(tools){
+    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('active')});
+    tools.forEach(tool => {
+        const btn = menu.querySelector(`.tool-selector[data-reference="${tool}"]`);
+        btn.classList.add('active');
+    });
+}
+function handleToolToggle(e){
+    const btn = e.currentTarget;
+    const tool = btn.dataset.reference;
+
+    btn.classList.toggle('active');
+
+    if (btn.classList.contains('active')) {
+        regenerateState.tools.add(tool);
+        addRegenerationFilter(tool);
+    } else {
+        regenerateState.tools.delete(tool);
+        removeRegenerationFilter(tool);
+    }
+
+    // Check if current model is still compatible
+    const updatedModel = refreshRegenerationModelList(regenerateState.model);
+
+    if (updatedModel && updatedModel !== regenerateState.model) {
+        // Model was changed to a fallback
+        regenerateState.model = updatedModel;
+        initModelSubMenu(updatedModel);
+    } else if (!updatedModel) {
+        // No compatible models found - revert tool selection
+        btn.classList.toggle('active');
+        if (btn.classList.contains('active')) {
+            regenerateState.tools.add(tool);
+            addRegenerationFilter(tool);
+        } else {
+            regenerateState.tools.delete(tool);
+            removeRegenerationFilter(tool);
+        }
+
+        // Show error message in menu
+        showRegenerationError(translation.Input_Err_FilterConflict || 'No compatible models available for selected tools');
+        return;
+    }
+
+    // Refresh the model list UI (enable/disable buttons)
+    refreshModelList(null, 'regeneration');
+    updateIndicators();
+}
+
+
+
+function initParamsSubMenu(params){
+
+    menu.querySelectorAll('input[type="range"]').forEach(el => {
+        el.addEventListener('input', () => {
+            handleSliderInput(el);
+            setParamValues(el)
+        });
+    })
+
+    setSliderValue(
+        menu.querySelector('#temperature-input'),
+        params.temperature
+    );
+    setSliderValue(
+        menu.querySelector('#top-p-input'),
+        params.top_p
+    );
+}
+function setParamValues(el){
+    if(el.dataset.param === 'temperature'){
+        regenerateState.params.temperature = parseFloat(el.value);
+    }
+    if(el.dataset.param === 'top_p'){
+        regenerateState.params.top_p = parseFloat(el.value);
+    }
+}
+
+
+
+
+function handleRegenerateClick(){
+    const { messageElement, model, tools , params} = regenerateState;
+
+    if (!model) {
+        console.error('No model selected for regeneration');
+        return;
+    }
+
+    if (!messageElement) {
+        console.error('No message element for regeneration');
+        return;
+    }
+    const metadata = {
+        'tools': Array.from(tools),
+        'params': params
+    }
+    regenerateMessage(
+        messageElement,
+        model,
+        metadata
+    );
+
+    closeRegenerateMenu();
+}
+
+function showRegenerationError(message){
+    // Find or create error message element in menu
+    let errorEl = menu.querySelector('.regeneration-error');
+
+    if (!errorEl) {
+        errorEl = document.createElement('div');
+        errorEl.className = 'regeneration-error';
+        errorEl.style.cssText = 'color: #ff4444; padding: 8px; font-size: 12px; text-align: center;';
+        menu.querySelector('.reg-wrapper').appendChild(errorEl);
+    }
+
+    errorEl.textContent = message;
+    errorEl.style.display = 'block';
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+        errorEl.style.display = 'none';
+    }, 3000);
+}
+
+function handleOutsideClick(event){
+    const menu = document.getElementById('regenerate-controls');
+
+    // Check if menu is visible
+    if (!menu || menu.style.display === 'none') {
+        return;
+    }
+
+    // Check if click is outside both the menu and the regenerate button
+    const isClickInsideMenu = menu.contains(event.target);
+    const isClickOnButton = regenerateButtonRef && regenerateButtonRef.contains(event.target);
+
+    if (!isClickInsideMenu && !isClickOnButton) {
+        closeRegenerateMenu();
+    }
+}
+function closeRegenerateMenu(){
+    menu.style.opacity = '0';
+    closeAllSubMenus();
+    setTimeout(() => {
+        menu.style.display = 'none';
+    }, 150);
+
+    // Remove active state from button
+    if (regenerateButtonRef) {
+        regenerateButtonRef.classList.remove('active');
+        regenerateButtonRef = null;
+    }
+
+    // Clear regeneration filters
+    clearRegenerationFilters();
+
+    // Remove outside click listener
+    document.removeEventListener('click', handleOutsideClick);
+
+    regenerateState = {
+        messageElement: null,
+        model: null,
+        tools: new Set(),
+        params: []
+    };
+}
+
+
+
+function toggleSubMenu(id){
+    const subMenus = menu.querySelectorAll('.sub-menu');
+    subMenus.forEach((subMenu) => {
+        if(subMenu.id === id && !subMenu.classList.contains('active')){
+            handlesSubMenuToggle(subMenu, true);
+        }
+        else{
+            handlesSubMenuToggle(subMenu, false);
+        }
+    })
+}
+
+function closeAllSubMenus(){
+    menu.querySelectorAll('.sub-menu').forEach((subMenu) => {
+        handlesSubMenuToggle(subMenu, false);
+    });
+
+}
+
+function handlesSubMenuToggle(menu, active){
+    if(active){
+        menu.style.display = 'block';
+        menu.classList.add('active');
+    }
+    else{
+        menu.classList.remove('active');
+        setTimeout(()=>{
+            menu.style.display = 'none';
+        }, 300)
+    }
+}
+
+
+async function regenerateMessage(messageElement, model, metadata, Done = null){
+    if(!messageElement.classList.contains('AI')){
+        return;
+    }
+
+    const threadIndex = messageElement.closest('.thread').id;
+
+    //reset message content
+    messageElement.querySelector('.message-text').innerHTML = '';
+    messageElement.dataset.rawMsg = '';
+    initializeMessageFormating();
+
+    let msgAttributes = {};
+    switch(activeModule){
+        case('chat'):
+            msgAttributes = {
+                'threadIndex': threadIndex,
+                'broadcasting': false,
+                'slug': '',
+                'regenerationElement': messageElement,
+                'stream': !!(model.capabilities && model.capabilities.stream),
+                'model': model.id,
+                'metadata': metadata
+            }
+
+            await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
+                if(Done){
+                    Done(true);
+                }
+            });
+            break;
+        case('groupchat'):
+            const roomKey = await keychainGet(activeRoom.slug);
+            const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+            const aiKeyRaw = await exportSymmetricKey(aiKey);
+            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
+
+            msgAttributes = {
+                'threadIndex': threadIndex,
+                'broadcasting': true,
+                'slug': activeRoom.slug,
+                'key': aiKeyBase64,
+                'regenerationElement': messageElement,
+                'stream': false,
+                'model': model.id,
+                'metadata': metadata
+            }
+            buildRequestObject(msgAttributes,  async (updatedText, done) => {});
+            break;
+    }
+}
+//#endregion
+let GEN_STAT_VIDEO_URL = null;
+document.addEventListener("DOMContentLoaded", async () => {
+    const src = darkMode === 'disabled'
+                                ? '/animations/DocSearch-lightMode.webm'
+                                : '/animations/DocSearch-darkMode.webm';
+    const response = await fetch(src);
+    const blob = await response.blob();
+    GEN_STAT_VIDEO_URL = URL.createObjectURL(blob);
+
+    const gridDotData = await fetch('/animations/Reasoning.mp4');
+    const girdBlob = await gridDotData.blob();
+    GRID_VIDEO_URL = URL.createObjectURL(girdBlob);
+
+});
+
+function createStatusElement(status, messageElement){
+
+    let statElement = messageElement.querySelector(`.gen-stat-element`);
+    //create a new element for first status
+    if(!statElement){
+        const statTemp = document.getElementById('gen-stat-template')
+        const statClone = statTemp.content.cloneNode(true);
+        statElement = statClone.querySelector(".gen-stat-element");
+        messageElement.querySelector('.message-text').appendChild(statElement);
+    }
+
+
+    let statusText = '';
+    console.log(status.key);
+    console.log(status.value);
+    if(status.key === 'tool_call' || status.key === 'max_execution'){
+        console.log('tool_calling');
+        statElement.querySelector('#grid-animation-block').classList.remove('active');
+        statElement.querySelector('video').src = GEN_STAT_VIDEO_URL
+        statElement.querySelector('video').style.display = 'flex';
+
+        // const list = JSON.parse(status);
+        const formatter = new Intl.ListFormat(activeLocale.label, {
+            style: "long",
+            type: "conjunction"
+        });
+        const value = status.value;
+        const uniqueTools = [...new Set(value)];
+
+        const toolNames = uniqueTools.map(tool => {
+            const key = `The_${tool}`;
+
+            if (translation.hasOwnProperty(key)) {
+                return translation[key];
+            }
+
+            // fallback: web_search -> Web Search
+            return tool
+                .split('_')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        });
+        const list = formatter.format(toolNames);
+        statusText = `${translation.Exec_prefix} ${list}`;
+    }
+    if(status.key === 'reasoning'){
+        console.log('reasoning');
+        statElement.querySelector('video').style.display = 'none';
+        statElement.querySelector('#grid-animation-block').classList.add('active');
+        statusText = translation['Reasoning_Msg'];
+    }
+    statElement.querySelector('.stat-txt').innerText = statusText;
+    // tripleDotAnime(statElement, statusText)
+}
+
+
+function tripleDotAnime(statElement, status){
+    // ---- Clear any existing interval ----
+    if (statElement._dotsIntervalId) {
+        clearInterval(statElement._dotsIntervalId);
+    }
+
+    const textEl = statElement.querySelector('.stat-txt');
+    let frame = 0;
+    const frames = [" ", " .", " ..", " ..."];
+
+    // ---- Start new interval and store its id ----
+    setInterval(()=> {
+        textEl.innerText = status + frames[frame];
+        frame = (frame + 1) % frames.length;
+    }, 500);
+}

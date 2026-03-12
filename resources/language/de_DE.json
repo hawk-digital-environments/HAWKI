@@ -28,7 +28,7 @@
     "Input_Err_UploadFailed": "Fehler beim Hochladen der Datei!",
     "Input_Err_NotSupported": "Dateityp wird nicht unterstützt:",
     "Input_Err_MaxSize": "Dateigröße überschreitet das zulässige Maximum.",
-    "Input_Err_FilterConflict": "You can't use the selected tools at the same time.",
+    "Input_Err_FilterConflict": "You can't use the selected tools at the same time",
 
     "Exp_Title":"SESSION-TIMEOUT",
     "Exp_MSG":"Bitte logg dich erneut ein!",
@@ -157,5 +157,30 @@
     "PH_SearchBar": "Name, Benutzername oder E-Mail eingeben",
     "Api_Warning": "Um die Sprachmodelle von HAWKI auch in anderen Anwendungen nutzen zu können, kann ein eigener API-Schlüssel generiert werden. Schreibe dazu eine E-Mail an deine IT, die den API-Key für dich generieren und dir zusenden wird.",
     "UploadFile": "Datei hochladen",
-    "Yesterday": "Gestern"
+    "Yesterday": "Gestern",
+
+    "Tools": "Werkzeuge",
+    "Add_Tool": "Werkzeug Hinzufügen",
+    "Tool_web_search": "Websuche",
+    "Tool_knowledge_base": "HAWK-Wissen",
+    "Exec_prefix": "Durchsuche",
+    "The_web_search": "das Web",
+    "The_knowledge_base": "die Vektordatenbank",
+    "Reasoning_Msg": "Vergleiche mögliche Optionen",
+
+    "Parameters": "Einstellungen",
+    "Temperature": "Temperatur",
+    "Precise" : "Präzise",
+    "Balanced": "Ausgewogen",
+    "Creative": "Kreativ",
+    "ResetToDefault": "Zurücksetzen",
+    "Presets": "Voreinstellungen",
+    "Default": "Standard",
+    "TT_Temp": "Steuert die Kreativität der Antworten der KI. Höhere Werte (z. B. 0,8) führen zu vielfältigeren und einfallsreicheren Ergebnissen; niedrigere Werte (z. B. 0,2) machen die Antworten fokussierter und vorhersehbarer.",
+    "TT_Top_P": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
+
+    "MissingToolMsg" : "Diese Nachricht wurde mit einem veralteten Tool erstellt: ",
+    "Preview_Loading": "Suche läuft...",
+    "Preview_Unavailable": "Vorschau nicht verfügbar"
+
 }

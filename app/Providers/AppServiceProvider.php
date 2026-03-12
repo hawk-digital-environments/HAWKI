@@ -11,6 +11,8 @@ use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
+use App\Services\AI\Db\AiModelSyncService;
+use App\Services\AI\Db\ToolSyncService;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\StorageServiceFactory;
@@ -19,6 +21,7 @@ use Illuminate\Console\Scheduling\Event;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
@@ -36,6 +39,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerMiddlewareAliases();
         $this->registerStorageServices();
+
+        // Register sync services as singletons so they can be resolved anywhere.
+        $this->app->singleton(AiModelSyncService::class);
+        $this->app->singleton(ToolSyncService::class);
     }
 
     /**
@@ -44,7 +51,63 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->bootWebdavStorage();
+        $this->bootAiModelSync();
         $this->bootSchedulerMacros();
+        $this->bootToolSync();
+    }
+
+    /**
+     * On the very first artisan run (e.g. after fresh migrations) automatically
+     * populate the ai_models / ai_providers tables from the config files so that
+     * operators do not have to run `php artisan models:sync` manually.
+     *
+     * For normal web requests this is a cheap no-op (table already has rows).
+     * It is guarded so that it never crashes a request even when the DB is not
+     * yet available (e.g. during the initial `migrate` run itself).
+     */
+    protected function bootAiModelSync(): void
+    {
+        // Only auto-sync when running CLI commands, not on every web request.
+        if (!$this->app->runningInConsole()) {
+            return;
+        }
+
+        try {
+            /** @var AiModelSyncService $syncService */
+            $syncService = $this->app->make(AiModelSyncService::class);
+
+            // Only sync when the table is empty (first install or after truncation).
+            if (!$syncService->isSynced()) {
+                $syncService->sync();
+            }
+        } catch (\Exception) {
+            // Silently skip — DB or tables may not exist yet (e.g. during migrate).
+        }
+    }
+
+    /**
+     * On the very first artisan run, automatically populate ai_tools from config
+     * so operators do not have to run `php artisan tools:sync` manually.
+     *
+     * Only function tools are auto-synced; MCP servers require network access and
+     * must be synced explicitly via `php artisan tools:sync`.
+     */
+    protected function bootToolSync(): void
+    {
+        if (!$this->app->runningInConsole()) {
+            return;
+        }
+
+        try {
+            /** @var ToolSyncService $syncService */
+            $syncService = $this->app->make(ToolSyncService::class);
+
+            if (!$syncService->isSynced()) {
+                $syncService->syncFunctionTools();
+            }
+        } catch (\Exception) {
+            // Silently skip — DB or tables may not exist yet (e.g. during migrate).
+        }
     }
 
     protected function registerStorageServices(): void
@@ -114,7 +177,6 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerMiddlewareAliases(): void
     {
-        // Register middleware aliases
         Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
         Route::aliasMiddleware('roomAdmin', AdminAccess::class);
         Route::aliasMiddleware('roomEditor', EditorAccess::class);

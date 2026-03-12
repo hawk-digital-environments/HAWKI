@@ -12,9 +12,17 @@ return [
             "text"
         ],
         'tools' => [
+            // Native capabilities
             'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT5_TOOLS_FILE_UPLOAD', false),
-            'vision'=> env('MODELS_OPENAI_GPT5_TOOLS_VISION', true),
+            'tool_calling' => true,
+            'file_upload' => true,
+            'vision'=> true,
+//            'web_search' => 'native',
+        ],
+        'default_params' => [
+            // OpenAI API defaults: temp=1.0, top_p=1.0
+            'temp' => env('MODELS_OPENAI_GPT5_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_OPENAI_GPT5_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -29,10 +37,19 @@ return [
             "text"
         ],
         'tools' => [
+            // Native capabilities
             'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT4_1_TOOLS_FILE_UPLOAD', false),
-            'vision'=> env('MODELS_OPENAI_GPT4_1_TOOLS_VISION', true),
+            'tool_calling' => true,
+            'file_upload' => true,
+            'vision'=> true,
 
+            // AiTool capabilities
+            'web_search' => 'native',
+        ],
+        'default_params' => [
+            // OpenAI API defaults: temp=1.0, top_p=1.0
+            'temp' => env('MODELS_OPENAI_GPT4_1_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_OPENAI_GPT4_1_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -48,8 +65,14 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_GPT4_1_NANO_TOOLS_FILE_UPLOAD', false),
-            'vision'=> env('MODELS_OPENAI_GPT4_1_NANO_TOOLS_VISION', true),
+            'tool_calling' => true,
+            'file_upload' => false,
+            'vision'=> false,
+        ],
+        'default_params' => [
+            // OpenAI API defaults: temp=1.0, top_p=1.0
+            'temp' => env('MODELS_OPENAI_GPT4_1_NANO_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_OPENAI_GPT4_1_NANO_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -65,8 +88,14 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'file_upload' => env('MODELS_OPENAI_O4_MINI_TOOLS_FILE_UPLOAD', false),
-            'vision'=> env('MODELS_OPENAI_O4_MINI_TOOLS_VISION', false),
+            'tool_calling' => true,
+            'file_upload' => false,
+            'vision'=> false,
+        ],
+        'default_params' => [
+            // Reasoning model (o-series); temperature is not tunable in the traditional sense — API defaults used
+            'temp' => env('MODELS_OPENAI_O4_MINI_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_OPENAI_O4_MINI_PARAMS_TOP_P', 1.0),
         ],
     ],
 ];
