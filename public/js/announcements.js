@@ -125,7 +125,7 @@ function showAnnouncementModal(announcement, view) {
             btnBar.appendChild(confirmBtn);
         }
     } else {
-        console.log(announcement);
+
         // Fallback: the default logic (Confirm, and Cancel if forced)
         const confirmBtn = document.createElement('button');
         confirmBtn.className = "btn-lg-fill align-end";

@@ -107,7 +107,6 @@ function refreshModelList(fieldId, context = 'input') {
 function addInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.add(filterName);
-    console.log(filters)
     inputFilters.set(fieldId, Array.from(filters));
     return refreshModelList(fieldId);
 }
@@ -116,8 +115,6 @@ function addInputFilter(fieldId, filterName) {
 function removeInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.delete(filterName);
-    console.log(filters)
-
     inputFilters.set(fieldId, Array.from(filters));
     return refreshModelList(fieldId);
 }
@@ -253,7 +250,6 @@ function setRegenerationFilters(tools) {
 // Add a filter to regeneration context
 function addRegenerationFilter(filterName) {
     const filters = new Set(regenerationFilters);
-    console.log(filters);
     filters.add(filterName);
     regenerationFilters = Array.from(filters);
 }

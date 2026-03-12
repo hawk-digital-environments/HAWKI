@@ -25,7 +25,6 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
 
                         setTimeout(() => {
                             input.parentElement.style.border = 'var(--border-stroke-thin)';
-                            console.log('back');
                         }, 200);
                     }
                 }

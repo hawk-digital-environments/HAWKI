@@ -1238,10 +1238,7 @@ function createStatusElement(status, messageElement){
 
 
     let statusText = '';
-    console.log(status.key);
-    console.log(status.value);
     if(status.key === 'tool_call' || status.key === 'max_execution'){
-        console.log('tool_calling');
         statElement.querySelector('#grid-animation-block').classList.remove('active');
         statElement.querySelector('video').src = GEN_STAT_VIDEO_URL
         statElement.querySelector('video').style.display = 'flex';
@@ -1271,7 +1268,6 @@ function createStatusElement(status, messageElement){
         statusText = `${translation.Exec_prefix} ${list}`;
     }
     if(status.key === 'reasoning'){
-        console.log('reasoning');
         statElement.querySelector('video').style.display = 'none';
         statElement.querySelector('#grid-animation-block').classList.add('active');
         statusText = translation['Reasoning_Msg'];

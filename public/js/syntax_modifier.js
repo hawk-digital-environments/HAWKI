@@ -43,7 +43,7 @@ function formatChunk(chunk, groundingMetadata) {
     }
 
     // Render the formatted text using markdown processor
-    return formatMessage(formatText, groundingMetadata);
+    return formatMessage(formatText, groundingMetadata, true);
   } catch (error) {
     console.error('Error in formatChunk:', error);
     // Fallback to basic rendering without special processing
@@ -63,12 +63,11 @@ function escapeHTML(text) {
   });
 }
 
-function formatMessage(rawContent, groundingMetadata = '') {
+function formatMessage(rawContent, groundingMetadata = '', isStreaming = false) {
   // Early exit for empty content
   if (!rawContent || rawContent.trim() === '') {
     return '';
   }
-
   try {
     // Process citations and preserve HTML elements in one step
     const contentToProcess = formatGoogleCitations(rawContent, groundingMetadata);
@@ -87,7 +86,7 @@ function formatMessage(rawContent, groundingMetadata = '') {
 
     // Convert bare URLs to <a> where appropriate and wrap all links in special blocks
     finalContent = convertHyperlinksToLinks(finalContent);
-    finalContent = wrapLinksInBlocks(finalContent);
+    finalContent = wrapLinksInBlocks(finalContent, isStreaming);
 
     return finalContent;
   } catch (error) {
@@ -365,7 +364,7 @@ function convertHyperlinksToLinks(text) {
 }
 
 // Wrap all links in special styled blocks using the template
-function wrapLinksInBlocks(text) {
+function wrapLinksInBlocks(text, isStreaming = false) {
   const container = document.createElement('div');
   container.innerHTML = text;
 
@@ -447,11 +446,15 @@ function wrapLinksInBlocks(text) {
                 titleElement.textContent = domain;
               }
 
-              // Set favicon
+              // Set favicon — skip during streaming to avoid per-chunk network requests and flicker
               const favicon = linkWrapper.querySelector('.adr-icon');
-              favicon.setAttribute('src', `https://www.google.com/s2/favicons?domain=${domain}&sz=32`);
-              favicon.setAttribute('alt', domain);
-              favicon.style.display = 'block';
+              if (isStreaming) {
+                favicon.style.display = 'none';
+              } else {
+                favicon.setAttribute('src', `https://www.google.com/s2/favicons?domain=${domain}&sz=32`);
+                favicon.setAttribute('alt', domain);
+                favicon.style.display = 'block';
+              }
 
             } catch (e) {
               // If URL parsing fails, use fallback display
