@@ -51,6 +51,14 @@ two new variables:
 
 Compare your existing `.env` with the updated `_docker_production/.env` template for the full reference.
 
+### Removed `.env` variables — `DB_BACKUP_*`
+
+The `php artisan backup:run` command and its corresponding schedule task have been removed in the docker container. They had never worked properly because of missing dependencies.
+
+Simply remove all `DB_BACKUP_*` variables from your `.env` file.
+
+> The backup variables MUST be removed from your `.env` file, otherwise the container will throw an error on startup to prevent confusion.
+
 ### `queue` and `reverb` services: new `PHP_WORKER_COMMAND` variable
 
 The `command:` directive on the `queue` and `reverb` services has been replaced by the `PHP_WORKER_COMMAND`

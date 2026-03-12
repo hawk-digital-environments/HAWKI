@@ -7,6 +7,7 @@
 #### Docker
 
 - Complete refactoring of the Docker setup to reduce complexity and improve maintainability. The docker image is now based on [php-nginx](https://github.com/Neunerlei/docker-images/blob/main/docs/php-nginx.md) and provides nginx out of the box. So we no longer need a separate nginx container. **IMPORTANT - take a look at the upgrade guide, please!**
+- The `php artisan backup:run` command and its corresponding schedule task have been removed in the docker container. They had never worked properly because of missing dependencies. **Please note**, remove all your `DB_BACKUP_*` environment variables, as they now throw an error if they are set, to prevent confusion.
 
 ### Quality of Life
 
@@ -21,4 +22,4 @@
 
 ### Deprecation
 
-- The `app:list-gwdg` is now marked as deprecated and will be removed in the next major release. There is no replacement for this command. 
+- The `app:list-gwdg` is now marked as deprecated and will be removed in the next major release. There is no replacement for this command.

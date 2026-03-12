@@ -50,21 +50,22 @@ HAWKI uses a database to save chats and other data. For this a relation SQL data
 
 > ***IMPORTANT:*** When using a database other than SQLite set DB_DATABASE to a sensible value. Because the default value in config/database.php is "laravel" which is less clear and could at least in theory already be in use by other applications.
 
-| Variable                | Default Value      | Description                                                                                              |
-|-------------------------|--------------------|----------------------------------------------------------------------------------------------------------|
-| DB_CONNECTION           | mysql              | Database server type: "mysql", "sqlite", "mariadb", "pgsql", "sqlsrv" (see config/database.php)          |
-| DB_BACKUP_INTERVAL      | daily              | Automatic database backup interval: "daily", "weekly", etc. **can be set to `never` to disable backups** |
-| DB_BACKUP_INTERVAL_ARGS |                    | Some intervals accept additional constraints (see below)                                                 |
-| DB_URL                  |                    | Database connection URL (instead of host and port)                                                       |
-| DB_HOST                 | localhost          | Database server host name                                                                                |
-| DB_PORT                 | 3306               | Database server port number                                                                              |
-| DB_SOCKET               |                    | Unix domain socket instead of URL, host and port (MySQL and MariaDB only)                                |
-| DB_DATABASE             | HAWKI2             | Database name (please change for your installation!)                                                     |
-| DB_USERNAME             | root               | Username to access the database server                                                                   |
-| DB_PASSWORD             |                    | Password to access the database server                                                                   |
-| DB_CHARSET              | utf8mb4            | Character encoding of the database                                                                       |
-| DB_COLLATION            | utf8mb4_unicode_ci | Database collation (MySQL and MariaDB only)                                                              |
-| MYSQL_ATTR_SSL_CA       |                    | SSL Certificate Authority file for MySQL SSL connections                                                 |
+| Variable                    | Default Value      | Description                                                                                              |
+|-----------------------------|--------------------|----------------------------------------------------------------------------------------------------------|
+| DB_CONNECTION               | mysql              | Database server type: "mysql", "sqlite", "mariadb", "pgsql", "sqlsrv" (see config/database.php)          |
+| DB_BACKUP_INTERVAL          | daily              | Automatic database backup interval: "daily", "weekly", etc. **can be set to `never` to disable backups** |
+| DB_BACKUP_INTERVAL_ARGS     |                    | Some intervals accept additional constraints (see below)                                                 |
+| DB_BACKUP_DUMPER_BINARY_DIR |                    | Allows to define the directory where the `mysqldump` executable is located. Empty, if in PATH variable.  |                                                                                                  
+| DB_URL                      |                    | Database connection URL (instead of host and port)                                                       |
+| DB_HOST                     | localhost          | Database server host name                                                                                |
+| DB_PORT                     | 3306               | Database server port number                                                                              |
+| DB_SOCKET                   |                    | Unix domain socket instead of URL, host and port (MySQL and MariaDB only)                                |
+| DB_DATABASE                 | HAWKI2             | Database name (please change for your installation!)                                                     |
+| DB_USERNAME                 | root               | Username to access the database server                                                                   |
+| DB_PASSWORD                 |                    | Password to access the database server                                                                   |
+| DB_CHARSET                  | utf8mb4            | Character encoding of the database                                                                       |
+| DB_COLLATION                | utf8mb4_unicode_ci | Database collation (MySQL and MariaDB only)                                                              |
+| MYSQL_ATTR_SSL_CA           |                    | SSL Certificate Authority file for MySQL SSL connections                                                 |
 
 #### DB_BACKUP_INTERVAL
 

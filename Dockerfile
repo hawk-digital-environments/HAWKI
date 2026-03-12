@@ -57,7 +57,15 @@ COPY --chown=www-data:www-data docker/app /container/custom
 COPY --chown=www-data:www-data ./composer.json ./composer.json
 COPY --chown=www-data:www-data ./composer.lock ./composer.lock
 
-RUN composer install --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader
+# Install the composer dependencies, without running any scripts, this allows us to install the dependencies
+# in a single layer and caching them even if the source files are changed
+# However, since the "laravel-backup" package is not really well suited for a docker container environment,
+# we drop it directly after installing the dependencies. This way we can keep it in the "composer.json" for on-host
+# installations, but it won't be included in the final image.
+RUN composer install --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader \
+    && composer remove --no-dev --no-cache --no-progress --no-interaction --verbose --no-autoloader \
+        spatie/laravel-backup \
+    && composer clear-cache
 
 # Add the app sources
 COPY --chown=www-data:www-data . .

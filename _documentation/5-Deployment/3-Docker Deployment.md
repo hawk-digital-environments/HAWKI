@@ -67,6 +67,24 @@ Once you made the necessary adjustments on the files mentioned above copy the `_
 server and execute the following command: `chmod +x deploy.sh && ./deploy.sh`. This will automatically
 bring up the containers and run the migrations.
 
+### Backing up your database
+
+As we are using the official MySQL image, you can use the [built-in backup functionality](https://hub.docker.com/_/mysql#creating-database-dumps) of MySQL to create backups of your database.
+
+Navigate into your HAWKI directory on the server and run the following command to create a backup of your database:
+
+```bash
+docker compose exec mysql sh -c 'exec mysqldump --all-databases -uroot -p"$MYSQL_ROOT_PASSWORD"' > backup.sql
+```
+
+This command will execute the `mysqldump` command inside the MySQL container and save the output to a file named `backup.sql` on your host machine. Make sure to replace `"$MYSQL_ROOT_PASSWORD"` with the actual root password of your MySQL database, which is set in your `.env` file.
+
+The restore process is just as simple, you can use the following command to restore your database from a backup file:
+
+```bash
+docker compose exec -T mysql sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD"' < backup.sql
+```
+
 ## Building a custom container
 
 Of course, you can completely customize the container if you want to. The `Dockerfile` in the root of the repository
