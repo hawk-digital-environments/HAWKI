@@ -223,7 +223,7 @@ function loadMessagesOnGUI(messages) {
     let threads = []
     messages.forEach(messageObj => {
         const addedMsg = addMessageToChatlog(messageObj, true);
-        updateMessageElement(addedMsg, messageObj);
+        updateMessageElement(addedMsg, messageObj, true);
 
 
         // Observe unread messages
@@ -327,79 +327,6 @@ async function sendReadStatToServer(message_id){
 //#endregion
 
 
-//#region Model
-function selectModel(btn){
-    const value = JSON.parse(btn.getAttribute('value'));
-    setModel(value.id);
-}
-function setModel(modelID = null){
-    let model;
-    if(!modelID){
-        if(localStorage.getItem("definedModel")){
-            model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
-        }
-        // if there is no defined model
-        // or the defined model is outdated or cruppted
-        if(!model){
-            model = modelsList.find(m => m.id === defaultModels.default_model);
-        }
-    }
-    else{
-        model = modelsList.find(m => m.id === modelID);
-    }
-    activeModel = model;
-    localStorage.setItem("definedModel", activeModel.id);
-
-    //UI UPDATE...
-    const selectors = document.querySelectorAll('.model-selector');
-    selectors.forEach(selector => {
-        //if this is our target model selector
-        if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
-
-            const modelObject = modelsList.find(m => m.id === activeModel.id);
-            selector.classList.add('active');
-
-            if(modelObject.tools.web_search && modelObject.tools.web_search === true){
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.add('active');
-                })
-            }
-            else{
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                })
-            }
-
-            const labels = document.querySelectorAll('.model-selector-label');
-            labels.forEach(label => {
-                label.innerHTML = activeModel.label;
-            });
-        }
-        else{
-            selector.classList.remove('active');
-        }
-    });
-
-}
-
-// Change the Model to a websearch capable model (available models atm.: gemini-2.0-flash-exp)
-function selectWebSearchModel(button) {
-    const isActive = button.classList.contains('active');
-    const input = button.parentElement.closest('.input-container').querySelector('.input');
-
-    if (isActive) {
-        button.classList.remove('active');
-        removeInputFilter(input.id, 'web_search');
-
-    } else {
-        const filterActive = addInputFilter(input.id, 'web_search');
-        if(filterActive){
-            button.classList.add('active');
-        }
-    }
-}
-
-//#endregion
 
 
 

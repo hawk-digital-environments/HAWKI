@@ -23,6 +23,7 @@ This file is a template for the .env file. It documents all relevant settings, t
 | APP_NAME               | HAWKI2                | Application name, can be anything you like                                                                                                                                                              |
 | APP_ENV                | local                 | Deployment type: "local", "staging" or "production"                                                                                                                                                     |
 | APP_URL                | http://127.0.0.1:8000 | Public URL to access the web interface                                                                                                                                                                  |
+| APP_TRUSTED_PROXIES    |                       | Comma separated list of trusted proxy IP addresses (see below)                                                                                                                                          |
 | APP_DEBUG              | true                  | Enable debug output: "true" or "false"                                                                                                                                                                  |
 | APP_TIMEZONE           | CET                   | Timezone of the web server                                                                                                                                                                              |
 | APP_LOCALE             | de_DE                 | Default language of the user interface (de_DE, en_US)                                                                                                                                                   |
@@ -35,42 +36,48 @@ This file is a template for the .env file. It documents all relevant settings, t
 | APP_CACHE_BUSTER       |                       | Custom version string to include when generating the cache buster hash for JS/CSS assets. This is OPTIONAL -> helps if you build your own HAWKI version and want to ensure users get the latest assets. |
 | AI_MENTION_HANDLE      | hawki                 | Handle to mention AI in group chats (without @ symbol)                                                                                                                                                  |
 
+#### APP_TRUSTED_PROXIES
+
+When running your applications behind a load balancer that terminates TLS / SSL certificates, you may notice your application sometimes does not generate HTTPS links. Typically this is because your application is being forwarded traffic from your load balancer on port 80 and does not know it should generate secure links.
+
+To solve this, you need to configure the application to trust the proxy (load balancer) that is forwarding the traffic. This is done by setting the `APP_TRUSTED_PROXIES` variable to the IP address of your load balancer. You can find this IP address in your load balancer configuration or by checking the incoming request headers.
+
+To dive deeper into this topic, please refer to the [Laravel documentation on trusted proxies](https://laravel.com/docs/12.x/requests#configuring-trusted-proxies)
+
 ## Database Server
 
 HAWKI uses a database to save chats and other data. For this a relation SQL database like MariaDB (MySQL) or Postgres should be used in production. For local development SQLite provides a zero-config default solution (but note that SQLite is single-user only and stores all data in a single file).
 
 > ***IMPORTANT:*** When using a database other than SQLite set DB_DATABASE to a sensible value. Because the default value in config/database.php is "laravel" which is less clear and could at least in theory already be in use by other applications.
 
-| Variable                | Default Value      | Description                                                                                              |
-|-------------------------|--------------------|----------------------------------------------------------------------------------------------------------|
-| DB_CONNECTION           | mysql              | Database server type: "mysql", "sqlite", "mariadb", "pgsql", "sqlsrv" (see config/database.php)          |
-| DB_BACKUP_INTERVAL      | daily              | Automatic database backup interval: "daily", "weekly", etc. **can be set to `never` to disable backups** |
-| DB_BACKUP_INTERVAL_ARGS |                    | Some intervals accept additional constraints (see below)                                                 |
-| DB_URL                  |                    | Database connection URL (instead of host and port)                                                       |
-| DB_HOST                 | localhost          | Database server host name                                                                                |
-| DB_PORT                 | 3306               | Database server port number                                                                              |
-| DB_SOCKET               |                    | Unix domain socket instead of URL, host and port (MySQL and MariaDB only)                                |
-| DB_DATABASE             | HAWKI2             | Database name (please change for your installation!)                                                     |
-| DB_USERNAME             | root               | Username to access the database server                                                                   |
-| DB_PASSWORD             |                    | Password to access the database server                                                                   |
-| DB_CHARSET              | utf8mb4            | Character encoding of the database                                                                       |
-| DB_COLLATION            | utf8mb4_unicode_ci | Database collation (MySQL and MariaDB only)                                                              |
-| MYSQL_ATTR_SSL_CA       |                    | SSL Certificate Authority file for MySQL SSL connections                                                 |
+| Variable                    | Default Value      | Description                                                                                              |
+|-----------------------------|--------------------|----------------------------------------------------------------------------------------------------------|
+| DB_CONNECTION               | mysql              | Database server type: "mysql", "sqlite", "mariadb", "pgsql", "sqlsrv" (see config/database.php)          |
+| DB_BACKUP_INTERVAL          | daily              | Automatic database backup interval: "daily", "weekly", etc. **can be set to `never` to disable backups** |
+| DB_BACKUP_INTERVAL_ARGS     |                    | Some intervals accept additional constraints (see below)                                                 |
+| DB_BACKUP_DUMPER_BINARY_DIR |                    | Allows to define the directory where the `mysqldump` executable is located. Empty, if in PATH variable.  |                                                                                                  
+| DB_URL                      |                    | Database connection URL (instead of host and port)                                                       |
+| DB_HOST                     | localhost          | Database server host name                                                                                |
+| DB_PORT                     | 3306               | Database server port number                                                                              |
+| DB_SOCKET                   |                    | Unix domain socket instead of URL, host and port (MySQL and MariaDB only)                                |
+| DB_DATABASE                 | HAWKI2             | Database name (please change for your installation!)                                                     |
+| DB_USERNAME                 | root               | Username to access the database server                                                                   |
+| DB_PASSWORD                 |                    | Password to access the database server                                                                   |
+| DB_CHARSET                  | utf8mb4            | Character encoding of the database                                                                       |
+| DB_COLLATION                | utf8mb4_unicode_ci | Database collation (MySQL and MariaDB only)                                                              |
+| MYSQL_ATTR_SSL_CA           |                    | SSL Certificate Authority file for MySQL SSL connections                                                 |
 
-> A word on `DB_BACKUP_INTERVAL`
->
-> Under the hood we are using a [PHP class](https://github.com/illuminate/console/blob/master/Scheduling/ManagesFrequencies.php), to manage the frequency. This class supports a wide range of frequencies, which can be set with the `DB_BACKUP_INTERVAL` variable.
-> Some of them are simple, fixed frequencies like `daily` or `weekly`, while others are more flexible and allow for additional constraints, such as `dailyAt` (which allows you to specify the time of day for the backup) or `weeklyOn` (which allows you to specify the day of the week and time for the backup).
->
-> So, to configure them to your needs, you can use this variable to pass along additional parameters as either a single string value, or a single numeric value (e.g. "20:00" or "20")
-> Or an JSON array to pass multiple values (e.g. ["sunday", "12:31"] or ["20:00", "wednesday", "15:00"])
->
+#### DB_BACKUP_INTERVAL
+
+Under the hood we are using a [PHP class](https://github.com/illuminate/console/blob/master/Scheduling/ManagesFrequencies.php), to manage the frequency. This class supports a wide range of frequencies, which can be set with the `DB_BACKUP_INTERVAL` variable.
+Some of them are simple, fixed frequencies like `daily` or `weekly`, while others are more flexible and allow for additional constraints, such as `dailyAt` (which allows you to specify the time of day for the backup) or `weeklyOn` (which allows you to specify the day of the week and time for the backup).
+So, to configure them to your needs, you can use this variable to pass along additional parameters as either a single string value, or a single numeric value (e.g. "20:00" or "20")
+Or an JSON array to pass multiple values (e.g. ["sunday", "12:31"] or ["20:00", "wednesday", "15:00"])
+
 > Example:
->
 > - DB_BACKUP_INTERVAL="cron", DB_BACKUP_INTERVAL_ARGS="0 0 * * *" for daily backup at midnight
 > - DB_BACKUP_INTERVAL="dailyAt", DB_BACKUP_INTERVAL_ARGS="20:00" for daily backup at 8pm
 > - DB_BACKUP_INTERVAL="daysOfMonth", DB_BACKUP_INTERVAL_ARGS="[1, 13, 28]" for backup on the 1st, 13th and 28th of each month, etc.
->
 
 ## HAWKI Profile Configuration
 

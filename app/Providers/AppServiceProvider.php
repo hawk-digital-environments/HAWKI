@@ -80,6 +80,7 @@ class AppServiceProvider extends ServiceProvider
         });
     }
 
+    /** @noinspection StaticClosureCanBeUsedInspection */
     private function bootSchedulerMacros(): void
     {
         $app = $this->app;
@@ -95,7 +96,7 @@ class AppServiceProvider extends ServiceProvider
              * @param mixed|null $intervalArgs Optional arguments for the scheduling method, which can be a JSON string, a single numeric value, or a simple string.
              * @return Event|null Returns the scheduled Event if successful, or null if there was an error in scheduling due to invalid interval or arguments.
              */
-            static function (
+            function (
                 string     $command,
                 array|null $parameters = null,
                 mixed      $interval = ScheduleWithDynamicIntervalFactory::NEVER_INTERVAL,
@@ -113,7 +114,6 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerMiddlewareAliases(): void
     {
-        // Register middleware aliases
         Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
         Route::aliasMiddleware('roomAdmin', AdminAccess::class);
         Route::aliasMiddleware('roomEditor', EditorAccess::class);

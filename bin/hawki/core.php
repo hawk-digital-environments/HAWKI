@@ -44,6 +44,14 @@ function showHelp() {
     echo "  token [--revoke]                - Create or revoke API tokens for a user" . PHP_EOL;
     echo "  update -hawki-avatar {path}     - Update HAWKI Avatar." . PHP_EOL;
     echo "  remove-user                     - Remove a user from the system" . PHP_EOL;
+    echo "  tools [subcommand]              - Manage AI tools" . PHP_EOL;
+    echo "    sync, list, configure, configure-server," . PHP_EOL;
+    echo "    add-mcp-server, remove-mcp-server, list-mcp-servers," . PHP_EOL;
+    echo "    assign, check-status" . PHP_EOL;
+    echo "    Run " . YELLOW . "php hawki tools help" . RESET . " for full details" . PHP_EOL;
+    echo "  models [subcommand]             - Manage AI models" . PHP_EOL;
+    echo "    sync, list" . PHP_EOL;
+    echo "    Run " . YELLOW . "php hawki models help" . RESET . " for full details" . PHP_EOL;
     echo "  run                             - Run development servers" . PHP_EOL;
     echo "    Flags:" . PHP_EOL;
     echo "      -dev                        - Run development servers" . PHP_EOL;

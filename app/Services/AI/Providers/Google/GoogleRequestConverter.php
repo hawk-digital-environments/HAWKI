@@ -3,6 +3,7 @@
 namespace App\Services\AI\Providers\Google;
 
 use App\Models\Attachment;
+use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
@@ -13,12 +14,14 @@ use Illuminate\Support\Facades\Log;
 #[Singleton]
 readonly class GoogleRequestConverter
 {
+    use ToolAwareConverter;
+
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
     )
     {
     }
-    
+
     public function convertRequestToPayload(AiRequest $request): array
     {
         $rawPayload = $request->payload;
@@ -51,8 +54,16 @@ readonly class GoogleRequestConverter
             'model' => $modelId,
             'system_instruction' => $systemInstruction,
             'contents' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasTool('stream'),
+            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
         ];
+
+        // Add optional parameters if present in the raw payload
+        if (isset($rawPayload['params']['temperature'])) {
+            $payload['temperature'] = $rawPayload['params']['temperature'];
+        }
+        if (isset($rawPayload['params']['top_p'])) {
+            $payload['top_p'] = $rawPayload['params']['top_p'];
+        }
 
         // Set complete optional fields with content (default values if not present in $rawPayload)
         $payload['safetySettings'] = $rawPayload['safetySettings'] ?? [
@@ -70,43 +81,78 @@ readonly class GoogleRequestConverter
             'topK' => 10
         ];
 
-        // Google Search only works with gemini >= 2.0
-        // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
-        $availableTools = $model->getTools();
-        
-        if (array_key_exists('web_search', $availableTools) && $availableTools['web_search'] == true){
-            // if frontend requested websearch tool
-            if(array_key_exists('tools', $rawPayload) &&
-                array_key_exists('web_search', $rawPayload['tools']) &&
-                $rawPayload['tools']['web_search'] == true){
-                
-                $payload['tools'] =
-                    [
-                        [
-                            "google_search" => new \stdClass()
-                        ]
-                    ];
+        // Build tools from capabilities
+        $disableTools = $this->shouldDisableTools($rawPayload);
+
+        $tools = [];
+
+        if (!$disableTools && !empty($rawPayload['tools'])) {
+            // Native Google Search (WEB_SEARCH capability)
+            // Google Search only works with gemini >= 2.0
+            // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
+
+            // Check if model supports web_search (handles both boolean and string format)
+            $webSearchValue = $model->getCapabilityStrategy('web_search');
+            if ($model->hasCapability('web_search') && $webSearchValue === 'native') {
+                if (in_array('web_search', $rawPayload['tools'], true)) {
+                    $tools[] = ["google_search" => new \stdClass()];
+                }
             }
-            else{
-                $payload['tools'] = [];
+
+            // Google may not support custom function tools or MCP integration yet
+            // When implementing, use buildFunctionCallTools() and buildMCPTools()
+            // and convert to Google's format using toGoogleFormat()
+            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
+            foreach ($toolDefinitions as $toolDef) {
+                $tools[] = $toolDef->toGoogleResponseFormat();
             }
         }
-        else{
-            // Fallback: websearch always on
-            $payload['tools'] =
-                [
-                    [
-                        "google_search" => new \stdClass()
-                    ]
-                ];
-        }
+
+        $payload['tools'] = $tools;
         return $payload;
     }
-    
+
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array
     {
+        $role = $message['role'];
+
+        // Handle tool result messages (if Google uses function calling)
+        if ($role === 'tool') {
+            return [
+                'role' => 'function',
+                'parts' => [
+                    [
+                        'functionResponse' => [
+                            'name' => $message['tool_call_id'],
+                            'response' => [
+                                'content' => $message['content']
+                            ]
+                        ]
+                    ]
+                ]
+            ];
+        }
+
+        // Handle assistant messages with tool_calls
+        if ($role === 'assistant' && isset($message['tool_calls'])) {
+            $parts = [];
+            foreach ($message['tool_calls'] as $toolCall) {
+                $parts[] = [
+                    'functionCall' => [
+                        'name' => $toolCall['function']['name'],
+                        'args' => json_decode($toolCall['function']['arguments'], true)
+                    ]
+                ];
+            }
+
+            return [
+                'role' => 'model',
+                'parts' => $parts
+            ];
+        }
+
         $formatted = [
-            'role' => $message['role'] === 'assistant' ? 'model' : 'user',
+            'role' => $role === 'assistant' ? 'model' : 'user',
             'parts' => []
         ];
 
@@ -126,7 +172,7 @@ readonly class GoogleRequestConverter
 
         return $formatted;
     }
-    
+
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$parts): void
     {
         $attachmentService = app(AttachmentService::class);

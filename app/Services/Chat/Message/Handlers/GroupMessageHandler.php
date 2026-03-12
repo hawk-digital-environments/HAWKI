@@ -27,6 +27,10 @@ class GroupMessageHandler extends BaseMessageHandler{
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
+            'metadata' => [
+                'tools' => $data['metadata']['tools'] ?? null,
+                'params' => $data['metadata']['params'] ?? null,
+            ]
         ]);
         $message->addReadSignature($member);
 
@@ -56,6 +60,10 @@ class GroupMessageHandler extends BaseMessageHandler{
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
+            'metadata' => [
+                'tools' => $data['metadata']['tools'] ?? null,
+                'params' => $data['metadata']['params'] ?? null,
+            ],
             'model'=> $data['model'] ?? null,
         ]);
 

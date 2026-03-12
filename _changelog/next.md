@@ -7,11 +7,14 @@
 #### Docker
 
 - Complete refactoring of the Docker setup to reduce complexity and improve maintainability. The docker image is now based on [php-nginx](https://github.com/Neunerlei/docker-images/blob/main/docs/php-nginx.md) and provides nginx out of the box. So we no longer need a separate nginx container. **IMPORTANT - take a look at the upgrade guide, please!**
+- The `php artisan backup:run` command and its corresponding schedule task have been removed in the docker container. They had never worked properly because of missing dependencies. **Please note**, remove all your `DB_BACKUP_*` environment variables, as they now throw an error if they are set, to prevent confusion.
 
 ### Quality of Life
 
 - Allow `DB_BACKUP_INTERVAL` to be set to `never`, to disable automatic database backups. This is useful for users who want to manage their own backup strategy or do not want to use the built-in backup functionality.
 - Adds a new `DB_BACKUP_INTERVAL_ARGS` environment variable, that works in tandem with `DB_BACKUP_INTERVAL`, to allow more fine-grained control over the database backup process. Read more in the [Dot Env documentation](../_documentation/3-architecture/10-dot%20Env.md)
+- Adds new `APP_TRUSTED_PROXIES` environment variable, to the app to run behind a reverse proxy with SSL termination. Read more in the [Dot Env documentation](../_documentation/3-architecture/10-dot%20Env.md#APP_TRUSTED_PROXIES)
+- `php artisan check:model-status` is now `php artisan ai:models:check-status`, to be more consistent with the naming of other AI related commands. The old command name is still available as an alias, but it is recommended to use the new command name.
 
 ### Bugfix
 
@@ -19,4 +22,4 @@
 
 ### Deprecation
 
-- List of features or functionalities that have been deprecated in this version.
+- The `app:list-gwdg` is now marked as deprecated and will be removed in the next major release. There is no replacement for this command.

@@ -60,12 +60,13 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                $getSslCaConstant() => env('MYSQL_ATTR_SSL_CA'),
+                $getSslCaConstant() => env('MYSQL_ATTR_SSL_CA')
             ]) : [],
             'dump' => [
-                'dump_binary_path' => '/opt/homebrew/opt/mysql-client/bin', // 👈 this is key
+                'dump_binary_path' => getenv('DB_BACKUP_DUMPER_BINARY_DIR'),
                 'use_single_transaction',
                 'timeout' => 60 * 5,
+                'addExtraOption' => '--ssl-verify-server-cert=false',
             ],
         ],
 

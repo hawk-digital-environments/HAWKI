@@ -19,7 +19,7 @@ class PrivateMessageHandler extends BaseMessageHandler{
         if ($conv->user_id !== Auth::id()) {
             throw new AuthorizationException();
         }
-
+//        \Log::info($data);
         $user = $data['isAi'] ? User::find(1) : Auth::user();
         $messageRole = $data['isAi'] ? 'assistant' : 'user';
 
@@ -35,6 +35,10 @@ class PrivateMessageHandler extends BaseMessageHandler{
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
             'completion' => $data['completion'],
+            'metadata' => [
+                'tools' => $data['metadata']['tools'] ?? null,
+                'params' => $data['metadata']['params'] ?? null,
+            ],
         ]);
 
         //ATTACHMENTS
@@ -65,7 +69,11 @@ class PrivateMessageHandler extends BaseMessageHandler{
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'model' => $data['model'],
-            'completion' => $data['completion']
+            'completion' => $data['completion'],
+            'metadata' => [
+                'tools' => $data['metadata']['tools'] ?? null,
+                'params' => $data['metadata']['params'] ?? null,
+            ]
         ]);
 
         return $message;

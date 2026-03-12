@@ -29,6 +29,9 @@ services:
             # This is the main code volume, which mounts the entire project directory into the container. This allows for live code changes without needing to rebuild the image,
             # as any changes made to the code on the host machine will be reflected inside the container immediately.
             - ./:/var/www/html
+            # Ensures that the laravel 404 handling is used when a file is not found by nginx.
+            # We are overriding a dedicated nginx configuration snippet here, which is included in the base image, to ensure that 404 errors are handled by PHP/Laravel instead of nginx
+            - ./docker/app/errors.nginx.conf:/container/templates/nginx/snippets/errors.nginx.conf
         env_file:
             # As a baseline, we use the .env file in the project root to provide environment variables to the container.
             # The "environment" section below can be used to set additional environment variables or override those defined in the .env file if needed.
@@ -66,9 +69,19 @@ services:
         depends_on:
             mysql:
                 condition: service_healthy
+        # By connecting the app container to both the "hawki_hawk_net" and "default" networks,
+        # we ensure that it can communicate with other HAWKI-related services that are connected to the "hawki_hawk_net"
+        # (e.g., for microservices or additional tools) while still being able to access services defined in this docker-compose file via the default network.
         networks:
             - hawki_hawk_net
             - default
+        # This healthcheck configuration allows Docker to monitor the health of the app container by periodically sending a request to the /health endpoint.
+        healthcheck:
+            test: curl --fail ${DOCKER_PROJECT_PROTOCOL:-http}://localhost/health || exit 1
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
     # Node is required only for dev and production. Why? Because we want to build our assets using vite, which requires a node
     # environment. In production, we build the assets in the pipeline and just serve them via nginx, but in development,
     # we want to have a live-reloading environment where changes to our frontend code are immediately reflected in the browser

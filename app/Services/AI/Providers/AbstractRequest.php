@@ -46,18 +46,22 @@ abstract class AbstractRequest
 
         // Set streaming-specific options
         $this->setStreamingCurlOptions($ch, function (string $chunk) use ($model, $onData, $chunkToResponse) {
-//            \Log::debug($chunk);
             $onData($chunkToResponse($model, $chunk));
         });
 
         // Execute the cURL session
-        curl_exec($ch);
+        $result = curl_exec($ch);
 
         // Handle errors
         if (curl_errno($ch)) {
-            $onData($this->createErrorResponse(curl_error($ch)));
+            $error = curl_error($ch);
+            \Log::error('cURL error in streaming request', ['error' => $error]);
+            $onData($this->createErrorResponse($error));
         }
 
+        if ($result === false) {
+            \Log::error('cURL returned false');
+        }
         curl_close($ch);
     }
 
@@ -172,9 +176,11 @@ abstract class AbstractRequest
     protected function setStreamingCurlOptions(\CurlHandle $ch, callable $onData): void
     {
         // Set timeout parameters for streaming
+        // LOW_SPEED_TIME is set high (120s) to accommodate reasoning models that may
+        // silently think for an extended period before streaming any output.
         curl_setopt($ch, CURLOPT_TIMEOUT, 0);
         curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 1);
-        curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 20);
+        curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, 120);
 
         $chunkHandler = new StreamChunkHandler($onData);
 
