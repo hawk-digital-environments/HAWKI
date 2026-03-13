@@ -1,0 +1,27 @@
+name: '[MANUAL] - 1. Create Release Branch'
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (semver, e.g. 2.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  create-release-branch:
+    name: Create release/v${{ inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - uses: hawk-digital-environments/hawk-pipeline-actions/create-release-branch@v1
+        with:
+          version: ${{ inputs.version }}
+          version-json: config/hawki_version.json
