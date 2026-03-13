@@ -1,0 +1,39 @@
+name: Trigger Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number to release (semver, e.g. 2.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-release:
+    name: Prepare Release v${{ github.event.inputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout development branch
+        uses: actions/checkout@v5
+        with:
+          ref: development
+          fetch-depth: 0
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - name: Setup release environment
+        uses: ./.github/actions/setup-release-environment
+
+      - name: Validate and prepare changelog
+        working-directory: .github/.release
+        run: node prepare-release-changelog.js "${{ github.event.inputs.version }}"
+
+      - name: Create and merge release PR
+        working-directory: .github/.release
+        run: node create-release-pr.js "${{ github.event.inputs.version }}"
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
