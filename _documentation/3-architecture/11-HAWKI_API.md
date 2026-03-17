@@ -84,7 +84,7 @@ Returns information about the authenticated user.
 POST /api/ai-req
 ```
 
-Send a request to an AI model and receive a response.
+Send a request to an AI model and receive a response. Supports plain-text messages as well as messages that include file attachments (images or documents) for vision-capable models.
 
 #### Request Body
 
@@ -102,7 +102,8 @@ Send a request to an AI model and receive a response.
       {
         "role": "user",
         "content": {
-          "text": "Hello, how are you today?"
+          "text": "What is shown in this image?",
+          "attachments": ["<uuid-returned-by-upload-endpoint>"]
         }
       }
     ]
@@ -112,10 +113,15 @@ Send a request to an AI model and receive a response.
 
 #### Parameters
 
-- `payload.model` (required): The model ID to use (e.g., "gpt-4o", "meta-llama-3.1-70b-instruct")
+- `payload.model` (required): The model ID to use (e.g., "gpt-4o", "qwen3-vl-30b-a3b-instruct")
 - `payload.messages` (required): Array of message objects in the conversation
-  - `role` (required): "system", "user", or "assistant"
-  - `content.text` (required): The message content
+  - `role` (required): `"system"`, `"user"`, or `"assistant"`
+  - `content.text` (optional\*): The text content of the message
+  - `content.attachments` (optional\*): Array of file UUIDs previously uploaded via `POST /api/attachments/upload`
+
+> \* At least one of `content.text` or `content.attachments` must be provided per message.
+
+> **Note**: Attachments are only processed by vision-capable models. If the selected model does not support images or documents, the attachment is skipped and a notice is appended to the message. Ensure that the UUIDs you supply belong to your account — requests referencing another user's attachments will be rejected with a `403` response.
 
 #### Response
 
@@ -123,10 +129,83 @@ Send a request to an AI model and receive a response.
 {
   "success": true,
   "content": {
-    "text": "I'm doing well, thank you for asking! How can I help you today?"
+    "text": "The image shows the quadratic formula: x = (-b ± √(b²-4ac)) / 2a"
   }
 }
 ```
+
+---
+
+### Upload Attachment
+
+```
+POST /api/attachments/upload
+```
+
+Upload a file (image or document) for use in a subsequent AI request. The endpoint returns a UUID that can be passed in `content.attachments` of an `ai-req` payload.
+
+#### Request
+
+Send the file as `multipart/form-data`:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file` | File | Yes | The file to upload (max 20 MB) |
+
+**Supported file types**: `jpeg`, `jpg`, `png`, `gif`, `webp`, `bmp`, `tiff`, `pdf`, `doc`, `docx`
+
+#### Response
+
+```json
+{
+  "success": true,
+  "uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "name": "formula.jpg",
+  "mime": "image/jpeg",
+  "type": "image"
+}
+```
+
+Use the `uuid` value in subsequent `ai-req` calls. Uploaded files are stored privately and can only be accessed by you.
+
+#### Error responses
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Missing or invalid API token |
+| `422` | Validation failed (file missing, too large, or unsupported type) |
+| `500` | Server-side storage error |
+
+---
+
+### Delete Attachment
+
+```
+DELETE /api/attachments/{uuid}
+```
+
+Delete a previously uploaded attachment. Only the user who uploaded the file can delete it.
+
+#### Path Parameters
+
+- `uuid` (required): The UUID returned by `POST /api/attachments/upload`
+
+#### Response
+
+```json
+{
+  "success": true
+}
+```
+
+#### Error responses
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Missing or invalid API token |
+| `403` | The attachment does not belong to you |
+| `404` | No attachment found with the given UUID |
+| `500` | Server-side deletion error |
 
 ## Error Handling
 
@@ -206,7 +285,7 @@ API requests may be subject to rate limiting based on your organization's polici
 
 ## Example Usage
 
-### cURL Example
+### Text-only request (cURL)
 
 ```bash
 curl -X POST https://your-hawki-instance.com/api/ai-req \
@@ -227,7 +306,86 @@ curl -X POST https://your-hawki-instance.com/api/ai-req \
   }'
 ```
 
-### JavaScript Example
+### Image analysis workflow (cURL)
+
+```bash
+# Step 1: Upload the image
+UPLOAD=$(curl -s -X POST https://your-hawki-instance.com/api/attachments/upload \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -F "file=@/path/to/formula.jpg")
+
+UUID=$(echo "$UPLOAD" | jq -r '.uuid')
+
+# Step 2: Send the AI request with the image UUID
+curl -X POST https://your-hawki-instance.com/api/ai-req \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"payload\": {
+      \"model\": \"qwen3-vl-30b-a3b-instruct\",
+      \"messages\": [
+        {
+          \"role\": \"user\",
+          \"content\": {
+            \"text\": \"What is the formula shown in this image?\",
+            \"attachments\": [\"$UUID\"]
+          }
+        }
+      ]
+    }
+  }"
+
+# Step 3 (optional): Delete the attachment when no longer needed
+curl -X DELETE "https://your-hawki-instance.com/api/attachments/$UUID" \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+### Image analysis workflow (Python)
+
+```python
+import requests
+
+BASE_URL = "https://your-hawki-instance.com"
+TOKEN    = "YOUR_TOKEN_HERE"
+HEADERS  = {"Authorization": f"Bearer {TOKEN}"}
+
+# Step 1: Upload the image
+with open("formula.jpg", "rb") as f:
+    upload_resp = requests.post(
+        f"{BASE_URL}/api/attachments/upload",
+        files={"file": f},
+        headers=HEADERS,
+    )
+upload_resp.raise_for_status()
+uuid = upload_resp.json()["uuid"]
+
+# Step 2: Query a vision-capable model with the uploaded image
+ai_resp = requests.post(
+    f"{BASE_URL}/api/ai-req",
+    json={
+        "payload": {
+            "model": "qwen3-vl-30b-a3b-instruct",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": {
+                        "text": "What is the formula shown in this image?",
+                        "attachments": [uuid],
+                    },
+                }
+            ],
+        }
+    },
+    headers=HEADERS,
+)
+ai_resp.raise_for_status()
+print(ai_resp.json()["content"]["text"])
+
+# Step 3 (optional): Delete the attachment
+requests.delete(f"{BASE_URL}/api/attachments/{uuid}", headers=HEADERS)
+```
+
+### JavaScript Example (text only)
 
 ```javascript
 async function queryHawkiAPI() {
@@ -254,6 +412,51 @@ async function queryHawkiAPI() {
   
   const data = await response.json();
   return data;
+}
+```
+
+### JavaScript Example (image analysis)
+
+```javascript
+async function analyzeImageWithHawki(imageFile) {
+  const base = 'https://your-hawki-instance.com';
+  const headers = { 'Authorization': 'Bearer YOUR_TOKEN_HERE' };
+
+  // Step 1: Upload the image
+  const formData = new FormData();
+  formData.append('file', imageFile);
+  const uploadResp = await fetch(`${base}/api/attachments/upload`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+  const { uuid } = await uploadResp.json();
+
+  // Step 2: Send AI request with image UUID
+  const aiResp = await fetch(`${base}/api/ai-req`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      payload: {
+        model: 'qwen3-vl-30b-a3b-instruct',
+        messages: [
+          {
+            role: 'user',
+            content: {
+              text: 'Describe what you see in this image.',
+              attachments: [uuid],
+            },
+          },
+        ],
+      },
+    }),
+  });
+  const result = await aiResp.json();
+
+  // Step 3 (optional): Delete the attachment
+  await fetch(`${base}/api/attachments/${uuid}`, { method: 'DELETE', headers });
+
+  return result.content.text;
 }
 ```
 
