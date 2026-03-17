@@ -53,6 +53,7 @@ class StreamController extends Controller
         }
 
         $payload = $validatedData['payload'];
+        $payload['stream'] = false;
 
         // Handle standard response
         $response = $this->aiService->sendRequest($payload);
