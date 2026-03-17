@@ -6,6 +6,7 @@ namespace App\Services\AI\Providers;
 
 
 use App\Services\AI\Utils\StreamChunkHandler;
+use App\Services\AI\Value\AiErrorResponse;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
 use JsonException;
@@ -56,7 +57,7 @@ abstract class AbstractRequest
         if (curl_errno($ch)) {
             $error = curl_error($ch);
             \Log::error('cURL error in streaming request', ['error' => $error]);
-            $onData($this->createErrorResponse($error));
+            $onData(new AiErrorResponse($error));
         }
 
         if ($result === false) {
@@ -102,7 +103,7 @@ abstract class AbstractRequest
         if (curl_errno($ch)) {
             $error = 'Error: ' . curl_error($ch);
             curl_close($ch);
-            return $this->createErrorResponse($error);
+            return new AiErrorResponse($error);
         }
 
         curl_close($ch);
@@ -110,22 +111,6 @@ abstract class AbstractRequest
         $data = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
 
         return $dataToResponse($data);
-    }
-
-    /**
-     * Create a standardized error response
-     * @param string $error
-     * @return AiResponse
-     */
-    protected function createErrorResponse(string $error): AiResponse
-    {
-        return new AiResponse(
-            content: [
-                'text' => 'INTERNAL ERROR: ' . $error,
-                'error' => $error
-            ],
-            error: $error,
-        );
     }
 
     /**

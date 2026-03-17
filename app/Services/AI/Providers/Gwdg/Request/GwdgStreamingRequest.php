@@ -7,8 +7,10 @@ namespace App\Services\AI\Providers\Gwdg\Request;
 
 use App\Services\AI\Providers\AbstractRequest;
 use App\Services\AI\Tools\Value\ToolCall;
+use App\Services\AI\Tools\Value\ToolCallCollection;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
+use App\Services\AI\Value\ToolCallAiResponse;
 
 class GwdgStreamingRequest extends AbstractRequest
 {
@@ -51,11 +53,6 @@ class GwdgStreamingRequest extends AbstractRequest
             $this->processToolCallsDelta($jsonChunk['choices'][0]['delta']['tool_calls']);
         }
 
-        // When done, finalize accumulated tool calls
-        $toolCalls = ($isDone && !empty($this->accumulatedToolCalls))
-            ? $this->finalizeToolCalls()
-            : null;
-
         // Extract usage data if available (Mistral fix: check for empty choices array)
         $usage = (!empty($jsonChunk['usage']) && empty($jsonChunk['choices']))
             ? $this->extractUsage($model, $jsonChunk)
@@ -64,14 +61,22 @@ class GwdgStreamingRequest extends AbstractRequest
         // Extract content if available
         $content = $jsonChunk['choices'][0]['delta']['content'] ?? '';
 
-        return new AiResponse(
+        $response = new AiResponse(
             content: ['text' => $content],
             usage: $usage,
             isDone: $isDone,
             error: null,
-            toolCalls: $toolCalls,
             finishReason: $finishReason
         );
+
+        if ($isDone && !empty($this->accumulatedToolCalls)) {
+            return ToolCallAiResponse::fromResponseAndToolCalls(
+                $response,
+                $this->finalizeToolCalls()
+            );
+        }
+
+        return $response;
     }
 
     /**
@@ -107,7 +112,7 @@ class GwdgStreamingRequest extends AbstractRequest
     /**
      * Finalize accumulated tool calls into ToolCall objects
      */
-    private function finalizeToolCalls(): array
+    private function finalizeToolCalls(): ToolCallCollection
     {
         $toolCalls = [];
 
@@ -116,7 +121,7 @@ class GwdgStreamingRequest extends AbstractRequest
                 $arguments = json_decode($accumulated['function']['arguments'], true, 512, JSON_THROW_ON_ERROR);
 
                 $toolCalls[] = new ToolCall(
-                    id: $accumulated['id'] ?? 'tool-' . $index,
+                    id: $accumulated['id'] ?? ('tool-' . $index),
                     type: $accumulated['type'],
                     name: $accumulated['function']['name'],
                     arguments: $arguments ?? [],
@@ -136,6 +141,6 @@ class GwdgStreamingRequest extends AbstractRequest
             }
         }
 
-        return $toolCalls;
+        return new ToolCallCollection(...$toolCalls);
     }
 }

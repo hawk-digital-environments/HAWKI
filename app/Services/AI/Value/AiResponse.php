@@ -19,28 +19,11 @@ readonly class AiResponse implements \JsonSerializable
         public ?TokenUsage $usage = null,
         public bool        $isDone = true,
         public ?string     $error = null,
-        public ?array      $toolCalls = null,     // Array of ToolCall objects
         public ?string     $finishReason = null,  // 'stop', 'tool_calls', 'length', etc.
         public string      $type = 'message',     // 'content', 'tool_call', 'tool_result', 'status'
         public ?array      $status = null  // Optional message for status type
     )
     {
-    }
-
-    /**
-     * Check if this response contains tool calls
-     */
-    public function hasToolCalls(): bool
-    {
-        return !empty($this->toolCalls);
-    }
-
-    /**
-     * Check if the response finished due to tool calls
-     */
-    public function isToolCallsFinish(): bool
-    {
-        return $this->finishReason === 'tool_calls';
     }
 
     public function toArray(): array
@@ -49,7 +32,6 @@ readonly class AiResponse implements \JsonSerializable
             'content' => $this->content,
             'usage' => $this->usage,
             'isDone' => $this->isDone,
-            'toolCalls' => $this->toolCalls,
             'finishReason' => $this->finishReason,
             'type' => $this->type,
             'status' => $this->status,
@@ -63,5 +45,4 @@ readonly class AiResponse implements \JsonSerializable
     {
         return $this->toArray();
     }
-
 }

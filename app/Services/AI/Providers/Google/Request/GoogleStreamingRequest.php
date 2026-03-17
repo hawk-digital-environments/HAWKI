@@ -6,6 +6,7 @@ namespace App\Services\AI\Providers\Google\Request;
 
 
 use App\Services\AI\Providers\AbstractRequest;
+use App\Services\AI\Value\AiErrorResponse;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
 
@@ -41,6 +42,11 @@ class GoogleStreamingRequest extends AbstractRequest
         $content = '';
         $groundingMetadata = '';
         $isDone = false;
+
+        // Extract errors
+        if (isset($jsonChunk['error'])) {
+            return new AiErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
+        }
 
         // Extract content if available
         if (isset($jsonChunk['candidates'][0]['content']['parts'][0]['text'])) {

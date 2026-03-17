@@ -7,8 +7,10 @@ namespace App\Services\AI\Providers\Gwdg\Request;
 
 use App\Services\AI\Providers\AbstractRequest;
 use App\Services\AI\Tools\Value\ToolCall;
+use App\Services\AI\Tools\Value\ToolCallCollection;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
+use App\Services\AI\Value\ToolCallAiResponse;
 
 class GwdgNonStreamingRequest extends AbstractRequest
 {
@@ -35,29 +37,31 @@ class GwdgNonStreamingRequest extends AbstractRequest
         $message = $data['choices'][0]['message'] ?? [];
         $content = $message['content'] ?? '';
         $finishReason = $data['choices'][0]['finish_reason'] ?? null;
-        $toolCalls = null;
 
-        // Parse tool calls if present
-        if (isset($message['tool_calls']) && is_array($message['tool_calls'])) {
-            $toolCalls = $this->parseToolCalls($message['tool_calls']);
-        }
-
-        return new AiResponse(
+        $response = new AiResponse(
             content: [
                 'text' => $content
             ],
             usage: $this->extractUsage($model, $data),
             isDone: true,
-            error: null,
-            toolCalls: $toolCalls,
             finishReason: $finishReason
         );
+
+        // Parse tool calls if present
+        if (isset($message['tool_calls']) && is_array($message['tool_calls'])) {
+            return ToolCallAiResponse::fromResponseAndToolCalls(
+                $response,
+                $this->parseToolCalls($message['tool_calls'])
+            );
+        }
+
+        return $response;
     }
 
     /**
      * Parse tool calls from non-streaming response
      */
-    private function parseToolCalls(array $toolCallsData): array
+    private function parseToolCalls(array $toolCallsData): ToolCallCollection
     {
         $toolCalls = [];
 
@@ -71,7 +75,7 @@ class GwdgNonStreamingRequest extends AbstractRequest
                 );
 
                 $toolCalls[] = new ToolCall(
-                    id: $toolCallData['id'] ?? 'tool-' . $index,
+                    id: $toolCallData['id'] ?? ('tool-' . $index),
                     type: $toolCallData['type'] ?? 'function',
                     name: $toolCallData['function']['name'] ?? '',
                     arguments: $arguments,
@@ -90,6 +94,6 @@ class GwdgNonStreamingRequest extends AbstractRequest
             }
         }
 
-        return $toolCalls;
+        return new ToolCallCollection(...$toolCalls);
     }
 }

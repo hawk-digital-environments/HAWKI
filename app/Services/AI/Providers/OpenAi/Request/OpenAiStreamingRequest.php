@@ -6,12 +6,15 @@ namespace App\Services\AI\Providers\OpenAi\Request;
 
 
 use App\Services\AI\Providers\AbstractRequest;
+use App\Services\AI\Value\AiErrorResponse;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
+use App\Services\AI\Value\ToolCallAiResponse;
 
 class OpenAiStreamingRequest extends AbstractRequest
 {
     use OpenAiUsageTrait;
+    use OpenAiToolCallingTrait;
 
     public function __construct(
         private array    $payload,
@@ -38,11 +41,11 @@ class OpenAiStreamingRequest extends AbstractRequest
         // Parse the event JSON
         $jsonChunk = json_decode($chunk, true);
         if (!$jsonChunk) {
-            return $this->createErrorResponse('Invalid JSON chunk received.');
+            return new AiErrorResponse('Invalid JSON chunk received');
         }
 
         if (isset($jsonChunk['error'])) {
-            return $this->createErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
+            return new AiErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
         }
         $type = $jsonChunk['type'] ?? '';
 
@@ -74,7 +77,7 @@ class OpenAiStreamingRequest extends AbstractRequest
                 // Parse tool calls from output array
                 if (!empty($response['output'])) {
                     $toolCalls = $this->parseToolCalls($response['output']);
-                    if (!empty($toolCalls)) {
+                    if (!$toolCalls->isEmpty()) {
                         $finishReason = 'tool_calls';
                     }
                 }
@@ -103,44 +106,27 @@ class OpenAiStreamingRequest extends AbstractRequest
                 break;
         }
 
-        return new AiResponse(
+        $response = new AiResponse(
             content: [
                 'text' => $content,
             ],
             usage: $usage,
             isDone: $isDone,
-            toolCalls: $toolCalls,
             finishReason: $finishReason,
             type: $responseType,
             status: [
                         'key' => $statusKey,
                         'value' => $status,
                     ],
-
         );
-    }
 
-    /**
-     * Parse tool calls from Response API output array
-     */
-    private function parseToolCalls(array $output): array
-    {
-        $toolCalls = [];
-
-        foreach ($output as $item) {
-            if (($item['type'] ?? '') === 'function_call' && ($item['status'] ?? '') === 'completed') {
-                $arguments = json_decode($item['arguments'] ?? '{}', true);
-
-                $toolCalls[] = new \App\Services\AI\Tools\Value\ToolCall(
-                    id: $item['call_id'] ?? $item['id'] ?? 'unknown',
-                    type: 'function',
-                    name: $item['name'] ?? 'unknown',
-                    arguments: $arguments,
-                    index: null
-                );
-            }
+        if ($toolCalls?->isEmpty() === false) {
+            return ToolCallAiResponse::fromResponseAndToolCalls(
+                response: $response,
+                toolCalls: $toolCalls
+            );
         }
 
-        return $toolCalls;
+        return $response;
     }
 }

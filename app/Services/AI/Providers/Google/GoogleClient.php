@@ -20,7 +20,7 @@ class GoogleClient extends AbstractClient
     )
     {
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -30,7 +30,7 @@ class GoogleClient extends AbstractClient
             $this->requestConverter->convertRequestToPayload($request)
         ))->execute($request->model);
     }
-    
+
     /**
      * @inheritDoc
      */
@@ -41,7 +41,7 @@ class GoogleClient extends AbstractClient
             $onData
         ))->execute($request->model);
     }
-    
+
     /**
      * @inheritDoc
      */
