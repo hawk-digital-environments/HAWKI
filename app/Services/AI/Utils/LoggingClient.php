@@ -51,10 +51,7 @@ readonly class LoggingClient implements ClientInterface
         $response = $this->concreteClient->sendRequest($request);
 
         if ($response->error !== null || $response instanceof AiErrorResponse) {
-            $this->logger->error('AI request resulted in error', [
-                'request' => $request,
-                'response' => $response
-            ]);
+            $this->logger->error('AI request resulted in error', $this->buildErrorContext($request, $response));
         }
 
         return $response;
@@ -67,14 +64,24 @@ readonly class LoggingClient implements ClientInterface
     {
         $this->concreteClient->sendStreamRequest($request, function (AiResponse $response) use ($request, $onData) {
             if ($response->error !== null || $response instanceof AiErrorResponse) {
-                $this->logger->error('AI streaming request resulted in error', [
-                    'request' => $request,
-                    'response' => $response
-                ]);
+                $this->logger->error('AI streaming request resulted in error', $this->buildErrorContext($request, $response));
             }
 
             $onData($response);
         });
+    }
+
+    /**
+     * Build a sanitized error context for logging without including sensitive prompt data.
+     */
+    private function buildErrorContext(AiRequest $request, AiResponse $response): array
+    {
+        return [
+            // Intentionally avoid logging full request/response to prevent leaking prompts or attachments.
+            'response_class' => get_class($response),
+            'has_error' => $response->error !== null,
+            'error' => $response->error,
+        ];
     }
 
     /**
