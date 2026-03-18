@@ -15,13 +15,12 @@ use App\Services\AI\Tools\Value\ToolCallCollection;
  */
 readonly class ToolCallAiResponse extends AiResponse
 {
-    public ToolCallCollection $toolCalls;
-
     /**
      * @inheritDoc
      */
     private function __construct(
         array       $content,
+        public ToolCallCollection $toolCalls,
         ?TokenUsage $usage = null,
         ?string     $error = null,
         ?string     $finishReason = null,
@@ -68,17 +67,14 @@ readonly class ToolCallAiResponse extends AiResponse
 
     public static function fromResponseAndToolCalls(AiResponse $response, ToolCallCollection $toolCalls): self
     {
-        $toolCallResponse = new self(
+        return new self(
             content: $response->content,
+            toolCalls: $toolCalls,
             usage: $response->usage,
             error: $response->error,
             finishReason: $response->finishReason ?? 'tool_calls',
             type: 'tool_call',
             status: $response->status
         );
-
-        $toolCallResponse->toolCalls = $toolCalls;
-
-        return $toolCallResponse;
     }
 }
