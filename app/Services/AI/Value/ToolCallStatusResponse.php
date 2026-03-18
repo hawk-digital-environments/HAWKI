@@ -9,7 +9,13 @@ use App\Services\AI\Tools\ToolRegistry;
 use App\Services\AI\Tools\Value\ToolCallCollection;
 
 /**
- * @todo I am not sure what this response does, I implemented it based on the original code but why it needs to be there 🤷‍♂️
+ * Status response sent while tool calls are being prepared/resolved.
+ *
+ * The frontend expects a `type: "status"` payload with `status.key = "tool_call"`
+ * that lists the capabilities of all tools referenced in the current
+ * ToolCallCollection. This allows the UI to react to pending tool calls
+ * (e.g. by updating progress or enabling tool-specific interactions)
+ * before a final AI response is returned.
  */
 readonly class ToolCallStatusResponse extends AiResponse
 {
