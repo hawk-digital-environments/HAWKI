@@ -49,7 +49,7 @@ class OpenAiNonStreamingRequest extends AbstractRequest
 
             // Parse tool calls
             $toolCalls = $this->parseToolCalls($data['output']);
-            if (!$toolCalls->isEmpty()) {
+            if ($toolCalls->hasItems()) {
                 $finishReason = 'tool_calls';
             }
         }
@@ -61,7 +61,7 @@ class OpenAiNonStreamingRequest extends AbstractRequest
             finishReason: $finishReason
         );
 
-        if (!$toolCalls?->isEmpty()) {
+        if ($toolCalls?->hasItems()) {
             return ToolCallAiResponse::fromResponseAndToolCalls(
                 $response,
                 $toolCalls

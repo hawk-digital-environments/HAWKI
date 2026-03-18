@@ -89,6 +89,15 @@ readonly class ToolCallCollection implements \IteratorAggregate, \JsonSerializab
     }
 
     /**
+     * Returns true if the collection has entries, false otherwise
+     * @return bool
+     */
+    public function hasItems(): bool
+    {
+        return !$this->isEmpty();
+    }
+
+    /**
      * Returns an array of tool calls formatted for sending back to the model
      * @return array
      */

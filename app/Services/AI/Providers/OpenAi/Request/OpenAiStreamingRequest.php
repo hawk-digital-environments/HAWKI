@@ -77,7 +77,7 @@ class OpenAiStreamingRequest extends AbstractRequest
                 // Parse tool calls from output array
                 if (!empty($response['output'])) {
                     $toolCalls = $this->parseToolCalls($response['output']);
-                    if (!$toolCalls->isEmpty()) {
+                    if ($toolCalls->hasItems()) {
                         $finishReason = 'tool_calls';
                     }
                 }
@@ -120,7 +120,7 @@ class OpenAiStreamingRequest extends AbstractRequest
                     ],
         );
 
-        if ($toolCalls?->isEmpty() === false) {
+        if ($toolCalls?->hasItems()) {
             return ToolCallAiResponse::fromResponseAndToolCalls(
                 response: $response,
                 toolCalls: $toolCalls
