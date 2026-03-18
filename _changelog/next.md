@@ -18,6 +18,7 @@
 [//]: # (- List of bugs that have been fixed in this version.)
 
 - `bin/env dev` now no longer dies after 300 seconds, allowing for longer-running development sessions without interruption.
+- `php artisan ai:tools:mcp:add` now uses the correct api key to fetch server information, removing the hardcoded api key for the HAWKI dev environment. Thanks to Raphael Fetzer for pointing out this issue!
 
 ### Internals
 

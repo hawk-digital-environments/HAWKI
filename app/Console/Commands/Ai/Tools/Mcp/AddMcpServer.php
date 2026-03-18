@@ -208,11 +208,10 @@ class AddMcpServer extends Command
             $apiKey = $this->secret('Please enter the API key for the MCP server (leave blank if none)') ?: null;
         }
 
-
         $client = new MCPSSEClient(
-            $url,
-            (int) 5,
-            "1|Mx1y74lMsg02Npzih1r76jadBKG6iKEiiaG4ncEA4021f614"
+            serverUrl: $url,
+            timeout: 5,
+            apiKey: $apiKey
         );
 
         $info = $client->getServerInfo();
