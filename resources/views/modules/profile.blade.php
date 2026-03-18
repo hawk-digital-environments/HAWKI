@@ -18,8 +18,8 @@
 
                 <div class="">
                     <div class="chat-name-panel text-cont">
-                        <h1 class="text-field zero-v-margin" id="profile-name"></h1>
-                        @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction' => 'updateUserInformation'])
+                        <h1 class="text-field zero-v-margin" id="profile-name" role="text"></h1>
+                        @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction' => 'updateUserInformation', 'tooltip' => $translation["EditUserNameToolTip"]])
                     </div>
 
                     <p class="zero-v-margin" id="profile-username"></p>
