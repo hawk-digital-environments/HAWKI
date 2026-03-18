@@ -13,6 +13,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-pdo": "*",
         "blade-ui-kit/blade-icons": "^1.8.0",
         "hawk-hhg/hawki-crypto": "^0.5.3",
         "jumbojett/openid-connect-php": "^1.0.2",
@@ -23,8 +24,8 @@
         "league/flysystem-aws-s3-v3": "^3.30.1",
         "league/flysystem-sftp-v3": "^3.30.0",
         "league/flysystem-webdav": "^3.30.0",
-        "spatie/laravel-backup": "^9.3.4",
-        "ext-pdo": "*"
+        "neunerlei/dbg": "^3.3",
+        "spatie/laravel-backup": "^9.3.4"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
@@ -66,9 +67,11 @@
             "@php artisan migrate --graceful --ansi"
         ],
         "queue": [
+            "Composer\\Config::disableProcessTimeout",
             "@php artisan queue:work -vv --queue=default,mails,message_broadcast"
         ],
         "websocket": [
+            "Composer\\Config::disableProcessTimeout",
             "@php artisan reverb:start --debug"
         ]
     },
@@ -84,6 +87,7 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
+            "0.0.0/composer-include-files": true,
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
         }

@@ -6,6 +6,7 @@ namespace App\Services\AI\Providers\Google\Request;
 
 
 use App\Services\AI\Providers\AbstractRequest;
+use App\Services\AI\Value\AiErrorResponse;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
 
@@ -25,13 +26,18 @@ class GoogleNonStreamingRequest extends AbstractRequest
         return $this->executeNonStreamingRequest(
             model: $model,
             payload: $this->preparePayload($this->payload),
-            dataToResponse: fn(array $data) => new AiResponse(
-                content: [
-                    'text' => $data['candidates'][0]['content']['parts'][0]['text'] ?? '',
-                    'groundingMetadata' => $data['candidates'][0]['groundingMetadata'] ?? ''
-                ],
-                usage: $this->extractUsage($model, $data)
-            ),
+            dataToResponse: function (array $data) use ($model) {
+                if (isset($data['error'])) {
+                    return new AiErrorResponse($data['error']['message'] ?? 'Unknown error');
+                }
+                return new AiResponse(
+                    content: [
+                        'text' => $data['candidates'][0]['content']['parts'][0]['text'] ?? '',
+                        'groundingMetadata' => $data['candidates'][0]['groundingMetadata'] ?? ''
+                    ],
+                    usage: $this->extractUsage($model, $data)
+                );
+            },
             getHttpHeaders: fn() => [
                 'Content-Type: application/json'
             ],

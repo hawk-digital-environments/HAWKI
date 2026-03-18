@@ -8,11 +8,12 @@ namespace App\Services\AI\Providers\OpenAi\Request;
 use App\Services\AI\Providers\AbstractRequest;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
-use App\Services\AI\Tools\Value\ToolCall;
+use App\Services\AI\Value\ToolCallAiResponse;
 
 class OpenAiNonStreamingRequest extends AbstractRequest
 {
     use OpenAiUsageTrait;
+    use OpenAiToolCallingTrait;
 
     public function __construct(
         private array $payload
@@ -48,41 +49,27 @@ class OpenAiNonStreamingRequest extends AbstractRequest
 
             // Parse tool calls
             $toolCalls = $this->parseToolCalls($data['output']);
-            if (!empty($toolCalls)) {
+            if ($toolCalls->hasItems()) {
                 $finishReason = 'tool_calls';
             }
         }
 
-        return new AiResponse(
+        $response = new AiResponse(
             content: ['text' => $content],
             usage: $this->extractUsage($model, $data),
             isDone: true,
-            toolCalls: $toolCalls,
             finishReason: $finishReason
         );
-    }
 
-    /**
-     * Parse tool calls from Response API output array
-     */
-    private function parseToolCalls(array $output): array
-    {
-        $toolCalls = [];
-
-        foreach ($output as $item) {
-            if (($item['type'] ?? '') === 'function_call' && ($item['status'] ?? '') === 'completed') {
-                $arguments = json_decode($item['arguments'] ?? '{}', true);
-
-                $toolCalls[] = new ToolCall(
-                    id: $item['call_id'] ?? $item['id'] ?? 'unknown',
-                    type: 'function',
-                    name: $item['name'] ?? 'unknown',
-                    arguments: $arguments,
-                    index: null
-                );
-            }
+        if ($toolCalls?->hasItems()) {
+            return ToolCallAiResponse::fromResponseAndToolCalls(
+                $response,
+                $toolCalls
+            );
         }
 
-        return $toolCalls;
+        return $response;
     }
+
+
 }

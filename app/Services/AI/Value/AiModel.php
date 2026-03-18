@@ -314,6 +314,20 @@ class AiModel implements JsonSerializable
         return $this->context->getClient();
     }
 
+    /**
+     * Returns the number of tool calling rounds that should be allowed for this model before giving up and returning a response without executing further tool calls.
+     * @param bool $streaming
+     * @return int
+     */
+    public function getMaxToolCallingRounds(bool $streaming = false): int
+    {
+        // If the model supports streaming, we can allow more tool calling rounds since the user will get partial responses in the meantime.
+        if ($streaming) {
+            return $this->raw['max_tool_calling_rounds_streaming'] ?? 5;
+        }
+        return $this->raw['max_tool_calling_rounds'] ?? 3;
+    }
+
     public function toArray(): array
     {
         $out = $this->raw;

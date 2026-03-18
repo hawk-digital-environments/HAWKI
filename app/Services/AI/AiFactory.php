@@ -12,7 +12,10 @@ use App\Services\AI\Exception\MissingRequiredAiServiceClassException;
 use App\Services\AI\Interfaces\ClientInterface;
 use App\Services\AI\Interfaces\ModelProviderInterface;
 use App\Services\AI\Providers\GenericModelProvider;
+use App\Services\AI\Tools\ToolRegistry;
+use App\Services\AI\Utils\LoggingClient;
 use App\Services\AI\Utils\ModelAwareClient;
+use App\Services\AI\Utils\ToolCallingClient;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiModelContext;
 use App\Services\AI\Value\AvailableAiModels;
@@ -21,6 +24,7 @@ use App\Services\AI\Value\ProviderConfig;
 use Illuminate\Config\Repository;
 use Illuminate\Container\Attributes\Singleton;
 use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 
 #[Singleton]
 class AiFactory
@@ -29,7 +33,8 @@ class AiFactory
 
     public function __construct(
         private readonly ContainerInterface $container,
-        private readonly Repository         $config
+        private readonly Repository   $config,
+        private readonly ToolRegistry $toolRegistry
     )
     {
     }
@@ -112,9 +117,15 @@ class AiFactory
                 return $this->rememberInstance(
                     'client_for_' . $provider->getConfig()->getId() . '_model_' . $model->getId(),
                     function () use ($provider, $model) {
-                        return new ModelAwareClient(
-                            $this->getClientForProvider($provider),
-                            $model
+                        return new LoggingClient(
+                            new ToolCallingClient(
+                                new ModelAwareClient(
+                                    $this->getClientForProvider($provider),
+                                    $model
+                                ),
+                                $this->toolRegistry
+                            ),
+                            $this->container->get(LoggerInterface::class)
                         );
                     }
                 );

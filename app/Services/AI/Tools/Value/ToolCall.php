@@ -15,7 +15,11 @@ readonly class ToolCall implements \JsonSerializable
     {
     }
 
-    public function jsonSerialize(): array
+    /**
+     * Returns a plain array representation of the tool call, suitable for sending to the model or logging
+     * @return array
+     */
+    public function toArray(): array
     {
         return [
             'id' => $this->id,
@@ -27,14 +31,8 @@ readonly class ToolCall implements \JsonSerializable
         ];
     }
 
-    public function toArray(): array
+    public function jsonSerialize(): array
     {
-        return [
-            'id' => $this->id,
-            'type' => $this->type,
-            'name' => $this->name,
-            'arguments' => $this->arguments,
-            'index' => $this->index,
-        ];
+        return $this->toArray();
     }
 }

@@ -24,9 +24,12 @@ readonly class ModelAwareClient implements ClientInterface
     {
     }
 
-    public function getConcreteClient(): ClientInterface
+    /**
+     * @inheritDoc
+     */
+    public function buildStack(ClientStack $stack): ClientStack
     {
-        return $this->concreteClient;
+        return $stack->push($this, $this->concreteClient);
     }
 
     /**
