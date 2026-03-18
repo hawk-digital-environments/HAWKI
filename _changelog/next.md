@@ -5,6 +5,7 @@
 [//]: # (- The main new features and changes in this version.)
 
 - Added configuration settings for file uploads, that allow administrators to specify allowed file types and maximum file sizes, enhancing security and control over user uploads. See the [environment variables](../_documentation/3-architecture/10-dot%20Env.md#File-Upload-Settings) documentation for more details.
+- Improved accessiblity of the frontend by adding ARIA attributes and improving keyboard navigation, making it easier for users with disabilities to use the application. Thanks to [Thomas Orgeldinger](https://github.com/there-it-is) for the tremendous help!
 
 ### Quality of Life
 
