@@ -3,24 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
-
 use App\Models\Message;
 use App\Models\User;
+use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Chat\Message\MessageContentValidator;
+use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\FileStorageService;
 use Dotenv\Exception\ValidationException;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
-use App\Services\Chat\Room\RoomService;
-
-use App\Services\Chat\Message\MessageContentValidator;
-use App\Services\Chat\Attachment\AttachmentService;
-
-use Exception;
-use Illuminate\Auth\Access\AuthorizationException;
-
-use Illuminate\Http\JsonResponse;
 
 class RoomController extends Controller
 {
@@ -226,7 +221,7 @@ class RoomController extends Controller
     // SECTION: ATTACHMENTS
     public function storeAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
         $validateData = $request->validate([
-            'file' => 'required|file|max:20480'
+            'file' => 'required|file|max:' . ($attachmentService->getMaxFileSize() / 1024)
         ]);
         $result = $attachmentService->store($validateData['file'], 'group');
         return response()->json($result);

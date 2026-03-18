@@ -1,5 +1,39 @@
 <?php
 
+/* ------------------------------------------------------------------------------
+| Inherit the PHP upload limits and convert them to bytes for use in validation
+| ------------------------------------------------------------------------------ */
+$parseStringSize = static function (string|int $size) {
+    $unit = strtolower(substr((string)$size, -1));
+    $value = (int)substr((string)$size, 0, -1);
+
+    return match ($unit) {
+        'g' => $value * 1024 * 1024 * 1024,
+        'm' => $value * 1024 * 1024,
+        'k' => $value * 1024,
+        default => (int)$size,
+    };
+};
+$fallbackUploadSize = 1024 * 1024; // 1 MB
+$phpMaxUploadSize = max($fallbackUploadSize, $parseStringSize(ini_get('upload_max_filesize')));
+$phpMaxPostSize = max($fallbackUploadSize, $parseStringSize(ini_get('post_max_size')));
+
+// This value is the absolute maximum file size that can be uploaded, considering both the upload_max_filesize and
+// post_max_size limits. It is used to ensure that the application does not allow uploads that would exceed
+// the server's capabilities.
+$systemMaxFileSize = min($phpMaxUploadSize, $phpMaxPostSize);
+
+/**
+ * Helper to parse a configured size (which can be a string like "10M" or an integer in bytes)
+ * and ensure it does not exceed the system maximum file size.
+ * @param string|int $size
+ * @return mixed
+ */
+$parseAndLimitConfiguredSize = static function (string|int $size) use ($parseStringSize, $systemMaxFileSize) {
+    $parsedSize = $parseStringSize($size);
+    return min($parsedSize, $systemMaxFileSize);
+};
+
 return [
 
     /*
@@ -20,6 +54,28 @@ return [
     'file_storage' => env('STORAGE_DISK', 'local_file_storage'),
 
     'avatar_storage' => env('AVATAR_STORAGE', 'public'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filesystem Upload limits
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify the upload limits for different types of files.
+    | These limits are used to validate file uploads throughout the application.
+    */
+
+    'upload_limits' => [
+        // The maximum file size for an uploaded file(e.g. attachment) in bytes - default is 20 MB
+        'max_file_size' => $parseAndLimitConfiguredSize(env('MAX_FILE_SIZE', 10 * 1024 * 1024)),
+        // The maximum file size for an avatar in bytes - default is 2 MB
+        'max_avatar_file_size' => $parseAndLimitConfiguredSize(env('MAX_AVATAR_FILE_SIZE', 2 * 1024 * 1024)),
+        // Allowed MIME types for uploaded files(e.g. attachments) - comma separated list in .env (If empty, the defaults are defined in the file storage service)
+        'allowed_file_mime_types' => array_values(array_filter(explode(',', env('ALLOWED_FILE_MIME_TYPES', '')))),
+        // Allowed MIME types for uploaded avatars - comma separated list in .env (If empty, the defaults are defined in the avatar storage service)
+        'allowed_avatar_mime_types' => array_values(array_filter(explode(',', env('ALLOWED_AVATAR_MIME_TYPES', '')))),
+        // Maximum number of files that can be attached to a single message (0 = unlimited)
+        'max_attachment_files' => env('MAX_ATTACHMENT_FILES', 0),
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -46,7 +102,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
@@ -54,7 +110,7 @@ return [
         'local_file_storage' => [
             'driver' => 'local',
             'root' => storage_path('app/data_repo'),
-            'url' => env('APP_URL').'/data_repo',
+            'url' => env('APP_URL') . '/data_repo',
             'visibility' => 'private',
             'serve' => true,
             'throw' => false,
@@ -85,7 +141,7 @@ return [
         'sftp' => [
             'driver' => 'sftp',
             'host' => env('SFTP_HOST'),
-            'port' => (int) env('SFTP_PORT', 22),
+            'port' => (int)env('SFTP_PORT', 22),
             'username' => env('SFTP_USERNAME'),
             'password' => env('SFTP_PASSWORD'),
             'root' => env('SFTP_BASE_PATH', '/'),

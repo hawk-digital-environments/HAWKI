@@ -159,6 +159,26 @@ Uploaded media files are typically stored on disk and served from an asset web s
 | SFTP_PASSWORD  |               | SFTP password            |
 | SFTP_BASE_PATH |               | Base path on SFTP server |
 
+## File Upload Settings
+
+The following settings define the limits and allowed types for file uploads in HAWKI. These settings are crucial for ensuring that the application can handle file uploads securely and efficiently, while also providing a good user experience.
+
+> IMPORTANT! Your upload limits must be supported by your PHP configuration (e.g. `post_max_size` and `upload_max_filesize` in php.ini). If you set a file size limit that exceeds your PHP configuration, the limits will automatically be reduced to the maximum allowed by PHP, which may lead to confusion if you are not aware of this behavior. Always ensure that your PHP configuration supports the file size limits you set in these environment variables.
+
+:::tip Docker Users
+
+If you are using our Docker image: Use the `MAX_UPLOAD_SIZE` variable in the Docker configuration to set the PHP and Nginx limits accordingly.
+
+:::
+
+| Variable                  | Default Value | Description                                                                                                                                                                     |
+|---------------------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| MAX_FILE_SIZE             | 20971520      | The maximum file size for an uploaded file (e.g., attachment) in bytes. The default is 20 MB (20 * 1024 * 1024 bytes).                                                          |
+| MAX_AVATAR_FILE_SIZE      | 2097152       | The maximum file size for an avatar in bytes. The default is 2 MB (2 * 1024 * 1024 bytes).                                                                                      |
+| ALLOWED_FILE_MIME_TYPES   |               | A comma-separated list of allowed MIME types for uploaded files (e.g., "image/jpeg,image/png,application/pdf"). If empty, the defaults are defined in the file storage service. |
+| ALLOWED_AVATAR_MIME_TYPES |               | A comma-separated list of allowed MIME types for uploaded avatars (e.g., "image/jpeg,image/png"). If empty, the defaults are defined in the avatar storage service.             |
+| MAX_ATTACHMENT_FILES      | 0             | The maximum number of files that can be attached to a single message. Set to 0 for unlimited.                                                                                   |
+
 ## Session Configuration
 
 These are essential Laravel default variables for session management, and they must be present and active to ensure proper session handling within the application.
@@ -208,19 +228,6 @@ These environment variables are used to specify the SSL certificate and the corr
 | SSL_CERTIFICATE_KEY | Specifies the path to the private key file corresponding to your SSL certificate. The key is required to confirm the identity of the server and encrypt the data being transmitted. |
 
 In the broadcasting configuration, these variables are used to configure the Guzzle HTTP client with appropriate SSL settings. By providing these files, you enable SSL/TLS encryption for broadcast services, enhancing the security of data in transit.
-
-## Vite Environment Configuration
-
-These Vite environment variables are used to configure the front-end build system and its integration with services such as Reverb for real-time functionality within the application.
-
-| Variable                | Description                                                                                                                                                     |
-|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| VITE_APP_NAME           | Represents the application's name used within the Vite build process. It is typically a direct reflection of the application's name set in the Laravel backend. |
-| VITE_REVERB_APP_KEY     | The Reverb application's key used for authentication. It should mirror the REVERB_APP_KEY variable set in the backend environment configuration.                |
-| VITE_REVERB_APP_CLUSTER | The cluster designation for the Reverb setup, which specifies which region or data center the real-time data will be managed through.                           |
-| VITE_REVERB_HOST        | Designates the host for the Reverb service. This is typically set from the corresponding backend environment variable REVERB_HOST.                              |
-| VITE_REVERB_PORT        | Specifies the port that the Reverb service will run on, consistent with the setup from the backend environment variable REVERB_PORT.                            |
-| VITE_REVERB_SCHEME      | Defines the protocol scheme used by the Reverb service, such as "http" or "https", typically mirroring the REVERB_SCHEME variable from the backend.             |
 
 ## Queue Worker Configuration
 

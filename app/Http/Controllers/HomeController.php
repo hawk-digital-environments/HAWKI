@@ -7,15 +7,12 @@ use App\Services\AI\AiService;
 use App\Services\Announcements\AnnouncementService;
 use App\Services\Chat\AiConv\AiConvService;
 use App\Services\Chat\Room\RoomService;
-use App\Services\FileConverter\FileConverterFactory;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\FileStorageService;
 use App\Services\System\SettingsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 // use Illuminate\Support\Facades\View;
@@ -102,8 +99,6 @@ class HomeController extends Controller
         }
         $announcements = $announcementService->getUserAnnouncements();
 
-        $converterActive = FileConverterFactory::converterActive();
-
         // Pass translation, authenticationMethod, and authForms to the view
         return view('modules.' . $requestModule,
                     compact('translation',
@@ -117,7 +112,6 @@ class HomeController extends Controller
                             'toolKit',
                             'toolKitLabels',
                             'announcements',
-                            'converterActive',
                         ));
     }
 

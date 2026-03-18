@@ -77,23 +77,10 @@ async function handleSelectedFiles(files, inputField) {
 
     if (!files || files.length === 0) return;
 
-    const allowedTypes = [
-        // Images
-        'image/jpeg', 'image/jpg', 'image/png',
-    ];
-
-    if(converterActive){
-        allowedTypes.push(
-            // Documents
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        );
-    }
-
-
-    const maxMB = 10;
-    const maxFileSize = maxMB * 1024 * 1024; // 10MB limit
+    const allowedTypes = hawkiConnection('storage.allowedMimeTypes');
+    const maxFileSize = hawkiConnection('storage.maxFileSize');
+    const maxFileSizeMB = (maxFileSize / (1024 * 1024)).toFixed(2);
+    const maxFileSizeReadable = `${maxFileSizeMB} MB`;
 
     // Convert FileList to Array and process all files in parallel
     Array.from(files).map(async file => {
@@ -107,7 +94,7 @@ async function handleSelectedFiles(files, inputField) {
 
         // File size validation
         if (file.size > maxFileSize) {
-            showFeedbackMsg(inputField, 'error',  `${translation.Input_Err_MaxSize} ${maxMB}`);
+            showFeedbackMsg(inputField, 'error', `${translation.Input_Err_MaxSize} ${maxFileSizeReadable}`);
             return null;
         }
 

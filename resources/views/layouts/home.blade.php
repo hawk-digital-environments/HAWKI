@@ -56,6 +56,7 @@
 		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
 	</script>
 
+    <x-internal-frontend-connection/>
 </head>
 <body>
 
@@ -109,9 +110,6 @@
 	const aiHandle = "{{ config('hawki.aiHandle') }}";
 
     const announcementList = @json($announcements);
-
-    const converterActive = @json($converterActive);
-
 
     window.addEventListener('DOMContentLoaded', async (event) => {
         setModel();

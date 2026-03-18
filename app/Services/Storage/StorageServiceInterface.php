@@ -7,6 +7,20 @@ use Illuminate\Http\UploadedFile;
 interface StorageServiceInterface
 {
     /**
+     * Get the maximum allowed file size for uploads in bytes
+     *
+     * @return int The maximum file size in bytes
+     */
+    public function getMaxFileSize(): int;
+
+    /**
+     * Get the list of allowed MIME types for file uploads
+     *
+     * @return array The list of allowed MIME types
+     */
+    public function getAllowedMimeTypes(): array;
+
+    /**
      * Store a file in storage
      *
      * @param UploadedFile|string $file The file to store (UploadedFile or file contents)

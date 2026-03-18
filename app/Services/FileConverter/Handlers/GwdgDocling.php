@@ -2,11 +2,9 @@
 
 namespace App\Services\FileConverter\Handlers;
 
-use App\Services\FileConverter\Handlers\Interfaces\FileConverterInterface;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\Finder\SplFileInfo;
 
@@ -81,5 +79,13 @@ class GwdgDocling implements FileConverterInterface
         }
 
         return $files;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isAvailable(): bool
+    {
+        return true;
     }
 }

@@ -1,17 +1,23 @@
 import Echo from 'laravel-echo';
 
 import Pusher from 'pusher-js';
+import {hawkiConnection} from './util/hawkiConnection.js';
 
 window.Pusher = Pusher;
 
-window.Echo = new Echo({
-    broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY ?? 'hawki2',
-    wsHost: import.meta.env.VITE_REVERB_HOST ?? window.location.hostname,
-    wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-    wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-    forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
-    enabledTransports: ['ws', 'wss'],
-});
+const wsConfig = hawkiConnection('transfer.websocket');
 
-// console.log(window.Echo.connector.pusher.connection);
+if (wsConfig) {
+    window.Echo = new Echo({
+        broadcaster: 'reverb',
+        key: wsConfig.key,
+        wsHost: wsConfig.host,
+        wsPath: wsConfig.path || undefined,
+        wsPort: wsConfig.port,
+        wssPort: wsConfig.port,
+        forceTLS: wsConfig.forceTLS,
+        enabledTransports: ['ws', 'wss']
+    });
+} else {
+    console.warn('No frontend connection element found, Echo will not be initialized.');
+}

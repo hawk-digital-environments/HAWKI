@@ -2,22 +2,32 @@
 
 namespace App\Services\Storage;
 
+use App\Services\FileConverter\Handlers\FileConverterInterface;
+use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 use Throwable;
-use App\Services\Storage\UrlGenerator;
-use \Illuminate\Contracts\Filesystem\FileNotFoundException;
 
 abstract class AbstractFileStorage implements StorageServiceInterface
 {
     public function __construct(
-        protected array $config,
-        protected Filesystem $disk,
-        protected UrlGenerator $urlGenerator
+        protected array                  $allowedMimeTypes,
+        protected int                    $maxFileSize,
+        protected array                  $config,
+        protected Filesystem             $disk,
+        protected UrlGenerator           $urlGenerator,
+        protected FileConverterInterface $fileConverter
     )
     {
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getMaxFileSize(): int
+    {
+        return $this->maxFileSize;
     }
 
     public function store(
@@ -30,10 +40,9 @@ abstract class AbstractFileStorage implements StorageServiceInterface
     ): bool
     {
         try {
-            if($subDir === ''){
+            if ($subDir === '') {
                 $path = $this->buildPath($category, $uuid, $filename, $temp);
-            }
-            else{
+            } else {
                 $path = $this->buildFolder($category, $uuid, $temp) . $subDir . '/' . $filename;
             }
 
@@ -59,7 +68,7 @@ abstract class AbstractFileStorage implements StorageServiceInterface
                 $fileName = basename($file);
 
                 $tempPath = $this->buildPath($category, $uuid, $fileName, true);
-                $newPath  = $this->buildPath($category, $uuid, $fileName, false);
+                $newPath = $this->buildPath($category, $uuid, $fileName, false);
 
                 $this->disk->move($tempPath, $newPath);
             }
@@ -76,7 +85,7 @@ abstract class AbstractFileStorage implements StorageServiceInterface
                     // Build relative path: preserve the subdirectory name
                     $relativeSubDir = str_replace($tempFolder, '', $subDir);
                     $tempPath = $subFile;
-                    $newPath  = str_replace('temp/', '', $subFile); // shift from temp/ to root
+                    $newPath = str_replace('temp/', '', $subFile); // shift from temp/ to root
 
                     $this->disk->move($tempPath, $newPath);
                 }
@@ -108,7 +117,7 @@ abstract class AbstractFileStorage implements StorageServiceInterface
             }
 
             // Get the first file (excluding subdirectories like output/)
-            $directFiles = array_filter($files, function($file) use ($folder) {
+            $directFiles = array_filter($files, function ($file) use ($folder) {
                 $relativePath = str_replace($folder . '/', '', $file);
                 return !str_contains($relativePath, '/');
             });
@@ -180,6 +189,23 @@ abstract class AbstractFileStorage implements StorageServiceInterface
         }
     }
 
+    public function storeOutputFile(
+        string $content,
+        string $filenameOrPath,
+        string $uuid,
+        string $category,
+        bool   $temp = false
+    ): void
+    {
+        if (str_contains($filenameOrPath, '/') || str_contains($filenameOrPath, '\\')) {
+            $filename = basename($filenameOrPath);
+        } else {
+            $filename = $filenameOrPath;
+        }
+
+        $this->store($content, $filename, $uuid, $category, $temp, '/output');
+    }
+
     public function delete(string $uuid, string $category): bool
     {
         try {
@@ -190,7 +216,6 @@ abstract class AbstractFileStorage implements StorageServiceInterface
             return false;
         }
     }
-
 
 
     public function deleteTempExpiredFiles(): bool
@@ -238,7 +263,7 @@ abstract class AbstractFileStorage implements StorageServiceInterface
             }
 
             // Get the first direct file (not in subdirectories)
-            $directFiles = array_filter($files, function($file) use ($folder) {
+            $directFiles = array_filter($files, function ($file) use ($folder) {
                 $relativePath = str_replace($folder . '/', '', $file);
                 return !str_contains($relativePath, '/');
             });
@@ -260,11 +285,10 @@ abstract class AbstractFileStorage implements StorageServiceInterface
     {
         $subStr = str_split(substr($uuid, 0, 4), 1);
         $dir = join('/', $subStr);
-        if($temp){
-            return 'temp/' . trim($category, '/',) . '/' . $dir . '/' . trim($uuid, '/');
-        }
-        else{
-            return trim($category, '/',) . '/' . $dir . '/' . trim($uuid, '/');
+        if ($temp) {
+            return 'temp/' . trim($category, '/') . '/' . $dir . '/' . trim($uuid, '/');
+        } else {
+            return trim($category, '/') . '/' . $dir . '/' . trim($uuid, '/');
         }
     }
 

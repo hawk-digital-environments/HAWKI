@@ -2,15 +2,14 @@
 
 namespace App\Services\FileConverter\Handlers;
 
-use App\Services\FileConverter\Handlers\Interfaces\FileConverterInterface;
+use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Symfony\Component\Finder\SplFileInfo;
 use ZipArchive;
-use RecursiveIteratorIterator;
-use RecursiveDirectoryIterator;
-use Exception;
 
 class HawkiDocConverter implements FileConverterInterface
 {
@@ -93,5 +92,13 @@ class HawkiDocConverter implements FileConverterInterface
             unlink($tmpZip);
             throw new Exception("Failed to open ZIP file.");
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function isAvailable(): bool
+    {
+        return true;
     }
 }

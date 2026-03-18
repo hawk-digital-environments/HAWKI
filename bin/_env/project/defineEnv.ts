@@ -62,14 +62,6 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
             help: 'The app key to use for the reverb app. Should be the same as the app id.',
             default: 'hawki2'
         })
-        .define('VITE_REVERB_HOST', {
-            help: 'The host of the reverb app.',
-            default: isInstalled ? envFile.get('DOCKER_PROJECT_DOMAIN') : 'localhost'
-        })
-        .define('VITE_REVERB_PORT', {
-            help: 'The port of the reverb app.',
-            default: isInstalled ? '443' : '80'
-        })
         .define('MAIL_MAILER', {
             help: 'The mailer to use. By default, we configure the SMTP mailer to run against the mailhog service.',
             default: 'sendmail'

@@ -158,7 +158,7 @@ class AiConvController extends Controller
 
     public function storeAttachment(Request $request): JsonResponse {
         $validateData = $request->validate([
-            'file' => 'required|file|max:20480'
+            'file' => 'required|file|max:' . ($this->attachmentService->getMaxFileSize() / 1024)
         ]);
         $result = $this->attachmentService->store($validateData['file'], 'private');
         return response()->json($result);

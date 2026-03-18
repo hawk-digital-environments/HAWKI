@@ -4,25 +4,52 @@ namespace App\Services\Chat\Attachment;
 
 
 use App\Models\AiConvMsg;
-use App\Models\Message;
 use App\Models\Attachment;
-
-use App\Services\Chat\Attachment\AttachmentFactory;
-
+use App\Models\Message;
 use App\Services\Storage\FileStorageService;
-use App\Services\Storage\Interfaces\StorageServiceInterface;
-use App\Services\Storage\StorageServiceFactory;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Auth;
-
 use Exception;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class AttachmentService{
 
 
     public function __construct(
-        private FileStorageService $storageService
+        private readonly FileStorageService $storageService,
+        #[Config('filesystems.upload_limits.max_attachment_files')]
+        private readonly int                $maxAttachments = 0
     ) {}
+
+    /**
+     * Get allowed mime types for file uploads.
+     *
+     * @return array
+     */
+    public function getAllowedMimeTypes(): array
+    {
+        return $this->storageService->getAllowedMimeTypes();
+    }
+
+    /**
+     * Get maximum file size for uploads in bytes.
+     *
+     * @return int
+     */
+    public function getMaxFileSize(): int
+    {
+        return $this->storageService->getMaxFileSize();
+    }
+
+    /**
+     * Get maximum number of attachments allowed.
+     * If 0, then unlimited attachments are allowed.
+     * @return int
+     */
+    public function getMaxAttachments(): int
+    {
+        return $this->maxAttachments;
+    }
 
     public function store($file, $category): ?array
     {
