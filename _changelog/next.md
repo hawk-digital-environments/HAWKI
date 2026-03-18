@@ -19,6 +19,7 @@
 
 - `bin/env dev` now no longer dies after 300 seconds, allowing for longer-running development sessions without interruption.
 - `php artisan ai:tools:mcp:add` now uses the correct api key to fetch server information, removing the hardcoded api key for the HAWKI dev environment. Thanks to Raphael Fetzer for pointing out this issue!
+- The external API endpoint to HAWKI no longer throws an error if the `stream` parameter is missing, improving the robustness of the API and allowing for more flexible usage. Thanks to [willirath](https://github.com/willirath) for pointing this out and providing a [fix](https://github.com/hawk-digital-environments/HAWKI/pull/281).
 
 ### Internals
 
