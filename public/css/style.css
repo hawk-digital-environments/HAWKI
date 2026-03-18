@@ -722,6 +722,13 @@ button:disabled{
 .tooltip-parent{
     position: relative;
 }
+
+/* When the dropdown is opened, hide the tooltip to prevent overlap */
+.tooltip-parent.dropdown-open .tooltip,
+.tooltip-parent.active .tooltip {
+    display: none !important;
+}
+
 .tooltip{
     position: absolute;
     display: none;
@@ -744,14 +751,18 @@ button:disabled{
     top: 2rem;
 }
 
+.tooltip-left.tooltip-left.tooltip-left {
+    left: 100%;
+}
+
 .tt-abs-left{
     top: 50%;
     left: 110%; /* Moves tooltip to the right of the button */
     transform: translateY(-50%);
 }
 .tt-abs-up{
-    top: -1.5rem;
-    right: -150%;
+    top: -2rem;
+    /*right: -150%;*/
 }
 
 

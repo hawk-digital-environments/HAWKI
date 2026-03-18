@@ -1563,10 +1563,15 @@
     padding-left: 2rem;
 }
 
-.fast-access-btn{
+.fast-access-btn,
+.model-params-btn,
+.burger-btn-arrow {
     position: relative;
 }
-.fast-access-btn .tooltip{
+
+.burger-btn-arrow .tooltip,
+.fast-access-btn .tooltip,
+.model-params-btn .tooltip {
     display: none;
     position: absolute;
     bottom: 100%;

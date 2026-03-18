@@ -75,6 +75,7 @@
     "FileRemove": "Remove",
     "SpeakToolTip": "Read aloud",
     "ModelSelectorToolTip": "Select model",
+    "ModelParamsControlToolTip": "Modify model parameters",
     "MoreToolTip": "More …",
     "RegenerateToolTip": "Regenerate",
     "ThreadOpenToolTip": "Open thread",

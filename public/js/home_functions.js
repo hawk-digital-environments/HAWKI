@@ -141,6 +141,13 @@ document.addEventListener('click', function(event) {
             //if a input panel is clicked
             clickedBurgerMenu = clickedElement;
         }
+        if (clickedElement.getAttribute('data-sender-menu-id')) {
+            const menuId = clickedElement.getAttribute('data-sender-menu-id');
+            const menu = document.querySelector(`[data-menu-id="${menuId}"]`);
+            if (menu) {
+                clickedBurgerMenu = menu;
+            }
+        }
 
 
         if (clickedElement.id === 'input-container') {
@@ -155,7 +162,7 @@ document.addEventListener('click', function(event) {
 });
 
 
-
+let burgerId = 0;
 function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = true){
     let menu;
     if(isRelativeToElement){
@@ -176,13 +183,10 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
         menu.style.left = `${btnRect.left}px`;
     }
 
-    if(sender && sender.querySelector('.icon')){
-        sender.querySelector('.icon').classList.add('active');
-    }
-    sender.classList.add('active');
+    const isAlreadyOpen = menu.getAttribute('data-menu-state') === 'open';
 
-    if(toggleOnSenderClick && menu.style.display !== 'none'){
-        if(closeMenuOnSelect){
+    if (toggleOnSenderClick && isAlreadyOpen) {
+        if (closeMenuOnSelect) {
             closeBurgerMenus(null);
         }
         else{
@@ -190,6 +194,19 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
         }
     }
     else{
+        const menuId = burgerId++;
+        menu.setAttribute('data-menu-id', `${menuId}`);
+        menu.setAttribute('data-menu-state', 'open');
+
+        if (sender) {
+            sender.setAttribute('data-sender-menu-id', `${menuId}`);
+            sender.setAttribute('data-sender-menu-state', 'open');
+            sender.classList.add('active', 'dropdown-open');
+            const senderIcon = sender.querySelector('.icon');
+            if (senderIcon) {
+                senderIcon.classList.add('active');
+            }
+        }
         menu.style.display = `block`;
         setTimeout(() => {
             //add some buffer to the width
@@ -203,7 +220,24 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
 }
 
 
-function closeBurgerMenus(clickedBurgerMenu){
+function closeBurgerMenus(clickedBurgerMenu) {
+    // Disable all active senders
+    const menuIdToKeepOpen = clickedBurgerMenu ? clickedBurgerMenu.getAttribute('data-menu-id') : null;
+    let senderSelector = '[data-sender-menu-id]';
+    if (clickedBurgerMenu) {
+        senderSelector = `[data-sender-menu-id]:not([data-sender-menu-id="${menuIdToKeepOpen}"])`;
+    }
+    document.querySelectorAll(senderSelector).forEach(sender => {
+        sender.classList.remove('active', 'dropdown-open');
+
+        sender.setAttribute('data-sender-menu-state', 'closed');
+
+        const senderIcon = sender.querySelector('.icon');
+        if (senderIcon) {
+            senderIcon.classList.remove('active');
+        }
+    });
+
     const menus = document.querySelectorAll('.burger-dropdown');
 
     menus.forEach(menu => {
@@ -225,6 +259,7 @@ function closeBurgerMenus(clickedBurgerMenu){
                 menu.style.display = "none";
             }, 300);
         }
+        menu.setAttribute('data-menu-state', 'closed');
     });
 }
 

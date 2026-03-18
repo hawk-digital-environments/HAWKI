@@ -64,7 +64,7 @@
                         @include('partials.home.components.models-list', ['selectModel' => true])
                     </div>
                     @php $tooltipId = str()->uuid() @endphp
-                    <button class="burger-btn-arrow burger-btn" onclick="openInputModelSelector(this)" aria-labelledby="{{ $tooltipId }}">
+                    <button class="burger-btn-arrow burger-btn tooltip-parent" onclick="openInputModelSelector(this)" aria-labelledby="{{ $tooltipId }}">
                         <div class="icon" aria-hidden="true">
                             <x-icon name="chevron-up"/>
                         </div>
@@ -72,8 +72,11 @@
                         <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["ModelSelectorToolTip"] }}</div>
                     </button>
                 </div>
-                <button class="btn-xs model-params-btn" onclick="openMsgParamsControlPanel(this)">
-                    <x-icon name="tool"/>
+
+                @php $tooltipId = str()->uuid() @endphp
+                <button class="btn-xs model-params-btn tooltip-parent " onclick="openMsgParamsControlPanel(this)" aria-labelledby="{{ $tooltipId }}">
+                    <x-icon name="tool" aria-hidden="true"/>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["ModelParamsControlToolTip"] }}</div>
                 </button>
             </div>
         </div>
@@ -215,15 +218,15 @@
                     <div class="buttons-bar">
                         <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
                             <x-icon name="paperclip"/>
-                            <div class="tooltip">
+                            <div class="tooltip tooltip-left">
                                 {{ $translation["UploadFile"] }}
                             </div>
                         </button>
 
 
-                        <div id="tool-selection-btn" class="btn-xs tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true, true)">
+                        <div id="tool-selection-btn" class="btn-xs fast-access-btn tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true, true)">
                             <x-icon name="plus"/>
-                            <div class="label tooltip" style="right: -60%; top: -2.25rem;">
+                            <div class="label tooltip">
                                 {{ $translation["Add_Tool"] }}
                             </div>
                             @include('partials.home.components.tools-list')
@@ -234,14 +237,19 @@
                 </div>
             </div>
 
-            <div class="input-main-btn input-send tooltip-parent">
+            <div class="input-main-btn input-send">
                 @php $tooltipId = str()->uuid() @endphp
-                @if($activeModule === 'chat')
-                    <button id="send-btn" onClick="onSendClickConv(this)" aria-labelledby="{{ $tooltipId }}">
-                @elseif($activeModule === 'groupchat')
-                    <button id="send-btn" onClick="onSendClickRoom(this)" aria-labelledby="{{ $tooltipId }}">
-                @endif
-                        <div id="send-icon" class="send-btn-icon" aria-hidden="true">
+                <button id="send-btn"
+                        class="tooltip-parent"
+
+                        @if($activeModule === 'chat')
+                            onClick="onSendClickConv(this)"
+                        @elseif($activeModule === 'groupchat')
+                            onClick="onSendClickRoom(this)"
+                        @endif
+                        aria-labelledby="{{ $tooltipId }}">
+
+                    <div id="send-icon" class="send-btn-icon" aria-hidden="true">
                             <x-icon name="arrow-up"/>
                         </div>
                         <div id="stop-icon" class="send-btn-icon" style="display:none" aria-hidden="true">
