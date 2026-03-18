@@ -8,6 +8,7 @@ namespace App\Services\AI\Utils;
 use App\Services\AI\Interfaces\ClientInterface;
 use App\Services\AI\Interfaces\ModelProviderInterface;
 use App\Services\AI\Tools\ToolRegistry;
+use App\Services\AI\Value\AiErrorResponse;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
 use App\Services\AI\Value\AiResponse;
@@ -73,12 +74,21 @@ readonly class ToolCallingClient implements ClientInterface
                 return $response;
             }
 
-            Log::info('AiTool execution required', [
-                'round' => $round + 1,
-                'tool_count' => count($response->toolCalls),
-            ]);
+            // Security, if the model keeps calling tools for some reason,
+            // we need to break the loop at some point to avoid infinite loops and potential abuse.
+            // This triggers ONLY, if the model responds with a tool calls,
+            // even if the follow-up request is marked as not allowing further tool calls, which should never happen,
+            // but we want to be safe.
+            if ($round >= $maxToolRounds) {
+                return new AiErrorResponse('Maximum tool calling rounds reached, aborting to prevent potential infinite loop');
+            }
 
             $round++;
+
+            Log::info('AiTool execution required', [
+                'round' => $round,
+                'tool_count' => count($response->toolCalls),
+            ]);
 
             $currentRequest = ToolCallFollowUpAiRequest::fromRequest(
                 originalRequest: $request,
@@ -123,6 +133,16 @@ readonly class ToolCallingClient implements ClientInterface
 
             // If the last complete response does not contain tool calls, we are done
             if (!$lastCompleteResponse instanceof ToolCallAiResponse) {
+                return;
+            }
+
+            // Security, if the model keeps calling tools for some reason,
+            // we need to break the loop at some point to avoid infinite loops and potential abuse.
+            // This triggers ONLY, if the model responds with a tool calls,
+            // even if the follow-up request is marked as not allowing further tool calls, which should never happen,
+            // but we want to be safe.
+            if ($round >= $maxToolRounds) {
+                $onData(new AiErrorResponse('Maximum tool calling rounds reached, aborting to prevent potential infinite loop'));
                 return;
             }
 
