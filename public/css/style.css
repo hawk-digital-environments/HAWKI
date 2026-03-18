@@ -253,7 +253,7 @@ svg{
 
 .modal-content-wrapper{
     direction: rtl;
-    overflow-y: scroll;
+    overflow-y: auto;
     margin-left: 4px;
     height: 100%;
 }
@@ -406,6 +406,7 @@ button:disabled{
     cursor: pointer;
     font-size: 1rem;
     border-radius: var(--border-radius-normal);
+    outline-offset: -2px;
 }
 .btn-lg-fill{
     font-weight: 400;
@@ -417,6 +418,10 @@ button:disabled{
     color: var(--text-color);
     border: var(--border-stroke-bold);
     border-radius: var(--border-radius-normal);
+}
+
+.btn-text:hover {
+    text-decoration: underline;
 }
 
 .save-btn{
@@ -438,8 +443,6 @@ button:disabled{
     position: absolute;
     right: 2rem;
     top: 2rem;
-    width: 24px;
-    height: 24px;
     z-index: 99;
     cursor: pointer;
 }
@@ -505,6 +508,8 @@ button:disabled{
     width: fit-content;
     background-color: transparent;
     border-radius: var(--border-radius-tight);
+    cursor: pointer;
+    border: none;
 }
 
 .burger-btn-arrow .icon{
@@ -560,7 +565,7 @@ button:disabled{
     width: 100%;
     height: 2.5rem;
     padding:  0 1rem;
-    border-radius: 5px;
+    border-radius: var(--border-radius-normal);
     background-color: transparent;
     transition: background-color var(--transition-fast);
     border: none;
@@ -568,6 +573,8 @@ button:disabled{
     white-space: nowrap;
     z-index: 99;
     transition: font-weight 0.05s;
+    cursor: pointer;
+    outline-offset: -2px;
 }
 .burger-item:not(:disabled):hover{
     background-color: var(--background-secondary);
@@ -592,6 +599,7 @@ button:disabled{
     border-radius: var(--border-radius-tight);
     background-color: transparent;
     transition: background-color var(--transition-fast);
+    outline-offset: -2px;
 }
 .menu-item .label{
     flex: 1;
@@ -730,6 +738,10 @@ button:disabled{
     background-color: var(--background-secondary);
     border: var(--border-stroke-hairline);
     border-radius: var(--border-radius-tight);
+}
+
+.tooltip-below{
+    top: 2rem;
 }
 
 .tt-abs-left{

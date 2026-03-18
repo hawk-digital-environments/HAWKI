@@ -37,13 +37,16 @@
 
 
         <div class="footerPanel">
-
-            <button class="btn-sm" onclick="toggleSettingsPanel(true)">
-                <x-icon name="settings-icon"/>
+            @php $tooltipId = str()->uuid() @endphp
+            <button class="btn-sm" onclick="toggleSettingsPanel(true)" aria-labelledby="{{ $tooltipId }}">
+                <x-icon name="settings-icon" aria-hidden="true"/>
+                 <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
+                    {{ $translation["Settings"] }}
+                </div>
             </button>
             <div class="impressumPanel">
-                <a href="/dataprotection" target="_blank">{{ $translation["DataProtection"] }}</a>
-                <a href="{{ env("IMPRINT_LOCATION") }}" target="_blank">{{ $translation["Impressum"] }}</a>
+                <a href="/dataprotection" target="_blank" class="btn-text">{{ $translation["DataProtection"] }}</a>
+                <a href="{{ env("IMPRINT_LOCATION") }}" target="_blank" class="btn-text">{{ $translation["Impressum"] }}</a>
             </div>
         </div>
 
@@ -51,8 +54,8 @@
 
     <main>
         <div class="backgroundImageContainer">
-            <video class="image_preview_container" src="" type="video/m4v" preload="none" autoplay loop muted></video>
-            <a href="" target="_blank" class="video-credits"></a>
+            <video class="image_preview_container" src="" type="video/m4v" preload="none" tabindex="-1" autoplay loop muted></video>
+            <a href="" target="_blank" class="video-credits" tabindex="-1"></a>
         </div>
     </main>
 </div>

@@ -1,13 +1,13 @@
 <div class="modal" id="member-info-modal">
     <div class="modal-panel">
         <div class="modal-content-wrapper">
-            
-            <div class="closeButton" onclick="closeMemberInfoModal()">
-                <svg viewBox="0 0 100 100"><path class="fill-svg" d="M 19.52 19.52 a 6.4 6.4 90 0 1 9.0496 0 L 51.2 42.1504 L 73.8304 19.52 a 6.4 6.4 90 0 1 9.0496 9.0496 L 60.2496 51.2 L 82.88 73.8304 a 6.4 6.4 90 0 1 -9.0496 9.0496 L 51.2 60.2496 L 28.5696 82.88 a 6.4 6.4 90 0 1 -9.0496 -9.0496 L 42.1504 51.2 L 19.52 28.5696 a 6.4 6.4 90 0 1 0 -9.0496 z"/></svg>
-            </div>
-        
+
+            <button class="closeButton btn-sm" onclick="closeMemberInfoModal()" aria-label="{{ $translation["Close"] }}">
+                <svg viewBox="0 0 100 100" aria-hidden="true"><path class="fill-svg" d="M 19.52 19.52 a 6.4 6.4 90 0 1 9.0496 0 L 51.2 42.1504 L 73.8304 19.52 a 6.4 6.4 90 0 1 9.0496 9.0496 L 60.2496 51.2 L 82.88 73.8304 a 6.4 6.4 90 0 1 -9.0496 9.0496 L 51.2 60.2496 L 28.5696 82.88 a 6.4 6.4 90 0 1 -9.0496 -9.0496 L 42.1504 51.2 L 19.52 28.5696 a 6.4 6.4 90 0 1 0 -9.0496 z"/></svg>
+            </button>
+
             <div class="modal-content">
-       
+
                 <div class="avatar-editable">
                     <img class="icon-img selectable-image" id="member-avatar"   alt="">
                     <div class="control-panel-chat-initials" id="member-inits"></div>
