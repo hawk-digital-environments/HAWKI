@@ -92,7 +92,7 @@ readonly class AiService
     public function sendRequest(array|AiRequest $request): AiResponse
     {
         [$request, $model] = $this->resolveRequestAndModel($request);
-        return $model->getClient()->sendRequest($request);
+        return $model->getClient()->sendRequest($request->withoutStreaming());
     }
 
     /**
@@ -108,7 +108,7 @@ readonly class AiService
     public function sendStreamRequest(array|AiRequest $request, callable $onData): void
     {
         [$request, $model] = $this->resolveRequestAndModel($request);
-        $model->getClient()->sendStreamRequest($request, $onData);
+        $model->getClient()->sendStreamRequest($request->withStreaming(), $onData);
     }
 
     /**

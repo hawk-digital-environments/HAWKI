@@ -45,7 +45,7 @@ readonly class OllamaRequestConverter
         $payload = [
             'model' => $modelId,
             'messages' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
+            'stream' => $request->shouldStream(),
         ];
 
         // Add optional parameters if present in the raw payload

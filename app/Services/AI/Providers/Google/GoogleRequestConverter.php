@@ -54,7 +54,7 @@ readonly class GoogleRequestConverter
             'model' => $modelId,
             'system_instruction' => $systemInstruction,
             'contents' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
+            'stream' => $request->shouldStream(),
         ];
 
         // Add optional parameters if present in the raw payload
@@ -230,7 +230,7 @@ readonly class GoogleRequestConverter
             ];
         } catch (\Exception $e) {
             Log::error('Failed to process image attachment: ' . $e->getMessage());
-            return $parts[] = [
+            return [
                 'text' => '[ERROR: Could not process image attachment: ' . $attachment->name . ']'
             ];
         }

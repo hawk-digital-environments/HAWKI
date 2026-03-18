@@ -45,7 +45,7 @@ readonly class OpenAiRequestConverter
         $payload = [
             'model' => $modelId,
             'input' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
+            'stream' => $request->shouldStream(),
         ];
 
         // Add optional parameters if present in the raw payload
