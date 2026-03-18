@@ -25,7 +25,7 @@ trait OpenAiToolCallingTrait
                     id: $item['call_id'] ?? $item['id'] ?? 'unknown',
                     type: 'function',
                     name: $item['name'] ?? 'unknown',
-                    arguments: $arguments,
+                    arguments: is_array($arguments) ? $arguments : [],
                     index: null
                 );
             }
