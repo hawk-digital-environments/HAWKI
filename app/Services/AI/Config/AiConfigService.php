@@ -298,8 +298,11 @@ class AiConfigService
                         'label' => $model->label,
                         'active' => $model->is_active,
                         'visible' => $model->is_visible,
-                        'input' => ['text'], // Default capabilities
-                        'output' => ['text'],
+                        'input' => array_unique(array_merge(
+                            $model->information['input'] ?? ['text'],
+                            ($tools['vision'] ?? false) ? ['image'] : []
+                        )),
+                        'output' => $model->information['output'] ?? ['text'],
                         'tools' => $tools,
                         'system_id' => $model->system_id, // Keep system_id for reference
                         'status' => 'online', // Always set to online for UI (real status check implemented later)
