@@ -18,6 +18,7 @@ use App\Services\AI\Value\ToolCallAiResponse;
 use App\Services\AI\Value\ToolCallFollowUpAiRequest;
 use App\Services\AI\Value\ToolCallStatusResponse;
 use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 
 /**
  * A Client decorator that adds support for AiTool calling based on the model's capabilities. It
@@ -29,7 +30,8 @@ readonly class ToolCallingClient implements ClientInterface
 {
     public function __construct(
         private ClientInterface $modelClient,
-        private ToolRegistry    $toolRegistry
+        private ToolRegistry    $toolRegistry,
+        private LoggerInterface $logger
     )
     {
     }
@@ -63,7 +65,14 @@ readonly class ToolCallingClient implements ClientInterface
      */
     public function sendRequest(AiRequest $request): AiResponse
     {
-        $maxToolRounds = $request->model?->getMaxToolCallingRounds(false) ?? 3;
+        // If no model is set, we cannot determine tool calling capabilities,
+        // so we just pass through the request to the underlying client without any tool calling support.
+        if ($request->model === null) {
+            $this->logger->warning('Received AiRequest without a model, skipping tool calling logic');
+            return $this->modelClient->sendRequest($request);
+        }
+
+        $maxToolRounds = $request->model->getMaxToolCallingRounds(false);
         $round = 0;
         $currentRequest = $request;
 
@@ -104,7 +113,15 @@ readonly class ToolCallingClient implements ClientInterface
      */
     public function sendStreamRequest(AiRequest $request, callable $onData): void
     {
-        $maxToolRounds = $request->model?->getMaxToolCallingRounds(true) ?? 5;
+        // If no model is set, we cannot determine tool calling capabilities,
+        // so we just pass through the request to the underlying client without any tool calling support.
+        if ($request->model === null) {
+            $this->logger->warning('Received AiRequest without a model, skipping tool calling logic');
+            $this->modelClient->sendStreamRequest($request, $onData);
+            return;
+        }
+
+        $maxToolRounds = $request->model->getMaxToolCallingRounds(true);
         $round = 0;
         $currentRequest = $request;
 

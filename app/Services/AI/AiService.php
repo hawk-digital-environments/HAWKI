@@ -124,7 +124,7 @@ readonly class AiService
                 throw new ModelNotInPayloadException($request);
             }
             $model = $this->getModelOrFail($modelId);
-            $request = new AiRequest(payload: $request);
+            $request = new AiRequest(model: $model, payload: $request);
             return [$request, $model];
         }
 

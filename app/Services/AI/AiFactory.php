@@ -117,15 +117,17 @@ class AiFactory
                 return $this->rememberInstance(
                     'client_for_' . $provider->getConfig()->getId() . '_model_' . $model->getId(),
                     function () use ($provider, $model) {
+                        $logger = $this->container->get(LoggerInterface::class);
                         return new LoggingClient(
                             new ToolCallingClient(
                                 new ModelAwareClient(
                                     $this->getClientForProvider($provider),
                                     $model
                                 ),
-                                $this->toolRegistry
+                                $this->toolRegistry,
+                                $logger
                             ),
-                            $this->container->get(LoggerInterface::class)
+                            $logger
                         );
                     }
                 );
