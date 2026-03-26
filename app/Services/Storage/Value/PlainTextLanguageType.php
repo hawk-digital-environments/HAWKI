@@ -630,6 +630,7 @@ enum PlainTextLanguageType: string
         'application/x-perl' => self::PERL,
         'text/x-perl' => self::PERL,
         // PHP
+        'text/x-php' => self::PHP,
         'application/x-php' => self::PHP,
         'application/x-httpd-php' => self::PHP,
         // POSTSCRIPT — image/x-eps skipped (image variant)
