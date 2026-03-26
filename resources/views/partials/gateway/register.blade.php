@@ -1,7 +1,7 @@
 @extends('layouts.gateway')
 @section('content')
 
-<button class="slide-back-btn" onclick="switchBackSlide()" aria-label="{{ $translation["Back"] }}">
+    <button class="slide-back-btn" onclick="switchBackSlide()" aria-label="{{ __("Back") }}">
     <x-icon name="chevron-left" aria-hidden="true"/>
 </button>
 
@@ -13,24 +13,24 @@
         </div>
 
         <div class="slide" data-index="1">
-            <h1>{{ $translation["Reg_SL1_H"] }}</h1>
+            <h1>{{ __("Reg_SL1_H") }}</h1>
             <div class="slide-content">
-                <p>{{ $translation["Reg_SL1_T"] }}</p>
+                <p>{{ __("Reg_SL1_T") }}</p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(2)">{{ $translation["Reg_SL1_B"] }}</button>
+                <button class="btn-lg-fill" onclick="switchSlide(2)">{{ __("Reg_SL1_B") }}</button>
             </div>
         </div>
 
         <div class="slide" data-index="2">
-            <h1>{{ $translation["Reg_SL2_H"] }}</h1>
+            <h1>{{ __("Reg_SL2_H") }}</h1>
             <div class="slide-content">
                 <p>
-                    {{ $translation["Reg_SL2_T"] }}
+                    {{ __("Reg_SL2_T") }}
                 </p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
+                <button class="btn-lg-fill" onclick="switchSlide(3)">{{ __("Reg_SL2_B") }}</button>
             </div>
         </div>
 
@@ -39,24 +39,24 @@
         </div>
 
         <div class="slide" data-index="4">
-            <h1>{{ $translation["Reg_SL4_H"] }}</h1>
+            <h1>{{ __("Reg_SL4_H") }}</h1>
             <div class="slide-content">
                 <p>
-                    {!! $translation["Reg_SL4_T"] !!}
+                    {!! __("Reg_SL4_T") !!}
                 </p>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(5)">{{ $translation["Reg_SL4_B"] }}</button>
+                <button class="btn-lg-fill" onclick="switchSlide(5)">{{ __("Reg_SL4_B") }}</button>
             </div>
         </div>
 
         <div class="slide" data-index="5">
-            <h1>{{ $translation["Reg_SL5_H"] }}</h1>
+            <h1>{{ __("Reg_SL5_H") }}</h1>
             <form id="passkey-form"  autocomplete="off">
                 <div class="password-input-wrapper">
                     <input
                         class="passkey-input"
-                        placeholder="{{ $translation['Reg_SL5_PH1'] }}"
+                        placeholder="{{ __('Reg_SL5_PH1') }}"
                         id="passkey-input"
                         type="text"
                         autocomplete="new-password"
@@ -74,7 +74,7 @@
                 <div id="passkey-repeat" class="password-input-wrapper top-gap-2" style="display:none" >
                     <input
                         class="passkey-input"
-                        placeholder="{{  $translation["Reg_SL5_PH2"] }}"
+                        placeholder="{{  __("Reg_SL5_PH2") }}"
                         type="text"
                         autocomplete="new-password"
                         autocorrect="off"
@@ -90,31 +90,31 @@
                 </div>
             </form>
             <p class="slide-subtitle top-gap-2">
-                {!! $translation["Reg_SL5_T"] !!}
+                {!! __("Reg_SL5_T") !!}
             </p>
             <p class="red-text" id="alert-message"></p>
 
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="checkPasskey()">{{ $translation["Save"] }}</button>
+                <button class="btn-lg-fill" onclick="checkPasskey()">{{ __("Save") }}</button>
             </div>
 
         </div>
 
         <div class="slide" data-index="6">
-            <h1 class="zero-b-margin">{{ $translation["Reg_SL6_H"] }}</h1>
+            <h1 class="zero-b-margin">{{ __("Reg_SL6_H") }}</h1>
             <p class="slide-subtitle top-gap-2">
-                {{ $translation["Reg_SL6_T"] }}
+                {{ __("Reg_SL6_T") }}
             </p>
             <div class="backup-hash-row">
                 <h3 id="backup-hash" class="demo-hash"></h3>
                 @php $tooltipId = str()->uuid() @endphp
                 <button class="btn-sm border" onclick="downloadTextFile()" aria-labelledby="{{ $tooltipId }}">
                     <x-icon name="download" aria-hidden="true"/>
-                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["DownloadTextFileTooltip"] }}</div>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("DownloadTextFileTooltip") }}</div>
                 </button>
             </div>
             <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="onBackupCodeComplete()">{{ $translation["Continue"] }}</button>
+                <button class="btn-lg-fill" onclick="onBackupCodeComplete()">{{ __("Continue") }}</button>
             </div>
         </div>
 
@@ -125,7 +125,6 @@
 
 <script>
     let userInfo = @json($userInfo);
-    const translation = @json($translation);
 
     initializeRegistration();
     document.addEventListener('DOMContentLoaded', function(){

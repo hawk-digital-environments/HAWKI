@@ -4,15 +4,17 @@ sidebar_position: 7
 
 # File Storage System
 
-HAWKI's file storage system provides a unified interface for storing, retrieving, and managing files across multiple storage drivers. Built on Laravel's filesystem abstraction, it supports local storage, cloud services (S3), SFTP, and WebDAV with automatic URL generation and cleanup functionality.
+HAWKI's file storage system provides a unified interface for storing, retrieving, and managing files across multiple storage drivers. Built on Laravel's filesystem abstraction, it supports local storage, cloud services (S3), SFTP, and WebDAV with automatic URL generation, content extraction, and cleanup functionality.
 
 ## Architecture Overview
 
-The system uses a factory pattern combined with Laravel's singleton pattern to provide consistent file operations across different storage backends:
+The system uses a service provider pattern combined with Laravel's singleton pattern to provide consistent file operations across different storage backends:
 
-- **Storage Services**: `FileStorageService` (general files) and `AvatarStorageService` (profile images)
-- **Factory Pattern**: `StorageServiceFactory` creates configured service instances
-- **URL Generation**: Driver-aware URL generation with security features
+- **Storage Services**: `FileStorageService` (general files) and `AvatarStorageService` (profile images), both extending `AbstractFileStorage`
+- **Value Objects**: Immutable objects like `StoredFile`, `FileReference`, `StoredFileIdentifier`, and `StoredFileExtract` represent files at different stages
+- **File Interface**: A common `FileInterface` contract shared by `StoredFile`, `StoredFileExtract`, and `FileReference`
+- **URL Generation**: All file URLs are routed through `StorageProxyController` via a named route
+- **Content Extraction**: Automatic text extraction from uploaded documents for AI consumption
 - **Automatic Cleanup**: Temporary file expiration and garbage collection
 
 ### File Organization Structure
@@ -26,11 +28,92 @@ Files are organized using UUID-based directory sharding for scalability:
 │   │   ├── {3rd_char_of_uuid}/
 │   │   │   ├── {4th_char_of_uuid}/
 │   │   │   │   └── {uuid}/
-│   │   │   │       ├── {uuid}.{extension}
-│   │   │   │       └── subdirectories/
+│   │   │   │       ├── {uuid}.{extension}   ← the stored file
+│   │   │   │       ├── .meta.json           ← metadata (StoredFile serialized)
+│   │   │   │       └── output/              ← content extracts
+│   │   │   │           └── extract.md
 ```
 
 Temporary files include a `temp/` prefix: `temp/{category}/{uuid_path}/{uuid}/`
+
+### File Categories
+
+The `StoredFileCategory` enum defines four categories:
+
+| Category         | Value             | Description                              |
+|------------------|-------------------|------------------------------------------|
+| `ROOM_AVATAR`    | `room_avatars`    | Avatars of groups/rooms                  |
+| `PROFILE_AVATAR` | `profile_avatars` | Avatars of users                         |
+| `GROUP`          | `group`           | Files shared in group/room chats         |
+| `PRIVATE`        | `private`         | Files shared in private AI conversations |
+
+## FileInterface and Implementations
+
+The `FileInterface` (`App\Services\Storage\Interfaces\FileInterface`) defines a common contract for all file representations in the system. It extends `Stringable` and provides methods for accessing file content, metadata, and type information.
+
+### Key Methods
+
+| Method                       | Returns                       | Description                                                 |
+|------------------------------|-------------------------------|-------------------------------------------------------------|
+| `getOriginalFilename()`      | `string`                      | User-facing filename (may differ from disk filename)        |
+| `getDiskFilePath()`          | `string`                      | Path on disk where the file is stored                       |
+| `getFileType()`              | `FileType`                    | General file categorization (image, pdf, plain-text, etc.)  |
+| `getPlainTextLanguageType()` | `PlainTextLanguageType\|null` | Language type for plain text files (e.g., markdown, python) |
+| `getMimeType()`              | `string`                      | MIME type of the file                                       |
+| `getContent()`               | `string`                      | File content as a string                                    |
+| `getStream()`                | `resource\|null`              | Stream resource for reading file content                    |
+| `getSize()`                  | `int`                         | File size in bytes                                          |
+
+### FileType Enum
+
+The `FileType` enum categorizes files into: `IMAGE`, `VIDEO`, `AUDIO`, `WORD_DOCUMENT`, `PDF`, `PLAIN_TEXT`, and `OTHER`. It can be derived from a MIME type using `FileType::fromMimeType()`.
+
+### Implementations
+
+#### FileReference
+
+`FileReference` (`App\Services\Storage\Value\FileReference`) represents a file that may reside in one of three locations:
+
+- **In memory** — raw string content (created via `FileReference::fromContent()`)
+- **On the local disk** — an absolute filesystem path (created via `FileReference::fromDisk()`)
+- **On a Laravel Filesystem disk** — e.g. S3, local storage disk (created via `FileReference::fromFilesystemDisk()`)
+
+Additional factory methods: `fromUploadedFile()` (from HTTP uploads) and `fromStoredFile()` (from an existing `StoredFile` or `StoredFileExtract`).
+
+`FileReference` is the input type for storing files — it abstracts where the file currently lives so the storage system can handle it uniformly.
+
+#### StoredFile
+
+`StoredFile` (`App\Services\Storage\Value\StoredFile`) is a readonly value object representing a file that has been persisted in the storage system. It is created either by storing a new file (`StoredFile::fromNewFile()`) or by loading metadata from disk (`StoredFile::fromMetaJson()`).
+
+Key additional methods beyond `FileInterface`:
+
+- `getIdentifier()` — returns the `StoredFileIdentifier`
+- `getExtracts()` — returns a `FileCollection` of `StoredFileExtract` instances (content extractions)
+- `getUrl()` — generates the access URL via the `UrlGenerator`
+- `getEtag()` — returns the ETag for caching
+- `getMetaDiskFileName()` — path to the `.meta.json` file
+
+`StoredFile` implements `JsonSerializable` and is serialized to `.meta.json` alongside the stored file on disk. The `diskFolderPath` is intentionally **not** persisted — it is injected when loading from JSON, allowing files to be moved on disk without updating metadata.
+
+#### StoredFileExtract
+
+`StoredFileExtract` (`App\Services\Storage\Value\StoredFileExtract`) represents extracted content from a stored file (e.g., text extracted from a PDF via the file converter). Extracts are stored in the `output/` subfolder alongside the source file.
+
+For plain text files, `getContent()` automatically wraps non-markdown content in markdown code fences for proper formatting.
+
+### StoredFileIdentifier
+
+`StoredFileIdentifier` (`App\Services\Storage\Value\StoredFileIdentifier`) is a readonly value object that uniquely identifies a stored file by combining a `StoredFileCategory` and a UUID. It serializes to and from the string format `{category}-{uuid}[.{extension}]`.
+
+Factory methods for various contexts:
+
+- `fromAttachment(Attachment)` — from an Attachment model
+- `fromUserAvatar(User)` / `tryFromUserAvatar(User)` — from a User model's avatar
+- `fromRoomAvatar(Room)` / `tryFromRoomAvatar(Room)` — from a Room model's icon
+- `fromString(string)` — from the serialized string format
+- `fromCategoryAndUuid(category, uuid)` — direct construction
+- `fromCategoryAndFilename(category, filename)` — generates a new UUID
 
 ## Supported Storage Drivers
 
@@ -42,7 +125,8 @@ Temporary files include a `temp/` prefix: `temp/{category}/{uuid_path}/{uuid}/`
     'visibility' => 'private',
 ]
 ```
-**Use Case**: Development, single-server deployments  
+
+**Use Case**: Development, single-server deployments
 **Access**: Through application routes only
 
 ### Public Local Storage
@@ -54,7 +138,8 @@ Temporary files include a `temp/` prefix: `temp/{category}/{uuid_path}/{uuid}/`
     'visibility' => 'public',
 ]
 ```
-**Use Case**: Avatar images, publicly accessible assets  
+
+**Use Case**: Avatar images, publicly accessible assets
 **Access**: Direct web access via `php artisan storage:link`
 
 ### Amazon S3
@@ -80,6 +165,8 @@ Temporary files include a `temp/` prefix: `temp/{category}/{uuid_path}/{uuid}/`
 ]
 ```
 
+The WebDAV driver is registered in `StorageServiceProvider::boot()`.
+
 ### SFTP
 ```php
 'sftp' => [
@@ -95,137 +182,156 @@ Temporary files include a `temp/` prefix: `temp/{category}/{uuid_path}/{uuid}/`
 
 ### StorageServiceInterface
 
-All storage services implement this interface:
+All storage services implement `StorageServiceInterface`:
 
 #### store()
 ```php
-public function store(
-    UploadedFile|string $file, 
-    string $filename, 
-    string $uuid, 
-    string $category, 
-    bool $temp = false,
-    string $subDir = ''
-): bool
+public function store(FileReference $file, StoredFileCategory $category): StoredFile|null
 ```
 
-Store a file with UUID-based organization. Set `$temp = true` for temporary storage.
+Store a file permanently. Returns a `StoredFile` on success, `null` on failure. Automatically generates a UUID, stores the file on disk, extracts content (if enabled), and writes the `.meta.json` metadata file.
+
+#### storeTemporary()
+
+```php
+public function storeTemporary(FileReference $file, StoredFileCategory $category): StoredFile|null
+```
+
+Store a file in the temporary location (prefixed with `temp/`). The file should later be persisted via `persistTemporaryFile()`.
+
+#### persistTemporaryFile()
+
+```php
+public function persistTemporaryFile(StoredFileIdentifier $identifier): bool
+```
+
+Move a file from temporary to permanent storage by relocating its folder.
 
 #### retrieve()
 ```php
-public function retrieve(string $uuid, string $category): ?string
+public function retrieve(StoredFileIdentifier|null $identifier, bool $temp = false): ?StoredFile
 ```
 
-Retrieve file contents. Returns `null` if file doesn't exist.
-
-#### getUrl()
-```php
-public function getUrl(string $uuid, string $category): ?string
-```
-
-Generate access URL using driver-appropriate method (direct URLs, pre-signed URLs, or signed routes).
+Retrieve a stored file by its identifier. Accepts `null` for convenience with `tryFrom...` methods. Supports legacy files that don't have a `.meta.json` — in that case, metadata is reconstructed from the filesystem and attachment database.
 
 #### delete()
 ```php
-public function delete(string $uuid, string $category): bool
+public function delete(StoredFileIdentifier|null $identifier, bool $temp = false): bool
 ```
 
-Delete file and associated directories.
+Delete a file and its entire directory (including extracts and metadata).
 
-#### moveFileToPersistentFolder()
+#### getMaxFileSize() / getAllowedMimeTypes()
 ```php
-public function moveFileToPersistentFolder(string $uuid, string $category): bool
+public function getMaxFileSize(): int
+public function getAllowedMimeTypes(): array
 ```
 
-Move files from temporary to permanent storage.
+Return upload constraints. `FileStorageService` includes image types, plain text types, and file converter types. `AvatarStorageService` includes only image types.
 
-## URL Generation System
+### AbstractFileStorage
 
-The system automatically selects optimal URL generation based on storage configuration:
+The `AbstractFileStorage` base class implements all `StorageServiceInterface` methods. Child classes only need to implement `getAllowedMimeTypes()` and optionally disable content extraction by setting `$extractFileContent = false`.
 
-| Driver      | Visibility | URL Method               | Result                  |
-|-------------|------------|--------------------------|-------------------------|
-| local       | public     | `disk->url()`            | Direct web URLs         |
-| local       | private    | `temporarySignedRoute()` | Laravel signed routes   |
-| s3          | private    | `temporaryUrl()`         | S3 pre-signed URLs      |
-| sftp/webdav | private    | `temporarySignedRoute()` | Proxied through Laravel |
+#### Child Classes
 
-### URL Examples
+- **`FileStorageService`** — General file storage. Accepts images, plain text files, and any file types supported by the configured `FileConverterInterface`. Content extraction is enabled.
+- **`AvatarStorageService`** — Avatar image storage. Accepts only image MIME types. Content extraction is disabled (`$extractFileContent = false`).
 
-**Direct Access (Local Public)**:
+### File Extension Handling
+
+For security, the storage system normalizes file extensions when writing to disk. Only `pdf`, `doc`, `docx`, `jpg`, `jpeg`, `png`, and `gif` extensions are preserved as-is. All other file types are stored with a `.blob` extension to prevent direct execution of potentially harmful files. The original extension is preserved in the `.meta.json` metadata.
+
+## Temporary Files and Multi-Step Uploads
+
+The storage system uses a two-phase upload process to handle file uploads reliably. Instead of storing files directly into their permanent location, files are first placed in a temporary directory (prefixed with `temp/`) and only moved to permanent storage once the frontend completes the full workflow.
+
+This pattern exists because file uploads are decoupled from the actions that reference them. A typical flow looks like this:
+
+1. **Upload request** — The frontend uploads a file. The backend calls `storeTemporary()`, which stores the file under the `temp/` prefix and returns a `StoredFile` with its identifier.
+2. **Attach request** — In a separate HTTP request, the frontend submits the chat message (or other record) and includes the file's identifier. The backend then calls `persistTemporaryFile()` to move the file from the temporary to the permanent location.
+
+If the second request never arrives — for example, the user closes the browser tab, navigates away, or the frontend encounters an error — the file remains in the temporary directory. The `deleteTempExpiredFiles()` cleanup method (run periodically) removes any temporary files older than 5 minutes, preventing orphaned uploads from accumulating on disk.
+
+This approach avoids two problematic alternatives:
+- **Storing permanently on upload**: Would leave orphaned files if the user never completes the action, requiring complex garbage collection against the database.
+- **Storing only on the final request**: Would require the frontend to hold the entire file in memory or re-upload it with the second request, increasing complexity and payload size.
+
+## StorageProxyController
+
+The `StorageProxyController` (`App\Http\Controllers\StorageProxyController`) handles all file access through a single route (`web.storage.proxy`). It receives a `StoredFileIdentifier` string, parses it, and routes the request based on the file category:
+
+| Category                        | Access Rule                                                                          |
+|---------------------------------|--------------------------------------------------------------------------------------|
+| `ROOM_AVATAR`, `PROFILE_AVATAR` | Streamed directly (no additional access checks)                                      |
+| `GROUP`                         | Verifies the current user is a member of the room the attachment belongs to          |
+| `PRIVATE`                       | Verifies the current user owns the private AI conversation the attachment belongs to |
+
+Responses include:
+
+- **ETag-based caching**: Returns `304 Not Modified` if the client sends a matching `If-None-Match` header
+- **Streaming**: Files are streamed via `streamDownload()` with proper `Content-Type`, `Cache-Control`, and `ETag` headers
+- The original filename is used for the `Content-Disposition` header
+
+## URL Generation
+
+The `UrlGenerator` is a simple readonly class that generates URLs by calling `URL::route()` with the `web.storage.proxy` route name and the file's `StoredFileIdentifier` as a parameter. All file URLs go through the `StorageProxyController`, which handles access control and streaming.
+
+## Service Registration
+
+Services are registered as singletons in `StorageServiceProvider`:
+
+```php
+// UrlGenerator — shared singleton using the 'web.storage.proxy' route
+$this->app->singleton(UrlGenerator::class, ...);
+
+// AvatarStorageService — uses the 'avatar_storage' disk (default: 'public')
+$this->app->singleton(AvatarStorageService::class, ...);
+
+// FileStorageService — uses the 'file_storage' disk (default: 'local_file_storage')
+$this->app->singleton(FileStorageService::class, ...);
 ```
-https://yourapp.com/storage/avatars/a/b/c/d/abcd-1234/abcd-1234.jpg
-```
 
-**Signed Route (Private)**:
-```
-https://yourapp.com/files/documents/download/uuid-123?expires=1640995200&signature=abc123...
-```
-
-**S3 Pre-signed**:
-```
-https://bucket.s3.amazonaws.com/path/file.jpg?X-Amz-Expires=86400&X-Amz-Signature=...
-```
+Both services receive a `StorageServiceContext` containing: the filesystem disk, allowed MIME types, max file size, logger, URL generator, content extractor, attachment database, and a clock instance.
 
 ## Service Usage
 
-### Dependency Injection
+### Storing Files
 ```php
-class DocumentController extends Controller
+class MyController extends Controller
 {
     public function upload(Request $request, FileStorageService $storage)
     {
-        $file = $request->file('document');
-        $uuid = Str::uuid();
-        
-        $stored = $storage->store(
-            file: $file,
-            filename: $file->getClientOriginalName(),
-            uuid: $uuid,
-            category: 'documents'
-        );
-        
+        $file = FileReference::fromUploadedFile($request->file('document'));
+
+        // Store temporarily first
+        $stored = $storage->storeTemporary($file, StoredFileCategory::GROUP);
+        // This is optional, you can also directly persist in one step with store() if you don't need the temp location
+        $stored = $storage->store($file, StoredFileCategory::GROUP);
+
         if ($stored) {
+            // Later, persist the file
+            $storage->persistTemporaryFile($stored->getIdentifier());
+
             return response()->json([
-                'uuid' => $uuid,
-                'download_url' => $storage->getUrl($uuid, 'documents')
+                'identifier' => (string) $stored->getIdentifier(),
+                'url' => $stored->getUrl()
             ]);
         }
-        
+
         return response()->json(['error' => 'Upload failed'], 500);
     }
 }
 ```
 
-### Avatar Management
+### Retrieving Files
 ```php
-public function uploadAvatar(Request $request, AvatarStorageService $avatarStorage)
-{
-    $avatar = $request->file('avatar');
-    $avatarId = Str::uuid();
-    
-    $stored = $avatarStorage->store(
-        file: $avatar,
-        filename: $avatarId . '.' . $avatar->getClientOriginalExtension(),
-        uuid: $avatarId,
-        category: 'profile_avatars'
-    );
-    
-    if ($stored) {
-        return response()->json([
-            'avatar_url' => $avatarStorage->getUrl($avatarId, 'profile_avatars')
-        ]);
-    }
+$file = $storage->retrieve($identifier);
+if ($file) {
+    $url = $file->getUrl();
+    $content = $file->getContent();
+    $extracts = $file->getExtracts(); // Content extractions (e.g., text from PDF)
 }
-```
-
-### Temporary Files Workflow
-```php
-// 1. Upload to temporary storage
-$stored = $storage->store($file, $filename, $uuid, 'documents', temp: true);
-
-// 2. Later, move to permanent storage
-$moved = $storage->moveFileToPersistentFolder($uuid, 'documents');
 ```
 
 ## Configuration
@@ -237,7 +343,6 @@ $moved = $storage->moveFileToPersistentFolder($uuid, 'documents');
 FILESYSTEM_DISK=local
 STORAGE_DISK=local_file_storage
 AVATAR_STORAGE=public
-REMOVE_FILES_AFTER_MONTHS=6
 
 # S3 Configuration (if using S3)
 S3_ACCESS_KEY=your_access_key
@@ -259,172 +364,29 @@ SFTP_PASSWORD=your-password
 SFTP_BASE_PATH=/home/user/uploads
 ```
 
-### Service Registration
-
-Services are registered as singletons in `AppServiceProvider`:
-
-```php
-public function register()
-{
-    $this->app->singleton(FileStorageService::class, function ($app) {
-        return $app->make(StorageServiceFactory::class)->getFileStorage();
-    });
-
-    $this->app->singleton(AvatarStorageService::class, function ($app) {
-        return $app->make(StorageServiceFactory::class)->getAvatarStorage();
-    });
-}
-```
-
-## Adding New Storage Drivers
-
-### 1. Create Driver Configuration
-
-Add to `config/filesystems.php`:
-
-```php
-'disks' => [
-    'my_custom_driver' => [
-        'driver' => 'my_driver',
-        'custom_setting' => env('MY_DRIVER_SETTING'),
-        'visibility' => 'private',
-    ]
-]
-```
-
-### 2. Register Custom Driver (if needed)
-
-If using a custom driver not supported by Laravel:
-
-```php
-// In AppServiceProvider boot()
-Storage::extend('my_driver', function ($app, $config) {
-    return new Filesystem(new MyCustomAdapter($config));
-});
-```
-
-### 3. Update URL Generation (if needed)
-
-Extend the `UrlGenerator` trait if your driver needs special URL handling:
-
-```php
-class CustomFileStorage extends AbstractFileStorage
-{
-    protected function generateUrl(string $path, string $uuid, string $category): string
-    {
-        if ($this->config['driver'] === 'my_driver') {
-            return $this->generateCustomUrl($path, $uuid, $category);
-        }
-        
-        return parent::generateUrl($path, $uuid, $category);
-    }
-    
-    private function generateCustomUrl(string $path, string $uuid, string $category): string
-    {
-        // Custom URL generation logic
-        return "https://my-service.com/files/{$uuid}";
-    }
-}
-```
-
-### 4. Create Custom Service
-
-```php
-class CustomStorageService extends AbstractFileStorage
-{
-    public function __construct(array $config, Filesystem $disk)
-    {
-        parent::__construct($config, $disk);
-    }
-    
-    // Override methods if needed for driver-specific behavior
-}
-```
-
-### 5. Update Factory
-
-```php
-class StorageServiceFactory
-{
-    public function getCustomStorage(): CustomStorageService
-    {
-        $disk = $this->config->get('filesystems.my_custom_storage', 'my_custom_driver');
-        return new CustomStorageService(
-            config('filesystems.disks.' . $disk),
-            $this->filesystemManager->disk($disk)
-        );
-    }
-}
-```
-
 ## File Cleanup and Management
 
 ### Automatic Cleanup
 
-The system includes automatic cleanup for temporary files:
+The system includes automatic cleanup for temporary files older than 5 minutes:
 
 ```php
-// Clean up expired temporary files (older than 5 minutes)
 $cleaned = $storage->deleteTempExpiredFiles();
 ```
 
-### Scheduled Cleanup Command
+This method iterates over all `temp/` directories, deletes expired files, and removes empty directories afterward.
 
-```php
-class CleanupExpiredFiles extends Command
-{
-    public function handle(FileStorageService $storage)
-    {
-        $cleaned = $storage->deleteTempExpiredFiles();
-        $this->info($cleaned ? 'Temporary files cleaned up' : 'No expired files found');
-    }
-}
-```
+### Legacy File Support
 
-### Configuration-based Cleanup
+Files uploaded before the metadata system was introduced are handled transparently. When `retrieve()` encounters a file directory without a `.meta.json`, it:
 
-Files are automatically cleaned based on configuration:
-
-```php
-'garbage_collections' => [
-    'remove_files_after_months' => env('REMOVE_FILES_AFTER_MONTHS', 6),
-]
-```
-
-## Error Handling
-
-### Exception Types
-- `FileNotFoundException`: File doesn't exist
-- `Storage exceptions`: Various filesystem-related errors
-
-### Error Handling Pattern
-```php
-try {
-    $content = $storage->retrieve($uuid, 'documents');
-    if (!$content) {
-        return response()->json(['error' => 'File not found'], 404);
-    }
-    // Process content
-} catch (FileNotFoundException $e) {
-    return response()->json(['error' => 'File not found'], 404);
-} catch (Exception $e) {
-    Log::error('Storage operation failed', ['error' => $e->getMessage()]);
-    return response()->json(['error' => 'Storage operation failed'], 500);
-}
-```
+1. Looks up the original filename from the attachment database
+2. Finds any existing content extracts in the `output/` subfolder
+3. Reconstructs a `StoredFile` and writes the `.meta.json` for future access
 
 ## Security Features
 
-- **Base64 Path Encoding**: Prevents path traversal attacks
-- **Temporary URL Expiration**: Default 24-hour expiration
-- **Signed Routes**: Laravel signature verification for private files
-- **Driver-appropriate Security**: Uses each driver's native security features
-
-## Performance Considerations
-
-- **Direct Access**: Public files served directly by web server (fastest)
-- **Cloud Pre-signed URLs**: S3 files served directly from cloud (fast)
-- **Proxied Access**: Private files served through Laravel (controlled but slower)
-- **Singleton Pattern**: Services instantiated once per request for efficiency
-
-This file storage system provides a robust, scalable solution for file management in HAWKI while maintaining security and performance across different storage backends.
+- **File Extension Normalization**: Non-standard extensions are replaced with `.blob` to prevent execution
+- **Access Control**: `StorageProxyController` enforces room membership and conversation ownership checks
+- **ETag Caching**: Prevents unnecessary file transfers and provides cache validation
+- **Category-based Routing**: Different access rules per file category

@@ -182,5 +182,5 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
 
 function showAllowedCharactersMessage(){
     const msg = document.querySelector('#alert-message');
-    msg.innerText = translation.HS_Allowed_PK_Characters;
+    msg.innerText = __('HS_Allowed_PK_Characters');
 }

@@ -90,7 +90,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
             header = messageObj.author.name
         }
         else{
-            header = `<span>${messageObj.author.name}</span> <span class="message-author-model">(${translation.RemovedMember})</span>`
+            header = `<span>${messageObj.author.name}</span> <span class="message-author-model">(${__('RemovedMember')})</span>`;
         }
 
         messageElement.querySelector('.message-author').innerHTML = header;
@@ -342,9 +342,9 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
         const yesterday = new Date();
         yesterday.setDate(today.getDate() - 1);
         if (msgDateObj.toDateString() === today.toDateString()) {
-            dateText = translation.Today;
+            dateText = __('Today');
         } else if (msgDateObj.toDateString() === yesterday.toDateString()) {
-            dateText = translation.Yesterday;
+            dateText = __('Yesterday');
         } else {
             const formattedDate = `${msgDateObj.getDate()}.${msgDateObj.getMonth()+1}.${msgDateObj.getFullYear()}`
             dateText = formattedDate;
@@ -718,7 +718,7 @@ async function confirmEditMessage(provider){
             const roomKey = await keychainGet(`${activeRoom.slug}`);
 
             if(messageElement.dataset.role === 'assistant'){
-                const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+                const aiCryptoSalt = hawkiConnection('salts.ai');
                 key = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
             }else{
                 key = roomKey;
@@ -993,7 +993,7 @@ function handleToolToggle(e){
         }
 
         // Show error message in menu
-        showRegenerationError(translation.Input_Err_FilterConflict || 'No compatible models available for selected tools');
+        showRegenerationError(__('Input_Err_FilterConflict') || 'No compatible models available for selected tools');
         return;
     }
 
@@ -1190,7 +1190,7 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
             break;
         case('groupchat'):
             const roomKey = await keychainGet(activeRoom.slug);
-            const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+            const aiCryptoSalt = hawkiConnection('salts.ai');
             const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
             const aiKeyRaw = await exportSymmetricKey(aiKey);
             const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
@@ -1244,7 +1244,12 @@ function createStatusElement(status, messageElement){
         statElement.querySelector('video').style.display = 'flex';
 
         // const list = JSON.parse(status);
-        const formatter = new Intl.ListFormat(activeLocale.label, {
+        const locales = hawkiConnection('locale.available');
+        const preferredLocale = hawkiConnection('locale.preferred');
+        const activeLocale = locales[preferredLocale] || locales[Object.keys(locales)[0]];
+        const formatter = new Intl.ListFormat(
+            activeLocale.shortName,
+            {
             style: "long",
             type: "conjunction"
         });
@@ -1254,8 +1259,8 @@ function createStatusElement(status, messageElement){
         const toolNames = uniqueTools.map(tool => {
             const key = `The_${tool}`;
 
-            if (translation.hasOwnProperty(key)) {
-                return translation[key];
+            if (hasTranslation(key)) {
+                return __(key);
             }
 
             // fallback: web_search -> Web Search
@@ -1265,12 +1270,12 @@ function createStatusElement(status, messageElement){
                 .join(' ');
         });
         const list = formatter.format(toolNames);
-        statusText = `${translation.Exec_prefix} ${list}`;
+        statusText = `${__('Exec_prefix')} ${list}`;
     }
     if(status.key === 'reasoning'){
         statElement.querySelector('video').style.display = 'none';
         statElement.querySelector('#grid-animation-block').classList.add('active');
-        statusText = translation['Reasoning_Msg'];
+        statusText = __('Reasoning_Msg');
     }
     statElement.querySelector('.stat-txt').innerText = statusText;
     // tripleDotAnime(statElement, statusText)

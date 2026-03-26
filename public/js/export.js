@@ -156,17 +156,17 @@ async function exportAsPDF() {
     // doc.setFontSize(16);
     // doc.text("Chatlog Export", 10, 15); // x, y
     doc.setFontSize(textFS);
-    doc.text(`${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}`, margin, yOffset); // x, y
+    doc.text(`${__('Exported_At')} ${formattedDate} ${__('By')} ${userInfo.name}`, margin, yOffset); // x, y
 
     yOffset += 20;
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(translation.Summery, margin, yOffset);
+    doc.text(__('Summery'), margin, yOffset);
 
-    const textLenght = translation.Summery.length;
+    const textLenght = __('Summery').length;
     doc.setFont(font, 'italic');
     doc.setFontSize(titleFS);
-    doc.text(` (${translation.Auto_Generated})`, margin + (textLenght * 4) + 0, yOffset);
+    doc.text(` (${__('Auto_Generated')})`, margin + (textLenght * 4) + 0, yOffset);
     doc.setFont(font, 'normal');
 
 
@@ -189,7 +189,7 @@ async function exportAsPDF() {
     yOffset += 20;
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(translation.SystemPrompt, margin, yOffset);
+    doc.text(__('SystemPrompt'), margin, yOffset);
 
     yOffset += 15;
     doc.setFont(font, 'normal');
@@ -213,7 +213,7 @@ async function exportAsPDF() {
     //START OF CONVERSATION
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(`${translation.Chatlog}:`, margin, yOffset);
+    doc.text(`${__('Chatlog')}:`, margin, yOffset);
     doc.setFont(font, 'normal');
 
     yOffset += 10;
@@ -301,7 +301,7 @@ async function exportAsPDF() {
     btn.disabled = false;
     btn.querySelector('.loading').style.display = 'none';
 
-    doc.save(`${translation.Chatlog}_${formattedDate}.pdf`);
+    doc.save(`${__('Chatlog')}_${formattedDate}.pdf`);
 }
 
 
@@ -396,7 +396,7 @@ async function exportAsWord() {
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: `${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}`,
+                    text: `${__('Exported_At')} ${formattedDate} ${__('By')} ${userInfo.name}`,
                     size: 24,
                 }),
             ],
@@ -408,12 +408,12 @@ async function exportAsWord() {
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: translation.Summery,
+                    text: __('Summery'),
                     bold: true,
                     size: 36,
                 }),
                 new docx.TextRun({
-                    text: ` (${translation.Auto_Generated})`,
+                    text: ` (${__('Auto_Generated')})`,
                     italics: true,
                     size: 28,
                 }),
@@ -430,7 +430,7 @@ async function exportAsWord() {
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: `${translation.SystemPrompt}:`,
+                    text: `${__('SystemPrompt')}:`,
                     bold: true,
                     size: 36,
                 }),
@@ -457,7 +457,7 @@ async function exportAsWord() {
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: `${translation.Chatlog}:`,
+                    text: `${__('Chatlog')}:`,
                     bold: true,
                     size: 36,
                 }),
@@ -534,7 +534,7 @@ async function exportAsWord() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `${translation.Chatlog}_${formattedDate}.docx`;
+        link.download = `${__('Chatlog')}_${formattedDate}.docx`;
         link.click();
         URL.revokeObjectURL(url);
     });
@@ -605,7 +605,7 @@ async function preparePrintPage(){
     else{
 
         key = await keychainGet(chatData.slug);
-        const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+        const aiCryptoSalt = hawkiConnection('salts.ai');
         aiKey = await deriveKey(key, chatData.slug, aiCryptoSalt);
 
         if(chatData.system_prompt){
@@ -631,12 +631,12 @@ async function preparePrintPage(){
 
     scrollPanel.innerHTML =
     `
-        <p>${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}</p>
-        <h1>${translation.Summery}:</h1>
+        <p>${__('Exported_At')} ${formattedDate} ${__('By')} ${userInfo.name}</p>
+        <h1>${__('Summery')}:</h1>
         <p>${summery}</p>
         <h3>System Prompt</h3>
         <p>${systemPrompt}</p>
-        <h1>${translation.Chatlog}</h1>
+        <h1>${__('Chatlog')}</h1>
         <div class="thread trunk" id="0">
         </div>
     `;
@@ -761,18 +761,14 @@ function createAttachmentPrintIcon(fileData) {
 
         attachment.querySelector('.attachment-icon').classList.add('boarder');
         break;
-        case('pdf'):
-            imgPreview = '/img/fileformat/pdf.png';
-        break;
-        case('docx'):
-            imgPreview = '/img/fileformat/doc.png';
-        break;
+        default:
+            imgPreview = getFileIconSvg(fileData.name.split('.').pop());
+            break;
     }
 
     attachment.querySelector('.controls').remove();
+    attachment.querySelector('.burger-btn').remove();
     attachment.querySelector('.status-indicator').remove();
     iconImg.setAttribute('src', imgPreview);
     return attachment;
 }
-
-

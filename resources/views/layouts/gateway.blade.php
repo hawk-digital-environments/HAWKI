@@ -20,13 +20,14 @@
     <script src="{{ asset('js/passkeyInputs.js') }}"></script>
     @vite('resources/js/app.js')
 
-	{!! $settingsPanel !!}
+    <x-settings-panel/>
 
     <script>
 		SwitchDarkMode(false);
-		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
+        UpdateSettingsLanguage('<x-current-locale/>');
 	</script>
 
+    <x-internal-frontend-connection/>
 </head>
 <body>
     @include('partials.overlay')

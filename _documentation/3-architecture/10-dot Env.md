@@ -117,6 +117,20 @@ Configuration for document conversion services. Choose between HAWIK's built-in 
 | HAWKI_FILE_CONVERTER_API_KEY | 123456                                                | API key for the HAWKI converter service               |
 | GWDG_FILE_CONVERTER_API_URL  | https://chat-ai.academiccloud.de/v1/documents/convert | URL to the GWDG Docling converter service             |
 
+### Pre-processing Binaries
+
+Before passing an uploaded file to the configured converter service, HAWKI can locally pre-process certain image formats that the converter might not support natively. This is done by calling external CLI tools that must be installed on the server:
+
+- **rsvg-convert** (package `librsvg2-bin`) – converts SVG files to PNG so they can be forwarded to the converter.
+- **ImageMagick** `convert` (package `imagemagick`) – converts multi-page or exotic raster formats (TIFF, PSD, EPS, AI, BMP, ICO, …) to JPEG, one file per page.
+
+Both tools are pre-installed in the official HAWKI Docker image. For bare-metal or custom installations, install them via your package manager (e.g. `apt-get install librsvg2-bin imagemagick`) and optionally override the binary paths below if they are not on the system `PATH`.
+
+| Variable                            | Default Value | Description                                                                                              |
+|-------------------------------------|---------------|----------------------------------------------------------------------------------------------------------|
+| FILE_CONVERTER_BINARY_RSVG_CONVERT  | rsvg-convert  | Path or name of the `rsvg-convert` binary. Override if it is not on the system PATH (e.g. `/usr/bin/rsvg-convert`). |
+| FILE_CONVERTER_BINARY_IMAGE_MAGICK  | convert       | Path or name of the ImageMagick `convert` binary. Override if it is not on the system PATH (e.g. `/usr/bin/convert`). On newer ImageMagick 7 installs the binary may also be called `magick`. |
+
 ## Filesystem Storage
 
 Uploaded media files are typically stored on disk and served from an asset web server. However, to simplify the setup the uploaded files will be served by PHP by default, though this is not optimal for performance. Alternatively, Amazon S3, Nextcloud, or SFTP can be used.

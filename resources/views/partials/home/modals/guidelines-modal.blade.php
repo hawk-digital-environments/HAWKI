@@ -6,8 +6,8 @@
                 <div id="policy-content"></div>
 
                 <div class="modal-buttons-bar">
-                    <button id="declineBtn" class="btn-lg-stroke align-end">{{ $translation["Cancel"] }}</button>
-                    <button id="confirmBtn" class="btn-lg-fill align-end" onclick="modalClick(this)" >{{ $translation["Confirm"] }}</button>
+                    <button id="declineBtn" class="btn-lg-stroke align-end">{{ __("Cancel") }}</button>
+                    <button id="confirmBtn" class="btn-lg-fill align-end" onclick="modalClick(this)" >{{ __("Confirm") }}</button>
                 </div>
 
                 <br>

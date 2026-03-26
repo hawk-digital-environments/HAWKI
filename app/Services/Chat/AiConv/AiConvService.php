@@ -2,10 +2,9 @@
 
 namespace App\Services\Chat\AiConv;
 
+use App\Http\Resources\Legacy\AiConvResource;
 use App\Models\AiConv;
-use App\Services\Chat\Attachment\AttachmentService;
-use App\Services\Chat\Message\MessageContentValidator;
-use App\Services\Chat\Message\MessageHandlerFactory;
+use App\Services\Chat\Message\Handlers\PrivateMessageHandler;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -16,18 +15,11 @@ use Illuminate\Support\Str;
 
 class AiConvService{
 
-    protected $messageHandler;
-    protected $contentValidator;
-    protected $attachmentService;
-
-    public function __construct(AttachmentService $attachmentService,
-                                MessageContentValidator $messageContentValidator)
+    public function __construct(
+        protected PrivateMessageHandler $messageHandler
+    )
     {
-        $this->messageHandler = MessageHandlerFactory::create('private');
-        $this->attachmentService = $attachmentService;
-        $this->contentValidator = $messageContentValidator;
     }
-
 
     public function create(array $validatedData): AiConv
     {
@@ -53,13 +45,7 @@ class AiConvService{
             throw new AuthorizationException();
         }
 
-        return [
-            'id' => $conv->id,
-            'name' => $conv->chat_name,
-            'slug' => $conv->slug,
-            'system_prompt' => $conv->system_prompt,
-            'messages' => $conv->messageObjects()
-        ];
+        return $conv->toResource(AiConvResource::class)->resolve();
     }
 
 

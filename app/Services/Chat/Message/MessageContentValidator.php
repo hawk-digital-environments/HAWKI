@@ -4,11 +4,17 @@ namespace App\Services\Chat\Message;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 
 
 class MessageContentValidator
 {
+    public function __construct(
+        private LoggerInterface $logger
+    )
+    {
+    }
+
     public function validate(array $content): ?array
     {
         try{
@@ -19,9 +25,7 @@ class MessageContentValidator
                 'text.tag' => 'required_with:text|string',
 
                 'attachments' => 'nullable|array',
-                'attachments.*.uuid' => 'required_with:attachments|string',
-                'attachments.*.name' => 'required_with:attachments|string',
-                'attachments.*.mime' => 'required_with:attachments|string',
+                'attachments.*' => 'required_with:attachments|string'
             ];
 
             $validator = Validator::make($content, $rules);
@@ -37,8 +41,8 @@ class MessageContentValidator
             return $validator->validate();
         }
         catch (ValidationException $e) {
-            Log::error($e->getMessage());
-            return null;
+            $this->logger->error($e->getMessage());
+            abort(422, 'Invalid message content: ' . $e->getMessage());
         }
     }
 }

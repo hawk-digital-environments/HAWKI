@@ -4,14 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
-
 use App\Models\Room;
 use App\Models\User;
 use App\Services\AI\AiService;
 use App\Services\AI\UsageAnalyzerService;
 use App\Services\AI\Value\AiResponse;
-use App\Services\Chat\Message\MessageHandlerFactory;
+use App\Services\Chat\Message\Handlers\GroupMessageHandler;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\Value\StoredFileIdentifier;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +22,8 @@ class StreamController extends Controller
     public function __construct(
         private readonly UsageAnalyzerService $usageAnalyzer,
         private readonly AiService            $aiService,
-        private readonly AvatarStorageService $avatarStorage
+        private readonly AvatarStorageService $avatarStorage,
+        private readonly GroupMessageHandler  $groupMessageHandler
     ){
     }
 
@@ -116,15 +117,12 @@ class StreamController extends Controller
         }
 
         if ($validatedData['broadcast']) {
-            $this->handleGroupChatRequest($validatedData);
+            $this->handleGroupChatRequest($validatedData, $request);
             return null;
         }
 
         $hawki = User::find(1); // HAWKI user
-        $avatar_url = $this->avatarStorage->getUrl('profile_avatars',
-                                            $hawki->username,
-                                            $hawki->avatar_id);
-
+        $avatar_url = $this->avatarStorage->retrieve(StoredFileIdentifier::tryFromUserAvatar($hawki))?->getUrl();
 
         if ($validatedData['payload']['stream']) {
             // Handle streaming response
@@ -202,7 +200,7 @@ class StreamController extends Controller
     /**
      * Handle group chat requests with the new architecture
      */
-    private function handleGroupChatRequest(array $data): void
+    private function handleGroupChatRequest(array $data, Request $request): void
     {
         $isUpdate = (bool) ($data['isUpdate'] ?? false);
         $room = Room::where('slug', $data['slug'])->firstOrFail();
@@ -236,16 +234,13 @@ class StreamController extends Controller
             ]);
         }
 //        \Log::debug($content);
-        $crypto = new SymmetricCrypto();
-        $encryptedData = $crypto->encrypt(json_encode($content),
-                                          base64_decode($data['key']));
+        $encryptedData = (new SymmetricCrypto())->encrypt(json_encode($content), base64_decode($data['key']));
 
         // Store message
-        $messageHandler = MessageHandlerFactory::create('group');
         $member = $room->members()->where('user_id', 1)->firstOrFail();
 
         if ($isUpdate) {
-            $message = $messageHandler->update($room, [
+            $message = $this->groupMessageHandler->update($room, [
                 'message_id' => $data['messageId'],
                 'model' => $data['payload']['model'],
                 'content' => [
@@ -261,23 +256,27 @@ class StreamController extends Controller
                 ],
             ]);
         } else {
-            $message = $messageHandler->create($room, [
-                'threadId' => $data['threadIndex'],
-                'member' => $member,
-                'message_role'=> 'assistant',
-                'model'=> $data['payload']['model'],
-                'content' => [
-                    'text' => [
-                        'ciphertext' => base64_encode($encryptedData->ciphertext),
-                        'iv' => base64_encode($encryptedData->iv),
-                        'tag' => base64_encode($encryptedData->tag),
-                    ]
+            $message = $this->groupMessageHandler->create(
+                $room,
+                [
+                    'threadId' => $data['threadIndex'],
+                    'member' => $member,
+                    'message_role' => 'assistant',
+                    'model' => $data['payload']['model'],
+                    'content' => [
+                        'text' => [
+                            'ciphertext' => base64_encode($encryptedData->ciphertext),
+                            'iv' => base64_encode($encryptedData->iv),
+                            'tag' => base64_encode($encryptedData->tag),
+                        ]
+                    ],
+                    'metadata' => [
+                        'tools' => $data['payload']['tools'] ?? null,
+                        'params' => $data['payload']['params'] ?? null,
+                    ],
                 ],
-                'metadata' => [
-                    'tools' => $data['payload']['tools'] ?? null,
-                    'params' => $data['payload']['params'] ?? null,
-                ],
-            ]);
+                $request->getUser()
+            );
         }
 
         $broadcastObject = [

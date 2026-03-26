@@ -26,6 +26,10 @@ readonly class AiResponse implements \JsonSerializable
     {
     }
 
+    /**
+     * Converts the AiResponse to an array format suitable for JSON serialization.
+     * @return array
+     */
     public function toArray(): array
     {
         return [

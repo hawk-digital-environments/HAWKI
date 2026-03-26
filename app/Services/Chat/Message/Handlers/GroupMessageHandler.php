@@ -6,20 +6,29 @@ namespace App\Services\Chat\Message\Handlers;
 use App\Models\AiConv;
 use App\Models\Message;
 use App\Models\Room;
-use App\Services\Chat\Attachment\AttachmentService;
+use App\Models\User;
+use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Storage\Value\StoredFileCategory;
+use App\Services\Storage\Value\StoredFileIdentifier;
+use Psr\Log\LoggerInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
 
-class GroupMessageHandler extends BaseMessageHandler{
+class GroupMessageHandler extends AbstractMessageHandler
+{
 
 
-    public function create(AiConv|Room $room, array $data): Message
+    public function create(
+        AiConv|Room $conv,
+        array       $data,
+        User        $user
+    ): Message
     {
         $member = $data['member'];
-        $nextMessageId = $this->assignID($room, $data['threadId']);
+        $nextMessageId = $this->assignID($conv, $data['threadId']);
         $message = Message::create([
-            'room_id' => $room->id,
+            'room_id' => $conv->id,
             'member_id' => $member->id,
             'message_id' => $nextMessageId,
             'message_role' => $data['message_role'],
@@ -35,11 +44,13 @@ class GroupMessageHandler extends BaseMessageHandler{
         $message->addReadSignature($member);
 
         //ATTACHMENTS
-        if(array_key_exists('attachments', $data['content'])){
-            $attachments = $data['content']['attachments'];
-            if($attachments){
-                foreach($attachments as $attach){
-                    $this->attachmentService->assignToMessage($message, $attach);
+        if (is_array($data['content']['attachments'] ?? null)) {
+            foreach ($data['content']['attachments'] as $uuid) {
+                $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::GROUP, $uuid);
+                $this->storageService->persistTemporaryFile($identifier);
+                $storedFile = $this->storageService->retrieve($identifier);
+                if ($storedFile) {
+                    $this->attachmentService->assignToMessage($message, $storedFile, $user);
                 }
             }
         }
@@ -48,9 +59,9 @@ class GroupMessageHandler extends BaseMessageHandler{
     }
 
 
-    public function update(AiConv|Room $room, array $data): Message
+    public function update(AiConv|Room $conv, array $data): Message
     {
-        $message = $room->getMessageById($data['message_id']);
+        $message = $conv->getMessageById($data['message_id']);
         if($message->member->user_id != 1 &&
            $message->member->user_id != Auth::id()){
             throw new AuthorizationException();
@@ -71,13 +82,12 @@ class GroupMessageHandler extends BaseMessageHandler{
     }
 
 
-    public function delete(AiConv|Room $room, array $data): bool{
-        $message = $room->messages->where('message_id', $data['message_id'])->first();
+    public function delete(AiConv|Room $conv, array $data): bool
+    {
+        $message = $conv->messages->where('message_id', $data['message_id'])->first();
 
-        $attachmentService = app(AttachmentService::class);
-        $attachments = $message->attachments;
-        foreach ($attachments as $attachment) {
-            $attachmentService->delete($attachment);
+        foreach ($message->attachments as $attachment) {
+            $attachment->delete();
         }
 
         $message->delete();

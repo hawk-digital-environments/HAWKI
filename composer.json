@@ -15,6 +15,7 @@
         "php": "^8.2",
         "ext-pdo": "*",
         "ext-zip": "*",
+        "ext-fileinfo": "*",
         "blade-ui-kit/blade-icons": "^1.8.0",
         "hawk-hhg/hawki-crypto": "^0.5.3",
         "jumbojett/openid-connect-php": "^1.0.2",

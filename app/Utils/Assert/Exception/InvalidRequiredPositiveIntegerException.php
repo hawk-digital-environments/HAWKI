@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Utils\Assert\Exception;
 
-class InvalidRequiredPositiveIntegerException extends AbstractInvalidIntegerException
+class InvalidRequiredPositiveIntegerException extends AbstractAssertionException
 {
-    public function __construct(
-        mixed   $value,
-        ?string $key = null,
-    )
+    public static function forInvalidValue(mixed $value, ?string $key = null): self
     {
-        parent::__construct($value, 'a positive integer', $key);
+        return new self(sprintf(
+                "Expected a positive integer%s, got %s",
+                self::optionalKey($key),
+                self::valueToString($value)
+            )
+        );
     }
 }

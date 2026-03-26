@@ -2,16 +2,12 @@
 
 namespace App\Services\System;
 
-use App\Http\Controllers\LanguageController;
 
+readonly class SettingsService
+{
 
-class SettingsService{
     public function render()
     {
-        $languageController = new LanguageController;
-        $translation = $languageController->getTranslation();
-        $langs = $languageController->getAvailableLanguages();
-
-        return view('partials/settings', compact('translation', 'langs'));
+        return view('partials/settings', ['langs' => $this->localeService->getAvailableLocales()]);
     }
 }

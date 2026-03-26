@@ -2,14 +2,13 @@
 
 namespace App\Services\AI\Providers\OpenAi;
 
-use App\Models\Attachment;
 use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
-use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Storage\FileStorageService;
 use Illuminate\Container\Attributes\Singleton;
-use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 
 #[Singleton]
 readonly class OpenAiRequestConverter
@@ -17,7 +16,10 @@ readonly class OpenAiRequestConverter
     use ToolAwareConverter;
 
     public function __construct(
-        private MessageAttachmentFinder $attachmentFinder
+        private MessageAttachmentFinder   $attachmentFinder,
+        private FileStorageService        $storageService,
+        private LoggerInterface           $logger,
+        private OpenAiAttachmentFormatter $attachmentFormatter
     )
     {
     }
@@ -104,7 +106,6 @@ readonly class OpenAiRequestConverter
     ): array {
         $role = $message['role'];
 
-
         $instructions = 'IMPORTANT: When using the tool results, always mention the references and url as inline citation';
 
         // Handle tool result messages - Response API requires them as user messages
@@ -160,12 +161,13 @@ readonly class OpenAiRequestConverter
             }
 
             if (!empty($content['attachments'])) {
-                $this->processAttachments(
-                    $content['attachments'],
-                    $attachmentsMap,
-                    $model,
-                    $formatted['content']
-                );
+                foreach ($this->attachmentFormatter->formatByAttachmentUuidsAndMap(
+                    model: $model,
+                    attachmentUuids: $content['attachments'],
+                    attachmentsMap: $attachmentsMap
+                ) as $formattedAttachment) {
+                    $formatted['content'][] = $formattedAttachment;
+                }
             }
 
             return $formatted;
@@ -190,89 +192,6 @@ readonly class OpenAiRequestConverter
          * SAFETY FALLBACK
          */
         throw new \InvalidArgumentException("Unsupported role: {$role}");
-    }
-
-
-    private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
-    {
-        $attachmentService = app(AttachmentService::class);
-        $skippedAttachments = [];
-
-        foreach ($attachmentUuids as $uuid) {
-            $attachment = $attachmentsMap[$uuid] ?? null;
-            if (!$attachment) {
-                continue; // skip invalid
-            }
-
-            switch ($attachment->type) {
-                case 'image':
-                    if ($model->canProcessImage()) {
-                        $content[] = $this->processImageAttachment($attachment, $attachmentService);
-                    } else {
-                        $skippedAttachments[] = $attachment->name . ' (image not supported)';
-                    }
-                    break;
-
-                case 'document':
-                    if ($model->canProcessDocument()) {
-                        $content[] = $this->processDocumentAttachment($attachment, $attachmentService);
-                    } else {
-                        $skippedAttachments[] = $attachment->name . ' (file upload not supported)';
-                    }
-                    break;
-
-                default:
-                    Log::warning('Unknown attachment type: ' . $attachment->type);
-                    $skippedAttachments[] = $attachment->name . ' (unsupported type)';
-                    break;
-            }
-        }
-
-        // Notify about skipped attachments
-        if (!empty($skippedAttachments)) {
-            $content[] = [
-                'type' => 'text',
-                'text' => '[NOTE: The following attachments were not included because this model does not support them: ' . implode(', ', $skippedAttachments) . ']'
-            ];
-        }
-    }
-
-    private function processImageAttachment(
-        Attachment $attachment,
-        AttachmentService $attachmentService
-    ): array {
-        // Retrieve raw binary image data
-        $binary = $attachmentService->retrieve($attachment);
-
-        // Detect mime type (important for vision models)
-        $mime = $attachment->mime_type ?? 'image/png';
-
-        // Encode as base64 data URL
-        $base64 = base64_encode($binary);
-
-        return [
-            'type' => 'input_image',
-            'image_url' => "data:{$mime};base64,{$base64}",
-        ];
-    }
-
-
-    private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): array
-    {
-        try {
-            $fileContent = $attachmentService->retrieve($attachment, 'md');
-            $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
-            return [
-                'type' => 'input_text',
-                'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---"
-            ];
-        } catch (\Exception $e) {
-            Log::error('Failed to process document attachment: ' . $e->getMessage());
-            return [
-                'type' => 'input_text',
-                'text' => '[ERROR: Could not process document attachment: ' . $attachment->name . ']'
-            ];
-        }
     }
 
     /**

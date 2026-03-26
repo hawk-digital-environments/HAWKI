@@ -8,11 +8,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
 	<meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-
-
-	<title>{{ env('APP_NAME') }}</title>
+    <title>{{ env('APP_NAME') }}</title>
 
 	<link rel="icon" href="{{ asset('favicon.ico') }}">
 
@@ -50,10 +46,10 @@
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
 
-	{!! $settingsPanel !!}
+    <x-settings-panel/>
     <script>
 		SwitchDarkMode(false);
-		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
+        UpdateSettingsLanguage('<x-current-locale/>');
 	</script>
 
     <x-internal-frontend-connection/>
@@ -98,9 +94,6 @@
 	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
 	const activeModule = @json($activeModule);
     const hawkiUsername = @json($userData['hawki_username'])
-
-    const activeLocale = {!! json_encode(Session::get('language')) !!};
-	const translation = @json($translation);
 
 	const modelsList = @json($models).models;
 	const defaultModels = @json($models).defaultModels;

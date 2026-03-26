@@ -9,7 +9,7 @@
     "
     id="edit-btn" onclick="editTextPanel(this)" aria-labelledby="{{ $tooltipId }}">
         <x-icon name="new" aria-hidden="true"/>
-        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $tooltip ?? $translation["EditToolTip"] }}</div>
+        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $tooltip ?? __("EditToolTip") }}</div>
     </button>
     @php $tooltipId = str()->uuid() @endphp
     <button class="btn-xs fast-access-btn tooltip-parent"
@@ -19,11 +19,11 @@
     @endif
     aria-labelledby="{{ $tooltipId }}">
         <x-icon name="check" aria-hidden="true"/>
-        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["Save"] }}</div>
+        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("Save") }}</div>
     </button>
     @php $tooltipId = str()->uuid() @endphp
     <button class="btn-xs fast-access-btn tooltip-parent" id="edit-abort" onclick="abortTextPanelEdit(this)" aria-labelledby="{{ $tooltipId }}">
         <x-icon name="x" aria-hidden="true"/>
-        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["Abort"] }}</div>
+        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("Abort") }}</div>
     </button>
 </div>

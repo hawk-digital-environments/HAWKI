@@ -2,10 +2,15 @@
 
 namespace App\Models;
 
+use App\Services\Chat\Attachment\Events\AttachmentDeleting;
 use Illuminate\Database\Eloquent\Model;
 
 class Attachment extends Model
 {
+    protected $dispatchesEvents = [
+        'deleting' => AttachmentDeleting::class,
+    ];
+
     protected $fillable =
     [
         'uuid',

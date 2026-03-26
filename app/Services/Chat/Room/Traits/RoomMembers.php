@@ -3,19 +3,19 @@
 
 namespace App\Services\Chat\Room\Traits;
 
+use App\Models\Member;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Member;
 use Exception;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
 
 
 trait RoomMembers{
     /**
      * @throws Exception
      */
-    public function add(string $slug, string $data): array
+    public function add(string $slug, array $data): array
     {
         try{
             $room = Room::where('slug', $slug)->firstOrFail();

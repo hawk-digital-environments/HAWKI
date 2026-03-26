@@ -12,9 +12,9 @@
 					<div class="icon" aria-hidden="true">
 						<x-icon name="plus"/>
 					</div>
-					<div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ $translation["StartNewChat"] }}</strong></div>
+					<div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ __("StartNewChat") }}</strong></div>
 				</button>
-				<h3 class="title">{{ $translation["History"] }}</h3>
+				<h3 class="title">{{ __("History") }}</h3>
 
 			</div>
 			<div class="dy-sidebar-content-panel" tabindex="-1">
@@ -57,12 +57,12 @@
 					</div>
 
 				</div>
-				<h1 id="start-title">{{ $translation["StartBanner"] }}</h1>
+				<h1 id="start-title">{{ __("StartBanner") }}</h1>
 
 				@include('partials.home.input-field', ['lite' => false])
 
 			</div>
-			<p class="warning">{{ $translation["MistakeWarning"] }}</p>
+			<p class="warning">{{ __("MistakeWarning") }}</p>
 
 		</div>
 	</div>

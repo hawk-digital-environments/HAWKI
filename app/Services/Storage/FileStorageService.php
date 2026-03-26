@@ -2,35 +2,37 @@
 
 namespace App\Services\Storage;
 
+use App\Services\FileConverter\Interfaces\FileConverterInterface;
+use App\Services\Storage\Value\PlainTextLanguageType;
+use App\Services\Storage\Value\StorageServiceContext;
 use Symfony\Component\Mime\MimeTypes;
 
 class FileStorageService extends AbstractFileStorage
 {
+    public function __construct(
+        StorageServiceContext                   $context,
+        private readonly FileConverterInterface $fileConverter
+    )
+    {
+        parent::__construct($context);
+    }
+
     /**
      * @inheritDoc
      */
     public function getAllowedMimeTypes(): array
     {
-        if (!empty($this->allowedMimeTypes)) {
-            return $this->allowedMimeTypes;
-        }
-
         $mime = new MimeTypes();
 
-        return array_merge(
-            $mime->getMimeTypes('png'),
-            $mime->getMimeTypes('jpeg'),
-            $mime->getMimeTypes('jpg'),
-            $mime->getMimeTypes('gif'),
-            $mime->getMimeTypes('bmp'),
-            $mime->getMimeTypes('tiff'),
-            ...$this->fileConverter->isAvailable()
-            ? [
-                $mime->getMimeTypes('pdf'),
-                $mime->getMimeTypes('doc'),
-                $mime->getMimeTypes('docx'),
-            ]
-            : []
+        return $this->filterMimeTypesByAllowed(
+            array_merge(
+                $mime->getMimeTypes('png'),
+                $mime->getMimeTypes('jpeg'),
+                $mime->getMimeTypes('jpg'),
+                $mime->getMimeTypes('gif'),
+                PlainTextLanguageType::getMimeTypes(),
+                $this->fileConverter->getAllowedMimeTypes()
+            )
         );
     }
 }

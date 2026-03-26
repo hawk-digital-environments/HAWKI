@@ -5,8 +5,8 @@
     <div class="scroll-panel">
         <div class="inputs-list profile-container" id="profile">
 
-            <h1 class="zero-b-margin">{{ $translation["Profile"] }}</h1>
-            <h3 class="label-header">{{ $translation["General"] }}</h3>
+            <h1 class="zero-b-margin">{{ __("Profile") }}</h1>
+            <h3 class="label-header">{{ __("General") }}</h3>
             <div class="userinfo-row">
                 <div class="avatar-editable" onclick="selectProfileAvatar(this)">
                     <img class="icon-img selectable-image" alt="">
@@ -19,7 +19,7 @@
                 <div class="">
                     <div class="chat-name-panel text-cont">
                         <h1 class="text-field zero-v-margin" id="profile-name" role="text"></h1>
-                        @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction' => 'updateUserInformation', 'tooltip' => $translation["EditUserNameToolTip"]])
+                        @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction' => 'updateUserInformation', 'tooltip' => __("EditUserNameToolTip"]))
                     </div>
 
                     <p class="zero-v-margin" id="profile-username"></p>
@@ -28,29 +28,29 @@
             </div>
 
             <div class="row">
-                <h4 class="label-header">{{ $translation["Bio"] }}</h4>
+                <h4 class="label-header">{{ __("Bio") }}</h4>
                 <textarea
                     class="text-input fit-height"
-                    placeholder="{{  $translation["PH_AboutMe"] }}"
+                    placeholder="{{  __("PH_AboutMe") }}"
                     name="bio"
                     id="bio-input"
                     maxlength="300"
                     oninput="resizeInputField(this); checkBioUpdate()"></textarea>
 
-                <button class="btn-md-stroke save-btn" onclick="updateUserInformation()">{{ $translation["Save"] }}</button>
+                <button class="btn-md-stroke save-btn" onclick="updateUserInformation()">{{ __("Save") }}</button>
             </div>
 
 
-            <h3 class="label-header top-gap-3">{{ $translation["PersonalData"] }}</h3>
+            <h3 class="label-header top-gap-3">{{ __("PersonalData") }}</h3>
             <div class="">
                 @if(config('sanctum.allow_user_token') && config('sanctum.allow_external_communication'))
-                    <button class="btn-md-txt" onclick="toggleAccessTokensPanel(true)">{{ $translation["AccessTokens"] }}</button>
+                    <button class="btn-md-txt" onclick="toggleAccessTokensPanel(true)">{{ __("AccessTokens") }}</button>
                 @else
-                    <p class="gray-text zero-v-margin">{{ $translation["AccessTokens"] }}</p>
-                    <p class="sub-descript">{{ $translation["Api_Warning"] }}</p>
+                    <p class="gray-text zero-v-margin">{{ __("AccessTokens") }}</p>
+                    <p class="sub-descript">{{ __("Api_Warning") }}</p>
                 @endif
 
-                <button class="btn-md-txt red-text top-gap-2" onclick="clearPersonalData()">{{ $translation["ClearLocalData"] }}</button>
+                <button class="btn-md-txt red-text top-gap-2" onclick="clearPersonalData()">{{ __("ClearLocalData") }}</button>
             </div>
 
         </div>

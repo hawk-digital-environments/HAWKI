@@ -2,10 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\User;
 use App\Models\Room;
+use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Value\StoredFileCategory;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -213,11 +215,8 @@ class MigrateAvatars extends Command
 
             // Store using AvatarStorageService
             $stored = $this->avatarStorage->store(
-                file: $fileContent,
-                filename: $avatarId . '.' . $extension,
-                uuid: $avatarId,
-                category: 'profile_avatars',
-                temp: false
+                file: FileReference::fromContent($fileContent, basename($oldAvatarPath)),
+                category: StoredFileCategory::PROFILE_AVATAR
             );
 
             if ($stored) {
@@ -225,6 +224,7 @@ class MigrateAvatars extends Command
                     $this->line("✓ Migrated avatar for user {$username}");
                 }
                 $this->profileMigratedCount++;
+                $user->update(['avatar_id' => $stored->getUuid()]);
 
                 // Delete old file after successful migration if cleanup is enabled
                 if ($cleanup) {
@@ -306,17 +306,15 @@ class MigrateAvatars extends Command
 
             // Store using AvatarStorageService
             $stored = $this->avatarStorage->store(
-                file: $fileContent,
-                filename: $roomIcon . '.' . $extension,
-                uuid: $roomIcon,
-                category: 'room_avatars',
-                temp: false
+                file: FileReference::fromContent($fileContent, basename($oldAvatarPath)),
+                category: StoredFileCategory::ROOM_AVATAR
             );
 
             if ($stored) {
                 if ($this->output->isVerbose()) {
                     $this->line("✓ Migrated avatar for room {$roomName}");
                 }
+                $room->update(['room_icon' => $stored->getUuid()]);
                 $this->roomMigratedCount++;
 
                 // Delete old file after successful migration if cleanup is enabled

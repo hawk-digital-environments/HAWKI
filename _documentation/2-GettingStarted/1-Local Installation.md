@@ -375,8 +375,7 @@ php artisan queue:work --queue=message_broadcast
 Laravel's built-in worker will take care of the rest.
 You can either keep the workers running in separate terminals to see the printed log, or stop them here and run them with the rest of the services later.
 
-
-##  File Converter 
+## File Converter
 
 The new Attachments feature in HAWKI allows user to upload files in the chat. But since the models mostly do not accept document files as input, we need to first convert these to text.
 This task can be done either by the new converter module in HAWKI Toolkit or be the provided document endpoint from GWDG.
@@ -385,6 +384,48 @@ If you do not uncomment the FILE_CONVERTER variables in .env file, HAWKI turns o
 If you prefer to use HAWKI FIle Converter, and you are not using the docker deployment you can host the converter separately from the project.
 For more information refer to the [File Converter Repo](https://github.com/hawk-digital-environments/hawki-toolkit-file-converter) of this documentation.
 
+> **Further reading:** For a detailed explanation of how the conversion pipeline works and how to add a custom converter, see [File Conversion](../3-architecture/7.1-File%20Conversion.md).
+
+### Optional dependencies
+
+If you want HAWKI to be able to read more image formats, you can install additional dependencies on your system (They are installed by default in the docker image):
+
+- For SVG you can install `rsvg-convert` (part of librsvg package). This allows HAWKI to convert SVG files to PNG format for better compatibility with models and clients.
+  ```bash
+    #For Debian / Ubuntu-based systems
+    sudo apt install librsvg2-bin
+  
+    #For Red Hat/CentOS-based systems
+    sudo yum install librsvg2-tools
+  
+    #For Fedora-based systems
+    sudo dnf install librsvg
+  
+    #For Alpine Linux
+    sudo apk add librsvg
+  
+    #For Arch Linux
+    sudo pacman -S librsvg
+  ```
+- For more "exotic" image formates: `.ai`, `.eps`, `.ps`, `.psd`, `.tiff`, `.tif`, `.bmp` and `.ico` you can install `ImageMagick` with support for these formats. This allows HAWKI to convert these image files to a more compatible format (jpg in our case) for processing and display.
+  ```bash
+    #For Debian / Ubuntu-based systems
+    sudo apt install imagemagick
+  
+    #For Red Hat/CentOS-based systems
+    sudo yum install imagemagick
+  
+    #For Fedora-based systems
+    sudo dnf install imagemagick
+  
+    #For Alpine Linux
+    sudo apk add imagemagick
+  
+    #For Arch Linux
+    sudo pacman -S imagemagick
+  ```
+
+> When the binaries are installed in your PATH, HAWKI automatically detects them and uses them for file conversion. You may use the `FILE_CONVERTER_BINARY_RSVG_CONVERT` and `FILE_CONVERTER_BINARY_IMAGE_MAGICK` environment variables to specify custom paths if needed.
 
 ### Start Development Server
 

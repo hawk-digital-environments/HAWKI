@@ -11,7 +11,7 @@ use App\Utils\JsonSerializableTrait;
 readonly class StorageConfig implements \JsonSerializable
 {
     use JsonSerializableTrait;
-    
+
     public function __construct(
         /**
          * Maximum file uploads (attachments) file size in bytes
@@ -26,9 +26,17 @@ readonly class StorageConfig implements \JsonSerializable
          */
         public array $allowedMimeTypes,
         /**
+         * Allowed file extensions for file uploads (attachments)
+         */
+        public array $allowedExtensions,
+        /**
          * Allowed MIME types for avatars
          */
         public array $allowedAvatarMimeTypes,
+        /**
+         * Allowed file extensions for avatars
+         */
+        public array $allowedAvatarExtensions,
         /**
          * Maximum number of attachment files per message
          */
@@ -40,7 +48,7 @@ readonly class StorageConfig implements \JsonSerializable
             static fn(bool $carry, mixed $item): bool => $carry && is_string($item) && $item !== '' && str_contains($item, '/'),
             true
         );
-        
+
         Assert::withKeyPrefix(
             static::class,
             fn() => Assert::isNonNegativeInteger($this->maxFileSize, 'maxFileSize'),
@@ -48,6 +56,8 @@ readonly class StorageConfig implements \JsonSerializable
             fn() => Assert::is($this->allowedMimeTypes, $isArrayOfMimeTypes, 'allowedMimeTypes'),
             fn() => Assert::is($this->allowedAvatarMimeTypes, $isArrayOfMimeTypes, 'allowedAvatarMimeTypes'),
             fn() => Assert::isNonNegativeInteger($this->maxAttachmentFiles, 'maxAttachmentFiles'),
+            fn() => Assert::isArrayOf($this->allowedExtensions, 'string', 'allowedExtensions'),
+            fn() => Assert::isArrayOf($this->allowedAvatarExtensions, 'string', 'allowedAvatarExtensions')
         );
     }
 }

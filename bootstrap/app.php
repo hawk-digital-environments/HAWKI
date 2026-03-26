@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo('/login');
     })
 
+    ->withEvents([
+        __DIR__ . '/../app/Services/*/Listeners'
+    ])
+
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->shouldRenderJsonWhen(function (Request $request) {
             return $request->expectsJson() || $request->is('api/*');

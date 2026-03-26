@@ -13,7 +13,6 @@ use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
 use App\Services\Profile\ProfileService;
-use App\Services\System\SettingsService;
 use Cookie;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -153,12 +152,7 @@ class AuthenticationController extends Controller
     /// keychain sync will be done on the frontend side (check encryption.js)
     public function handshake(Request $request)
     {
-
         $userInfo = Auth::user();
-
-        // Call getTranslation method from LanguageController
-        $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsService())->render();
 
         $profileService = new ProfileService();
         $keychainData = $profileService->fetchUserKeychain();
@@ -173,7 +167,7 @@ class AuthenticationController extends Controller
         $charLimit = config('hawki.security.passkey.char_limitation', true);
 
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay', 'allowPaste', 'charLimit'));
+        return view('partials.gateway.handshake', compact('userInfo', 'keychainData', 'activeOverlay', 'allowPaste', 'charLimit'));
 
     }
 
@@ -189,11 +183,6 @@ class AuthenticationController extends Controller
 
         $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
 
-
-        // Call getTranslation method from LanguageController
-        $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsService())->render();
-
         $activeOverlay = false;
         if (Session::get('last-route') && Session::get('last-route') != 'register') {
             $activeOverlay = true;
@@ -203,7 +192,7 @@ class AuthenticationController extends Controller
         $allowPaste = config('hawki.security.passkey.allow_paste', true);
         $charLimit = config('hawki.security.passkey.char_limitation', true);
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'allowPaste', 'charLimit'));
+        return view('partials.gateway.register', compact('userInfo', 'activeOverlay', 'allowPaste', 'charLimit'));
     }
 
 

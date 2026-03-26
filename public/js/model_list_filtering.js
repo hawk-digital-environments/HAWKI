@@ -189,7 +189,7 @@ function selectFallbackModel(fieldId, context = 'input', currentModel = null) {
         showFeedbackMsg(
             input,
             'error',
-            `${translation.Input_Err_FilterConflict} : ${
+            `${__('Input_Err_FilterConflict')} : ${
                 filters.map(formatFilterName).join(', ')
             }`
         );
@@ -233,13 +233,10 @@ function checkFilterCombination(fieldId, newFilter) {
 function getFilterFromMime(mime){
     const type = checkFileFormat(mime);
     switch(type){
-        case('pdf'):
-        case('docx'):
-            return 'file_upload';
         case('image'):
             return 'vision';
         default:
-            return null;
+            return 'file_upload';
     }
 }
 

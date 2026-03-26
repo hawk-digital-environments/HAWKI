@@ -113,8 +113,7 @@ async function onSendMessageToRoom(inputField) {
 
     /// if HAWKI is targeted send copy to stream controller
     if(submittedObj.filteredContent.aiMention && submittedObj.filteredContent.aiMention.toLowerCase().includes(aiHandle.toLowerCase())){
-
-        const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+        const aiCryptoSalt = hawkiConnection('salts.ai');
         const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
         const aiKeyRaw = await exportSymmetricKey(aiKey);
         const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
@@ -245,7 +244,7 @@ async function handleUserMessages(messageData, slug){
 async function handleAIMessage(messageData, slug){
 
     const roomKey = await keychainGet(slug);
-    const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+    const aiCryptoSalt = hawkiConnection('salts.ai');
     const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
 
     messageData.content.text = await decryptWithSymKey(aiKey,
@@ -277,7 +276,7 @@ async function handleUpdateMessage(messageData, slug){
     const roomKey = await keychainGet(slug);
 
     if(messageData.message_role === 'assistant'){
-        const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+        const aiCryptoSalt = hawkiConnection('salts.ai');
         key = await deriveKey(roomKey, slug, aiCryptoSalt);
     }else{
         key = roomKey;
@@ -434,7 +433,7 @@ function openRoomCreatorPanel(){
 
     const roomCreationPanel = document.getElementById('room-creation');
 
-    defaultPrompt = translation.Default_Prompt;
+    defaultPrompt = __('Default_Prompt');
 
     roomCreationPanel.querySelector('#chat-name-input').value = '';
     roomCreationPanel.querySelector('#user-search-bar').value = '';
@@ -590,7 +589,7 @@ async function sendInvitation(btn){
     // Check if no invitees selected
     if (listOfInvitees.length === 0) {
         const msg = invModal.querySelector(".error-msg");
-        msg.innerText = translation.Cnf_checkMembersAdded;
+        msg.innerText = __('Cnf_checkMembersAdded');
         return;
     }
 
@@ -864,7 +863,7 @@ async function loadRoom(btn=null, slug=null){
     loadRoomMembers(roomData);
 
     const roomKey = await keychainGet(slug);
-    const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
+    const aiCryptoSalt = hawkiConnection('salts.ai');
     const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
 
     if(roomData.room_description){
@@ -1309,7 +1308,7 @@ async function submitInfoField(){
 
 async function requestDeleteRoom() {
 
-    const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_deleteRoom);
+    const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_deleteRoom'));
     if (!confirmed) {
         return;
     }
@@ -1341,7 +1340,7 @@ async function requestDeleteRoom() {
 
 async function leaveRoom(){
 
-    const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_leaveRoom);
+    const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_leaveRoom'));
     if (!confirmed) {
         return;
     }
@@ -1405,7 +1404,7 @@ async function removeMemberFromRoom(username){
     }
 
 
-    const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_removeMember);
+    const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_removeMember'));
     if (!confirmed) {
         return false;
     }

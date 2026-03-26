@@ -66,13 +66,13 @@ async function addNewToken(){
         newTokenField.style.display = 'none';
         await openModal(ModalType.INFO,
             `
-             <p>${translation.Cnf_tokenMsg1}</p>
+             <p>${__('Cnf_tokenMsg1')}</p>
              <p>******</p>
              <p><b>${data.token}</b></p>
              <p>******</p>
-             <p class="red-text">${translation.Cnf_tokenMsg2}</p>
+             <p class="red-text">${__('Cnf_tokenMsg2')}</p>
             `,
-            `<h3>${translation.Cnf_tokenMsgSuccess}</h3>`
+            `<h3>${__('Cnf_tokenMsgSuccess')}</h3>`
         )
 
         return;
@@ -124,7 +124,7 @@ function addTokenToList(token){
 async function requestTokenRevoke(btn){
     const item = btn.closest('#token-item')
     const name = item.querySelector('.token-name').innerText;
-    const confirm = await openModal(ModalType.WARNING, `${translation.Cnf_tokenRevoke} ${name}`)
+    const confirm = await openModal(ModalType.WARNING, `${__('Cnf_tokenRevoke')} ${name}`);
     if(!confirm){
         return;
     }

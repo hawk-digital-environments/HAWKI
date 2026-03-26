@@ -15,9 +15,9 @@
 					<div class="icon" aria-hidden="true">
 						<x-icon name="plus"/>
 					</div>
-					<div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ $translation["CreateRoom"] }}</strong></div>
+					<div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ __("CreateRoom") }}</strong></div>
 				</button>
-				<h3 class="title">{{ $translation["Rooms"] }}</h3>
+				<h3 class="title">{{ __("Rooms") }}</h3>
 
 			</div>
 			<div class="dy-sidebar-content-panel" tabindex="-1">
@@ -42,8 +42,8 @@
 
 			<div class="scroll-container" id="welcome-content">
 				<div class="group-welcome-wrapper scroll-panel">
-					{!! $translation["_GroupWelcome"] !!}
-					<button class="btn-lg-fill" onclick="openRoomCreatorPanel()">{{ $translation["CreateARoom"] }}</button>
+					{!! __("_GroupWelcome") !!}
+					<button class="btn-lg-fill" onclick="openRoomCreatorPanel()">{{ __("CreateARoom") }}</button>
 				</div>
 			</div>
 		</div>
@@ -64,7 +64,7 @@
 				</div>
 				@include('partials.home.input-field', ['lite' => false])
 			</div>
-			<p class="warning">{{ $translation["MistakeWarning"] }}</p>
+			<p class="warning">{{ __("MistakeWarning") }}</p>
 
 		</div>
 

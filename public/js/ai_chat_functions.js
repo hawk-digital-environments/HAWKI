@@ -10,7 +10,7 @@ function initializeAiChatModule(chatsObject){
     chatItemTemplate = document.getElementById('selection-item-template');
     chatlogElement = document.querySelector('.chatlog');
 
-    defaultPrompt = translation.Default_Prompt;
+    defaultPrompt = __('Default_Prompt');
 
     const systemPromptFields = document.querySelectorAll('.system_prompt_field');
     systemPromptFields.forEach(field => {
@@ -362,7 +362,7 @@ async function generateChatName(firstMessage, convItem) {
                 {
                     role: "system",
                     content: {
-                        text: translation.Name_Prompt
+                        text: __('Name_Prompt')
                     }
                 },
                 {
@@ -546,7 +546,7 @@ async function RequestConvContent(slug){
 
 async function requestDeleteConv() {
 
-    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteConv);
+    const confirmed = await openModal(ModalType.WARNING, __('Cnf_deleteConv'));
     if (!confirmed) {
         return;
     }
@@ -593,7 +593,7 @@ async function requestDeleteConv() {
 
 
 async function deleteMessage(btn){
-    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteConv);
+    const confirmed = await openModal(ModalType.WARNING, __('Cnf_deleteConv'));
     if (!confirmed) {
         return;
     }

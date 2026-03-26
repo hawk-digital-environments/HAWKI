@@ -2,19 +2,16 @@
 
 namespace App\Models;
 
-use App\Services\Chat\Message\MessageHandlerFactory;
+use App\Services\Chat\Message\Handlers\GroupMessageHandler;
 use App\Services\Storage\AvatarStorageService;
 use Exception;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class Room extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'room_name',
         'room_icon',
@@ -41,19 +38,6 @@ class Room extends Model
     {
         return $this->messages()->where('message_id', $messageId)->firstOrFail();
     }
-
-    public function messageObjects(): array
-    {
-        $messages = $this->messages;
-
-        $messagesData = array();
-        foreach ($messages as $message){
-            $msgData = $message->createMessageObject();
-            array_push($messagesData, $msgData);
-        }
-        return $messagesData;
-    }
-
 
     public function membersAll(): HasMany
     {
@@ -143,7 +127,7 @@ class Room extends Model
             // Delete related messages and members
             $messages = $this->messages()->get();
             foreach ($messages as $message){
-                $messageHandler = MessageHandlerFactory::create('group');
+                $messageHandler = app(GroupMessageHandler::class);
                 $messageHandler->delete($this, $message->toArray());
             }
             $this->members()->delete();
@@ -159,40 +143,5 @@ class Room extends Model
             Log::error("Failed to remove member: $e");
             return false;
         }
-    }
-
-
-
-    public function hasRole($userId, $role): bool
-    {
-        return $this->members()
-                    ->where('user_id', $userId)
-                    ->where('role', $role)
-                    ->exists();
-    }
-
-
-    public function changeName($newName): bool
-    {
-        $this->update(['room_name' => $newName]);
-    }
-
-
-
-    public function hasUnreadMessagesFor($member): bool
-    {
-        // get the last 100 messages.
-        $msgs = $this->messages()
-        ->orderBy('updated_at', 'desc')
-        ->take(100)
-        ->get();
-
-        // iterate the messages in reverse order from the newest to the oldest.
-        for ($i = count($msgs) - 1; $i >= 0; $i--) {
-            if(!$msgs[$i]->isReadBy($member)){
-                return true;
-            }
-        }
-        return false;
     }
 }

@@ -311,7 +311,7 @@ function checkFileFormat(mime){
                mime.includes('wordprocessingml')) {
         return 'docx';
     } else {
-        return null;
+        return 'document';
     }
 }
 

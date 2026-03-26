@@ -12,6 +12,7 @@ use App\Services\Frontend\Connection\Value\LocaleConfig;
 use App\Services\Frontend\Connection\Value\Salts;
 use App\Services\Frontend\Connection\Value\StorageConfig;
 use App\Services\Frontend\Connection\Value\TransferConfig;
+use App\Services\Frontend\Connection\Value\TranslatorConfig;
 use App\Services\Frontend\Connection\Value\Userinfo;
 
 readonly class InternalConnection extends AbstractConnection
@@ -26,6 +27,7 @@ readonly class InternalConnection extends AbstractConnection
         StorageConfig          $storage,
         TransferConfig         $transfer,
         public InternalSecrets $secrets,
+        public TranslatorConfig $translation
     )
     {
         parent::__construct(

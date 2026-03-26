@@ -2,7 +2,7 @@
     <div class="modal-panel">
         <div class="modal-content-wrapper">
 
-            <button class="closeButton btn-sm" onclick="closeMemberInfoModal()" aria-label="{{ $translation["Close"] }}">
+            <button class="closeButton btn-sm" onclick="closeMemberInfoModal()" aria-label="{{ __("Close") }}">
                 <svg viewBox="0 0 100 100" aria-hidden="true"><path class="fill-svg" d="M 19.52 19.52 a 6.4 6.4 90 0 1 9.0496 0 L 51.2 42.1504 L 73.8304 19.52 a 6.4 6.4 90 0 1 9.0496 9.0496 L 60.2496 51.2 L 82.88 73.8304 a 6.4 6.4 90 0 1 -9.0496 9.0496 L 51.2 60.2496 L 28.5696 82.88 a 6.4 6.4 90 0 1 -9.0496 -9.0496 L 42.1504 51.2 L 19.52 28.5696 a 6.4 6.4 90 0 1 0 -9.0496 z"/></svg>
             </button>
 
@@ -13,12 +13,12 @@
                     <div class="control-panel-chat-initials" id="member-inits"></div>
                 </div>
 
-                <h3 id="youTag" class="zero-b-margin top-gap-1">( {{ $translation["You"] }} )</h3>
+                <h3 id="youTag" class="zero-b-margin top-gap-1">( {{ __("You") }} )</h3>
                 <h3 id="username" class="zero-b-margin top-gap-1"></h3>
                 <p id="dis-name" class="zero-v-margin"></p>
                 <p id="role" class="" ></p>
 
-                <button class="btn-md-txt red-text admin-only" id="remove-member-btn">{{ $translation["MemberRemove"] }}</button>
+                <button class="btn-md-txt red-text admin-only" id="remove-member-btn">{{ __("MemberRemove") }}</button>
 
             </div>
         </div>

@@ -129,7 +129,7 @@ function showAnnouncementModal(announcement, view) {
         // Fallback: the default logic (Confirm, and Cancel if forced)
         const confirmBtn = document.createElement('button');
         confirmBtn.className = "btn-lg-fill align-end";
-        confirmBtn.textContent = translation.Confirm;
+        confirmBtn.textContent = __('Confirm');
         confirmBtn.addEventListener('click', function() {
             reportAnnouncementFeedback(announcement.id);
             closeAnnouncementModal(modal);
@@ -137,7 +137,7 @@ function showAnnouncementModal(announcement, view) {
         if (announcement.isForced == true) {
             const cancelBtn = document.createElement('button');
             cancelBtn.className = "btn-lg-stroke align-end";
-            cancelBtn.textContent = translation.Cancel;
+            cancelBtn.textContent = __('Cancel');
             cancelBtn.addEventListener('click', () => {
                 forceLogoutUser();
             });
@@ -161,7 +161,7 @@ function closeAnnouncementModal(annModal) {
 
 
 async function forceLogoutUser(){
-    const confirmed = await openModal(ModalType.WARNING , translation.Logout_Warning);
+    const confirmed = await openModal(ModalType.WARNING, __('Logout_Warning'));
     if (!confirmed) {
         return;
     }

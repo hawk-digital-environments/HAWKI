@@ -1,5 +1,6 @@
 import './echo.js';
 import {hawkiConnection} from './util/hawkiConnection.js';
+import {hasTranslation, translate} from './util/translator.js';
 
 import jQuery from 'jquery';
 import Cropper from 'cropperjs';
@@ -15,6 +16,7 @@ import katex from 'katex';
 import renderMathInElement from 'katex/contrib/auto-render/auto-render.js';
 import pako from 'pako';
 import markdownit from 'markdown-it';
+import {getFileIconSvg} from './util/fileIconSvg.js';
 
 window.$ = jQuery;
 
@@ -86,3 +88,6 @@ const md = markdownit({
 window.md = md;
 
 window.hawkiConnection = hawkiConnection;
+window.__ = translate;
+window.hasTranslation = hasTranslation;
+window.getFileIconSvg = getFileIconSvg;

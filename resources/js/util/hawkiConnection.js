@@ -13,8 +13,7 @@ export function hawkiConnection(keyOrPath) {
         if (frontendConnectionEl) {
             parsedConnectionData = JSON.parse(frontendConnectionEl.textContent);
         } else {
-            console.warn('No frontend connection element found, hawkiConnection will not be able to provide connection data.');
-            return null;
+            throw new Error('No frontend connection element found. Ensure that the backend is rendering the frontend connection data correctly.');
         }
     }
 

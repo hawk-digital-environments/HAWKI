@@ -24,6 +24,12 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     install-php-extensions \
         ldap
 
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+        imagemagick \
+        librsvg2-bin
+
 # -----------------------------------------------------
 # APP - DEV
 # -----------------------------------------------------

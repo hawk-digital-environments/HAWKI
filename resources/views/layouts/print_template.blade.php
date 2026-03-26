@@ -25,7 +25,7 @@
     <script src="{{ asset('js/file_manager.js') }}"></script>
     <script src="{{ asset('js/attachment_handler.js') }}"></script>
 
-
+    <x-internal-frontend-connection/>
 </head>
 <body>
     <div class="wrapper">
@@ -77,13 +77,11 @@
 	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
 	const activeModule = @json($activeModule);
     const chatData = @json($chatData);
-	const activeLocale = {!! json_encode(Session::get('language')) !!};
 
 	const modelsList = @json($models).models;
 	const defaultModels = @json($models).defaultModels;
 	const systemModels = @json($models).systemModels;
 
-	const translation = @json($translation);
 	window.addEventListener('DOMContentLoaded', async (event) => {
         preparePrintPage();
     });

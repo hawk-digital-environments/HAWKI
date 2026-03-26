@@ -154,29 +154,6 @@ class ProfileController extends Controller
         ]);
     }
 
-    /// Returns the requested salt to the user
-    public function getServerSalt(Request $request)
-    {
-        // Get 'saltlabel' from the header
-        $saltLabel = $request->header('saltlabel');
-
-        // Check if the saltlabel header exists
-        if (!$saltLabel) {
-            return response()->json(['error' => 'saltlabel header is required'], 400);
-        }
-
-        $serverSalt = env(strtoupper($saltLabel));
-
-        // Check if the salt exists
-        if (!$serverSalt) {
-            return response()->json(['error' => 'Salt not found'], 404);
-        }
-
-        // Send back the salt, base64-encoded
-        return response()->json(['salt' => base64_encode($serverSalt)]);
-    }
-
-
     // SECTION: API TOKENS
 
     public function requestApiToken(Request $request, ApiTokenService $apiTokenService): JsonResponse

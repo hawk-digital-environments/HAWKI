@@ -57,7 +57,7 @@ async function checkPasskey(){
 
     // if passkey field is left empty.
     if(enteredPasskey === ''){
-        msg.innerText = translation.HS_EnterPasskeyMsg
+        msg.innerText = __('HS_EnterPasskeyMsg');
         return;
     }
 
@@ -75,13 +75,13 @@ async function checkPasskey(){
 
     //if repeat passkey is empty
     if(repeatedKey === ''){
-        msg.innerText = translation.HS_RepeatPassKey
+        msg.innerText = __('HS_RepeatPassKey');
         return;
     }
 
     //if the inputs are not the same.
     if(enteredPasskey != repeatedKey){
-        msg.innerText = translation.HS_DifferentEntries
+        msg.innerText = __('HS_DifferentEntries');
         return;
     }
 
@@ -105,7 +105,7 @@ async function checkPasskey(){
 
     document.querySelector('#backup-hash').innerText = backupHash;
     // derive key from backup hash
-    const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
+    const passkeyBackupSalt = hawkiConnection('salts.backup');
     const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
     //encrypt Passkey as plaintext
     const cryptoPasskey = await encryptWithSymKey(derivedKey, enteredPasskey, false);
@@ -340,7 +340,7 @@ async function verifyEnteredPassKey(provider){
 
 async function verifyPasskey(passkey) {
     try {
-        const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
+        const udSalt = hawkiConnection('salts.userdata');
         const keychainEncryptor = await deriveKey(passkey, "keychain_encryptor", udSalt);
 
         const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainCryptoData);
@@ -416,7 +416,7 @@ async function extractPasskey(){
     }
 
     // derive Key from entered backupkey
-    const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
+    const passkeyBackupSalt = hawkiConnection('salts.backup');
     const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
     // console.log(derivedKey);
     try{

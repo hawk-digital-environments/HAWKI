@@ -13,7 +13,7 @@
     <div class="scroll-container">
         <div class="scroll-panel">
             <div class="dataprotection">
-                {!! $translation["_DataProtection"] !!}
+                {{__('_DataProtection')}}
             </div>
         </div>
     </div>

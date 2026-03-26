@@ -227,7 +227,7 @@ function getLSwithExpiry(key) {
 /// Remove User Data on Local Storage and Logout
 async function clearPersonalData(){
 
-    const confirmed = await openModal(ModalType.CONFIRM, translation.Cnf_passkeyRemove);
+    const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_passkeyRemove'));
     if (!confirmed) {
         return;
     }

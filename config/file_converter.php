@@ -1,13 +1,29 @@
 <?php
 
 
-use App\Services\FileConverter\Handlers\GwdgDocling;
+use App\Services\FileConverter\Handlers\GwdgDoclingConverter;
 use App\Services\FileConverter\Handlers\HawkiDocConverter;
+use App\Services\FileConverter\Handlers\KreuzbergConverter;
 
 return [
 
     'default' => env('FILE_CONVERTER', 'hawki_converter'),
     'fallback' => 'hawki_converter',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pre-processing Binaries
+    |--------------------------------------------------------------------------
+    | Paths to the external binaries used by ImagePreProcessingConverter.
+    | Override these if the executables are not on the system PATH.
+    |
+    | FILE_CONVERTER_BINARY_RSVG_CONVERT  – rsvg-convert (librsvg2-bin)
+    | FILE_CONVERTER_BINARY_IMAGE_MAGICK  – ImageMagick convert / magick
+    */
+    'binaries' => [
+        'rsvg_convert' => env('FILE_CONVERTER_BINARY_RSVG_CONVERT', 'rsvg-convert'),
+        'image_magick'  => env('FILE_CONVERTER_BINARY_IMAGE_MAGICK', 'convert'),
+    ],
 
     'converters' => [
         'hawki_converter' => [
@@ -18,7 +34,11 @@ return [
         'gwdg_docling' =>[
             'api_url' => env('GWDG_FILE_CONVERTER_API_URL', 'https://chat-ai.academiccloud.de/v1/documents/convert'),
             'api_key' => env('GWDG_API_KEY'),
-            'class' => GwdgDocling::class
+            'class' => GwdgDoclingConverter::class
+        ],
+        'kreuzberg' => [
+            'api_url' => env('KREUZBERG_FILE_CONVERTER_API_URL'),
+            'class' => KreuzbergConverter::class
         ]
     ]
 ];

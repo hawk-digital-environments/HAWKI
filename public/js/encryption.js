@@ -1,7 +1,4 @@
 let passKey;
-let saltObj = {};
-
-
 
 //#region Key Creation
 async function generateKey() {
@@ -50,6 +47,10 @@ function generatePasskeyBackupHash(){
 
 //NOTE: DERIVEKEY MISTAKE?
 async function deriveKey(passkey, label, serverSalt) {
+    // Double encode severSalt for legacy reasons
+    if (typeof serverSalt === 'string') {
+        serverSalt = Uint8Array.from(serverSalt, c => c.charCodeAt(0));
+    }
 
     const enc = new TextEncoder();
 
@@ -244,10 +245,10 @@ async function encryptWithTempHash(roomKey, tempHash) {
 
 
     // Fetch server salt
-    const severSalt = await fetchServerSalt('INVITATION_SALT');
+    const serverSalt = hawkiConnection('salts.invitation');
 
     // Derive a key from the temporary hash
-    const derivedKey = await deriveKey(tempHash, 'invitation_key', severSalt);
+    const derivedKey = await deriveKey(tempHash, 'invitation_key', serverSalt);
 
     // Encrypt the room key using the derived key
     const encryptedRoomKeyData = await encryptWithSymKey(derivedKey, exportedRoomKey, true);
@@ -265,10 +266,10 @@ async function encryptWithTempHash(roomKey, tempHash) {
 async function decryptWithTempHash(encryptedData, tempHash, iv, tag) {
 
     //fetch server salt
-    const severSalt = await fetchServerSalt('INVITATION_SALT');
+    const serverSalt = hawkiConnection('salts.invitation');
 
     // Derive the key from the temporary hash using the salt
-    const derivedKey = await deriveKey(tempHash, 'invitation_key', severSalt);
+    const derivedKey = await deriveKey(tempHash, 'invitation_key', serverSalt);
 
     // Decrypt the data
     const decryptedData = await decryptWithSymKey(derivedKey, encryptedData, iv, tag, true);
@@ -342,7 +343,7 @@ async function keychainSet(key, value, formatToJWK, backup = true) {
 
     // Encrypt the updated keychain
     const passKey = await getPassKey();
-    const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
+    const udSalt = hawkiConnection('salts.userdata');
     const keychainEncryptor = await deriveKey(passKey, "keychain_encryptor", udSalt);
     const encKeychainData = await encryptWithSymKey(keychainEncryptor, keychainString, false);
 
@@ -436,7 +437,7 @@ async function openKeychain() {
 
             try {
                 const passKey = await getPassKey();
-                const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
+                const udSalt = hawkiConnection('salts.userdata');
                 const keychainEncryptor = await deriveKey(passKey, "keychain_encryptor", udSalt);
 
                 // console.log("Decrypting keychain...");
@@ -510,7 +511,7 @@ async function syncKeychain(serverKeychainData) {
     const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainData);
 
     const passKey = await getPassKey();
-    const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
+    const udSalt = hawkiConnection('salts.userdata');
     const keychainEncryptor = await deriveKey(passKey, "keychain_encryptor", udSalt);
 
     let serverKeychain;
@@ -598,53 +599,6 @@ async function removeKeychain(username) {
 
 //#region Utilities
 
-
-//fetches server salt with label
-async function fetchServerSalt(saltLabel) {
-
-    if(saltObj[saltLabel]){
-        const salt = saltObj[saltLabel];
-        const serverSalt = Uint8Array.from(atob(salt), c => c.charCodeAt(0));
-        return serverSalt;
-    }
-
-
-    try {
-        // Make a GET request to the server with saltlabel in the headers
-        const response = await fetch('/req/crypto/getServerSalt', {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',  // Optional for GET, but useful to include
-                'saltlabel': saltLabel,              // Pass saltlabel as a custom header
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
-            },
-        });
-
-        // Check if the server responded with an error
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Server Error:', errorData.error);
-            throw new Error(`Server Error: ${errorData.error}`);
-        }
-
-        // Parse the JSON response
-        const data = await response.json();
-
-        // Convert the base64-encoded salt to a Uint8Array
-        const serverSalt = Uint8Array.from(atob(data.salt), c => c.charCodeAt(0));
-        saltObj[saltLabel] = data.salt;
-        return serverSalt;
-
-    } catch (error) {
-        console.error('Error fetching salt:', error);
-        throw error;
-    }
-}
-
-
-
-
 function arrayBufferToBase64(buffer) {
     const binary = String.fromCharCode.apply(null, new Uint8Array(buffer));
     return btoa(binary);
@@ -718,7 +672,7 @@ async function getPassKey(){
         try{
             const keyData = localStorage.getItem(`${userInfo.username}PK`);
             const keyJson = JSON.parse(keyData);
-            const salt = await fetchServerSalt('PASSKEY_SALT');
+            const salt = hawkiConnection('salts.passkey');
             const key = await deriveKey(userInfo.email, userInfo.username, salt);
 
             passKey = await decryptWithSymKey(key, keyJson.ciphertext, keyJson.iv, keyJson.tag, false);
@@ -742,7 +696,7 @@ async function setPassKey(enteredKey){
     if(enteredKey === ''){
         return null;
     }
-    const salt = await fetchServerSalt('PASSKEY_SALT');
+    const salt = hawkiConnection('salts.passkey');
     //NOTE: USER INFO AND EMAIL SHOULD BE CHANGED TO SOMETHING PROPER
     const key = await deriveKey(userInfo.email, userInfo.username, salt);
 

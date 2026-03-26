@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\FileConverter\Handlers;
 
 
+use App\Services\FileConverter\Interfaces\FileConverterInterface;
 use Illuminate\Http\UploadedFile;
-use Symfony\Component\Finder\SplFileInfo;
 
 /**
  * A file converter that does nothing and returns an empty array.
@@ -15,7 +15,25 @@ use Symfony\Component\Finder\SplFileInfo;
  */
 class NullFileConverter implements FileConverterInterface
 {
-    public function convert(SplFileInfo|string|UploadedFile $file): array
+    /**
+     * @inheritDoc
+     */
+    public static function isValidConfig(array $config): bool
+    {
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function setConfig(array $config): void
+    {
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function convert(UploadedFile $file): array
     {
         return [];
     }
@@ -27,4 +45,21 @@ class NullFileConverter implements FileConverterInterface
     {
         return false;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getAllowedMimeTypes(): array
+    {
+        return [];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function canConvertMimetype(string $mimetype): bool
+    {
+        return false;
+    }
+
 }

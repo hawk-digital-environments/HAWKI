@@ -9,6 +9,7 @@ use App\Services\AI\AiFactory;
 use App\Services\AI\Exception\NoContextBoundException;
 use App\Services\AI\Interfaces\ClientInterface;
 use App\Services\AI\Interfaces\ModelProviderInterface;
+use App\Services\Storage\Value\FileType;
 use JsonSerializable;
 
 class AiModel implements JsonSerializable
@@ -249,6 +250,21 @@ class AiModel implements JsonSerializable
     public function canProcessImage(): bool
     {
         return $this->hasInputMethod('image') && $this->hasCapability('vision');
+    }
+
+    /**
+     * Checks if the model can process a specific type of file based on its capabilities and input methods.
+     * @param FileType $type The type of file to check.
+     * @return bool True if the model can process the given file type, false otherwise.
+     */
+    public function canProcessFileType(FileType $type): bool
+    {
+        // @todo we should expand this list to allow detection for all kinds of attachments (audio, video, etc.) based on the model's capabilities and input methods.
+        return match ($type) {
+            FileType::IMAGE => $this->canProcessImage(),
+            FileType::PLAIN_TEXT => $this->canProcessDocument(),
+            default => false,
+        };
     }
 
     /**

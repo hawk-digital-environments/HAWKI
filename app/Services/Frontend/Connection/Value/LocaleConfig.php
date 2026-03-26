@@ -12,13 +12,14 @@ use App\Utils\JsonSerializableTrait;
 readonly class LocaleConfig implements \JsonSerializable
 {
     use JsonSerializableTrait;
-    
+
     public array $available;
-    
+
     public function __construct(
         public Locale $preferred,
         public Locale $default,
         array         $available,
+
     )
     {
         Assert::is($available, static function ($locales) {
@@ -29,7 +30,7 @@ readonly class LocaleConfig implements \JsonSerializable
             }
             return true;
         }, 'available');
-        
+
         $this->available = array_map(static fn(Locale $l) => $l->toArray(), $available);
     }
 }

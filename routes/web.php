@@ -11,6 +11,7 @@ use App\Http\Controllers\LinkPreviewController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\StorageProxyController;
 use App\Http\Controllers\StreamController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,7 +55,6 @@ Route::middleware('prevent_back')->group(function () {
         Route::get('/register', [AuthenticationController::class, 'register']);
         Route::post('/req/profile/validatePasskey', [ProfileController::class, 'validatePasskey']);
         Route::post('/req/profile/backupPassKey', [ProfileController::class, 'backupPassKey']);
-        Route::get('/req/crypto/getServerSalt', [ProfileController::class, 'getServerSalt']);
         Route::post('/req/complete_registration', [AuthenticationController::class, 'completeRegistration']);
 
     });
@@ -83,6 +83,11 @@ Route::middleware('prevent_back')->group(function () {
 
         Route::middleware('signature_check')->group(function(){
 
+            // STORAGE PROXY
+            Route::get('/proxy/storage/{identifier}', [StorageProxyController::class, 'streamRouted'])
+                ->where(['filename' => '.*'])
+                ->name('web.storage.proxy');
+
             Route::get('/chat/{slug?}' , [HomeController::class, 'index']);
 
             Route::get('/req/conv/{slug?}', [AiConvController::class, 'load']);
@@ -96,12 +101,6 @@ Route::middleware('prevent_back')->group(function () {
 
             Route::post('/req/conv/attachment/upload', [AiConvController::class, 'storeAttachment']);
             Route::get('/req/conv/attachment/getLink/{uuid}', [AiConvController::class, 'getAttachmentUrl']);
-
-            Route::get('/files/{uuid}/private/{path}', [AiConvController::class, 'downloadAttachment'])
-                ->where([
-                    'path' => '.*'
-                ])->name('files.download.private')->middleware('signed');
-
 
             Route::delete('/req/conv/attachment/delete', [AiConvController::class, 'deleteAttachment']);
             Route::post('/req/streamAI', [StreamController::class, 'handleAiConnectionRequest']);
@@ -119,10 +118,6 @@ Route::middleware('prevent_back')->group(function () {
             Route::post('/req/room/readstat/{slug}', [RoomController::class, 'markAsRead']);
             Route::get('/req/room/message/get/{slug}/{messageId}', [RoomController::class, 'retrieveMessage']);
             Route::get('/req/room/attachment/getLink/{uuid}', [RoomController::class, 'getAttachmentUrl']);
-            Route::get('/files/{uuid}/group/{path}', [RoomController::class, 'downloadAttachment'])
-                ->where([
-                    'path' => '.*'
-                ])->name('files.download.group')->middleware('signed');
 
             Route::middleware('roomEditor')->group(function () {
                 Route::post('/req/room/sendMessage/{slug}', [RoomController::class, 'sendMessage']);

@@ -2,64 +2,68 @@
 
 namespace App\Services\FileConverter\Handlers;
 
+use App\Services\FileConverter\Exception\ConversionFailedException;
+use App\Services\Storage\Value\FileCollection;
+use App\Services\Storage\Value\FileReference;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use Symfony\Component\Finder\SplFileInfo;
+use Symfony\Component\Mime\MimeTypes;
 use ZipArchive;
 
-class HawkiDocConverter implements FileConverterInterface
+class HawkiDocConverter extends AbstractFileConverter
 {
-    private array $config;
-    public function __construct(array $config)
+    /**
+     * @inheritDoc
+     */
+    public static function isValidConfig(array $config): bool
     {
-        $this->config = $config;
+        return isset($config['api_url'])
+            && is_string($config['api_key'])
+            && !empty($config['api_key'])
+            && is_string($config['api_url'])
+            && filter_var($config['api_url'], FILTER_VALIDATE_URL);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getAllowedMimeTypes(): array
+    {
+        $mime = new MimeTypes();
+
+        return [
+            ...$mime->getMimeTypes('pdf'),
+            ...$mime->getMimeTypes('doc'),
+            ...$mime->getMimeTypes('docx'),
+        ];
     }
 
     /**
      * @throws ConnectionException
      * @throws Exception
      */
-    public function convert(UploadedFile|SplFileInfo|string $file): array
+    public function convert(FileReference $file): FileCollection
     {
-        if ($file instanceof UploadedFile) {
-            $resource = fopen($file->getRealPath(), 'r');
-            $filename = $file->getClientOriginalName();
-        } elseif ($file instanceof \SplFileInfo) {
-            $resource = fopen($file->getPathname(), 'r');
-            $filename = $file->getFilename();
-        } elseif (is_string($file)) {
-            // Assume string contains file contents (as returned from Storage::get())
-            // Write to a temp file
-            $tempFilePath = tempnam(sys_get_temp_dir(), 'upl_');
-            file_put_contents($tempFilePath, $file);
-            $resource = fopen($tempFilePath, 'r');
-            $filename = 'file.pdf'; // Or dynamically assign if you know the original name
-        } else {
-            throw new \InvalidArgumentException("Invalid file input. Expected UploadedFile or SplFileInfo.");
-        }
-
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->config['api_key'],
-            'Accept'        => 'application/json',
+            'Accept' => 'application/json',
         ])
-        ->attach('file', $resource, $filename)
-        ->post($this->config['api_url']);
-        fclose($resource);
+            ->attach('file', $file->getStream(), $file->getOriginalFilename())
+            ->post($this->config['api_url']);
 
         if (!$response->successful()) {
             \Log::error('PDF extraction failed: ' . $response->body());
-            throw new Exception('PDF extraction failed: ' . $response->body());
+            throw ConversionFailedException::forFailedResponse($this, $response);
         }
 
         // Unzip files from response
         $zipContent = $response->body();
-        $extractDir = sys_get_temp_dir() . '/pdf_extract_' . uniqid();
+        $extractDir = sys_get_temp_dir() . '/pdf_extract_' . uniqid('', true);
         if (!mkdir($extractDir, 0700, true) && !is_dir($extractDir)) {
-            throw new \RuntimeException(sprintf('Directory "%s" was not created', $extractDir));
+            throw ConversionFailedException::forString($this, sprintf('Directory "%s" was not created', $extractDir));
         }
 
         $this->unzipContent($zipContent, $extractDir);
@@ -69,12 +73,22 @@ class HawkiDocConverter implements FileConverterInterface
         $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($extractDir));
         foreach ($rii as $fileinfo) {
             if ($fileinfo->isFile()) {
-                $relativePath = substr($fileinfo->getPathname(), strlen($extractDir) + 1);
-                $files[$relativePath] = file_get_contents($fileinfo->getPathname());
+                $files[] = FileReference::fromDisk(
+                    diskFilePath: $fileinfo->getPathname(),
+                    originalFilename: basename($fileinfo->getPathname()),
+                );
             }
         }
 
-        return $files;
+        // Register a shutdown function to clean up the extracted files after the request is complete,
+        // to avoid leaving temporary files on disk.
+        register_shutdown_function(static function () use ($files) {
+            foreach ($files as $file) {
+                @unlink($file->getDiskFilePath());
+            }
+        });
+
+        return new FileCollection(...$files);
     }
 
     private function unzipContent($zipContent, $extractToDirectory): bool
@@ -90,7 +104,7 @@ class HawkiDocConverter implements FileConverterInterface
             return true;
         } else {
             unlink($tmpZip);
-            throw new Exception("Failed to open ZIP file.");
+            throw ConversionFailedException::forString($this, "Failed to open ZIP file.");
         }
     }
 

@@ -7,13 +7,16 @@ namespace App\Utils\Assert\Exception;
 
 class InvalidUriException extends AbstractAssertionException
 {
-    public function __construct(
-        mixed   $value,
-        ?string $key = null,
-    )
+    public static function forInvalidValue(mixed $value, ?string $key = null): self
     {
         $keyPart = $key !== null ? " for key '$key'" : '';
-        parent::__construct("Expected a valid URI$keyPart, got: " . (is_string($value) ? $value : gettype($value)));
+        $valueString = self::valueToString($value);
+        return new self("Invalid URI$valueString$keyPart");
     }
-    
+
+    public static function forExceptionOfUriParsing(\Throwable $throwable, ?string $key = null): self
+    {
+        $keyPart = $key !== null ? " for key '$key'" : '';
+        return new self("Failed to parse URI$keyPart: " . $throwable->getMessage(), previous: $throwable);
+    }
 }

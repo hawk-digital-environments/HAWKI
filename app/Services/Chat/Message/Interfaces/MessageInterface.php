@@ -6,15 +6,15 @@ use App\Models\AiConv;
 use App\Models\AiConvMsg;
 use App\Models\Message;
 use App\Models\Room;
+use App\Models\User;
 
 interface MessageInterface
 {
-    public function create(AiConv|Room $room, array $data): AiConvMsg|Message;
+    public function create(AiConv|Room $conv, array $data, User $user): AiConvMsg|Message;
 
-    public function update(AiConv|Room $room, array $data): AiConvMsg|Message;
+    public function update(AiConv|Room $conv, array $data): AiConvMsg|Message;
 
-    public function delete(AiConv|Room $room, array $data): bool;
+    public function delete(AiConv|Room $conv, array $data): bool;
 
-    public function assignID(AiConv|Room $room, int $threadId): string;
+    public function assignID(AiConv|Room $conv, int $threadId): string;
 }
-

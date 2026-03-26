@@ -2,28 +2,22 @@
 
 namespace App\Services\Chat\Room\Traits;
 
-use App\Models\Room;
-use App\Models\Message;
-
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-
-use App\Services\Chat\Message\MessageHandlerFactory;
+use App\Http\Resources\Legacy\MessageResource;
 use App\Jobs\SendMessage;
-
-
-use Exception;
+use App\Models\Room;
+use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\Auth;
+
 
 trait RoomMessages{
 
-    public function sendMessage(array $data, string $slug): ?array{
+    public function sendMessage(array $data, string $slug, User $user): ?array
+    {
 
         $room = Room::where('slug', $slug)->firstOrFail();
 
-        $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
+        $member = $room->members()->where('user_id', $user->id)->firstOrFail();
 
         if(!$member){
             throw new AuthorizationException();
@@ -32,7 +26,7 @@ trait RoomMessages{
         $data['member']= $member;
         $data['message_role'] = 'user';
 
-        $message = $this->messageHandler->create($room, $data);
+        $message = $this->messageHandler->create($room, $data, $user);
 
         $broadcastObject = [
             'slug' => $room->slug,
@@ -40,7 +34,7 @@ trait RoomMessages{
         ];
         SendMessage::dispatch($broadcastObject, false)->onQueue('message_broadcast');
 
-        return $message->createMessageObject();
+        return $message->toResource(MessageResource::class)->resolve();
     }
 
 
@@ -60,7 +54,7 @@ trait RoomMessages{
             'message_id'=> $message->message_id,
         ];
         SendMessage::dispatch($broadcastObject, true)->onQueue('message_broadcast');
-        return $message->createMessageObject();
+        return $message->toResource(MessageResource::class)->resolve();
 
     }
 
@@ -70,8 +64,7 @@ trait RoomMessages{
         if(!$room->isMember(Auth::id())){
             throw new AuthorizationException();
         }
-        $message = $room->getMessageById($message_id);
-        return $message->createMessageObject();
+        return $room->getMessageById($message_id)->toResource(MessageResource::class)->resolve();
     }
 
     public function markAsRead(array $validatedData, string $slug): bool{

@@ -7,20 +7,25 @@ use App\Models\AiConv;
 use App\Models\AiConvMsg;
 use App\Models\Room;
 use App\Models\User;
-use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Storage\Value\StoredFileCategory;
+use App\Services\Storage\Value\StoredFileIdentifier;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
-class PrivateMessageHandler extends BaseMessageHandler{
-
-
-
-    public function create(AiConv|Room $conv, array $data): AiConvMsg {
+class PrivateMessageHandler extends AbstractMessageHandler
+{
+    public function create(
+        AiConv|Room $conv,
+        array       $data,
+        User        $user,
+    ): AiConvMsg
+    {
         if ($conv->user_id !== Auth::id()) {
             throw new AuthorizationException();
         }
 //        \Log::info($data);
-        $user = $data['isAi'] ? User::find(1) : Auth::user();
+        $user = $data['isAi'] ? User::findOrFail(1) : $user;
         $messageRole = $data['isAi'] ? 'assistant' : 'user';
 
         $nextMessageId = $this->assignID($conv, $data['threadId']);
@@ -42,12 +47,13 @@ class PrivateMessageHandler extends BaseMessageHandler{
         ]);
 
         //ATTACHMENTS
-        if(array_key_exists('attachments', $data['content'])){
-            $attachments = $data['content']['attachments'];
-            if($attachments){
-                foreach($attachments as $attach){
-                    $this->attachmentService->assignToMessage($message, $attach);
-
+        if (is_array($data['content']['attachments'] ?? null)) {
+            foreach ($data['content']['attachments'] as $uuid) {
+                $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, $uuid);
+                $this->storageService->persistTemporaryFile($identifier);
+                $storedFile = $this->storageService->retrieve($identifier);
+                if ($storedFile) {
+                    $this->attachmentService->assignToMessage($message, $storedFile, $user);
                 }
             }
         }
@@ -55,8 +61,8 @@ class PrivateMessageHandler extends BaseMessageHandler{
     }
 
 
-
-    public function update(AiConv|Room $conv, array $data): AiConvMsg{
+    public function update(AiConv|Room $conv, array $data): AiConvMsg
+    {
         if ($conv->user_id !== Auth::id()) {
             throw new AuthorizationException();
         }
@@ -80,17 +86,16 @@ class PrivateMessageHandler extends BaseMessageHandler{
     }
 
 
-    public function delete(AiConv|Room $conv, array $data): bool{
+    public function delete(AiConv|Room $conv, array $data): bool
+    {
         if ($conv->user_id !== Auth::id()) {
             throw new AuthorizationException();
         }
 
         $message = $conv->messages->where('message_id', $data['message_id'])->first();
 
-        $attachmentService = app(AttachmentService::class);
-        $attachments = $message->attachments;
-        foreach ($attachments as $attachment) {
-            $attachmentService->delete($attachment);
+        foreach ($message->attachments as $attachment) {
+            $attachment->delete();
         }
 
         $message->delete();

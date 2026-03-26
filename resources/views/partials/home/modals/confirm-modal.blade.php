@@ -10,11 +10,11 @@
 
 
                 <div class="row modal-buttons-bar top-gap-3" id="confirm-btn-bar">
-                    <button class="btn-lg-stroke" id="modal-cancel-button">{{ $translation["Cancel"] }}</button>
-                    <button class="btn-lg-fill red-text" id="modal-confirm-button">{{ $translation["Confirm"] }}</button>
+                    <button class="btn-lg-stroke" id="modal-cancel-button">{{ __("Cancel") }}</button>
+                    <button class="btn-lg-fill red-text" id="modal-confirm-button">{{ __("Confirm") }}</button>
                 </div>
                 <div class="row  top-gap-3" id="info-btn-bar">
-                    <button class="btn-lg-stroke red-text" id="modal-close-button" style="justify-self: end">{{ $translation["Close"] }}</button>
+                    <button class="btn-lg-stroke red-text" id="modal-close-button" style="justify-self: end">{{ __("Close") }}</button>
                 </div>
 
             </div>

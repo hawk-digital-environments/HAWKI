@@ -69,10 +69,10 @@ return [
         'max_file_size' => $parseAndLimitConfiguredSize(env('MAX_FILE_SIZE', 10 * 1024 * 1024)),
         // The maximum file size for an avatar in bytes - default is 2 MB
         'max_avatar_file_size' => $parseAndLimitConfiguredSize(env('MAX_AVATAR_FILE_SIZE', 2 * 1024 * 1024)),
-        // Allowed MIME types for uploaded files(e.g. attachments) - comma separated list in .env (If empty, the defaults are defined in the file storage service)
-        'allowed_file_mime_types' => array_values(array_filter(explode(',', env('ALLOWED_FILE_MIME_TYPES', '')))),
-        // Allowed MIME types for uploaded avatars - comma separated list in .env (If empty, the defaults are defined in the avatar storage service)
-        'allowed_avatar_mime_types' => array_values(array_filter(explode(',', env('ALLOWED_AVATAR_MIME_TYPES', '')))),
+        // Allowed MIME types for uploaded files(e.g. attachments) - comma separated list in .env (If empty, all supported MIME types are allowed; The supported list depends on the MIME types in the FileStorageService and if you have the FileConverter configured to convert certain types, those will be included as well)
+        'allowed_file_mime_types' => array_map('strtolower', array_values(array_filter(explode(',', env('ALLOWED_FILE_MIME_TYPES', ''))))),
+        // Allowed MIME types for uploaded avatars - comma separated list in .env (If empty, all supported MIME types are allowed; The supported list depends on the MIME types in the AvatarStorageService)
+        'allowed_avatar_mime_types' => array_map('strtolower', array_values(array_filter(explode(',', env('ALLOWED_AVATAR_MIME_TYPES', ''))))),
         // Maximum number of files that can be attached to a single message (0 = unlimited)
         'max_attachment_files' => env('MAX_ATTACHMENT_FILES', 0),
     ],

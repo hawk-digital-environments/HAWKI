@@ -1452,16 +1452,86 @@
     border-radius: var(--border-radius-normal);
 }
 
+.drag-drop-overlay .drag-drop-limits {
+    font-size: var(--font-sm);
+}
+
 .drag-drop-box {
     padding: 0 2rem;
     background: var(--background-main);
-    border: 2px dashed var(--accent-color);; /* Tailwind blue-500 */
+    border: 2px dashed var(--accent-color);;
     border-radius: 1rem;
     width: 100%;
     height: 100%;
     min-height: 5rem;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     overflow: hidden;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    position: relative;
+}
+
+/* Drag-over valid state */
+.drag-drop-overlay.drag-valid .drag-drop-box {
+    border-color: #22c55e;
+    background-color: rgba(34, 197, 94, 0.08);
+}
+
+/* Drag-over invalid state */
+.drag-drop-overlay.drag-invalid .drag-drop-box {
+    border-color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.08);
+}
+
+/* Status badge: hidden by default, shown when a state is set */
+.drag-drop-status {
+    display: none;
+    position: absolute;
+    top: 0.6rem;
+    right: 0.8rem;
+}
+
+.drag-drop-overlay.drag-valid .drag-drop-status,
+.drag-drop-overlay.drag-invalid .drag-drop-status {
+    display: flex;
+}
+
+.drag-status-valid,
+.drag-status-invalid {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--font-sm);
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 2rem;
+}
+
+.drag-drop-overlay.drag-valid .drag-status-valid {
+    display: flex;
+    color: #16a34a;
+    background-color: rgba(34, 197, 94, 0.15);
+}
+
+.drag-drop-overlay.drag-invalid .drag-status-invalid {
+    display: flex;
+    color: #dc2626;
+    background-color: rgba(239, 68, 68, 0.15);
+}
+
+.drag-status-valid svg,
+.drag-status-invalid svg {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 2.5;
+    flex-shrink: 0;
+}
+
+.drag-status-valid svg {
+    stroke: #16a34a;
+}
+
+.drag-status-invalid svg {
+    stroke: #dc2626;
 }
 
 .drag-drop-content{
@@ -1512,7 +1582,26 @@
     padding: 0 2rem;
 }
 
+/* -- Drag status message (shown instead of limits/desc during drag) -- */
+.drag-status-msg {
+    display: none; /* toggled by JS */
+    margin: 0.4rem 0 0 0;
+    font-size: var(--font-xs);
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: center;
+    max-width: 28rem;
+}
 
+.drag-drop-overlay.drag-valid .drag-status-msg,
+.drag-drop-overlay.drag-valid h4 {
+    color: #16a34a;
+}
+
+.drag-drop-overlay.drag-invalid .drag-status-msg,
+.drag-drop-overlay.drag-invalid h4 {
+    color: #dc2626;
+}
 
 /* SECTION: CHAT INPUT CONTROL PANEL */
 .input-controls.minimized

@@ -127,7 +127,8 @@ class AiFactory
                                 $this->toolRegistry,
                                 $logger
                             ),
-                            $logger
+                            $logger,
+                            $this->config->get('app.debug')
                         );
                     }
                 );

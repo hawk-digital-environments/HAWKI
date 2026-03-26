@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\Message;
 use App\Models\User;
-use App\Services\Chat\Attachment\AttachmentService;
+use App\Services\Chat\Attachment\Db\AttachmentDb;
 use App\Services\Chat\Message\MessageContentValidator;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Value\StoredFileCategory;
+use App\Services\Storage\Value\StoredFileIdentifier;
 use Dotenv\Exception\ValidationException;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -166,7 +169,7 @@ class RoomController extends Controller
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
 
-        $messageData = $this->roomService->sendMessage($validatedData, $slug);
+        $messageData = $this->roomService->sendMessage($validatedData, $slug, $request->user());
 
         return response()->json([
             'success' => true,
@@ -219,16 +222,32 @@ class RoomController extends Controller
 
 
     // SECTION: ATTACHMENTS
-    public function storeAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
+    public function storeAttachment(Request $request, FileStorageService $fileStorage): JsonResponse
+    {
         $validateData = $request->validate([
-            'file' => 'required|file|max:' . ($attachmentService->getMaxFileSize() / 1024)
+            'file' => 'required|file|max:' . ($fileStorage->getMaxFileSize() / 1024)
         ]);
-        $result = $attachmentService->store($validateData['file'], 'group');
-        return response()->json($result);
 
+        $storedFile = $fileStorage->storeTemporary(
+            file: FileReference::fromUploadedFile($validateData['file']),
+            category: StoredFileCategory::GROUP
+        );
+
+        if ($storedFile === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to store file'
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'uuid' => $storedFile->getUuid(),
+        ]);
     }
 
-    public function getAttachmentUrl(string $uuid, AttachmentService $attachmentService): JsonResponse {
+    public function getAttachmentUrl(string $uuid, FileStorageService $fileStorage): JsonResponse
+    {
 
         try {
             $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
@@ -238,7 +257,7 @@ class RoomController extends Controller
                 throw new AuthorizationException();
             }
 
-            $url = $attachmentService->getFileUrl($attachment, null);
+            $url = $fileStorage->retrieve(StoredFileIdentifier::fromAttachment($attachment))?->getUrl();
         }
         catch (Exception $e) {
             throw $e;
@@ -249,35 +268,12 @@ class RoomController extends Controller
             'url' => $url
         ]);
     }
-    public function downloadAttachment(string $uuid, string $path)
-    {
-        try {
-            $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
-            if(!$attachment->attachable->room->isMember(Auth::id())){
-                throw new AuthorizationException();
-            }
-
-            $storageService = app(FileStorageService::class);
-            $stream = $storageService->streamFromSignedPath($path); // returns a resource
-
-            return response()->streamDownload(function () use ($stream)
-            {
-                fpassthru($stream); // send stream directly to browser
-            },
-                $attachment->filename,
-                [
-                    'Content-Type' => $attachment->mime,
-                ]
-            );
-        } catch (\Illuminate\Contracts\Filesystem\FileNotFoundException $e) {
-            abort(404, 'File not found');
-        }
-    }
 
     /**
      * @throws Exception
      */
-    public function deleteAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
+    public function deleteAttachment(Request $request, AttachmentDb $attachmentService): JsonResponse
+    {
 
         $validateData = $request->validate([
             'fileId' => 'required|string',

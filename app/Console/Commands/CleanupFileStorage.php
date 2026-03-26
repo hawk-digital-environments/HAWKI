@@ -2,13 +2,11 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Chat\Attachment\AttachmentService;
-use App\Services\Storage\AvatarStorageService;
-use Illuminate\Console\Command;
-
-use App\Services\Storage\FileStorageService;
 use App\Models\Attachment;
+use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Storage\FileStorageService;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 class CleanupFileStorage extends Command
 {
@@ -29,7 +27,7 @@ class CleanupFileStorage extends Command
     /**
      * Execute the console command.
      */
-    public function handle(AttachmentService $attachmentService,
+    public function handle(AttachmentDb $attachmentService,
                            FileStorageService $fileStorageService)
     {
         $deleteInterval = config('filesystems.garbage_collections.remove_files_after_months');
@@ -49,8 +47,7 @@ class CleanupFileStorage extends Command
             $this->line("Removing Expired attachments");
             $this->line(count($attachments) . " expired Attachments were found.");
             foreach($attachments as $atch){
-                $deleted = $attachmentService->delete($atch);
-                if(!$deleted){
+                if (!$atch->delete()) {
                     $failsList[] = $atch;
                 }
                 else{
@@ -72,8 +69,7 @@ class CleanupFileStorage extends Command
 
         $this->line('Cleaning up temp files...');
 
-        $fileStorage = app(FileStorageService::class);
-        $success = $fileStorage->deleteTempExpiredFiles();
+        $success = $fileStorageService->deleteTempExpiredFiles();
         if($success){
             $this->info("Temp files deleted from File Storage.");
         }

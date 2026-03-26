@@ -13,7 +13,6 @@ function selectFile(sender) {
     }
 }
 
-
 function initFileUploader(inputField) {
 
     const overlay = inputField.querySelector('.drag-drop-overlay');
@@ -21,6 +20,48 @@ function initFileUploader(inputField) {
     const input = inputField.querySelector('.input');
     const ctrls = inputField.querySelector('.input-controls');
     let dragCounter = 0;
+
+    const allowedMimeTypes = hawkiConnection('storage.allowedMimeTypes');
+
+    // Set the allowed mime types on the file-upload-input input field, so the file picker also filters unsupported types
+    if (fileInput) {
+        fileInput.setAttribute('accept', allowedMimeTypes.join(','));
+    }
+
+    // Builds a single status sentence shown instead of the limits/desc during drag.
+    // Collects unique unsupported MIME types; uses singular/plural translation keys accordingly.
+    function updateDragFileList(fileInfos) {
+        const msgEl = overlay && overlay.querySelector('.drag-status-msg');
+        if (!msgEl) return;
+
+        const invalidTypes = [...new Set(
+            fileInfos.filter(f => !f.allowed).map(f => f.type || '?')
+        )].map(type => {
+            // At max 30 chars to prevent overflow, (cut from beginning, so we have the ending always visible) prefix with...
+            // Wrap with quotes to make it clearer, especially for empty MIME types
+            return type.length > 30 ? `"...${type.slice(-30)}"` : `"${type}"`;
+        });
+
+        let message;
+        if (invalidTypes.length === 0) {
+            message = __('Upload_Overlay_Valid_Msg');
+        } else if (invalidTypes.length === 1) {
+            message = __('Upload_Overlay_Invalid_Single', {type: invalidTypes[0]});
+        } else {
+            message = __('Upload_Overlay_Invalid_Multiple', {types: invalidTypes.join(', ')});
+        }
+
+        msgEl.textContent = message;
+        msgEl.style.display = 'block';
+    }
+
+    function clearDragFileList() {
+        const msgEl = overlay && overlay.querySelector('.drag-status-msg');
+        if (msgEl) {
+            msgEl.textContent = '';
+            msgEl.style.display = 'none';
+        }
+    }
 
     // Drag and drop handling
     inputField.addEventListener('dragover', function(e) {
@@ -35,6 +76,26 @@ function initFileUploader(inputField) {
         dragCounter++;
         ctrls.classList.add('minimized');
         overlay.style.display = 'flex';
+
+        // Detect dragged file MIME types and show validity feedback
+        const items = e.dataTransfer && e.dataTransfer.items;
+        if (items && items.length > 0) {
+            let allAllowed = true;
+            const fileInfos = [];
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].kind === 'file') {
+                    const mimeType = items[i].type || 'unknown/unknown';
+                    const allowed = !mimeType || allowedMimeTypes.includes(mimeType);
+                    if (!allowed) allAllowed = false;
+                    fileInfos.push({type: mimeType, allowed});
+                }
+            }
+            if (fileInfos.length > 0) {
+                overlay.classList.toggle('drag-valid', allAllowed);
+                overlay.classList.toggle('drag-invalid', !allAllowed);
+                updateDragFileList(fileInfos);
+            }
+        }
     });
 
     inputField.addEventListener('dragleave', function(e) {
@@ -42,10 +103,11 @@ function initFileUploader(inputField) {
         e.stopPropagation();
 
         dragCounter--;
-        // Only hide if all drags have left this element
         if (dragCounter === 0) {
             ctrls.classList.remove('minimized');
             overlay.style.display = 'none';
+            overlay.classList.remove('drag-valid', 'drag-invalid');
+            clearDragFileList();
         }
     });
 
@@ -55,6 +117,8 @@ function initFileUploader(inputField) {
 
         dragCounter = 0;
         overlay.style.display = 'none';
+        overlay.classList.remove('drag-valid', 'drag-invalid');
+        clearDragFileList();
         handleSelectedFiles(e.dataTransfer.files, input);
 
     });
@@ -86,7 +150,7 @@ async function handleSelectedFiles(files, inputField) {
     Array.from(files).map(async file => {
         // File type validation
         if (!allowedTypes.includes(file.type)) {
-            showFeedbackMsg(inputField, 'error', `${translation.Input_Err_NotSupported} ${file.type}`);
+            showFeedbackMsg(inputField, 'error', `${__('Input_Err_NotSupported')} ${file.type || 'unknown/unknown'}`);
             return null; // Early exit from this file's processing
         }
         queueAnchoredAnnouncements('FileUpload');
@@ -94,12 +158,12 @@ async function handleSelectedFiles(files, inputField) {
 
         // File size validation
         if (file.size > maxFileSize) {
-            showFeedbackMsg(inputField, 'error', `${translation.Input_Err_MaxSize} ${maxFileSizeReadable}`);
+            showFeedbackMsg(inputField, 'error', `${__('Input_Err_MaxSize')} ${maxFileSizeReadable}`);
             return null;
         }
 
         if(!checkFilterCombination(input_id, getFilterFromMime(file.type))){
-            showFeedbackMsg(inputField, 'error', `${translation.Input_Err_FilterConflict}`)
+            showFeedbackMsg(inputField, 'error', `${__('Input_Err_FilterConflict')}`);
             return;
         }
 
@@ -132,13 +196,12 @@ function setAttachmentsFilter(input_id){
     let visionFilterFlag = false;
     attachments.forEach(attachment => {
         const type = checkFileFormat(attachment.fileData.mime);
-        if(type === 'pdf' || type === 'docx' || type === 'image'){
-            fileUploadFilterFlag = true;
-            addInputFilter(input_id, 'file_upload');
-        }
         if(type === 'image'){
             visionFilterFlag = true;
             addInputFilter(input_id, 'vision');
+        } else {
+            fileUploadFilterFlag = true;
+            addInputFilter(input_id, 'file_upload');
         }
     });
 
@@ -190,12 +253,9 @@ function createAttachmentThumbnail(fileData, thumbType) {
 
         attachment.querySelector('.attachment-icon').classList.add('boarder');
         break;
-        case('pdf'):
-            imgPreview = '/img/fileformat/pdf.png';
-        break;
-        case('docx'):
-            imgPreview = '/img/fileformat/doc.png';
-        break;
+        default:
+            imgPreview = getFileIconSvg(fileData.name.split('.').pop());
+            break;
     }
 
 
@@ -222,6 +282,14 @@ async function openAttachmentDropDown(burgerBtn, attachment, fileData) {
     const downloadBtn = burgerMenu.querySelector('#download-btn');
     const removeBtn = burgerMenu.querySelector('#remove-btn');
 
+    // Documents cannot be previewed, so hide the open button for them
+    if (checkFileFormat(fileData.mime) === 'document') {
+        openBtn.style.display = 'none';
+        openBtn.disabled = true;
+    } else {
+        openBtn.style.display = '';
+        openBtn.disabled = false;
+    }
 
     // Define handlers
     async function openHandler() {
@@ -268,7 +336,7 @@ async function openAttachmentDropDown(burgerBtn, attachment, fileData) {
 }
 
 async function onDeleteClicked(fileData, attachment){
-    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteFile);
+    const confirmed = await openModal(ModalType.WARNING, __('Cnf_deleteFile'));
     if (!confirmed) {
         return;
     }
@@ -401,7 +469,6 @@ function updateFileStatus(fileId, status) {
  * @returns {Promise<array|null>} - List of uploaded file metadata or null.
  */
 async function uploadAttachmentQueue(queueId, category, slug = null) {
-    console.log('uploading FIle ', queueId, category, slug);
     let url = '';
     if(slug){
         url = `/req/${category}/attachment/upload/${slug}`;
@@ -410,8 +477,6 @@ async function uploadAttachmentQueue(queueId, category, slug = null) {
         url = `/req/${category}/attachment/upload`;
     }
     const attachments = uploadQueues.get(queueId);
-    console.log('queue');
-    console.log(attachments);
 
     if (!attachments || attachments.length === 0) return null;
 
@@ -424,7 +489,7 @@ async function uploadAttachmentQueue(queueId, category, slug = null) {
             updateFileStatus(attachment.fileData.tempId, status, fileUrl);
             if(status === 'error'){
                 const inputField = document.querySelector(`.input[id=${queueId}`);
-                showFeedbackMsg(inputField, 'error', translation.Input_Err_UploadFailed);
+                showFeedbackMsg(inputField, 'error', __('Input_Err_UploadFailed'));
             }
         });
 
@@ -436,11 +501,7 @@ async function uploadAttachmentQueue(queueId, category, slug = null) {
         return upload.promise
             .then(data => {
                 attachment.fileData.uuid = data.uuid;
-                uploadedFiles.push({
-                    uuid: data.uuid,
-                    name: attachment.fileData.name,
-                    mime: attachment.fileData.mime,
-                });
+                uploadedFiles.push(data.uuid);
                 updateFileStatus(attachment.fileData.tempId, 'complete');
                 removeAtchFromList(attachment.fileData.tempId, queueId);
             })

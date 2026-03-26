@@ -1,7 +1,7 @@
 <div class="dy-main-content" id="room-control-panel">
     <div class="panel-container">
 
-        <button class="closeButton btn-sm" onclick="closeRoomCP()" aria-label="{{ $translation["Close"] }}">
+        <button class="closeButton btn-sm" onclick="closeRoomCP()" aria-label="{{ __("Close") }}">
             <x-icon name="x" aria-hidden="true"/>
         </button>
 
@@ -22,7 +22,7 @@
                             <div class="chat-name-panel text-cont">
                                 <h1 class="text-field chat-name zero-v-margin" id="chat-name"></h1>
 
-                                @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditRoomNameToolTip"]])
+                                @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction'=>'submitInfoField', 'tooltip' => __("EditRoomNameToolTip"]))
                             </div>
 
 
@@ -35,7 +35,7 @@
 
 
                 <div class="row top-gap-3" id="members-panel">
-                    <h4 class="label-header">{{ $translation["Members"] }}</h4>
+                    <h4 class="label-header">{{ __("Members") }}</h4>
                     <div class="members-list dynamic-grid">
 
 
@@ -44,25 +44,25 @@
 
                 <div class="row top-gap-3" id="description-panel">
 
-                    <label class="label-header">{{ $translation["Description"] }}</label>
+                    <label class="label-header">{{ __("Description") }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="description-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditDescriptionToolTip"], 'placement' => 'left'])
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => __("EditDescriptionToolTip"], 'placement' => 'left'))
                     </div>
                 </div>
 
 
                 <div class="row top-gap-3" id="system-prompt-panel">
-                    <label class="label-header">{{ $translation["SystemPrompt"] }}</label>
+                    <label class="label-header">{{ __("SystemPrompt") }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="system_prompt-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => $translation["EditSystemPromptToolTip"], 'placement' => 'left'])
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => __("EditSystemPromptToolTip"], 'placement' => 'left'))
                     </div>
                 </div>
 
 
                 <div class="row flex-row top-gap-3 justify-content-end admin-only" id="remove-panel">
-                    <button class="btn-lg-fill delete-btn align-end" onclick="requestDeleteRoom()">{{ $translation["Delete"] }}</button>
+                    <button class="btn-lg-fill delete-btn align-end" onclick="requestDeleteRoom()">{{ __("Delete") }}</button>
                 </div>
 
 

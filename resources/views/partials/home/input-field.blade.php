@@ -14,7 +14,7 @@
             <div class="icon" aria-hidden="true">
                 <x-icon name="chevron-up"/>
             </div>
-            <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["MoreToolTip"] }}</div>
+            <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("MoreToolTip") }}</div>
         </button>
         @endif
 
@@ -26,7 +26,7 @@
                     <button class="btn-xs fast-access-btn" onclick="startNewChat()" aria-labelledby="{{ $tooltipId }}">
                         <x-icon name="new" aria-hidden="true"/>
                         <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
-                            {{ $translation["StartNewChat"] }}
+                            {{ __("StartNewChat") }}
                         </div>
                     </button>
                 @endif
@@ -36,7 +36,7 @@
                     <button class="btn-xs fast-access-btn" value="system_prompt_panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'system_prompt_panel')" aria-labelledby="{{ $tooltipId }}">
                         <x-icon name="sliders" aria-hidden="true"/>
                         <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
-                            {{ $translation["SystemPrompt"] }}
+                            {{ __("SystemPrompt") }}
                         </div>
                     </button>
 
@@ -47,7 +47,7 @@
                     <button class="btn-xs fast-access-btn" value="export-panel" onclick="toggleRelativePanelClass('input-controls', this,'expanded'); switchControllerProp(this, 'export-panel')" aria-labelledby="{{ $tooltipId }}">
                         <x-icon name="download" aria-hidden="true"/>
                         <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">
-                            {{ $translation["Export"] }}
+                            {{ __("Export") }}
                         </div>
                     </button>
                 @endif
@@ -69,14 +69,14 @@
                             <x-icon name="chevron-up"/>
                         </div>
                         <div class="label model-selector-label" aria-hidden="true"></div>
-                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["ModelSelectorToolTip"] }}</div>
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("ModelSelectorToolTip") }}</div>
                     </button>
                 </div>
 
                 @php $tooltipId = str()->uuid() @endphp
                 <button class="btn-xs model-params-btn tooltip-parent " onclick="openMsgParamsControlPanel(this)" aria-labelledby="{{ $tooltipId }}">
                     <x-icon name="tool" aria-hidden="true"/>
-                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["ModelParamsControlToolTip"] }}</div>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("ModelParamsControlToolTip") }}</div>
                 </button>
             </div>
         </div>
@@ -92,25 +92,25 @@
 
                         <button class="btn-xs menu-item" value="" onclick="switchControllerProp(this); startNewChat(); toggleRelativePanelClass('input-controls', this,'expanded');">
                             <x-icon name="new"/>
-                            <div class="label">{{ $translation["StartNewChat"] }}</div>
+                            <div class="label">{{ __("StartNewChat") }}</div>
                         </button>
                         @endif
 
                         <button class="btn-xs menu-item" value="models_panel" onclick="switchControllerProp(this, 'models_panel')">
                             <x-icon name="layers"/>
-                            <div class="label">{{ $translation["Models"] }}</div>
+                            <div class="label">{{ __("Models") }}</div>
                         </button>
 
                         @if($activeModule === 'chat')
                         <button class="btn-xs menu-item" value="system_prompt_panel" onclick="switchControllerProp(this, 'system_prompt_panel')">
                             <x-icon name="sliders"/>
-                            <div class="label">{{ $translation["SystemPrompt"] }}</div>
+                            <div class="label">{{ __("SystemPrompt") }}</div>
                         </button>
                         @endif
 
                         <button class="btn-xs menu-item" value="export-panel" onclick="switchControllerProp(this, 'export-panel')">
                             <x-icon name="download"/>
-                            <div class="label">{{ $translation["Export"] }}</div>
+                            <div class="label">{{ __("Export") }}</div>
                         </button>
 
                         </button>
@@ -135,7 +135,7 @@
 
                             <button class="burger-item" id="export-btn-print" onclick="exportPrintPage()">
                                 <div class="icon"></div>
-                                <div class="label">{{ $translation["Print"] }}</div>
+                                <div class="label">{{ __("Print") }}</div>
                             </button>
 
                             <button class="burger-item" id="export-btn-pdf" onclick="exportAsPDF()">
@@ -143,7 +143,7 @@
                                     <x-icon name="loading"/>
                                 </div>
                                 <div class="icon"></div>
-                                <div class="label">PDF {{ $translation["Download"] }}</div>
+                                <div class="label">PDF {{ __("Download") }}</div>
                             </button>
 
                             <button class="burger-item" id="export-btn-word" onclick="exportAsWord()">
@@ -151,7 +151,7 @@
                                     <x-icon name="loading"/>
                                 </div>
                                 <div class="icon"></div>
-                                <div class="label">Word {{ $translation["Download"] }}</div>
+                                <div class="label">Word {{ __("Download") }}</div>
                             </button>
 
                             <button class="burger-item" id="export-btn-csv" onclick="exportAsCsv()">
@@ -159,12 +159,12 @@
                                     <x-icon name="loading"/>
                                 </div>
                                 <div class="icon"></div>
-                                <div class="label">CSV {{ $translation["Download"] }}</div>
+                                <div class="label">CSV {{ __("Download") }}</div>
                             </button>
 
                             <button class="burger-item" id="export-btn-json" onclick="exportAsJson()">
                                 <div class="icon"></div>
-                                <div class="label">JSON {{ $translation["Download"] }}</div>
+                                <div class="label">JSON {{ __("Download") }}</div>
                             </button>
                         </div>
 
@@ -196,13 +196,13 @@
 
                     @if($activeModule === 'chat')
 
-                        placeholder="{{ $translation['Input_Placeholder_Chat'] }}"
+                        placeholder="{{ __('Input_Placeholder_Chat') }}"
                         oninput="resizeInputField(this);"
                         onkeypress="onHandleKeydownConv(event)"
 
                     @elseif($activeModule === 'groupchat')
 
-                        placeholder="{{ $translation['Input_Placeholder_Room'] ." ". config('hawki.aiHandle')}}"
+                        placeholder="{{ __('Input_Placeholder_Room') ." ". config('hawki.aiHandle')}}"
                         oninput="resizeInputField(this); onGroupchatType()"
                         onkeypress="onHandleKeydownRoom(event)"
 
@@ -219,7 +219,7 @@
                         <button class="btn-xs fast-access-btn file-upload file-upload-btn" onclick="selectFile(this)">
                             <x-icon name="paperclip"/>
                             <div class="tooltip tooltip-left">
-                                {{ $translation["UploadFile"] }}
+                                {{ __("UploadFile") }}
                             </div>
                         </button>
 
@@ -227,7 +227,7 @@
                         <div id="tool-selection-btn" class="btn-xs fast-access-btn tooltip-parent" onclick="openBurgerMenu('tool-selection-panel', this, false, true, true, true)">
                             <x-icon name="plus"/>
                             <div class="label tooltip">
-                                {{ $translation["Add_Tool"] }}
+                                {{ __("Add_Tool") }}
                             </div>
                             @include('partials.home.components.tools-list')
                         </div>
@@ -261,7 +261,7 @@
                             </div>
                         </div>
                         <div class="label tooltip tt-abs-up" aria-hidden="true" id="{{ $tooltipId }}">
-                        {{ $translation["Send"] }}
+                        {{ __("Send") }}
                         </div>
                 </button>
             </div>

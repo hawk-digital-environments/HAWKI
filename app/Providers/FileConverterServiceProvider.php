@@ -2,19 +2,23 @@
 
 namespace App\Providers;
 
-use App\Services\FileConverter\Exception\InvalidFileConverterTypeException;
-use App\Services\FileConverter\Handlers\FileConverterInterface;
+use App\Services\FileConverter\Exception\InvalidFileConverterConfigException;
 use App\Services\FileConverter\Handlers\NullFileConverter;
+use App\Services\FileConverter\Interfaces\FileConverterInterface;
+use App\Services\FileConverter\Utils\ImagePreProcessingConverter;
+use Illuminate\Cache\Repository;
 use Illuminate\Support\ServiceProvider;
+use Psr\Log\LoggerInterface;
 
 class FileConverterServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
         $this->app->bind(FileConverterInterface::class, function () {
+            $config = $this->app->get('config');
             $candidates = [
-                config('file_converter.default'),
-                config('file_converter.fallback'),
+                $config->get('file_converter.default'),
+                $config->get('file_converter.fallback'),
             ];
 
             foreach ($candidates as $converterType) {
@@ -23,13 +27,31 @@ class FileConverterServiceProvider extends ServiceProvider
                 }
 
                 $converterConfig = $this->getConverterConfig($converterType);
+                /** @var class-string<FileConverterInterface> $converterClass */
+                $converterClass = $this->getConverterClassName($converterType, $converterConfig);
 
-                if ($this->isConfiguredConverterConfig($converterConfig)) {
-                    $converterClass = $converterConfig['class'];
-                    $instance = new $converterClass($converterConfig);
-                    if ($instance->isAvailable()) {
-                        return $instance;
-                    }
+                if (!$converterClass::isValidConfig($converterConfig)) {
+                    continue;
+                }
+
+                /** @var FileConverterInterface $instance */
+                $instance = $this->app->make($converterClass, ['config' => $converterConfig]);
+
+                if ($instance->isAvailable()) {
+                    $binaries = $config->get('file_converter.binaries', []);
+
+                    // Wrap it with the image pre-processing converter
+                    $wrappedInstance = new ImagePreProcessingConverter(
+                        concreteConverter: $instance,
+                        logger: $this->app->make(LoggerInterface::class),
+                        cache: $this->app->make(Repository::class),
+                        rsvgConvertBinary: $binaries['rsvg_convert'] ?? 'rsvg-convert',
+                        imageMagickBinary: $binaries['image_magick'] ?? 'convert',
+                    );
+
+                    $wrappedInstance->setConfig($converterConfig);
+
+                    return $wrappedInstance;
                 }
             }
 
@@ -43,28 +65,34 @@ class FileConverterServiceProvider extends ServiceProvider
 
     /**
      * Fetches the converter configuration for the given type from the config file.
-     * If the configuration is missing or invalid, it throws an InvalidFileConverterTypeException.
+     * If the configuration is missing or invalid, it throws an InvalidFileConverterConfigException.
      */
     private function getConverterConfig(mixed $type): array
     {
         $converterConfig = config("file_converter.converters.$type");
         if (!is_array($converterConfig) || empty($converterConfig)) {
-            throw new InvalidFileConverterTypeException($type);
+            throw InvalidFileConverterConfigException::forInvalidConverterType($type);
         }
         return $converterConfig;
     }
 
     /**
-     * Checks if the given converter configuration is properly set up with all required fields.
-     * It checks for the presence of 'api_url', 'api_key', and 'class' fields, and also verifies that
-     * the specified class exists and implements the FileConverterInterface.
+     * Validates the converter configuration for the given type and retrieves the converter class name.
+     * @param string $type The type of the converter (e.g., 'gwdg_docling').
+     * @param array $config The converter configuration array containing 'class' and other necessary fields.
+     * @return string
      */
-    private function isConfiguredConverterConfig(array $converterConfig): bool
+    private function getConverterClassName(string $type, array $config): string
     {
-        return !empty($converterConfig['api_url'])
-            && !empty($converterConfig['api_key'])
-            && !empty($converterConfig['class'])
-            && class_exists($converterConfig['class'])
-            && in_array(FileConverterInterface::class, class_implements($converterConfig['class']), true);
+        if (empty($config['class'])) {
+            throw InvalidFileConverterConfigException::forMissingClassInConfig($type);
+        }
+
+        $class = $config['class'];
+        if (!class_exists($class) || !in_array(FileConverterInterface::class, class_implements($class), true)) {
+            throw InvalidFileConverterConfigException::forInvalidClassInConfig($type, $class);
+        }
+
+        return $class;
     }
 }

@@ -7,22 +7,15 @@ namespace App\Utils\Assert\Exception;
 
 class ValueIsNotInListException extends AbstractAssertionException
 {
-    public function __construct(
-        mixed   $value,
-        array   $list,
-        ?string $key = null,
-    )
+    public static function forInvalidValue(mixed $value, array $list, ?string $key = null): self
     {
-        $keyPart = $key !== null ? " for key '$key'" : '';
-        $valueString = gettype($value);
-        if ($valueString === 'integer' || $valueString === 'double') {
-            $valueString = ': ' . $value;
-        } else if ($valueString === 'string' && $value !== '') {
-            $valueString = ': "' . $value . '"';
-        } else if ($valueString === 'string' && $value === '') {
-            $valueString = ' an empty string';
-        }
         $listString = implode(', ', array_map(fn($item) => is_string($item) ? "\"$item\"" : (string)$item, $list));
-        parent::__construct("Expected a value from the list [$listString]$keyPart, got" . $valueString);
+        return new self(sprintf(
+                "Expected a value from the list [%s]%s, got %s",
+                $listString,
+                self::optionalKey($key),
+                self::valueToString($value)
+            )
+        );
     }
 }

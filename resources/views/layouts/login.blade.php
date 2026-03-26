@@ -18,12 +18,14 @@
     <script src="{{ asset('js/announcements.js') }}"></script>
     @vite('resources/js/app.js')
 
-    {!! $settingsPanel !!}
+    <x-settings-panel/>
 
     <script>
 		InitializePreDomSettings(false);
-        UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
+        UpdateSettingsLanguage('<x-current-locale/>');
 	</script>
+
+    <x-internal-frontend-connection-login/>
 
 </head>
 <body>
@@ -41,12 +43,12 @@
             <button class="btn-sm" onclick="toggleSettingsPanel(true)" aria-labelledby="{{ $tooltipId }}">
                 <x-icon name="settings-icon" aria-hidden="true"/>
                  <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
-                    {{ $translation["Settings"] }}
+                     {{ __("Settings") }}
                 </div>
             </button>
             <div class="impressumPanel">
-                <a href="/dataprotection" target="_blank" class="btn-text">{{ $translation["DataProtection"] }}</a>
-                <a href="{{ env("IMPRINT_LOCATION") }}" target="_blank" class="btn-text">{{ $translation["Impressum"] }}</a>
+                <a href="/dataprotection" target="_blank" class="btn-text">{{ __("DataProtection") }}</a>
+                <a href="{{ env("IMPRINT_LOCATION") }}" target="_blank" class="btn-text">{{ __("Impressum") }}</a>
             </div>
         </div>
 
