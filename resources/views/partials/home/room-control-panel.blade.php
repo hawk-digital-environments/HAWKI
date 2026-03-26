@@ -22,7 +22,7 @@
                             <div class="chat-name-panel text-cont">
                                 <h1 class="text-field chat-name zero-v-margin" id="chat-name"></h1>
 
-                                @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction'=>'submitInfoField', 'tooltip' => __("EditRoomNameToolTip"]))
+                                @include('partials.home.components.edit-panel', ['rightOut' => true, 'callbackFunction'=>'submitInfoField', 'tooltip' => __("EditRoomNameToolTip")]))
                             </div>
 
 
@@ -47,7 +47,7 @@
                     <label class="label-header">{{ __("Description") }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="description-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => __("EditDescriptionToolTip"], 'placement' => 'left'))
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => __("EditDescriptionToolTip"), 'placement' => 'left']))
                     </div>
                 </div>
 
@@ -56,7 +56,7 @@
                     <label class="label-header">{{ __("SystemPrompt") }}</label>
                     <div class="text-panel text-cont">
                         <p class="text-field" id="system_prompt-field"></p>
-                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => __("EditSystemPromptToolTip"], 'placement' => 'left'))
+                        @include('partials.home.components.edit-panel', ['callbackFunction'=>'submitInfoField', 'tooltip' => __("EditSystemPromptToolTip"), 'placement' => 'left']))
                     </div>
                 </div>
 
