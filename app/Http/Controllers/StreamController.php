@@ -275,7 +275,7 @@ class StreamController extends Controller
                         'params' => $data['payload']['params'] ?? null,
                     ],
                 ],
-                $request->getUser()
+                $request->user()
             );
         }
 
