@@ -25,3 +25,11 @@ jobs:
         with:
           version: ${{ inputs.version }}
           version-json: config/hawki_version.json
+          # This ensures that the model provider config files are updated in the release branch
+          # so our docker setup will match the current state of the main config files.
+          shell: |
+            rm -f _docker_production/config/model_providers.php
+            cp config/model_providers.php _docker_production/config/model_providers.php
+            rm -rf _docker_production/config/model_lists
+            cp -r config/model_lists _docker_production/config/model_lists
+            git add _docker_production/config/model_lists
