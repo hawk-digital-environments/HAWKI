@@ -170,27 +170,20 @@ class Assert
     }
 
     /**
-     * Asserts that the given value is an array where every element is of the specified class or type.
+     * Asserts that the given value is an array where every element is of the specified native type.
      *
-     * The type is matched using {@see get_debug_type()}, which supports native types (e.g. "int", "string")
-     * as well as fully qualified class names (e.g. "App\Models\User").
-     *
-     * The template parameter `T` is inferred from the `$type` string, so after this call
-     * static analysers will narrow `$value` to `array<T>`.
+     * The type is matched using {@see get_debug_type()}, which supports native types (e.g. "int", "string").
+     * For class instance checks use {@see Assert::isArrayOfInstances()} instead.
      *
      * Example:
      * ```php
-     * // $value is narrowed to array<\App\Models\User> after this call
-     * Assert::isArrayOf($value, \App\Models\User::class);
+     * Assert::isArrayOf($value, 'string');
+     * Assert::isArrayOf($value, 'int');
      * ```
      *
-     * @template T of object
-     *
      * @param mixed $value The value to check; must be an array.
-     * @param class-string<T> $type The expected class of each array item.
+     * @param string $type The expected native type (e.g. "string", "int") of each array item.
      * @param string|null $key Optional key name used in the exception message for context.
-     *
-     * @psalm-assert array<T> $value
      *
      * @throws InvalidArrayOfTypesException if the value is not an array,
      *         or if any element does not match the expected type.
@@ -203,6 +196,40 @@ class Assert
         foreach ($value as $index => $item) {
             if (get_debug_type($item) !== $type) {
                 throw InvalidArrayOfTypesException::forInvalidItem($value, $index, $type, $key);
+            }
+        }
+    }
+
+    /**
+     * Asserts that the given value is an array where every element is an instance of the specified class.
+     *
+     * For native type checks (e.g. "string", "int") use {@see Assert::isArrayOf()} instead.
+     *
+     * Example:
+     * ```php
+     * // $value is narrowed to array<\App\Models\User> after this call
+     * Assert::isArrayOfInstances($value, \App\Models\User::class);
+     * ```
+     *
+     * @template T of object
+     *
+     * @param mixed $value The value to check; must be an array.
+     * @param class-string<T> $class The expected class of each array item.
+     * @param string|null $key Optional key name used in the exception message for context.
+     *
+     * @psalm-assert array<T> $value
+     *
+     * @throws InvalidArrayOfTypesException if the value is not an array,
+     *         or if any element is not an instance of the expected class.
+     */
+    public static function isArrayOfInstances(mixed $value, string $class, ?string $key = null): void
+    {
+        if (!is_array($value)) {
+            throw InvalidArrayOfTypesException::forNonArrayValue($value, $class, $key);
+        }
+        foreach ($value as $index => $item) {
+            if (!$item instanceof $class) {
+                throw InvalidArrayOfTypesException::forInvalidItem($value, $index, $class, $key);
             }
         }
     }
@@ -230,7 +257,7 @@ class Assert
      * @template T
      *
      * @param mixed $value The value to assert.
-     * @param callable(T): void $assertion A callable that receives the value and signals failure by returning a string or throwing.
+     * @param callable(T):(void|string) $assertion A callable that receives the value and signals failure by returning a string or throwing.
      *                                        Annotate the callable's parameter with `@psalm-assert` to propagate narrowing.
      * @param string|null $key Optional key name used in the exception message for context.
      *

@@ -53,6 +53,7 @@
 - `AiErrorResponse` now captures a stack trace at construction time and exposes it in `toArray()` when `app.debug` is enabled, making AI provider errors significantly easier to trace during development.
 - Event listeners in `app/Services/*/Listeners` are now auto-discovered via a glob registered in `bootstrap/app.php`.
 - `ext-fileinfo` is now declared as a required PHP extension in `composer.json`.
+- Added phpstan for static analysis which should help catch potential bugs and improve code quality. Run `composer run stan` to execute the static analysis checks. Currently NOT in the pipeline, because there are still some issues to fix, but we will get there eventually.
 
 ### Deprecation
 

@@ -213,12 +213,7 @@ class LocaleService
             return null;
         }
 
-        $request = $this->application->get(Request::class);
-        if (!$request instanceof Request) {
-            return null;
-        }
-
-        $cookieValue = $request->cookie(self::LAST_LANGUAGE_COOKIE_KEY);
+        $cookieValue = $this->application->get(Request::class)->cookie(self::LAST_LANGUAGE_COOKIE_KEY);
         if (empty($cookieValue) || !is_string($cookieValue)) {
             return null;
         }

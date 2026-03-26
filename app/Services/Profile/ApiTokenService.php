@@ -2,25 +2,42 @@
 
 namespace App\Services\Profile;
 
-use Exception;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use laravel\Sanctum\NewAccessToken;
+use App\Models\User;
+use App\Services\Profile\Exception\NoCurrentUserException;
+use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Support\Collection;
+use Laravel\Sanctum\NewAccessToken;
+use Psr\Log\LoggerInterface;
 
-class ApiTokenService{
-
-    public function createApiToken(string $name): NewAccessToken{
-        $user = Auth::user();
-        return $user->createToken($name);
+readonly class ApiTokenService
+{
+    public function __construct(
+        #[CurrentUser]
+        private User|null       $currentUser,
+        private LoggerInterface $logger
+    )
+    {
     }
 
+    public function createApiToken(string $name): NewAccessToken
+    {
+        if (!$this->currentUser) {
+            throw NoCurrentUserException::forMethod(__METHOD__);
+        }
+        return $this->currentUser->createToken($name);
+    }
 
-    public function fetchTokenList(){
-        $user = Auth::user();
-        // Retrieve all tokens associated with the authenticated user
-        $tokens = $user->tokens()->get();
+    /**
+     * @return Collection<array{id: int, name: string}>
+     */
+    public function fetchTokenList(): Collection
+    {
+        if (!$this->currentUser) {
+            throw NoCurrentUserException::forMethod(__METHOD__);
+        }
+
         // Construct an array of token data
-        return $tokens->map(function ($token) {
+        return $this->currentUser->tokens()->get()->map(function ($token) {
             return [
                 'id' => $token->id,
                 'name' => $token->name,
@@ -28,18 +45,17 @@ class ApiTokenService{
         });
     }
 
-
-    public function revokeToken(int $tokenId){
-        try{
-            $user = Auth::user();
-            $token = $user->tokens()->where('id', $tokenId);
-            $token->delete();
+    public function revokeToken(int $tokenId): void
+    {
+        if (!$this->currentUser) {
+            throw NoCurrentUserException::forMethod(__METHOD__);
         }
-        catch(Exception $e){
-            Log::error($e->getMessage());
+        try {
+            $token = $this->currentUser->tokens()->where('id', $tokenId);
+            $token->delete();
+        } catch (\Throwable $e) {
+            $this->logger->error('Error revoking API token', ['token_id' => $tokenId, 'exception' => $e]);
             throw $e;
         }
-
     }
-
 }

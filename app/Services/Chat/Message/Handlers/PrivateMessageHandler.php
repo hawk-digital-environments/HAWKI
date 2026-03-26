@@ -5,9 +5,9 @@ namespace App\Services\Chat\Message\Handlers;
 
 use App\Models\AiConv;
 use App\Models\AiConvMsg;
+use App\Models\Message;
 use App\Models\Room;
 use App\Models\User;
-use App\Services\Chat\Attachment\Db\AttachmentDb;
 use App\Services\Storage\Value\StoredFileCategory;
 use App\Services\Storage\Value\StoredFileIdentifier;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -61,16 +61,17 @@ class PrivateMessageHandler extends AbstractMessageHandler
     }
 
 
-    public function update(AiConv|Room $conv, array $data): AiConvMsg
+    public function update(AiConv|Room $conv, array $data): AiConvMsg|null
     {
         if ($conv->user_id !== Auth::id()) {
             throw new AuthorizationException();
         }
 
         //find the target message
+        /** @var AiConvMsg|null $message */
         $message = $conv->messages->where('message_id', $data['message_id'])->first();
 
-        $message->update([
+        $message?->update([
             'content' => $data['content']['text']['ciphertext'],
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
@@ -92,7 +93,11 @@ class PrivateMessageHandler extends AbstractMessageHandler
             throw new AuthorizationException();
         }
 
+        /** @var Message|null $message */
         $message = $conv->messages->where('message_id', $data['message_id'])->first();
+        if (!$message) {
+            return false;
+        }
 
         foreach ($message->attachments as $attachment) {
             $attachment->delete();

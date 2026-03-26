@@ -8,7 +8,7 @@ namespace App\Services\Storage\Value;
 use App\Services\Storage\Interfaces\FileInterface;
 
 /**
- * @extends \IteratorAggregate<FileInterface>
+ * @implements \IteratorAggregate<FileInterface>
  */
 readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSerializable
 {
@@ -46,12 +46,12 @@ readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSe
      */
     public function filterByMediaType(FileType $mediaType): self
     {
-        $filteredExtracts = array_filter(
+        $filterFiles = array_filter(
             $this->files,
-            static fn(FileInterface $extract) => $extract->getFileType() === $mediaType
+            static fn(FileInterface $file) => $file->getFileType() === $mediaType
         );
 
-        return new self(...$filteredExtracts);
+        return new self(...$filterFiles);
     }
 
     /**
@@ -61,12 +61,17 @@ readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSe
      */
     public function filterByExtension(string $extension): self
     {
-        $filteredExtracts = array_filter(
+        $filteredFiles = array_filter(
             $this->files,
-            static fn(FileInterface $extract) => $extract->getExtension() === $extension
+            static function (FileInterface $file) use ($extension) {
+                if ($file instanceof StoredFileExtract) {
+                    return $file->getExtension() === $extension;
+                }
+                return pathinfo($file->getOriginalFilename(), PATHINFO_EXTENSION) === $extension;
+            }
         );
 
-        return new self(...$filteredExtracts);
+        return new self(...$filteredFiles);
     }
 
     /**
@@ -76,12 +81,12 @@ readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSe
      */
     public function filterByMimetype(string $mimetype): self
     {
-        $filteredExtracts = array_filter(
+        $filteredFiles = array_filter(
             $this->files,
             static fn(FileInterface $extract) => $extract->getMimeType() === $mimetype
         );
 
-        return new self(...$filteredExtracts);
+        return new self(...$filteredFiles);
     }
 
     /**

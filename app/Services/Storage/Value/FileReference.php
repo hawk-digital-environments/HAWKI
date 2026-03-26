@@ -209,7 +209,7 @@ class FileReference implements \Stringable, FileInterface
 
         // Special handling for PDF files, which could also be Illustrator files
         if ($mimeType === 'application/pdf') {
-            $extension = pathinfo($this->originalFileName ?? '', PATHINFO_EXTENSION);
+            $extension = pathinfo($this->originalFileName, PATHINFO_EXTENSION);
             if (strtolower($extension) === 'ai') {
                 $mimeType = 'application/illustrator';
             }

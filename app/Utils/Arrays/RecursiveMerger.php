@@ -30,7 +30,7 @@ final class RecursiveMerger
 
         // Extract options and validate input
         $argsClean = [$b];
-        foreach ($args ?? [] as $arg) {
+        foreach ($args as $arg) {
             if ($arg instanceof RecursiveMergeOption) {
                 if ($arg === RecursiveMergeOption::NO_NUMERIC_MERGE) {
                     self::$mergeNumeric = false;
@@ -42,11 +42,13 @@ final class RecursiveMerger
                     continue;
                 }
 
+                // @phpstan-ignore-next-line Technically this condition is always true, but I want to be safe in case more options are added in the future
                 if ($arg === RecursiveMergeOption::STRICT_NUMERIC_MERGE) {
                     self::$strictNumericMerge = true;
                     continue;
                 }
 
+                // @phpstan-ignore-next-line Technically, unreachable code, but I want to be safe in case more options are added in the future
                 continue;
             }
 

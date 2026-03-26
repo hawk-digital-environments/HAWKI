@@ -19,9 +19,6 @@ trait RoomMessages{
 
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
 
-        if(!$member){
-            throw new AuthorizationException();
-        }
         $data['room'] = $room;
         $data['member']= $member;
         $data['message_role'] = 'user';

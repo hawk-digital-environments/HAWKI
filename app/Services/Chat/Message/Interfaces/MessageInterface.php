@@ -12,7 +12,7 @@ interface MessageInterface
 {
     public function create(AiConv|Room $conv, array $data, User $user): AiConvMsg|Message;
 
-    public function update(AiConv|Room $conv, array $data): AiConvMsg|Message;
+    public function update(AiConv|Room $conv, array $data): AiConvMsg|Message|null;
 
     public function delete(AiConv|Room $conv, array $data): bool;
 

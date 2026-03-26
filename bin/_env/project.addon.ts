@@ -127,6 +127,15 @@ export const addon: AddonEntrypoint = async (context) => ({
             });
 
         program
+            .command('stan')
+            .description('runs phpstan static analysis inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .action(async (options, command) => {
+                await context.composer.exec(['run', 'stan', ...command.args]);
+            });
+
+        program
             .command('start-docker-production-test')
             .option('--no-pull', 'do not pull the latest docker images, use the ones available locally')
             .description('Creates a running system of the `_docker_production` directory for testing purposes')

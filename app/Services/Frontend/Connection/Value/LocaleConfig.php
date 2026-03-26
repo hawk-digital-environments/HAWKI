@@ -22,14 +22,7 @@ readonly class LocaleConfig implements \JsonSerializable
 
     )
     {
-        Assert::is($available, static function ($locales) {
-            foreach ($locales as $locale) {
-                if (!$locale instanceof Locale) {
-                    return 'The array contains an element that is not a Locale instance';
-                }
-            }
-            return true;
-        }, 'available');
+        Assert::isArrayOfInstances($available, Locale::class, 'available');
 
         $this->available = array_map(static fn(Locale $l) => $l->toArray(), $available);
     }

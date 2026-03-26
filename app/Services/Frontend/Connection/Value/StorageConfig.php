@@ -43,17 +43,22 @@ readonly class StorageConfig implements \JsonSerializable
         public int   $maxAttachmentFiles,
     )
     {
-        $isArrayOfMimeTypes = static fn(array $arr): bool => array_reduce(
-            $arr,
-            static fn(bool $carry, mixed $item): bool => $carry && is_string($item) && $item !== '' && str_contains($item, '/'),
-            true
-        );
+        $isArrayOfMimeTypes = static function (array $arr): ?string {
+            $isValid = array_reduce(
+                $arr,
+                static fn(bool $carry, mixed $item): bool => $carry && is_string($item) && $item !== '' && str_contains($item, '/'),
+                true
+            );
+            return $isValid ? null : 'must be an array of non-empty MIME type strings (format: "type/subtype")';
+        };
 
         Assert::withKeyPrefix(
             static::class,
             fn() => Assert::isNonNegativeInteger($this->maxFileSize, 'maxFileSize'),
             fn() => Assert::isNonNegativeInteger($this->maxAvatarFileSize, 'maxAvatarFileSize'),
+            /** @phpstan-ignore staticMethod.alreadyNarrowedType */
             fn() => Assert::is($this->allowedMimeTypes, $isArrayOfMimeTypes, 'allowedMimeTypes'),
+            /** @phpstan-ignore staticMethod.alreadyNarrowedType */
             fn() => Assert::is($this->allowedAvatarMimeTypes, $isArrayOfMimeTypes, 'allowedAvatarMimeTypes'),
             fn() => Assert::isNonNegativeInteger($this->maxAttachmentFiles, 'maxAttachmentFiles'),
             fn() => Assert::isArrayOf($this->allowedExtensions, 'string', 'allowedExtensions'),

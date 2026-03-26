@@ -40,11 +40,14 @@ trait RoomFunctions
             throw new AuthorizationException();
         }
 
-        $membership = $room->members()->where('user_id', Auth::id())->first();
+        /** @var Member $membership */
+        $membership = $room->members()->where('user_id', Auth::id())->firstOrFail();
         $membership->updateLastRead();
 
         $role = $membership->role;
-        return $room->toResource(RoomResource::class)->setRole($role)->resolve();
+        /** @var RoomResource $resource */
+        $resource = $room->toResource(RoomResource::class);
+        return $resource->setRole($role)->resolve();
     }
 
     public function update(array $data, string $slug)

@@ -25,7 +25,7 @@ trait RoomMembers{
 
             $user = User::where('username', $data['username'])->firstOrFail();
             $room->addMember($user->id, $data['role']);
-            return $room->members;
+            return $room->members->toArray();
         }
         catch (Exception $e){
             throw new Exception('Failed to add new member:' . $e->getMessage());
@@ -35,8 +35,10 @@ trait RoomMembers{
 
 
     public function leave($slug): bool{
+        /** @var Room $room */
         $room = Room::where('slug', $slug)->firstOrFail();
         $user = Auth::user();
+        /** @var Member $member */
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
         return $this->removeMember($member, $room);
     }
@@ -46,11 +48,14 @@ trait RoomMembers{
      */
     public function kick($slug, $username): bool{
 
+        /** @var Room $room */
         $room = Room::where('slug', $slug)->firstOrFail();
+        /** @var User $user */
         $user = User::where('username', $username)->firstOrFail();
+        /** @var Member $member */
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
 
-        if($member->user_id === '1'){
+        if ($member->user_id === 1) {
             throw new Exception('You can\'t kick AI Agent.');
         }
 
