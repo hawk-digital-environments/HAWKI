@@ -173,7 +173,6 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
      */
     private function convertSvg(FileReference $file): FileCollection
     {
-        logFile($file->getDiskFilePath());
         $svgPath = sys_get_temp_dir() . '/' . uniqid('source_', true) . '.svg';
         file_put_contents($svgPath, $file->getStream());
         $pngPath = sys_get_temp_dir() . '/' . uniqid('converted_', true) . '.png';

@@ -78,11 +78,6 @@ readonly class ContentExtractor
             if (!in_array($currentExtension, $extensions, true)) {
                 $correctedFilename = pathinfo($file->getOriginalFilename(), PATHINFO_FILENAME) . '.' . $extensions[0];
                 $file = $file->withOriginalFilename($correctedFilename);
-                logFile('CORRECTED FILE EXTENSION', [
-                    'originalFilename' => $file->getOriginalFilename(),
-                    'correctedFilename' => $correctedFilename,
-                    'mimeType' => $mimeType,
-                ]);
             }
         }
 
