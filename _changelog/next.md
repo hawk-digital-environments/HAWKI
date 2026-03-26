@@ -54,9 +54,11 @@
 - Event listeners in `app/Services/*/Listeners` are now auto-discovered via a glob registered in `bootstrap/app.php`.
 - `ext-fileinfo` is now declared as a required PHP extension in `composer.json`.
 - Added phpstan for static analysis which should help catch potential bugs and improve code quality. Run `composer run stan` to execute the static analysis checks. Currently NOT in the pipeline, because there are still some issues to fix, but we will get there eventually.
+- The model config files of `config/model_providers.php` and `config/model_lists` are now automatically copied to `_docker_production` when a new release branch is created.
 
 ### Deprecation
 
 [//]: # (- List of features or functionalities that have been deprecated in this version.)
 
 - `LanguageController::getTranslation()` and `getAvailableLanguages()` are deprecated and will be removed in a future version. Use `LocaleService` and the frontend connection payload instead.
+- OpenAI requests that still run against the "/chats/completions" endpoint now trigger a warning log, to help understand why the requests are failing.

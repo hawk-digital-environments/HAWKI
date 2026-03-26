@@ -26,6 +26,14 @@ readonly class OpenAiRequestConverter
 
     public function convertRequestToPayload(AiRequest $request): array
     {
+        // Check if the request should go through the deprecated `chat/completions` endpoint
+        if (str_contains(
+            $request->model?->getProvider()->getConfig()->getApiUrl(),
+            'chat/completions'
+        )) {
+            $this->logger->warning("Request is being sent to deprecated the chat/completions endpoint. You will probably have issues and receiving errors! Please migrate to the /completions endpoint instead!");
+        }
+
         $rawPayload = $request->payload;
         $model = $request->model;
         $messages = $rawPayload['messages'];
