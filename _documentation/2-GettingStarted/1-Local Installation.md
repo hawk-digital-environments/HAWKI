@@ -408,21 +408,24 @@ If you want HAWKI to be able to read more image formats, you can install additio
     sudo pacman -S librsvg
   ```
 - For more "exotic" image formates: `.ai`, `.eps`, `.ps`, `.psd`, `.tiff`, `.tif`, `.bmp` and `.ico` you can install `ImageMagick` with support for these formats. This allows HAWKI to convert these image files to a more compatible format (jpg in our case) for processing and display.
+
+  > **Note:** For PostScript-based formats (`.ai`, `.eps`, `.ps`), ImageMagick requires `ghostscript` to be installed as well — it delegates those conversions to `gs` internally.
+
   ```bash
     #For Debian / Ubuntu-based systems
-    sudo apt install imagemagick
-  
+    sudo apt install imagemagick ghostscript
+
     #For Red Hat/CentOS-based systems
-    sudo yum install imagemagick
-  
+    sudo yum install imagemagick ghostscript
+
     #For Fedora-based systems
-    sudo dnf install imagemagick
-  
+    sudo dnf install imagemagick ghostscript
+
     #For Alpine Linux
-    sudo apk add imagemagick
-  
+    sudo apk add imagemagick ghostscript
+
     #For Arch Linux
-    sudo pacman -S imagemagick
+    sudo pacman -S imagemagick ghostscript
   ```
 
 > When the binaries are installed in your PATH, HAWKI automatically detects them and uses them for file conversion. You may use the `FILE_CONVERTER_BINARY_RSVG_CONVERT` and `FILE_CONVERTER_BINARY_IMAGE_MAGICK` environment variables to specify custom paths if needed.

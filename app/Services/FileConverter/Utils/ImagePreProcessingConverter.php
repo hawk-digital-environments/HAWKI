@@ -22,14 +22,16 @@ use Symfony\Component\Mime\MimeTypes;
  *
  * Two external binaries are used and detected at runtime:
  *   - rsvg-convert  (package librsvg2-bin)  – SVG → PNG
- *   - ImageMagick convert (package imagemagick) – TIFF, PSD, EPS, AI, BMP, ICO, … → JPEG
+ *   - ImageMagick convert (package imagemagick) – TIFF, PSD, BMP, ICO, … → JPEG
+ *   - Ghostscript gs (package ghostscript) – required by ImageMagick for PostScript-based formats (AI, EPS, PS)
  *
- * Both binary paths are configurable via {@see \App\Providers\FileConverterServiceProvider}
+ * All binary paths are configurable via {@see \App\Providers\FileConverterServiceProvider}
  * and the `file_converter.binaries` config key.
  */
 readonly class ImagePreProcessingConverter implements FileConverterInterface
 {
     private array $imagickMimeTypes;
+    private array $imagickGhostscriptMimeTypes;
 
     public function __construct(
         private FileConverterInterface $concreteConverter,
@@ -37,13 +39,16 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         private Repository             $cache,
         private string                 $rsvgConvertBinary = 'rsvg-convert',
         private string                 $imageMagickBinary = 'convert',
+        private string                 $ghostscriptBinary = 'gs',
     )
     {
         $mime = new MimeTypes();
-        $this->imagickMimeTypes = array_merge(
+        $this->imagickGhostscriptMimeTypes = array_merge(
             $mime->getMimeTypes('ai'),
             $mime->getMimeTypes('eps'),
             $mime->getMimeTypes('ps'),
+        );
+        $this->imagickMimeTypes = array_merge(
             $mime->getMimeTypes('psd'),
             $mime->getMimeTypes('tiff'),
             $mime->getMimeTypes('tif'),
@@ -86,6 +91,34 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
     }
 
     /**
+     * Returns true when the Ghostscript CLI binary (typically `gs`) is available on the server.
+     *
+     * Ghostscript is required by ImageMagick to process PostScript-based formats (.ai, .eps, .ps).
+     * The result is cached for 24 hours alongside the other binary checks.
+     */
+    public function canConvertWithGhostscript(): bool
+    {
+        return $this->cache->remember('common-image-format-extractor.hasGhostscriptCli', 60 * 60 * 24, function () {
+            $found = exec('which ' . escapeshellarg($this->ghostscriptBinary)) !== '';
+            $this->logger->debug('Ghostscript CLI tool found: ' . ($found ? 'yes' : 'no'));
+            return $found;
+        });
+    }
+
+    /**
+     * Returns the ImageMagick-supported MIME types that are currently available,
+     * excluding PostScript-based formats when Ghostscript is not installed.
+     */
+    private function getAvailableImagickMimeTypes(): array
+    {
+        $types = $this->imagickMimeTypes;
+        if ($this->canConvertWithGhostscript()) {
+            $types = array_merge($types, $this->imagickGhostscriptMimeTypes);
+        }
+        return $types;
+    }
+
+    /**
      * @inheritDoc
      */
     public static function isValidConfig(array $config): bool
@@ -120,7 +153,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
 
         if ($shouldUsePreProcessor
             && $this->canConvertWithImagick()
-            && in_array($file->getMimeType(), $this->imagickMimeTypes, true)
+            && in_array($file->getMimeType(), $this->getAvailableImagickMimeTypes(), true)
         ) {
             return $this->convertWithImagick($file);
         }
@@ -152,7 +185,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         });
 
         $result = exec(
-            escapeshellarg($this->rsvgConvertBinary) . ' -u -f png -o ' . escapeshellarg($pngPath) . ' ' . escapeshellarg($svgPath),
+            escapeshellarg($this->rsvgConvertBinary) . ' -u -f png -o ' . escapeshellarg($pngPath) . ' ' . escapeshellarg($svgPath) . ' 2>&1',
             $output,
             $returnVar
         );
@@ -217,7 +250,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
             . ' ' . escapeshellarg($inputPath)
             . ' ' . escapeshellarg($outputPattern);
 
-        exec($cmd, $output, $returnVar);
+        exec($cmd . ' 2>&1', $output, $returnVar);
 
         if ($returnVar !== 0) {
             $this->logger->error('Failed to convert file with ImageMagick CLI', [
@@ -290,7 +323,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         }
 
         if ($this->canConvertWithImagick()) {
-            $types = array_merge($types, $this->imagickMimeTypes);
+            $types = array_merge($types, $this->getAvailableImagickMimeTypes());
         }
 
         return array_unique(
