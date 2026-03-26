@@ -6,7 +6,8 @@ namespace App\Services\FileConverter\Handlers;
 
 
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
-use Illuminate\Http\UploadedFile;
+use App\Services\Storage\Value\FileCollection;
+use App\Services\Storage\Value\FileReference;
 
 /**
  * A file converter that does nothing and returns an empty array.
@@ -33,9 +34,9 @@ class NullFileConverter implements FileConverterInterface
     /**
      * @inheritDoc
      */
-    public function convert(UploadedFile $file): array
+    public function convert(FileReference $file): FileCollection
     {
-        return [];
+        return new FileCollection();
     }
 
     /**
@@ -62,4 +63,11 @@ class NullFileConverter implements FileConverterInterface
         return false;
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function wouldLikeSomeoneElseToConvertMimetype(string $mimetype): bool
+    {
+        return false;
+    }
 }
