@@ -15,7 +15,7 @@ trait OpenAiUsageTrait
      *
      * @param AiModel $model
      * @param array $data
-     * @return array|null
+     * @return TokenUsage|null
      */
     protected function extractUsage(AiModel $model, array $data): ?TokenUsage
     {

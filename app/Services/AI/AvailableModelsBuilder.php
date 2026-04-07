@@ -46,6 +46,10 @@ class AvailableModelsBuilder
         return $this;
     }
 
+    /**
+     * @param ModelUsageType $usageType
+     * @return AvailableAiModels
+     */
     public function build(ModelUsageType $usageType): AvailableAiModels
     {
         $this->validateKeysOverAllTypes($this->defaultModelsByType);

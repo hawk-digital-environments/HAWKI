@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\AI\Tools\Value;
 
+use IteratorAggregate;
+
 /**
- * @extends \IteratorAggregate<int, ToolResult>
+ * @implements  IteratorAggregate<int, ToolResult>
  */
-readonly class ToolResultCollection implements \IteratorAggregate
+readonly class ToolResultCollection implements IteratorAggregate
 {
     /**
      * @var array|ToolResult[]

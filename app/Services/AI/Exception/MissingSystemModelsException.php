@@ -11,5 +11,5 @@ class MissingSystemModelsException extends AbstractMissingConfiguredModelsExcept
     {
         return 'system';
     }
-    
+
 }

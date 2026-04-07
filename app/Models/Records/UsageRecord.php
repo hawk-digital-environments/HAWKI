@@ -2,7 +2,10 @@
 
 namespace App\Models\Records;
 
+use App\Models\Room;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UsageRecord extends Model
 {
@@ -15,12 +18,18 @@ class UsageRecord extends Model
         'type',
     ];
 
-    public function user()
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function room()
+    /**
+     * @return BelongsTo<Room, $this>
+     */
+    public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
     }

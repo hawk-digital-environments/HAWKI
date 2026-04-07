@@ -27,7 +27,10 @@
         "league/flysystem-sftp-v3": "^3.30.0",
         "league/flysystem-webdav": "^3.30.0",
         "neunerlei/dbg": "^3.3",
-        "spatie/laravel-backup": "^9.3.4"
+        "spatie/laravel-backup": "^9.3.4",
+        "ext-dom": "*",
+        "ext-libxml": "*",
+        "ext-curl": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",

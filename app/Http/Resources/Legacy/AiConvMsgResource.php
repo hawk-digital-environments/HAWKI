@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Legacy;
 
 use App\Models\AiConvMsg;
+use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Value\StoredFileIdentifier;
 use App\Utils\ServiceLocatorTrait;
@@ -17,14 +18,16 @@ class AiConvMsgResource extends JsonResource
     public function toArray(Request $request): array
     {
         $avatarStorage = $this->getServiceInstance(AvatarStorageService::class);
+        $user = $this->user;
+        assert($user instanceof User);
 
         return [
             'message_role' => $this->message_role,
             'message_id' => $this->message_id,
             'author' => [
-                'username' => $this->user->username,
-                'name' => $this->user->name,
-                'avatar_url' => $avatarStorage->retrieve(StoredFileIdentifier::tryFromUserAvatar($this->user))?->getUrl()
+                'username' => $user->username,
+                'name' => $user->name,
+                'avatar_url' => $avatarStorage->retrieve(StoredFileIdentifier::tryFromUserAvatar($user))?->getUrl()
             ],
             'model' => $this->model,
             'content' => [

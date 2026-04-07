@@ -213,7 +213,10 @@ class AiConvController extends Controller
                 ], 500);
             }
 
-            $result = $this->attachmentService->delete($attachment);
+            // @todo: I assume with the AttachmentDeleting event, storage system will automatically remove the files.
+            // If correct, AttachmentService can be removed from the construct.
+            $result = $attachment->delete();
+//            $result = $this->attachmentService->delete($attachment);
             return response()->json([
                 "success" => $result
             ]);

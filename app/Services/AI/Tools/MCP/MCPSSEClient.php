@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services\AI\Tools\MCP;
 
+use Exception;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -29,7 +30,7 @@ class MCPSSEClient
      * @param string $method The MCP method to call (e.g., 'tools/list', 'tools/call')
      * @param array $params The parameters for the method
      * @return array The response from the server
-     * @throws \Exception If the request fails
+     * @throws Exception If the request fails
      */
     public function request(string $method, array $params = []): array
     {
@@ -81,11 +82,11 @@ class MCPSSEClient
         curl_close($ch);
 
         if ($result === false) {
-            throw new \Exception("MCP SSE request failed: {$error}");
+            throw new Exception("MCP SSE request failed: {$error}");
         }
 
         if ($httpCode !== 200) {
-            throw new \Exception("MCP SSE request failed with HTTP {$httpCode}");
+            throw new Exception("MCP SSE request failed with HTTP {$httpCode}");
         }
 
         // Parse SSE response
@@ -119,7 +120,7 @@ class MCPSSEClient
 
             return $response['result'] ?? $response;
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('MCP initialize handshake failed', [
                 'url' => $this->serverUrl,
                 'error' => $e->getMessage(),
@@ -155,7 +156,7 @@ class MCPSSEClient
             $response = $this->request('tools/list');
             // Return the result field which contains the tools array
             return $response['result'] ?? $response;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Failed to list MCP tools', [
                 'url' => $this->serverUrl,
                 'error' => $e->getMessage(),
@@ -185,7 +186,9 @@ class MCPSSEClient
      * @param string $data The raw SSE data
      * @param string $requestId The request ID to match
      * @return array The parsed response
-     * @throws \Exception If parsing fails
+     * @throws Exception If parsing fails
+     *
+     * @phpstan-ignore method.unused
      */
     private function parseSSEResponse(string $data, string $requestId): array
     {
@@ -223,14 +226,14 @@ class MCPSSEClient
         }
 
         if ($jsonData === null) {
-            throw new \Exception('No valid JSON-RPC response found in SSE stream');
+            throw new Exception('No valid JSON-RPC response found in SSE stream');
         }
 
         // Check for JSON-RPC error
         if (isset($jsonData['error'])) {
             $errorMsg = $jsonData['error']['message'] ?? 'Unknown MCP error';
             $errorCode = $jsonData['error']['code'] ?? -1;
-            throw new \Exception("MCP Error ({$errorCode}): {$errorMsg}");
+            throw new Exception("MCP Error ({$errorCode}): {$errorMsg}");
         }
 
         return $jsonData['result'] ?? [];
@@ -247,7 +250,7 @@ class MCPSSEClient
             // Try to list tools as a health check
             $this->listTools();
             return true;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::warning('MCP server not available', [
                 'url' => $this->serverUrl,
                 'error' => $e->getMessage(),

@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Ai;
 
 use App\Models\Ai\AiModel;
+use App\Models\Ai\AiProvider;
 use Illuminate\Console\Command;
 
 class ListModels extends Command
@@ -14,6 +15,7 @@ class ListModels extends Command
 
     protected $description = 'List all AI models registered in the database';
 
+    /** @noinspection PhpParamsInspection */
     public function handle(): int
     {
         $query = AiModel::with('provider', 'status');
@@ -39,11 +41,13 @@ class ListModels extends Command
         }
 
         // Group by provider
-        $grouped = $models->groupBy(fn($m) => $m->provider?->provider_id ?? 'unknown');
+        $grouped = $models->groupBy(fn($m) => $m->provider->provider_id ?? 'unknown');
 
         foreach ($grouped as $providerId => $providerModels) {
-            $provider = $providerModels->first()->provider;
-            $status   = $provider?->active ? '<fg=green>active</>' : '<fg=red>inactive</>';
+            /** @var AiProvider|null $provider */
+            $provider = $providerModels->first()?->provider;
+
+            $status   = $provider?->active ? '<fg=green>active</' : '<fg=red>inactive</>';
             $this->newLine();
             $this->line("Provider: <fg=cyan;options=bold>{$providerId}</> [{$status}]");
             $this->line(str_repeat('─', 70));
@@ -52,7 +56,7 @@ class ListModels extends Command
                 $m->model_id,
                 $m->label,
                 $m->active ? '<fg=green>✓</>' : '<fg=red>✗</>',
-                $m->status?->status?->value ?? 'unknown',
+                $m->status->status->value ?? 'unknown',
                 implode(', ', $m->input ?? []),
             ])->toArray();
 

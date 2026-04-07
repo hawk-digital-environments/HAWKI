@@ -109,16 +109,17 @@ abstract class AbstractAttachmentFormatter
 
                 foreach ($this->resolveFormattableFiles($attachment, $file) as $formattableFile) {
                     try {
-                        if (!$formattableFile instanceof FileInterface) {
-                            $this->logger->error(sprintf(
-                                'The Attachment formatter "%s" resolved a formattable file of type: "%s" which is not supported. Only objects implementing "%s" are allowed.',
-                                static::class,
-                                get_debug_type($formattableFile),
-                                FileInterface::class
-                            ));
-
-                            continue;
-                        }
+//                        @todo: Instanceof between App\Services\Storage\Interfaces\FileInterface and App\Services\Storage\Interfaces\FileInterface will always evaluate to true.
+//                        if (!$formattableFile instanceof FileInterface) {
+//                            $this->logger->error(sprintf(
+//                                'The Attachment formatter "%s" resolved a formattable file of type: "%s" which is not supported. Only objects implementing "%s" are allowed.',
+//                                static::class,
+//                                get_debug_type($formattableFile),
+//                                FileInterface::class
+//                            ));
+//
+//                            continue;
+//                        }
 
                         $result = $this->formatFile($formattableFile, $attachment, $model);
 
@@ -176,15 +177,16 @@ abstract class AbstractAttachmentFormatter
                 ));
                 continue;
             }
-
-            if (!$attachment instanceof Attachment) {
-                $this->logger->error(sprintf(
-                    'The provided attachments map contains a non-Attachment value for uuid "%s" of type "%s".',
-                    $uuid,
-                    get_debug_type($attachment)
-                ));
-                continue;
-            }
+// @todo: Instanceof between App\Models\Attachment and App\Models\Attachment will always evaluate to true.
+//
+//            if (!$attachment instanceof Attachment) {
+//                $this->logger->error(sprintf(
+//                    'The provided attachments map contains a non-Attachment value for uuid "%s" of type "%s".',
+//                    $uuid,
+//                    get_debug_type($attachment)
+//                ));
+//                continue;
+//            }
 
             yield from $this->format($model, $attachment);
         }

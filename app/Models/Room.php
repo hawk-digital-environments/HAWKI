@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\Value\StoredFileIdentifier;
 use Exception;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Testing\Fluent\Concerns\Has;
 
 class Room extends Model
 {
@@ -20,7 +22,7 @@ class Room extends Model
         'slug'
     ];
 
-    protected static function boot()
+    protected static function boot(): void
     {
         parent::boot();
 
@@ -29,43 +31,72 @@ class Room extends Model
         });
     }
 
+    /**
+    * @return HasMany<Message, $this>
+    */
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class)->orderBy('message_id');
     }
 
-    public function getMessageById($messageId): Message
+    /**
+     * @param string $messageId
+     * @return Message
+     */
+    public function getMessageById(string $messageId): Message
     {
         return $this->messages()->where('message_id', $messageId)->firstOrFail();
     }
-
+    /**
+     * @return HasMany<Member, $this>
+     */
     public function membersAll(): HasMany
     {
         return $this->hasMany(Member::class);
     }
+    /**
+     * @return HasMany<Member, $this>
+     */
     public function members(): HasMany
     {
         return $this->hasMany(Member::class)->where('isRemoved', false);
     }
-    public function isMember($userId): bool
+
+    /**
+     * @param int $userId
+     * @return bool
+     */
+    public function isMember(int $userId): bool
     {
         return $this->members()
                     ->where('user_id', $userId)
                     ->exists();
     }
 
+    /**
+     * @return HasMany<Member, $this>
+     */
     public function oldMembers(): HasMany
     {
         return $this->hasMany(Member::class)->where('isRemoved', true);
     }
-    public function isOldMember($userId): bool
+
+    /**
+     * @param int $userId
+     * @return bool
+     */
+    public function isOldMember(int $userId): bool
     {
         return $this->oldMembers()
                     ->where('user_id', $userId)
                     ->exists();
     }
 
-    public function addMember($userId, $role): void
+    /**
+     * @param int $userId
+     * @param string $role
+     */
+    public function addMember(int $userId, string $role): void
     {
         if($this->isMember($userId)){
             $member = $this->members()->where('user_id', $userId)->first();
@@ -96,8 +127,11 @@ class Room extends Model
 
         }
     }
-
-    public function removeMember($userId): bool
+    /**
+     * @param int $userId
+     * @return bool
+     */
+    public function removeMember(int $userId): bool
     {
         if($this->isMember($userId)){
             try{
@@ -121,7 +155,9 @@ class Room extends Model
         return false;
     }
 
-
+    /**
+     * @return bool
+     */
     public function deleteRoom(): bool{
         try{
             // Delete related messages and members
@@ -133,7 +169,7 @@ class Room extends Model
             $this->members()->delete();
             if($this->room_icon){
                 $avatarStorage = app(AvatarStorageService::class);
-                $avatarStorage->delete($this->room_icon,'room_avatars');
+                $avatarStorage->delete(StoredFileIdentifier::tryFromRoomAvatar($this));
             }
             // Delete the room itself
             $this->delete();

@@ -537,7 +537,7 @@ async function RequestConvContent(slug){
         }
     }
     catch (err){
-        console.error('Error fetching data:', error);
+        console.error('Error fetching data:', err);
         throw err;
     }
 }

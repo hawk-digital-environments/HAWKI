@@ -11,34 +11,39 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
 {
     private array $missingModelIds;
     private array $missingTypes;
-    
-    public function __construct(
+
+    final public function __construct(
         array $missingModelIds,
         array $missingTypes
     )
     {
         $this->missingModelIds = $missingModelIds;
         $this->missingTypes = $missingTypes;
-        
+
         $message = 'The following ' . $this->getListType() . ' AI model IDs are missing: ' . implode(', ', $missingModelIds) . '.';
         if (!empty($missingTypes)) {
             $message .= ' Missing types: ' . implode(', ', $missingTypes) . '.';
         }
         parent::__construct($message);
     }
-    
+
     abstract protected function getListType(): string;
-    
+
     public function getMissingModelIds(): array
     {
         return $this->missingModelIds;
     }
-    
+
     public function getMissingTypes(): array
     {
         return $this->missingTypes;
     }
-    
+
+    /**
+     * @param array $knownModelIds
+     * @param AiModelMap $registeredModels
+     * @return static
+     */
     public static function createForMissing(
         array      $knownModelIds,
         AiModelMap $registeredModels,
@@ -50,8 +55,8 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
                 $knownModelIds, static fn($id) => in_array($id, $missingDefaultModelIds, true)
             )
         );
-        
-        return new MissingDefaultModelsException(
+
+        return new static(
             missingModelIds: array_unique($missingDefaultModelIds),
             missingTypes: $missingDefaultModelTypes
         );

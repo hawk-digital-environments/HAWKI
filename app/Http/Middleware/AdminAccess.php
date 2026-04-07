@@ -26,11 +26,12 @@ class AdminAccess
         $room = Room::where('slug', $request->route('slug'))->firstOrFail();
         // find member model
         $member = $room->members()->where('user_id', $user->id)->first();
+        assert($member instanceof Member);
 
         if($member->hasRole('admin')){
             return $next($request);
         }
-   
+
         // Optionally, you can redirect back or return a response with a 403 error.
         return response()->json(['response' => 'Forbidden'], 403);
     }

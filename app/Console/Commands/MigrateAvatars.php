@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Value\FileReference;
 use App\Services\Storage\Value\StoredFileCategory;
+use App\Services\Storage\Value\StoredFileIdentifier;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -188,7 +189,7 @@ class MigrateAvatars extends Command
 
             // Check if new avatar already exists (unless force is used)
             if (!$force) {
-                $existingFile = $this->avatarStorage->retrieve($avatarId, 'profile_avatars');
+                $existingFile = $this->avatarStorage->retrieve(StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PROFILE_AVATAR, $avatarId));
                 if ($existingFile !== null) {
                     if ($this->output->isVerbose()) {
                         $this->line("Avatar already exists for user {$username}, skipping...");
@@ -279,7 +280,7 @@ class MigrateAvatars extends Command
 
             // Check if new avatar already exists (unless force is used)
             if (!$force) {
-                $existingFile = $this->avatarStorage->retrieve($roomIcon, 'room_avatars');
+                $existingFile = $this->avatarStorage->retrieve(StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::ROOM_AVATAR, $roomIcon));
                 if ($existingFile !== null) {
                     if ($this->output->isVerbose()) {
                         $this->line("Avatar already exists for room {$roomName}, skipping...");

@@ -276,15 +276,11 @@ class AiModel implements JsonSerializable
      */
     public function isAvailableInUsageType(ModelUsageType $usageType): bool
     {
-        if ($usageType === ModelUsageType::DEFAULT) {
-            return true;
-        }
-
-        if ($usageType === ModelUsageType::EXTERNAL_APP && $this->isAllowedInExternalApp()) {
-            return true;
-        }
-
-        return false;
+//        @todo: phpStan suggested to use match instead of if conditions. If the usageType is not supported this should throw a Match Error.
+        return match ($usageType) {
+            ModelUsageType::DEFAULT => true,
+            ModelUsageType::EXTERNAL_APP => $this->isAllowedInExternalApp(),
+        };
     }
 
     /**

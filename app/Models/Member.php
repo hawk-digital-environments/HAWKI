@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Log;
 
 class Member extends Model
@@ -14,7 +15,7 @@ class Member extends Model
     const ROLE_ASSISTANT = 'assistant';
 
     protected $fillable = [
-        'room_id', 
+        'room_id',
         'user_id',
         'role',
         'last_read',
@@ -26,29 +27,53 @@ class Member extends Model
     //     return $this->belongsTo(Room::class);
     // }
 
-    public function user()
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function hasRole($role)
+    /**
+     * @param $role
+     * @return bool
+     */
+    public function hasRole($role): bool
     {
         return $this->role === $role;
     }
 
-    public function updateRole($role){
-        $this->update(['role', $role]);
+    /**
+     * @param string $role
+     * @return void
+     */
+    public function updateRole(string $role): void
+    {
+        $this->update(['role' => $role]);
     }
 
-    public function updateLastRead(){
+    /**
+     * @return void
+     */
+    public function updateLastRead(): void
+    {
         $this->update(['last_read' => Carbon::now()]);
     }
 
-    public function revokeMembership(){
+    /**
+     * @return void
+     */
+    public function revokeMembership(): void
+    {
         $this->update(['isRemoved'=> 1]);
     }
 
-    public function recreateMembership(){
+    /**
+     * @return void
+     */
+    public function recreateMembership(): void
+    {
         $this->update(['isRemoved'=> 0]);
     }
 }

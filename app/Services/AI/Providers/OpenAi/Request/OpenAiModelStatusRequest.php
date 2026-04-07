@@ -18,7 +18,7 @@ class OpenAiModelStatusRequest extends AbstractRequest
     )
     {
     }
-    
+
     public function execute(AiModelStatusCollection $statusCollection): void
     {
         $pingUrl = $this->provider->getConfig()->getPingUrl();
@@ -26,16 +26,16 @@ class OpenAiModelStatusRequest extends AbstractRequest
             $statusCollection->setAllOnline();
             return;
         }
-        
+
         try {
             $response = Http::withToken($this->provider->getConfig()->getApiKey())
                 ->timeout(10) // Set a short timeout
                 ->get($this->provider->getConfig()->getPingUrl());
-            
-            $stats = json_decode((string)$response->getBody(), true, 512, JSON_THROW_ON_ERROR)['data'];
-            
+
+            $stats = json_decode($response->body(), true, 512, JSON_THROW_ON_ERROR)['data'];
+
             $statusCollection->setAllOffline();
-            
+
             foreach ($stats as $modelStat) {
                 $statusCollection->setStatusById($modelStat['id'], ModelOnlineStatus::ONLINE);
             }

@@ -3,6 +3,7 @@ namespace App\Console\Commands;
 
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Models\Records\UsageRecord;
@@ -37,6 +38,16 @@ class TopTokenUsers extends Command
 
         $this->info("Top $limit users for " . now()->format('F Y') . ($modelFilter ? " using model [$modelFilter]" : "") . ":");
 
+
+        // @Todo: The method will be deprecated after the admin panel is implemented.
+        // We can create a dedicated data object here to contain total_prompt and total_completion, but it's unnecessary.
+        // let's instead bypass php stan error for now.
+        /** @var Collection<int, object{
+         *     user_id: int,
+         *     total_prompt: int,
+         *     total_completion: int
+         * }> $topUsers
+         */
         foreach ($topUsers as $user) {
             $this->line("User ID: {$user->user_id}, Prompt Tokens: {$user->total_prompt}, Completion Tokens: {$user->total_completion}");
         }

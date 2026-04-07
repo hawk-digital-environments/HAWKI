@@ -67,7 +67,8 @@ readonly class LoggingClient implements ClientInterface
      */
     public function sendStreamRequest(AiRequest $request, callable $onData): void
     {
-        $this->concreteClient->sendStreamRequest($request, function (AiResponse $response) use ($request, $onData) {
+        // NOTE: $request is removed from use clause
+        $this->concreteClient->sendStreamRequest($request, function (AiResponse $response) use ($onData) {
             if ($response->error !== null || $response instanceof AiErrorResponse) {
                 $this->logger->error('AI streaming request resulted in error', $this->buildErrorContext($response));
             }

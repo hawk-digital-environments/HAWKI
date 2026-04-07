@@ -97,7 +97,7 @@ readonly class GwdgRequestConverter
 
             // Only include content if it's non-empty
             $content = $message['content'] ?? '';
-            if ($content !== '' && $content !== null) {
+            if ($content !== '') {
                 $formatted['content'] = $content;
             }
 

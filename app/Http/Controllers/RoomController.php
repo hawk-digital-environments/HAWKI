@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
+use App\Models\Member;
 use App\Models\Message;
+use App\Models\Room;
 use App\Models\User;
 use App\Services\Chat\Attachment\Db\AttachmentDb;
 use App\Services\Chat\Message\MessageContentValidator;
@@ -253,7 +255,11 @@ class RoomController extends Controller
             $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
 
             // If the requesting User is NOT a member of this group RETURN 403
-            if(!$attachment->attachable->room->isMember(Auth::id())){
+            $attachable = $attachment->attachable;
+            assert($attachable instanceof Message);
+            $room = $attachable->room;
+            assert($room instanceof Room);
+            if(!$room->isMember(Auth::id())){
                 throw new AuthorizationException();
             }
 
@@ -272,7 +278,7 @@ class RoomController extends Controller
     /**
      * @throws Exception
      */
-    public function deleteAttachment(Request $request, AttachmentDb $attachmentService): JsonResponse
+    public function deleteAttachment(Request $request): JsonResponse
     {
 
         $validateData = $request->validate([
@@ -281,10 +287,18 @@ class RoomController extends Controller
         try{
             $attachment = Attachment::where('uuid', $validateData['fileId'])->firstOrFail();
 
-            $room = $attachment->attachable->room;
+            $attachable = $attachment->attachable;
+            assert($attachable instanceof Message);
+            $room = $attachable->room;
+            assert($room instanceof Room);
+
             if(!$room->isMember(Auth::id())){
                 throw new AuthorizationException();
             }
+
+            /**
+             * @var Member $membership
+             */
             $membership = $room->members->where('user_id', Auth::id())->firstOrFail();
             if(!$membership->hasRole('admin') || !$attachment->user->is(Auth::user())) {
                 throw new AuthorizationException();
@@ -296,7 +310,9 @@ class RoomController extends Controller
                 ], 500);
             }
 
-            $result = $attachmentService->delete($attachment);
+//            $result = $attachmentService->delete($attachment);
+            // @todo: I assume with the AttachmentDeleting event, storage system will automatically remove the files.
+            $result = $attachment->delete();
             return response()->json([
                 "success" => $result
             ]);

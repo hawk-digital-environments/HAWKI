@@ -61,7 +61,7 @@ abstract class AbstractMessageHandler implements MessageInterface
                 // Increment the decimal part
                 $parts = explode('.', $lastMessage->message_id);
                 $newDecimal = intval($parts[1]) + 1;
-                $newMessageId = $parts[0] . '.' . str_pad($newDecimal, $decimalPadding, '0', STR_PAD_LEFT);
+                $newMessageId = $parts[0] . '.' . str_pad((string)$newDecimal, $decimalPadding, '0', STR_PAD_LEFT);
             } else {
                 // If no sub-messages exist, start from threadId.001
                 $newMessageId = $threadId . '.001';

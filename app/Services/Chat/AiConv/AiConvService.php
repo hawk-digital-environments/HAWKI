@@ -72,11 +72,6 @@ class AiConvService{
         $user = Auth::user();
         $conv = AiConv::where('slug', $slug)->firstOrFail();
 
-        // Check if the conv exists
-        if (!$conv) {
-            throw new ModelNotFoundException();
-        }
-
         if ($conv->user_id !== $user->id) {
             throw new AuthorizationException();
         }

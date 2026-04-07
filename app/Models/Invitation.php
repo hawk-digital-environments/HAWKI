@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invitation extends Model
 {
@@ -18,7 +19,10 @@ class Invitation extends Model
         'invitation'
     ];
 
-    public function room()
+    /**
+     * @return BelongsTo<Room, $this>
+     */
+    public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
     }
