@@ -94,11 +94,12 @@ readonly class ConnectionFactory
 
     private function createTransferConfig(RouteConfig $routes): TransferConfig
     {
+        //@todo: $appUrlScheme === 'https' ? 443 : 80) overrides the whole reverb env variable -> it also kills my local dev
         $appUrl = $this->config->get('app.url');
         $appUrlScheme = parse_url($appUrl, PHP_URL_SCHEME) ?? 'http';
         $appUrlHost = parse_url($appUrl, PHP_URL_HOST) ?? 'localhost';
         $appUrlPath = parse_url($appUrl, PHP_URL_PATH);
-        $appUrlPort = parse_url($appUrl, PHP_URL_PORT) ?? ($appUrlScheme === 'https' ? 443 : 80);
+        $appUrlPort = parse_url($appUrl, PHP_URL_PORT) ?? ($appUrlScheme === 'https' ? 443 : 8080);
         return new TransferConfig(
             baseUrl: $appUrl,
             websocket: new WebsocketConfig(

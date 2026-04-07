@@ -6,6 +6,8 @@ let currentAnchoredAnnouncementIndex=0;
 
 function initAnnouncements(announcementList){
     announcement_queue = (announcementList || []).filter(a => a.anchor === null);
+    anchored_queue = (announcementList || []).filter(a => a.anchor !== null);
+    console.log(announcement_queue);
     if (announcement_queue.length > 0) {
         currentAnnouncementIndex = 0;
         renderNextAnnouncement();
@@ -13,7 +15,7 @@ function initAnnouncements(announcementList){
 }
 
 function queueAnchoredAnnouncements(targetAnchor){
-    anchored_queue = (announcementList || []).filter(a => a.anchor === targetAnchor);
+    anchored_queue = (anchored_queue || []).filter(a => a.anchor === targetAnchor);
     if (anchored_queue.length > 0) {
         currentAnnouncementIndex = 0;
         renderNextAnnouncementInQueue(anchored_queue);
@@ -43,7 +45,6 @@ async function renderAnnouncement(announcement, show = true){
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
             }
         })
         const data = await response.json();
@@ -85,8 +86,7 @@ function showAnnouncementModal(announcement, view) {
     // Render Markdown content
     const modal = document.querySelector('#announcements-modal');
     const contentWrapper = modal.querySelector('.content-box');
-    const html = md.render(processedView);
-    contentWrapper.innerHTML = html;
+    contentWrapper.innerHTML = md.render(processedView);
 
     // Set link targets and security attributes
     contentWrapper.querySelectorAll('a').forEach(a => {
@@ -134,7 +134,7 @@ function showAnnouncementModal(announcement, view) {
             reportAnnouncementFeedback(announcement.id);
             closeAnnouncementModal(modal);
         });
-        if (announcement.isForced == true) {
+        if (announcement.isForced === true) {
             const cancelBtn = document.createElement('button');
             cancelBtn.className = "btn-lg-stroke align-end";
             cancelBtn.textContent = __('Cancel');
@@ -145,7 +145,7 @@ function showAnnouncementModal(announcement, view) {
         }
         btnBar.appendChild(confirmBtn);
     }
-    if (btnBar.childElementCount == 1){
+    if (btnBar.childElementCount === 1){
         btnBar.style.justifyContent = 'center';
     }
 
@@ -184,27 +184,24 @@ function markAnnouncementAsSeen(announcementId) {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
         }
     })
     .catch(error => console.error('Error marking announcement as seen:', error));
 }
 
 function reportAnnouncementFeedback(announcementId){
-
     fetch(`/req/announcement/report/${announcementId}`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log(`Announcement Confirmed`);
+            anchored_queue = anchored_queue.filter(a => a.id !== announcementId);
         }
     })
     .catch(error => console.error('Error reporting announcement feedback:', error));
