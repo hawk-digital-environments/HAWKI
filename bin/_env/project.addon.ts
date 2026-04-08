@@ -13,11 +13,6 @@ export const addon: AddonEntrypoint = async (context) => ({
         events.on('installer:envFile:filter', async ({envFile}) => {
             // Automatically rewrite the APP_URL
             envFile.set('APP_URL', 'https://' + envFile.get('DOCKER_PROJECT_DOMAIN'));
-            // Reconfigure reverb for ssl
-            envFile
-                .set('VITE_REVERB_HOST', envFile.get('DOCKER_PROJECT_DOMAIN'))
-                .set('VITE_REVERB_PORT', '443')
-                .set('VITE_REVERB_SCHEME', 'https');
         });
     },
     commands: async (program) => {
