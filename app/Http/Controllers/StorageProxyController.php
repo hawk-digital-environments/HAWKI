@@ -65,7 +65,7 @@ class StorageProxyController extends Controller
         }
 
         $room = $attachable->room;
-        assert($room instanceof Room);
+
         if (!$room->isMember($this->currentUser->id)) {
             abort(403, 'You are not a member of the room this attachment belongs to');
         }

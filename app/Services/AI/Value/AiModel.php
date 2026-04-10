@@ -7,6 +7,7 @@ namespace App\Services\AI\Value;
 
 use App\Services\AI\AiFactory;
 use App\Services\AI\Exception\NoContextBoundException;
+use App\Services\AI\Exception\UnexpectedModelUsageTypeException;
 use App\Services\AI\Interfaces\ClientInterface;
 use App\Services\AI\Interfaces\ModelProviderInterface;
 use App\Services\Storage\Value\FileType;
@@ -276,11 +277,15 @@ class AiModel implements JsonSerializable
      */
     public function isAvailableInUsageType(ModelUsageType $usageType): bool
     {
-//        @todo: phpStan suggested to use match instead of if conditions. If the usageType is not supported this should throw a Match Error.
-        return match ($usageType) {
-            ModelUsageType::DEFAULT => true,
-            ModelUsageType::EXTERNAL_APP => $this->isAllowedInExternalApp(),
-        };
+        if ($usageType === ModelUsageType::DEFAULT) {
+            return true;
+        }
+        /** @phpstan-ignore identical.alwaysTrue (defensive check for future ModelUsageType cases) */
+        if ($usageType === ModelUsageType::EXTERNAL_APP && $this->isAllowedInExternalApp()) {
+            return true;
+        }
+
+        throw UnexpectedModelUsageTypeException::forAvailableInUsageType($usageType);
     }
 
     /**

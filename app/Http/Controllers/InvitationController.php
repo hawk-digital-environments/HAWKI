@@ -198,8 +198,6 @@ class InvitationController extends Controller
 
         // Add the user to the room (assuming you have a pivot table for room members)
         $room = $invitation->room;
-        // make sure $room is Room Model. Also solves testing error.
-        assert($room instanceof Room);
         $room->addMember($user->id, $invitation->role);
 
 

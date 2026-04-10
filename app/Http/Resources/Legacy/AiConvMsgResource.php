@@ -19,7 +19,6 @@ class AiConvMsgResource extends JsonResource
     {
         $avatarStorage = $this->getServiceInstance(AvatarStorageService::class);
         $user = $this->user;
-        assert($user instanceof User);
 
         return [
             'message_role' => $this->message_role,

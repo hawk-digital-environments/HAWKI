@@ -7,7 +7,6 @@ use App\Models\Member;
 use App\Models\Message;
 use App\Models\Room;
 use App\Models\User;
-use App\Services\Chat\Attachment\Db\AttachmentDb;
 use App\Services\Chat\Message\MessageContentValidator;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\FileStorageService;
@@ -258,7 +257,7 @@ class RoomController extends Controller
             $attachable = $attachment->attachable;
             assert($attachable instanceof Message);
             $room = $attachable->room;
-            assert($room instanceof Room);
+
             if(!$room->isMember(Auth::id())){
                 throw new AuthorizationException();
             }
@@ -290,7 +289,6 @@ class RoomController extends Controller
             $attachable = $attachment->attachable;
             assert($attachable instanceof Message);
             $room = $attachable->room;
-            assert($room instanceof Room);
 
             if(!$room->isMember(Auth::id())){
                 throw new AuthorizationException();
@@ -310,8 +308,6 @@ class RoomController extends Controller
                 ], 500);
             }
 
-//            $result = $attachmentService->delete($attachment);
-            // @todo: I assume with the AttachmentDeleting event, storage system will automatically remove the files.
             $result = $attachment->delete();
             return response()->json([
                 "success" => $result

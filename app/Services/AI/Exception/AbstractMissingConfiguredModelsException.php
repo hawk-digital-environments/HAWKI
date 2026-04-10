@@ -7,6 +7,8 @@ namespace App\Services\AI\Exception;
 
 use App\Services\AI\Value\AiModelMap;
 
+
+//@todo: Martin wants to refactor this. Martin doesn't like static factory in abstract. Martin knows himself...
 abstract class AbstractMissingConfiguredModelsException extends \RuntimeException implements AiServiceExceptionInterface
 {
     private array $missingModelIds;

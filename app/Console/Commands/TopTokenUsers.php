@@ -39,7 +39,6 @@ class TopTokenUsers extends Command
         $this->info("Top $limit users for " . now()->format('F Y') . ($modelFilter ? " using model [$modelFilter]" : "") . ":");
 
 
-        // @Todo: The method will be deprecated after the admin panel is implemented.
         // We can create a dedicated data object here to contain total_prompt and total_completion, but it's unnecessary.
         // let's instead bypass php stan error for now.
         /** @var Collection<int, object{

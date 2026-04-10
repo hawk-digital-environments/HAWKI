@@ -26,7 +26,6 @@ class AdminAccess
         $room = Room::where('slug', $request->route('slug'))->firstOrFail();
         // find member model
         $member = $room->members()->where('user_id', $user->id)->first();
-        assert($member instanceof Member);
 
         if($member->hasRole('admin')){
             return $next($request);

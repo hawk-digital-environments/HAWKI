@@ -156,7 +156,6 @@ class HomeController extends Controller
         }
     }
 
-    //    @todo: test dataprotection page
     public function dataprotectionIndex(Request $request): View
     {
         return view('layouts.dataprotection');

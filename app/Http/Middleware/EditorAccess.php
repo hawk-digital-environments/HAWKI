@@ -25,7 +25,6 @@ class EditorAccess
         $room = Room::where('slug', $request->route('slug'))->firstOrFail();
         // find member model
         $member = $room->members()->where('user_id', $user->id)->first();
-        assert($member instanceof Member);
 
         if($member->hasRole('admin') || $member->hasRole('editor')){
             return $next($request);

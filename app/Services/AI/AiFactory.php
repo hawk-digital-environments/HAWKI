@@ -41,7 +41,7 @@ class AiFactory
 
     public function getAvailableModels(ModelUsageType $usageType): AvailableAiModels
     {
-        return $this->rememberValue('available_models_' . $usageType->value, function () use ($usageType) {
+        return $this->rememberInstance('available_models_' . $usageType->value, function () use ($usageType) {
             $builder = $this->rememberInstance(AvailableModelsBuilder::class, function () {
                 $config = $this->config->get('model_providers', []);
 
@@ -173,14 +173,13 @@ class AiFactory
     }
 
 
-//    @todo: is this duplicated code? should we just change class-string to string $key?
     /**
      * @template T of object
-     * @param class-string<T> $key
+     * @param class-string<T>|string $key
      * @param callable(): T $callback
-     * @return T
+     * @return ($key is class-string<T> ? T : mixed)
      */
-    private function rememberInstance(string $key, callable $callback): object
+    private function rememberInstance(string $key, callable $callback): mixed
     {
         if (!isset($this->instances[$key])) {
             $this->instances[$key] = $callback();
@@ -189,18 +188,4 @@ class AiFactory
         return $this->instances[$key];
     }
 
-    /**
-     * @template T of object
-     * @param string $key
-     * @param callable(): T $callback
-     * @return T
-     */
-    private function rememberValue(string $key, callable $callback): object
-    {
-        if (!isset($this->instances[$key])) {
-            $this->instances[$key] = $callback();
-        }
-
-        return $this->instances[$key];
-    }
 }
