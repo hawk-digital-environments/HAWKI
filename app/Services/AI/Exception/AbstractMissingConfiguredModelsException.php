@@ -11,23 +11,8 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
 {
     private array $missingModelIds;
     private array $missingTypes;
-
-    final public function __construct(
-        array $missingModelIds,
-        array $missingTypes
-    )
-    {
-        $this->missingModelIds = $missingModelIds;
-        $this->missingTypes = $missingTypes;
-
-        $message = 'The following ' . $this->getListType() . ' AI model IDs are missing: ' . implode(', ', $missingModelIds) . '.';
-        if (!empty($missingTypes)) {
-            $message .= ' Missing types: ' . implode(', ', $missingTypes) . '.';
-        }
-        parent::__construct($message);
-    }
-
-    abstract protected function getListType(): string;
+    
+    abstract protected static function getListType(): string;
 
     public function getMissingModelIds(): array
     {
@@ -39,26 +24,26 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
         return $this->missingTypes;
     }
 
-    /**
-     * @param array $knownModelIds
-     * @param AiModelMap $registeredModels
-     * @return static
-     */
     public static function createForMissing(
         array      $knownModelIds,
         AiModelMap $registeredModels,
     ): static
     {
-        $missingDefaultModelIds = array_diff($knownModelIds, $registeredModels->toIdArray());
-        $missingDefaultModelTypes = array_keys(
+        $missingModelIds = array_diff($knownModelIds, $registeredModels->toIdArray());
+        $missingModelTypes = array_keys(
             array_filter(
-                $knownModelIds, static fn($id) => in_array($id, $missingDefaultModelIds, true)
+                $knownModelIds, static fn($id) => in_array($id, $missingModelIds, true)
             )
         );
 
-        return new static(
-            missingModelIds: array_unique($missingDefaultModelIds),
-            missingTypes: $missingDefaultModelTypes
-        );
+        $message = 'The following ' . static::getListType() . ' AI model IDs are missing: ' . implode(', ', $missingModelIds) . '.';
+        if (!empty($missingModelTypes)) {
+            $message .= ' Missing types: ' . implode(', ', $missingModelTypes) . '.';
+        }
+
+        $i = new static($message);
+        $i->missingModelIds = $missingModelIds;
+        $i->missingTypes = $missingModelTypes;
+        return $i;
     }
 }
