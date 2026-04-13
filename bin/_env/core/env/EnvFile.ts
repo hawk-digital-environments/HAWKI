@@ -100,7 +100,7 @@ export async function createEnvFile({events, paths}: Context): Promise<EnvFile> 
 
     const envFile = new EnvFile(loadEnvFileState(paths.envFilePath));
 
-    if (envFileHashChanged(paths)) {
+    if (envFileHashChanged(paths) && process.env.TESTING_SKIP_CLI_INPUT !== "true") {
         await (new EnvFileMigrator(events, paths)).migrate(envFile);
     }
 

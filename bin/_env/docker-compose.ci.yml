@@ -1,0 +1,8 @@
+services:
+    tests:
+      container_name: env-testing
+      volumes:
+        - ../../.env.example:/ci/.env.ci
+      build:
+        context: ..
+        dockerfile: _env/Dockerfile.ci

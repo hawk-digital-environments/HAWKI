@@ -25,3 +25,6 @@ yarn-error.log
 docker-compose.override.yml
 .DS_Store
 _docker_production_test
+.devcontainer
+.agents
+skills-lock.json

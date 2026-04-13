@@ -1,7 +1,7 @@
 import type {Context} from '@/Context.js';
 import path from 'path';
 import fs from 'fs';
-import {executeCommand} from '@/executeCommand.js';
+import {executeCommand} from '@/executeCommand.ts';
 
 export async function startDockerProductionTest(context: Context, pull: boolean) {
     const testDirectory = path.join(context.paths.projectDir, '_docker_production_test');

@@ -4,7 +4,7 @@ import type {AddonEntrypoint} from '@/loadAddons.ts';
 import {execSync} from 'node:child_process';
 import path from 'path';
 import fs from 'fs';
-import {startDockerProductionTest} from './project/startDockerProductionTest.js';
+import {startDockerProductionTest} from './project/startDockerProductionTest.ts';
 
 export const addon: AddonEntrypoint = async (context) => ({
     ui: defineUi,
