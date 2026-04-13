@@ -40,7 +40,15 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     apt-get update && apt-get upgrade -y && apt-get install -y \
         tmux \
     && pecl install xdebug-3.5.0 \
-    && docker-php-ext-enable xdebug
+    && docker-php-ext-enable xdebug \
+    && { \
+        echo "xdebug.mode=debug"; \
+        echo "xdebug.start_with_request=yes"; \
+        echo "xdebug.client_host=host.docker.internal"; \
+        echo "xdebug.client_port=9003"; \
+        echo "xdebug.log=/tmp/xdebug.log"; \
+        echo "xdebug.log_level=7"; \
+    } >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
 # Install dev.command.sh
 COPY --chmod=755 --chown=www-data:www-data docker/app/dev.command.sh /usr/bin/dev.command.sh

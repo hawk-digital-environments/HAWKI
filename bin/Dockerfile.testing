@@ -1,0 +1,11 @@
+FROM node:24.14
+
+WORKDIR /testing/bin
+
+COPY . .
+
+WORKDIR /testing/bin/_env
+
+RUN npm install
+
+CMD cp /testing/.env.testing /testing/.env && npm run test
