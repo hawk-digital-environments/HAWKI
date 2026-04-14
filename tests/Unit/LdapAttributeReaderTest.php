@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit;
 
 use App\Services\Auth\Exception\LdapException;
@@ -9,54 +11,42 @@ use Psr\Log\LoggerInterface;
 
 class LdapAttributeReaderTest extends TestCase
 {
-    private function createReader(?LoggerInterface $logger = null): LdapAttributeReader
-    {
-        return new LdapAttributeReader(
-            usernameAttribute: 'uid',
-            emailAttribute: 'mail',
-            displayNameAttribute: 'displayName',
-            employeeTypeAttribute: 'employeeType',
-            legacyInvertDisplayNameOrder: false,
-            logger: $logger
-        );
-    }
-
     /**
-     * Test that attributes with proper case are read correctly
+     * Test that attributes with proper case are read correctly.
      */
-    public function test_reads_attribute_with_correct_case(): void
+    public function testReadsAttributeWithCorrectCase(): void
     {
-        $reader = $this->createReader();
+        $reader = self::createReader();
         $ldapEntry = [
             [
                 'uid' => ['testuser'],
                 'mail' => ['test@example.com'],
                 'displayName' => ['Test User'],
-                'employeeType' => ['staff']
-            ]
+                'employeeType' => ['staff'],
+            ],
         ];
 
-        $this->assertEquals('testuser', $reader->getUsername($ldapEntry));
-        $this->assertEquals('test@example.com', $reader->getEmail($ldapEntry));
-        $this->assertEquals('Test User', $reader->getDisplayName($ldapEntry));
-        $this->assertEquals('staff', $reader->getEmployeeType($ldapEntry));
+        self::assertEquals('testuser', $reader->getUsername($ldapEntry));
+        self::assertEquals('test@example.com', $reader->getEmail($ldapEntry));
+        self::assertEquals('Test User', $reader->getDisplayName($ldapEntry));
+        self::assertEquals('staff', $reader->getEmployeeType($ldapEntry));
     }
 
     /**
-     * Test that lowercase attributes are detected and used gracefully
+     * Test that lowercase attributes are detected and used gracefully.
      */
-    public function test_reads_lowercase_attribute_with_warning(): void
+    public function testReadsLowercaseAttributeWithWarning(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())
             ->method('debug')
             ->with(
                 'LDAP attribute found in lowercase - possible misconfiguration',
-                $this->callback(function ($context) {
-                    return $context['expected_attribute'] === 'UID'
-                        && $context['found_attribute'] === 'uid'
+                self::callback(static function ($context) {
+                    return 'UID' === $context['expected_attribute']
+                        && 'uid' === $context['found_attribute']
                         && isset($context['message']);
-                })
+                }),
             );
 
         $reader = new LdapAttributeReader(
@@ -65,7 +55,7 @@ class LdapAttributeReaderTest extends TestCase
             displayNameAttribute: 'displayName',
             employeeTypeAttribute: 'employeeType',
             legacyInvertDisplayNameOrder: false,
-            logger: $logger
+            logger: $logger,
         );
 
         $ldapEntry = [
@@ -73,27 +63,27 @@ class LdapAttributeReaderTest extends TestCase
                 'uid' => ['testuser'],  // Lowercase in LDAP
                 'mail' => ['test@example.com'],
                 'displayName' => ['Test User'],
-                'employeeType' => ['staff']
-            ]
+                'employeeType' => ['staff'],
+            ],
         ];
 
         // Should successfully retrieve the lowercase attribute
-        $this->assertEquals('testuser', $reader->getUsername($ldapEntry));
+        self::assertEquals('testuser', $reader->getUsername($ldapEntry));
     }
 
     /**
-     * Test that missing attributes throw an exception
+     * Test that missing attributes throw an exception.
      */
-    public function test_throws_exception_for_missing_attribute(): void
+    public function testThrowsExceptionForMissingAttribute(): void
     {
-        $reader = $this->createReader();
+        $reader = self::createReader();
         $ldapEntry = [
             [
                 'mail' => ['test@example.com'],
                 'displayName' => ['Test User'],
-                'employeeType' => ['staff']
+                'employeeType' => ['staff'],
                 // uid is missing
-            ]
+            ],
         ];
 
         $this->expectException(LdapException::class);
@@ -102,11 +92,11 @@ class LdapAttributeReaderTest extends TestCase
     }
 
     /**
-     * Test that empty LDAP entry throws exception
+     * Test that empty LDAP entry throws exception.
      */
-    public function test_throws_exception_for_empty_ldap_entry(): void
+    public function testThrowsExceptionForEmptyLdapEntry(): void
     {
-        $reader = $this->createReader();
+        $reader = self::createReader();
         $ldapEntry = [];
 
         $this->expectException(LdapException::class);
@@ -115,11 +105,11 @@ class LdapAttributeReaderTest extends TestCase
     }
 
     /**
-     * Test that non-array LDAP entry throws exception
+     * Test that non-array LDAP entry throws exception.
      */
-    public function test_throws_exception_for_non_array_ldap_entry(): void
+    public function testThrowsExceptionForNonArrayLdapEntry(): void
     {
-        $reader = $this->createReader();
+        $reader = self::createReader();
         $ldapEntry = 'not an array';
 
         $this->expectException(LdapException::class);
@@ -128,9 +118,9 @@ class LdapAttributeReaderTest extends TestCase
     }
 
     /**
-     * Test lowercase fallback works for all attribute types
+     * Test lowercase fallback works for all attribute types.
      */
-    public function test_lowercase_fallback_works_for_all_attributes(): void
+    public function testLowercaseFallbackWorksForAllAttributes(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
         // Expect debug to be called for each uppercase attribute
@@ -144,7 +134,7 @@ class LdapAttributeReaderTest extends TestCase
             displayNameAttribute: 'DISPLAYNAME',
             employeeTypeAttribute: 'EMPLOYEETYPE',
             legacyInvertDisplayNameOrder: false,
-            logger: $logger
+            logger: $logger,
         );
 
         $ldapEntry = [
@@ -152,20 +142,20 @@ class LdapAttributeReaderTest extends TestCase
                 'uid' => ['testuser'],
                 'mail' => ['test@example.com'],
                 'displayname' => ['Test User'],
-                'employeetype' => ['staff']
-            ]
+                'employeetype' => ['staff'],
+            ],
         ];
 
-        $this->assertEquals('testuser', $reader->getUsername($ldapEntry));
-        $this->assertEquals('test@example.com', $reader->getEmail($ldapEntry));
-        $this->assertEquals('Test User', $reader->getDisplayName($ldapEntry));
-        $this->assertEquals('staff', $reader->getEmployeeType($ldapEntry));
+        self::assertEquals('testuser', $reader->getUsername($ldapEntry));
+        self::assertEquals('test@example.com', $reader->getEmail($ldapEntry));
+        self::assertEquals('Test User', $reader->getDisplayName($ldapEntry));
+        self::assertEquals('staff', $reader->getEmployeeType($ldapEntry));
     }
 
     /**
-     * Test that already lowercase attributes don't trigger warning
+     * Test that already lowercase attributes don't trigger warning.
      */
-    public function test_already_lowercase_attributes_do_not_trigger_warning(): void
+    public function testAlreadyLowercaseAttributesDoNotTriggerWarning(): void
     {
         $logger = $this->createMock(LoggerInterface::class);
         // Should not call debug for already lowercase attributes
@@ -178,7 +168,7 @@ class LdapAttributeReaderTest extends TestCase
             displayNameAttribute: 'displayName',
             employeeTypeAttribute: 'employeeType',
             legacyInvertDisplayNameOrder: false,
-            logger: $logger
+            logger: $logger,
         );
 
         $ldapEntry = [
@@ -186,30 +176,42 @@ class LdapAttributeReaderTest extends TestCase
                 'uid' => ['testuser'],
                 'mail' => ['test@example.com'],
                 'displayName' => ['Test User'],
-                'employeeType' => ['staff']
-            ]
+                'employeeType' => ['staff'],
+            ],
         ];
 
-        $this->assertEquals('testuser', $reader->getUsername($ldapEntry));
+        self::assertEquals('testuser', $reader->getUsername($ldapEntry));
     }
 
     /**
-     * Test that non-string attribute values throw exception
+     * Test that non-string attribute values throw exception.
      */
-    public function test_throws_exception_for_non_string_attribute_value(): void
+    public function testThrowsExceptionForNonStringAttributeValue(): void
     {
-        $reader = $this->createReader();
+        $reader = self::createReader();
         $ldapEntry = [
             [
                 'uid' => [123],  // Integer instead of string
                 'mail' => ['test@example.com'],
                 'displayName' => ['Test User'],
-                'employeeType' => ['staff']
-            ]
+                'employeeType' => ['staff'],
+            ],
         ];
 
         $this->expectException(LdapException::class);
         $this->expectExceptionMessage("LDAP: User info attribute 'uid' is not a string.");
         $reader->getUsername($ldapEntry);
+    }
+
+    private static function createReader(?LoggerInterface $logger = null): LdapAttributeReader
+    {
+        return new LdapAttributeReader(
+            usernameAttribute: 'uid',
+            emailAttribute: 'mail',
+            displayNameAttribute: 'displayName',
+            employeeTypeAttribute: 'employeeType',
+            legacyInvertDisplayNameOrder: false,
+            logger: $logger,
+        );
     }
 }

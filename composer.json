@@ -33,9 +33,10 @@
         "ext-curl": "*"
     },
     "require-dev": {
+        "ergebnis/php-cs-fixer-config": "^6.61",
         "fakerphp/faker": "^1.24.1",
+        "friendsofphp/php-cs-fixer": "^3.95",
         "larastan/larastan": "^3.9",
-        "laravel/pint": "^1.25.1",
         "laravel/sail": "^1.46.0",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8.2",
@@ -57,13 +58,9 @@
     },
     "scripts": {
         "hawki": "php hawki",
-        "whoami": "id",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
-        ],
-        "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
@@ -81,9 +78,12 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan reverb:start --debug"
         ],
-        "stan": [
-            "./vendor/bin/phpstan analyse"
-        ]
+        "php-cs-fixer": "./vendor/bin/php-cs-fixer fix",
+        "stan": "./vendor/bin/phpstan analyse",
+        "test:unit": "phpunit --testsuite unit --exclude-group integration",
+        "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --exclude-group integration --coverage-html ./.phpunit.coverage; cp ./tests/coverage.dark.css .phpunit.coverage/_css/custom.css",
+        "test:unit:coverage:text": "XDEBUG_MODE=coverage phpunit --testsuite unit --exclude-group integration --coverage-text",
+        "test:unit:coverage:clover": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-clover .phpunit.coverage/coverage-clover.xml"
     },
     "extra": {
         "laravel": {

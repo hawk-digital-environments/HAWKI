@@ -7,7 +7,7 @@ namespace App\Services\AI\Exception;
 
 class MissingSystemModelsException extends AbstractMissingConfiguredModelsException
 {
-    protected function getListType(): string
+    protected static function getListType(): string
     {
         return 'system';
     }

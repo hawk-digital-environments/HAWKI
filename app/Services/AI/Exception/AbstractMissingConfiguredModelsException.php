@@ -23,7 +23,7 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
     {
         return $this->missingTypes;
     }
-
+    
     /**
      * @param array $knownModelIds
      * @param AiModelMap $registeredModels
