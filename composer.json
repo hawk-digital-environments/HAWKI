@@ -55,21 +55,9 @@
     },
     "scripts": {
         "hawki": "php hawki",
-        "whoami": "id",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
-        ],
-        "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
-        ],
-        "post-root-package-install": [
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
-        ],
-        "post-create-project-cmd": [
-            "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
-            "@php artisan migrate --graceful --ansi"
         ],
         "queue": [
             "Composer\\Config::disableProcessTimeout",
@@ -79,10 +67,16 @@
             "Composer\\Config::disableProcessTimeout",
             "@php artisan reverb:start --debug"
         ],
-        "stan": [
-            "./vendor/bin/phpstan analyse"
-        ]
         "php-cs-fixer": "./vendor/bin/php-cs-fixer fix",
+        "test:stan": "./vendor/bin/phpstan analyse",
+        "test:unit": "phpunit --testsuite unit",
+        "test:all": [
+            "composer run test:stan",
+            "composer test:unit"
+        ],
+        "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-html ./.phpunit.coverage; cp ./tests/coverage.dark.css .phpunit.coverage/_css/custom.css",
+        "test:unit:coverage:text": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-text",
+        "test:unit:coverage:clover": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-clover .phpunit.coverage/coverage-clover.xml"
     },
     "extra": {
         "laravel": {

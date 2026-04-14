@@ -14,7 +14,7 @@ export const addon: AddonEntrypoint = async (context) => ({
                 const {docker, mailhog} = context;
 
                 await docker.ensureComposeServiceIsRunning('mailhog');
-                await executeCommand('open', [`http://${docker.projectDomain}:${mailhog.port}`]);
+                await executeCommand('open', [`http://${docker.projectHost}:${mailhog.port}`]);
             });
     }
 });

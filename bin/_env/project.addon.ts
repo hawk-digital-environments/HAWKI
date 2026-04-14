@@ -129,6 +129,16 @@ export const addon: AddonEntrypoint = async (context) => ({
             .action(async (options, command) => {
                 await context.composer.exec(['run', 'stan', ...command.args]);
             });
+
+        program
+            .command('php')
+            .description('runs a custom php command inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('app', ['php', ...command.args], {interactive: true});
+            });
+
         program
             .command('php-cs-fixer')
             .alias('pcs')
