@@ -143,8 +143,10 @@ export const addon: AddonEntrypoint = async (context) => ({
             .command('php-cs-fixer')
             .alias('pcs')
             .description('runs php-cs-fixer to automatically fix code style issues')
-            .action(async () => {
-                await context.composer.exec(['run', 'php-cs-fixer']);
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .action(async (options, command) => {
+                await context.composer.exec(['run', 'php-cs-fixer', ...command.args]);
             });
 
         program

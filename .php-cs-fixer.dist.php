@@ -35,7 +35,7 @@ $config->setRules(
         ],
         'concat_space' => [
             'spacing' => 'one'
-        ]
+        ],
     ])
 );
 
