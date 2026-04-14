@@ -15,7 +15,6 @@ class ListModels extends Command
 
     protected $description = 'List all AI models registered in the database';
 
-    /** @noinspection PhpParamsInspection */
     public function handle(): int
     {
         $query = AiModel::with('provider', 'status');
@@ -32,22 +31,22 @@ class ListModels extends Command
 
         if ($models->isEmpty()) {
             $this->warn('No models found. Run <comment>php artisan ai:models:sync</comment> first.');
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         if ($this->option('json')) {
             $this->line($models->toJson(JSON_PRETTY_PRINT));
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         // Group by provider
-        $grouped = $models->groupBy(fn($m) => $m->provider->provider_id ?? 'unknown');
+        $grouped = $models->groupBy(fn($m) => $m->provider?->provider_id ?? 'unknown');
 
         foreach ($grouped as $providerId => $providerModels) {
             /** @var AiProvider|null $provider */
             $provider = $providerModels->first()?->provider;
 
-            $status   = $provider?->active ? '<fg=green>active</' : '<fg=red>inactive</>';
+            $status = $provider?->active ? '<fg=green>active</' : '<fg=red>inactive</>';
             $this->newLine();
             $this->line("Provider: <fg=cyan;options=bold>{$providerId}</> [{$status}]");
             $this->line(str_repeat('─', 70));

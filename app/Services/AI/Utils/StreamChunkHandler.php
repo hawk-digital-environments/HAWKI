@@ -17,7 +17,6 @@ class StreamChunkHandler
 
     public function handle(string $data): void
     {
-        \Log::debug($data);
         if (!str_starts_with(trim($data), 'data: ')) {
             $data = $this->normalizeDataChunk($data);
         }

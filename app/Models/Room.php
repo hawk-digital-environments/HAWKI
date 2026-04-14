@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Testing\Fluent\Concerns\Has;
 
 class Room extends Model
 {
@@ -32,8 +31,8 @@ class Room extends Model
     }
 
     /**
-    * @return HasMany<Message, $this>
-    */
+     * @return HasMany<Message, $this>
+     */
     public function messages(): HasMany
     {
         return $this->hasMany(Message::class)->orderBy('message_id');
@@ -47,6 +46,7 @@ class Room extends Model
     {
         return $this->messages()->where('message_id', $messageId)->firstOrFail();
     }
+
     /**
      * @return HasMany<Member, $this>
      */
@@ -54,6 +54,7 @@ class Room extends Model
     {
         return $this->hasMany(Member::class);
     }
+
     /**
      * @return HasMany<Member, $this>
      */
@@ -69,8 +70,8 @@ class Room extends Model
     public function isMember(int $userId): bool
     {
         return $this->members()
-                    ->where('user_id', $userId)
-                    ->exists();
+            ->where('user_id', $userId)
+            ->exists();
     }
 
     /**
@@ -88,8 +89,8 @@ class Room extends Model
     public function isOldMember(int $userId): bool
     {
         return $this->oldMembers()
-                    ->where('user_id', $userId)
-                    ->exists();
+            ->where('user_id', $userId)
+            ->exists();
     }
 
     /**
@@ -98,26 +99,24 @@ class Room extends Model
      */
     public function addMember(int $userId, string $role): void
     {
-        if($this->isMember($userId)){
+        if ($this->isMember($userId)) {
             $member = $this->members()->where('user_id', $userId)->first();
-            if(!$member->hasRole($role)){
+            if (!$member->hasRole($role)) {
                 $member->updateRole($role);
             }
-        }
-        else{
-            if($this->isOldMember($userId)){
+        } else {
+            if ($this->isOldMember($userId)) {
 
                 // if an old membership exists for the user
                 // reactivate the old membership.
                 $member = $this->membersAll()->where('user_id', $userId)->first();
                 $member->recreateMembership();
 
-                if(!$member->hasRole($role)){
+                if (!$member->hasRole($role)) {
                     $member->updateRole($role);
                 }
 
-            }
-            else{
+            } else {
                 // create new member for the room
                 $this->members()->create([
                     'user_id' => $userId,
@@ -127,14 +126,15 @@ class Room extends Model
 
         }
     }
+
     /**
      * @param int $userId
      * @return bool
      */
     public function removeMember(int $userId): bool
     {
-        if($this->isMember($userId)){
-            try{
+        if ($this->isMember($userId)) {
+            try {
                 // Attempt to delete the member from the room based on user ID
                 $this->members()
                     ->where('user_id', $userId)
@@ -146,8 +146,7 @@ class Room extends Model
                     $this->deleteRoom();
                 }
                 return true;
-            }
-            catch(Exception $e){
+            } catch (Exception $e) {
                 Log::error("Failed to remove member: $e");
                 return false;
             }
@@ -158,24 +157,24 @@ class Room extends Model
     /**
      * @return bool
      */
-    public function deleteRoom(): bool{
-        try{
+    public function deleteRoom(): bool
+    {
+        try {
             // Delete related messages and members
             $messages = $this->messages()->get();
-            foreach ($messages as $message){
+            foreach ($messages as $message) {
                 $messageHandler = app(GroupMessageHandler::class);
                 $messageHandler->delete($this, $message->toArray());
             }
             $this->members()->delete();
-            if($this->room_icon){
+            if ($this->room_icon) {
                 $avatarStorage = app(AvatarStorageService::class);
                 $avatarStorage->delete(StoredFileIdentifier::tryFromRoomAvatar($this));
             }
             // Delete the room itself
             $this->delete();
             return true;
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             Log::error("Failed to remove member: $e");
             return false;
         }
