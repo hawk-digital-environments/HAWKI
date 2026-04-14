@@ -7,13 +7,11 @@ namespace App\Services\AI\Exception;
 
 use App\Services\AI\Value\AiModelMap;
 
-
-//@todo: Martin wants to refactor this. Martin doesn't like static factory in abstract. Martin knows himself...
 abstract class AbstractMissingConfiguredModelsException extends \RuntimeException implements AiServiceExceptionInterface
 {
-    private array $missingModelIds;
-    private array $missingTypes;
-    
+    private readonly array $missingModelIds;
+    private readonly array $missingTypes;
+
     abstract protected static function getListType(): string;
 
     public function getMissingModelIds(): array
@@ -26,6 +24,11 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
         return $this->missingTypes;
     }
 
+    /**
+     * @param array $knownModelIds
+     * @param AiModelMap $registeredModels
+     * @return static
+     */
     public static function createForMissing(
         array      $knownModelIds,
         AiModelMap $registeredModels,
