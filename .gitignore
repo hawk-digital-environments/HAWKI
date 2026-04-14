@@ -43,3 +43,4 @@ _docker_production_test
 npm-debug.log
 yarn-error.log
 .DS_Store
+_architecture
