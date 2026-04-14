@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "dev": "vite",
+        "dev": "npm install && vite",
         "build": "vite build"
     },
     "devDependencies": {
