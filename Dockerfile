@@ -54,6 +54,22 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
 COPY --chmod=755 --chown=www-data:www-data docker/app/dev.command.sh /usr/bin/dev.command.sh
 
 # -----------------------------------------------------
+# APP - TEST
+# -----------------------------------------------------
+FROM app_root AS app_test
+
+COPY --chown=www-data:www-data . .
+
+RUN mkdir -p /var/www/html/storage/framework/cache \
+    && mkdir -p /var/www/html/storage/framework/sessions \
+    && mkdir -p /var/www/html/storage/framework/views \
+    && mkdir -p /var/www/html/storage/logs \
+    && mkdir -p /var/www/html/storage/app/public \
+    && chown -R www-data:www-data /var/www/html/storage \
+    && composer install --no-cache --no-progress --no-interaction --verbose \
+    && composer clear-cache
+
+# -----------------------------------------------------
 # APP - PROD
 # -----------------------------------------------------
 FROM app_root AS app_prod
