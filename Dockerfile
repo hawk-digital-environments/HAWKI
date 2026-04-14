@@ -13,7 +13,7 @@ RUN npm ci && npm run build
 # =====================================================
 # APP - ROOT
 # -----------------------------------------------------
-FROM neunerlei/php-nginx:8.5 AS app_root
+FROM neunerlei/php-nginx:8.2 AS app_root
 
 LABEL org.opencontainers.image.authors="HAWKI Team <ki@hawk.de>"
 LABEL org.opencontainers.image.description="The HAWKI application image"

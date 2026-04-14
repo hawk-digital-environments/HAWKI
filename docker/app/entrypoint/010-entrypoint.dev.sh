@@ -1,6 +1,6 @@
 #!/bin/bash
 
-composer install
+gosu www-data composer install
 
 # Ensure the test user exists
 if ! [[ -f /var/www/html/storage/app/test_users.json ]]; then
