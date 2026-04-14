@@ -30,9 +30,10 @@
         "spatie/laravel-backup": "^9.3.4"
     },
     "require-dev": {
+        "ergebnis/php-cs-fixer-config": "^6.61",
         "fakerphp/faker": "^1.24.1",
+        "friendsofphp/php-cs-fixer": "^3.95",
         "larastan/larastan": "^3.9",
-        "laravel/pint": "^1.25.1",
         "laravel/sail": "^1.46.0",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8.2",
@@ -81,6 +82,7 @@
         "stan": [
             "./vendor/bin/phpstan analyse"
         ]
+        "php-cs-fixer": "./vendor/bin/php-cs-fixer fix",
     },
     "extra": {
         "laravel": {
