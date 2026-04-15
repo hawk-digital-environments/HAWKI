@@ -57,6 +57,8 @@
 - The model config files of `config/model_providers.php` and `config/model_lists` are now automatically copied to `_docker_production` when a new release branch is created.
 - The `jquery` library has been removed from the frontend dependencies, as it is not used in the codebase. This reduces the overall bundle size and improves performance.
 - Update of all major frontend dependencies.
+- Add `prettier` and `php-cs-fixer` configurations to enforce consistent code formatting across the codebase. Run `bin/env style php` or `bin/env style js` to automatically format the code according to the defined standards.
+- Added `phpunit` and `phpstan` to run tests and static analysis of the main application. Run `bin/env test unit` to execute the unit tests and `bin/env test stan` to run static analysis. Run all tests and checks with `bin/env test all`.
 
 ### Deprecation
 

@@ -70,6 +70,130 @@ export const addon: AddonEntrypoint = async (context) => ({
                 await context.docker.executeCommandInService('app', ['php', 'hawki', ...command.args], {interactive: true});
             });
 
+        program
+            .command('start-docker-production-test')
+            .option('--no-pull', 'do not pull the latest docker images, use the ones available locally')
+            .description('Creates a running system of the `_docker_production` directory for testing purposes')
+            .action(async (options) => startDockerProductionTest(context, options.pull));
+
+        program
+            .command('php')
+            .description('runs a custom php command inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('app', ['php', ...command.args], {interactive: true});
+            });
+
+        program
+            .command('node')
+            .description('runs a custom node command inside the node container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('node', ['node', ...command.args], {interactive: true});
+            });
+
+        // =============================================================================
+        // Test commands
+        // =============================================================================
+
+        const tests = program
+            .command('tests')
+            .description('a list of commands to help you with testing tasks');
+
+        const phpTests = tests
+            .command('php')
+            .description('a list of commands to help you with php testing tasks');
+
+        phpTests
+            .command('stan')
+            .description('runs phpstan static analysis inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.composer.exec(['run', 'test:stan', ...command.args]);
+            });
+
+        phpTests
+            .command('unit')
+            .description('runs phpunit tests inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .option('--coverage, -c', 'generate a code coverage report')
+            .helpOption(false)
+            .action(async (options, command) => {
+                const script = options.coverage ? 'test:unit:coverage' : 'test:unit';
+                await context.composer.exec(['run', script, ...command.args]);
+            });
+
+        phpTests
+            .command('feature')
+            .description('runs php feature tests inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .option('--coverage, -c', 'generate a code coverage report')
+            .helpOption(false)
+            .action(async (options, command) => {
+                const script = options.coverage ? 'test:feature:coverage' : 'test:feature';
+                await context.composer.exec(['run', script, ...command.args]);
+            });
+
+        phpTests
+            .command('all')
+            .description('runs all tests (phpstan and phpunit) inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.composer.exec(['run', 'test:all']);
+            });
+
+        tests
+            .command('all')
+            .description('runs all tests (php and js) inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.composer.exec(['run', 'test:all']);
+                await context.docker.executeCommandInService('node', ['npm', 'test'], {interactive: true});
+            });
+
+        // =============================================================================
+        // Code Style commands
+        // =============================================================================
+
+        const style = program
+            .command('style')
+            .description('a list of commands to help you with code style tasks');
+
+        style
+            .command('php')
+            .description('runs php-cs-fixer to automatically fix code style issues')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.composer.exec(['run', 'php-cs-fixer', ...command.args]);
+            });
+
+        style
+            .command('js')
+            .description('runs prettier to automatically fix code style issues in js/ts/css files')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.docker.executeCommandInService('node', ['npm', 'run', 'prettier', '--', ...command.args], {interactive: true});
+            });
+
+        // =============================================================================
+        // Documentation commands
+        // =============================================================================
         const docsDir = path.join(context.paths.projectDir, '_documentation.build');
 
         const docs = program
@@ -120,78 +244,5 @@ export const addon: AddonEntrypoint = async (context) => ({
                     stdio: 'inherit'
                 });
             });
-
-        program
-            .command('test:stan')
-            .alias('stan')
-            .description('runs phpstan static analysis inside the app container')
-            .allowExcessArguments(true)
-            .allowUnknownOption(true)
-            .helpOption(false)
-            .action(async (options, command) => {
-                await context.composer.exec(['run', 'test:stan', ...command.args]);
-            });
-
-        program
-            .command('test:php:unit')
-            .alias('phpunit')
-            .description('runs phpunit tests inside the app container')
-            .allowExcessArguments(true)
-            .allowUnknownOption(true)
-            .option('--coverage, -c', 'generate a code coverage report')
-            .helpOption(false)
-            .action(async (options, command) => {
-                const script = options.coverage ? 'test:unit:coverage' : 'test:unit';
-                await context.composer.exec(['run', script, ...command.args]);
-            });
-
-        program
-            .command('test:php:feature')
-            .alias('phpfeat')
-            .description('runs php feature tests inside the app container')
-            .allowExcessArguments(true)
-            .allowUnknownOption(true)
-            .option('--coverage, -c', 'generate a code coverage report')
-            .helpOption(false)
-            .action(async (options, command) => {
-                const script = options.coverage ? 'test:feature:coverage' : 'test:feature';
-                await context.composer.exec(['run', script, ...command.args]);
-            });
-
-        program
-            .command('test:all')
-            .alias('test')
-            .description('runs all tests (phpstan and phpunit) inside the app container')
-            .allowExcessArguments(true)
-            .allowUnknownOption(true)
-            .helpOption(false)
-            .action(async (options, command) => {
-                await context.composer.exec(['run', 'test:all']);
-            });
-
-        program
-            .command('php')
-            .description('runs a custom php command inside the app container')
-            .allowExcessArguments(true)
-            .allowUnknownOption(true)
-            .action(async (options, command) => {
-                await context.docker.executeCommandInService('app', ['php', ...command.args], {interactive: true});
-            });
-
-        program
-            .command('php-cs-fixer')
-            .alias('pcs')
-            .description('runs php-cs-fixer to automatically fix code style issues')
-            .allowExcessArguments(true)
-            .allowUnknownOption(true)
-            .action(async (options, command) => {
-                await context.composer.exec(['run', 'php-cs-fixer', ...command.args]);
-            });
-
-        program
-            .command('start-docker-production-test')
-            .option('--no-pull', 'do not pull the latest docker images, use the ones available locally')
-            .description('Creates a running system of the `_docker_production` directory for testing purposes')
-            .action(async (options) => startDockerProductionTest(context, options.pull));
     }
 });

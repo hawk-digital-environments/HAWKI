@@ -23,11 +23,12 @@ $ruleSet = Config\RuleSet\Php82::create();
 
 $config = Config\Factory::fromRuleSet($ruleSet);
 
-//$config->setCacheFile(__DIR__ . '/.build/php-cs-fixer/.php-cs-fixer.cache');
+$config->setCacheFile(__DIR__ . '/.php-cs-fixer.cache');
 $config->setFinder($finder);
 $config->setRules(
     array_merge($config->getRules(), [
         'final_class' => false,
+        'static_private_method' => false,
         'native_function_invocation' => [
             'include' => ['@compiler_optimized'],
             'scope' => 'namespaced',

@@ -210,7 +210,7 @@ CS fixer is a tool that automatically formats your code according to a set of ru
 You can manually run the fixer with the following command, which will boot up the php container if needed and execute the fixer command inside it:
 
 ```bash
-bin/env php-cs-fixer
+bin/env style php
 ```
 
 However many IDEs also support integrating the fixer directly into the editor, so you can see formatting issues in real-time and automatically fix them on save. When you are running in a docker container, you need to configure the IDE to use the fixer executable inside the container.
@@ -248,21 +248,40 @@ Always bring up the container with `bin/env up` before trying to use the fixer i
 
    Click **OK**.
 
+### Prettier
+
+Prettier is a code formatter for JavaScript and TypeScript. We use it to ensure that our frontend codebase is consistent and follows a defined coding style.
+
+You can manually run prettier with the following command, which will boot up the node container if needed and execute the prettier command inside it:
+
+```bash
+bin/env style js
+```
+
+However many IDEs also support integrating prettier directly into the editor, so you can see formatting issues in real-time and automatically fix them on save. The easiest way to do this is to boot up the container once with `bin/env up` which will install the node modules on your machine, which allows the IDE to find the prettier executable on your local file system. After that, you can configure the IDE to use the local prettier executable as you normally would, and it should work without any issues.
+
+1. Go to `Settings` > `Languages & Frameworks` > `Javascript` > `Prettier`.
+2. Check prettier package has auto-detected, should be something like myproject/node_modules/prettier
+3. Update Run for Files to look like this: `{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}`
+4. Tick the **On Save button**, if you want your files formatting updated on file save
+5. Click **OK**.
+
 ## Running tests
 
 HAWKI uses PHPUnit for testing of the PHP code, which also runs inside the php container. You can run the tests with the following command, which will boot up the php container if needed and execute the tests inside it:
 
 ```bash
-bin/env phpunit
+bin/env test unit
 ```
 
 For static code analysis, we use PHPStan, which also runs inside the php container. You can run it with the following command:
 
 ```bash
-bin/env stan
+bin/env test stan
 ```
 
 Or if you want to run all tests and static analysis in one go, you can use the `test` command:
 
 ```bash
-bin/env test:all
+bin/env test php all
+```

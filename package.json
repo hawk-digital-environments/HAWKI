@@ -5,7 +5,8 @@
     "scripts": {
         "dev": "npm install && vite",
         "build": "vite build",
-        "prettier": "prettier --write ."
+        "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
+        "test": "echo \"Heads up: no test specified\" && exit 0"
     },
     "devDependencies": {
         "concurrently": "^9.2.1",
