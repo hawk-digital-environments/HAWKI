@@ -1,8 +1,6 @@
 import './echo.js';
 import {hawkiConnection} from './util/hawkiConnection.js';
 import {hasTranslation, translate} from './util/translator.js';
-
-import jQuery from 'jquery';
 import Cropper from 'cropperjs';
 import jsPDF from 'jspdf';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -18,11 +16,7 @@ import pako from 'pako';
 import markdownit from 'markdown-it';
 import {getFileIconSvg} from './util/fileIconSvg.js';
 
-window.$ = jQuery;
-
-
 window.Cropper = Cropper;
-
 
 window.jsPDF = jsPDF;
 

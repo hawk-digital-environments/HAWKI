@@ -55,6 +55,8 @@
 - `ext-fileinfo` is now declared as a required PHP extension in `composer.json`.
 - Added phpstan for static analysis which should help catch potential bugs and improve code quality. Run `composer run stan` to execute the static analysis checks. Currently NOT in the pipeline, because there are still some issues to fix, but we will get there eventually.
 - The model config files of `config/model_providers.php` and `config/model_lists` are now automatically copied to `_docker_production` when a new release branch is created.
+- The `jquery` library has been removed from the frontend dependencies, as it is not used in the codebase. This reduces the overall bundle size and improves performance.
+- Update of all major frontend dependencies.
 
 ### Deprecation
 

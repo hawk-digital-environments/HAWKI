@@ -4,30 +4,31 @@
     "type": "module",
     "scripts": {
         "dev": "npm install && vite",
-        "build": "vite build"
+        "build": "vite build",
+        "prettier": "prettier --write ."
     },
     "devDependencies": {
         "concurrently": "^9.2.1",
-        "laravel-vite-plugin": "^2.1.0",
-        "pusher-js": "^8.4.0",
+        "laravel-vite-plugin": "^3.0.1",
+        "prettier": "^3.8.3",
+        "pusher-js": "^8.5.0",
         "shelljs": "^0.10.0",
-        "vite": "^7.3.1"
+        "vite": "^8.0.8"
     },
     "dependencies": {
-        "cropperjs": "^2.1.0",
-        "docx": "^9.6.0",
+        "cropperjs": "^2.1.1",
+        "docx": "^9.6.1",
         "docx-preview": "^0.3.7",
         "highlight.js": "^11.11.1",
-        "jquery": "^3.7.1",
-        "jspdf": "^4.2.0",
-        "katex": "^0.16.33",
-        "laravel-echo": "^2.3.0",
+        "jspdf": "^4.2.1",
+        "katex": "^0.16.45",
+        "laravel-echo": "^2.3.4",
         "markdown-it": "^14.1.1",
         "pako": "^2.1.0",
-        "pdfjs-dist": "^5.4.624",
-        "pusher-js": "^8.4.0"
+        "pdfjs-dist": "^5.6.205",
+        "pusher-js": "^8.5.0"
     },
     "optionalDependencies": {
-        "@rollup/rollup-linux-x64-gnu": "^4.59.0"
+        "@rollup/rollup-linux-x64-gnu": "^4.60.1"
     }
 }
