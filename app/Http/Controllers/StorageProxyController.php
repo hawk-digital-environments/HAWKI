@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AiConvMsg;
 use App\Models\Message;
+use App\Models\Room;
 use App\Models\User;
 use App\Services\Chat\Attachment\Db\AttachmentDb;
 use App\Services\Routing\CacheBusting\CacheBusterGenerator;
@@ -63,7 +64,9 @@ class StorageProxyController extends Controller
             abort(400, 'Invalid request, attachment is not linked to a message');
         }
 
-        if (!$attachable->room->isMember($this->currentUser->id)) {
+        $room = $attachable->room;
+
+        if (!$room->isMember($this->currentUser->id)) {
             abort(403, 'You are not a member of the room this attachment belongs to');
         }
 

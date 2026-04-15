@@ -11,14 +11,6 @@ use Illuminate\Support\Facades\View;
 
 class LoginController extends Controller
 {
-    protected $languageController;
-
-    // Inject LanguageController instance
-    public function __construct(LanguageController $languageController)
-    {
-        $this->languageController = $languageController;
-    }
-
     /// Redirect to Login Page
     public function index(AuthServiceInterface $authService, Request $request)
     {

@@ -7,12 +7,13 @@ namespace App\Services\AI\Tools\Value;
 
 use App\Services\AI\Tools\ToolRegistry;
 use Illuminate\Support\Facades\Log;
+use IteratorAggregate;
 use Traversable;
 
 /**
- * @extends \IteratorAggregate<int, ToolCall>
+ * @implements IteratorAggregate<int, ToolCall>
  */
-readonly class ToolCallCollection implements \IteratorAggregate, \JsonSerializable, \Countable
+readonly class ToolCallCollection implements IteratorAggregate, \JsonSerializable, \Countable
 {
     /**
      * @var array|ToolCall[]

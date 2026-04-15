@@ -198,7 +198,6 @@ class InvitationController extends Controller
 
         // Add the user to the room (assuming you have a pivot table for room members)
         $room = $invitation->room;
-
         $room->addMember($user->id, $invitation->role);
 
 

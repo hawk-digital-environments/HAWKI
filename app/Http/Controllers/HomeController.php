@@ -110,7 +110,7 @@ class HomeController extends Controller
             ));
     }
 
-    public function print($module, $slug, AiConvService $aiConvService, RoomService $roomService, AvatarStorageService $avatarStorage, SettingsService $settingsService)
+    public function print($module, $slug, AiConvService $aiConvService, RoomService $roomService, AvatarStorageService $avatarStorage)
     {
         switch ($module) {
             case 'chat':
@@ -156,10 +156,8 @@ class HomeController extends Controller
         }
     }
 
-
     public function dataprotectionIndex(Request $request): View
     {
-        $translation = $this->languageController->getTranslation();
-        return view('layouts.dataprotection', compact('translation'));
+        return view('layouts.dataprotection');
     }
 }

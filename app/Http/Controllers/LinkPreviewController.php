@@ -80,8 +80,9 @@ class LinkPreviewController extends Controller
 
         foreach ($ogTags as $property => $key) {
             $nodes = $xpath->query("//meta[@property='$property']");
-            if ($nodes->length > 0) {
-                $content = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $content = $node->getAttribute('content');
                 if (!empty($content)) {
                     $metadata[$key] = $content;
                 }
@@ -91,22 +92,25 @@ class LinkPreviewController extends Controller
         // Fallback to Twitter Card tags
         if (!$metadata['title']) {
             $nodes = $xpath->query("//meta[@name='twitter:title']");
-            if ($nodes->length > 0) {
-                $metadata['title'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['title'] = $node->getAttribute('content');
             }
         }
 
         if (!$metadata['description']) {
             $nodes = $xpath->query("//meta[@name='twitter:description']");
-            if ($nodes->length > 0) {
-                $metadata['description'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['description'] = $node->getAttribute('content');
             }
         }
 
         if (!$metadata['image']) {
             $nodes = $xpath->query("//meta[@name='twitter:image']");
-            if ($nodes->length > 0) {
-                $metadata['image'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['image'] = $node->getAttribute('content');
             }
         }
 
@@ -120,18 +124,19 @@ class LinkPreviewController extends Controller
 
         if (!$metadata['description']) {
             $nodes = $xpath->query("//meta[@name='description']");
-            if ($nodes->length > 0) {
-                $metadata['description'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['description'] = $node->getAttribute('content');
             }
         }
 
         // Get favicon
         $faviconNodes = $xpath->query("//link[@rel='icon' or @rel='shortcut icon']");
-        if ($faviconNodes->length > 0) {
-            $favicon = $faviconNodes->item(0)->getAttribute('href');
+        $node = $faviconNodes->item(0);
+        if ($node instanceof \DOMElement) {
+            $favicon = $node->getAttribute('href');
             $metadata['favicon'] = $this->resolveUrl($url, $favicon);
         } else {
-            // Default to Google favicon service
             $metadata['favicon'] = "https://www.google.com/s2/favicons?domain={$metadata['domain']}&sz=32";
         }
 

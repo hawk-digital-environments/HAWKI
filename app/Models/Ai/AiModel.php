@@ -3,6 +3,7 @@
 namespace App\Models\Ai;
 
 use App\Models\Ai\Tools\AiTool;
+use App\Services\AI\Value\ModelOnlineStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -56,16 +57,20 @@ class AiModel extends Model
 
     /**
      * Returns the model status value, or null if no status record exists.
+     *
+     * @return ?ModelOnlineStatus
      */
-    public function getOnlineStatus(): ?\App\Services\AI\Value\ModelOnlineStatus
+    public function getOnlineStatus(): ?ModelOnlineStatus
     {
         return $this->status?->status;
     }
 
     /**
      * Persist a new status for this model.
+     * @param ModelOnlineStatus $onlineStatus
+     * @return void
      */
-    public function setStatus(\App\Services\AI\Value\ModelOnlineStatus $onlineStatus): void
+    public function setStatus(ModelOnlineStatus $onlineStatus): void
     {
         AiModelStatus::updateOrCreate(
             ['model_id' => $this->model_id],
@@ -79,6 +84,8 @@ class AiModel extends Model
 
     /**
      * The online-status record for this model (1-to-1, keyed by model_id string).
+     *
+     * @return HasOne<AiModelStatus, $this>
      */
     public function status(): HasOne
     {
@@ -87,6 +94,8 @@ class AiModel extends Model
 
     /**
      * The provider that owns this model.
+     *
+     * @return BelongsTo
      */
     public function provider(): BelongsTo
     {
@@ -96,6 +105,8 @@ class AiModel extends Model
     /**
      * The tools that are externally assigned to this model via the pivot table.
      * Named 'assignedTools' to avoid collision with the 'tools' JSON config column.
+     *
+     * @return BelongsToMany
      */
     public function assignedTools(): BelongsToMany
     {

@@ -297,7 +297,7 @@ class CheckStorageConnection extends Command
             // Step 5: Test file retrieval
             $retrievedContent = Storage::disk('sftp')->get($testFilename);
 
-            if ($retrievedContent === false) {
+            if ($retrievedContent === null) {
                 return [
                     'success' => false,
                     'message' => 'File upload succeeded but retrieval failed.'

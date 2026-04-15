@@ -40,6 +40,7 @@ class Removeuser extends Command
             // Ask for the respective value
             $value = $this->ask("Please enter the $choice");
 
+            $user = null;
             switch($choice){
                 case('Username'):
                     $user = User::where('username', $value)->first();
@@ -56,7 +57,7 @@ class Removeuser extends Command
                 $this->error('User not found!');
                 return;
             }
-            if($user->isRemoved === 1){
+            if($user->isRemoved === false){
                 $this->error('User is already removed!');
                 return;
             }

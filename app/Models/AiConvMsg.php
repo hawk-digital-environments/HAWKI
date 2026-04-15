@@ -26,17 +26,26 @@ class AiConvMsg extends Model
         'metadata' => 'array',
     ];
 
-    // Define the relationship with AiConv
+    /**
+     * Define the relationship with AiConv
+     * @return BelongsTo<AiConv, $this>
+     */
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(AiConv::class, 'conv_id');
     }
 
+    /**
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * @return MorphMany<Attachment, $this>
+     */
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');

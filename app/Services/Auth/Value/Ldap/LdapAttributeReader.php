@@ -88,7 +88,7 @@ readonly class LdapAttributeReader
         // Handle display name inversion (e.g., "Lastname, Firstname")
         if ($this->legacyInvertDisplayNameOrder) {
             $parts = explode(", ", $displayName);
-            $displayName = ($parts[1] ?? '') . ' ' . ($parts[0] ?? '');
+            $displayName = ($parts[1] ?? '') . ' ' . ($parts[0]);
         }
         return $displayName;
     }

@@ -12,10 +12,17 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\LanguageController;
 use Illuminate\Support\Facades\Log;
 use Exception;
+use Illuminate\Translation\Translator;
 
 
-class AnnouncementService
+readonly class AnnouncementService
 {
+    public function __construct(
+        private Translator $translator
+    )
+    {
+    }
+
     /**
      * Create a new announcement
      *
@@ -51,7 +58,7 @@ class AnnouncementService
         // Collect force announcements
         $forceAnnouncements = [];
         foreach ($announcements as $announcement) {
-            if ($announcement->is_forced == true && $announcement->anchor == null) {
+            if ($announcement->is_forced === true && $announcement->anchor == null) {
                 $forceAnnouncements[] = $announcement;
             }
         }
@@ -131,12 +138,12 @@ class AnnouncementService
      * Render announcement Blade and return to frontend
      */
 
-    public function renderAnnouncement(Announcement $announcement){
+    public function renderAnnouncement(Announcement $announcement): string
+    {
         $view = $announcement->view;
-        $lang = Session::get('language')['id'];
+        $lang = $this->translator->locale();
         $file = resource_path("announcements/$view/$lang.md");
-        $content = file_get_contents($file);
-        return $content;
+        return file_get_contents($file);
     }
 
     /**

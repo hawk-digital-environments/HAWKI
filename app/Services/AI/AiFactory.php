@@ -172,13 +172,14 @@ class AiFactory
         return __NAMESPACE__ . '\\Providers\\' . $adapter . '\\' . $adapter . ucfirst($className);
     }
 
+
     /**
      * @template T of object
-     * @param class-string<T> $key
-     * @param callable<T> $callback
-     * @return T|object
+     * @param class-string<T>|string $key
+     * @param callable(): T $callback
+     * @return ($key is class-string<T> ? T : mixed)
      */
-    private function rememberInstance(string $key, callable $callback): object
+    private function rememberInstance(string $key, callable $callback): mixed
     {
         if (!isset($this->instances[$key])) {
             $this->instances[$key] = $callback();
@@ -186,4 +187,5 @@ class AiFactory
 
         return $this->instances[$key];
     }
+
 }

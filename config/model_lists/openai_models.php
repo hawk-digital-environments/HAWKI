@@ -1,6 +1,31 @@
 <?php
 return [
     [
+        'active'=> env('MODELS_OPENAI_GPT5_2_ACTIVE', true),
+        'id' => 'gpt-5.2',
+        'label' => 'OpenAI GPT 5.2',
+        "input"=> [
+            "text",
+            "image"
+        ],
+        "output"=> [
+            "text"
+        ],
+        'tools' => [
+            // Native capabilities
+            'stream' => true,
+            'tool_calling' => true,
+            'file_upload' => true,
+            'vision'=> true,
+//            'web_search' => 'native',
+        ],
+        'default_params' => [
+            // OpenAI API defaults: temp=1.0, top_p=1.0
+            'temp' => env('MODELS_OPENAI_GPT5_2_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_OPENAI_GPT5_2_PARAMS_TOP_P', 1.0),
+        ],
+    ],
+    [
         'active'=> env('MODELS_OPENAI_GPT5_ACTIVE', true),
         'id' => 'gpt-5',
         'label' => 'OpenAI GPT 5',

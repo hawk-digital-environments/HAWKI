@@ -95,9 +95,7 @@ class ProfileService
 
             foreach ($rooms as $room) {
                 $member = $room->members()->where('user_id', $user->id)->firstOrFail();
-                if ($member) {
-                    $response = $roomService->removeMember($member, $room);
-                }
+                $roomService->removeMember($member, $room);
             }
 
             $convs = $user->conversations()->get();

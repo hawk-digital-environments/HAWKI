@@ -44,6 +44,7 @@ class ConfigureTool extends Command
 
             $field = (int) $selected[0];
 
+            // @phpstan-ignore-next-line - we validate input via choice options
             match ($field) {
                 0 => $changed = $this->editActive($tool) || $changed,
                 1 => $changed = $this->editCapability($tool) || $changed,

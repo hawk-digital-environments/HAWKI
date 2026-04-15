@@ -51,6 +51,7 @@ class ListAllTools extends Command
         if ($functionTools->isEmpty()) {
             $this->warn('   No function-calling tools in database. Run <comment>php artisan ai:tools:sync --function-only</comment>.');
         } else {
+            /** @var AiTool|null $tool */
             foreach ($functionTools as $tool) {
                 $isInRegistry = $registry->has($tool->name) ? '<fg=green>✓ loaded</>' : '<fg=yellow>⚠ not in registry</>';
                 $classOk      = $tool->class_name && class_exists($tool->class_name)
@@ -83,7 +84,7 @@ class ListAllTools extends Command
         if ($mcpTools->isEmpty()) {
             $this->warn('   No MCP tools in database. Use <comment>php artisan tools:add-mcp-server</comment>.');
         } else {
-            $grouped = $mcpTools->groupBy(fn($t) => $t->server?->server_label ?? 'unknown');
+            $grouped = $mcpTools->groupBy(fn($t) => $t->server->server_label ?? 'unknown');
             foreach ($grouped as $serverLabel => $serverTools) {
                 $server = $serverTools->first()->server;
                 $this->line("  <fg=magenta>▶</> Server: <fg=magenta;options=bold>{$serverLabel}</> ({$server?->url})");

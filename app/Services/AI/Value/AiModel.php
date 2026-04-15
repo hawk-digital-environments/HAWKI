@@ -7,6 +7,7 @@ namespace App\Services\AI\Value;
 
 use App\Services\AI\AiFactory;
 use App\Services\AI\Exception\NoContextBoundException;
+use App\Services\AI\Exception\UnexpectedModelUsageTypeException;
 use App\Services\AI\Interfaces\ClientInterface;
 use App\Services\AI\Interfaces\ModelProviderInterface;
 use App\Services\Storage\Value\FileType;
@@ -53,7 +54,7 @@ class AiModel implements JsonSerializable
      */
     public function idMatches(string $idToTest): bool
     {
-        if(empty($idToTest)) {
+        if (empty($idToTest)) {
             return false;
         }
         $id = $this->getId();
@@ -280,11 +281,12 @@ class AiModel implements JsonSerializable
             return true;
         }
 
-        if ($usageType === ModelUsageType::EXTERNAL_APP && $this->isAllowedInExternalApp()) {
-            return true;
+        /** @phpstan-ignore identical.alwaysTrue (defensive check for future ModelUsageType cases) */
+        if ($usageType === ModelUsageType::EXTERNAL_APP) {
+            return $this->isAllowedInExternalApp();
         }
 
-        return false;
+        throw UnexpectedModelUsageTypeException::forAvailableInUsageType($usageType);
     }
 
     /**
@@ -350,7 +352,7 @@ class AiModel implements JsonSerializable
         $out['capabilities'] = $this->getCapabilities();
         unset($out['tools']); // config stores as 'tools'; expose as 'capabilities'
         $out['status'] = ModelOnlineStatus::UNKNOWN->value;
-        if(isset($this->context)){
+        if (isset($this->context)) {
             $out['status'] = $this->context->getStatus()->value;
         }
         return $out;

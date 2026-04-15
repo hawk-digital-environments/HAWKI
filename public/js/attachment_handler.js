@@ -466,9 +466,10 @@ function updateFileStatus(fileId, status) {
  *
  * @param {string} queueId - The ID of the upload queue.
  * @param {string} category - The category/type of upload.
+ * @param {string} slug
  * @returns {Promise<array|null>} - List of uploaded file metadata or null.
  */
-async function uploadAttachmentQueue(queueId, category, slug = null) {
+async function uploadAttachmentQueue(queueId, category, slug = '') {
     let url = '';
     if(slug){
         url = `/req/${category}/attachment/upload/${slug}`;

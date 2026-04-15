@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\Log;
 class AiConvController extends Controller
 {
     public function __construct(
-        protected readonly AttachmentDb            $attachmentService,
         protected readonly AiConvService           $aiConvService,
         protected readonly MessageContentValidator $contentValidator,
         protected readonly PrivateMessageHandler   $messageHandler
@@ -213,7 +212,7 @@ class AiConvController extends Controller
                 ], 500);
             }
 
-            $result = $this->attachmentService->delete($attachment);
+            $result = $attachment->delete();
             return response()->json([
                 "success" => $result
             ]);

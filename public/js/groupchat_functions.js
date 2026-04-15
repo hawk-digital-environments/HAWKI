@@ -951,7 +951,7 @@ async function RequestRoomContent(slug){
         return await response.json();
     }
     catch (err){
-        console.error('Error fetching data:', error);
+        console.error('Error fetching data:', err);
         throw err;
     }
 }

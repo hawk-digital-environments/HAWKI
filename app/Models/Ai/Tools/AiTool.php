@@ -35,6 +35,8 @@ class AiTool extends Model
 
     /**
      * The MCP server this tool belongs to (nullable for function-call tools).
+     *
+     * @return BelongsTo<McpServer, $this>
      */
     public function server(): BelongsTo
     {
@@ -43,6 +45,8 @@ class AiTool extends Model
 
     /**
      * The AI models that are allowed to use this tool.
+     *
+     * @return BelongsToMany<AiModel, $this>
      */
     public function models(): BelongsToMany
     {

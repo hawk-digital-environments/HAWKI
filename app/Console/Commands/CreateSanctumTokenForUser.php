@@ -73,7 +73,7 @@ class CreateSanctumTokenForUser extends Command
             return;
         }
 
-        if ($user->isRemoved === 1) {
+        if ($user->isRemoved === false) {
             $this->error('User account is suspended!');
             return;
         }
@@ -99,11 +99,13 @@ class CreateSanctumTokenForUser extends Command
             // Create a token
             $tokenName = $this->ask('Enter a name for the token (max 16 characters)');
 
-            // Call the create method
-            $token = $this->apiTokenService->createApiToken($tokenName);
+
 
             // Check the response status
-            if ($token) {
+            try {
+                // Call the create method
+                $token = $this->apiTokenService->createApiToken($tokenName);
+
                 $this->info('Token created successfully:');
                 $this->line('');
                 $this->line('Token ID: ' . $token->accessToken->id);
@@ -113,8 +115,8 @@ class CreateSanctumTokenForUser extends Command
                 $this->line('');
                 $this->info($token->plainTextToken);
                 $this->line('');
-            } else {
-                $this->error('Failed to create token.');
+            } catch (Exception $e) {
+                $this->error('Failed to create token. ' . $e->getMessage());
             }
         }
     }
@@ -126,7 +128,7 @@ class CreateSanctumTokenForUser extends Command
     {
         $tokens = $this->apiTokenService->fetchTokenList();
 
-        if (!$tokens || empty($tokens)) {
+        if (count($tokens) === 0) {
             $this->warn('No tokens found for this user.');
             return;
         }

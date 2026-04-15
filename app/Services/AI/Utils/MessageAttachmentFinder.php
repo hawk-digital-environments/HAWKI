@@ -11,7 +11,7 @@ readonly final class MessageAttachmentFinder
 {
     /**
      * Helper for the AI converter classes to find all attachments referenced in the given messages.
-     * @param array{content:array{attachments: []}[] $messages The raw messages as arrays.
+     * @param array<int, array{content: array{attachments: array|null}}> $messages
      * @return array<string, Attachment>  Returns an array of Attachment models indexed by their UUIDs.
      */
     public function findAttachmentsOfMessages(array $messages): array
@@ -22,11 +22,11 @@ readonly final class MessageAttachmentFinder
             ->flatten()
             ->unique()
             ->all();
-        
+
         if (empty($uuids)) {
             return [];
         }
-        
+
         return Attachment::whereIn('uuid', $uuids)
             ->get()
             ->keyBy('uuid')
