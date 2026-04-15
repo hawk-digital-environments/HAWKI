@@ -18,6 +18,7 @@ auth.json
 
 # PHPUnit
 .phpunit.coverage
+.phpunit.feature.coverage
 .phpunit.result.cache
 .phpunit.cache
 

@@ -122,12 +122,51 @@ export const addon: AddonEntrypoint = async (context) => ({
             });
 
         program
-            .command('stan')
+            .command('test:stan')
+            .alias('stan')
             .description('runs phpstan static analysis inside the app container')
             .allowExcessArguments(true)
             .allowUnknownOption(true)
+            .helpOption(false)
             .action(async (options, command) => {
-                await context.composer.exec(['run', 'stan', ...command.args]);
+                await context.composer.exec(['run', 'test:stan', ...command.args]);
+            });
+
+        program
+            .command('test:php:unit')
+            .alias('phpunit')
+            .description('runs phpunit tests inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .option('--coverage, -c', 'generate a code coverage report')
+            .helpOption(false)
+            .action(async (options, command) => {
+                const script = options.coverage ? 'test:unit:coverage' : 'test:unit';
+                await context.composer.exec(['run', script, ...command.args]);
+            });
+
+        program
+            .command('test:php:feature')
+            .alias('phpfeat')
+            .description('runs php feature tests inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .option('--coverage, -c', 'generate a code coverage report')
+            .helpOption(false)
+            .action(async (options, command) => {
+                const script = options.coverage ? 'test:feature:coverage' : 'test:feature';
+                await context.composer.exec(['run', script, ...command.args]);
+            });
+
+        program
+            .command('test:all')
+            .alias('test')
+            .description('runs all tests (phpstan and phpunit) inside the app container')
+            .allowExcessArguments(true)
+            .allowUnknownOption(true)
+            .helpOption(false)
+            .action(async (options, command) => {
+                await context.composer.exec(['run', 'test:all']);
             });
 
         program

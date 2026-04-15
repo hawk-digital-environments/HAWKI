@@ -77,10 +77,12 @@
         ],
         "php-cs-fixer": "./vendor/bin/php-cs-fixer fix",
         "stan": "./vendor/bin/phpstan analyse",
-        "test:unit": "phpunit --testsuite unit --exclude-group integration",
-        "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --exclude-group integration --coverage-html ./.phpunit.coverage; cp ./tests/coverage.dark.css .phpunit.coverage/_css/custom.css",
-        "test:unit:coverage:text": "XDEBUG_MODE=coverage phpunit --testsuite unit --exclude-group integration --coverage-text",
-        "test:unit:coverage:clover": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-clover .phpunit.coverage/coverage-clover.xml"
+        "test:unit": "phpunit --testsuite unit",
+        "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-html ./.phpunit.coverage; cp ./tests/coverage.dark.css .phpunit.coverage/_css/custom.css",
+        "test:unit:coverage:text": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-text",
+        "test:unit:coverage:clover": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-clover .phpunit.coverage/coverage-clover.xml",
+        "test:feature": "phpunit --testsuite feature",
+        "test:feature:coverage": "XDEBUG_MODE=coverage phpunit --testsuite feature --coverage-html ./.phpunit.feature.coverage; cp ./tests/coverage.dark.css .phpunit.feature.coverage/_css/custom.css"
     },
     "extra": {
         "laravel": {

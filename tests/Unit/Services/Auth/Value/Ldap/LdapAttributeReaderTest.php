@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit;
+namespace Tests\Unit\Services\Auth\Value\Ldap;
 
 use App\Services\Auth\Exception\LdapException;
-use App\Services\Auth\Value\Ldap\LdapAttributeReader;
+use App\Services\Auth\Ldap\LdapAttributeReader;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
+#[CoversClass(LdapAttributeReader::class)]
 class LdapAttributeReaderTest extends TestCase
 {
     /**
