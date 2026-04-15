@@ -53,7 +53,9 @@ cd HAWKI
 ```
 bin/env up
 ```
+
 OR (if you want to follow the output of the containers)
+
 ```
 bin/env up -f
 ```
@@ -61,13 +63,14 @@ bin/env up -f
 **HINT:** bin/env SHOULD be executable by default. If it is not, you can make it executable by running `chmod +x bin/env`.
 
 If you not already have the `.env` file, the script will ask you to create one. You can use the default values by pressing enter (twice).
-The script will also automatically create a test user for you, if you have not already done so. 
+The script will also automatically create a test user for you, if you have not already done so.
 You will be able to log in with the username `tester` and the password `tester`.
 
 4. **Start the workers:**
 
 (If you opted for the `-f` flag in the previous step, you will need to open a new terminal window for this step).
 This process MUST be running while you are using the application!
+
 ```
 bin/env dev
 ```
@@ -76,6 +79,7 @@ bin/env dev
 
 (Do this either in the original terminal window (if not using the -f) or in a new one).
 This command will open the application in your default browser.
+
 ```
 bin/env open
 ```
@@ -150,6 +154,7 @@ REDIS_PASSWORD=password
 ```
 
 You also need to fill some additional values, but you must generate the values yourself.
+
 ```dotenv
 APP_KEY=RANDOM_STRING(32)
 REVERB_APP_SECRET=RANDOM_STRING(32)
@@ -171,6 +176,7 @@ the test user file.
 5. **Start the application:**
 
 The "-d" is optional and will start the containers in the background. If you want to follow the output of the containers, you can omit the "-d".
+
 ```bash
 docker-compose up -d
 ```
@@ -178,6 +184,7 @@ docker-compose up -d
 6. **Start the queue worker:**
 
 This processes keeps running and will block your terminal. You can open a new terminal window to run the next command.
+
 ```bash
 docker-compose exec php php artisan queue:work --queue=default,mails,message_broadcast
 ```
@@ -185,6 +192,7 @@ docker-compose exec php php artisan queue:work --queue=default,mails,message_bro
 7. **Start the reverb websocket server:**
 
 This processes keeps running and will block your terminal. You can open a new terminal window to run the next command.
+
 ```bash
 docker-compose exec php php artisan reverb:start
 ```
@@ -192,3 +200,69 @@ docker-compose exec php php artisan reverb:start
 8. **Access the application:**
 
 Open your browser and navigate to [http://localhost](http://localhost).
+
+## Integrating Tools with your IDE
+
+### PHP CS Fixer
+
+CS fixer is a tool that automatically formats your code according to a set of rules. We use it to ensure that our codebase is consistent and follows the PSR-12 coding standard.
+
+You can manually run the fixer with the following command, which will boot up the php container if needed and execute the fixer command inside it:
+
+```bash
+bin/env php-cs-fixer
+```
+
+However many IDEs also support integrating the fixer directly into the editor, so you can see formatting issues in real-time and automatically fix them on save. When you are running in a docker container, you need to configure the IDE to use the fixer executable inside the container.
+
+Always bring up the container with `bin/env up` before trying to use the fixer in your IDE, otherwise the IDE won't be able to find the executable and will throw an error.
+
+**PHP Storm:**
+
+1. Go to `Settings` > `Languages & Frameworks` > `PHP` > `Quality Tools` > `PHP CS Fixer`.
+2. Next to **"Configuration: By default project interpreter"** click the **`...`** button.
+3. In the new modal, click on **"By default project interpreter"**, then in the right panel click **`...`** next to **"CLI Interpreter"**.
+4. In the modal that opens, click the **`+`** button in the top-left and select **"From Docker, Vagrant, VM..."**.
+5. A new dialog opens — configure it as follows:
+    - **Server type:** `Docker Compose`
+    - **Configuration files:** `./docker-compose.yml; ./docker-compose.override.yml`
+    - **Service:** `app`
+    - **Environment variables:** *(leave empty)*
+    - **PHP interpreter path:** `php`
+
+   Click **OK**.
+6. You are now back in the CLI Interpreters modal. Fill in the right panel:
+    - **Name:** `app` (or any name you like)
+    - Under **General**, click the **refresh** icon next to **"PHP executable"** — this should detect and display the PHP version.
+
+   Click **OK**.
+7. Back in the second modal, the **CLI Interpreter** should now automatically be set to `app` (or the name you chose) and PhpStorm should apply the path mappings for you.
+    - **PHP CS Fixer path:** `/var/www/html/vendor/bin/php-cs-fixer`
+
+   Click **OK**.
+8. Back in the main **Settings** modal, under **Options**:
+    - **Ruleset:** `Custom`
+    - **Path:** `$PATH_TO_YOUR_PROJECT/HAWKI`
+9. In the **Settings tree** on the left, navigate to **"Quality Tools"**.
+   In the right panel, set **"External Formatters"** to **"PHP CS Fixer"**.
+
+   Click **OK**.
+
+## Running tests
+
+HAWKI uses PHPUnit for testing of the PHP code, which also runs inside the php container. You can run the tests with the following command, which will boot up the php container if needed and execute the tests inside it:
+
+```bash
+bin/env phpunit
+```
+
+For static code analysis, we use PHPStan, which also runs inside the php container. You can run it with the following command:
+
+```bash
+bin/env stan
+```
+
+Or if you want to run all tests and static analysis in one go, you can use the `test` command:
+
+```bash
+bin/env test:all
