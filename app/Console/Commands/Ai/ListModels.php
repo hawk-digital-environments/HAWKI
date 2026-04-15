@@ -40,7 +40,7 @@ class ListModels extends Command
         }
 
         // Group by provider
-        $grouped = $models->groupBy(fn($m) => $m->provider?->provider_id ?? 'unknown');
+        $grouped = $models->groupBy(fn($m) => $m->provider->provider_id ?? 'unknown');
 
         foreach ($grouped as $providerId => $providerModels) {
             /** @var AiProvider|null $provider */

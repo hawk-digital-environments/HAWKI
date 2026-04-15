@@ -281,11 +281,11 @@ class AiModel implements JsonSerializable
             return true;
         }
 
-        /** @phpstan-ignore identical.alwaysTrue (defensive check for future ModelUsageType cases) */
         if ($usageType === ModelUsageType::EXTERNAL_APP) {
             return $this->isAllowedInExternalApp();
         }
 
+        // @phpstan-ignore-next-line This should never happen since ModelUsageType is an enum, but we want to be sure to catch any future additions to the enum that we might forget to handle here.
         throw UnexpectedModelUsageTypeException::forAvailableInUsageType($usageType);
     }
 

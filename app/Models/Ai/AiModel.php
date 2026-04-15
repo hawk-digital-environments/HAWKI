@@ -25,10 +25,10 @@ class AiModel extends Model
     ];
 
     protected $casts = [
-        'active'        => 'boolean',
-        'input'         => 'array',
-        'output'        => 'array',
-        'tools'         => 'array',
+        'active' => 'boolean',
+        'input' => 'array',
+        'output' => 'array',
+        'tools' => 'array',
         'default_params' => 'array',
     ];
 
@@ -95,7 +95,7 @@ class AiModel extends Model
     /**
      * The provider that owns this model.
      *
-     * @return BelongsTo
+     * @return BelongsTo<AiProvider, $this>
      */
     public function provider(): BelongsTo
     {
@@ -106,7 +106,7 @@ class AiModel extends Model
      * The tools that are externally assigned to this model via the pivot table.
      * Named 'assignedTools' to avoid collision with the 'tools' JSON config column.
      *
-     * @return BelongsToMany
+     * @return BelongsToMany<AiTool, $this>
      */
     public function assignedTools(): BelongsToMany
     {
@@ -151,6 +151,7 @@ class AiModel extends Model
             return $map;
         });
     }
+
     /**
      * Invalidate the capabilities cache — call this after assigning or detaching tools.
      */

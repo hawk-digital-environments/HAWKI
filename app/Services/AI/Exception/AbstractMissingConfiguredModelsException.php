@@ -9,8 +9,14 @@ use App\Services\AI\Value\AiModelMap;
 
 abstract class AbstractMissingConfiguredModelsException extends \RuntimeException implements AiServiceExceptionInterface
 {
-    private readonly array $missingModelIds;
-    private readonly array $missingTypes;
+    final private function __construct(
+        string                 $message,
+        private readonly array $missingModelIds,
+        private readonly array $missingTypes
+    )
+    {
+        parent::__construct($message);
+    }
 
     abstract protected static function getListType(): string;
 
@@ -23,7 +29,7 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
     {
         return $this->missingTypes;
     }
-    
+
     /**
      * @param array $knownModelIds
      * @param AiModelMap $registeredModels
@@ -46,9 +52,6 @@ abstract class AbstractMissingConfiguredModelsException extends \RuntimeExceptio
             $message .= ' Missing types: ' . implode(', ', $missingModelTypes) . '.';
         }
 
-        $i = new static($message);
-        $i->missingModelIds = $missingModelIds;
-        $i->missingTypes = $missingModelTypes;
-        return $i;
+        return new static($message, $missingModelIds, $missingModelTypes);
     }
 }
