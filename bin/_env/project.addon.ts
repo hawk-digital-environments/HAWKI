@@ -101,7 +101,7 @@ export const addon: AddonEntrypoint = async (context) => ({
         // =============================================================================
 
         const tests = program
-            .command('tests')
+            .command('test')
             .description('a list of commands to help you with testing tasks');
 
         const phpTests = tests

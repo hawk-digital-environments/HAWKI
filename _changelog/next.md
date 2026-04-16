@@ -53,6 +53,7 @@
 - `AiErrorResponse` now captures a stack trace at construction time and exposes it in `toArray()` when `app.debug` is enabled, making AI provider errors significantly easier to trace during development.
 - Event listeners in `app/Services/*/Listeners` are now auto-discovered via a glob registered in `bootstrap/app.php`.
 - `ext-fileinfo` is now declared as a required PHP extension in `composer.json`.
+- Introduced `AbstractCastableObject` (`App\Utils\Casts`) — a foundational reflection-based utility for hydrating and serializing typed PHP objects from/to string arrays. Supports built-in type casting (int, float, bool, string, array), enums, dates, encrypted values, and custom casters via `#[CastedValue]` annotations. Serves as the base for the upcoming database-backed configuration layer (`AbstractConfig`).
 - Added phpstan for static analysis which should help catch potential bugs and improve code quality. Run `composer run stan` to execute the static analysis checks. Currently NOT in the pipeline, because there are still some issues to fix, but we will get there eventually.
 - The model config files of `config/model_providers.php` and `config/model_lists` are now automatically copied to `_docker_production` when a new release branch is created.
 - The `jquery` library has been removed from the frontend dependencies, as it is not used in the codebase. This reduces the overall bundle size and improves performance.

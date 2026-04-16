@@ -1,0 +1,222 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Utils\Casts;
+
+use App\Utils\Casts\AbstractCastableObject;
+use App\Utils\Casts\CastedValue;
+use App\Utils\Casts\Exceptions\InvalidCastTypeException;
+use App\Utils\Casts\Values\CastType;
+use Illuminate\Support\Facades\Crypt;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsContextAwareCasterConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsCustomCasterConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsCustomCasterWithArgsConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsEncryptedStringConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsInvalidClassConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsInvalidUnionConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsMixedConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsNullableConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsSimpleTypesConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsStaticPropertyConfig;
+
+#[CoversClass(AbstractCastableObject::class)]
+#[CoversClass(CastType::class)]
+#[CoversClass(CastedValue::class)]
+#[CoversClass(InvalidCastTypeException::class)]
+class AbstractCastableObjectTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        CastsSimpleTypesConfig::reset();
+        CastsContextAwareCasterConfig::reset();
+        CastsCustomCasterConfig::reset();
+        CastsCustomCasterWithArgsConfig::reset();
+        CastsEncryptedStringConfig::reset();
+        CastsInvalidClassConfig::reset();
+        CastsInvalidUnionConfig::reset();
+        CastsMixedConfig::reset();
+        CastsNullableConfig::reset();
+        CastsSimpleTypesConfig::reset();
+        CastsStaticPropertyConfig::reset();
+    }
+
+    // ==========================================================================
+    // fromStringArray / fromArray construction
+    // ==========================================================================
+
+    public function testItCreatesFromStringArray(): void
+    {
+        $sut = CastsSimpleTypesConfig::fromStringArray([
+            'count' => '42',
+            'price' => '9.99',
+            'active' => '1',
+            'name' => 'hello',
+            'tags' => '["a","b"]',
+        ]);
+
+        static::assertInstanceOf(CastsSimpleTypesConfig::class, $sut);
+    }
+
+    public function testItCreatesFromArray(): void
+    {
+        $sut = CastsSimpleTypesConfig::fromArray([
+            'count' => 42,
+            'active' => true,
+        ]);
+
+        static::assertInstanceOf(CastsSimpleTypesConfig::class, $sut);
+        static::assertSame(42, $sut->count);
+        static::assertTrue($sut->active);
+    }
+
+    public function testItRetainsDefaultsForMissingKeys(): void
+    {
+        $sut = CastsSimpleTypesConfig::fromStringArray([]);
+
+        static::assertSame(0, $sut->count);
+        static::assertSame(0.0, $sut->price);
+        static::assertFalse($sut->active);
+        static::assertSame('', $sut->name);
+        static::assertSame([], $sut->tags);
+    }
+
+    public function testItIgnoresNullValues(): void
+    {
+        $sut = CastsSimpleTypesConfig::fromStringArray(['count' => null]);
+
+        static::assertSame(0, $sut->count);
+    }
+
+    // ==========================================================================
+    // Raw string passthrough (no type hint)
+    // ==========================================================================
+
+    public function testItPassesThroughRawStringForUntypedProperty(): void
+    {
+        $sut = CastsMixedConfig::fromStringArray(['raw' => 'raw-value']);
+        static::assertSame('raw-value', $sut->raw);
+    }
+
+    public function testItSerializesUntypedPropertyAsStringInToArrayList(): void
+    {
+        $sut = CastsMixedConfig::fromArray(['raw' => 'hello']);
+        static::assertSame('hello', $sut->toArrayList()['raw']);
+    }
+
+    // ==========================================================================
+    // toArrayList — serialization
+    // ==========================================================================
+
+    public function testItSerializesNullPropertyAsNull(): void
+    {
+        $sut = CastsNullableConfig::fromStringArray(['value' => null]);
+        static::assertNull($sut->toArrayList()['value']);
+    }
+
+    // ==========================================================================
+    // Custom casters
+    // ==========================================================================
+
+    public function testItUsesCustomCasterOnHydrate(): void
+    {
+        $sut = CastsCustomCasterConfig::fromStringArray(['value' => 'raw']);
+        static::assertSame('custom:raw', $sut->value);
+    }
+
+    public function testItUsesCustomCasterOnSerialize(): void
+    {
+        $sut = CastsCustomCasterConfig::fromArray(['value' => 'custom:raw']);
+        static::assertSame('raw', $sut->toArrayList()['value']);
+    }
+
+    public function testItPassesParentObjectToCustomCaster(): void
+    {
+        $sut = CastsContextAwareCasterConfig::fromStringArray(['locale' => 'de', 'label' => 'Hallo']);
+        static::assertSame('de:Hallo', $sut->label);
+    }
+
+    public function testItUsesCustomCasterWithConstructorArgsOnHydrate(): void
+    {
+        $sut = CastsCustomCasterWithArgsConfig::fromStringArray(['value' => 'raw']);
+        static::assertSame('prefixed:raw', $sut->value);
+    }
+
+    public function testItUsesCustomCasterWithConstructorArgsOnSerialize(): void
+    {
+        $sut = CastsCustomCasterWithArgsConfig::fromArray(['value' => 'prefixed:raw']);
+        static::assertSame('raw', $sut->toArrayList()['value']);
+    }
+
+    // ==========================================================================
+    // getCasts
+    // ==========================================================================
+
+    public function testItCachesCastMap(): void
+    {
+        $sut1 = CastsSimpleTypesConfig::fromStringArray([]);
+        $sut2 = CastsSimpleTypesConfig::fromStringArray([]);
+
+        static::assertSame($sut1->getCasts(), $sut2->getCasts());
+    }
+
+    public function testItIgnoresStaticPropertiesInToArrayList(): void
+    {
+        $sut = CastsStaticPropertyConfig::fromStringArray(['name' => 'test']);
+        $result = $sut->toArrayList();
+
+        static::assertArrayHasKey('name', $result);
+        static::assertArrayNotHasKey('ignored', $result);
+    }
+
+    // ==========================================================================
+    // Exception cases
+    // ==========================================================================
+
+    public function testItThrowsForUnionType(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf(
+            '%s::$%s has a union/intersection type and requires an explicit #[CastedValue] annotation.',
+            CastsInvalidUnionConfig::class,
+            'value',
+        ));
+
+        CastsInvalidUnionConfig::fromStringArray(['value' => '1']);
+    }
+
+    public function testItThrowsForNonBuiltinClassType(): void
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage(sprintf(
+            '%s::$%s has type "%s" which cannot be cast automatically. Add a #[CastedValue] annotation.',
+            CastsInvalidClassConfig::class,
+            'value',
+            \stdClass::class,
+        ));
+
+        CastsInvalidClassConfig::fromStringArray(['value' => '{}']);
+    }
+
+    // ==========================================================================
+    // Encrypted — end-to-end pipeline
+    // ==========================================================================
+
+    public function testItDecryptsOnHydrateViaFullPipeline(): void
+    {
+        Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('my-secret');
+
+        $sut = CastsEncryptedStringConfig::fromStringArray(['secret' => 'ciphertext']);
+        static::assertSame('my-secret', $sut->secret);
+    }
+
+    public function testItEncryptsOnSerializeViaFullPipeline(): void
+    {
+        Crypt::shouldReceive('encryptString')->with('my-secret')->once()->andReturn('ciphertext');
+
+        $sut = CastsEncryptedStringConfig::fromArray(['secret' => 'my-secret']);
+        static::assertSame('ciphertext', $sut->toArrayList()['secret']);
+    }
+}
