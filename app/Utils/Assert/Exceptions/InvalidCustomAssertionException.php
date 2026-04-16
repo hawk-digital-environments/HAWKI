@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace App\Utils\Assert\Exception;
+namespace App\Utils\Assert\Exceptions;
 
 
 class InvalidCustomAssertionException extends AbstractAssertionException

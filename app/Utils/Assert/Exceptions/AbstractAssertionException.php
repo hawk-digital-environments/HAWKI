@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace App\Utils\Assert\Exception;
+namespace App\Utils\Assert\Exceptions;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -64,6 +64,8 @@ abstract class AbstractAssertionException extends \InvalidArgumentException impl
         if (is_float($value)) {
             return 'Float(' . $value . ')';
         }
+        // @codeCoverageIgnoreStart - This is a fallback for any types we haven't explicitly handled, but in practice we should have covered all scalar types and common structures.
         return get_debug_type($value);
+        // @codeCoverageIgnoreEnd
     }
 }

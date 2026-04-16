@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Utils\Assert;
 
 
-use App\Utils\Assert\Exception\InvalidArrayOfTypesException;
-use App\Utils\Assert\Exception\InvalidCustomAssertionException;
-use App\Utils\Assert\Exception\InvalidRequiredNonNegativeIntegerException;
-use App\Utils\Assert\Exception\InvalidRequiredPositiveIntegerException;
-use App\Utils\Assert\Exception\InvalidRequiredStringException;
-use App\Utils\Assert\Exception\InvalidUriException;
-use App\Utils\Assert\Exception\ValueIsNotInListException;
+use App\Utils\Assert\Exceptions\InvalidArrayOfTypesException;
+use App\Utils\Assert\Exceptions\InvalidCustomAssertionException;
+use App\Utils\Assert\Exceptions\InvalidRequiredNonNegativeIntegerException;
+use App\Utils\Assert\Exceptions\InvalidRequiredPositiveIntegerException;
+use App\Utils\Assert\Exceptions\InvalidRequiredStringException;
+use App\Utils\Assert\Exceptions\InvalidUriException;
+use App\Utils\Assert\Exceptions\ValueIsNotInListException;
 use GuzzleHttp\Psr7\Uri;
 
 /**
@@ -32,7 +32,6 @@ class Assert
      * Set and restored by {@see Assert::withKeyPrefix()}.
      */
     private static ?string $currentKeyPrefix = null;
-
 
     /**
      * Asserts that the given value is a positive integer (> 0).
@@ -134,7 +133,9 @@ class Assert
         try {
             new Uri($value);
         } catch (\InvalidArgumentException $e) {
+            // @codeCoverageIgnoreStart - This should never happen if filter_var passed, but we catch it just in case the Uri implementation changes in the future to throw for some edge case that filter_var doesn't catch.
             throw InvalidUriException::forExceptionOfUriParsing($e, self::prefixKey($key));
+            // @codeCoverageIgnoreEnd
         }
     }
 
@@ -326,6 +327,9 @@ class Assert
      */
     private static function prefixKey(?string $key): string
     {
-        return $key !== null ? self::$currentKeyPrefix . '.' . $key : self::$currentKeyPrefix;
+        if (self::$currentKeyPrefix !== null) {
+            return $key !== null ? self::$currentKeyPrefix . '.' . $key : self::$currentKeyPrefix;
+        }
+        return $key ?? '';
     }
 }
