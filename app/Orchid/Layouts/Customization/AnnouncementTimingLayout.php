@@ -20,7 +20,7 @@ class AnnouncementTimingLayout extends Rows
     {
         // Get available anchors from config
         $anchors = collect(config('announcements.anchors', []))
-            ->mapWithKeys(fn($anchor, $key) => [$key => $anchor['name']]);
+            ->mapWithKeys(fn($anchor, $key) => [$key => "{$anchor['name']} ({$key})"]);
         
         // Add empty option for no anchor
         $anchors->prepend('No anchor (show immediately)', '');
@@ -30,7 +30,7 @@ class AnnouncementTimingLayout extends Rows
                 ->title('Anchor')
                 ->options($anchors->toArray())
                 ->empty('No anchor (show immediately)', '')
-                ->help('Optional: Trigger announcement on specific frontend event'),
+                ->help('Optional: Trigger announcement on specific frontend event. Use the exact key value in parentheses (e.g., "firstupload")'),
 
             DateTimer::make('announcement.starts_at')
                 ->title('Start Date')

@@ -16,7 +16,14 @@ function switchSlide(targetIndex) {
         target.style.display = "flex";
         const backBtn = document.querySelector('.slide-back-btn');
 
-        if(targetIndex > 1){
+        // Hide back button on slide 6 (backup recovery) to prevent going back
+        if(targetIndex == 6){
+            backBtn.style.opacity = "0";
+            setTimeout( () => {
+                backBtn.style.display = "none";
+            }, 500)
+        }
+        else if(targetIndex > 1){
             backBtn.style.display = "flex";
             setTimeout(() => {
                 backBtn.style.opacity = "1";
@@ -32,6 +39,13 @@ function switchSlide(targetIndex) {
         // Add a small delay before changing the opacity to ensure the display change has been processed
         setTimeout(() => {
             target.style.opacity = "1";
+            
+            // Auto-start WebAuthn authentication on slide 6 if user has passkey
+            if (targetIndex == 6 && typeof hasWebAuthnPasskey !== 'undefined' && hasWebAuthnPasskey) {
+                setTimeout(() => {
+                    autoStartWebAuthnLogin();
+                }, 500);
+            }
         }, 300);
 
         previousSlide = target;
@@ -40,7 +54,15 @@ function switchSlide(targetIndex) {
 }
 
 function switchBackSlide(){
-    const targetIndex = currentSlideIndex - 1;
+    let targetIndex;
+    
+    // Handle special case for sub-slides (e.g., 6.1 should go back to 6)
+    if (currentSlideIndex === '6.1') {
+        targetIndex = 6;
+    } else {
+        targetIndex = currentSlideIndex - 1;
+    }
+    
     switchSlide(targetIndex);
 }
 
@@ -64,12 +86,18 @@ async function checkPasskey(){
 
     //Show Repeat Passkey
     if(repeatWrapper.style.display === 'none'){
-        repeatWrapper.style.display = 'flex';
-        repeatWrapper.querySelector('input').focus();
+        repeatWrapper.style.display = 'block';
+        const repeatInput = document.getElementById('passkey-input-repeat');
+        if (repeatInput) repeatInput.focus();
         return;
     }
-    const repeatField = repeatWrapper.querySelector('.passkey-input')
-    const repeatedKey = String(repeatField.dataset.realValue);
+    const repeatField = document.getElementById('passkey-input-repeat');
+    if (!repeatField) {
+        console.error('Repeat passkey input field not found');
+        msg.innerText = "Error: Repeat passkey field not found";
+        return;
+    }
+    const repeatedKey = String(repeatField.dataset.realValue || '');
 
 
     //if repeat passkey is empty
@@ -269,7 +297,7 @@ async function completeRegistration() {
         keychain: keychainData.ciphertext,
         KCIV: keychainData.iv,
         KCTAG: keychainData.tag,
-        backupHash: backupHash, // Include backup hash for email notification
+        backupHash: backupHash.trim(), // Include backup hash for email notification (trimmed)
     };
 
     try {
@@ -314,7 +342,8 @@ async function verifyEnteredPassKey(provider){
 
     const slide = provider.closest(".slide");
     const inputField = slide.querySelector("#passkey-input");
-    const enteredKey = String(inputField.value.trim());
+    // Get the real value from dataset, not the masked value
+    const enteredKey = String(inputField.dataset.realValue || inputField.value).trim();
     const errorMessage = slide.querySelector("#alert-message");
 
     if (!enteredKey) {
@@ -377,10 +406,12 @@ function uploadTextFile() {
             // Once the file is read, invoke the callback with the file content
             reader.onload = function(e) {
                 const content = e.target.result;
-                if (isValidBackupKeyFormat(content.trim())) {
-                    document.querySelector('#backup-hash-input').value = content;
+                const trimmedContent = content.trim();
+                const validation = isValidBackupKeyFormat(trimmedContent);
+                if (validation.valid) {
+                    document.querySelector('#backup-hash-input').value = trimmedContent;
                 } else {
-                    msg.innerText = 'The file content does not match the required format.';
+                    msg.innerText = validation.message || 'The file content does not match the required format.';
                 }
             };
             // Read the file as text
@@ -392,21 +423,53 @@ function uploadTextFile() {
     input.click();
 }
 function isValidBackupKeyFormat(content) {
+    // Check for whitespace
+    if (/\s/.test(content)) {
+        return {
+            valid: false,
+            error: 'whitespace',
+            message: window.translations?.['HS-BackupContainsWhitespace'] || 'Backup code contains spaces. Please remove all spaces.'
+        };
+    }
+    
     // Define a regular expression to match the format xxxx-xxxx-xxxx-xxxx
     const pattern = /^[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}$/;
-    return pattern.test(content);
+    
+    if (!pattern.test(content)) {
+        return {
+            valid: false,
+            error: 'format',
+            message: window.translations?.['HS-BackupKeyInvalid'] || 'Backup key is not valid!'
+        };
+    }
+    
+    return { valid: true };
 }
 
 async function extractPasskey(){
     const msg = document.querySelector('#backup-alert-message');
-    const backupHash = document.querySelector('#backup-hash-input').value;
+    // Get the real value from dataset, not the masked value
+    let backupHash = getPasskeyRealValue('backup-hash-input');
     
     if(!backupHash){
         msg.innerText = 'Enter backupHash or upload your backup file.';
         return;
     }
-    if(!isValidBackupKeyFormat(backupHash)){
-        msg.innerText = 'Backup key is not valid!';
+    
+    // Trim whitespace and validate
+    const trimmedHash = backupHash.trim();
+    if (trimmedHash !== backupHash) {
+        // Whitespace was removed - update input and warn user
+        document.getElementById('backup-hash-input').value = trimmedHash;
+        msg.innerText = window.translations?.['HS-WhitespaceRemoved'] || 'Spaces were automatically removed from your backup code. Please try again.';
+        msg.style.display = 'block';
+        return; // Stop here and let user retry with trimmed code
+    }
+    
+    const validation = isValidBackupKeyFormat(backupHash);
+    if(!validation.valid){
+        msg.innerText = validation.message;
+        msg.style.display = 'block';
         return;
     }
 
@@ -428,9 +491,42 @@ async function extractPasskey(){
                                                 passkeyBackup.tag,
                                                 false);
 
+        // Set the passkey BEFORE verification so syncKeychain can use it
+        await setPassKey(passkey);
+        
+        // Sync keychain from server to ensure we have the latest keychain matching this passkey
+        console.log('Syncing keychain from server after backup recovery...');
+        try {
+            await syncKeychain(serverKeychainCryptoData);
+            console.log('Keychain synced successfully');
+        } catch (syncError) {
+            console.error('Failed to sync keychain:', syncError);
+            msg.innerText = 'Failed to sync keychain. Please try again.';
+            msg.style.display = 'block';
+            return;
+        }
+
         if(verifyPasskey(passkey)){
-            setPassKey(passkey);
-            switchSlide(4);
+            
+            // Trigger password manager save prompt by submitting the form
+            const backupForm = document.querySelector('#backup-recovery-form');
+            if (backupForm && typeof PasswordCredential !== 'undefined') {
+                try {
+                    const formData = new FormData(backupForm);
+                    const credential = new PasswordCredential({
+                        id: formData.get('username'),
+                        password: backupHash,
+                        name: 'Backup Recovery Code'
+                    });
+                    navigator.credentials.store(credential).catch(err => {
+                        console.log('Password manager storage not available:', err);
+                    });
+                } catch (e) {
+                    console.log('PasswordCredential API not supported:', e);
+                }
+            }
+            
+            switchSlide(3);
             document.querySelector('#passkey-field').innerText = passkey;
             setTimeout(()=>{
                 document.querySelector('.slide-back-btn').remove();
@@ -545,10 +641,12 @@ function uploadTextFileSystem() {
             // Once the file is read, invoke the callback with the file content
             reader.onload = function(e) {
                 const content = e.target.result;
-                if (isValidBackupKeyFormat(content.trim())) {
-                    document.querySelector('#backup-hash-input-system').value = content;
+                const trimmedContent = content.trim();
+                const validation = isValidBackupKeyFormat(trimmedContent);
+                if (validation.valid) {
+                    document.querySelector('#backup-hash-input-system').value = trimmedContent;
                 } else {
-                    msg.innerText = 'The file content does not match the required format.';
+                    msg.innerText = validation.message || 'The file content does not match the required format.';
                 }
             };
             // Read the file as text
@@ -562,20 +660,44 @@ function uploadTextFileSystem() {
 
 async function extractPasskeySystem(){
     const msg = document.querySelector('#backup-alert-message-system');
-    const backupHash = document.querySelector('#backup-hash-input-system').value;
+    // Get the real value from dataset, not the masked value
+    let backupHash = getPasskeyRealValue('backup-hash-input-system');
     if(!backupHash){
-        msg.innerText = 'Enter backupHash or upload your backup file.';
+        if (msg) {
+            msg.innerText = window.translations?.['HS-EnterBackupHashError'] || 'Please enter your recovery code.';
+            msg.style.display = 'block';
+        }
         return;
     }
-    if(!isValidBackupKeyFormat(backupHash)){
-        msg.innerText = 'Backup key is not valid!';
+    
+    // Trim whitespace and validate
+    const trimmedHash = backupHash.trim();
+    if (trimmedHash !== backupHash) {
+        // Whitespace was removed - update input and warn user
+        document.getElementById('backup-hash-input-system').value = trimmedHash;
+        if (msg) {
+            msg.innerText = window.translations?.['HS-WhitespaceRemoved'] || 'Spaces were automatically removed from your backup code. Please try again.';
+            msg.style.display = 'block';
+        }
+        return; // Stop here and let user retry with trimmed code
+    }
+    
+    const validation = isValidBackupKeyFormat(backupHash);
+    if(!validation.valid){
+        if (msg) {
+            msg.innerText = validation.message;
+            msg.style.display = 'block';
+        }
         return;
     }
 
     // Get passkey backup from server.
     const passkeyBackup = await requestPasskeyBackup();
     if(!passkeyBackup){
-        msg.innerText = 'No backup found for this user.';
+        if (msg) {
+            msg.innerText = window.translations?.['HS-NoBackupFound'] || 'No backup found for this user.';
+            msg.style.display = 'block';
+        }
         return;
     }
 
@@ -597,18 +719,55 @@ async function extractPasskeySystem(){
         
         console.log('Backup decrypted successfully, verifying with keychain...');
 
+        // Set the passkey BEFORE verification so syncKeychain can use it
+        await setPassKey(decryptedPasskey);
+        
+        // Sync keychain from server to ensure we have the latest keychain matching this passkey
+        console.log('Syncing keychain from server after system backup recovery...');
+        try {
+            await syncKeychain(serverKeychainCryptoData);
+            console.log('Keychain synced successfully');
+        } catch (syncError) {
+            console.error('Failed to sync keychain:', syncError);
+            if (msg) {
+                msg.innerText = 'Failed to sync keychain. Please try again.';
+                msg.style.display = 'block';
+            }
+            return;
+        }
+
         // Verify the decrypted passkey with keychain (method-agnostic)
         // The backup contains the ORIGINAL passkey used during registration
         const verified = await verifyPasskey(decryptedPasskey);
         
         if (verified) {
             console.log('Passkey verified with keychain - restoring access');
-            await setPassKey(decryptedPasskey);
-            await syncKeychain(serverKeychainCryptoData);
+            
+            // Trigger password manager save prompt
+            const backupSystemForm = document.querySelector('#backup-recovery-system-form');
+            if (backupSystemForm && typeof PasswordCredential !== 'undefined') {
+                try {
+                    const formData = new FormData(backupSystemForm);
+                    const credential = new PasswordCredential({
+                        id: formData.get('username'),
+                        password: backupHash,
+                        name: 'Backup Recovery Code (System)'
+                    });
+                    navigator.credentials.store(credential).catch(err => {
+                        console.log('Password manager storage not available:', err);
+                    });
+                } catch (e) {
+                    console.log('PasswordCredential API not supported:', e);
+                }
+            }
+            
             window.location.href = '/chat';
         } else {
             console.error('Backup code is correct, but passkey does not match keychain');
-            msg.innerText = "Backup code is correct, but passkey verification failed. Please reset your profile.";
+            if (msg) {
+                msg.innerText = window.translations?.['HS-BackupVerificationFailed'] || "Backup code is correct, but passkey verification failed. Please reset your profile.";
+                msg.style.display = 'block';
+            }
             
             // Optional: Auto-switch to slide 7 (profile reset) after 3 seconds
             setTimeout(() => {
@@ -623,9 +782,15 @@ async function extractPasskeySystem(){
         
         // Check if it's a decryption error (wrong backup code)
         if (error.message && error.message.includes('Decryption failed')) {
-            msg.innerText = 'Incorrect backup code. Please check your backup code and try again.';
+            if (msg) {
+                msg.innerText = window.translations?.['HS-IncorrectBackupCode'] || 'Incorrect backup code. Please check your backup code and try again.';
+                msg.style.display = 'block';
+            }
         } else {
-            msg.innerText = 'Error processing backup code: ' + error.message;
+            if (msg) {
+                msg.innerText = (window.translations?.['HS-BackupProcessingError'] || 'Error processing backup code: ') + error.message;
+                msg.style.display = 'block';
+            }
         }
     }
 }

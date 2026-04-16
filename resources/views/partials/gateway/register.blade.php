@@ -79,40 +79,16 @@
 
             <h1>{{ $translation["Reg_SL5_H"] }}</h1>
             <form id="passkey-form"  autocomplete="off">
-                <div class="password-input-wrapper">
-                    <input
-                        class="passkey-input"
-                        placeholder="{{ $translation['Reg_SL5_PH1'] }}"
-                        id="passkey-input"
-                        type="text"
-                        autocomplete="new-password"
-                        autocorrect="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        name="not_a_password_input"
-                    />
-                    <div class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
-                </div>
+                <x-passkey-input 
+                    id="passkey-input"
+                    placeholder="{{ $translation['Reg_SL5_PH1'] }}"
+                />
 
-                <div id="passkey-repeat" class="password-input-wrapper top-gap-2" style="display:none" >
-                    <input
-                        class="passkey-input"
-                        placeholder="{{  $translation["Reg_SL5_PH2"] }}"
-                        type="text"
-                        autocomplete="new-password"
-                        autocorrect="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        name="not_a_password_input"
-
+                <div id="passkey-repeat" style="display:none;" class="top-gap-2">
+                    <x-passkey-input 
+                        id="passkey-input-repeat"
+                        placeholder="{{  $translation['Reg_SL5_PH2'] }}"
                     />
-                    <div class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </div>
                 </div>
             </form>
             <p class="slide-subtitle top-gap-2">
@@ -196,13 +172,14 @@
 
 <script>
     let userInfo = @json($userInfo);
-    let passkeyMethod = @json($passkeyMethod ?? 'user');
+    let passkeyMethod = @json(config('auth.passkey_method', 'user'));
     let isFirstLoginLocalUser = @json($isFirstLoginLocalUser ?? false);
     let needsPasswordReset = @json($needsPasswordReset ?? false);
     let groupchatActive = @json(config('hawki.groupchat_active', true));
     let needsApproval = @json($needsApproval ?? false);
     const translation = @json($translation);
-
+    
+    
     initializeRegistration();
 
     // Helper function to safely switch to a slide after ensuring DOM is ready
@@ -240,7 +217,7 @@
     // Function to handle navigation from Guidelines slide (slide 3) based on passkey method
     // Make this a global function for potential reuse
     window.navigateFromGuidelines = function() {
-
+        
         if (passkeyMethod === 'system') {
             // System generated passkeys - go to slide 7 (auto generate)
             switchSlide(7);
@@ -256,7 +233,7 @@
      */
     window.modalClick = function(button) {
         //console.log('Guidelines modal confirmed, navigating based on passkey method:', passkeyMethod);
-
+        
         // Handle modal closing (from home_functions.js pattern)
         const modal = button.closest('.modal');
         if (modal) {
@@ -359,7 +336,7 @@
         // Override with our version that adds the password
         window.completeRegistration = async function() {
             //console.log('Local user completeRegistration called with password:', window.localUserNewPassword);
-
+            
             setOverlay(true, true);
 
             // Generate a key pair (public and private keys)
@@ -428,6 +405,7 @@
         };
     }
 
+    // Initialize passkey inputs with character limitation for registration
     document.addEventListener('DOMContentLoaded', function () {
         initializePasskeyInputs(true);
     });
@@ -440,6 +418,6 @@
 </script>
 
 {{-- Auto Passkey Generation Module --}}
-<script src="{{ asset('auto_passkey_generation.js') }}"></script>
+<script src="{{ asset('js/auto_passkey_generation.js') }}"></script>
 
 @endsection

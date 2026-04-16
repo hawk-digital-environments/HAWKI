@@ -78,6 +78,7 @@ class ApiProvidersSeeder extends Seeder
             // Create new provider with all default values
             // Since we only run when table is empty, all providers are new
             $provider = ApiProvider::create([
+                'unique_name' => \Illuminate\Support\Str::slug($providerName),
                 'provider_name' => $providerName,
                 'api_format_id' => $apiFormat->id,
                 'base_url' => $config['base_url'],

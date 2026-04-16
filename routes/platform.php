@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Admin\RoleAssignmentController;
+use App\Orchid\Screens\Customization\AnnouncementEditScreen;
+use App\Orchid\Screens\Customization\AnnouncementScreen;
 use App\Orchid\Screens\Customization\CssEditScreen;
 use App\Orchid\Screens\Customization\CssRulesScreen;
-use App\Orchid\Screens\Customization\AnnouncementScreen;
-use App\Orchid\Screens\Customization\AnnouncementEditScreen;
 use App\Orchid\Screens\Customization\LocalizedTextScreen;
 use App\Orchid\Screens\Customization\MailTemplateEditScreen;
 use App\Orchid\Screens\Customization\MailTemplatesScreen;
@@ -25,30 +25,34 @@ use App\Orchid\Screens\Examples\ExampleGridScreen;
 use App\Orchid\Screens\Examples\ExampleLayoutsScreen;
 use App\Orchid\Screens\Examples\ExampleScreen;
 use App\Orchid\Screens\Examples\ExampleTextEditorsScreen;
-use App\Orchid\Screens\ModelSettings\ApiFormatEditScreen;
-use App\Orchid\Screens\ModelSettings\ApiFormatSettingsScreen;
 use App\Orchid\Screens\ModelSettings\AiModelEditScreen;
 use App\Orchid\Screens\ModelSettings\AiModelListScreen;
+use App\Orchid\Screens\ModelSettings\ApiFormatEditScreen;
+use App\Orchid\Screens\ModelSettings\ApiFormatSettingsScreen;
+use App\Orchid\Screens\ModelSettings\ApiProvidersScreen;
+use App\Orchid\Screens\ModelSettings\AssistantEditScreen;
+use App\Orchid\Screens\ModelSettings\AssistantsScreen;
+use App\Orchid\Screens\ModelSettings\PromptEditScreen;
+use App\Orchid\Screens\ModelSettings\PromptsScreen;
 use App\Orchid\Screens\ModelSettings\ProviderCreateScreen;
 use App\Orchid\Screens\ModelSettings\ProviderEditScreen;
-use App\Orchid\Screens\ModelSettings\ApiProvidersScreen;
-use App\Orchid\Screens\ModelSettings\AssistantsScreen;
-use App\Orchid\Screens\ModelSettings\AssistantEditScreen;
-use App\Orchid\Screens\ModelSettings\PromptsScreen;
-use App\Orchid\Screens\ModelSettings\PromptEditScreen;
 use App\Orchid\Screens\ModelSettings\ToolsScreen;
 use App\Orchid\Screens\PlatformScreen;
 use App\Orchid\Screens\Role\RoleAssignmentEditScreen;
 use App\Orchid\Screens\Role\RoleAssignmentScreen;
 use App\Orchid\Screens\Role\RoleEditScreen;
 use App\Orchid\Screens\Role\RoleListScreen;
-use App\Orchid\Screens\Settings\FeatureSettingsScreen;
 use App\Orchid\Screens\Settings\AuthenticationSettingsScreen;
 use App\Orchid\Screens\Settings\AuthMethodEditScreen;
+use App\Orchid\Screens\Settings\FeatureSettingsScreen;
 use App\Orchid\Screens\Settings\LogScreen;
 use App\Orchid\Screens\Settings\MailConfigurationSettingsScreen;
+use App\Orchid\Screens\Settings\PerformanceSettingsScreen;
 use App\Orchid\Screens\Settings\StorageSettingsScreen;
 use App\Orchid\Screens\Settings\SystemSettingsScreen;
+use App\Orchid\Screens\Settings\UsageDebugScreen;
+use App\Orchid\Screens\SystemSettings\BackupSettingsScreen;
+use App\Orchid\Screens\SystemSettings\ScheduledTasksScreen;
 use App\Orchid\Screens\Testing\MailTestingScreen;
 use App\Orchid\Screens\Testing\TestingSettingsScreen;
 use App\Orchid\Screens\User\UserEditScreen;
@@ -91,6 +95,15 @@ Route::screen('/dashboard/requests', RequestsDashboard::class)
         ->parent('platform.index')
         ->push(__('Requests Dashboard'), route('platform.dashboard.requests')));
 
+Route::get('/dashboard/requests/user-details', [RequestsDashboard::class, 'getUserProviderDetails'])
+    ->name('platform.dashboard.requests.user-details');
+
+Route::screen('/dashboard/usage-debug', UsageDebugScreen::class)
+    ->name('platform.dashboard.usage.debug')
+    ->breadcrumbs(fn (Trail $trail) => $trail
+        ->parent('platform.index')
+        ->push(__('Usage Debug'), route('platform.dashboard.usage.debug')));
+
 // Settings
 Route::screen('/settings/system', SystemSettingsScreen::class)
     ->name('platform.settings.system')
@@ -98,6 +111,14 @@ Route::screen('/settings/system', SystemSettingsScreen::class)
         return $trail
             ->parent('platform.index')
             ->push('System Settings', route('platform.settings.system'));
+    });
+
+Route::screen('/settings/performance', PerformanceSettingsScreen::class)
+    ->name('platform.settings.performance')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Performance Settings', route('platform.settings.performance'));
     });
 
 Route::screen('/settings/authentication', AuthenticationSettingsScreen::class)
@@ -130,6 +151,26 @@ Route::screen('/settings/mail-configuration', MailConfigurationSettingsScreen::c
         return $trail
             ->parent('platform.index')
             ->push('Mail Configuration', route('platform.settings.mail-configuration'));
+    });
+
+Route::screen('/settings/backup', BackupSettingsScreen::class)
+    ->name('platform.systems.settings.backup')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Backup Configuration', route('platform.systems.settings.backup'));
+    });
+
+Route::get('/settings/backup/download/{filename}', [BackupSettingsScreen::class, 'downloadBackup'])
+    ->name('platform.systems.settings.backup.download');
+
+// Settings - Scheduled Tasks
+Route::screen('/settings/scheduled-tasks', ScheduledTasksScreen::class)
+    ->name('platform.systems.settings.scheduled-tasks')
+    ->breadcrumbs(function (Trail $trail) {
+        return $trail
+            ->parent('platform.index')
+            ->push('Scheduled Tasks', route('platform.systems.settings.scheduled-tasks'));
     });
 
 // Settings - Log Management
@@ -297,28 +338,28 @@ Route::screen('/customization/mail-templates', MailTemplatesScreen::class)
     });
 
 // Announcements
-Route::screen('/customization/announcements', AnnouncementScreen::class)
-    ->name('platform.customization.announcements')
+Route::screen('/announcements', AnnouncementScreen::class)
+    ->name('platform.announcements')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
             ->parent('platform.index')
-            ->push('Announcements', route('platform.customization.announcements'));
+            ->push('Announcements', route('platform.announcements'));
     });
 
-Route::screen('/customization/announcements/create', AnnouncementEditScreen::class)
-    ->name('platform.customization.announcements.create')
+Route::screen('/announcements/create', AnnouncementEditScreen::class)
+    ->name('platform.announcements.create')
     ->breadcrumbs(function (Trail $trail) {
         return $trail
-            ->parent('platform.customization.announcements')
-            ->push('Create Announcement', route('platform.customization.announcements.create'));
+            ->parent('platform.announcements')
+            ->push('Create Announcement', route('platform.announcements.create'));
     });
 
-Route::screen('/customization/announcements/{announcement}/edit', AnnouncementEditScreen::class)
-    ->name('platform.customization.announcements.edit')
+Route::screen('/announcements/{announcement}/edit', AnnouncementEditScreen::class)
+    ->name('platform.announcements.edit')
     ->breadcrumbs(function (Trail $trail, $announcement) {
         return $trail
-            ->parent('platform.customization.announcements')
-            ->push('Edit: ' . $announcement->title, route('platform.customization.announcements.edit', $announcement));
+            ->parent('platform.announcements')
+            ->push('Edit: '.$announcement->title, route('platform.announcements.edit', $announcement));
     });
 
 // Models - API Management - Providers

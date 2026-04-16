@@ -7,8 +7,6 @@ use App\Models\User;
 use App\Models\Member;
 use App\Models\Invitation;
 
-use App\Jobs\SendEmailJob;
-
 use Illuminate\Http\Request;
 
 use App\Http\Controllers\RoomController;
@@ -24,6 +22,11 @@ class InvitationController extends Controller
     /// Send the email with the signed URL to external invitee
     public function sendExternInvitationEmail(Request $request) {
 
+        // Check if email notifications are enabled
+        if (!config('hawki.send_groupchat_invitation_mails')) {
+            return response()->json(['message' => 'Email notifications are disabled']);
+        }
+
         // Validate the request
         $validatedData = $request->validate([
             'username' => 'required|string|max:255',
@@ -36,8 +39,17 @@ class InvitationController extends Controller
 
         // Check if the user exists
         if (!$user) {
-            return response()->json(['error' => 'user not found']);
+            return response()->json(['error' => 'user not found'], 404);
         }
+
+        // Get room information
+        $room = Room::where('slug', $validatedData['slug'])->first();
+        if (!$room) {
+            return response()->json(['error' => 'room not found'], 404);
+        }
+
+        // Get inviter (current authenticated user)
+        $inviter = Auth::user();
 
         // Generate a signed URL with the hash
         $url = URL::signedRoute('open.invitation', [
@@ -45,21 +57,32 @@ class InvitationController extends Controller
             'slug' => $validatedData['slug']
         ], now()->addHours(48));
 
-        // Prepare email data
-        $emailData = [
-            'user' => $user,
-            'title' => 'A Generic Email',
-            'message' => 'YOU HAVE BEEN INVITED A THE NEW GROUP...',
-            'url' => $url,  // Include the generated URL if needed in the email
+        // Get the invitation template (prefer German, fallback to English)
+        $template = \App\Models\MailTemplate::where('type', 'invitation')
+            ->where('language', 'de')
+            ->first();
+
+        if (!$template) {
+            $template = \App\Models\MailTemplate::where('type', 'invitation')
+                ->where('language', 'en')
+                ->first();
+        }
+
+        if (!$template) {
+            return response()->json(['error' => 'Invitation template not found'], 500);
+        }
+
+        // Prepare template data with proper placeholder format
+        $templateData = [
+            '{{user_name}}' => $user->name,
+            '{{inviter_name}}' => $inviter->name,
+            '{{room_name}}' => $room->room_name,
+            '{{invitation_url}}' => $url,
         ];
 
-        // Specify the view template and subject line
-        $viewTemplate = 'emails.invitation';
-        $subjectLine = 'Invitation';
-
-        // Dispatch the email job
-        SendEmailJob::dispatch($emailData, $user->email, $subjectLine, $viewTemplate)
-                    ->onQueue('emails');
+        // Create and queue the email using TemplateMail
+        $mail = \App\Mail\TemplateMail::fromTemplate($template, $templateData, $user);
+        \Illuminate\Support\Facades\Mail::to($user->email)->queue($mail);
 
         return response()->json(['message' => 'Invitation email sent successfully.']);
     }
@@ -67,14 +90,18 @@ class InvitationController extends Controller
 
     /// store invitation on the database
     public function storeInvitations(Request $request, $slug) {
-        $roomId = Room::where('slug', $slug)->firstOrFail()->id;
+        $room = Room::where('slug', $slug)->firstOrFail();
+        $roomId = $room->id;
         $invitations = $request->input('invitations');
+        $inviter = Auth::user();
 
         foreach($invitations as $inv) {
             // Check if an invitation already exists for this user in this room
             $existingInvitation = Invitation::where('room_id', $roomId)
                                              ->where('username', $inv['username'])
                                              ->first();
+
+            $isNewInvitation = !$existingInvitation;
 
             if ($existingInvitation) {
                 // Update the existing invitation
@@ -83,6 +110,10 @@ class InvitationController extends Controller
                     'iv' => $inv['iv'],
                     'tag' => $inv['tag'],
                     'invitation' => $inv['encryptedRoomKey']
+                ]);
+                \Log::info("Invitation updated (no email sent)", [
+                    'username' => $inv['username'],
+                    'room' => $room->room_name
                 ]);
             } else {
                 // Create a new invitation
@@ -94,8 +125,142 @@ class InvitationController extends Controller
                     'tag' => $inv['tag'],
                     'invitation' => $inv['encryptedRoomKey']
                 ]);
+                \Log::info("New invitation created", [
+                    'username' => $inv['username'],
+                    'room' => $room->room_name,
+                    'email_enabled' => config('hawki.send_groupchat_invitation_mails')
+                ]);
+            }
+            
+            // Broadcast invitation event to the invited user
+            $eventData = [
+                'type' => 'invitation',
+                'room' => [
+                    'slug' => $room->slug,
+                    'room_name' => $room->room_name,
+                    'room_icon' => $room->room_icon,
+                    'invited_by' => Auth::user()->name,  // Current user is the inviter
+                ]
+            ];
+            
+            event(new \App\Events\RoomInvitationEvent($eventData, $inv['username']));
+
+            // Send email notification for new invitations if enabled
+            if ($isNewInvitation && config('hawki.send_groupchat_invitation_mails')) {
+                \Log::info("Attempting to send invitation email", [
+                    'username' => $inv['username'],
+                    'room' => $room->room_name
+                ]);
+                $this->sendInvitationEmail($inv['username'], $room, $inviter);
             }
         }
+    }
+
+    /**
+     * Send invitation email to a user
+     * 
+     * @param string $username
+     * @param Room $room
+     * @param User $inviter
+     * @return void
+     */
+    private function sendInvitationEmail($username, $room, $inviter) {
+        try {
+            // Find the invited user
+            $invitedUser = User::where('username', $username)->first();
+            
+            if (!$invitedUser || !$invitedUser->email) {
+                \Log::warning("Cannot send invitation email: User not found or no email", [
+                    'username' => $username
+                ]);
+                return;
+            }
+
+            // Get the invitation template (prefer German, fallback to English)
+            $template = \App\Models\MailTemplate::where('type', 'invitation')
+                ->where('language', 'de')
+                ->first();
+
+            if (!$template) {
+                $template = \App\Models\MailTemplate::where('type', 'invitation')
+                    ->where('language', 'en')
+                    ->first();
+            }
+
+            if (!$template) {
+                \Log::error("Invitation template not found in database");
+                return;
+            }
+
+            // Prepare template data
+            $templateData = [
+                '{{user_name}}' => $invitedUser->name,
+                '{{inviter_name}}' => $inviter->name,
+                '{{room_name}}' => $room->room_name,
+                '{{invitation_url}}' => url('/groupchat/' . $room->slug),
+            ];
+
+            // Create and queue the email using TemplateMail
+            $mail = \App\Mail\TemplateMail::fromTemplate($template, $templateData, $invitedUser);
+            \Illuminate\Support\Facades\Mail::to($invitedUser->email)->queue($mail);
+
+            \Log::info("Groupchat invitation email queued", [
+                'username' => $username,
+                'room' => $room->room_name,
+                'inviter' => $inviter->name,
+                'template_language' => $template->language
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Failed to send groupchat invitation email", [
+                'username' => $username,
+                'room' => $room->room_name ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    public function convertTempHashInvitation(Request $request) {
+        $validated = $request->validate([
+            'room_slug' => 'required|string',
+            'encrypted_room_key' => 'required|string',
+            'role' => 'required|string|in:admin,editor,viewer'
+        ]);
+
+        $room = Room::where('slug', $validated['room_slug'])->firstOrFail();
+        $user = Auth::user();
+
+        // Check if user is already a member
+        if ($room->isMember($user->id)) {
+            // Delete old temp-hash invitation
+            $oldInvitation = Invitation::where('room_id', $room->id)
+                                        ->where('username', $user->username)
+                                        ->first();
+            
+            if ($oldInvitation) {
+                $oldInvitation->delete();
+            }
+
+            // Create new public-key invitation
+            Invitation::create([
+                'room_id' => $room->id,
+                'username' => $user->username,
+                'role' => $validated['role'],
+                'iv' => '0',  // Public key encryption marker
+                'tag' => '0',
+                'invitation' => $validated['encrypted_room_key']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Invitation converted successfully'
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'User is not a member of this room'
+        ], 400);
     }
 
 
@@ -212,4 +377,49 @@ class InvitationController extends Controller
 
     }
 
+    /// Delete invitation
+    public function deleteInvitation(Request $request, $slug){
+        $room = Room::where('slug', $slug)->firstOrFail();
+        $currentUser = Auth::user();
+
+        // Check if username parameter is provided
+        if ($request->has('username')) {
+            // Admin/Moderator deleting someone else's invitation
+            $validated = $request->validate([
+                'username' => 'required|string|max:16',
+            ]);
+
+            // Check if user has permission (must be member of the room)
+            if(!$room->isMember($currentUser->id)){
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $targetUsername = $validated['username'];
+        } else {
+            // User declining their own invitation
+            $targetUsername = $currentUser->username;
+        }
+
+        $invitation = Invitation::where('room_id', $room->id)
+                                ->where('username', $targetUsername)
+                                ->first();
+
+        if (!$invitation) {
+            return response()->json(['error' => 'Invitation not found'], 404);
+        }
+
+        // If declining own invitation, verify it belongs to current user
+        if (!$request->has('username') && $invitation->username !== $currentUser->username) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $invitation->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Invitation deleted successfully'
+        ]);
+    }
+
 }
+

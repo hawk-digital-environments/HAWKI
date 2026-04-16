@@ -75,14 +75,13 @@ class ProviderCreateScreen extends Screen
     public function commandBar(): iterable
     {
         return [
-        Link::make('Cancel')
+            Link::make('Cancel')
                 ->icon('x-circle')
-                ->route('platform.models.api.providers'),    
-        Button::make('Create Provider')
+                ->route('platform.models.api.providers'),
+            Button::make('Create Provider')
                 ->icon('bs.check-circle')
                 ->method('create'),
 
-            
         ];
     }
 
@@ -129,6 +128,18 @@ class ProviderCreateScreen extends Screen
 
         $providerData = $request->input('provider');
         $providerName = $providerData['provider_name'];
+
+        // Generate unique_name from provider_name
+        $uniqueName = \Illuminate\Support\Str::slug($providerName);
+
+        // Ensure uniqueness by adding a suffix if necessary
+        $suffix = 1;
+        $baseUniqueName = $uniqueName;
+        while (ApiProvider::where('unique_name', $uniqueName)->exists()) {
+            $uniqueName = $baseUniqueName.'-'.$suffix;
+            $suffix++;
+        }
+        $providerData['unique_name'] = $uniqueName;
 
         // Ensure display_order is treated as integer
         if (isset($providerData['display_order'])) {

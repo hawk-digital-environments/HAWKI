@@ -30,6 +30,10 @@ class AuthTypeFilter extends Filter
      */
     public function run(Builder $builder): Builder
     {
+        if (!$this->request->filled('auth_type')) {
+            return $builder;
+        }
+
         if ($this->request->get('auth_type') === 'local') {
             return $builder->where('auth_type', 'local');
         }
@@ -58,5 +62,23 @@ class AuthTypeFilter extends Filter
                 ->value($this->request->get('auth_type'))
                 ->title($this->name()),
         ];
+    }
+
+    /**
+     * Value to be displayed
+     */
+    public function value(): string
+    {
+        $authType = $this->request->get('auth_type');
+        
+        if ($authType === 'local') {
+            return $this->name() . ': Local Users';
+        }
+        
+        if ($authType === 'external') {
+            return $this->name() . ': External Users';
+        }
+        
+        return $this->name();
     }
 }

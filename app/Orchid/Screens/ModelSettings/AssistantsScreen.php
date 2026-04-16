@@ -103,6 +103,15 @@ class AssistantsScreen extends Screen
     {
         $assistant = AiAssistant::findOrFail($request->get('id'));
         
+        // Prevent toggling system assistants (owned by system user with ID 1 or employeetype 'system')
+        $isSystemAssistant = $assistant->owner_id === 1 || 
+                            ($assistant->owner && $assistant->owner->employeetype === 'system');
+        
+        if ($isSystemAssistant) {
+            Toast::warning('System assistants cannot have their status changed. They must always be active.');
+            return;
+        }
+        
         // Cycle through statuses: active -> archived -> draft -> active
         $statusCycle = [
             'active' => 'archived',
@@ -123,6 +132,15 @@ class AssistantsScreen extends Screen
     {
         $assistant = AiAssistant::findOrFail($request->get('id'));
         
+        // Prevent toggling system assistants (owned by system user with ID 1 or employeetype 'system')
+        $isSystemAssistant = $assistant->owner_id === 1 || 
+                            ($assistant->owner && $assistant->owner->employeetype === 'system');
+        
+        if ($isSystemAssistant) {
+            Toast::warning('System assistants cannot have their visibility changed. They must always be public.');
+            return;
+        }
+        
         // Cycle through visibility: public -> org -> private -> public
         $visibilityCycle = [
             'public' => 'org',
@@ -142,6 +160,16 @@ class AssistantsScreen extends Screen
     public function remove(Request $request): void
     {
         $assistant = AiAssistant::findOrFail($request->get('id'));
+        
+        // Prevent deleting system assistants (owned by system user with ID 1 or employeetype 'system')
+        $isSystemAssistant = $assistant->owner_id === 1 || 
+                            ($assistant->owner && $assistant->owner->employeetype === 'system');
+        
+        if ($isSystemAssistant) {
+            Toast::error('System assistants cannot be deleted. They are required for system functionality.');
+            return;
+        }
+        
         $assistant->delete();
 
         Toast::info('Assistant has been deleted.');

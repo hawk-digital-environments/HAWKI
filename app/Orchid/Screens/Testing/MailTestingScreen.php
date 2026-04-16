@@ -125,14 +125,13 @@ class MailTestingScreen extends Screen
         }
 
         // Get available mail templates dynamically from database
-        $templateTypes = MailTemplate::distinct('type')
+            $templateTypes = MailTemplate::distinct('type')
             ->orderBy('type')
             ->pluck('type')
             ->mapWithKeys(function ($type) {
                 // Generate human-readable labels
                 $label = match ($type) {
                     'welcome' => 'Welcome Email Template',
-                    'otp' => 'OTP Authentication Template',
                     'invitation' => 'Group Chat Invitation Template',
                     'notification' => 'General Notification Template',
                     'approval' => 'Account Approval Template',
@@ -142,9 +141,7 @@ class MailTestingScreen extends Screen
 
                 return [$type];
             })
-            ->toArray();
-
-        return [
+            ->toArray();        return [
             'combinedJobsData' => $combinedJobsData,
             'templateTypes' => $templateTypes,
         ];
@@ -215,11 +212,6 @@ class MailTestingScreen extends Screen
             //            ->icon('bs.envelope-plus')
             //            ->method('sendWelcomeEmailTest')
             //            ->confirm('This will queue a welcome email (requires queue worker). Continue?'),
-            //
-            //        Button::make('Send OTP Email')
-            //            ->icon('bs.shield')
-            //            ->method('sendOtpEmailTest')
-            //            ->confirm('This will send an OTP (One-Time Password) email to the current authenticated user. Continue?'),
             //    ])->autoWidth(),
             //
             // ])->title('Legacy Email Testing'),
@@ -239,7 +231,6 @@ class MailTestingScreen extends Screen
                             ->mapWithKeys(function ($type) {
                                 $label = match ($type) {
                                     'welcome' => 'Welcome Email Template',
-                                    'otp' => 'OTP Authentication Template',
                                     'invitation' => 'Group Chat Invitation Template',
                                     'notification' => 'General Notification Template',
                                     'approval' => 'Account Approval Template',
@@ -574,49 +565,6 @@ class MailTestingScreen extends Screen
             Log::error('Error sending welcome email test (sync): '.$e->getMessage());
             Log::error('Stack trace: '.$e->getTraceAsString());
             Toast::error('Failed to send welcome email (sync): '.$e->getMessage());
-        }
-
-        return back();
-    }
-
-    /**
-     * Send an OTP email test
-     *
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function sendOtpEmailTest()
-    {
-        try {
-            $user = auth()->user();
-
-            if (! $user) {
-                Toast::error('No authenticated user found for OTP email test.');
-
-                return back();
-            }
-
-            // Create user info array similar to what's used in the handshake process
-            $userInfo = [
-                'username' => $user->username ?? $user->name,
-                'email' => $user->email,
-                'name' => $user->name ?? $user->username,
-            ];
-
-            // Generate test OTP
-            $testOtp = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
-            $appName = config('app.name', 'HAWKI');
-
-            // Send OTP email synchronously for testing (bypass queue)
-            \Illuminate\Support\Facades\Mail::to($user->email)->sendNow(new \App\Mail\OTPMail($userInfo, $testOtp, $appName));
-
-            Toast::success("OTP email test has been sent to: {$user->email}. Test OTP: {$testOtp}")
-                ->autoHide(false);
-
-            Log::info("OTP email test sent to user: {$user->username} ({$user->email}) with test OTP: {$testOtp}");
-
-        } catch (\Exception $e) {
-            Log::error('Error sending OTP email test: '.$e->getMessage());
-            Toast::error('Failed to send OTP email: '.$e->getMessage());
         }
 
         return back();
@@ -1324,9 +1272,6 @@ class MailTestingScreen extends Screen
 
         // Add template-specific test data
         return match ($templateType) {
-            'otp' => array_merge($baseData, [
-                'otp' => '123456',
-            ]),
             'invitation' => array_merge($baseData, [
                 'room_name' => 'Test Group Chat Room',
                 'inviter_name' => 'Test Inviter',

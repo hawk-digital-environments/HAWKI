@@ -55,6 +55,7 @@
                 <a href="{{ config('hawki.accessibility_location') }}" target="_blank">{{ $translation["Accessibility"] }}</a>
                 @endif
 
+
             </div>
         </div>
 

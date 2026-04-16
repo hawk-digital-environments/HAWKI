@@ -34,6 +34,12 @@ class AiModelToolsLayout extends Rows
                 ->help('Enable web search integration (requires provider support)')
                 ->sendTrueOrFalse()
                 ->placeholder('Allow web searches'),
+
+            CheckBox::make('model.settings.tools.reasoning')
+                ->title('Reasoning')
+                ->help('Enable advanced reasoning and chain-of-thought capabilities')
+                ->sendTrueOrFalse()
+                ->placeholder('Support advanced reasoning'),
         ];
     }
 }

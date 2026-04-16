@@ -25,6 +25,15 @@ class CheckModelStatusCommand extends Command
     
     public function handle(): void
     {
+        // Skip if using database config - DB models are always considered ONLINE
+        // ai_config_system can be: false (config files), true (database), or 'database' string
+        $aiConfigSystem = config('hawki.ai_config_system');
+        if ($aiConfigSystem === true || $aiConfigSystem === 'database') {
+            $this->info('Skipping model status check: Database-based configuration is active.');
+            $this->info('DB-configured models are always considered ONLINE.');
+            return;
+        }
+        
         $this->output->writeln('Starting model status check...');
         
         $models = $this->aiService->getAvailableModels()->models;

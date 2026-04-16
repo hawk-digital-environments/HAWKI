@@ -37,6 +37,9 @@ class AnthropicNonStreamingRequest extends AbstractRequest
         $textContent = $this->extractTextContent($data);
         $citations = $this->extractCitationsFromContent($data);
         
+        // Count server tool use by tool name
+        $serverToolUses = $this->collectServerToolUse($data);
+        
         $responseContent = ['text' => $textContent];
         
         // Add citations as auxiliaries if available
@@ -51,10 +54,52 @@ class AnthropicNonStreamingRequest extends AbstractRequest
             ];
         }
         
+        // Extract usage and add server tool use if present
+        $usage = $this->extractUsage($model, $data);
+        if ($usage && !empty($serverToolUses)) {
+            $usage = new \App\Services\AI\Value\TokenUsage(
+                model: $usage->model,
+                promptTokens: $usage->promptTokens,
+                completionTokens: $usage->completionTokens,
+                totalTokens: $usage->totalTokens,
+                cacheReadInputTokens: $usage->cacheReadInputTokens,
+                cacheCreationInputTokens: $usage->cacheCreationInputTokens,
+                reasoningTokens: $usage->reasoningTokens,
+                audioInputTokens: $usage->audioInputTokens,
+                audioOutputTokens: $usage->audioOutputTokens,
+                serverToolUse: $serverToolUses, // Array with tool names as keys
+            );
+        }
+        
         return new AiResponse(
             content: $responseContent,
-            usage: $this->extractUsage($model, $data)
+            usage: $usage
         );
+    }
+    
+    /**
+     * Collect server tool use invocations with tool names
+     */
+    private function collectServerToolUse(array $data): array
+    {
+        $toolUses = [];
+        
+        if (!isset($data['content']) || !is_array($data['content'])) {
+            return $toolUses;
+        }
+        
+        foreach ($data['content'] as $block) {
+            if (isset($block['type']) && $block['type'] === 'server_tool_use') {
+                $toolName = $block['name'] ?? 'unknown';
+                
+                if (!isset($toolUses[$toolName])) {
+                    $toolUses[$toolName] = 0;
+                }
+                $toolUses[$toolName]++;
+            }
+        }
+        
+        return $toolUses;
     }
     
     /**

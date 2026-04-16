@@ -75,7 +75,7 @@ textarea::placeholder,
 .password-input-wrapper{
     display: flex;
     align-items: center;
-    padding: 0 2rem;
+    padding: 0 0.3rem 0 2rem;
     outline: none;
     border: var(--border-stroke-thin);
     border-radius: var(--border-radius-tight);
@@ -410,6 +410,15 @@ button:disabled{
     background: var(--button-color);
     color: var(--invert-Text-color);
 }
+.btn-lg-fill-red{
+    font-weight: 400;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-normal);
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+}
 .btn-lg-stroke{
     background: transparent;
     color: var(--text-color);
@@ -428,6 +437,47 @@ button:disabled{
     background-color: red;
     color: white;
 }
+
+.btn-icon-only {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: unset;
+    padding: 0.5rem;
+    border: var(--border-stroke-bold);
+    border-radius: var(--border-radius-normal);
+    background: transparent;
+    color: var(--text-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-icon-only.delete-btn {
+    background-color: #ef4444;
+    color: white;
+    border-color: #ef4444;
+}
+
+.btn-icon-only.delete-btn:hover {
+    background-color: #dc2626;
+    border-color: #dc2626;
+}
+
+.btn-icon-only svg {
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.image-delete-overlay {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 .delete-btn-svg svg{
     stroke: red;
 }
@@ -469,6 +519,50 @@ button:disabled{
     justify-self: center;
     background-color: green;
 }
+
+/* Group Chat notification states */
+.dot-lg.new-room {
+    background-color: #ef4444; /* Red - new room invitation */
+}
+
+.dot-lg.new-message {
+    background-color: #10b981; /* Green - new message */
+}
+
+/* Sidebar GroupChat Badge */
+#groupchat-notification-badge.new-room {
+    background-color: #ef4444; /* Red - new room invitation */
+}
+
+#groupchat-notification-badge.new-message {
+    background-color: #10b981; /* Green - new message */
+}
+
+/* New dual badge system */
+#groupchat-invitation-badge {
+    background-color: #ef4444; /* Red - new room invitation */
+    display: none;
+    position: absolute;
+    top: 6px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    /*border: 2px solid var(--background-primary, #fff);*/
+}
+
+#groupchat-message-badge {
+    background-color: #10b981; /* Green - new message */
+    display: none;
+    position: absolute;
+    bottom: 6px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    /*border: 2px solid var(--background-primary, #fff);*/
+}
+
 .red-c{
     background-color: red;
 }
@@ -573,6 +667,16 @@ button:disabled{
 .burger-item[disabled]:hover{
     background-color: red;
 } */
+
+/* Filtered-out models (incompatible with active filters) */
+.burger-item.filtered-out {
+    opacity: 0.4;
+    cursor: pointer; /* Keep clickable */
+}
+.burger-item.filtered-out:hover {
+    opacity: 0.6;
+    background-color: var(--background-secondary);
+}
 
 .burger-item .loading{
     display: none;
@@ -685,12 +789,29 @@ button:disabled{
     margin-top: 3rem;
 }
 .dynamic-grid{
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 3rem);
+    display: flex;
+    flex-wrap: wrap;
     row-gap: 1.5rem;
-    justify-items: center;
     align-items: center;
     gap: 1rem;
+}
+
+/* Member buttons - fixed width */
+.dynamic-grid > button,
+.dynamic-grid > .member-btn {
+    width: 3rem;
+    flex-shrink: 0;
+}
+
+/* Specific widths for invitations section elements */
+.dynamic-grid .invitations-separator {
+    width: 2px;
+    flex-shrink: 0;
+}
+
+.dynamic-grid .invitations-label {
+    flex-shrink: 0;
+    width: max-content;
 }
 .zero-v-margin{
     margin-top: 0;
@@ -788,3 +909,21 @@ button:disabled{
 
     width: 15rem;
 } */
+
+/* Invitations Section Styling */
+.invitations-separator {
+    width: 2px;
+    height: 40px;
+    background-color: var(--border-color, #e0e0e0);
+    margin: 0 8px;
+}
+
+.invitations-label {
+    font-size: 0.9em;
+    color: var(--text-secondary, #666);
+    margin: 0 8px 0 12px;
+    align-self: center;
+    white-space: nowrap;
+    min-width: fit-content;
+    flex-shrink: 0;
+}

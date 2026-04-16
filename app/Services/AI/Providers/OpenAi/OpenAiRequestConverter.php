@@ -62,7 +62,40 @@ readonly class OpenAiRequestConverter
             $payload['presence_penalty'] = $rawPayload['presence_penalty'];
         }
 
+        // Get available tools from model (used for reasoning)
+        $availableTools = $model->getTools();
+
+        // Add reasoning configuration if:
+        // 1. Model supports reasoning
+        // 2. User explicitly requested reasoning via reasoning_effort
+        if (isset($availableTools['reasoning']) && $availableTools['reasoning'] === true) {
+            $reasoningEffort = $this->getReasoningEffort($modelId, $rawPayload);
+            
+            // Only add reasoning if explicitly requested
+            if ($reasoningEffort !== null) {
+                $payload['reasoning'] = [
+                    'effort' => $reasoningEffort,
+                    'summary' => 'auto', // Enable reasoning summaries
+                ];
+            }
+        }
+
         return $payload;
+    }
+
+    /**
+     * Get reasoning effort level based on model and payload
+     * Only use reasoning if explicitly enabled via payload
+     */
+    private function getReasoningEffort(string $modelId, array $rawPayload): ?string
+    {
+        // Check if reasoning effort is specified in payload
+        if (isset($rawPayload['reasoning_effort'])) {
+            return $rawPayload['reasoning_effort'];
+        }
+
+        // No reasoning if not explicitly requested
+        return null;
     }
 
     private function formatMessage(array $message, array $attachmentsMap, AiModel $model): array

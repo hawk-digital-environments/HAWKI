@@ -3,6 +3,8 @@ let activeThreadIndex = 0;
 let activeModel;
 let isScrolling = false; // Flag to track if the user is scrolling
 let observer;
+let currentChatId = null; // Track current chat ID for model selection logic
+
 function initializeChatlogFunctions(){
     initializeInputField();
     setSendBtnStatus(SendBtnStatus.SENDABLE);
@@ -63,6 +65,37 @@ function clearChatlog(){
     }
 }
 
+function showEmptyRoomPlaceholder(){
+    const trunk = document.querySelector('.trunk');
+    
+    // Remove any existing placeholder first
+    removeEmptyRoomPlaceholder();
+    
+    // Create placeholder element
+    const placeholder = document.createElement('div');
+    placeholder.id = 'empty-room-placeholder';
+    placeholder.className = 'empty-room-placeholder';
+    
+    // Get translation text
+    const placeholderText = translation?.EmptyRoomPlaceholder || 'No messages in this room yet. Send the first message!';
+    
+    placeholder.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem; opacity: 0.5;">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <p style="margin: 0; font-weight: 500;">${placeholderText}</p>
+    `;
+    
+    trunk.appendChild(placeholder);
+}
+
+function removeEmptyRoomPlaceholder(){
+    const placeholder = document.getElementById('empty-room-placeholder');
+    if (placeholder) {
+        placeholder.remove();
+    }
+}
+
 function clearInput(){
     const input = document.querySelector('.input');
     input.querySelector('.attachments-list').querySelectorAll('.attachment').forEach(atch => {
@@ -86,7 +119,11 @@ async function submitMessageToServer(requestObj, url){
 
         const data = await response.json();
         if (data.success) {
-            return data.messageData;
+            // Return entire response data, including conv_updated_at if present
+            return {
+                ...data.messageData,
+                conv_updated_at: data.conv_updated_at
+            };
             // updateMessageElement(messageElement, data.messageData);
         } else {
             // Handle unexpected response
@@ -113,6 +150,11 @@ async function requestMsgUpdate(messageObj, messageElement, url){
         const data = await response.json();
         if (data.success) {
             updateMessageElement(messageElement, data.messageData);
+            
+            // Update chat timestamp if available
+            if (data.conv_updated_at && typeof updateChatTimestampFromServer === 'function') {
+                updateChatTimestampFromServer(data.conv_updated_at);
+            }
         } else {
             // Handle unexpected response
             console.error('Unexpected response:', data);
@@ -182,7 +224,16 @@ function onThreadButtonEvent(btn){
         thread.classList.remove('visible');
     }else{
         thread.classList.add('visible');
-        thread.querySelector('.input-field').focus();
+        
+        // Apply role-based UI to thread input field
+        if (typeof applyRoleBasedUI === 'function' && typeof activeRoom !== 'undefined' && activeRoom?.currentUserRole) {
+            applyRoleBasedUI(activeRoom.currentUserRole);
+        }
+        
+        // Only focus input if user can send messages
+        if (activeRoom?.currentUserRole === 'admin' || activeRoom?.currentUserRole === 'editor') {
+            thread.querySelector('.input-field')?.focus();
+        }
     }
 }
 
@@ -213,6 +264,15 @@ function findThreadWithID(threadId){
 
 //CREATE MESSAGE ELEMENT AND PUT IT IN THE CHATLOG
 function loadMessagesOnGUI(messages) {
+    // Check if there are no messages and show placeholder
+    if (!messages || messages.length === 0) {
+        showEmptyRoomPlaceholder();
+        return;
+    }
+    
+    // Remove placeholder if it exists (messages are present)
+    removeEmptyRoomPlaceholder();
+    
     // Sorting messages by ID
     messages.sort((a, b) => {
         return +a.message_id - +b.message_id;
@@ -254,15 +314,45 @@ function checkThreadUnreadMessages(thread) {
     }
 }
 
-function flagRoomUnreadMessages(slug, active){
-    const selector = document.querySelector(`.selection-item[slug="${slug}"`)
+function flagRoomUnreadMessages(slug, active, isNewRoom = false){
+    const selector = document.querySelector(`.selection-item[slug="${slug}"]`);
+    
+    // If element doesn't exist (user in different route), just return
+    if (!selector) {
+        return;
+    }
+    
     if(active){
-        selector.querySelector('#unread-msg-flag').style.display = 'block'
-        document.getElementById('mark-as-read-btn').removeAttribute("disabled");
+        const flag = selector.querySelector('#unread-msg-flag');
+        if (!flag) return; // Safety check
+        
+        flag.style.display = 'block';
+        
+        // Set color based on type
+        if (isNewRoom) {
+            flag.classList.add('new-room');
+            flag.classList.remove('new-message');
+        } else {
+            flag.classList.add('new-message');
+            flag.classList.remove('new-room');
+        }
+        
+        const markAsReadBtn = document.getElementById('mark-as-read-btn');
+        if (markAsReadBtn) {
+            markAsReadBtn.removeAttribute("disabled");
+        }
     }
     else{
-        selector.querySelector('#unread-msg-flag').style.display = 'none';
-        document.getElementById('mark-as-read-btn').setAttribute('disabled', true);
+        const flag = selector.querySelector('#unread-msg-flag');
+        if (!flag) return; // Safety check
+        
+        flag.style.display = 'none';
+        flag.classList.remove('new-room', 'new-message');
+        
+        const markAsReadBtn = document.getElementById('mark-as-read-btn');
+        if (markAsReadBtn) {
+            markAsReadBtn.setAttribute('disabled', true);
+        }
     }
 }
 
@@ -273,6 +363,19 @@ async function markAsSeen(element) {
 
         if(document.querySelectorAll('.message[data-read_stat="false"]').length === 0){
             flagRoomUnreadMessages(activeRoom.slug, false);
+            
+            // Update hasUnreadMessages in rooms array
+            if (typeof rooms !== 'undefined' && activeRoom) {
+                const room = rooms.find(r => r.slug === activeRoom.slug);
+                if (room) {
+                    room.hasUnreadMessages = false;
+                }
+            }
+            
+            // Update sidebar badge
+            if (typeof checkAndUpdateSidebarBadge === 'function') {
+                checkAndUpdateSidebarBadge();
+            }
         }
 
         if(element.id.split('.')[1] !== '000'){
@@ -299,6 +402,19 @@ function markAllAsRead(){
         }
     });
     flagRoomUnreadMessages(activeRoom.slug, false);
+    
+    // Update hasUnreadMessages in rooms array
+    if (typeof rooms !== 'undefined' && activeRoom) {
+        const room = rooms.find(r => r.slug === activeRoom.slug);
+        if (room) {
+            room.hasUnreadMessages = false;
+        }
+    }
+    
+    // Update sidebar badge
+    if (typeof checkAndUpdateSidebarBadge === 'function') {
+        checkAndUpdateSidebarBadge();
+    }
 }
 
 async function sendReadStatToServer(message_id){
@@ -317,10 +433,10 @@ async function sendReadStatToServer(message_id){
         const data = await response.json();
 
         if (!data.success) {
-            console.error('failed to inform server');
+            console.error('[sendReadStatToServer] Server returned success=false');
         }
     } catch (error) {
-        console.error('failed to inform server');
+        console.error('[sendReadStatToServer] Error:', error);
     }
 }
 
@@ -330,69 +446,196 @@ async function sendReadStatToServer(message_id){
 //#region Model
 function selectModel(btn){
     const value = JSON.parse(btn.getAttribute('value'));
+    const selectedModel = value;
+    
+    // Check if the selected model is incompatible with current filters (e.g., web_search, reasoning)
+    // If user clicks on a filtered-out model, automatically remove conflicting filters
+    if (btn.classList.contains('filtered-out')) {
+        const inputContainer = btn.closest('.input-container');
+        const input = inputContainer ? inputContainer.querySelector('.input') : null;
+        
+        if (input) {
+            // Check which filters are active and incompatible
+            const websearchBtn = inputContainer.querySelector('#websearch-btn');
+            const reasoningBtn = inputContainer.querySelector('#reasoning-btn');
+            
+            // If web_search is active but model doesn't support it, deactivate it
+            if (websearchBtn && websearchBtn.classList.contains('active') && !selectedModel.tools?.web_search) {
+                websearchBtn.classList.remove('active', 'active-set');
+                removeInputFilter(input.id, 'web_search');
+            }
+            
+            // If reasoning is active but model doesn't support it, deactivate it
+            if (reasoningBtn && reasoningBtn.classList.contains('active') && !selectedModel.tools?.reasoning) {
+                reasoningBtn.classList.remove('active', 'active-set');
+                removeInputFilter(input.id, 'reasoning');
+            }
+            
+            // Add more filter checks here if needed (vision, file_upload, etc.)
+        }
+    }
+    
     setModel(value.id);
+    
+    // Store model selection per chat when forceDefaultModel is enabled
+    if (typeof forceDefaultModel !== 'undefined' && forceDefaultModel === true && currentChatId) {
+        const chatModelKey = `chat_${currentChatId}_model`;
+        localStorage.setItem(chatModelKey, value.id);
+    }
 }
-function setModel(modelID = null){
+
+function setModel(modelID = null, chatId = null){
+    // Check if modelsList is empty or undefined
+    if(!modelsList || modelsList.length === 0){
+        console.error('ModelsList is empty or undefined. No models available.');
+        activeModel = null;
+        
+        // Show user-friendly warning
+        const modelLabel = document.querySelectorAll('.model-selector-label');
+        modelLabel.forEach(label => {
+            label.innerHTML = 'Kein Modell verfügbar';
+            label.style.color = '#ff6b6b';
+        });
+        return;
+    }
+    
     let model;
     if(!modelID){
-        if(localStorage.getItem("definedModel")){
-            model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
+        // Determine model selection based on forceDefaultModel setting
+        if (typeof forceDefaultModel !== 'undefined' && forceDefaultModel === true) {
+            // Force default model mode: use chat-specific or default model
+            if (chatId) {
+                const chatModelKey = `chat_${chatId}_model`;
+                const chatModel = localStorage.getItem(chatModelKey);
+                if (chatModel) {
+                    model = modelsList.find(m => m.id === chatModel);
+                }
+            }
+            // If no chat-specific model, use default model
+            if (!model) {
+                model = modelsList.find(m => m.id === defaultModels?.default_model);
+            }
+        } else {
+            // Legacy behavior: use globally defined model
+            if(localStorage.getItem("definedModel")){
+                model = modelsList.find(m => m.id === localStorage.getItem("definedModel"));
+            }
+            // if there is no defined model or the defined model is outdated or corrupted
+            if(!model){
+                model = modelsList.find(m => m.id === defaultModels?.default_model);
+            }
         }
-        // if there is no defined model
-        // or the defined model is outdated or cruppted
-        if(!model){
-            model = modelsList.find(m => m.id === defaultModels.default_model);
+        
+        // If still no model found, use the first available model
+        if(!model && modelsList.length > 0){
+            model = modelsList[0];
+            console.warn('No default model configured. Using first available model:', model.id);
         }
     }
     else{
         model = modelsList.find(m => m.id === modelID);
     }
+    
+    // Check if model exists, if not, return early and show error
+    if(!model){
+        console.error('No valid model found. ModelsList:', modelsList, 'DefaultModels:', defaultModels);
+        activeModel = null;
+        
+        // Show user-friendly warning
+        const modelLabel = document.querySelectorAll('.model-selector-label');
+        modelLabel.forEach(label => {
+            label.innerHTML = 'Kein Modell verfügbar';
+            label.style.color = '#ff6b6b';
+        });
+        return;
+    }
+    
     activeModel = model;
-    localStorage.setItem("definedModel", activeModel.id);
+    
+    // Update localStorage based on forceDefaultModel setting
+    if (typeof forceDefaultModel !== 'undefined' && forceDefaultModel === true) {
+        // Store per-chat model selection
+        if (chatId) {
+            const chatModelKey = `chat_${chatId}_model`;
+            localStorage.setItem(chatModelKey, activeModel.id);
+        }
+    } else {
+        // Legacy behavior: store globally
+        localStorage.setItem("definedModel", activeModel.id);
+    }
 
     //UI UPDATE...
-    const selectors = document.querySelectorAll('.model-selector');
-    selectors.forEach(selector => {
-        //if this is our target model selector
-        if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
+    // Only update UI if activeModel is valid
+    if(activeModel){
+        const selectors = document.querySelectorAll('.model-selector');
+        selectors.forEach(selector => {
+            //if this is our target model selector
+            if(JSON.parse(selector.getAttribute('value')).id === activeModel.id){
+                selector.classList.add('active');
 
-            const modelObject = modelsList.find(m => m.id === activeModel.id);
-            selector.classList.add('active');
+                const labels = document.querySelectorAll('.model-selector-label');
 
-            if(modelObject.tools.web_search && modelObject.tools.web_search === true){
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.add('active');
-                })
+                labels.forEach(label => {
+                    const inputContainer = label.closest('.input-container');
+                    const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
+                    const reasoningBtn = inputContainer ? inputContainer.querySelector('#reasoning-btn') : null;
+
+                    if (websearchBtn) {
+                        // Check if the model supports web_search tool
+                        // This supports both file-based and DB-based configs
+                        const supportsWebSearch = activeModel.tools?.web_search === true;
+                        const input = inputContainer.querySelector('.input');
+                        
+                        if (supportsWebSearch) {
+                            // Model supports web search
+                            // Only auto-enable if configured AND not already active
+                            if (typeof webSearchAutoEnable !== 'undefined' && webSearchAutoEnable === true) {
+                                if (!websearchBtn.classList.contains('active')) {
+                                    websearchBtn.classList.add('active', 'active-set');
+                                    if (input) {
+                                        addInputFilter(input.id, 'web_search');
+                                    }
+                                }
+                            }
+                            // If auto-enable is false, keep current state (don't change anything)
+                        } else {
+                            // Model doesn't support web search - always deactivate it
+                            if (websearchBtn.classList.contains('active')) {
+                                websearchBtn.classList.remove('active', 'active-set');
+                                if (input) {
+                                    removeInputFilter(input.id, 'web_search');
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (reasoningBtn) {
+                        // Check if the model supports reasoning tool
+                        const supportsReasoning = activeModel.tools?.reasoning === true;
+                        const input = inputContainer.querySelector('.input');
+                        
+                        if (supportsReasoning) {
+                            // Model supports reasoning - keep current state (don't auto-enable)
+                            // User must manually activate reasoning
+                        } else {
+                            // Model doesn't support reasoning - always deactivate it
+                            if (reasoningBtn.classList.contains('active')) {
+                                reasoningBtn.classList.remove('active', 'active-set');
+                                if (input) {
+                                    removeInputFilter(input.id, 'reasoning');
+                                }
+                            }
+                        }
+                    }
+                    
+                    label.innerHTML = activeModel.label;
+                });
             }
             else{
-                document.querySelectorAll('#websearch-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                })
+                selector.classList.remove('active');
             }
-
-            const labels = document.querySelectorAll('.model-selector-label');
-            labels.forEach(label => {
-                const inputContainer = label.closest('.input-container');
-                const websearchBtn = inputContainer ? inputContainer.querySelector('#websearch-btn') : null;
-
-                if (websearchBtn) {
-                    // Check if the model supports web_search tool (not if it's the default web search model)
-                    // This supports both file-based and DB-based configs
-                    const supportsWebSearch = activeModel.tools?.web_search === true;
-
-                    if (supportsWebSearch) {
-                        websearchBtn.classList.add('active');
-                    } else {
-                        websearchBtn.classList.remove('active');
-                    }
-                }
-                label.innerHTML = activeModel.label;
-            });
-        }
-        else{
-            selector.classList.remove('active');
-        }
-    });
+        });
+    }
 
 }
 
@@ -402,16 +645,102 @@ function selectWebSearchModel(button) {
     const input = button.parentElement.closest('.input-container').querySelector('.input');
 
     if (isActive) {
-        button.classList.remove('active');
+        button.classList.remove('active', 'active-set');
         removeInputFilter(input.id, 'web_search');
 
     } else {
-        const filterActive = addInputFilter(input.id, 'web_search');
-        if(filterActive){
-            button.classList.add('active');
-        }
+        button.classList.add('active', 'active-set');
         addInputFilter(input.id, 'web_search');
     }
+}
+
+// Toggle reasoning dropdown
+function toggleReasoningDropdown(button) {
+    const isActive = button.classList.contains('active');
+    const dropdown = button.parentElement.querySelector('#reasoning-dropdown');
+    const input = button.closest('.input-container').querySelector('.input');
+    
+    // If reasoning is active, clicking the button should deactivate it
+    if (isActive) {
+        button.classList.remove('active', 'active-set');
+        removeInputFilter(input.id, 'reasoning');
+        
+        // Close dropdown if open
+        if (dropdown.style.display !== 'none') {
+            dropdown.style.opacity = '0';
+            setTimeout(() => {
+                dropdown.style.display = 'none';
+            }, 300);
+        }
+        return;
+    }
+    
+    // Otherwise, show the dropdown to select effort level
+    const isVisible = dropdown.style.display !== 'none';
+    
+    // Close all burger menus first
+    closeBurgerMenus(null);
+    
+    if (!isVisible) {
+        // Show dropdown
+        dropdown.style.display = 'block';
+        setTimeout(() => {
+            dropdown.style.opacity = '1';
+        }, 10);
+    }
+}
+
+// Select reasoning effort level and activate reasoning
+function selectReasoningEffort(optionButton, effort) {
+    const dropdown = optionButton.closest('#reasoning-dropdown');
+    const reasoningBtn = dropdown.parentElement.querySelector('#reasoning-btn');
+    const input = reasoningBtn.closest('.input-container').querySelector('.input');
+    
+    // Store the selected effort level
+    reasoningBtn.dataset.effort = effort;
+    
+    // Update selected state in dropdown
+    dropdown.querySelectorAll('.reasoning-option').forEach(opt => {
+        opt.classList.remove('selected');
+    });
+    optionButton.classList.add('selected');
+    
+    // Update effort indicator dots
+    updateReasoningEffortIndicator(reasoningBtn, effort);
+    
+    // Activate reasoning with the filter
+    reasoningBtn.classList.add('active', 'active-set');
+    addInputFilter(input.id, 'reasoning');
+    
+    // Close dropdown
+    dropdown.style.opacity = '0';
+    setTimeout(() => {
+        dropdown.style.display = 'none';
+    }, 300);
+}
+
+// Update the visual indicator for reasoning effort level
+function updateReasoningEffortIndicator(button, effort) {
+    const dots = button.querySelectorAll('.effort-dot');
+    const effortLevels = { 'low': 1, 'medium': 2, 'high': 3 };
+    const activeLevel = effortLevels[effort] || 2;
+    
+    // Activate dots from bottom to top
+    // low = only bottom dot (index 2), medium = bottom + middle (index 1,2), high = all (index 0,1,2)
+    dots.forEach((dot, index) => {
+        const dotLevel = parseInt(dot.dataset.level);
+        // Activate dot if its level is greater than (3 - activeLevel)
+        if (dotLevel > (3 - activeLevel)) {
+            dot.classList.add('active');
+        } else {
+            dot.classList.remove('active');
+        }
+    });
+}
+
+// Legacy function for backwards compatibility - now opens dropdown
+function selectReasoningModel(button) {
+    toggleReasoningDropdown(button);
 }
 
 //#endregion

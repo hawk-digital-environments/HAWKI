@@ -7,7 +7,6 @@ namespace App\Orchid\Screens\Customization;
 use App\Models\Announcements\Announcement;
 use App\Orchid\Layouts\Customization\AnnouncementFiltersLayout;
 use App\Orchid\Layouts\Customization\AnnouncementListLayout;
-use App\Orchid\Layouts\Customization\CustomizationTabMenu;
 use App\Orchid\Traits\OrchidLoggingTrait;
 use Illuminate\Http\Request;
 use Orchid\Screen\Actions\Link;
@@ -66,7 +65,7 @@ class AnnouncementScreen extends Screen
         return [
             Link::make('Create Announcement')
                 ->icon('bs.plus-circle')
-                ->route('platform.customization.announcements.create'),
+                ->route('platform.announcements.create'),
         ];
     }
 
@@ -76,7 +75,6 @@ class AnnouncementScreen extends Screen
     public function layout(): iterable
     {
         return [
-            CustomizationTabMenu::class,
             AnnouncementFiltersLayout::class,
             AnnouncementListLayout::class,
         ];

@@ -32,20 +32,38 @@ class RoleFilter extends Filter
      */
     public function run(Builder $builder): Builder
     {
-        return $builder->whereHas('roles', function (Builder $query) {
-            $query->where('slug', $this->request->get('role'));
+        if (!$this->request->filled('role')) {
+            return $builder;
+        }
+
+        $roleValue = $this->request->get('role');
+
+        // Special case: filter for users with NO roles
+        if ($roleValue === 'no-role') {
+            return $builder->whereDoesntHave('roles');
+        }
+
+        // Filter for users with specific role
+        return $builder->whereHas('roles', function (Builder $query) use ($roleValue) {
+            $query->where('slug', $roleValue);
         });
     }
 
     /**
      * Get the display fields.
      */
-    public function display(): array
+    public function display(): iterable
     {
+        // Get all roles from database
+        $roles = Role::pluck('name', 'slug')->toArray();
+        
+        // Add "No Role" option at the beginning
+        $options = ['no-role' => 'No Role (Regular Users)'] + $roles;
+
         return [
             Select::make('role')
-                ->fromModel(Role::class, 'name', 'slug')
-                ->empty()
+                ->options($options)
+                ->empty('All Users')
                 ->value($this->request->get('role'))
                 ->title(__('Roles')),
         ];
@@ -56,6 +74,16 @@ class RoleFilter extends Filter
      */
     public function value(): string
     {
-        return $this->name().': '.Role::where('slug', $this->request->get('role'))->first()->name;
+        $roleValue = $this->request->get('role');
+        
+        if ($roleValue === 'no-role') {
+            return $this->name() . ': No Role (Regular Users)';
+        }
+        
+        $role = Role::where('slug', $roleValue)->first();
+        
+        return $role 
+            ? $this->name() . ': ' . $role->name 
+            : $this->name();
     }
 }

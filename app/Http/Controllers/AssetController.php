@@ -37,11 +37,23 @@ class AssetController extends Controller
         CssCache $cache
     ): Response
     {
-        $css = $cache->rememberForeverIfNotNull(
-            $name,
-            static fn() => AppCss::getByName($name),
-            '/* CSS not found */'
-        );
+        // Only custom-styles is managed in the database
+        if ($name === 'custom-styles') {
+            $css = $cache->rememberForeverIfNotNull(
+                $name,
+                static fn() => AppCss::getByName($name),
+                '/* CSS not found */'
+            );
+        } else {
+            // All other CSS files are loaded directly from the filesystem
+            $cssPath = public_path("css/{$name}.css");
+            if (!file_exists($cssPath)) {
+                return response('/* CSS file not found: ' . $name . ' */')
+                    ->header('Content-Type', 'text/css')
+                    ->setStatusCode(404);
+            }
+            $css = file_get_contents($cssPath);
+        }
 
         return response($css)->header('Content-Type', 'text/css');
     }

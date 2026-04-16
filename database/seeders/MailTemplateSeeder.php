@@ -9,11 +9,8 @@ class MailTemplateSeeder extends Seeder
 
     public function run(): void
     {
-        // Clear existing templates
-        \DB::table('mail_templates')->truncate();
-
-        // Insert modern mail templates with HAWKI branding
-        \DB::table('mail_templates')->insert([
+        // Use upsert to handle existing templates (update or insert)
+        $templates = [
             // Welcome Templates
             [
                 'type' => 'welcome',
@@ -21,8 +18,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Welcome email for new users',
                 'subject' => 'Welcome to {{app_name}} - Your AI Journey Begins!',
                 'body' => $this->getWelcomeTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'welcome',
@@ -30,8 +25,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Willkommens-E-Mail für neue Benutzer',
                 'subject' => 'Willkommen bei {{app_name}} - Ihre KI-Reise beginnt!',
                 'body' => $this->getWelcomeTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // OTP Templates
@@ -41,8 +34,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Authentication code email',
                 'subject' => 'Your {{app_name}} Authentication Code',
                 'body' => $this->getOtpTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'otp',
@@ -50,8 +41,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Authentifizierungscode E-Mail',
                 'subject' => 'Ihr {{app_name}} Authentifizierungscode',
                 'body' => $this->getOtpTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Invitation Templates
@@ -59,19 +48,15 @@ class MailTemplateSeeder extends Seeder
                 'type' => 'invitation',
                 'language' => 'en',
                 'description' => 'Group chat invitation email',
-                'subject' => 'You\'re invited to join a {{app_name}} Group Chat',
+                'subject' => 'Group Chat Invitation - {{room_name}}',
                 'body' => $this->getInvitationTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'invitation',
                 'language' => 'de',
                 'description' => 'Gruppen-Chat Einladungs-E-Mail',
-                'subject' => 'Einladung zu einem {{app_name}} Gruppen-Chat',
+                'subject' => 'Gruppen-Chat Einladung - {{room_name}}',
                 'body' => $this->getInvitationTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Notification Templates
@@ -81,8 +66,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'General notification email',
                 'subject' => '{{app_name}} Notification',
                 'body' => $this->getNotificationTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'notification',
@@ -90,8 +73,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Allgemeine Benachrichtigungs-E-Mail',
                 'subject' => '{{app_name}} Benachrichtigung',
                 'body' => $this->getNotificationTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // User Approval Granted Templates
@@ -101,8 +82,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Account approval granted notification',
                 'subject' => 'Your {{app_name}} Account Has Been Approved',
                 'body' => $this->getApprovalGrantedTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'approval_granted',
@@ -110,8 +89,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Benachrichtigung über erteilte Kontogenehmigung',
                 'subject' => 'Ihr {{app_name}}-Account wurde freigeschaltet',
                 'body' => $this->getApprovalGrantedTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Approval Pending Templates
@@ -121,8 +98,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Account pending approval notification',
                 'subject' => 'Your {{app_name}} Account is Pending Approval',
                 'body' => $this->getApprovalPendingTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'approval_pending',
@@ -130,8 +105,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Benachrichtigung über ausstehende Kontogenehmigung',
                 'subject' => 'Ihr {{app_name}}-Account wurde erfolgreich beantragt',
                 'body' => $this->getApprovalPendingTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
 
             // Approval Revoked Templates
@@ -141,8 +114,6 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Account approval revoked notification',
                 'subject' => 'Your {{app_name}} Account Access Has Been Revoked',
                 'body' => $this->getApprovalRevokedTemplateEn(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
             [
                 'type' => 'approval_revoked',
@@ -150,10 +121,22 @@ class MailTemplateSeeder extends Seeder
                 'description' => 'Benachrichtigung über widerrufene Kontogenehmigung',
                 'subject' => 'Ihr {{app_name}}-Zugang wurde widerrufen',
                 'body' => $this->getApprovalRevokedTemplateDe(),
-                'created_at' => now(),
-                'updated_at' => now(),
             ],
-        ]);
+        ];
+
+        // Add timestamps to each template
+        foreach ($templates as &$template) {
+            $template['created_at'] = now();
+            $template['updated_at'] = now();
+        }
+
+        // Use upsert to prevent duplicate entry errors
+        // Updates existing templates, inserts new ones
+        \DB::table('mail_templates')->upsert(
+            $templates,
+            ['type', 'language'], // Unique key columns
+            ['description', 'subject', 'body', 'updated_at'] // Columns to update
+        );
     }
 
     private function getWelcomeTemplateEn(): string
@@ -181,8 +164,8 @@ class MailTemplateSeeder extends Seeder
                 <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 24px 0;">
                     <strong style="color: #856404;">Important: Your {{app_name}} Backup Code</strong><br>
                     <span style="color: #856404;">Please save this backup code securely. You will need it to unlock a new device for {{app_name}}:</span><br>
-                    <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; text-align: center; letter-spacing: 2px; color: #2c3e50;">
-                        {{backup_hash}}
+                    <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; text-align: center;">
+<code style="font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: #2c3e50; background: transparent; padding: 0; border: none; display: inline-block; user-select: all; -webkit-user-select: all;">{{backup_hash}}</code>
                     </div>
                     <small style="color: #856404;">Store this code in a safe place. Do not share it with anyone.</small>
                 </div>
@@ -240,8 +223,8 @@ class MailTemplateSeeder extends Seeder
                 <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 24px 0;">
                     <strong style="color: #856404;">Wichtig: Ihr {{app_name}}-Wiederherstellungs-Code</strong><br>
                     <span style="color: #856404;">Bitte speichern Sie diesen Backup-Code sicher. Sie benötigen ihn, um ein neues Gerät für {{app_name}} freizuschalten:</span><br>
-                    <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; text-align: center; letter-spacing: 2px; color: #2c3e50;">
-                        {{backup_hash}}
+                    <div style="background: #fff; padding: 12px; margin: 12px 0; border-radius: 6px; text-align: center;">
+<code style="font-family: \'Courier New\', monospace; font-size: 16px; font-weight: bold; letter-spacing: 2px; color: #2c3e50; background: transparent; padding: 0; border: none; display: inline-block; user-select: all; -webkit-user-select: all;">{{backup_hash}}</code>
                     </div>
                     <small style="color: #856404;">Bewahren Sie diesen Code an einem sicheren Ort auf. Teilen Sie ihn niemals mit anderen.</small>
                 </div>
@@ -375,41 +358,35 @@ class MailTemplateSeeder extends Seeder
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
             <div style="padding: 32px 32px 16px 32px; text-align: center;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">You\'re invited to collaborate! 🚀</h1>
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">New Group Chat Invitation</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
                 <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    Hello there!
+                    Hello {{user_name}},
                 </p>
                 
                 <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    <strong>{{inviter_name}}</strong> has invited you to join an exciting group chat conversation on {{app_name}}, where you can collaborate using advanced AI technology.
+                    <strong>{{inviter_name}}</strong> has invited you to join a group chat.
                 </p>
 
                 <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <strong style="color: #1d4ed8;">Group Chat:</strong> {{room_name}}<br>
-                    <strong style="color: #1d4ed8;">About:</strong> {{room_description}}
+                    <strong style="color: #1d4ed8;">Group Chat:</strong> {{room_name}}
                 </div>
-
-                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    {{app_name}} is a privacy-focused platform that enables university communities to harness the power of generative AI for research, learning, and collaboration. Your conversations are protected with end-to-end encryption.
-                </p>
 
                 <div style="text-align: center; margin: 32px 0;">
                     <a href="{{invitation_url}}" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
-                        Join the Conversation
+                        View Invitation
                     </a>
                 </div>
 
-                <div style="background: #fef3c7; border: 1px solid #d97706; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <strong style="color: #92400e;">⏰ Time-sensitive invitation</strong><br>
-                    <span style="color: #a16207;">This invitation link will expire in 48 hours for security reasons. Click the button above to join now.<br>
-                    <small>Sent on {{current_date}}</small></span>
+                <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #1d4ed8;">🔔 Action Required</strong><br>
+                    <span style="color: #075985;">Log in to your {{app_name}} account to accept this invitation.</span>
                 </div>
 
                 <p style="font-size: 16px; color: #64748b;">
-                    Looking forward to seeing you in the conversation!<br>
+                    Best regards,<br>
                     <strong>The {{app_name}} Team</strong>
                 </p>
             </div>
@@ -421,41 +398,35 @@ class MailTemplateSeeder extends Seeder
         return '
         <div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
             <div style="padding: 32px 32px 16px 32px; text-align: center;">
-                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Sie sind zur Zusammenarbeit eingeladen! 🚀</h1>
+                <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #000000;">Neue Gruppen-Chat Einladung</h1>
             </div>
             
             <div style="padding: 32px; background: #ffffff;">
                 <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    Hallo!
+                    Hallo {{user_name}},
                 </p>
                 
                 <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    <strong>{{inviter_name}}</strong> hat Sie zu einem spannenden Gruppen-Chat auf {{app_name}} eingeladen, wo Sie mit fortschrittlicher KI-Technologie zusammenarbeiten können.
+                    <strong>{{inviter_name}}</strong> hat Sie zu einem Gruppen-Chat eingeladen.
                 </p>
 
                 <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <strong style="color: #1d4ed8;">Gruppen-Chat:</strong> {{room_name}}<br>
-                    <strong style="color: #1d4ed8;">Beschreibung:</strong> {{room_description}}
+                    <strong style="color: #1d4ed8;">Gruppen-Chat:</strong> {{room_name}}
                 </div>
-
-                <p style="font-size: 16px; color: #64748b; margin-bottom: 24px;">
-                    {{app_name}} ist eine datenschutzorientierte Plattform, die universitären Gemeinschaften ermöglicht, die Kraft generativer KI für Forschung, Lernen und Zusammenarbeit zu nutzen. Ihre Unterhaltungen sind durch End-to-End-Verschlüsselung geschützt.
-                </p>
 
                 <div style="text-align: center; margin: 32px 0;">
                     <a href="{{invitation_url}}" style="background: #2563eb; color: white; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-weight: 600; display: inline-block;">
-                        An der Unterhaltung teilnehmen
+                        Einladung ansehen
                     </a>
                 </div>
 
-                <div style="background: #fef3c7; border: 1px solid #d97706; border-radius: 8px; padding: 20px; margin: 24px 0;">
-                    <strong style="color: #92400e;">⏰ Zeitkritische Einladung</strong><br>
-                    <span style="color: #a16207;">Dieser Einladungslink läuft aus Sicherheitsgründen in 48 Stunden ab. Klicken Sie jetzt auf die Schaltfläche oben, um teilzunehmen.<br>
-                    <small>Gesendet am {{current_date}}</small></span>
+                <div style="background: #dbeafe; border: 1px solid #2563eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                    <strong style="color: #1d4ed8;">🔔 Aktion erforderlich</strong><br>
+                    <span style="color: #075985;">Melden Sie sich in Ihrem {{app_name}}-Konto an, um diese Einladung anzunehmen.</span>
                 </div>
 
                 <p style="font-size: 16px; color: #64748b;">
-                    Wir freuen uns darauf, Sie in der Unterhaltung zu sehen!<br>
+                    Mit freundlichen Grüßen,<br>
                     <strong>Das {{app_name}} Team</strong>
                 </p>
             </div>

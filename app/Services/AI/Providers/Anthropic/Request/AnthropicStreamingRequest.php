@@ -12,6 +12,7 @@ class AnthropicStreamingRequest extends AbstractRequest
     use AnthropicUsageTrait;
     
     private array $citations = [];
+    private array $serverToolUses = []; // Track server-side tool invocations with names
     
     public function __construct(
         private array    $payload,
@@ -43,11 +44,12 @@ class AnthropicStreamingRequest extends AbstractRequest
         $isDone = false;
         $usage = null;
 
-        // Log raw chunk for debugging (only if trigger enabled)
+        // Log raw chunk for debugging (provider-specific format before HAWKI normalization)
         if (config('logging.triggers.curl_return_object')) {
-            \Log::info('Anthropic Stream Chunk (raw)', [
+            \Log::info('3. Anthropic parseStreamChunk - Provider Format', [
                 'chunk_length' => strlen($chunk),
-                'chunk_preview' => substr($chunk, 0, 200)
+                'chunk_preview' => substr($chunk, 0, 200),
+                'note' => 'Before conversion to HAWKI format'
             ]);
         }
 
@@ -93,11 +95,22 @@ class AnthropicStreamingRequest extends AbstractRequest
                 // Check if this is a web search tool invocation
                 if (isset($data['content_block']['type'])) {
                     if ($data['content_block']['type'] === 'server_tool_use') {
-                        // Web search tool is being invoked
+                        // Server-side tool is being invoked
+                        $toolName = $data['content_block']['name'] ?? 'unknown';
+                        $toolId = $data['content_block']['id'] ?? null;
+                        
+                        // Track tool usage
+                        if (!isset($this->serverToolUses[$toolName])) {
+                            $this->serverToolUses[$toolName] = 0;
+                        }
+                        $this->serverToolUses[$toolName]++;
+                        
                         if (config('app.debug')) {
-                            \Log::debug("Anthropic web search invocation", [
-                                'tool_use_id' => $data['content_block']['id'] ?? null,
-                                'tool_name' => $data['content_block']['name'] ?? null
+                            \Log::debug("Anthropic server tool invocation", [
+                                'tool_use_id' => $toolId,
+                                'tool_name' => $toolName,
+                                'tool_count' => $this->serverToolUses[$toolName],
+                                'all_tools' => $this->serverToolUses
                             ]);
                         }
                     } elseif ($data['content_block']['type'] === 'web_search_tool_result') {
@@ -116,6 +129,23 @@ class AnthropicStreamingRequest extends AbstractRequest
                 // Message metadata update, may contain usage info
                 if (isset($data['usage'])) {
                     $usage = $this->extractUsage($model, ['usage' => $data['usage']]);
+                    
+                    // Add server tool use details if tools were used
+                    if ($usage && !empty($this->serverToolUses)) {
+                        // Create new TokenUsage with server tool use details
+                        $usage = new \App\Services\AI\Value\TokenUsage(
+                            model: $usage->model,
+                            promptTokens: $usage->promptTokens,
+                            completionTokens: $usage->completionTokens,
+                            totalTokens: $usage->totalTokens,
+                            cacheReadInputTokens: $usage->cacheReadInputTokens,
+                            cacheCreationInputTokens: $usage->cacheCreationInputTokens,
+                            reasoningTokens: $usage->reasoningTokens,
+                            audioInputTokens: $usage->audioInputTokens,
+                            audioOutputTokens: $usage->audioOutputTokens,
+                            serverToolUse: $this->serverToolUses, // Use array with tool names as keys
+                        );
+                    }
                 }
                 break;
 

@@ -4,6 +4,12 @@ return [
 
     'backup' => [
         /*
+         * Enable or disable automatic backups.
+         * This can be controlled via the admin interface.
+         */
+        'enabled' => env('BACKUP_ENABLED', true),
+
+        /*
          * The name of this application. You can use this name to monitor
          * the backups.
          */
@@ -11,14 +17,23 @@ return [
 
         'schedule_interval' => env('DB_BACKUP_INTERVAL', 'weekly'),
 
+        'schedule_time' => env('DB_BACKUP_TIME', '02:00'),
+
         'source' => [
             'files' => [
                 /*
                  * The list of directories and files that will be included in the backup.
+                 * Only user-generated files are included (avatars, attachments)
+                 * Only includes directories that actually exist to avoid errors
                  */
-                'include' => [
-                    base_path(),
-                ],
+                'include' => array_filter([
+                    storage_path('app/public/profile_avatars'),  // User profile avatars
+                    storage_path('app/public/room_avatars'),     // Group/Room avatars
+                    storage_path('app/data_repo/private'),       // Private chat attachments (1:1)
+                    storage_path('app/data_repo/group'),         // Group chat attachments
+                ], function ($path) {
+                    return file_exists($path) && is_dir($path);
+                }),
 
                 /*
                  * These directories and files will be excluded from the backup.
@@ -26,8 +41,10 @@ return [
                  * Directories used by the backup process will automatically be excluded.
                  */
                 'exclude' => [
-                    base_path('vendor'),
-                    base_path('node_modules'),
+                    storage_path('app/backup-temp'),             // Backup temp directory
+                    storage_path('app/data_repo/temp'),          // Temp file uploads
+                    storage_path('framework'),                   // Cache, sessions, views
+                    storage_path('logs'),                        // Log files
                 ],
 
                 /*
@@ -99,7 +116,7 @@ return [
         /*
          * If specified, the database dumped file name will contain a timestamp (e.g.: 'Y-m-d-H-i-s').
          */
-        'database_dump_file_timestamp_format' => "Y-m-d-H-i-s",
+        'database_dump_file_timestamp_format' => 'Y-m-d-H-i-s',
 
         /*
          * The base of the dump filename, either 'database' or 'connection'
@@ -147,7 +164,7 @@ return [
             /*
              * The filename prefix used for the backup zip file.
              */
-            'filename_prefix' => '',
+            'filename_prefix' => config('scheduler.backup.destination.filename_prefix', env('BACKUP_FILENAME_PREFIX', '')),
 
             /*
              * The disk names on which the backups will be stored.
@@ -277,6 +294,12 @@ return [
     ],
 
     'cleanup' => [
+        /*
+         * Enable or disable automatic cleanup of old backups.
+         * This can be controlled via the admin interface.
+         */
+        'enabled' => env('BACKUP_CLEANUP_ENABLED', false),
+
         /*
          * The strategy that will be used to cleanup old backups. The default strategy
          * will keep all backups for a certain amount of days. After that period only

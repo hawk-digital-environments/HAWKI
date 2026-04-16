@@ -33,13 +33,46 @@ class AiAssistantSeeder extends Seeder
         $assistants = [
             [
                 'key' => 'default_model',
-                'name' => 'Default Model',
+                'name' => 'Default Chat Model',
                 'description' => 'Standard AI Model für allgemeine Anfragen',
                 'status' => 'active',
                 'visibility' => 'public',
                 'owner_id' => $hawkiUser->id,
                 'ai_model' => $defaultAiModelSystemId,
                 'prompt' => $promptMapping['default_model'],
+                'tools' => null
+            ],
+            [
+                'key' => 'web_search',
+                'name' => 'Default Web Search Model',
+                'description' => 'Standard AI Model für Anfragen mit Web-Suche',
+                'status' => 'active',
+                'visibility' => 'public',
+                'owner_id' => $hawkiUser->id,
+                'ai_model' => null, // Admin must configure this
+                'prompt' => null, // No prompt assigned
+                'tools' => null
+            ],
+            [
+                'key' => 'file_upload',
+                'name' => 'Default File Upload Model',
+                'description' => 'Standard AI Model für Anfragen mit Datei-Upload',
+                'status' => 'active',
+                'visibility' => 'public',
+                'owner_id' => $hawkiUser->id,
+                'ai_model' => null, // Admin must configure this
+                'prompt' => null, // No prompt assigned
+                'tools' => null
+            ],
+            [
+                'key' => 'vision',
+                'name' => 'Default Vision Model',
+                'description' => 'Standard AI Model für Anfragen mit Bild-Analyse',
+                'status' => 'active',
+                'visibility' => 'public',
+                'owner_id' => $hawkiUser->id,
+                'ai_model' => null, // Admin must configure this
+                'prompt' => null, // No prompt assigned
                 'tools' => null
             ],
             [
@@ -94,6 +127,7 @@ class AiAssistantSeeder extends Seeder
         }
 
         $this->command->info("AI Assistants seeded successfully: {$created} created, {$updated} updated.");
-        $this->command->info('All assistants use default AI Model (first available) and are mapped to system prompt types.');
+        $this->command->info('System assistants (default_model, title_generator, prompt_improver, summarizer) use first available AI Model.');
+        $this->command->info('Capability assistants (web_search, file_upload, vision) have no AI Model assigned - admin must configure these.');
     }
 }

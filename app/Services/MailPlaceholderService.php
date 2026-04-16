@@ -17,6 +17,11 @@ class MailPlaceholderService
         // Merge custom data with standard placeholders (custom data takes precedence)
         $allPlaceholders = array_merge($placeholders, $customData);
 
+        // Trim all values to prevent whitespace issues in emails
+        $allPlaceholders = array_map(function ($value) {
+            return is_string($value) ? trim($value) : $value;
+        }, $allPlaceholders);
+
         return str_replace(array_keys($allPlaceholders), array_values($allPlaceholders), $text);
     }
 
@@ -70,7 +75,6 @@ class MailPlaceholderService
             '{{current_datetime}}' => 'Current date and time (Y-m-d H:i:s format)',
 
             // Template-specific placeholders
-            '{{otp_code}}' => 'One-time password/authentication code',
             '{{invitation_link}}' => 'Link to join a group chat or room',
             '{{room_name}}' => 'Name of the chat room or group',
             '{{inviter_name}}' => 'Name of the person sending the invitation',
@@ -91,9 +95,6 @@ class MailPlaceholderService
 
         // Template-specific test data
         $templateSpecificData = [
-            'otp' => [
-                '{{otp_code}}' => '123456',
-            ],
             'invitation' => [
                 '{{invitation_link}}' => Config::get('app.url').'/invitation/test-link',
                 '{{room_name}}' => 'Test Group Chat',

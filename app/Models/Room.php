@@ -61,8 +61,10 @@ class Room extends Model
     }
     public function members(): HasMany
     {
-        return $this->hasMany(Member::class)->where('isRemoved', false);
+        return $this->hasMany(Member::class)
+            ->where('isMember', true);
     }
+    
     public function isMember($userId): bool
     {
         return $this->members()
@@ -72,8 +74,10 @@ class Room extends Model
 
     public function oldMembers(): HasMany
     {
-        return $this->hasMany(Member::class)->where('isRemoved', true);
+        return $this->hasMany(Member::class)
+            ->where('isMember', false);
     }
+    
     public function isOldMember($userId): bool
     {
         return $this->oldMembers()
@@ -91,16 +95,10 @@ class Room extends Model
         }
         else{
             if($this->isOldMember($userId)){
-
                 // if an old membership exists for the user
-                // reactivate the old membership.
+                // reactivate the old membership with new role
                 $member = $this->membersAll()->where('user_id', $userId)->first();
-                $member->recreateMembership();
-
-                if(!$member->hasRole($role)){
-                    $member->updateRole($role);
-                }
-
+                $member->recreateMembership($role);
             }
             else{
                 // create new member for the room
@@ -109,7 +107,6 @@ class Room extends Model
                     'role' => $role,
                 ]);
             }
-
         }
     }
 
@@ -135,6 +132,48 @@ class Room extends Model
             }
         }
         return false;
+    }
+    
+    // Permission helper methods
+    public function getMemberByUserId($userId): ?Member
+    {
+        return $this->members()->where('user_id', $userId)->first();
+    }
+    
+    public function userCanSendMessages($userId): bool
+    {
+        $member = $this->getMemberByUserId($userId);
+        return $member && $member->canSendMessages();
+    }
+    
+    public function userCanModifyRoom($userId): bool
+    {
+        $member = $this->getMemberByUserId($userId);
+        return $member && $member->canModifyRoom();
+    }
+    
+    public function userCanAddMembers($userId): bool
+    {
+        $member = $this->getMemberByUserId($userId);
+        return $member && $member->canAddMembers();
+    }
+    
+    public function userCanRemoveMembers($userId): bool
+    {
+        $member = $this->getMemberByUserId($userId);
+        return $member && $member->canRemoveMembers();
+    }
+    
+    public function userCanDeleteRoom($userId): bool
+    {
+        $member = $this->getMemberByUserId($userId);
+        return $member && $member->canDeleteRoom();
+    }
+    
+    public function userCanViewAllMembers($userId): bool
+    {
+        $member = $this->getMemberByUserId($userId);
+        return $member && $member->canViewAllMembers();
     }
 
 
@@ -189,10 +228,23 @@ class Room extends Model
 
         // iterate the messages in reverse order from the newest to the oldest.
         for ($i = count($msgs) - 1; $i >= 0; $i--) {
-            if(!$msgs[$i]->isReadBy($member)){
+            $msg = $msgs[$i];
+            
+            // Skip own messages - they're automatically "read"
+            if ($msg->member_id === $member->id) {
+                continue;
+            }
+            
+            // Check if message is read by this member
+            if(!$msg->isReadBy($member)){
                 return true;
             }
         }
         return false;
+    }
+
+    public function invitations(): HasMany
+    {
+        return $this->hasMany(Invitation::class);
     }
 }

@@ -17,6 +17,13 @@ function uploadFileToServer(fileData, url, progressCallback) {
         formData.append('file', fileData.file);
         const tempId = fileData.tempId;
 
+        console.log('Uploading file:', {
+            name: fileData.name,
+            size: fileData.size,
+            type: fileData.mime,
+            url: url
+        });
+
         // Initial progress state
         if (progressCallback) {
             progressCallback(tempId, 'uploading', 0);
@@ -28,6 +35,10 @@ function uploadFileToServer(fileData, url, progressCallback) {
         if (csrfToken) {
             xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken.getAttribute('content'));
         }
+        
+        // Ensure server knows this is an AJAX request expecting JSON
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
         // Upload progress tracking
         xhr.upload.onprogress = (event) => {
@@ -41,18 +52,69 @@ function uploadFileToServer(fileData, url, progressCallback) {
         xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 try {
+                    // Check if response is HTML (session timeout/redirect)
+                    const contentType = xhr.getResponseHeader('Content-Type');
+                    if (contentType && contentType.includes('text/html')) {
+                        console.error('Received HTML response instead of JSON - possible session timeout', {
+                            status: xhr.status,
+                            contentType: contentType,
+                            responsePreview: xhr.responseText.substring(0, 500)
+                        });
+                        progressCallback?.(tempId, 'error', 100);
+                        reject('Session timeout or authentication error - please refresh the page');
+                        return;
+                    }
+                    
                     const responseData = JSON.parse(xhr.responseText);
+                    
+                    // Check if upload was successful
+                    if (responseData.success === false) {
+                        console.error('Upload failed:', responseData);
+                        progressCallback?.(tempId, 'error', 100);
+                        reject(responseData.message || 'Upload failed');
+                        return;
+                    }
+                    
                     if (progressCallback) {
                         progressCallback(responseData.requestId || tempId, 'complete', 100, responseData.fileUrl);
                     }
                     resolve(responseData);
                 } catch (e) {
+                    console.error('Failed to parse server response:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText.substring(0, 500),
+                        error: e
+                    });
                     progressCallback?.(tempId, 'error', 100);
-                    reject('Invalid server response');
+                    reject(`Invalid server response: ${e.message}`);
                 }
             } else {
+                // Handle HTTP errors (4xx, 5xx)
+                let errorMessage = `Upload failed: ${xhr.statusText}`;
+                
+                try {
+                    const errorData = JSON.parse(xhr.responseText);
+                    if (errorData.message) {
+                        errorMessage = errorData.message;
+                    }
+                    if (errorData.errors) {
+                        // Laravel validation errors
+                        const validationErrors = Object.values(errorData.errors).flat();
+                        errorMessage = validationErrors.join(', ');
+                    }
+                } catch (e) {
+                    // If response is not JSON, use default error message
+                }
+                
+                console.error('Upload failed with status:', {
+                    status: xhr.status,
+                    statusText: xhr.statusText,
+                    responseText: xhr.responseText.substring(0, 500),
+                    parsedError: errorMessage
+                });
                 progressCallback?.(tempId, 'error', 100);
-                reject(`Upload failed: ${xhr.statusText}`);
+                reject(errorMessage);
             }
         };
 

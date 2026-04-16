@@ -45,14 +45,20 @@
 					{!! $translation["group_welcome"] !!}
 					<button class="btn-lg-fill" onclick="openRoomCreatorPanel()">{{ $translation["CreateARoom"] }}</button>
 				</div>
-			</div>
 		</div>
+	</div>
 
-		<div class="dy-main-content" id="chat">
-			<div class="chatlog">
-				<div class="chatlog-container ">
-
-					<div class="scroll-container">
+	<div class="dy-main-content" id="chat">
+		<div class="chat-header" id="group-chat-header">
+			<img class="chat-header-icon" id="chat-header-icon" alt="">
+			<div class="chat-header-initials" id="chat-header-initials"></div>
+			<h3 class="chat-header-name" id="chat-header-name"></h3>
+			<button class="btn-xs" onclick="openRoomCP()" title="Info">
+				<x-icon name="info"/>
+			</button>
+		</div>
+		<div class="chatlog">
+			<div class="chatlog-container ">					<div class="scroll-container">
 						<div class="scroll-panel">
 							<div class="thread trunk" id="0">
 

@@ -5,6 +5,8 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
     inputWrappers.forEach(wrapper => {
         const input = wrapper.querySelector('.passkey-input');
         const toggleBtn = wrapper.querySelector('.btn-xs');
+        if (!input || !toggleBtn) return;
+        
         input.dataset.visible = 'false'
 
         //random name will prevent chrome from auto filling.
@@ -137,17 +139,48 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
         });
 
 
-        // Prevent copy/cut/paste
-        ['copy', 'cut', 'paste'].forEach(evt =>
-            input.addEventListener(evt, e => e.preventDefault())
-        );
+        // Prevent copy/cut/paste only for inputs without data-allow-paste attribute
+        if (!input.hasAttribute('data-allow-paste')) {
+            ['copy', 'cut', 'paste'].forEach(evt =>
+                input.addEventListener(evt, e => e.preventDefault())
+            );
+        } else {
+            // Special handling for paste in backup hash inputs
+            input.addEventListener('paste', function(e) {
+                e.preventDefault();
+                
+                // Get pasted text from clipboard
+                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                
+                // Clean up the pasted text (trim whitespace)
+                const cleanedText = pastedText.trim();
+                
+                // Update the real value
+                input.dataset.realValue = cleanedText;
+                
+                // Update display based on visibility state
+                if (input.dataset.visible === 'true') {
+                    input.value = cleanedText;
+                } else {
+                    input.value = '*'.repeat(cleanedText.length);
+                }
+            });
+        }
 
         // Toggle visibility (unchanged, but will read dataset.realValue)
         toggleBtn.addEventListener('click', function () {
             const real = input.dataset.realValue || '';
-            const icons = toggleBtn.querySelectorAll('svg');
-            const eye = icons[0];
-            const eyeOff = icons[1];
+            
+            // Find the icon elements - they are direct children of the button container
+            const iconChildren = Array.from(toggleBtn.children);
+            
+            if (iconChildren.length < 2) {
+                console.warn('Toggle button should have at least 2 icon children');
+                return;
+            }
+            
+            const eye = iconChildren[0];
+            const eyeOff = iconChildren[1];
 
             const isVisible = input.dataset.visible === 'true';
             if (!isVisible) {
@@ -164,6 +197,21 @@ function initializePasskeyInputs(applyCharacterLimitation = false){
             }
         });
     });
+}
+
+
+// Helper function to get the real (unmasked) value of a passkey input
+function getPasskeyRealValue(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return '';
+    
+    // For backup-hash-inputs (normal password fields), just return the value
+    if (input.classList.contains('backup-hash-input')) {
+        return input.value;
+    }
+    
+    // For passkey-inputs (masked inputs), return the dataset value
+    return input.dataset.realValue || input.value;
 }
 
 

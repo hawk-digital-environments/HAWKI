@@ -197,6 +197,74 @@ class AiModelListScreen extends Screen
     }
 
     /**
+     * Toggle a specific capability for a model.
+     */
+    public function toggleCapability(Request $request): void
+    {
+        try {
+            $model = AiModel::findOrFail($request->get('id'));
+            $capability = $request->get('capability');
+            
+            // Validate capability
+            $validCapabilities = ['file_upload', 'vision', 'web_search', 'reasoning'];
+            if (!in_array($capability, $validCapabilities)) {
+                Toast::error('Invalid capability specified.');
+                return;
+            }
+
+            // Get current settings
+            $settings = $model->settings ?? [];
+            $tools = $settings['tools'] ?? [];
+            
+            // Get current status
+            $currentStatus = !empty($tools[$capability]);
+            $newStatus = !$currentStatus;
+            
+            // Toggle the capability
+            $tools[$capability] = $newStatus;
+            $settings['tools'] = $tools;
+
+            // Use trait method for model save with change detection
+            $this->saveModelWithChangeDetection(
+                $model,
+                ['settings' => $settings],
+                "Model '{$model->label}' capability '{$capability}'",
+                ['settings' => $model->settings],
+                null,
+                function ($savedModel) use ($capability, $currentStatus, $newStatus) {
+                    // After-save callback with structured logging
+                    $this->logModelOperation(
+                        'toggle_capability',
+                        'AiModel',
+                        $savedModel->id,
+                        'success',
+                        [
+                            'model_label' => $savedModel->label,
+                            'provider_id' => $savedModel->provider_id,
+                            'capability' => $capability,
+                            'status_change' => ['from' => $currentStatus, 'to' => $newStatus],
+                        ]
+                    );
+                }
+            );
+
+        } catch (\Exception $e) {
+            $this->logModelOperation(
+                'toggle_capability',
+                'AiModel',
+                $request->get('id'),
+                'error',
+                [
+                    'capability' => $request->get('capability'),
+                    'error' => $e->getMessage()
+                ]
+            );
+
+            Toast::error('Error toggling model capability: '.$e->getMessage());
+        }
+    }
+
+    /**
      * Delete a model.
      */
     public function deleteModel(Request $request)

@@ -159,6 +159,7 @@ return [
     'triggers' => [
         'curl_request_object' => false,
         'curl_return_object' => false,
+        'raw_curl_chunk' => false,
         'normalized_return_object' => false,
         'formatted_stream_chunk' => false,
         'translated_return_object' => false,

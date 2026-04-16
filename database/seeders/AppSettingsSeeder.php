@@ -40,6 +40,9 @@ class AppSettingsSeeder extends Seeder
             return;
         }
 
+        // Track all valid keys from settings.php
+        $validKeys = [];
+
         // Verarbeite alle konfigurierten Dateien aus settings.php
         foreach ($settingsConfig as $configName => $keysToProcess) {
             // Überspringe das Gruppen-Mapping - das ist ein spezieller Konfigurationsschlüssel
@@ -53,15 +56,20 @@ class AppSettingsSeeder extends Seeder
                 continue;
             }
 
-            $this->processConfigFile($configName, $keysToProcess);
+            $processedKeys = $this->processConfigFile($configName, $keysToProcess);
+            $validKeys = array_merge($validKeys, $processedKeys);
         }
+
+        // Remove settings that are no longer defined in settings.php
+        $this->removeObsoleteSettings($validKeys);
     }
 
     /**
      * Processes a configuration file and imports its settings
      *
      * @param  string  $configName
-     * @return void
+     * @param  array  $keysToProcess
+     * @return array Array of processed database keys
      */
     private function processConfigFile($configName, array $keysToProcess)
     {
@@ -71,7 +79,7 @@ class AppSettingsSeeder extends Seeder
         if (! is_array($configData)) {
             $this->command->warn("Config {$configName} is not an array, skipping");
 
-            return;
+            return [];
         }
 
         // Hole das Gruppen-Mapping aus der Konfiguration
@@ -85,6 +93,7 @@ class AppSettingsSeeder extends Seeder
 
         $flattenedConfig = $this->flattenArray($configData);
         $processedCount = 0;
+        $processedKeys = [];
 
         // Nur die in settings.php definierten Schlüssel verarbeiten
         foreach ($keysToProcess as $key => $value) {
@@ -118,6 +127,7 @@ class AppSettingsSeeder extends Seeder
 
             // DB-Key erstellen (mit Unterstrich): app_name
             $dbKey = "{$configName}_{$realKey}";
+            $processedKeys[] = $dbKey;
 
             // $configFullKey = "{$configName}.{$realKey}";
             $type = $this->determineType($value, $dbKey);
@@ -139,6 +149,8 @@ class AppSettingsSeeder extends Seeder
         }
 
         $this->command->info("Processed {$processedCount} keys from {$configName}");
+        
+        return $processedKeys;
     }
 
     /**
@@ -288,5 +300,33 @@ class AppSettingsSeeder extends Seeder
         ]);
         
         $this->command->info("Created new setting: {$key}");
+    }
+
+    /**
+     * Remove settings from database that are no longer defined in settings.php
+     *
+     * @param  array  $validKeys  Array of valid database keys from settings.php
+     * @return void
+     */
+    private function removeObsoleteSettings(array $validKeys)
+    {
+        // Get all settings that have a source (managed by config files)
+        $allSettings = AppSetting::whereNotNull('source')->get();
+        
+        $removedCount = 0;
+        
+        foreach ($allSettings as $setting) {
+            if (!in_array($setting->key, $validKeys)) {
+                $this->command->warn("Removing obsolete setting: {$setting->key} (from {$setting->source})");
+                $setting->delete();
+                $removedCount++;
+            }
+        }
+        
+        if ($removedCount > 0) {
+            $this->command->info("Removed {$removedCount} obsolete setting(s) from database");
+        } else {
+            $this->command->info("No obsolete settings found");
+        }
     }
 }

@@ -617,8 +617,17 @@ async function preparePrintPage(){
         let msgKey = key;
         for (const msg of messages) {
             msgKey = msg.message_role === 'assistant' ? aiKey : key;
-            const decryptedContent =  await decryptWithSymKey(msgKey, msg.content.text, msg.content.text.iv, msg.content.text.tag);
-            msg.content.text = decryptedContent;
+            
+            // Check if content.text is an object (encrypted) or already a string
+            if (typeof msg.content.text === 'object' && msg.content.text.ciphertext) {
+                const decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+                msg.content.text = decryptedContent;
+            } else if (typeof msg.content.text === 'string') {
+                // Already decrypted or plain text - do nothing
+                console.log('Message already decrypted or plain text:', msg.message_id);
+            } else {
+                console.error('Unexpected message structure:', msg);
+            }
         };
     }
 

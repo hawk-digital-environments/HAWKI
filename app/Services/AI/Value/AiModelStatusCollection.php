@@ -95,6 +95,18 @@ final class AiModelStatusCollection implements \IteratorAggregate
     }
 
     /**
+     * Mark all models with a specific status.
+     * @param ModelOnlineStatus $status
+     * @return void
+     */
+    public function markAllAs(ModelOnlineStatus $status): void
+    {
+        foreach ($this->models as $model) {
+            $this->setStatus($model, $status);
+        }
+    }
+
+    /**
      * Get all model IDs in the collection.
      * @return iterable<string>
      */

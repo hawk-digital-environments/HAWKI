@@ -85,8 +85,36 @@ trait RoomMessages{
         catch(\Exception $e){
             return false;
         }
+    }
 
-
+    public function markAllAsRead(string $slug): bool{
+        try{
+            $room = Room::where('slug', $slug)->firstOrFail();
+            $member = $room->members()->where('user_id', Auth::id())->firstOrFail();
+            
+            // Get all messages in this room that are not authored by this member
+            $messages = $room->messages()
+                ->where('member_id', '!=', $member->id)
+                ->get();
+            
+            foreach ($messages as $message) {
+                if (!$message->isReadBy($member)) {
+                    $message->addReadSignature($member);
+                }
+            }
+            
+            // Also delete invitation (accepting it) if exists
+            $user = Auth::user();
+            $invitation = $user->invitations()->where('room_id', $room->id)->first();
+            if ($invitation) {
+                $invitation->delete();
+            }
+            
+            return true;
+        }
+        catch(\Exception $e){
+            return false;
+        }
     }
 
 }

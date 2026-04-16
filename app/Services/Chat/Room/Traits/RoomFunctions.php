@@ -45,17 +45,12 @@ trait RoomFunctions
         $membership->updateLastRead();
 
         $role = $membership->role;
-
-        $data = [
-            'id' => $room->id,
-            'name' => $room->room_name,
-            'room_icon' => $roomIcon,
-            'slug' => $room->slug,
-            'system_prompt' => $room->system_prompt,
-            'room_description' => $room->room_description,
-            'role' => $role,
-
-            'members' => $room->members->map(function ($member) {
+        
+        // Viewers can only see Admin + themselves
+        $canViewAllMembers = $membership->canViewAllMembers();
+        
+        $membersData = $canViewAllMembers 
+            ? $room->members->map(function ($member) {
                 return [
                     'user_id' => $member->user->id,
                     'name' => $member->user->name,
@@ -65,6 +60,54 @@ trait RoomFunctions
                     'avatar_url' => !empty($member->user->avatar_id) ?
                                     $this->avatarStorage->getUrl($member->user->avatar_id, 'profile_avatars')
                                     : null
+                ];
+            })->values()
+            : $room->members->filter(function ($member) {
+                // Show admins, assistants (AI), and current user to Viewers
+                return $member->role === \App\Models\Member::ROLE_ADMIN || 
+                       $member->role === \App\Models\Member::ROLE_ASSISTANT ||
+                       $member->user_id === Auth::id();
+            })->map(function ($member) {
+                return [
+                    'user_id' => $member->user->id,
+                    'name' => $member->user->name,
+                    'username' => $member->user->username,
+                    'role' => $member->role,
+                    'employeetype' => $member->user->employeetype,
+                    'avatar_url' => !empty($member->user->avatar_id) ?
+                                    $this->avatarStorage->getUrl($member->user->avatar_id, 'profile_avatars')
+                                    : null
+                ];
+            })->values();
+
+        $data = [
+            'id' => $room->id,
+            'name' => $room->room_name,
+            'room_icon' => $roomIcon,
+            'slug' => $room->slug,
+            'system_prompt' => $room->system_prompt,
+            'room_description' => $room->room_description,
+            'role' => $role,
+            'total_members_count' => $room->members()
+                ->whereHas('user', function($query) {
+                    $query->where('employeetype', '!=', 'system')
+                          ->where('employeetype', '!=', 'AI');
+                })
+                ->count(),
+            'can_view_all_members' => $canViewAllMembers,
+
+            'members' => $membersData,
+
+            'invitations' => $room->invitations->map(function ($invitation) {
+                $user = \App\Models\User::where('username', $invitation->username)->first();
+                return [
+                    'username' => $invitation->username,
+                    'name' => $user ? $user->name : $invitation->username,
+                    'role' => $invitation->role,
+                    'avatar_url' => ($user && !empty($user->avatar_id)) ?
+                                    $this->avatarStorage->getUrl($user->avatar_id, 'profile_avatars')
+                                    : null,
+                    'isPending' => true
                 ];
             }),
 
@@ -130,6 +173,27 @@ trait RoomFunctions
             ];
         } catch(Exception $e) {
             throw new Exception('Failed to store image: ' . $e->getMessage());
+        }
+    }
+
+    public function removeAvatar(string $slug): void
+    {
+        $room = Room::where('slug', $slug)->firstOrFail();
+
+        if (!$room->isMember(Auth::id())) {
+            throw new AuthorizationException();
+        }
+
+        if ($room->room_icon) {
+            $avatarStorage = app(AvatarStorageService::class);
+            try {
+                $avatarStorage->delete($room->room_icon, 'room_avatars');
+            } catch (Exception $e) {
+                // Log error but continue with database update
+                \Log::error('Failed to delete room avatar file: ' . $e->getMessage());
+            }
+
+            $room->update(['room_icon' => null]);
         }
     }
 
