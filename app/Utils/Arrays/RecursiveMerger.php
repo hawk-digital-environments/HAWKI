@@ -48,8 +48,10 @@ final class RecursiveMerger
                     continue;
                 }
 
+                // @codeCoverageIgnoreStart
                 // @phpstan-ignore-next-line Technically, unreachable code, but I want to be safe in case more options are added in the future
                 continue;
+                // @codeCoverageIgnoreEnd
             }
 
             $argsClean[] = $arg;

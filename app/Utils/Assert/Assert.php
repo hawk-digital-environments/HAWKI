@@ -132,8 +132,9 @@ class Assert
         }
         try {
             new Uri($value);
+            // @codeCoverageIgnoreStart
         } catch (\InvalidArgumentException $e) {
-            // @codeCoverageIgnoreStart - This should never happen if filter_var passed, but we catch it just in case the Uri implementation changes in the future to throw for some edge case that filter_var doesn't catch.
+            // This should never happen if filter_var passed, but we catch it just in case the Uri implementation changes in the future to throw for some edge case that filter_var doesn't catch.
             throw InvalidUriException::forExceptionOfUriParsing($e, self::prefixKey($key));
             // @codeCoverageIgnoreEnd
         }
