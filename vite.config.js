@@ -20,7 +20,11 @@ export default defineConfig({
         https: process.env.DOCKER_PROJECT_PROTOCOL === 'https' ? {
             key: '/etc/ssl/certs/custom/key.pem',
             cert: '/etc/ssl/certs/custom/cert.pem'
-        } : false
+        } : false,
+        hmr: {
+            host: process.env.DOCKER_PROJECT_HOST || 'localhost',
+            protocol: process.env.DOCKER_PROJECT_PROTOCOL === 'https' ? 'wss' : 'ws',
+        },
     }
 
 });

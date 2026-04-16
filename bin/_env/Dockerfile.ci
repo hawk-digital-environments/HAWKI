@@ -1,0 +1,11 @@
+FROM node:24.14
+
+WORKDIR /ci/bin
+
+COPY . .
+
+WORKDIR /ci/bin/_env
+
+RUN npm install
+
+CMD cp /ci/.env.ci /ci/.env && npm run test
