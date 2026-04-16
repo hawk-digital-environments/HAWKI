@@ -8,7 +8,7 @@ class UpdateEnumTypeOnUsageRecordsTable extends Migration
 {
     public function up()
     {
-        if(env('DB_CONNECTION') == 'pgsql') {
+        if (env('DB_CONNECTION') == 'pgsql') {
             // Check if the column uses a custom enum type or is just a varchar with a check constraint:
             // Query information_schema to get the column type
             $columnType = DB::table('information_schema.columns')
@@ -32,8 +32,12 @@ class UpdateEnumTypeOnUsageRecordsTable extends Migration
                      CHECK (type IN ('private', 'group', 'api'));"
                 );
             }
-        }
-        else{
+        } elseif (DB::getDriverName() === 'sqlite') {
+            // SQLite doesn't support enum → use string instead
+            Schema::table('usage_records', function (Blueprint $table) {
+                $table->string('type', 50)->change();
+            });
+        } else {
             // This updates the 'type' column to include 'api'.
             DB::statement("
                 ALTER TABLE `usage_records`

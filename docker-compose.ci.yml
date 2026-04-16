@@ -1,0 +1,16 @@
+services:
+    test:
+        container_name: ${PROJECT_NAME:-hawki}-test
+        build:
+            context: .
+            target: app_test
+        environment:
+            - APP_KEY=${APP_KEY:-N9bC6l&vZY2EO4be%Sty3hDOQSfPB7e0}
+            - APP_ENV=testing
+            - DB_CONNECTION=sqlite
+            - "DB_DATABASE=:memory:"
+            - CACHE_STORE=array
+            - SESSION_DRIVER=array
+            - QUEUE_CONNECTION=sync
+            - MAIL_MAILER=array
+        entrypoint: ["sh", "-c", "APP_ENV=testing php vendor/bin/phpunit"]

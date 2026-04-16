@@ -22,5 +22,4 @@ export default defineConfig({
             cert: '/etc/ssl/certs/custom/cert.pem'
         } : false
     }
-
 });
