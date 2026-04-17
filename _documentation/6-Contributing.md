@@ -1,0 +1,1042 @@
+# Contributing to HAWKI
+
+Thank you for contributing to HAWKI. This guide covers everything you need: workflow, architecture, and code standards. All participants are expected to treat others with respect and courtesy.
+
+---
+
+## Table of Contents
+
+1. [How to Contribute](#how-to-contribute)
+2. [Development Workflow](#development-workflow)
+3. [Architecture & Code Organization](#architecture--code-organization)
+4. [Code Standards](#code-standards)
+5. [Testing](#testing)
+6. [Pull Request Process](#pull-request-process)
+7. [Code Review](#code-review)
+8. [AI Agents](#ai-agents)
+9. [Getting Help](#getting-help)
+
+---
+
+## How to Contribute
+
+- **Bug reports:** Search existing issues first. Include reproduction steps, environment details, and error messages.
+- **Feature suggestions:** Check existing issues. Describe the use case and why it benefits users.
+- **Bug fixes:** Reference the issue in your commit.
+- **New features:** Discuss in an issue before implementing. Keep scope focused.
+- **Documentation:** Fix typos, clarify explanations, keep docs in sync with code.
+
+---
+
+## Development Workflow
+
+### Branching Strategy
+
+| Branch             | Purpose                                                                                                         |
+|--------------------|-----------------------------------------------------------------------------------------------------------------|
+| **`development`**  | **Default branch** — bleeding edge. All feature and bugfix PRs target here.                                     |
+| **`main`**         | Stable release. Only updated by the release pipeline, never directly.                                           |
+| **`feature/*`**    | New functionality (e.g., `feature/user-notifications`)                                                          |
+| **`bugfix/*`**     | Issue fixes (e.g., `bugfix/login-validation`)                                                                   |
+| **`hotfix/*`**     | Urgent fixes branched from `main` and merged back into both `main` and `development`                            |
+| **`hawk/testing`** | Deployment branch for the HAWK testing environment — pushing here triggers an automated Docker build and deploy |
+| **`hawk/prod`**    | Deployment branch for the HAWK production environment — same pipeline, production infrastructure                |
+
+`development` is the default branch because it represents the current state of active work. `main` reflects what has been released. Contributors always branch from `development` and open PRs against `development`. The release process, versioning strategy, and pipeline details are described in [`_changelog/README.md`](https://github.com/hawk-digital-environments/HAWKI/blob/development/_changelog/README.md).
+
+```bash
+git checkout development && git pull upstream development
+git checkout -b feature/your-feature-name
+```
+
+### Commit Messages
+
+We follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
+
+```
+type(scope): short summary of what changed
+
+Optional body explaining what and why (not how). Wrap at 72 characters.
+
+Refs #123
+```
+
+**Types:** `feat` · `fix` · `docs` · `style` · `refactor` · `test` · `chore`
+
+**Rules:** Subject line under 50 characters · reference related issues.
+
+### Keeping Your Branch Updated
+
+```bash
+git fetch upstream
+git rebase upstream/development
+git push origin feature/your-feature-name --force-with-lease
+```
+
+---
+
+## Architecture & Code Organization
+
+### Domain-Driven Design (Light)
+
+HAWKI follows a **lightweight Domain-Driven Design** approach. Code is organized around business concepts (domains) rather than technical layers, making the codebase easier to reason about as it grows.
+
+> **Note:** Laravel is not designed for DDD out of the box. We use a pragmatic "light" variant: business logic is organized into domains under `App\Services`, while Laravel-native classes (Controllers, Models, FormRequests, API Resources, Events, Listeners) remain in their conventional `app/` locations. This avoids fighting the framework while still gaining the organizational benefits of domain thinking.
+>
+> For more background on Domain-Driven Design, see [martinfowler.com/bliki/DomainDrivenDesign](https://martinfowler.com/bliki/DomainDrivenDesign.html).
+
+### Domain Structure
+
+Domains live under `App\Services\{DomainName}\`. Each domain owns its business logic, database access, and domain types.
+
+#### Naming & Pluralization
+
+- **Domain namespaces** use the natural singular noun of the domain concept (`Auth`, `Storage`, `Announcement`)
+- **Structural namespaces** use the plural for countable nouns (`Exceptions`, `Values`, `Contracts`, `Traits`), and singular for mass/uncountable nouns (`Middleware`)
+- **All namespace segments are `CamelCase`**, including acronyms — `Ai` not `AI`, `Mcp` not `MCP`, `Http` not `HTTP`. This keeps PSR-4 autoloading consistent and avoids ambiguity when acronyms appear mid-path (e.g. `Ai\Tools\Mcp` reads unambiguously; `AI\Tools\MCP` does not).
+- Prefer `Contracts/` over `Interfaces/` or `Interface/`
+
+```
+app/Services/
+└── Ai/                         ← Domain (singular noun, CamelCase)
+    ├── Clients/                 ← Structural namespace (group of ClientInterface decorators)
+    │   ├── LoggingClient.php
+    │   └── ToolCallingClient.php
+    ├── Contracts/              ← Interfaces for cross-domain communication
+    │   └── ModelProviderInterface.php
+    ├── Repositories/           ← Database access (repositories + optional query objects)
+    │   ├── Queries/
+    │   │   └── FindActiveModelsByProviderQuery.php
+    │   └── AiModelRepository.php
+    ├── Exceptions/             ← Domain-specific exceptions
+    │   └── ModelNotFoundException.php
+    ├── Providers/              ← External provider integrations (structural namespace)
+    ├── Values/                 ← Value objects, DTOs, enums
+    │   ├── AiModelCollection.php
+    │   └── ModelUsageType.php  ← Enum (Type suffix)
+    ├── AiFactory.php           ← Named collaborator, direct partner of AiService
+    └── AiService.php           ← Domain service (@api)
+```
+
+Laravel-native classes mirror this domain structure through subfolders:
+
+```
+app/
+├── Http/
+│   ├── Controllers/Ai/
+│   ├── Requests/Ai/
+│   └── Resources/Ai/
+├── Models/Ai/
+├── Events/Ai/
+└── Listeners/Ai/
+```
+
+#### Domain Services & Public API
+
+Any class named `...Service` is the **public API** of its domain and must carry the `@api` docblock marker. `...Service` classes **always live in the domain root** — never inside a structural namespace.
+
+Domains should aim for **one focused service entry point** to avoid feature creep. Multiple `...Service` classes at the domain root are allowed where sensible, but must be a deliberate decision.
+
+Services must always be:
+
+- **Stateless** — no mutable instance variables
+- **Singletons** — registered with `#[Singleton]`
+- **Lightweight at construction** — no heavy initialization in the constructor; defer expensive work to factories or the first method call that needs it
+
+#### Domain Root Cleanliness
+
+The domain root is not exclusively for services. Named collaborators that are direct, single-purpose partners of the domain service also live flat here (e.g. `AiFactory`, `AvailableModelsBuilder`). The signal to move a class into a structural namespace is fit, not complexity:
+
+- **Fits a structural archetype** (`Exceptions/`, `Values/`, `Contracts/`, `Repositories/`) → put it in that directory
+- **Multiple classes collaborate with each other** around a shared concept → extract them into a named structural namespace (e.g. `AI/Client/` for a group of `ClientInterface` decorators)
+- **`Utils/` is always a classification failure** — every class has a more precise home. If you feel the urge to create one, classify more precisely.
+
+#### Structural Namespaces
+
+A structural namespace is an **organizational tool**, not a domain boundary. It follows the same naming rules as a domain directory. The key constraint: **`...Service` classes inside a structural namespace must bubble up to the domain root**. Value objects, entities, and contracts inside a structural namespace stay where they are — they are accessed through the service.
+
+When internal complexity grows, apply this decision sequence:
+
+1. **Can it be its own domain?** Always preferred — extract it.
+2. **Can the logic be merged into the main domain service?** Do that.
+3. **Neither?** Create a structural namespace. If a `...Service` inside it cannot be merged into the main domain service, that is a signal it should have been its own domain — go back to step 1.
+
+When a pattern starts to emerge, refactor into a clean structural namespace. If the refactoring would break `@api` compatibility, add a `@todo` for the next major release instead.
+
+#### Naming Collaborators Correctly — Providers as an Example
+
+Not every class that behaves like a "service" should be called one. A concrete example: LDAP, OIDC, and Shibboleth are auth *strategy implementations*, not standalone services. They cannot be injected directly by consumers — they are internal implementations of `AuthProviderInterface`, orchestrated by `AuthService`. Naming them `LdapService` etc. misrepresents their role.
+
+The correct structure names them as providers and groups them in a dedicated structural namespace:
+
+```
+Auth/
+├── Providers/                       ← structural namespace, internal
+│   ├── Ldap/
+│   │   ├── Exceptions/
+│   │   ├── Values/
+│   │   ├── LdapAttributeReader.php
+│   │   └── LdapAuthProvider.php     ← no @api, internal only
+│   ├── Oidc/
+│   │   └── OidcAuthProvider.php
+│   └── Shibboleth/
+│       └── ShibbolethAuthProvider.php
+├── Contracts/
+│   └── AuthProviderInterface.php
+├── Exceptions/
+├── Values/
+│   └── AuthenticatedUserInfo.php
+└── AuthService.php                  ← @api, the only public entry point
+```
+
+#### Aggregating Services
+
+When a domain has multiple sub-services, expose them through a single aggregating service as `public readonly` constructor-injected properties. This keeps a single injection point while mirroring the namespace structure in the public API:
+
+```php
+class StorageService
+{
+    public function __construct(
+        public readonly FileStorageService $files,
+        public readonly AvatarStorageService $avatars,
+    ) {}
+}
+
+// Callers use a single injection point:
+$storage->files->retrieve($identifier);
+$storage->avatars->store($file);
+```
+
+Property names should mirror the structural namespace they represent (`files` → `Storage/Files/`, `avatars` → `Storage/Avatar/`).
+
+### Layer Responsibilities
+
+#### Controllers
+
+Handle HTTP requests only. No business logic.
+
+- Delegate validation to `FormRequest` classes
+- Call one service method
+- Return an `ApiResource` (JSON) or redirect
+- No direct database access, no conditional logic beyond routing
+
+```php
+// ✅ Good — thin controller
+public function store(CreateMessageRequest $request, MessageService $messageService): MessageResource
+{
+    return new MessageResource($messageService->createMessage($request->validated()));
+}
+```
+
+#### FormRequests
+
+All validation and authorization logic lives here. Never validate in controllers.
+
+> **TODO:** Detailed guidance on the distinction between validation, authorization (`authorize()`), and Laravel Policies/Gates is deferred — it will be elaborated alongside the plugin architecture documentation.
+
+#### API Resources
+
+Transform models into JSON responses. Live in `App\Http\Resources\{Domain}\`.
+
+Resources are the serialization boundary: they decide which fields and relationships to expose and how to format values. Since Laravel instantiates Resources outside the container, constructor injection is not available. When a Resource needs a service, use `ServiceLocatorTrait` (see [Dependency Injection](#dependency-injection)).
+
+```php
+class MessageResource extends JsonResource
+{
+    use ServiceLocatorTrait;
+
+    public function toArray(Request $request): array
+    {
+        $formatter = $this->getServiceInstance(MessageFormatterService::class);
+        return [
+            'id'      => $this->id,
+            'content' => $formatter->format($this->content),
+        ];
+    }
+}
+```
+
+#### Services
+
+Contain all business logic and domain workflows.
+
+- Single responsibility per service
+- No dependency on HTTP, sessions, or request objects
+- All dependencies injected via constructor
+- Reusable across controllers, jobs, and commands
+
+##### Service Decomposition — Sub-Services
+
+When a service grows to cover multiple distinct concerns, split it into **sub-services** rather than using traits to split the file.
+
+**Why not traits?** Using traits purely to break a large service into smaller files is a code-organisation hack, not an architectural solution. It produces hidden cross-trait coupling (`$this->method()` that lives in a different file), invisible injected dependencies (a trait silently relying on a constructor parameter it does not declare), and a flat method surface with no grouping signal. Traits exist for *horizontal reuse across unrelated classes* — not for splitting a single class.
+
+**The correct pattern:** Extract each distinct concern into its own service class and expose it through the parent service as a `public readonly` property. The parent service remains the `@api` surface of the domain; the sub-services are internal implementation detail.
+
+```php
+// ✅ Good — explicit sub-domain services
+
+class RoomService
+{
+    public function __construct(
+        public readonly RoomMemberService $members,
+        public readonly RoomMessageService $messages,
+        private readonly RoomRepository $repository,
+    ) {}
+
+    // Core room operations live directly on this class
+    public function create(array $data): Room { ... }
+    public function load(string $slug): Room { ... }
+    public function delete(string $slug): bool { ... }
+}
+
+// Callers use the grouped API:
+$roomService->members->add($slug, $data);
+$roomService->messages->sendMessage($data, $slug, $user);
+```
+
+```php
+// ❌ Bad — traits used as a file-splitting mechanism
+
+class RoomService
+{
+    use RoomFunctions;   // core operations
+    use RoomMembers;     // calls $this->delete() from RoomFunctions — hidden coupling
+    use RoomMessages;    // uses $this->messageHandler — invisible dependency
+}
+```
+
+**When does a sub-service become a standalone service?** If a concern is broad enough that controllers or other services need to inject it directly — independently of the parent — it should be a standalone service, not a sub-service property. The `public readonly` accessor pattern is appropriate when callers always go through the parent service and the sub-service has no meaningful identity on its own.
+
+**Cross-service dependencies in sub-services:** A sub-service sometimes needs to trigger behaviour owned by the parent (e.g., `RoomMemberService` deletes the room when the last member leaves). Inject the parent service into the sub-service — do not call `$this->parentMethod()` through trait inheritance. If this creates a circular dependency, extract the shared logic into a third collaborator or use a domain event.
+
+#### Repositories
+
+All database access is encapsulated in dedicated `Repository` classes (suffix: `Repository`). **Never call Eloquent model statics directly from services or controllers.**
+
+**Why not call models directly?** Models cannot be injected into the container and therefore cannot be mocked. A `Repository` class is injectable and mockable, making test setup explicit and reliable.
+
+```php
+// ✅ Good — injectable and mockable
+readonly class AiModelRepository
+{
+    public function findActiveByProvider(string $providerId): Collection
+    {
+        return AiModel::where('provider_id', $providerId)
+            ->where('active', true)
+            ->get();
+    }
+}
+
+// Usage in a service
+class AiService
+{
+    public function __construct(private readonly AiModelRepository $repository) {}
+
+    public function getModels(string $providerId): Collection
+    {
+        return $this->repository->findActiveByProvider($providerId);
+    }
+}
+```
+
+**Query objects (optional, encouraged for complex or reused queries):** When a query is complex or appears in more than one place, extract it into a dedicated `Query` object inside a `Queries/` structural namespace within the domain's `Repositories/` directory. The repository injects and composes these objects, keeping itself a clean API surface rather than a growing god-class:
+
+```
+AI/
+├── Repositories/
+│   ├── Queries/
+│   │   └── FindActiveModelsByProviderQuery.php
+│   └── AiModelRepository.php
+```
+
+```php
+// ✅ A focused query object — injectable, testable, reusable
+readonly class FindActiveModelsByProviderQuery
+{
+    public function execute(string $providerId): Collection
+    {
+        return AiModel::where('provider_id', $providerId)
+            ->where('active', true)
+            ->get();
+    }
+}
+
+// ✅ Repository composes queries — stays thin
+readonly class AiModelRepository
+{
+    public function __construct(
+        private readonly FindActiveModelsByProviderQuery $findActiveModels,
+    ) {}
+
+    public function findActiveByProvider(string $providerId): Collection
+    {
+        return $this->findActiveModels->execute($providerId);
+    }
+}
+```
+
+Each `Query` object owns exactly one SQL query. For simple, one-off lookups, inline Eloquent calls in the repository are perfectly fine — do not over-engineer.
+
+Eloquent query scopes are a convenience mechanism — their logic belongs in `Repository` classes or `Query` objects, not in models.
+
+#### Models
+
+Models are **data descriptors only**. They define structure, relationships, and casts. They do not perform work.
+
+**Allowed:**
+
+- Eloquent relationships (`hasMany`, `belongsTo`, etc.)
+- Attribute casts and accessors
+- Simple helper methods that operate only on data already present on the instance
+
+**Forbidden:**
+
+- Business logic or workflows
+- Direct database queries, query scopes, or global scopes (belongs in `Repository` classes or `Query` objects)
+- Cache access, external service calls, or facade usage
+- Static or global state
+- `ServiceLocatorTrait`
+
+The reason: Models cannot use constructor injection, so any external dependency leads back to facades — defeating the DI principle. Keep models stupid.
+
+#### Value Objects & DTOs
+
+Value objects represent domain concepts as typed, immutable structures. They live in `{Domain}/Values/`.
+
+- Always `readonly` (unless there is a specific reason not to be)
+- Use static factory methods (`from...`, `tryFrom...`) for construction; keep constructors simple or `private`
+- May include helper methods that derive additional data from their own properties
+- No external dependencies — no services, no database access
+
+```php
+readonly class StoredFileIdentifier
+{
+    private function __construct(
+        public string $uuid,
+        public StoredFileCategory $category,
+        public string $extension,
+    ) {}
+
+    public static function fromCategoryAndUuid(
+        StoredFileCategory $category,
+        string $uuid,
+        string $extension,
+    ): self {
+        return new self($uuid, $category, $extension);
+    }
+}
+```
+
+**When can a value object do more?** When the convenience gain clearly outweighs the cost of the object knowing too much. A concrete example: a file value object that holds a filesystem reference for lazy content loading saves the entire call stack from having to pass a filesystem dependency around — the efficiency gain is real and the coupling is contained. The test to apply: *is this domain logic tightly tied to this value's own data, or am I sneaking a service in through the back door?* If you are unsure, discuss with the team before proceeding. The default remains: value objects hold data, they do not do work.
+
+#### Enums
+
+Use enums instead of plain strings for any constrained set of values. Enums live in `{Domain}/Values/` right beside your other value objects.
+
+```
+Values/
+├── ModelUsageType.php      ← enum
+├── ModelOnlineStatus.php   ← enum
+└── StoredFileCategory.php  ← enum
+```
+
+#### Exceptions
+
+Exceptions live in `{Domain}/Exceptions/`. Every domain defines one marker interface — `{Domain}ExceptionInterface` — that extends `\Throwable`. All exceptions in the domain implement it. Sub-domains may define additional narrower interfaces. This allows callers to catch an entire domain's exceptions with a single type.
+
+**Design rules:**
+
+- Never throw built-in PHP exceptions directly. Always create a dedicated exception class that extends the appropriate base (`\InvalidArgumentException`, `\RuntimeException`, etc.).
+- Every exception class exposes one or more **static factory methods** that receive the contextual data and build a complete, actionable error message. Do not construct exceptions with `new` from outside the class.
+- Error messages must be **speaking and helpful**: describe what the caller tried to do, what went wrong, and — when possible — how to fix it. Use `sprintf` to compose messages.
+- The constructor may be `private` when only the static factories should be used, but this is not required.
+- When the same exception is appropriate in multiple distinct situations with slight variations in the message, add a dedicated factory method for each.
+- When catching exceptions without targeting a specific type, always catch `\Throwable` — not `\Exception`. `\Throwable` covers both `\Exception` and `\Error`.
+
+```php
+// App\Services\FileConverter\Exception\FileConverterExceptionInterface.php
+interface FileConverterExceptionInterface extends \Throwable {}
+
+// App\Services\FileConverter\Exception\ConversionFailedException.php
+class ConversionFailedException extends \RuntimeException implements FileConverterExceptionInterface
+{
+    public static function forUnsupportedMimeType(string $mimeType, string $converterClass): self
+    {
+        return new self(sprintf(
+            'Converter "%s" cannot handle MIME type "%s". '
+            . 'Register a converter that supports this type, or check the file before passing it.',
+            $converterClass,
+            $mimeType,
+        ));
+    }
+
+    public static function forExternalToolFailure(string $tool, string $reason): self
+    {
+        return new self(sprintf(
+            'External tool "%s" failed during conversion: %s. '
+            . 'Ensure the tool is installed and accessible on the server.',
+            $tool,
+            $reason,
+        ));
+    }
+}
+```
+
+**Who logs?**
+
+Exceptions are dumb — they carry data and a message, they never log themselves. Logging is the responsibility of the **catch site that makes a decision**:
+
+- **If you swallow** (return `null`, `false`, or continue iteration): you **must** log here, because no one else will. Include the operation context, not just `$e->getMessage()`.
+- **If you re-throw or convert** to a domain exception: log only the contextual enrichment you are adding. The next catch boundary up the chain will log its own decision. Do not log the same failure twice.
+- **Unhandled exceptions**: Laravel will catch and log these automatically, but that means the application crashes. Catch defensively at service boundaries so callers receive a clean failure signal.
+- **Log the exception** Use the PSR log's context parameter to include the full exception object (`['exception' => $e]`) — this ensures you get the stack trace and all details in your logs, not just the message. **IMPORTANT** `exception` is a reserved key in PSR logging — using it triggers special handling in most loggers that formats the exception nicely. Do not log exceptions as plain messages or with custom keys.
+
+```php
+// ✅ Swallow + log — caller gets null, no duplicate logging
+try {
+    return $this->fileStorage->retrieve($identifier);
+} catch (\Throwable $e) {
+    $this->logger->error('Failed to retrieve file for attachment ' . $identifier->uuid, ['exception' => $e]);
+    return null;
+}
+
+// ✅ Convert + minimal log — caller receives a clean domain exception
+try {
+    $this->connect($config);
+} catch (\Throwable $e) {
+    $this->logger->error('LDAP connection failed: ' . $e->getMessage());
+    throw AuthFailedException::forConnectionFailure($host, $e);
+}
+
+// ❌ Double log — the outer catch will log again
+$this->logger->error('...', ['exception' => $e]);
+throw $e; // and the next handler also logs $e
+```
+
+#### Events & Listeners
+
+- Events: named in **past tense** (`MessageSent`, `UserRegistered`) — data carriers, no logic
+- Listeners: named as **actions** (`NotifyRoomMembers`, `LogMessageActivity`)
+- Follow the same domain subfolder structure as controllers
+- Register mappings in `EventServiceProvider`
+
+> **TODO:** Detailed guidance on when to use events versus direct service calls, sync vs. async dispatch, and the role of events in the plugin architecture is deferred — it will be elaborated alongside the plugin system documentation.
+
+#### Contracts (Interfaces)
+
+Use interfaces where you expect **multiple or replaceable implementations** of the same concept. A concrete example is `FileConverterInterface`, which multiple converter handlers implement — the interface enforces the contract and allows the system to swap implementations without changing callers.
+
+Do not introduce interfaces speculatively. If there is only one implementation and no plan to replace it, a plain class is fine.
+
+#### API Stability (`@api`)
+
+Classes and methods marked with `@api` in their DocBlock form the **stable public surface** of a domain. This rule also includes interfaces; those without the marker are only for the domain itself! `@api` is a promise:
+
+- The signature will not change until the next major version, even as features are added
+- Removal requires a `@deprecated` tag first, with a clear description of **when** it will be removed and **how to migrate**
+
+```php
+/**
+ * @api
+ */
+class AiService
+{
+    /**
+     * @api
+     * @deprecated Will be removed in v3.0. Use getAvailableModels() instead.
+     */
+    public function getModels(): AiModelCollection { ... }
+}
+```
+
+Everything **without** `@api` is internal and may change at any time — do not depend on it from outside its domain.
+
+> **Note:** If a class has the `@api` tag but none of its methods do, the entire public and protected surface of the class is considered stable. This is the common pattern for service classes.
+
+**What exactly is stable?** The public and protected signatures of `@api`-marked classes and methods. Private implementation details — private fields, private methods, internal state — may still change between versions. Decorators (see below) that only call `public` and `protected` methods are safe; decorators that rely on private internals are not.
+
+**Versioning and `@deprecated`:** The versioning strategy that determines when something is scheduled for removal is described in [`_changelog/README.md`](https://github.com/hawk-digital-environments/HAWKI/blob/development/_changelog/README.md). The `@deprecated` tag must always reference a target version and a migration path.
+
+#### Extension & Decoration
+
+`@api` classes and their methods are **never `final`** — neither the class declaration nor individual methods. This is intentional: HAWKI is designed with a plugin system in mind, and `@api` classes must remain open for decoration and extension.
+
+To decorate an `@api` service, use Laravel's `$this->app->extend()` together with `App\Utils\DecoratorTrait`. The trait uses reflection to copy all properties from the original instance into the decorator without calling the constructor, preserving runtime state while allowing individual methods to be overridden. See the class docblock in [`App\Utils\DecoratorTrait`](https://github.com/hawk-digital-environments/HAWKI/blob/development/app/Utils/DecoratorTrait.php) for full details, limitations, and caveats.
+
+```php
+// DecoratedAiService.php
+class DecoratedAiService extends AiService
+{
+    use DecoratorTrait;
+
+    public function getModels(): AiModelCollection
+    {
+        // Override specific behaviour, the rest delegates to the parent
+        $models = parent::getModels();
+        return $this->filter($models);
+    }
+}
+
+// In a ServiceProvider
+$this->app->extend(AiService::class, function (AiService $original) {
+    return DecoratedAiService::createDecoratedOf($original);
+});
+```
+
+Internal (non-`@api`) classes may be `final` and carry no such guarantee.
+
+#### Singletons
+
+Register stateless or internally-cached services as singletons in a ServiceProvider, or use the `#[Singleton]` attribute directly on the class (see [Dependency Injection](#dependency-injection)).
+
+```php
+// Via ServiceProvider
+$this->app->singleton(StorageService::class, fn ($app) =>
+    new StorageService(config('storage.driver'))
+);
+```
+
+---
+
+## Code Standards
+
+### Code Style
+
+HAWKI follows the [PSR-12](https://www.php-fig.org/psr/psr-12/) coding style guide for all PHP code. JavaScript and other frontend assets are formatted with [Prettier](https://prettier.io/).
+
+To keep formatting consistent, the project ships with CLI tooling that runs the formatters for you:
+
+```bash
+# Format all PHP files using php-cs-fixer
+bin/env style php
+# If not running in a docker container
+composer run php-cs-fixer
+
+# Format all JS/frontend files using Prettier
+bin/env style js
+# If not running in a docker container
+npm run prettier
+```
+
+Run the appropriate formatter before every commit. The "You executed the code formatters" item in the [Code Quality Checklist](#code-quality-checklist) refers to this step.
+
+> **Heads-up — automated enforcement is coming:** Style is currently a manually enforced convention. Starting with **HAWKI 3.0.0**, all pull requests will be validated automatically by the CI pipeline and will fail if formatting issues are detected. Run the formatters locally now to avoid surprises later.
+
+### Strict Types
+
+Every PHP file must declare `strict_types=1`:
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\AI;
+```
+
+### PHP Native Classes — Fully Qualified Names
+
+PHP built-in classes (`\Throwable`, `\RuntimeException`, `\InvalidArgumentException`, `\DateTime`, etc.) must always be written with a **leading backslash** and never imported via `use`. This makes it immediately clear which classes are native PHP versus user-defined or vendor code. Many packages define classes with identical names, and IDE auto-import can silently pull in the wrong one at runtime.
+
+```php
+// ✅ Good
+} catch (\Throwable $e) { ... }
+class MyException extends \RuntimeException {}
+
+// ❌ Bad
+use \Throwable;
+} catch (Throwable $e) { ... }
+```
+
+### Type Declarations
+
+Always declare parameter and return types. Use the most specific type possible; avoid `mixed`.
+
+```php
+// ✅ Full types
+public function findModel(string $modelId): ?AiModel { ... }
+
+// ✅ Union (PHP 8.0+)
+public function getId(): int|string { ... }
+
+// ❌ No types
+public function calculateTotal($quantity, $price) { ... }
+```
+
+For complex array shapes or generic collections, add a DocBlock:
+
+```php
+/** @return Collection<int, AiModel> */
+public function getActiveModels(): Collection { ... }
+```
+
+### Dependency Injection
+
+Always inject dependencies via the constructor. Never use facades or `app()` helpers in services, `Repository` classes, or value objects.
+
+#### Laravel Attributes (Preferred for Framework Services)
+
+Laravel's [contextual attributes](https://laravel.com/docs/13.x/container#contextual-attributes) make injecting framework services clean without requiring knowledge of which concrete class a facade resolves to:
+
+```php
+#[Singleton]
+readonly class AiService
+{
+    public function __construct(
+        private AiModelDb $db,
+        #[Config('hawki.aiHandle')]
+        private string $aiHandle,
+    ) {}
+}
+```
+
+#### Common Injections
+
+| Need              | How to inject                                              |
+|-------------------|------------------------------------------------------------|
+| Config value      | `#[Config('app.key')] string $value`                       |
+| Cache             | `#[Cache] Illuminate\Contracts\Cache\Repository $cache`    |
+| Logging           | `Psr\Log\LoggerInterface $logger`                          |
+| Filesystem        | `Illuminate\Contracts\Filesystem\Filesystem $fs`           |
+| Mail              | `Illuminate\Contracts\Mail\Mailer $mailer`                 |
+| Singleton service | `#[Singleton]` attribute on the class                      |
+| DB access         | Create a `Repository` class — never inject the `DB` facade |
+
+#### ServiceLocatorTrait (Allowed Exception)
+
+> **⚠ This is an anti-pattern. Use it only when constructor injection is genuinely impossible — currently that means API Resources. If you feel the urge to use this anywhere else, you are almost certainly solving the wrong problem. Stop and reconsider the design.**
+
+In classes that Laravel instantiates outside the container (e.g., API Resources), constructor injection is not available. In these cases, `App\Utils\ServiceLocatorTrait` provides a testable alternative to facades. See the class docblock in [`App\Utils\ServiceLocatorTrait`](https://github.com/hawk-digital-environments/HAWKI/blob/development/app/Utils/ServiceLocatorTrait.php) for the full rationale and API.
+
+```php
+class UserResource extends JsonResource
+{
+    use ServiceLocatorTrait;
+
+    public function toArray(Request $request): array
+    {
+        $service = $this->getServiceInstance(AvatarStorageService::class);
+        // ...
+    }
+}
+
+// In tests — inject mocks explicitly. setFailOnMissingLocalService(true) causes
+// the trait to throw if any service is resolved from the real container,
+// catching accidental test leakage early.
+$resource = new UserResource($user);
+$resource->setFailOnMissingLocalService(true);
+$resource->setService(AvatarStorageService::class, $mockService);
+```
+
+**Never use `ServiceLocatorTrait` in models.** Models are data descriptors and must have no service dependencies at all.
+
+### Configuration
+
+Never access environment variables directly in application code. Go through config files.
+
+```php
+// ❌
+$key = env('API_KEY');
+
+// ✅ In config/api.php
+return ['key' => env('API_KEY')];
+
+// ✅ Injected via attribute in a class
+#[Config('api.key')] private string $apiKey
+```
+
+`env()` returns `null` when the config cache is active (`php artisan config:cache`), making direct usage unreliable in production.
+
+### Date & Time
+
+Never use `now()`, `new \DateTime()`, `new \DateTimeImmutable()`, `Carbon::now()`, or any other direct time construction in services, `Db` classes, or value objects. Always inject `Psr\Clock\ClockInterface` as a constructor dependency and use it to obtain the current time.
+
+This makes time deterministic in tests — no mocking of globals or facades required.
+
+```php
+use Psr\Clock\ClockInterface;
+use Symfony\Component\Clock\Clock;
+
+readonly class MyService
+{
+    public function __construct(
+        private ClockInterface $clock = new Clock(),
+    ) {}
+
+    public function doSomething(): void
+    {
+        $now = $this->clock->now(); // \DateTimeImmutable
+    }
+}
+```
+
+The `Symfony\Component\Clock\Clock` is the default implementation and resolves to the system clock at runtime. In tests, pass a `\Symfony\Component\Clock\MockClock` or any other `ClockInterface` implementation to control time precisely.
+
+The only exception is config files and migration files, where there is no DI container and time is genuinely a constant of the deployment context.
+
+### Documentation
+
+PHP 8 type declarations make most DocBlocks redundant. Write DocBlocks only when:
+
+- The method has complex array shapes (`@param array{...}`)
+- The intent or side effects are non-obvious from the code
+- Generic collection types need annotation (`@return Collection<int, User>`)
+
+Inside function bodies use `//` or `/* */` — never `/** */`.
+
+```php
+// ✅ No DocBlock needed — types and name are clear
+public function verify(User $user): bool { ... }
+
+// ✅ DocBlock needed — explains non-obvious business rule
+/**
+ * Only processes refunds for orders older than 30 days.
+ * Newer orders are handled by the instant refund service.
+ */
+public function processDelayedRefund(Order $order): void { ... }
+
+// ❌ Avoid — duplicates what the signature already says
+/** @param User $user @return bool */
+public function verify(User $user): bool { ... }
+```
+
+### Code Quality Checklist
+
+Before submitting your PR:
+
+- [ ] `declare(strict_types=1)` in every PHP file
+- [ ] All parameters and return types declared
+- [ ] Dependencies injected via constructor or `#[Config]` / `#[Cache]` attributes
+- [ ] No facades in services, `Repository` classes, or value objects
+- [ ] `ServiceLocatorTrait` used only where constructor injection is impossible (not in models)
+- [ ] No `env()` calls outside config files
+- [ ] All database access goes through a `Repository` class — no static model calls in services
+- [ ] Models contain no business logic, no facades, no query scopes, no service locator
+- [ ] Value objects are `readonly` with `from...` / `tryFrom...` factory methods
+- [ ] Enums used for all constrained string or int values
+- [ ] DocBlocks only where needed (complex types, non-obvious intent)
+- [ ] No `now()`, `new \DateTime()`, `Carbon::now()`, or similar — use injected `Psr\Clock\ClockInterface`
+- [ ] No debug statements (`dd()`, `dump()`, `var_dump()`)
+- [ ] No hardcoded values (use config or constants)
+- [ ] You provided good test coverage for new features and bug fixes
+- [ ] You executed the code formatters
+
+> **Tip:** [AI tools](#ai-agents) can help enforce these standards. Check our [contributing skills guide](pathname://attachments/skills/contributing/SKILL.md) for automated assistance.
+
+---
+
+## Testing
+
+### Backend / PHP
+
+HAWKI uses [PHPUnit](https://phpunit.de/) for both unit and feature (integration) tests.
+
+#### Running Tests
+
+| What                      | In Docker                  | Locally (Composer)              |
+|---------------------------|----------------------------|---------------------------------|
+| Unit tests only           | `bin/env test php unit`    | `composer run test:unit`        |
+| Feature tests only        | `bin/env test php feature` | `composer run test:feature`     |
+| Static analysis (PHPStan) | `bin/env test php stan`    | `composer run test:stan`        |
+| All of the above          | `bin/env test php all`     | *(run each command separately)* |
+
+> **AI Tools:** Our [testing skills guide](pathname://attachments/skills/phpunit/SKILL.md) provides guidance on writing effective unit and feature tests using PHPUnit, including best practices for assertions, data providers, mocking, and test structure.
+
+#### PHPUnit — Unit & Feature Tests
+
+**Core Principles**
+
+1. **Test behavior, not implementation** — Verify what the code does from a caller's perspective, not how it achieves the result internally.
+2. **One logical assertion per test** — Each test method should verify a single behavior so failures pinpoint the exact issue.
+3. **Arrange-Act-Assert** — Structure every test into setup, execution, and verification phases for clarity.
+4. **Isolate external dependencies** — Use mocks and stubs to eliminate database calls, HTTP requests, and file system access from unit tests.
+5. **Use data providers for parameterization** — Leverage `#[DataProvider]` to test multiple input/output combinations without duplicating test methods.
+6. **Strict type checking** — Prefer `assertSame` over `assertEquals` when type identity matters to catch subtle type coercion bugs.
+
+**Naming & Structure**
+
+- Every test method must start with `testIt...` (e.g. `testItConstructs`, `testItCanRetrieveValueXy`) and have a `void` return type.
+- The variable holding the class under test must always be named `$sut`.
+- If the class under test has constructor parameters, include a dedicated `testItConstructs` method that only verifies the object can be created.
+- When expecting exceptions, always assert the exception message as well. For messages built with `sprintf`, keep a similar syntax in the test.
+
+**Namespaces**
+
+- **Unit tests:** `Tests\Unit\{mirrored namespace}` — mirrors the `app/` namespace under `tests/Unit/`.
+- **Feature / integration tests:** `Tests\Feature\{relevant sub-namespace}`.
+- When extending an existing test file, preserve its current namespace.
+
+**Coverage Attributes**
+
+Always annotate test classes with the appropriate coverage attributes from `PHPUnit\Framework\Attributes`:
+
+```php
+#[CoversClass(MyClass::class)]
+#[CoversTrait(MyTrait::class)]
+#[CoversMethod(MyClass::class, 'methodName')]
+```
+
+> Interfaces are never tagged with `#[CoversClass]`.
+
+**Data Providers**
+
+- Name a single-use provider after its test method: `provideTestItDoesSomethingData`.
+- Return a generator (`iterable`) using `yield 'descriptive label' => [values]`:
+
+```php
+public static function provideTestItDoesSomethingData(): iterable
+{
+    yield 'empty string'   => ['', null];
+    yield 'no at sign'     => ['hello', null];
+    yield 'valid address'  => ['a@b.com', 'a@b.com'];
+}
+```
+
+**Assertions**
+
+PHPUnit assertion methods are `static` — always call them as `static::assertSame()`, not `$this->assertSame()`.
+
+**Fixtures**
+
+Create fixture classes as separate files, one file per fixture. Place them in a sub-namespace next to the test class. For a test class `MyClassXyTest`, the fixtures live in `MyClassXyTest\MyClassXyTestFixtures\`.
+
+**Best Practices**
+
+- Use `assertSame` over `assertEquals` when type matters — `assertSame` catches `'1' !== 1` bugs.
+- Use `setUp` and `tearDown` for shared setup and cleanup.
+- Mock only external dependencies (repositories, HTTP clients, third-party APIs). Do not mock value objects or simple utilities.
+- Test both the happy path and error paths; unverified exception handling fails silently in production.
+
+**Anti-Patterns to Avoid**
+
+- Testing private methods via reflection — test through the public API instead.
+- Over-mocking — mocking everything makes tests prove nothing about real behavior.
+- Hardcoding absolute file paths — use `sys_get_temp_dir()` / `tempnam()`.
+- Large test methods (> ~20 lines) — split into focused single-behavior tests.
+
+#### PHPStan — Static Analysis
+
+PHPStan is used to catch type errors and other issues statically, without running the code. Run it before every commit alongside the tests.
+
+```bash
+# In Docker
+bin/env test php stan
+
+# Locally
+composer run test:stan
+```
+
+If PHPStan reports errors, fix them rather than suppressing them — suppressions should be a last resort reserved for genuine false positives in third-party code.
+
+---
+
+### Frontend / JS
+
+There is currently no automated frontend test suite. Frontend testing will be introduced in **HAWKI 3.0.0**.
+
+---
+
+## Pull Request Process
+
+### Before Creating a PR
+
+1. Ensure your branch is up to date with `development`
+2. Review your own changes
+3. Run the test suite locally (automated test coverage is actively being built out — check for new tests before assuming there are none)
+
+The release pipeline and automated checks are described in [`_changelog/README.md`](https://github.com/hawk-digital-environments/HAWKI/blob/development/_changelog/README.md).
+
+### PR Scope & Size
+
+One PR = one responsibility. Keep PRs small and focused:
+
+- One feature, bugfix, or refactor (or a tightly related set)
+- Do not mix refactors, formatting, and feature changes
+- If a change touches many files, explain why in the description
+
+### PR Title & Description
+
+Use the same format as commit messages:
+
+```
+feat(ai): add model status caching
+fix(auth): resolve LDAP reconnect loop
+```
+
+A good PR description answers:
+
+- **What** was changed?
+- **Why** was this approach chosen?
+- What issue does it close? (`Closes #123`)
+
+### Draft PRs
+
+For early feedback or architectural guidance, open a Draft PR and request specific feedback in the description. Mark as "Ready for review" when complete.
+
+---
+
+## Code Review
+
+### For Contributors
+
+- All PRs require at least one approval before merge
+- Address all feedback; resolve conversations when done
+- If feedback is unclear, ask for clarification
+
+### For Reviewers
+
+- Critique code, not people
+- Explain *why*, not just *what*
+- Suggest alternatives where relevant
+- Label comments:
+    - **Blocking:** "This will cause a bug because..."
+    - **Non-blocking:** "Consider X for better readability"
+    - **Question:** "Why did you choose this approach?"
+
+---
+
+## AI Agents
+
+You are welcome to use AI tools when contributing to HAWKI. AI assistants can help you:
+
+- Write and review code following our architecture and standards
+- Generate tests following PHPUnit best practices
+- Format code and catch common errors
+- Understand documentation and coding patterns
+- Debug issues and optimize performance
+
+To help you succeed, we provide curated skills:
+
+- **[Contributing Skill](pathname://attachments/skills/contributing/SKILL.md)** — General guidelines for writing code that adheres to HAWKI's standards, architecture patterns, and best practices
+- **[PHPUnit Testing Skill](pathname://attachments/skills/phpunit/SKILL.md)** — Comprehensive guidance for writing effective unit and feature tests, including assertions, data providers, mocking, and test structure
+
+Share these skills with your AI tool to provide context on HAWKI's expectations.
+
+---
+
+## Getting Help
+
+- **[GitHub Issues](https://github.com/hawk-digital-environments/HAWKI/issues)** — Bugs and feature requests
+- **[Discord](https://discord.gg/zzR54sRWDE)** — Real-time support in **#sos-support**
+- **[Documentation](https://docs.hawki.info)** — Guides and FAQs
+
+**Good First Issues:** Look for `good first issue`, `help wanted`, or `documentation` labels.
+
+When in doubt about architecture, open a Draft PR early rather than building something that might need a major rewrite. Architectural discussions are cheaper than large rewrites.
+
+---
+
+## Philosophy
+
+- **Clarity over cleverness** — Simple, readable code wins
+- **Explicit dependencies** — Make dependencies visible and testable
+- **Domains, not layers** — Organize by business concept, not technical concern
+- **Consistency** — Follow established patterns in the codebase
+- **Incremental improvement** — Small, focused changes compound over time
+
+---
+
+> **A note of honest self-deprecation:** We are aware that the current codebase does not fully reflect the goals described in this guide — folder names are inconsistent, a few `Utils/` directories exist that shouldn't, and some naming conventions are mid-migration. We are actively working to bring the code in line with these rules across upcoming releases. Please do as we say, not as we did. :)
+
+Thank you for contributing to HAWKI! 🧡

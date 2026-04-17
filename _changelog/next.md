@@ -10,6 +10,7 @@
 - Added support for the [Kreuzberg](https://github.com/kreuzberg-dev/kreuzberg) open-source document extraction API as a new file converter option. Configure via `KREUZBERG_FILE_CONVERTER_API_URL` in the `.env` file. No API key is required.
 - All file access (attachments and avatars) is now securely proxied through the application via a dedicated storage proxy controller, with proper access control enforced for all file types and storage backends. Direct storage URLs are no longer exposed to clients.
 - Drag-and-drop file upload now provides real-time visual feedback: files are classified as valid or invalid against the server-configured allowed MIME types before the upload begins, and the file picker's `accept` attribute is automatically populated to match.
+- We now have an official [Contribution guide](https://docs.hawki.infoContributing) that provides detailed instructions and guidelines for contributing to the project, including coding standards, testing procedures, and how to submit pull requests. This should make it easier for new contributors to get started and ensure a consistent codebase.
 
 ### Quality of Life
 
