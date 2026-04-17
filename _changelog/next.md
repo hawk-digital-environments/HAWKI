@@ -6,7 +6,7 @@
 
 - Added configuration settings for file uploads, that allow administrators to specify allowed file types and maximum file sizes, enhancing security and control over user uploads. See the [environment variables](../_documentation/3-architecture/10-dot%20Env.md#File-Upload-Settings) documentation for more details.
 - Improved accessiblity of the frontend by adding ARIA attributes and improving keyboard navigation, making it easier for users with disabilities to use the application. Thanks to [Thomas Orgeldinger](https://github.com/there-it-is) for the tremendous help!
-- Extended supported file formats for attachments: documents (PPTX, XLSX, HTML, Markdown, AsciiDoc, CSV, WebVTT) and additional image formats (SVG, TIFF, PSD, EPS, AI, BMP, ICO) are now handled via an image pre-processing pipeline using `rsvg-convert` and ImageMagick — auto-detected from `$PATH` when available. See the [optional dependencies](../_documentation/2-GettingStarted/1-Local%20Installation.md#optional-dependencies) documentation for installation instructions.
+- Extended supported file formats for attachments: documents (PPTX, XLSX, HTML, Markdown, AsciiDoc, CSV, WebVTT) and additional image formats (SVG, TIFF, PSD, EPS, AI, BMP, ICO) are now handled via an image pre-processing pipeline using `rsvg-convert` and ImageMagick — auto-detected from `$PATH` when available. **Note:** PostScript-based formats (EPS, AI, PS) require `ghostscript` to be installed alongside ImageMagick. See the [optional dependencies](../_documentation/2-GettingStarted/1-Local%20Installation.md#optional-dependencies) documentation for installation instructions.
 - Added support for the [Kreuzberg](https://github.com/kreuzberg-dev/kreuzberg) open-source document extraction API as a new file converter option. Configure via `KREUZBERG_FILE_CONVERTER_API_URL` in the `.env` file. No API key is required.
 - All file access (attachments and avatars) is now securely proxied through the application via a dedicated storage proxy controller, with proper access control enforced for all file types and storage backends. Direct storage URLs are no longer exposed to clients.
 - Drag-and-drop file upload now provides real-time visual feedback: files are classified as valid or invalid against the server-configured allowed MIME types before the upload begins, and the file picker's `accept` attribute is automatically populated to match.
@@ -22,6 +22,7 @@
 - Cryptographic salts are now delivered via the frontend connection payload instead of individual network requests, reducing initial page load latency.
 - The frontend translation system has been rewritten. Translations are now available via a unified `__()` helper function, consistent with Laravel's backend translation API.
 - HAWKI's locale and settings panel are now also available on the login and gateway pages, enabling translated UI before a user is authenticated.
+- Development workflow improvements: new `phpunit`, `phpstan`, `prettier`, and `php-cs-fixer` tools are now integrated to make testing and code formatting easier. Run `bin/env test all` for tests and static analysis, or `bin/env style php` / `bin/env style js` for code formatting.
 
 ### Bugfix
 
@@ -39,7 +40,7 @@
 [//]: # (- Changes that are mostly relevant to maintainers and contributors, such as refactors, dependency updates, CI changes, etc.)
 
 - Refactoring of the "file converter" logic, improving the handling of file conversions and reducing potential errors. Also implemented a lot of logging in this area to make it easier to debug issues related to file conversions.
-- Refactoring and code cleanup of the tool calling logic, improving readability and maintainability.
+- Refactoring and code cleanup of the tool calling logic, improving readability and maintainability. The `ToolCallingClient` now properly validates that incoming requests contain a model; requests without a model are logged with a warning and passed through to the underlying client without tool calling support.
 - Inherited a lot of code from the `external-chat` branch, as preparation for V3 merge and to avoid merge conflicts later on. This also allows us to use the new "connection" logic to pass backend information to the frontend.
 - It is now possible to implement "custom file converters" using the "file_converter.converters" array in the configuration. This allows for more flexibility and extensibility in handling file conversions, as users can now easily add their own custom converters without modifying the core codebase. A new "class" property has been added to the converter configuration, which specifies the class that should be used for the converter. This class must implement the `FileConverterInterface` and can be autoloaded using Composer's PSR-4 autoloading.
 - The `FileConverterFactory` has been removed, to retrieve the converter simply ask for the `FileConverterInterface`, which will always provide you the currently configured converter. To determine if the converter is active (e.g. configured or not) check the `isAvailable()` method on the converter instance.
@@ -56,6 +57,7 @@
 - `ext-fileinfo` is now declared as a required PHP extension in `composer.json`.
 - Introduced `AbstractCastableObject` (`App\Utils\Casts`) — a foundational reflection-based utility for hydrating and serializing typed PHP objects from/to string arrays. Supports built-in type casting (int, float, bool, string, array), enums, dates, encrypted values, and custom casters via `#[CastedValue]` annotations. Serves as the base for the upcoming database-backed configuration layer (`AbstractConfig`).
 - Added phpstan for static analysis which should help catch potential bugs and improve code quality. Run `composer run stan` to execute the static analysis checks. Currently NOT in the pipeline, because there are still some issues to fix, but we will get there eventually.
+- Achieved 100% test coverage for `App\Utils` module with comprehensive PHPUnit tests for utility classes like `Assert`, `Arrays`, and `Casts` helpers.
 - The model config files of `config/model_providers.php` and `config/model_lists` are now automatically copied to `_docker_production` when a new release branch is created.
 - The `jquery` library has been removed from the frontend dependencies, as it is not used in the codebase. This reduces the overall bundle size and improves performance.
 - Update of all major frontend dependencies.
