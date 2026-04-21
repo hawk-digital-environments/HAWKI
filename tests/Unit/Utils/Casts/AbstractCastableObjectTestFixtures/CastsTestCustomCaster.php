@@ -8,12 +8,12 @@ use App\Utils\Casts\Contracts\CastsValue;
 
 class CastsTestCustomCaster implements CastsValue
 {
-    public function get(object $object, string $stored): mixed
+    public function get(object $object, string $stored, string $property): mixed
     {
         return 'custom:' . $stored;
     }
 
-    public function set(object $object, mixed $value): string
+    public function set(object $object, mixed $value, string $property): string
     {
         return str_replace('custom:', '', $value);
     }

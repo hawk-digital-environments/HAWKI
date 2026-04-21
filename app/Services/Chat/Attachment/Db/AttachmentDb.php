@@ -8,9 +8,9 @@ use App\Models\Attachment;
 use App\Models\Message;
 use App\Models\User;
 use App\Services\Chat\Attachment\Value\AttachmentType;
-use App\Services\Storage\Value\StoredFile;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\StoredFile;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Exception;
 use Psr\Log\LoggerInterface;
 

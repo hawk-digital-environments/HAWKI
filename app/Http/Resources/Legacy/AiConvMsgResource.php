@@ -3,9 +3,8 @@
 namespace App\Http\Resources\Legacy;
 
 use App\Models\AiConvMsg;
-use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Utils\ServiceLocatorTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;

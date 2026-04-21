@@ -4,8 +4,8 @@ namespace App\Services\FileConverter\Interfaces;
 
 use App\Services\FileConverter\Handlers\KreuzbergConverter;
 use App\Services\FileConverter\Utils\ImagePreProcessingConverter;
-use App\Services\Storage\Value\FileCollection;
-use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Values\FileCollection;
+use App\Services\Storage\Values\FileReference;
 
 interface FileConverterInterface
 {

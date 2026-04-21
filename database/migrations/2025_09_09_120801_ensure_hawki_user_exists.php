@@ -1,14 +1,13 @@
 <?php
 
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\FileType;
-use App\Services\Storage\Value\StoredFileCategory;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\FileType;
+use App\Services\Storage\Values\StoredFileCategory;
 use Illuminate\Database\Migrations\Migration;
 use Psr\Log\LoggerInterface;
 
-return new class extends Migration
-{
+return new class extends Migration {
     private readonly LoggerInterface $logger;
     private readonly AvatarStorageService $avatarStorage;
 
@@ -52,14 +51,14 @@ return new class extends Migration
         DB::table('users')->updateOrInsert(
             ['id' => 1],
             [
-                'name'        => config('hawki.migration.name'),
-                'username'    => config('hawki.migration.username'),
-                'email'       => config('hawki.migration.email'),
-                'employeetype'=> config('hawki.migration.employeetype'),
-                'publicKey'   => '0',
+                'name' => config('hawki.migration.name'),
+                'username' => config('hawki.migration.username'),
+                'email' => config('hawki.migration.email'),
+                'employeetype' => config('hawki.migration.employeetype'),
+                'publicKey' => '0',
                 'avatar_id' => $stored->getUuid(),
-                'updated_at'  => now(),
-                'created_at'  => $hawki?->created_at ?? now(),
+                'updated_at' => now(),
+                'created_at' => $hawki?->created_at ?? now(),
             ]
         );
     }

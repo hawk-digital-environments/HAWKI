@@ -5,7 +5,7 @@ namespace App\Services\Storage\Listeners;
 
 use App\Services\Chat\Attachment\Events\AttachmentDeleting;
 use App\Services\Storage\FileStorageService;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Psr\Log\LoggerInterface;
 
 readonly class DeleteStoredFileOnAttachmentDeletion

@@ -6,3 +6,5 @@ parameters:
         - app/
 
     level: 5
+    stubFiles:
+        - phpstan.php.stub

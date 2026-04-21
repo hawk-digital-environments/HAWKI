@@ -6,8 +6,8 @@ namespace App\Services\FileConverter\Handlers;
 
 
 use App\Services\FileConverter\Exception\ConversionFailedException;
-use App\Services\Storage\Value\FileCollection;
-use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Values\FileCollection;
+use App\Services\Storage\Values\FileReference;
 use Arr;
 use Carbon\Carbon;
 use Illuminate\Cache\Repository;

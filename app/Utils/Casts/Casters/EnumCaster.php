@@ -13,7 +13,7 @@ readonly class EnumCaster implements CastsValue, BuiltInCasterInterface
 {
     public function __construct(
         /**
-         * @var class-string<\BackedEnum> $enumClass
+         * @var class-string<\BackedEnum|\UnitEnum> $enumClass
          */
         private string $enumClass
     )
@@ -23,7 +23,7 @@ readonly class EnumCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function get(object $object, string $stored): mixed
+    public function get(object $object, string $stored, string $property): mixed
     {
         if (is_a($this->enumClass, \BackedEnum::class, true)) {
             return $this->enumClass::from($stored);
@@ -36,7 +36,7 @@ readonly class EnumCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function set(object $object, mixed $value): string
+    public function set(object $object, mixed $value, string $property): string
     {
         if ($value instanceof \BackedEnum) {
             return (string)$value->value;
@@ -62,15 +62,12 @@ readonly class EnumCaster implements CastsValue, BuiltInCasterInterface
      */
     public static function argsForProperty(\ReflectionProperty $prop): array|null
     {
-        if ($prop->getType()?->isBuiltin()) {
+        $type = $prop->getType();
+        if (!$type instanceof \ReflectionNamedType || $type->isBuiltin()) {
             return null;
         }
 
-        $type = $prop->getType()?->getName();
-        if ($type === null) {
-            return null;
-        }
-
-        return enum_exists($type) ? [$type] : null;
+        $typeName = $type->getName();
+        return enum_exists($typeName) ? [$typeName] : null;
     }
 }

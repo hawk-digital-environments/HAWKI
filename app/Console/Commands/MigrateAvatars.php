@@ -5,9 +5,9 @@ namespace App\Console\Commands;
 use App\Models\Room;
 use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
@@ -377,7 +377,7 @@ class MigrateAvatars extends Command
 
             if (Storage::disk('local')->exists($path)) {
                 return [
-                    'path'      => $path,
+                    'path' => $path,
                     'extension' => $ext,
                 ];
             }

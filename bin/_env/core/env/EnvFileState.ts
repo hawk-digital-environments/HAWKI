@@ -49,6 +49,24 @@ export class EnvFileState {
         return undefined;
     }
 
+    public deleteLinesForKey(key: string): this {
+        for (const line of this._lines) {
+            if (line.keyMatches(key) || line.commentedKeyMatches(key)) {
+                this._lines.delete(line);
+            }
+        }
+        return this;
+    }
+
+    public commentLinesForKey(key: string): this {
+        for (const line of this._lines) {
+            if (line.keyMatches(key)) {
+                line.comment();
+            }
+        }
+        return this;
+    }
+
     public toString(): string {
         let result = '';
         for (const line of this._lines) {

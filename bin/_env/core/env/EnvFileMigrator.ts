@@ -24,7 +24,7 @@ export interface EnvVariableOptions {
      * The default value to use if no value could be resolved.
      * If not set, the user will be prompted for a value if needed.
      */
-    default?: string | ((templateValue: string | undefined) => Promise<string>)
+    default?: string | ((templateValue: string | undefined) => Promise<string>);
 
     /**
      * Allows you to determine if the variable needs to be updated.
@@ -66,7 +66,6 @@ export interface EnvVariableOptions {
     /**
      * This allows you to remove a variable from the .env file if it exists. While it is called "remove",
      * it will simply comment out the line defining the variable, so it can be easily restored if needed.
-     * This can be useful if in you
      */
     remove?: string;
 }

@@ -2,7 +2,7 @@
 
 namespace App\Services\Storage;
 
-use App\Services\Storage\Value\StoredFile;
+use App\Services\Storage\Values\StoredFile;
 use Illuminate\Support\Facades\URL;
 
 readonly class UrlGenerator

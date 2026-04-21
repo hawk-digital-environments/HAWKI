@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Utils\Arrays;
 
-
+/**
+ * @api
+ */
 final class RecursiveMerger
 {
     private static bool $mergeNumeric;

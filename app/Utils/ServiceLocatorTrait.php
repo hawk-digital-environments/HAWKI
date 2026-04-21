@@ -56,6 +56,7 @@ use Illuminate\Container\EntryNotFoundException;
  * $userResource->setService(AvatarStorageService::class, $mockAvatarStorageService);
  * $array = $userResource->toArray($request);
  * ```
+ * @api
  */
 trait ServiceLocatorTrait
 {

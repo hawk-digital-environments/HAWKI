@@ -26,6 +26,11 @@
             <directory>app</directory>
         </include>
     </source>
+    <coverage>
+        <report>
+            <html outputDirectory=".phpunit.coverage" customCssFile="tests/coverage.dark.css"/>
+        </report>
+    </coverage>
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

@@ -3,12 +3,13 @@
 namespace App\Providers;
 
 use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\ExtApp\ExtAppContext;
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\UrlGenerator;
 use App\Services\Storage\Utils\ContentExtractor;
-use App\Services\Storage\Value\StorageServiceContext;
+use App\Services\Storage\Values\StorageServiceContext;
 use Illuminate\Config\Repository;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Application;
@@ -25,7 +26,11 @@ class StorageServiceProvider extends ServiceProvider
         $this->app->singleton(
             UrlGenerator::class,
             function (Application $app) {
-                return new UrlGenerator('web.storage.proxy');
+                $extAppContext = $app->get(ExtAppContext::class);
+                $routeName = $extAppContext->isExternal()
+                    ? 'api.external_app.storage.proxy'
+                    : 'web.storage.proxy';
+                return new UrlGenerator($routeName);
             }
         );
 

@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Log;
 
 class Member extends Model
 {
@@ -22,10 +21,13 @@ class Member extends Model
         'isRemoved'
     ];
 
-    // public function room()
-    // {
-    //     return $this->belongsTo(Room::class);
-    // }
+    /**
+     * @return BelongsTo<Room, $this>
+     */
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -66,7 +68,7 @@ class Member extends Model
      */
     public function revokeMembership(): void
     {
-        $this->update(['isRemoved'=> 1]);
+        $this->update(['isRemoved' => 1]);
     }
 
     /**
@@ -74,6 +76,6 @@ class Member extends Model
      */
     public function recreateMembership(): void
     {
-        $this->update(['isRemoved'=> 0]);
+        $this->update(['isRemoved' => 0]);
     }
 }

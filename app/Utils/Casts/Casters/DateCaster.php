@@ -23,7 +23,7 @@ readonly class DateCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function get(object $object, string $stored): mixed
+    public function get(object $object, string $stored, string $property): mixed
     {
         return match ($this->type) {
             CastType::DATE => Carbon::parse($stored)->startOfDay(),
@@ -38,7 +38,7 @@ readonly class DateCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function set(object $object, mixed $value): string
+    public function set(object $object, mixed $value, string $property): string
     {
         if ($this->type === CastType::TIMESTAMP) {
             return (string)($value instanceof \DateTimeInterface ? $value->getTimestamp() : (int)$value);
@@ -80,7 +80,12 @@ readonly class DateCaster implements CastsValue, BuiltInCasterInterface
      */
     public static function argsForProperty(\ReflectionProperty $prop): array|null
     {
-        $typeName = $prop->getType()?->getName() ?? '';
+        $type = $prop->getType();
+        if (!$type instanceof \ReflectionNamedType) {
+            return null;
+        }
+
+        $typeName = $type->getName();
 
         // DateTimeImmutable and its subclasses (e.g. CarbonImmutable) → immutable_datetime.
         // Must be checked before DateTimeInterface because DateTimeImmutable implements it.

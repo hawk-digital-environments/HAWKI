@@ -10,7 +10,7 @@ use App\Services\AI\Exception\NoContextBoundException;
 use App\Services\AI\Exception\UnexpectedModelUsageTypeException;
 use App\Services\AI\Interfaces\ClientInterface;
 use App\Services\AI\Interfaces\ModelProviderInterface;
-use App\Services\Storage\Value\FileType;
+use App\Services\Storage\Values\FileType;
 use JsonSerializable;
 
 class AiModel implements JsonSerializable

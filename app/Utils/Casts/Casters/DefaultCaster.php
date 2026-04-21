@@ -19,7 +19,7 @@ readonly class DefaultCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function get(object $object, string $stored): mixed
+    public function get(object $object, string $stored, string $property): mixed
     {
         return match ($this->castedType) {
             CastType::INT => (int)$stored,
@@ -35,7 +35,7 @@ readonly class DefaultCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function set(object $object, mixed $value): string
+    public function set(object $object, mixed $value, string $property): string
     {
         return match ($this->castedType) {
             CastType::BOOL => $value ? '1' : '0',
@@ -67,7 +67,12 @@ readonly class DefaultCaster implements CastsValue, BuiltInCasterInterface
      */
     public static function argsForProperty(\ReflectionProperty $prop): array|null
     {
-        $type = match ($prop->getType()?->getName()) {
+        $type = $prop->getType();
+        if (!$type instanceof \ReflectionNamedType) {
+            return null;
+        }
+
+        $castedType = match ($type->getName()) {
             'int' => CastType::INT,
             'float' => CastType::FLOAT,
             'bool' => CastType::BOOL,
@@ -77,10 +82,10 @@ readonly class DefaultCaster implements CastsValue, BuiltInCasterInterface
             default => null, // mixed, never, void — raw string passthrough
         };
 
-        if (!$type) {
+        if (!$castedType) {
             return null;
         }
 
-        return [$type];
+        return [$castedType];
     }
 }

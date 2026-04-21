@@ -25,7 +25,7 @@ class EncryptedCasterTest extends TestCase
         Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('my-secret');
 
         $sut = new EncryptedCaster(CastType::STRING);
-        static::assertSame('my-secret', $sut->get(new \stdClass(), 'ciphertext'));
+        static::assertSame('my-secret', $sut->get(new \stdClass(), 'ciphertext', 'prop'));
     }
 
     public function testItDecryptsArray(): void
@@ -33,7 +33,7 @@ class EncryptedCasterTest extends TestCase
         Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('["a","b"]');
 
         $sut = new EncryptedCaster(CastType::ARRAY);
-        static::assertSame(['a', 'b'], $sut->get(new \stdClass(), 'ciphertext'));
+        static::assertSame(['a', 'b'], $sut->get(new \stdClass(), 'ciphertext', 'prop'));
     }
 
     public function testItDecryptsJsonAliasAsArray(): void
@@ -41,7 +41,7 @@ class EncryptedCasterTest extends TestCase
         Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('["x"]');
 
         $sut = new EncryptedCaster(CastType::JSON);
-        static::assertSame(['x'], $sut->get(new \stdClass(), 'ciphertext'));
+        static::assertSame(['x'], $sut->get(new \stdClass(), 'ciphertext', 'prop'));
     }
 
     public function testItDecryptsObject(): void
@@ -49,7 +49,7 @@ class EncryptedCasterTest extends TestCase
         Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('{"k":"v"}');
 
         $sut = new EncryptedCaster(CastType::OBJECT);
-        $result = $sut->get(new \stdClass(), 'ciphertext');
+        $result = $sut->get(new \stdClass(), 'ciphertext', 'prop');
         static::assertInstanceOf(\stdClass::class, $result);
         static::assertSame('v', $result->k);
     }
@@ -63,7 +63,7 @@ class EncryptedCasterTest extends TestCase
         Crypt::shouldReceive('encryptString')->with('my-secret')->once()->andReturn('ciphertext');
 
         $sut = new EncryptedCaster(CastType::STRING);
-        static::assertSame('ciphertext', $sut->set(new \stdClass(), 'my-secret'));
+        static::assertSame('ciphertext', $sut->set(new \stdClass(), 'my-secret', 'prop'));
     }
 
     public function testItEncryptsArrayAsJson(): void
@@ -71,7 +71,7 @@ class EncryptedCasterTest extends TestCase
         Crypt::shouldReceive('encryptString')->with('["a","b"]')->once()->andReturn('ciphertext');
 
         $sut = new EncryptedCaster(CastType::ARRAY);
-        $sut->set(new \stdClass(), ['a', 'b']);
+        $sut->set(new \stdClass(), ['a', 'b'], 'prop');
     }
 
     public function testItEncryptsObjectAsJson(): void
@@ -81,7 +81,7 @@ class EncryptedCasterTest extends TestCase
         $obj = new \stdClass();
         $obj->k = 'v';
         $sut = new EncryptedCaster(CastType::OBJECT);
-        $sut->set(new \stdClass(), $obj);
+        $sut->set(new \stdClass(), $obj, 'prop');
     }
 
     // ==========================================================================

@@ -2,7 +2,7 @@
 
 namespace App\Services\Chat\Attachment\Value;
 
-use App\Services\Storage\Value\FileType;
+use App\Services\Storage\Values\FileType;
 
 enum AttachmentType: string
 {

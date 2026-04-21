@@ -9,6 +9,7 @@ namespace App\Utils;
  * this trait provides a default implementation of the jsonSerialize method.
  * It serializes all public properties of the object into an associative array.
  * Static properties are ignored.
+ * @api
  */
 trait JsonSerializableTrait
 {

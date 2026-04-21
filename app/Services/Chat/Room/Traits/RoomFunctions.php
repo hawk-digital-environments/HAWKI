@@ -2,13 +2,14 @@
 
 namespace App\Services\Chat\Room\Traits;
 
+use App\Events\RoomCreatedEvent;
 use App\Http\Resources\Legacy\RoomResource;
 use App\Models\Member;
 use App\Models\Room;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
@@ -24,10 +25,19 @@ trait RoomFunctions
         $room = Room::create([
             'room_name' => $data['room_name'],
         ]);
-        // Add AI as assistant
-        $room->addMember(1, Member::ROLE_ASSISTANT);
-        // Add the creator as admin
-        $room->addMember(Auth::id(), Member::ROLE_ADMIN);
+
+        // Because we need the room to have members (that will act as audience for sync logs)
+        // we first create the room and members without triggering the events,
+        // only after that we dispatch the events
+        $deferred = $room->runWithDeferredMemberEvents(function () use ($room) {
+            // Add AI as assistant
+            $room->addMember(1, Member::ROLE_ASSISTANT);
+            // Add the creator as admin
+            $room->addMember(Auth::id(), Member::ROLE_ADMIN);
+        });
+
+        RoomCreatedEvent::dispatch($room);
+        $deferred();
 
         return $room;
     }

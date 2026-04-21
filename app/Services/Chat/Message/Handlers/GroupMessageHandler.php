@@ -3,20 +3,31 @@
 
 namespace App\Services\Chat\Message\Handlers;
 
+use App\Events\MessageSentEvent;
+use App\Events\MessageUpdatedEvent;
 use App\Models\AiConv;
 use App\Models\Message;
 use App\Models\Room;
 use App\Models\User;
 use App\Services\Chat\Attachment\Db\AttachmentDb;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
-use Psr\Log\LoggerInterface;
+use App\Services\Message\ThreadIdHelper;
+use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 
 
 class GroupMessageHandler extends AbstractMessageHandler
 {
+    public function __construct(
+        private readonly ThreadIdHelper $threadIdHelper,
+        AttachmentDb                    $attachmentService,
+        FileStorageService              $storageService
+    )
+    {
+        parent::__construct($attachmentService, $storageService);
+    }
 
 
     public function create(
@@ -33,6 +44,7 @@ class GroupMessageHandler extends AbstractMessageHandler
             'message_id' => $nextMessageId,
             'message_role' => $data['message_role'],
             'model' => $data['model'] ?? null,
+            'thread_id' => $this->threadIdHelper->getThreadIdForRoomAndThreadIndex($conv, $data['threadId']),
             'iv' => $data['content']['text']['iv'],
             'tag' => $data['content']['text']['tag'],
             'content' => $data['content']['text']['ciphertext'],
@@ -55,6 +67,8 @@ class GroupMessageHandler extends AbstractMessageHandler
             }
         }
 
+        MessageSentEvent::dispatch($message);
+
         return $message;
     }
 
@@ -62,8 +76,8 @@ class GroupMessageHandler extends AbstractMessageHandler
     public function update(AiConv|Room $conv, array $data): Message
     {
         $message = $conv->getMessageById($data['message_id']);
-        if($message->member->user_id != 1 &&
-           $message->member->user_id != Auth::id()){
+        if ($message->member->user_id != 1 &&
+            $message->member->user_id != Auth::id()) {
             throw new AuthorizationException();
         }
 
@@ -75,8 +89,10 @@ class GroupMessageHandler extends AbstractMessageHandler
                 'tools' => $data['metadata']['tools'] ?? null,
                 'params' => $data['metadata']['params'] ?? null,
             ],
-            'model'=> $data['model'] ?? null,
+            'model' => $data['model'] ?? null,
         ]);
+
+        MessageUpdatedEvent::dispatch($message);
 
         return $message;
     }

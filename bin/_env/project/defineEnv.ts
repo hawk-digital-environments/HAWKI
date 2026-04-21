@@ -30,10 +30,18 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
             help: 'If set to true, it is possible to login with the test user "tester" and password "tester".',
             default: 'true'
         })
-        .define('APP_URL', {
-            help: 'The URL of your application. This is used for generating links and redirects.',
-            default: isInstalled ? 'https://' + envFile.get('DOCKER_PROJECT_DOMAIN') : 'http://localhost'
-        })
+        .define('APP_URL', (() => {
+            if (!envFile.isEmpty('DOCKER_PROJECT_HOST') && !envFile.isEmpty('DOCKER_PROJECT_PROTOCOL')) {
+                return {
+                    remove: 'APP_URL is generated from DOCKER_PROJECT_PROTOCOL and DOCKER_PROJECT_HOST'
+                };
+            } else {
+                return {
+                    help: 'The URL to use for the application. This is used to generate links in emails and for the reverb app.',
+                    default: 'http://localhost'
+                };
+            }
+        })())
         .define('DB_HOST', {
             help: 'The host of your database server. "mysql" is the name of the provided docker-compose service.',
             default: 'mysql'

@@ -5,13 +5,19 @@ declare(strict_types=1);
 namespace App\Services\Frontend\Connection;
 
 
+use App\Models\ExtAppUser;
+use App\Models\ExtAppUserRequest;
 use App\Models\User;
 use App\Services\AI\AiService;
 use App\Services\Encryption\SaltProvider;
+use App\Services\ExtApp\ExtAppFeatureSwitch;
 use App\Services\Frontend\Connection\Value\AiConfig;
 use App\Services\Frontend\Connection\Value\Builder\RouteConfigBuilder;
+use App\Services\Frontend\Connection\Value\Connection\ExtAppConnection;
+use App\Services\Frontend\Connection\Value\Connection\ExtAppRequestConnection;
 use App\Services\Frontend\Connection\Value\Connection\InternalConnection;
 use App\Services\Frontend\Connection\Value\Connection\InternalLoginConnection;
+use App\Services\Frontend\Connection\Value\ExtAppSecrets;
 use App\Services\Frontend\Connection\Value\FeatureFlags;
 use App\Services\Frontend\Connection\Value\InternalSecrets;
 use App\Services\Frontend\Connection\Value\LocaleConfig;
@@ -26,6 +32,8 @@ use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Translation\LocaleService;
 use Illuminate\Config\Repository;
+use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Translation\Translator;
 use Route;
 use Symfony\Component\Mime\MimeTypes;
@@ -38,10 +46,51 @@ readonly class ConnectionFactory
         private AiService            $aiService,
         private AvatarStorageService $avatarStorageService,
         private FileStorageService   $fileStorageService,
-        private LocaleService $localeService,
-        private Translator    $translator
+        private LocaleService        $localeService,
+        private Translator           $translator,
+        private ExtAppFeatureSwitch  $featureSwitch
     )
     {
+    }
+
+    public function createExtAppConnection(ExtAppUser $extAppUser): ExtAppConnection
+    {
+        return new ExtAppConnection(
+            version: $this->config->get('app.version'),
+            locale: $this->createLocaleConfig(),
+            featureFlags: new FeatureFlags(
+                aiInGroups: $this->featureSwitch->isAiInGroupsEnabled()
+            ),
+            ai: $this->createAiConfig(true),
+            userinfo: $this->createUserinfo($extAppUser),
+            salts: $this->createSalts(),
+            storage: $this->createStorageConfig(),
+            transfer: $this->createTransferConfig(
+                $this->createExtAppRouteConfig()
+            ),
+            secrets: $this->createExtAppSecrets($extAppUser),
+        );
+    }
+
+    public function createExtAppRequestConnection(ExtAppUserRequest $request): ExtAppRequestConnection
+    {
+        UrlGenerator::macro('getForcedRoot',
+            function () {
+                /* @phpstan-ignore-next-line property.protected */
+                return $this->forcedRoot;
+            }
+        );
+        $forcedRoot = URL::getForcedRoot();
+        try {
+            URL::useOrigin($this->config->get('app.url'));
+            return new ExtAppRequestConnection(
+                version: $this->config->get('app.version'),
+                locale: $this->createLocaleConfig(),
+                connectUrl: route('web.apps.connect', ['request_id' => $request->request_id])
+            );
+        } finally {
+            URL::useOrigin($forcedRoot);
+        }
     }
 
     public function createInternalLoginConnection(): InternalLoginConnection
@@ -82,8 +131,12 @@ readonly class ConnectionFactory
         );
     }
 
-    private function createUserinfo(User $user): Userinfo
+    private function createUserinfo(User|ExtAppUser $user): Userinfo
     {
+        if ($user instanceof ExtAppUser) {
+            $user = $user->user;
+        }
+
         return new Userinfo(
             id: $user->id,
             username: $user->username,
@@ -94,21 +147,35 @@ readonly class ConnectionFactory
 
     private function createTransferConfig(RouteConfig $routes): TransferConfig
     {
-        //@todo: $appUrlScheme === 'https' ? 443 : 80) overrides the whole reverb env variable -> it also kills my local dev
-        // we need an other override for REVERB_PORT.
         $appUrl = $this->config->get('app.url');
-        $appUrlScheme = parse_url($appUrl, PHP_URL_SCHEME) ?? 'http';
-        $appUrlHost = parse_url($appUrl, PHP_URL_HOST) ?? 'localhost';
-        $appUrlPath = parse_url($appUrl, PHP_URL_PATH);
-        $appUrlPort = parse_url($appUrl, PHP_URL_PORT) ?? ($appUrlScheme === 'https' ? 443 : 80);
+        $reverbScheme = parse_url($appUrl, PHP_URL_SCHEME) ?? 'http';
+        $reverbHost = parse_url($appUrl, PHP_URL_HOST) ?? 'localhost';
+        $reverbPath = parse_url($appUrl, PHP_URL_PATH);
+        $reverbPort = parse_url($appUrl, PHP_URL_PORT) ?? ($reverbScheme === 'https' ? 443 : 80);
+
+        // Check for overrides using (VITE_REVERB_...)
+        $viteReverbHost = $this->config->get('reverb.frontend.host');
+        $viteReverbPort = $this->config->get('reverb.frontend.port');
+        $viteReverbScheme = $this->config->get('reverb.frontend.scheme');
+        if ($viteReverbHost) {
+            $reverbHost = $viteReverbHost;
+            $reverbPath = null; // If host is overridden, we assume the path is just "/"
+        }
+        if ($viteReverbPort) {
+            $reverbPort = $viteReverbPort;
+        }
+        if ($viteReverbScheme) {
+            $reverbScheme = $viteReverbScheme;
+        }
+
         return new TransferConfig(
             baseUrl: $appUrl,
             websocket: new WebsocketConfig(
                 key: $this->config->get('reverb.frontend.key'),
-                host: $appUrlHost,
-                port: $appUrlPort,
-                forceTLS: $this->config->get('reverb.frontend.scheme', 'https') === 'https',
-                path: $appUrlPath,
+                host: $reverbHost,
+                port: $reverbPort,
+                forceTLS: $reverbScheme === 'https',
+                path: $reverbPath,
             ),
             routes: $routes
         );
@@ -154,6 +221,15 @@ readonly class ConnectionFactory
         );
     }
 
+    private function createExtAppSecrets(ExtAppUser $user): ExtAppSecrets
+    {
+        return new ExtAppSecrets(
+            passkey: (string)$user->passkey,
+            apiToken: (string)$user->api_token,
+            privateKey: (string)$user->user_private_key,
+        );
+    }
+
     private function createInternalSecrets(): InternalSecrets
     {
         return new InternalSecrets(
@@ -165,9 +241,35 @@ readonly class ConnectionFactory
     {
         $builder = new RouteConfigBuilder(Route::getRoutes());
 
-        // @todo this will be added in a future version
+        $builder
+            ->addRoute('syncLog', 'web.syncLog', 'api.external_app.syncLog')
+            ->addRoute('keychainPasskeyValidator', 'web.keychainPasskeyValidator', 'api.external_app.keychainPasskeyValidator')
+            ->addRoute('keychainUpdate', 'web.keychainUpdate', 'api.external_app.keychainUpdate')
+            ->addRoute('profileUpdate', 'web.profileUpdate', 'api.external_app.profileUpdate')
+            ->addRoute('profileAvatarUpload', 'web.profileAvatarUpload', 'api.external_app.profileAvatarUpload')
+            ->addRoute('storageProxy', 'web.storage.proxy', 'api.external_app.storage.proxy')
+            ->addRoute('roomCreate', 'web.roomCreate', 'api.external_app.roomCreate')
+            ->addRoute('roomUpdate', 'web.roomUpdate', 'api.external_app.roomUpdate')
+            ->addRoute('roomRemove', 'web.roomRemove', 'api.external_app.roomRemove')
+            ->addRoute('roomMemberCandidateSearch', 'web.roomMemberCandidateSearch', 'api.external_app.roomMemberCandidateSearch')
+            ->addRoute('roomInviteMember', 'web.roomInviteMember', 'api.external_app.roomInviteMember')
+            ->addRoute('roomEditMember', 'web.roomEditMember', 'api.external_app.roomEditMember')
+            ->addRoute('roomRemoveMember', 'web.roomRemoveMember', 'api.external_app.roomRemoveMember')
+            ->addRoute('roomLeave', 'web.roomLeave', 'api.external_app.roomLeave')
+            ->addRoute('roomInvitationAccept', 'web.roomInvitationAccept', 'api.external_app.roomInvitationAccept')
+            ->addRoute('roomAvatarUpload', 'web.roomAvatarUpload', 'api.external_app.roomAvatarUpload')
+            ->addRoute('roomMessagesMarkRead', 'web.roomMessagesMarkRead', 'api.external_app.roomMessagesMarkRead')
+            ->addRoute('roomMessagesSend', 'web.roomMessagesSend', 'api.external_app.roomMessagesSend')
+            ->addRoute('roomMessagesEdit', 'web.roomMessagesEdit', 'api.external_app.roomMessagesEdit')
+            ->addRoute('roomMessagesAiSend', 'web.roomMessagesAiSend', 'api.external_app.roomMessagesAiSend')
+            ->addRoute('roomMessagesAttachmentUpload', 'web.roomMessagesAttachmentUpload', 'api.external_app.roomMessagesAttachmentUpload');
 
         return $builder;
+    }
+
+    private function createExtAppRouteConfig(): RouteConfig
+    {
+        return $this->createRouteConfigBuilder()->buildExtAppRouteConfig();
     }
 
     private function createInternalRouteConfig(): RouteConfig

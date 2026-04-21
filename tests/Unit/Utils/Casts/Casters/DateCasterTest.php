@@ -23,7 +23,7 @@ class DateCasterTest extends TestCase
     public function testItHydratesDate(): void
     {
         $sut = new DateCaster(CastType::DATE);
-        $result = $sut->get(new \stdClass(), '2024-03-15');
+        $result = $sut->get(new \stdClass(), '2024-03-15', 'date');
         static::assertInstanceOf(Carbon::class, $result);
         static::assertSame('2024-03-15 00:00:00', $result->format('Y-m-d H:i:s'));
     }
@@ -31,7 +31,7 @@ class DateCasterTest extends TestCase
     public function testItHydratesImmutableDate(): void
     {
         $sut = new DateCaster(CastType::IMMUTABLE_DATE);
-        $result = $sut->get(new \stdClass(), '2024-03-15');
+        $result = $sut->get(new \stdClass(), '2024-03-15', 'date');
         static::assertInstanceOf(CarbonImmutable::class, $result);
         static::assertSame('2024-03-15 00:00:00', $result->format('Y-m-d H:i:s'));
     }
@@ -39,7 +39,7 @@ class DateCasterTest extends TestCase
     public function testItHydratesDatetime(): void
     {
         $sut = new DateCaster(CastType::DATETIME);
-        $result = $sut->get(new \stdClass(), '2024-03-15 12:30:00');
+        $result = $sut->get(new \stdClass(), '2024-03-15 12:30:00', 'date');
         static::assertInstanceOf(Carbon::class, $result);
         static::assertSame('2024-03-15 12:30:00', $result->format('Y-m-d H:i:s'));
     }
@@ -47,7 +47,7 @@ class DateCasterTest extends TestCase
     public function testItHydratesImmutableDatetime(): void
     {
         $sut = new DateCaster(CastType::IMMUTABLE_DATETIME);
-        $result = $sut->get(new \stdClass(), '2024-03-15 12:30:00');
+        $result = $sut->get(new \stdClass(), '2024-03-15 12:30:00', 'date');
         static::assertInstanceOf(CarbonImmutable::class, $result);
         static::assertSame('2024-03-15 12:30:00', $result->format('Y-m-d H:i:s'));
     }
@@ -55,7 +55,7 @@ class DateCasterTest extends TestCase
     public function testItHydratesDatetimeWithCustomFormat(): void
     {
         $sut = new DateCaster(CastType::DATETIME, 'd.m.Y H:i');
-        $result = $sut->get(new \stdClass(), '15.03.2024 12:30');
+        $result = $sut->get(new \stdClass(), '15.03.2024 12:30', 'date');
         static::assertInstanceOf(Carbon::class, $result);
         static::assertSame('2024-03-15 12:30:00', $result->format('Y-m-d H:i:s'));
     }
@@ -63,7 +63,7 @@ class DateCasterTest extends TestCase
     public function testItHydratesImmutableDatetimeWithCustomFormat(): void
     {
         $sut = new DateCaster(CastType::IMMUTABLE_DATETIME, 'd.m.Y H:i');
-        $result = $sut->get(new \stdClass(), '15.03.2024 12:30');
+        $result = $sut->get(new \stdClass(), '15.03.2024 12:30', 'date');
         static::assertInstanceOf(CarbonImmutable::class, $result);
         static::assertSame('2024-03-15 12:30:00', $result->format('Y-m-d H:i:s'));
     }
@@ -71,7 +71,7 @@ class DateCasterTest extends TestCase
     public function testItHydratesTimestampAsInt(): void
     {
         $sut = new DateCaster(CastType::TIMESTAMP);
-        static::assertSame(1710499800, $sut->get(new \stdClass(), '1710499800'));
+        static::assertSame(1710499800, $sut->get(new \stdClass(), '1710499800', 'date'));
     }
 
     // ==========================================================================
@@ -81,38 +81,38 @@ class DateCasterTest extends TestCase
     public function testItSerializesDate(): void
     {
         $sut = new DateCaster(CastType::DATE);
-        static::assertSame('2024-03-15', $sut->set(new \stdClass(), Carbon::parse('2024-03-15')));
+        static::assertSame('2024-03-15', $sut->set(new \stdClass(), Carbon::parse('2024-03-15'), 'prop'));
     }
 
     public function testItSerializesImmutableDate(): void
     {
         $sut = new DateCaster(CastType::IMMUTABLE_DATE);
-        static::assertSame('2024-03-15', $sut->set(new \stdClass(), CarbonImmutable::parse('2024-03-15')));
+        static::assertSame('2024-03-15', $sut->set(new \stdClass(), CarbonImmutable::parse('2024-03-15'), 'prop'));
     }
 
     public function testItSerializesDatetime(): void
     {
         $sut = new DateCaster(CastType::DATETIME);
-        static::assertSame('2024-03-15 12:30:00', $sut->set(new \stdClass(), Carbon::parse('2024-03-15 12:30:00')));
+        static::assertSame('2024-03-15 12:30:00', $sut->set(new \stdClass(), Carbon::parse('2024-03-15 12:30:00'), 'prop'));
     }
 
     public function testItSerializesDatetimeWithCustomFormat(): void
     {
         $sut = new DateCaster(CastType::DATETIME, 'd.m.Y H:i');
-        static::assertSame('15.03.2024 12:30', $sut->set(new \stdClass(), Carbon::parse('2024-03-15 12:30:00')));
+        static::assertSame('15.03.2024 12:30', $sut->set(new \stdClass(), Carbon::parse('2024-03-15 12:30:00'), 'prop'));
     }
 
     public function testItSerializesTimestampFromInt(): void
     {
         $sut = new DateCaster(CastType::TIMESTAMP);
-        static::assertSame('1710499800', $sut->set(new \stdClass(), 1710499800));
+        static::assertSame('1710499800', $sut->set(new \stdClass(), 1710499800, 'prop'));
     }
 
     public function testItSerializesTimestampFromDateTimeInterface(): void
     {
         $sut = new DateCaster(CastType::TIMESTAMP);
         $dt = Carbon::createFromTimestamp(1710499800);
-        static::assertSame('1710499800', $sut->set(new \stdClass(), $dt));
+        static::assertSame('1710499800', $sut->set(new \stdClass(), $dt, 'prop'));
     }
 
     // ==========================================================================
@@ -176,6 +176,12 @@ class DateCasterTest extends TestCase
     public function testItReturnsNullForNonDateProperty(): void
     {
         $prop = new \ReflectionProperty(DateCasterTestConfig::class, 'notADateProp');
+        static::assertNull(DateCaster::argsForProperty($prop));
+    }
+
+    public function testItIgnoresUnionProperty(): void
+    {
+        $prop = new \ReflectionProperty(DateCasterTestConfig::class, 'unionProp');
         static::assertNull(DateCaster::argsForProperty($prop));
     }
 }

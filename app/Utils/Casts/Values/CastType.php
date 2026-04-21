@@ -24,6 +24,7 @@ use App\Utils\Casts\Exceptions\InvalidCastTypeException;
  * arguments that cannot be encoded in an enum case.
  * @see CastedValue
  * @see AbstractCastableObject
+ * @api
  */
 enum CastType: string
 {

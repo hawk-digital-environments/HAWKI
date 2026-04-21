@@ -2,14 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Events\InvitationCreatedEvent;
+use App\Events\InvitationUpdatedEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invitation extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'room_id',
         'username',
@@ -17,6 +16,11 @@ class Invitation extends Model
         'iv',
         'tag',
         'invitation'
+    ];
+
+    protected $dispatchesEvents = [
+        'created' => InvitationCreatedEvent::class,
+        'updated' => InvitationUpdatedEvent::class
     ];
 
     /**
@@ -27,14 +31,11 @@ class Invitation extends Model
         return $this->belongsTo(Room::class);
     }
 
-    // public function user()
-    // {
-    //     $user = User::where('username', $username)->first();
-    //     if($user){
-    //         return $user;
-    //     }
-    //     else{
-    //         return null;
-    //     }
-    // }
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'username', 'username');
+    }
 }

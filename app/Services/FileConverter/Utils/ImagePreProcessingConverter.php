@@ -6,8 +6,8 @@ namespace App\Services\FileConverter\Utils;
 
 
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
-use App\Services\Storage\Value\FileCollection;
-use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Values\FileCollection;
+use App\Services\Storage\Values\FileReference;
 use Illuminate\Cache\Repository;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mime\MimeTypes;

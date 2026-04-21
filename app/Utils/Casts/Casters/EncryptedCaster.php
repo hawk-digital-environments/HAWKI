@@ -28,7 +28,7 @@ readonly class EncryptedCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function get(object $object, string $stored): mixed
+    public function get(object $object, string $stored, string $property): mixed
     {
         $decrypted = Crypt::decryptString($stored);
 
@@ -42,7 +42,7 @@ readonly class EncryptedCaster implements CastsValue, BuiltInCasterInterface
     /**
      * @inheritDoc
      */
-    public function set(object $object, mixed $value): string
+    public function set(object $object, mixed $value, string $property): string
     {
         $plain = match ($this->innerType) {
             CastType::ARRAY, CastType::JSON, CastType::OBJECT => json_encode($value),

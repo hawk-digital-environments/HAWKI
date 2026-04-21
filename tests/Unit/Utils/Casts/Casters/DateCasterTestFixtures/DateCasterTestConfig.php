@@ -13,4 +13,5 @@ class DateCasterTestConfig
     public ?\DateTimeImmutable $immutableProp = null;
     public ?\DateTimeInterface $interfaceProp = null;
     public int $notADateProp = 0;
+    public int|float $unionProp = 0; // union type should be ignored by DateCaster
 }

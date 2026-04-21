@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PrivateUserData;
 use App\Services\Profile\ApiTokenService;
 use App\Services\Profile\PasskeyService;
 use App\Services\Profile\ProfileService;
@@ -10,7 +9,6 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 
@@ -18,7 +16,8 @@ class ProfileController extends Controller
 {
 
     // SECTION: PROFILE INFORMATION
-    public function update(Request $request, ProfileService $profileService): JsonResponse{
+    public function update(Request $request, ProfileService $profileService): JsonResponse
+    {
 
         $validatedData = $request->validate([
             'displayName' => 'string|max:20',
@@ -45,7 +44,8 @@ class ProfileController extends Controller
     }
 
 
-    public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse{
+    public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse
+    {
         $profileService->resetProfile();
         return response()->json([
             'success' => true,
@@ -53,7 +53,8 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function validatePasskey(Request $request){
+    public function validatePasskey(Request $request)
+    {
         $passkey = $request->getContent();
         $request->validate([
             'passkey' => 'string',
@@ -93,7 +94,8 @@ class ProfileController extends Controller
 
 
     // SECTION: PASSKEY BACKUP
-    public function backupPassKey(Request $request, PasskeyService $passkeyService): JsonResponse{
+    public function backupPassKey(Request $request, PasskeyService $passkeyService): JsonResponse
+    {
 
         $validatedData = $request->validate([
             'cipherText' => 'required|string',
@@ -111,46 +113,13 @@ class ProfileController extends Controller
 
     }
 
-    public function requestPasskeyBackup(PasskeyService $passkeyService): JsonResponse{
+    public function requestPasskeyBackup(PasskeyService $passkeyService): JsonResponse
+    {
 
         $response = $passkeyService->retrievePasskeyBackup();
         return response()->json([
             'success' => true,
             'passkeyBackup' => $response,
-        ]);
-    }
-
-    public function backupKeychain(Request $request){
-
-        $validatedData = $request->validate([
-            'ciphertext' => 'required|string',
-            'iv' => 'required|string',
-            'tag' => 'required|string',
-        ]);
-
-
-        $user = Auth::user();
-
-        try{
-            $privateUserData = PrivateUserData::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'KCIV' => $validatedData['iv'],
-                    'KCTAG' => $validatedData['tag'],
-                    'keychain' => $validatedData['ciphertext'],
-                ]
-            );
-
-        } catch (\Exception $error) {
-            return response()->json([
-                'success' => false,
-                'error' => $error->getMessage()
-            ]);
-        }
-
-
-        return response()->json([
-            'success' => true,
         ]);
     }
 
@@ -186,7 +155,6 @@ class ProfileController extends Controller
             'tokens' => $tokenList,
         ]);
     }
-
 
 
     public function revokeToken(Request $request, ApiTokenService $apiTokenService): JsonResponse

@@ -18,6 +18,8 @@ use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsEncryptedStri
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsInvalidClassConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsInvalidUnionConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsMixedConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsNestedInnerConfig;
+use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsNestedOuterConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsNullableConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsSimpleTypesConfig;
 use Tests\Unit\Utils\Casts\AbstractCastableObjectTestFixtures\CastsStaticPropertyConfig;
@@ -41,6 +43,8 @@ class AbstractCastableObjectTest extends TestCase
         CastsNullableConfig::reset();
         CastsSimpleTypesConfig::reset();
         CastsStaticPropertyConfig::reset();
+        CastsNestedInnerConfig::reset();
+        CastsNestedOuterConfig::reset();
     }
 
     // ==========================================================================
@@ -103,7 +107,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItSerializesUntypedPropertyAsStringInToArrayList(): void
     {
         $sut = CastsMixedConfig::fromArray(['raw' => 'hello']);
-        static::assertSame('hello', $sut->toArrayList()['raw']);
+        static::assertSame('hello', $sut->toStringArray()['raw']);
     }
 
     // ==========================================================================
@@ -113,7 +117,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItSerializesNullPropertyAsNull(): void
     {
         $sut = CastsNullableConfig::fromStringArray(['value' => null]);
-        static::assertNull($sut->toArrayList()['value']);
+        static::assertNull($sut->toStringArray()['value']);
     }
 
     // ==========================================================================
@@ -129,7 +133,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItUsesCustomCasterOnSerialize(): void
     {
         $sut = CastsCustomCasterConfig::fromArray(['value' => 'custom:raw']);
-        static::assertSame('raw', $sut->toArrayList()['value']);
+        static::assertSame('raw', $sut->toStringArray()['value']);
     }
 
     public function testItPassesParentObjectToCustomCaster(): void
@@ -147,7 +151,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItUsesCustomCasterWithConstructorArgsOnSerialize(): void
     {
         $sut = CastsCustomCasterWithArgsConfig::fromArray(['value' => 'prefixed:raw']);
-        static::assertSame('raw', $sut->toArrayList()['value']);
+        static::assertSame('raw', $sut->toStringArray()['value']);
     }
 
     // ==========================================================================
@@ -165,7 +169,7 @@ class AbstractCastableObjectTest extends TestCase
     public function testItIgnoresStaticPropertiesInToArrayList(): void
     {
         $sut = CastsStaticPropertyConfig::fromStringArray(['name' => 'test']);
-        $result = $sut->toArrayList();
+        $result = $sut->toStringArray();
 
         static::assertArrayHasKey('name', $result);
         static::assertArrayNotHasKey('ignored', $result);
@@ -201,6 +205,46 @@ class AbstractCastableObjectTest extends TestCase
     }
 
     // ==========================================================================
+    // Nested castable objects — end-to-end pipeline
+    // ==========================================================================
+
+    public function testItHydratesNestedCastableObjectFromJsonString(): void
+    {
+        $sut = CastsNestedOuterConfig::fromStringArray([
+            'tag' => 'outer',
+            'inner' => '{"value":"hello","num":"5"}',
+        ]);
+
+        static::assertInstanceOf(CastsNestedOuterConfig::class, $sut);
+        static::assertSame('outer', $sut->tag);
+        static::assertInstanceOf(CastsNestedInnerConfig::class, $sut->inner);
+        static::assertSame('hello', $sut->inner->value);
+        static::assertSame(5, $sut->inner->num);
+    }
+
+    public function testItSerializesNestedCastableObjectToSingleJsonObject(): void
+    {
+        $inner = CastsNestedInnerConfig::fromArray(['value' => 'hello', 'num' => 5]);
+        $sut = CastsNestedOuterConfig::fromArray(['tag' => 'outer', 'inner' => $inner]);
+
+        $result = $sut->toStringArray();
+
+        static::assertSame('outer', $result['tag']);
+        static::assertSame('{"value":"hello","num":"5"}', $result['inner']);
+        // Must be valid JSON — not an escaped string within a string
+        $decoded = json_decode((string)$result['inner'], true);
+        static::assertIsArray($decoded);
+        static::assertSame('hello', $decoded['value']);
+    }
+
+    public function testItInfersNestedCastableObjectCastWithoutAnnotation(): void
+    {
+        $casts = CastsNestedOuterConfig::fromStringArray([])->getCasts();
+
+        static::assertArrayHasKey('inner', $casts);
+    }
+
+    // ==========================================================================
     // Encrypted — end-to-end pipeline
     // ==========================================================================
 
@@ -217,6 +261,6 @@ class AbstractCastableObjectTest extends TestCase
         Crypt::shouldReceive('encryptString')->with('my-secret')->once()->andReturn('ciphertext');
 
         $sut = CastsEncryptedStringConfig::fromArray(['secret' => 'my-secret']);
-        static::assertSame('ciphertext', $sut->toArrayList()['secret']);
+        static::assertSame('ciphertext', $sut->toStringArray()['secret']);
     }
 }

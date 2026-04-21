@@ -13,7 +13,7 @@ use App\Utils\Casts\Values\ResolvedCaster;
  *
  * Instances can only be created through the static factory {@see AbstractCastableObject::fromStringArray()},
  * which converts raw stored strings into fully-typed PHP values. The reverse direction is covered by
- * {@see AbstractCastableObject::toArrayList()}, which serializes all public properties back to strings.
+ * {@see AbstractCastableObject::toStringArray()}, which serializes all public properties back to strings.
  * Properties that are not present in the input array during hydration retain their declared PHP default values.
  *
  * ---
@@ -102,6 +102,39 @@ use App\Utils\Casts\Values\ResolvedCaster;
  * - `'immutable_datetime'` — stored as `Y-m-d H:i:s`; decoded to `CarbonImmutable`
  * - `'immutable_datetime:FORMAT'` — same but with a custom format; returns `CarbonImmutable`
  * - `'timestamp'` — stored as a Unix timestamp integer string; decoded to `int`
+ *
+ * ### Nested Castable Objects
+ * A property typed as a subclass of {@see AbstractCastableObject} is cast automatically —
+ * no annotation needed. The value is stored as a **JSON object string** and hydrated back into
+ * the typed instance on read. When objects are nested, each level is stored as a JSON-encoded
+ * string within its parent (i.e. inner JSON is escaped rather than embedded). This adds a few
+ * extra backslashes per nesting level in the database but keeps the implementation trivial.
+ *
+ * ```php
+ * class AddressConfig extends AbstractCastableObject
+ * {
+ *     public string $street = '';
+ *     public string $zip = '';
+ * }
+ *
+ * class PersonConfig extends AbstractCastableObject
+ * {
+ *     public string $name = '';
+ *     public AddressConfig $address;
+ * }
+ *
+ * $person = PersonConfig::fromStringArray([
+ *     'name'    => 'Alice',
+ *     'address' => '{"street":"Main St","zip":"12345"}',
+ * ]);
+ * $person->address->street; // 'Main St'
+ *
+ * $person->toStringArray();
+ * // ['name' => 'Alice', 'address' => '{"street":"Main St","zip":"12345"}']
+ *
+ * // Stored in the DB when PersonConfig is itself a nested property:
+ * // {"name":"Alice","address":"{\"street\":\"Main St\",\"zip\":\"12345\"}"}
+ * ```
  *
  * ### Enums
  * Enum type hints are detected automatically — no annotation needed.
@@ -281,13 +314,13 @@ abstract class AbstractCastableObject
      * Properties without a {@see CastedValue} annotation are cast to string via `(string)`.
      *
      * ```php
-     * $row = $config->toArrayList();
+     * $row = $config->toStringArray();
      * // ['max_tokens' => '8192', 'stream' => '1', 'openai_api_key' => '<ciphertext>', ...]
      * ```
      *
      * @return array<string, null|string>
      */
-    final public function toArrayList(): array
+    final public function toStringArray(): array
     {
         $result = [];
 
@@ -343,7 +376,7 @@ abstract class AbstractCastableObject
         if (null === $cast) {
             return $stored;
         }
-        return self::getCasterInstance($cast->caster)->get($this, $stored);
+        return self::getCasterInstance($cast->caster)->get($this, $stored, $property);
     }
 
     /**
@@ -360,7 +393,7 @@ abstract class AbstractCastableObject
         if (null === $cast) {
             return (string)$value;
         }
-        return self::getCasterInstance($cast->caster)->set($this, $value);
+        return self::getCasterInstance($cast->caster)->set($this, $value, $property);
     }
 
     /**

@@ -13,9 +13,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-openssl": "*",
+        "ext-curl": "*",
         "ext-pdo": "*",
         "ext-zip": "*",
         "ext-fileinfo": "*",
+        "ext-dom": "*",
+        "ext-libxml": "*",
         "blade-ui-kit/blade-icons": "^1.8.0",
         "hawk-hhg/hawki-crypto": "^0.5.3",
         "jumbojett/openid-connect-php": "^1.0.2",
@@ -23,14 +27,12 @@
         "laravel/reverb": "^1.6.0",
         "laravel/sanctum": "^4.2.0",
         "laravel/tinker": "^2.10.1",
+        "phpseclib/phpseclib": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.30.1",
         "league/flysystem-sftp-v3": "^3.30.0",
         "league/flysystem-webdav": "^3.30.0",
         "neunerlei/dbg": "^3.3",
-        "spatie/laravel-backup": "^9.3.4",
-        "ext-dom": "*",
-        "ext-libxml": "*",
-        "ext-curl": "*"
+        "spatie/laravel-backup": "^9.3.4"
     },
     "require-dev": {
         "ergebnis/php-cs-fixer-config": "^6.61",
@@ -72,7 +74,7 @@
         ],
         "queue": [
             "Composer\\Config::disableProcessTimeout",
-            "@php artisan queue:work -vv --queue=default,mails,message_broadcast"
+            "@php artisan queue:work -vv --queue=default,mails,message_broadcast --timeout=0"
         ],
         "websocket": [
             "Composer\\Config::disableProcessTimeout",
@@ -81,7 +83,7 @@
         "php-cs-fixer": "./vendor/bin/php-cs-fixer fix",
         "test:stan": "./vendor/bin/phpstan analyse",
         "test:unit": "phpunit --testsuite unit",
-        "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-html ./.phpunit.coverage; cp ./tests/coverage.dark.css .phpunit.coverage/_css/custom.css",
+        "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-html ./.phpunit.coverage",
         "test:unit:coverage:text": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-text",
         "test:unit:coverage:clover": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-clover .phpunit.coverage/coverage-clover.xml",
         "test:feature": "phpunit --testsuite feature",

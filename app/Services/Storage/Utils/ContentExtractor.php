@@ -7,9 +7,9 @@ namespace App\Services\Storage\Utils;
 
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
 use App\Services\Storage\AbstractFileStorage;
-use App\Services\Storage\Value\FileCollection;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\StoredFileExtract;
+use App\Services\Storage\Values\FileCollection;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileExtract;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Psr\Log\LoggerInterface;

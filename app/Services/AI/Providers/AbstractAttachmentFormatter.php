@@ -11,8 +11,8 @@ use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Interfaces\FileInterface;
-use App\Services\Storage\Value\StoredFile;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\StoredFile;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Psr\Log\LoggerInterface;
 
 /**

@@ -94,7 +94,6 @@ return [
                 'max_message_size' => env('REVERB_APP_MAX_MESSAGE_SIZE', 250000),
             ],
         ],
-
     ],
 
     /*
@@ -109,6 +108,9 @@ return [
     */
     'frontend' => [
         'key' => env('REVERB_APP_KEY'),
+        'host' => env('VITE_REVERB_HOST'),
+        'port' => env('VITE_REVERB_PORT'),
+        'scheme' => env('VITE_REVERB_SCHEME')
     ]
 
 ];

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Events\MessageUpdatedEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -13,6 +14,8 @@ class Message extends Model
 
     protected $fillable = [
         'room_id',
+        'thread_id',
+        'has_thread',
         'message_id',
         'message_role',
         'member_id',
@@ -73,6 +76,7 @@ class Message extends Model
             $signs = json_decode($this->reader_signs, true) ?? [];
             $signs[] = $member->id;
             $this->reader_signs = json_encode($signs);
+            MessageUpdatedEvent::dispatch($this);
             $this->save();
         }
     }

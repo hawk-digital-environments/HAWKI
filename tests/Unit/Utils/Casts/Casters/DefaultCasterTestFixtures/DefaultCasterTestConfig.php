@@ -17,4 +17,5 @@ class DefaultCasterTestConfig
     public array $arrayProp = [];
     public object $objectProp; // matched by DefaultCaster (class name = 'object' keyword)
     public \stdClass $stdClassProp; // not matched by DefaultCaster (class name ≠ 'object' keyword)
+    public int|float $unionProp = 0; // union type should be ignored by DefaultCaster
 }

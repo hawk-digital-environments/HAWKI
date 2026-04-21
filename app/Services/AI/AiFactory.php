@@ -33,8 +33,8 @@ class AiFactory
 
     public function __construct(
         private readonly ContainerInterface $container,
-        private readonly Repository   $config,
-        private readonly ToolRegistry $toolRegistry
+        private readonly Repository         $config,
+        private readonly ToolRegistry       $toolRegistry
     )
     {
     }
@@ -111,9 +111,9 @@ class AiFactory
         $status = null;
 
         return new AiModelContext(
-            $model,
-            $provider,
-            function (AiModel $model) use ($provider) {
+            model: $model,
+            provider: $provider,
+            clientResolver: function (AiModel $model) use ($provider) {
                 return $this->rememberInstance(
                     'client_for_' . $provider->getConfig()->getId() . '_model_' . $model->getId(),
                     function () use ($provider, $model) {
@@ -133,13 +133,13 @@ class AiFactory
                     }
                 );
             },
-            function (AiModel $model) use (&$status) {
+            statusResolver: function (AiModel $model) use (&$status) {
                 if ($status === null) {
                     $status = $this->container->get(ModelStatusDb::class)->getStatus($model);
                 }
                 return $status;
             },
-            $dbCapabilities
+            dbCapabilities: $dbCapabilities
         );
     }
 

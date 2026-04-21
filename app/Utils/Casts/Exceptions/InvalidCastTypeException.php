@@ -7,8 +7,12 @@ namespace App\Utils\Casts\Exceptions;
 
 use App\Utils\Casts\Contracts\CastsValue;
 use App\Utils\Casts\Values\CastType;
+use ReflectionType;
 
-class InvalidCastTypeException extends \InvalidArgumentException
+/**
+ * @api
+ */
+class InvalidCastTypeException extends \InvalidArgumentException implements CastableObjectExceptionInterface
 {
     public static function forType(CastType|string $type): self
     {
@@ -43,7 +47,37 @@ class InvalidCastTypeException extends \InvalidArgumentException
             '%s::$%s has type "%s" which cannot be cast automatically. Add a #[CastedValue] annotation.',
             $prop->class,
             $prop->getName(),
-            $prop->getType()?->getName(),
+            self::propertyTypeToString($prop)
         ));
+    }
+
+    private static function propertyTypeToString(\ReflectionProperty $prop): string
+    {
+        $recursiveWalker = static function (ReflectionType $type) use (&$recursiveWalker): string {
+            if ($type instanceof \ReflectionNamedType) {
+                return $type->getName();
+            }
+            if ($type instanceof \ReflectionUnionType) {
+                $typeNames = array_map($recursiveWalker, $type->getTypes());
+                sort($typeNames);
+                return implode('|', $typeNames);
+            }
+            if ($type instanceof \ReflectionIntersectionType) {
+                $typeNames = array_map($recursiveWalker, $type->getTypes());
+                sort($typeNames);
+                return implode('&', $typeNames);
+            }
+            // @codeCoverageIgnoreStart
+            // This should never happen, as the only possible ReflectionType implementations are the ones handled above, future proof
+            return 'unknown';
+            // @codeCoverageIgnoreEnd
+        };
+
+        $type = $prop->getType();
+        if ($type === null) {
+            return 'none';
+        }
+
+        return $recursiveWalker($type);
     }
 }

@@ -11,8 +11,8 @@ export const addon: AddonEntrypoint = async (context) => ({
     env: defineEnv,
     events: async (events) => {
         events.on('installer:envFile:filter', async ({envFile}) => {
-            // Automatically rewrite the APP_URL
-            envFile.set('APP_URL', 'https://' + envFile.get('DOCKER_PROJECT_DOMAIN'));
+            // Disable the APP_URL comment in the env file, as it is now handled by the DOCKER_PROJECT_HOST AND DOCKER_PROJECT_PROTOCOL variables.
+            envFile.comment('APP_URL');
         });
     },
     commands: async (program) => {
@@ -21,6 +21,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .description('runs a certain artisan command for the project')
             .allowExcessArguments(true)
             .allowUnknownOption(true)
+            .helpOption(false)
             .action(async (options, command) => {
                 await context.docker.executeCommandInService('app', ['php', 'artisan', ...command.args], {interactive: true});
             });

@@ -8,7 +8,7 @@ use App\Services\Announcements\AnnouncementService;
 use App\Services\Chat\AiConv\AiConvService;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use App\Services\System\SettingsService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;

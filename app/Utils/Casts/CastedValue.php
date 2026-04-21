@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Utils\Casts;
 
+use App\Utils\Casts\Casters\CastableObjectCaster;
 use App\Utils\Casts\Casters\DateCaster;
 use App\Utils\Casts\Casters\DefaultCaster;
 use App\Utils\Casts\Casters\EncryptedCaster;
 use App\Utils\Casts\Casters\EnumCaster;
 use App\Utils\Casts\Contracts\BuiltInCasterInterface;
 use App\Utils\Casts\Contracts\CastsValue;
+use App\Utils\Casts\Exceptions\AmbiguousFormatArgumentException;
 use App\Utils\Casts\Exceptions\InvalidCastTypeException;
 use App\Utils\Casts\Values\CastType;
 use App\Utils\Casts\Values\ResolvedCaster;
@@ -84,6 +86,7 @@ use App\Utils\Casts\Values\ResolvedCaster;
  * | `'immutable_datetime'`             | `CarbonImmutable`        | `Y-m-d H:i:s`          |
  * | `'immutable_datetime:FORMAT'`      | `CarbonImmutable`        | given format           |
  * | `'timestamp'`                      | `int`                    | Unix timestamp string  |
+ * | Any `AbstractCastableObject` subclass FQN | Instance of that class | JSON object string     |
  *
  * @see CastType
  * @see AbstractCastableObject
@@ -96,6 +99,7 @@ readonly class CastedValue
     private const BUILT_IN_CASTERS = [
         DateCaster::class,
         EnumCaster::class,
+        CastableObjectCaster::class,
         EncryptedCaster::class,
         DefaultCaster::class
     ];
@@ -134,8 +138,7 @@ readonly class CastedValue
             $baseType = $typeParts[0];
             $modifier = $typeParts[1] ?? null;
             if ($modifier !== null && $format !== null) {
-                // @todo better exception class
-                throw new \InvalidArgumentException('Format/argument string must be provided either as part of the type string (after a colon) or as the second constructor argument, not both.');
+                throw AmbiguousFormatArgumentException::forDuplicateFormat($baseType, $format);
             }
             $format = $modifier ?? $format;
             $narrowedType = $baseType;
@@ -147,7 +150,7 @@ readonly class CastedValue
         $narrowedCastType = $narrowedType instanceof CastType ? $narrowedType : CastType::tryFromString($narrowedType);
         // Theoretically the '' case should never happen, as if $narrowedType is not a CastType it should always be a string (but just to be safe)
         /* @var string $narrowedTypeString */
-        $narrowedTypeString = is_string($narrowedType) ? $narrowedType : ($narrowedCastType?->value ?? '');
+        $narrowedTypeString = is_string($narrowedType) ? $narrowedType : ($narrowedCastType->value ?? '');
 
         // Resolve the built-in casters
         foreach (self::BUILT_IN_CASTERS as $casterClass) {

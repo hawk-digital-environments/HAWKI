@@ -24,6 +24,7 @@ use GuzzleHttp\Psr7\Uri;
  * The `@psalm-assert` annotations on each method enable Psalm (and compatible tools like PHPStan
  * and PhpStorm) to narrow the type of `$value` in the calling scope after a successful assertion,
  * eliminating the need for redundant type checks downstream.
+ * @api
  */
 class Assert
 {

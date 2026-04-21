@@ -22,13 +22,13 @@ class EnumCasterTest extends TestCase
     public function testItHydratesBackedEnum(): void
     {
         $sut = new EnumCaster(CastsTestStatus::class);
-        static::assertSame(CastsTestStatus::Inactive, $sut->get(new \stdClass(), 'inactive'));
+        static::assertSame(CastsTestStatus::Inactive, $sut->get(new \stdClass(), 'inactive', 'prop'));
     }
 
     public function testItHydratesUnitEnumByCaseName(): void
     {
         $sut = new EnumCaster(CastsTestDirection::class);
-        static::assertSame(CastsTestDirection::South, $sut->get(new \stdClass(), 'South'));
+        static::assertSame(CastsTestDirection::South, $sut->get(new \stdClass(), 'South', 'prop'));
     }
 
     // ==========================================================================
@@ -38,19 +38,19 @@ class EnumCasterTest extends TestCase
     public function testItSerializesBackedEnumByValue(): void
     {
         $sut = new EnumCaster(CastsTestStatus::class);
-        static::assertSame('active', $sut->set(new \stdClass(), CastsTestStatus::Active));
+        static::assertSame('active', $sut->set(new \stdClass(), CastsTestStatus::Active, 'prop'));
     }
 
     public function testItSerializesUnitEnumByCaseName(): void
     {
         $sut = new EnumCaster(CastsTestDirection::class);
-        static::assertSame('North', $sut->set(new \stdClass(), CastsTestDirection::North));
+        static::assertSame('North', $sut->set(new \stdClass(), CastsTestDirection::North, 'prop'));
     }
 
     public function testItSerializesNonEnumValueAsEmptyString(): void
     {
         $sut = new EnumCaster(CastsTestStatus::class);
-        static::assertSame('', $sut->set(new \stdClass(), 'not-an-enum'));
+        static::assertSame('', $sut->set(new \stdClass(), 'not-an-enum', 'prop'));
     }
 
     // ==========================================================================

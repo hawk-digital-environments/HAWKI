@@ -21,20 +21,20 @@ class DefaultCasterTest extends TestCase
     public function testItHydratesInt(): void
     {
         $sut = new DefaultCaster(CastType::INT);
-        static::assertSame(42, $sut->get(new \stdClass(), '42'));
+        static::assertSame(42, $sut->get(new \stdClass(), '42', 'prop'));
     }
 
     public function testItHydratesFloat(): void
     {
         $sut = new DefaultCaster(CastType::FLOAT);
-        static::assertSame(3.14, $sut->get(new \stdClass(), '3.14'));
+        static::assertSame(3.14, $sut->get(new \stdClass(), '3.14', 'prop'));
     }
 
     #[DataProvider('provideTestItHydratesBoolData')]
     public function testItHydratesBool(string $stored, bool $expected): void
     {
         $sut = new DefaultCaster(CastType::BOOL);
-        static::assertSame($expected, $sut->get(new \stdClass(), $stored));
+        static::assertSame($expected, $sut->get(new \stdClass(), $stored, 'prop'));
     }
 
     public static function provideTestItHydratesBoolData(): iterable
@@ -49,31 +49,31 @@ class DefaultCasterTest extends TestCase
     public function testItHydratesString(): void
     {
         $sut = new DefaultCaster(CastType::STRING);
-        static::assertSame('hello world', $sut->get(new \stdClass(), 'hello world'));
+        static::assertSame('hello world', $sut->get(new \stdClass(), 'hello world', 'prop'));
     }
 
     public function testItHydratesArray(): void
     {
         $sut = new DefaultCaster(CastType::ARRAY);
-        static::assertSame(['x', 'y'], $sut->get(new \stdClass(), '["x","y"]'));
+        static::assertSame(['x', 'y'], $sut->get(new \stdClass(), '["x","y"]', 'prop'));
     }
 
     public function testItHydratesArrayFallsBackToEmptyOnInvalidJson(): void
     {
         $sut = new DefaultCaster(CastType::ARRAY);
-        static::assertSame([], $sut->get(new \stdClass(), 'not-json'));
+        static::assertSame([], $sut->get(new \stdClass(), 'not-json', 'prop'));
     }
 
     public function testItHydratesJsonAliasAsArray(): void
     {
         $sut = new DefaultCaster(CastType::JSON);
-        static::assertSame(['a'], $sut->get(new \stdClass(), '["a"]'));
+        static::assertSame(['a'], $sut->get(new \stdClass(), '["a"]', 'prop'));
     }
 
     public function testItHydratesObject(): void
     {
         $sut = new DefaultCaster(CastType::OBJECT);
-        $result = $sut->get(new \stdClass(), '{"key":"val"}');
+        $result = $sut->get(new \stdClass(), '{"key":"val"}', 'prop');
         static::assertInstanceOf(\stdClass::class, $result);
         static::assertSame('val', $result->key);
     }
@@ -81,7 +81,7 @@ class DefaultCasterTest extends TestCase
     public function testItHydratesObjectFallsBackToEmptyStdClassOnInvalidJson(): void
     {
         $sut = new DefaultCaster(CastType::OBJECT);
-        static::assertInstanceOf(\stdClass::class, $sut->get(new \stdClass(), 'not-json'));
+        static::assertInstanceOf(\stdClass::class, $sut->get(new \stdClass(), 'not-json', 'prop'));
     }
 
     // ==========================================================================
@@ -91,37 +91,37 @@ class DefaultCasterTest extends TestCase
     public function testItSerializesInt(): void
     {
         $sut = new DefaultCaster(CastType::INT);
-        static::assertSame('42', $sut->set(new \stdClass(), 42));
+        static::assertSame('42', $sut->set(new \stdClass(), 42, 'prop'));
     }
 
     public function testItSerializesFloat(): void
     {
         $sut = new DefaultCaster(CastType::FLOAT);
-        static::assertSame('3.14', $sut->set(new \stdClass(), 3.14));
+        static::assertSame('3.14', $sut->set(new \stdClass(), 3.14, 'prop'));
     }
 
     public function testItSerializesBoolTrueAsOne(): void
     {
         $sut = new DefaultCaster(CastType::BOOL);
-        static::assertSame('1', $sut->set(new \stdClass(), true));
+        static::assertSame('1', $sut->set(new \stdClass(), true, 'prop'));
     }
 
     public function testItSerializesBoolFalseAsZero(): void
     {
         $sut = new DefaultCaster(CastType::BOOL);
-        static::assertSame('0', $sut->set(new \stdClass(), false));
+        static::assertSame('0', $sut->set(new \stdClass(), false, 'prop'));
     }
 
     public function testItSerializesString(): void
     {
         $sut = new DefaultCaster(CastType::STRING);
-        static::assertSame('test', $sut->set(new \stdClass(), 'test'));
+        static::assertSame('test', $sut->set(new \stdClass(), 'test', 'prop'));
     }
 
     public function testItSerializesArray(): void
     {
         $sut = new DefaultCaster(CastType::ARRAY);
-        static::assertSame('["a"]', $sut->set(new \stdClass(), ['a']));
+        static::assertSame('["a"]', $sut->set(new \stdClass(), ['a'], 'prop'));
     }
 
     public function testItSerializesObject(): void
@@ -129,7 +129,7 @@ class DefaultCasterTest extends TestCase
         $sut = new DefaultCaster(CastType::OBJECT);
         $obj = new \stdClass();
         $obj->key = 'val';
-        static::assertSame('{"key":"val"}', $sut->set(new \stdClass(), $obj));
+        static::assertSame('{"key":"val"}', $sut->set(new \stdClass(), $obj, 'prop'));
     }
 
     // ==========================================================================
@@ -168,10 +168,14 @@ class DefaultCasterTest extends TestCase
     // ==========================================================================
 
     #[DataProvider('provideTestItReturnsArgsForPropertyData')]
-    public function testItReturnsArgsForProperty(string $property, CastType $expected): void
+    public function testItReturnsArgsForProperty(string $property, CastType|null $expected): void
     {
         $prop = new \ReflectionProperty(DefaultCasterTestConfig::class, $property);
-        static::assertSame([$expected], DefaultCaster::argsForProperty($prop));
+        if ($expected === null) {
+            static::assertNull(DefaultCaster::argsForProperty($prop));
+        } else {
+            static::assertSame([$expected], DefaultCaster::argsForProperty($prop));
+        }
     }
 
     public static function provideTestItReturnsArgsForPropertyData(): iterable
@@ -182,6 +186,7 @@ class DefaultCasterTest extends TestCase
         yield 'string' => ['stringProp', CastType::STRING];
         yield 'array' => ['arrayProp', CastType::ARRAY];
         yield 'object' => ['objectProp', CastType::OBJECT];
+        yield 'union type' => ['unionProp', null]; // union types should be ignored by DefaultCaster, so expect null
     }
 
     public function testItReturnsNullForClassTypedProperty(): void

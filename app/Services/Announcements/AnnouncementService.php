@@ -2,23 +2,19 @@
 
 namespace App\Services\Announcements;
 
-use Illuminate\Support\Facades\Session;
 use App\Models\Announcements\Announcement;
 use App\Models\User;
+use App\Services\Translation\LocaleService;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-
-
-use App\Http\Controllers\LanguageController;
-use Illuminate\Support\Facades\Log;
-use Exception;
-use Illuminate\Translation\Translator;
+use Illuminate\Support\Facades\Session;
 
 
 readonly class AnnouncementService
 {
     public function __construct(
-        private Translator $translator
+        private LocaleService $localeService
     )
     {
     }
@@ -30,16 +26,17 @@ readonly class AnnouncementService
      * $service->createAnnouncement('announcements.terms_update', 'info', true);
      */
     public function createAnnouncement(
-        string $title,
-        string $view,
-        string $type = 'info',
-        bool $isForced = false,
-        bool $isGlobal = true,
-        ?array $targetUsers = null,
+        string  $title,
+        string  $view,
+        string  $type = 'info',
+        bool    $isForced = false,
+        bool    $isGlobal = true,
+        ?array  $targetUsers = null,
         ?string $anchor = null,
         ?string $startsAt = null,
         ?string $expiresAt = null
-    ): Announcement {
+    ): Announcement
+    {
         return Announcement::create([
             'title' => $title,
             'view' => $view,
@@ -47,13 +44,14 @@ readonly class AnnouncementService
             'is_forced' => $isForced,
             'is_global' => $isGlobal,
             'target_users' => $targetUsers,
-            'anchor'=>$anchor,
+            'anchor' => $anchor,
             'starts_at' => $startsAt,
             'expires_at' => $expiresAt,
         ]);
     }
 
-    public function getUserAnnouncements(){
+    public function getUserAnnouncements()
+    {
         $announcements = Auth::user()->unreadAnnouncements();
         // Collect force announcements
         $forceAnnouncements = [];
@@ -63,18 +61,17 @@ readonly class AnnouncementService
             }
         }
         Session::put('force_announcements', $forceAnnouncements);
-        return $announcements->map(function($ann){
-            return[
-                'id' =>$ann->id,
-                'title'=>$ann->title,
-                'type'=>$ann->type,
-                'isForced'=>$ann->is_forced,
-                'anchor'=>$ann->anchor,
-                'expires_at'=>$ann->expires_at
+        return $announcements->map(function ($ann) {
+            return [
+                'id' => $ann->id,
+                'title' => $ann->title,
+                'type' => $ann->type,
+                'isForced' => $ann->is_forced,
+                'anchor' => $ann->anchor,
+                'expires_at' => $ann->expires_at
             ];
         });
     }
-
 
 
     /**
@@ -95,11 +92,10 @@ readonly class AnnouncementService
     }
 
 
-
-    public function fetchLatestPolicy(): Announcement{
+    public function fetchLatestPolicy(): Announcement
+    {
         return $this->getActiveAnnouncements()->where('type', 'policy')->firstOrFail();
     }
-
 
 
     /**
@@ -141,7 +137,7 @@ readonly class AnnouncementService
     public function renderAnnouncement(Announcement $announcement): string
     {
         $view = $announcement->view;
-        $lang = $this->translator->locale();
+        $lang = $this->localeService->getCurrentLocale()->lang;
         $file = resource_path("announcements/$view/$lang.md");
         return file_get_contents($file);
     }

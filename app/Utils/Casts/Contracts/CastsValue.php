@@ -59,22 +59,24 @@ interface CastsValue
      *                       sibling properties that appear later in the class declaration may
      *                       not yet be populated when this is called.
      * @param string $stored the raw string as it was read from the database
+     * @param string $property the name of the property being cast.
      *
      * @return mixed the PHP-typed value to assign to the property
      */
-    public function get(object $object, string $stored): mixed;
+    public function get(object $object, string $stored, string $property): mixed;
 
     /**
      * Convert a PHP value into its stored string representation.
      *
-     * Called during {@see AbstractCastableObject::toArrayList()} for every property
+     * Called during {@see AbstractCastableObject::toStringArray()} for every property
      * whose cast type resolves to this caster class.
      *
      * @param object $object The parent castable object instance. Useful when the serialization
      *                       format depends on a sibling property (e.g. a locale or timezone).
      * @param mixed $value the current PHP value of the property
+     * @param string $property the name of the property being cast.
      *
      * @return string the serialized string to persist in the database
      */
-    public function set(object $object, mixed $value): string;
+    public function set(object $object, mixed $value, string $property): string;
 }

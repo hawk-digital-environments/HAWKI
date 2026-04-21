@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Services\AI\Db;
 
 
-use App\Models\Ai\AiModelStatus;
+use App\Events\AiModelStatusUpdateEvent;
+use App\Models\AiModelStatus;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\ModelOnlineStatus;
 
@@ -34,5 +35,7 @@ class ModelStatusDb
             ['model_id' => $model->getId()],
             ['status' => $status]
         );
+
+        AiModelStatusUpdateEvent::dispatch($model);
     }
 }

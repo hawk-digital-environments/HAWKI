@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Storage\Interfaces;
 
 
-use App\Services\Storage\Value\FileType;
-use App\Services\Storage\Value\PlainTextLanguageType;
+use App\Services\Storage\Values\FileType;
+use App\Services\Storage\Values\PlainTextLanguageType;
 
 interface FileInterface extends \Stringable
 {

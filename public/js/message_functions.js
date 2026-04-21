@@ -1,21 +1,23 @@
-
-function addMessageToChatlog(messageObj, isFromServer = false){
+function addMessageToChatlog(messageObj, isFromServer = false) {
+    if (typeof messageObj.content === 'string' && isValidJson(messageObj.content)) {
+        messageObj.content = JSON.parse(messageObj.content);
+    }
 
     const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
 
     /// CLONE
     // clone message element
-    const messageTemp = document.getElementById('message-template')
+    const messageTemp = document.getElementById('message-template');
     const messageClone = messageTemp.content.cloneNode(true);
 
     //Get messageElement
-    const messageElement = messageClone.querySelector(".message");
+    const messageElement = messageClone.querySelector('.message');
 
     /// DATASET & ID
     // set dataset attributes
     messageElement.dataset.role = messageObj.message_role;
     messageElement.dataset.rawMsg = messageText;
-    if(messageObj.metadata){
+    if (messageObj.metadata) {
         const meta = messageObj.metadata;
         messageElement.dataset.tools = JSON.stringify(meta.tools ?? []);
         messageElement.dataset.params = JSON.stringify(meta.params ?? {});
@@ -23,73 +25,68 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     // messageElement.dataset.groundingMetadata = JSON.stringify(groundingMetadata);
 
     //if date and time is confirmed from the server add them
-    if(messageObj.created_at) messageElement.dataset.created_at = messageObj.created_at;
+    if (messageObj.created_at) messageElement.dataset.created_at = messageObj.created_at;
 
     // set id (whole . deci format)
-    if(messageObj.message_id){
+    if (messageObj.message_id) {
         messageElement.id = messageObj.message_id;
     }
 
     /// CLASSES & AVATARS
     // add classes AI ME MEMBER to the element
-    if(messageObj.message_role === "assistant"){
+    if (messageObj.message_role === 'assistant') {
         messageElement.classList.add('AI');
         messageElement.querySelector('.user-inits').remove();
         messageElement.querySelector('.icon-img').src = hawkiAvatarUrl;
-    }
-    else{
-        if(messageObj.author.name && messageObj.author.username === userInfo.username){
+    } else {
+        if (messageObj.author.name && messageObj.author.username === userInfo.username) {
             messageElement.classList.add('me');
-            if(userAvatarUrl){
-                messageElement.querySelector('.user-inits').style.display = "none";
-                messageElement.querySelector('.icon-img').style.display = "block";
+            if (userAvatarUrl) {
+                messageElement.querySelector('.user-inits').style.display = 'none';
+                messageElement.querySelector('.icon-img').style.display = 'block';
                 messageElement.querySelector('.icon-img').src = userAvatarUrl;
+            } else {
+                messageElement.querySelector('.icon-img').style.display = 'none';
+                messageElement.querySelector('.user-inits').style.display = 'block';
+                const userInitials = messageObj.author.name.slice(0, 1).toUpperCase();
+                messageElement.querySelector('.user-inits').innerText = userInitials;
             }
-            else{
-                messageElement.querySelector('.icon-img').style.display = "none";
-                messageElement.querySelector('.user-inits').style.display = "block";
-                const userInitials =  messageObj.author.name.slice(0, 1).toUpperCase();
-                messageElement.querySelector('.user-inits').innerText = userInitials
-            }
-        }else{
+        } else {
             messageElement.classList.add('member');
             const hasAvatar = !!messageObj.author.avatar_url;
-            messageElement.querySelector('.icon-img').style.display = hasAvatar ? "block" : "none";
-            messageElement.querySelector('.user-inits').style.display = hasAvatar ? "none" : "block";
+            messageElement.querySelector('.icon-img').style.display = hasAvatar ? 'block' : 'none';
+            messageElement.querySelector('.user-inits').style.display = hasAvatar ? 'none' : 'block';
 
             // assign icon to message.
-            if(!hasAvatar){
-                messageElement.querySelector('.icon-img').style.display = "none";
-                messageElement.querySelector('.user-inits').style.display = "block";
-                const userInitials =  messageObj.author.name.slice(0, 1).toUpperCase();
-                messageElement.querySelector('.user-inits').innerText = userInitials
-            }
-            else{
-                messageElement.querySelector('.icon-img').style.display = "block";
-                messageElement.querySelector('.user-inits').style.display = "none";
+            if (!hasAvatar) {
+                messageElement.querySelector('.icon-img').style.display = 'none';
+                messageElement.querySelector('.user-inits').style.display = 'block';
+                const userInitials = messageObj.author.name.slice(0, 1).toUpperCase();
+                messageElement.querySelector('.user-inits').innerText = userInitials;
+            } else {
+                messageElement.querySelector('.icon-img').style.display = 'block';
+                messageElement.querySelector('.user-inits').style.display = 'none';
                 messageElement.querySelector('.icon-img').src = messageObj.author.avatar_url;
             }
         }
     }
 
     /// Set Author Name
-    if(messageObj.model && messageObj.message_role === 'assistant'){
+    if (messageObj.model && messageObj.message_role === 'assistant') {
         model = modelsList.find(m => m.id === messageObj.model);
         messageElement.querySelector('.message-author').innerHTML =
             model ?
-            `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>`:
-            `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+                `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>` :
+                `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
 
         messageElement.dataset.model = messageObj.model;
         messageElement.dataset.author = messageObj.author.username;
-    }
-    else{
+    } else {
 
         let header;
-        if(!messageObj.author.isRemoved || messageObj.author.isRemoved === 0){
-            header = messageObj.author.name
-        }
-        else{
+        if (!messageObj.author.isRemoved || messageObj.author.isRemoved === 0) {
+            header = messageObj.author.name;
+        } else {
             header = `<span>${messageObj.author.name}</span> <span class="message-author-model">(${__('RemovedMember')})</span>`;
         }
 
@@ -99,7 +96,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
     /// INDEXING & THREAD
     // if message is from the user, it still doesn't have an assigned ID from the server.
-    if(isFromServer){
+    if (isFromServer) {
         // deconstruct message id
         let [msgWholeNum, msgDecimalNum] = messageObj.message_id.split('.').map(Number);
 
@@ -109,8 +106,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         } else {
             threadIndex = msgWholeNum;
         }
-    }
-    else{
+    } else {
         threadIndex = activeThreadIndex;
     }
 
@@ -121,10 +117,9 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     // if message has a date it's already submitted and comes from the server.
     // if not, it has been created by user and does not have a date stamp -> today is the date
     let msgDate;
-    if(messageObj.created_at){
+    if (messageObj.created_at) {
         msgDate = messageObj.created_at.split('+')[0];
-    }
-    else{
+    } else {
         todayDate = new Date();
         msgDate = `${todayDate.getFullYear()}-${(todayDate.getMonth() + 1).toString().padStart(2, '0')}-${todayDate.getDate().toString().padStart(2, '0')}`;
     }
@@ -132,7 +127,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
 
     ///ATTACHMENTS
-    if(messageObj.content.attachments && messageObj.content.attachments.length != 0){
+    if (messageObj.content.attachments && messageObj.content.attachments.length != 0) {
 
         const attachmentContainer = messageElement.querySelector('.attachments');
 
@@ -146,15 +141,14 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
     /// CONTENT
     // Setup Message Content
-    const msgTxtElement = messageElement.querySelector(".message-text");
+    const msgTxtElement = messageElement.querySelector('.message-text');
 
-    if(!messageElement.classList.contains('AI')){
+    if (!messageElement.classList.contains('AI')) {
         let processedContent = detectMentioning(messageText).modifiedText;
         processedContent = convertHyperlinksToLinks(processedContent);
         processedContent = wrapLinksInBlocks(processedContent);
         msgTxtElement.innerHTML = processedContent;
-    }
-    else{
+    } else {
         let markdownProcessed = formatMessage(messageText, groundingMetadata);
         msgTxtElement.innerHTML = markdownProcessed;
         formatMathFormulas(msgTxtElement);
@@ -166,9 +160,8 @@ function addMessageToChatlog(messageObj, isFromServer = false){
             groundingMetadata.searchEntryPoint.renderedContent) {
 
             addGoogleRenderedContent(messageElement, groundingMetadata);
-        }
-        else{
-            if(messageElement.querySelector('.google-search')){
+        } else {
+            if (messageElement.querySelector('.google-search')) {
                 messageElement.querySelector('.google-search').remove();
             }
         }
@@ -176,22 +169,21 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
 
     /// check for completion status. ONLY FOR CONV MESSAGES FROM AI.
-    if (messageObj.hasOwnProperty('completion')){
+    if (messageObj.hasOwnProperty('completion')) {
         if (messageObj.completion === 0 && messageElement.querySelector('#incomplete-msg-icon')) {
             messageElement.querySelector('#incomplete-msg-icon').style.display = 'flex';
-        }else{
+        } else {
             messageElement.querySelector('#incomplete-msg-icon').style.display = 'none';
         }
     }
-        /// READ STATUS
+    /// READ STATUS
     // if the read status exists in the data
-    if(messageElement.classList.contains('me') && messageElement.querySelector('#unread-message-icon')){
-        messageElement.querySelector('#unread-message-icon').style.display = "none";
-    }
-    else if ('read_status' in messageObj) {
+    if (messageElement.classList.contains('me') && messageElement.querySelector('#unread-message-icon')) {
+        messageElement.querySelector('#unread-message-icon').style.display = 'none';
+    } else if ('read_status' in messageObj) {
         messageElement.dataset.read_stat = messageObj.read_status;
 
-        if(messageObj.read_status){
+        if (messageObj.read_status) {
             setMessageStatusAsRead(messageElement);
         }
     }
@@ -199,7 +191,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
     /// INSERT IN CHATLOG
     // insert into target thread
-    if(threadIndex === 0){
+    if (threadIndex === 0) {
         // if message is a main message then it needs a thread inside
         // clone and insert thread template in message.
         const threadTemplate = document.getElementById('thread-template');
@@ -208,7 +200,7 @@ function addMessageToChatlog(messageObj, isFromServer = false){
         threadDiv.classList.add('branch');
         threadDiv.querySelector('.model-selector-label').innerHTML = activeModel.label;
 
-        if(messageObj.message_id){
+        if (messageObj.message_id) {
             threadDiv.id = messageObj.message_id.split('.')[0];
             threadDiv.querySelector('.input').id = threadDiv.id;
         }
@@ -217,10 +209,9 @@ function addMessageToChatlog(messageObj, isFromServer = false){
 
         messageElement.appendChild(threadDiv);
         activeThread.appendChild(messageElement);
-	    initFileUploader(input);
+        initFileUploader(input);
 
-    }
-    else{
+    } else {
         const branchInput = activeThread.querySelector('.input-container');
         messageElement.querySelector('#thread-btn').remove();
         const messageChildrenCount = Array.from(activeThread.children).filter(child => child.classList.contains('message')).length + 1;
@@ -232,38 +223,38 @@ function addMessageToChatlog(messageObj, isFromServer = false){
     }
 
     formatHljs(messageElement);
-    return  messageElement;
+    return messageElement;
 }
 
 
-function updateMessageElement(messageElement, messageObj, updateContent = false){
+function updateMessageElement(messageElement, messageObj, updateContent = false) {
 
     messageElement.id = messageObj.message_id;
-    if(messageObj.metadata){
+    if (messageObj.metadata) {
         const meta = messageObj.metadata;
         messageElement.dataset.tools = JSON.stringify(meta.tools ?? []);
         messageElement.dataset.params = JSON.stringify(meta.params ?? {});
     }
 
-    if(messageElement.querySelector('.thread')){
+    if (messageElement.querySelector('.thread')) {
         messageElement.querySelector('.thread').id = messageObj.message_id.split('.')[0];
-        messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0]
+        messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0];
     }
 
-    if(messageElement.classList.contains('me')){
+    if (messageElement.classList.contains('me')) {
         messageElement.querySelector('#sent-status-icon').style.display = 'flex';
     }
 
-    if (messageObj.hasOwnProperty('completion')){
+    if (messageObj.hasOwnProperty('completion')) {
         if ((messageObj.completion === 0 || messageObj.completion === false) && messageElement.querySelector('#incomplete-msg-icon')) {
             messageElement.querySelector('#incomplete-msg-icon').style.display = 'flex';
-        }else{
+        } else {
             messageElement.querySelector('#incomplete-msg-icon').style.display = 'none';
         }
     }
 
     messageElement.dataset.role = messageObj.message_role;
-    const msgTxtElement = messageElement.querySelector(".message-text");
+    const msgTxtElement = messageElement.querySelector('.message-text');
 
     if (messageElement.classList.contains('AI')) {
         const username = messageElement.dataset.author;
@@ -275,18 +266,17 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
         messageElement.dataset.model = messageObj.model;
     }
 
-    if(updateContent){
+    if (updateContent) {
         const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
 
         messageElement.dataset.rawMsg = messageText;
-        if(messageObj.message_role === "user"){
+        if (messageObj.message_role === 'user') {
             const filteredContent = detectMentioning(messageText);
             let processedContent = filteredContent.modifiedText;
             processedContent = convertHyperlinksToLinks(processedContent);
             processedContent = wrapLinksInBlocks(processedContent);
             msgTxtElement.innerHTML = processedContent;
-        }
-        else{
+        } else {
 
             let markdownProcessed = formatMessage(messageText, groundingMetadata);
             msgTxtElement.innerHTML = markdownProcessed;
@@ -298,22 +288,20 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
                 groundingMetadata.searchEntryPoint.renderedContent) {
 
                 addGoogleRenderedContent(messageElement, groundingMetadata);
-            }
-            else{
-                if(messageElement.querySelector('.google-search')){
+            } else {
+                if (messageElement.querySelector('.google-search')) {
                     messageElement.querySelector('.google-search').remove();
                 }
             }
         }
 
         // if the read status exists in the data
-        if(messageElement.classList.contains('me') && messageElement.querySelector('#unread-message-icon')){
-            messageElement.querySelector('#unread-message-icon').style.display = "none";
-        }
-        else if ('read_status' in messageObj) {
+        if (messageElement.classList.contains('me') && messageElement.querySelector('#unread-message-icon')) {
+            messageElement.querySelector('#unread-message-icon').style.display = 'none';
+        } else if ('read_status' in messageObj) {
             messageElement.dataset.read_stat = messageObj.read_status;
 
-            if(messageObj.read_status){
+            if (messageObj.read_status) {
                 setMessageStatusAsRead(messageElement);
             }
         }
@@ -329,15 +317,13 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
 }
 
 
-
-
-function setDateSpan(activeThread, msgDate, formatDay = true){
+function setDateSpan(activeThread, msgDate, formatDay = true) {
 
     // Determine if msgDate is today or yesterday
     const msgDateObj = new Date(msgDate);
     let dateText;
 
-    if(formatDay){
+    if (formatDay) {
         const today = new Date();
         const yesterday = new Date();
         yesterday.setDate(today.getDate() - 1);
@@ -346,12 +332,11 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
         } else if (msgDateObj.toDateString() === yesterday.toDateString()) {
             dateText = __('Yesterday');
         } else {
-            const formattedDate = `${msgDateObj.getDate()}.${msgDateObj.getMonth()+1}.${msgDateObj.getFullYear()}`
+            const formattedDate = `${msgDateObj.getDate()}.${msgDateObj.getMonth() + 1}.${msgDateObj.getFullYear()}`;
             dateText = formattedDate;
         }
-    }
-    else{
-        const formattedDate = `${msgDateObj.getDate()}.${msgDateObj.getMonth()+1}.${msgDateObj.getFullYear()}`
+    } else {
+        const formattedDate = `${msgDateObj.getDate()}.${msgDateObj.getMonth() + 1}.${msgDateObj.getFullYear()}`;
         dateText = formattedDate;
     }
 
@@ -378,16 +363,15 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
     // If the date is different, create a new date span
     if (!lastDate || lastDate !== msgDate) {
         // if the date is also different than the last date span in the main thread.
-        if(lastTrunkDate != msgDate){
+        if (lastTrunkDate != msgDate) {
             const dateSpan = document.createElement('span');
             dateSpan.className = 'date_span';
             dateSpan.textContent = dateText; // Use formatted text
             dateSpan.setAttribute('data-date', msgDate);
 
-            if(activeThread.id === "0"){
+            if (activeThread.id === '0') {
                 activeThread.appendChild(dateSpan);
-            }
-            else{
+            } else {
                 const branchInput = activeThread.querySelector('.input-container');
                 activeThread.insertBefore(dateSpan, branchInput);
             }
@@ -396,32 +380,29 @@ function setDateSpan(activeThread, msgDate, formatDay = true){
 }
 
 
-
-function deconstContent(inputContent){
+function deconstContent(inputContent) {
 
     let messageText = '';
     let groundingMetadata = '';
 
-    if(isValidJson(inputContent)){
+    if (isValidJson(inputContent)) {
         const json = JSON.parse(inputContent);
-        if(json.hasOwnProperty('groundingMetadata')){
-            groundingMetadata = json.groundingMetadata
+        if (json.hasOwnProperty('groundingMetadata')) {
+            groundingMetadata = json.groundingMetadata;
         }
-        if(json.hasOwnProperty('text')){
+        if (json.hasOwnProperty('text')) {
             messageText = json.text;
-        }
-        else{
+        } else {
             messageText = inputContent;
         }
-    }
-    else{
+    } else {
         messageText = inputContent;
     }
 
     return {
         messageText: messageText,
         groundingMetadata: groundingMetadata
-    }
+    };
 
 }
 
@@ -443,7 +424,7 @@ function escapeRegExp(string) {
 
 /// Finds out if HAWKI is mentioned in the text.
 /// rawText = text from input field or decrypted from server.
-function detectMentioning(rawText){
+function detectMentioning(rawText) {
     // aiMentioned: if AI is mentioned
     // filteredText: text without mentioning,
     // modifiedText: text with mentioning (bold),
@@ -453,7 +434,7 @@ function detectMentioning(rawText){
         aiMentioned: false,
         filteredText: rawText,
         modifiedText: rawText,
-        aiMention: "",
+        aiMention: '',
         userMentions: []
     };
 
@@ -479,19 +460,19 @@ function detectMentioning(rawText){
 }
 
 
-function setMessageStatusAsRead(messageElement){
+function setMessageStatusAsRead(messageElement) {
     messageElement.dataset.read_stat = true;
-    messageElement.querySelector('#unread-message-icon').style.display = "none";
+    messageElement.querySelector('#unread-message-icon').style.display = 'none';
 }
 
 //#region MSG_CTL: COPY
 
-function activateMessageControls(msgElement){
+function activateMessageControls(msgElement) {
 
-    if(!msgElement.classList.contains('me') && msgElement.querySelector('#edit-btn')){
+    if (!msgElement.classList.contains('me') && msgElement.querySelector('#edit-btn')) {
         msgElement.querySelector('#edit-btn').remove();
     }
-    if(!msgElement.classList.contains('AI') && msgElement.querySelector('#regenerate-btn')){
+    if (!msgElement.classList.contains('AI') && msgElement.querySelector('#regenerate-btn')) {
         msgElement.querySelector('#regenerate-btn').remove();
     }
     const codeBlocks = msgElement.querySelectorAll('pre');
@@ -505,7 +486,7 @@ function activateMessageControls(msgElement){
             const copyBtn = clone.querySelector('.copy-btn');
 
             if (copyBtn) {
-                copyBtn.addEventListener("click", function() {
+                copyBtn.addEventListener('click', function () {
                     copyCodeBlock(copyBtn);
                 });
                 header.appendChild(copyBtn);
@@ -523,7 +504,7 @@ function activateMessageControls(msgElement){
             const copyBtn = clone.querySelector('.copy-btn');
             copyBtn.classList.add('math-copy-btn');
 
-            copyBtn.addEventListener("click", function() {
+            copyBtn.addEventListener('click', function () {
                 copyMathBlock(mathBlock);
             });
             mathBlock.appendChild(copyBtn);
@@ -541,7 +522,7 @@ function copyCodeBlock(btn) {
     navigator.clipboard.writeText(trimmedMsg);
 }
 
-function copyMathBlock(block){
+function copyMathBlock(block) {
     const m = block.dataset.rawmath;
     navigator.clipboard.writeText(m);
 }
@@ -573,7 +554,7 @@ function copyCodeBlockToClipboard(provider) {
 //#region MSG_CTL: EDIT
 
 
-function editMessage(provider){
+function editMessage(provider) {
     const msgControls = provider.closest('.message-controls');
     const controls = msgControls.querySelector('.controls');
     const editControls = msgControls.querySelector('.edit-bar');
@@ -588,11 +569,11 @@ function editMessage(provider){
     const content = message.querySelector('.message-content');
 
     /// PASTE STYLE
-    content.addEventListener("paste", function(e) {
+    content.addEventListener('paste', function (e) {
         e.preventDefault();
 
         // Get the plain text from clipboard
-        let text = (e.clipboardData || window.clipboardData).getData("text/plain");
+        let text = (e.clipboardData || window.clipboardData).getData('text/plain');
 
         // Get selection and range
         const selection = window.getSelection();
@@ -605,7 +586,7 @@ function editMessage(provider){
         const fragment = document.createDocumentFragment();
 
         for (let i = 0; i < lines.length; i++) {
-            if(i > 0) fragment.appendChild(document.createElement("br"));
+            if (i > 0) fragment.appendChild(document.createElement('br'));
             fragment.appendChild(document.createTextNode(lines[i]));
         }
 
@@ -628,18 +609,15 @@ function editMessage(provider){
 
     content.focus();
 
-    var range,selection;
-    if(document.createRange)
-    {
+    var range, selection;
+    if (document.createRange) {
         range = document.createRange();
         range.selectNodeContents(content);
         range.collapse(false);
         selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(range);
-    }
-    else if(document.selection)
-    {
+    } else if (document.selection) {
         range = document.body.createTextRange();
         range.moveToElementText(content);
         range.collapse(false);
@@ -647,13 +625,12 @@ function editMessage(provider){
     }
 }
 
-function abortEditMessage(provider){
+function abortEditMessage(provider) {
     const msgControls = provider.closest('.message-controls');
     const controls = msgControls.querySelector('.controls');
     const editControls = msgControls.querySelector('.edit-bar');
     controls.style.display = 'flex';
     editControls.style.display = 'none';
-
 
 
     const wrapper = provider.closest('.message-wrapper');
@@ -674,14 +651,14 @@ function abortEditMessage(provider){
     const content = wrapper.querySelector('.message-content');
     content.setAttribute('contenteditable', false);
     content.innerHTML = content.dataset.tempContent;
-    content.removeAttribute('data-temp-content')
+    content.removeAttribute('data-temp-content');
 }
 
-async function confirmEditMessage(provider){
+async function confirmEditMessage(provider) {
     const msgControls = provider.closest('.message-controls');
     const messageElement = provider.closest('.message');
 
-    if(!messageElement.classList.contains('me')){
+    if (!messageElement.classList.contains('me')) {
         return;
     }
 
@@ -703,49 +680,48 @@ async function confirmEditMessage(provider){
     content.removeAttribute('data-temp-content');
 
     messageElement.dataset.rawMsg = cont;
-    messageElement.querySelector(".message-text").innerHTML = detectMentioning(cont).modifiedText;
+    messageElement.querySelector('.message-text').innerHTML = detectMentioning(cont).modifiedText;
 
     let key;
     let url;
 
-    switch(activeModule){
+    switch (activeModule) {
         case('chat'):
-            url = `/req/conv/updateMessage/${activeConv.slug}`
+            url = `/req/conv/updateMessage/${activeConv.slug}`;
             key = await keychainGet('aiConvKey');
-        break;
+            break;
         case('groupchat'):
-            url = `/req/room/updateMessage/${activeRoom.slug}`
+            url = `/req/room/updateMessage/${activeRoom.slug}`;
             const roomKey = await keychainGet(`${activeRoom.slug}`);
 
-            if(messageElement.dataset.role === 'assistant'){
+            if (messageElement.dataset.role === 'assistant') {
                 const aiCryptoSalt = hawkiConnection('salts.ai');
                 key = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-            }else{
+            } else {
                 key = roomKey;
             }
-        break;
+            break;
     }
 
     const cryptoMsg = await encryptWithSymKey(key, cont, false);
     const messageObj = {
-        'content':{
-                'text': {
-                    'ciphertext': cryptoMsg.ciphertext,
-                    'iv': cryptoMsg.iv,
-                    'tag': cryptoMsg.tag,
-                }
-            },
+        'content': {
+            'text': {
+                'ciphertext': cryptoMsg.ciphertext,
+                'iv': cryptoMsg.iv,
+                'tag': cryptoMsg.tag
+            }
+        },
         'isAi': false,
         'model': '',
         'completion': true,
-        'message_id': messageElement.id,
-    }
+        'message_id': messageElement.id
+    };
 
-    requestMsgUpdate(messageObj, messageElement ,url);
+    requestMsgUpdate(messageObj, messageElement, url);
 }
 
 //#endregion
-
 
 
 //#region MSG_CTL: TTS
@@ -754,15 +730,15 @@ let currentUtterance = null; // Track the current utterance
 let previousProvider = null; // Track the previous provider (button)
 
 const readIcon =
-`<svg>
+    `<svg>
     <path d="M8.25 3.75L4.5 6.75H1.5V11.25H4.5L8.25 14.25V3.75Z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M14.3018 3.69727C15.7078 5.10372 16.4977 7.01103 16.4977 8.99977C16.4977 10.9885 15.7078 12.8958 14.3018 14.3023M11.6543 6.34477C12.3573 7.04799 12.7522 8.00165 12.7522 8.99602C12.7522 9.99038 12.3573 10.944 11.6543 11.6473" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>`
+</svg>`;
 const stopReadIcon =
-`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="10"></circle>
     <rect x="9" y="9" width="6" height="6"></rect>
-</svg>`
+</svg>`;
 
 function messageReadAloud(provider) {
     const synth = window.speechSynthesis;
@@ -785,7 +761,7 @@ function messageReadAloud(provider) {
         previousProvider.innerHTML = readIcon;
     }
     // Start speaking and change icon to "stop"
-    const msgText = provider.closest(".message").dataset.rawMsg;
+    const msgText = provider.closest('.message').dataset.rawMsg;
     const utterance = new SpeechSynthesisUtterance(msgText);
 
     currentUtterance = utterance;
@@ -802,12 +778,13 @@ function messageReadAloud(provider) {
         }
     };
 }
+
 //#endregion
 
 
 //#region MSG_CTL: REGENERATE
 
-async function onRegenerateBtn(btn){
+async function onRegenerateBtn(btn) {
     openRegenerateDropDown(btn);
 }
 
@@ -820,7 +797,7 @@ let regenerateState = {
 let menu;
 let regenerateButtonRef = null;
 
-function openRegenerateDropDown(sender){
+function openRegenerateDropDown(sender) {
     menu = document.getElementById('regenerate-controls');
     regenerateButtonRef = sender;
     const btnRect = sender.getBoundingClientRect();
@@ -835,7 +812,7 @@ function openRegenerateDropDown(sender){
         menu.style.opacity = `1`;
     }, 50);
 
-    const msgElement = sender.closest(".message");
+    const msgElement = sender.closest('.message');
 
     regenerateState.messageElement = msgElement;
     const modelId = msgElement.dataset.model;
@@ -845,21 +822,19 @@ function openRegenerateDropDown(sender){
     let tools = [];
     let missingTools = [];
     msgTools.forEach(msgTool => {
-        if(toolKit.includes(msgTool)){
+        if (toolKit.includes(msgTool)) {
             tools.push(msgTool);
-        }
-        else{
+        } else {
             missingTools.push(msgTool);
         }
-    })
+    });
     regenerateState.tools = new Set(tools);
 
-    if(missingTools.length > 0){
+    if (missingTools.length > 0) {
         menu.querySelector('#expired-tool-warning').style.display = 'block';
         menu.querySelector('#expired-tool-warning')
             .querySelector('.expired-tool-name').innerText = missingTools.join(', ');
-    }
-    else{
+    } else {
         menu.querySelector('#expired-tool-warning').style.display = 'none';
     }
 
@@ -867,7 +842,7 @@ function openRegenerateDropDown(sender){
     const storedParams = JSON.parse(msgElement.dataset.params || '{}');
     regenerateState.params = {
         temperature: storedParams.temperature ?? activeModel.params?.temperature ?? null,
-        top_p: storedParams.top_p ?? activeModel.params?.top_p ?? null,
+        top_p: storedParams.top_p ?? activeModel.params?.top_p ?? null
     };
     // Initialize regeneration filters based on current tools
     setRegenerationFilters(Array.from(regenerateState.tools));
@@ -889,14 +864,14 @@ function openRegenerateDropDown(sender){
 }
 
 
-function bindRegenerateMenuEvents(){
+function bindRegenerateMenuEvents() {
 
     menu.querySelectorAll('.reg-submenu-btn')
         .forEach(btn => {
             btn.onclick = () => {
                 toggleSubMenu(btn.getAttribute('reference'));
             };
-        })
+        });
 
     menu.querySelectorAll('.model-selector')
         .forEach(btn => {
@@ -911,7 +886,8 @@ function bindRegenerateMenuEvents(){
     menu.querySelector('.confirm')
         .onclick = handleRegenerateClick;
 }
-function updateIndicators(){
+
+function updateIndicators() {
     const modelId = typeof regenerateState.model === 'string' ? regenerateState.model : regenerateState.model?.id;
     const modelLabel = typeof regenerateState.model === 'string'
         ? modelsList.find(m => m.id === modelId)?.label || modelId
@@ -935,7 +911,8 @@ function initModelSubMenu(model) {
         );
     });
 }
-function handleModelSelection(e){
+
+function handleModelSelection(e) {
     const btn = e.currentTarget;
 
     // Prevent selecting disabled models
@@ -953,14 +930,17 @@ function handleModelSelection(e){
 }
 
 
-function initToolSubMenu(tools){
-    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('active')});
+function initToolSubMenu(tools) {
+    menu.querySelectorAll(`.tool-selector`).forEach(btn => {
+        btn.classList.remove('active');
+    });
     tools.forEach(tool => {
         const btn = menu.querySelector(`.tool-selector[data-reference="${tool}"]`);
         btn.classList.add('active');
     });
 }
-function handleToolToggle(e){
+
+function handleToolToggle(e) {
     const btn = e.currentTarget;
     const tool = btn.dataset.reference;
 
@@ -1003,15 +983,14 @@ function handleToolToggle(e){
 }
 
 
-
-function initParamsSubMenu(params){
+function initParamsSubMenu(params) {
 
     menu.querySelectorAll('input[type="range"]').forEach(el => {
         el.addEventListener('input', () => {
             handleSliderInput(el);
-            setParamValues(el)
+            setParamValues(el);
         });
-    })
+    });
 
     setSliderValue(
         menu.querySelector('#temperature-input'),
@@ -1022,20 +1001,19 @@ function initParamsSubMenu(params){
         params.top_p
     );
 }
-function setParamValues(el){
-    if(el.dataset.param === 'temperature'){
+
+function setParamValues(el) {
+    if (el.dataset.param === 'temperature') {
         regenerateState.params.temperature = parseFloat(el.value);
     }
-    if(el.dataset.param === 'top_p'){
+    if (el.dataset.param === 'top_p') {
         regenerateState.params.top_p = parseFloat(el.value);
     }
 }
 
 
-
-
-function handleRegenerateClick(){
-    const { messageElement, model, tools , params} = regenerateState;
+function handleRegenerateClick() {
+    const {messageElement, model, tools, params} = regenerateState;
 
     if (!model) {
         console.error('No model selected for regeneration');
@@ -1049,7 +1027,7 @@ function handleRegenerateClick(){
     const metadata = {
         'tools': Array.from(tools),
         'params': params
-    }
+    };
     regenerateMessage(
         messageElement,
         model,
@@ -1059,7 +1037,7 @@ function handleRegenerateClick(){
     closeRegenerateMenu();
 }
 
-function showRegenerationError(message){
+function showRegenerationError(message) {
     // Find or create error message element in menu
     let errorEl = menu.querySelector('.regeneration-error');
 
@@ -1079,7 +1057,7 @@ function showRegenerationError(message){
     }, 3000);
 }
 
-function handleOutsideClick(event){
+function handleOutsideClick(event) {
     const menu = document.getElementById('regenerate-controls');
 
     // Check if menu is visible
@@ -1095,7 +1073,8 @@ function handleOutsideClick(event){
         closeRegenerateMenu();
     }
 }
-function closeRegenerateMenu(){
+
+function closeRegenerateMenu() {
     menu.style.opacity = '0';
     closeAllSubMenus();
     setTimeout(() => {
@@ -1123,42 +1102,39 @@ function closeRegenerateMenu(){
 }
 
 
-
-function toggleSubMenu(id){
+function toggleSubMenu(id) {
     const subMenus = menu.querySelectorAll('.sub-menu');
     subMenus.forEach((subMenu) => {
-        if(subMenu.id === id && !subMenu.classList.contains('active')){
+        if (subMenu.id === id && !subMenu.classList.contains('active')) {
             handlesSubMenuToggle(subMenu, true);
-        }
-        else{
+        } else {
             handlesSubMenuToggle(subMenu, false);
         }
-    })
+    });
 }
 
-function closeAllSubMenus(){
+function closeAllSubMenus() {
     menu.querySelectorAll('.sub-menu').forEach((subMenu) => {
         handlesSubMenuToggle(subMenu, false);
     });
 
 }
 
-function handlesSubMenuToggle(menu, active){
-    if(active){
+function handlesSubMenuToggle(menu, active) {
+    if (active) {
         menu.style.display = 'block';
         menu.classList.add('active');
-    }
-    else{
+    } else {
         menu.classList.remove('active');
-        setTimeout(()=>{
+        setTimeout(() => {
             menu.style.display = 'none';
-        }, 300)
+        }, 300);
     }
 }
 
 
-async function regenerateMessage(messageElement, model, metadata, Done = null){
-    if(!messageElement.classList.contains('AI')){
+async function regenerateMessage(messageElement, model, metadata, Done = null) {
+    if (!messageElement.classList.contains('AI')) {
         return;
     }
 
@@ -1170,7 +1146,7 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
     initializeMessageFormating();
 
     let msgAttributes = {};
-    switch(activeModule){
+    switch (activeModule) {
         case('chat'):
             msgAttributes = {
                 'threadIndex': threadIndex,
@@ -1180,10 +1156,10 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
                 'stream': !!(model.capabilities && model.capabilities.stream),
                 'model': model.id,
                 'metadata': metadata
-            }
+            };
 
-            await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async(isDone)=>{
-                if(Done){
+            await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async (isDone) => {
+                if (Done) {
                     Done(true);
                 }
             });
@@ -1204,17 +1180,19 @@ async function regenerateMessage(messageElement, model, metadata, Done = null){
                 'stream': false,
                 'model': model.id,
                 'metadata': metadata
-            }
-            buildRequestObject(msgAttributes,  async (updatedText, done) => {});
+            };
+            buildRequestObject(msgAttributes, async (updatedText, done) => {
+            });
             break;
     }
 }
+
 //#endregion
 let GEN_STAT_VIDEO_URL = null;
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const src = darkMode === 'disabled'
-                                ? '/animations/DocSearch-lightMode.webm'
-                                : '/animations/DocSearch-darkMode.webm';
+        ? '/animations/DocSearch-lightMode.webm'
+        : '/animations/DocSearch-darkMode.webm';
     const response = await fetch(src);
     const blob = await response.blob();
     GEN_STAT_VIDEO_URL = URL.createObjectURL(blob);
@@ -1225,22 +1203,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 });
 
-function createStatusElement(status, messageElement){
+function createStatusElement(status, messageElement) {
 
     let statElement = messageElement.querySelector(`.gen-stat-element`);
     //create a new element for first status
-    if(!statElement){
-        const statTemp = document.getElementById('gen-stat-template')
+    if (!statElement) {
+        const statTemp = document.getElementById('gen-stat-template');
         const statClone = statTemp.content.cloneNode(true);
-        statElement = statClone.querySelector(".gen-stat-element");
+        statElement = statClone.querySelector('.gen-stat-element');
         messageElement.querySelector('.message-text').appendChild(statElement);
     }
 
 
     let statusText = '';
-    if(status.key === 'tool_call' || status.key === 'max_execution'){
+    if (status.key === 'tool_call' || status.key === 'max_execution') {
         statElement.querySelector('#grid-animation-block').classList.remove('active');
-        statElement.querySelector('video').src = GEN_STAT_VIDEO_URL
+        statElement.querySelector('video').src = GEN_STAT_VIDEO_URL;
         statElement.querySelector('video').style.display = 'flex';
 
         // const list = JSON.parse(status);
@@ -1250,9 +1228,9 @@ function createStatusElement(status, messageElement){
         const formatter = new Intl.ListFormat(
             activeLocale.shortName,
             {
-            style: "long",
-            type: "conjunction"
-        });
+                style: 'long',
+                type: 'conjunction'
+            });
         const value = status.value;
         const uniqueTools = [...new Set(value)];
 
@@ -1272,7 +1250,7 @@ function createStatusElement(status, messageElement){
         const list = formatter.format(toolNames);
         statusText = `${__('Exec_prefix')} ${list}`;
     }
-    if(status.key === 'reasoning'){
+    if (status.key === 'reasoning') {
         statElement.querySelector('video').style.display = 'none';
         statElement.querySelector('#grid-animation-block').classList.add('active');
         statusText = __('Reasoning_Msg');
@@ -1282,7 +1260,7 @@ function createStatusElement(status, messageElement){
 }
 
 
-function tripleDotAnime(statElement, status){
+function tripleDotAnime(statElement, status) {
     // ---- Clear any existing interval ----
     if (statElement._dotsIntervalId) {
         clearInterval(statElement._dotsIntervalId);
@@ -1290,10 +1268,10 @@ function tripleDotAnime(statElement, status){
 
     const textEl = statElement.querySelector('.stat-txt');
     let frame = 0;
-    const frames = [" ", " .", " ..", " ..."];
+    const frames = [' ', ' .', ' ..', ' ...'];
 
     // ---- Start new interval and store its id ----
-    setInterval(()=> {
+    setInterval(() => {
         textEl.innerText = status + frames[frame];
         frame = (frame + 1) % frames.length;
     }, 500);

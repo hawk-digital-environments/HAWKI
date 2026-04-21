@@ -2,6 +2,9 @@
 
 namespace App\Utils\Arrays;
 
+/**
+ * @api
+ */
 enum RecursiveMergeOption
 {
     /**

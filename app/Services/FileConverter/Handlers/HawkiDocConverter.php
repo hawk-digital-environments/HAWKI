@@ -3,8 +3,8 @@
 namespace App\Services\FileConverter\Handlers;
 
 use App\Services\FileConverter\Exception\ConversionFailedException;
-use App\Services\Storage\Value\FileCollection;
-use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Values\FileCollection;
+use App\Services\Storage\Values\FileReference;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;

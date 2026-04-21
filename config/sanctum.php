@@ -4,8 +4,6 @@ use Laravel\Sanctum\Sanctum;
 
 return [
 
-    'allow_external_communication'=> env('ALLOW_EXTERNAL_COMMUNICATION', false),
-    'allow_user_token'=> env('ALLOW_USER_TOKEN_CREATION', false),
 
     /*
     |--------------------------------------------------------------------------

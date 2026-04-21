@@ -1,16 +1,15 @@
-
 <!DOCTYPE html>
 <html class="lightMode">
 <head>
 
 
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
-	<meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ env('APP_NAME') }}</title>
 
-	<link rel="icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
 
 
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
@@ -42,116 +41,115 @@
     <script src="{{ asset('js/link_preview.js') }}"></script>
     <script src="{{ asset('js/model_functions.js') }}"></script>
 
-	@if(config('sanctum.allow_external_communication'))
+    @if(config('external_access.enabled'))
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
 
     <x-settings-panel/>
     <script>
-		SwitchDarkMode(false);
+        SwitchDarkMode(false);
         UpdateSettingsLanguage('<x-current-locale/>');
-	</script>
+    </script>
 
     <x-internal-frontend-connection/>
 </head>
 <body>
 
-	<div class="wrapper">
+<div class="wrapper">
 
-		@include('partials.home.sidebar')
-		<div class="main">
-			@yield('content')
-		</div>
-	</div>
-    @include('partials.home.components.regenerationControls')
-    @include('partials.home.components.model-parameters-controller')
+    @include('partials.home.sidebar')
+    <div class="main">
+        @yield('content')
+    </div>
+</div>
+@include('partials.home.components.regenerationControls')
+@include('partials.home.components.model-parameters-controller')
 
-	@include('partials.home.modals.guidelines-modal')
-	@include('partials.home.modals.add-member-modal')
-	@include('partials.home.modals.session-expiry-modal')
-	@include('partials.home.modals.file-viewer-modal')
-	@include('partials.home.modals.announcements-modal')
+@include('partials.home.modals.guidelines-modal')
+@include('partials.home.modals.add-member-modal')
+@include('partials.home.modals.session-expiry-modal')
+@include('partials.home.modals.file-viewer-modal')
+@include('partials.home.modals.announcements-modal')
 
-	@include('partials.overlay')
+@include('partials.overlay')
 
-    @php
-        $templates = collect(File::files(resource_path('views/partials/home/templates')))
-            ->sortBy(fn($file) => $file->getFilename())
-            ->values();
-    @endphp
-    @foreach ($templates as $temp)
-        @include('partials.home.templates.' . $viewName = str_replace('.blade', '',  $temp->getFilenameWithoutExtension()))
-    @endforeach
-    @include('partials.home.modals.confirm-modal')
+@php
+    $templates = collect(File::files(resource_path('views/partials/home/templates')))
+        ->sortBy(fn($file) => $file->getFilename())
+        ->values();
+@endphp
+@foreach ($templates as $temp)
+    @include('partials.home.templates.' . $viewName = str_replace('.blade', '',  $temp->getFilenameWithoutExtension()))
+@endforeach
+@include('partials.home.modals.confirm-modal')
 
 </body>
 </html>
 
 <script>
 
-	const userInfo = @json($user);
-	const userAvatarUrl = @json($userData['avatar_url']);
-	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
-	const activeModule = @json($activeModule);
+    const userInfo = @json($user);
+    const userAvatarUrl = @json($userData['avatar_url']);
+    const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
+    const activeModule = @json($activeModule);
     const hawkiUsername = @json($userData['hawki_username'])
 
-	const modelsList = @json($models).models;
-	const defaultModels = @json($models).defaultModels;
-	const systemModels = @json($models).systemModels;
-	const toolKit = @json($toolKit);
-	const toolKitLabels = @json($toolKitLabels);
-	const aiHandle = "{{ config('hawki.aiHandle') }}";
+    const modelsList = @json($models).models;
+    const defaultModels = @json($models).defaultModels;
+    const systemModels = @json($models).systemModels;
+    const toolKit = @json($toolKit);
+    const toolKitLabels = @json($toolKitLabels);
+    const aiHandle = "{{ config('hawki.aiHandle') }}";
 
     const announcementList = @json($announcements);
 
     window.addEventListener('DOMContentLoaded', async (event) => {
         setModel();
 
-		const passkey = await getPassKey()
-		if(!passkey){
-			console.log('passkey not found!');
-			window.location.href = '/handshake';
-		}
+        const passkey = await getPassKey();
+        if (!passkey) {
+            console.log('passkey not found!');
+            window.location.href = '/handshake';
+        }
 
-		setSessionCheckerTimer(0);
-		CheckModals()
+        setSessionCheckerTimer(0);
+        CheckModals();
 
-		const tempLink = @json(session('invitation_tempLink'));
-	    if (tempLink){
-			await handleTempLinkInvitation(tempLink);
-		}
+        const tempLink = @json(session('invitation_tempLink'));
+        if (tempLink) {
+            await handleTempLinkInvitation(tempLink);
+        }
 
-		handleUserInvitations();
-
-
-		//Module Checkup
-		setActiveSidebarButton(activeModule);
-
-		const sidebarBtn = document.getElementById('profile-sb-btn');
-		if(userAvatarUrl){
-			sidebarBtn.querySelector('.user-inits').style.display = 'none';
-			sidebarBtn.querySelector('.icon-img').style.display = 'flex';
-			sidebarBtn.querySelector('.icon-img').setAttribute('src', userAvatarUrl);
-		}
-		else{
-			sidebarBtn.querySelector('.icon-img').style.display = 'none';
-			const userInitials =  userInfo.name.slice(0, 1).toUpperCase();
-			sidebarBtn.querySelector('.user-inits').style.display = "flex";
-			sidebarBtn.querySelector('.user-inits').innerText = userInitials
-		}
+        handleUserInvitations();
 
 
-		initializeGUI();
-		checkWindowSize(800, 200);
+        //Module Checkup
+        setActiveSidebarButton(activeModule);
+
+        const sidebarBtn = document.getElementById('profile-sb-btn');
+        if (userAvatarUrl) {
+            sidebarBtn.querySelector('.user-inits').style.display = 'none';
+            sidebarBtn.querySelector('.icon-img').style.display = 'flex';
+            sidebarBtn.querySelector('.icon-img').setAttribute('src', userAvatarUrl);
+        } else {
+            sidebarBtn.querySelector('.icon-img').style.display = 'none';
+            const userInitials = userInfo.name.slice(0, 1).toUpperCase();
+            sidebarBtn.querySelector('.user-inits').style.display = 'flex';
+            sidebarBtn.querySelector('.user-inits').innerText = userInitials;
+        }
+
+
+        initializeGUI();
+        checkWindowSize(800, 200);
 
         initAnnouncements(announcementList);
 
 
-		setTimeout(() => {
-			if(@json($activeOverlay)){
-				setOverlay(false, true)
-			}
-		}, 100);
+        setTimeout(() => {
+            if (@json($activeOverlay)) {
+                setOverlay(false, true);
+            }
+        }, 100);
     });
 
 
