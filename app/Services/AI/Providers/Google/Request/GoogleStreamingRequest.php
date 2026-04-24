@@ -48,9 +48,18 @@ class GoogleStreamingRequest extends AbstractRequest
             return new AiErrorResponse($jsonChunk['error']['message'] ?? 'Unknown error');
         }
 
-        // Extract content if available
-        if (isset($jsonChunk['candidates'][0]['content']['parts'][0]['text'])) {
-            $content = $jsonChunk['candidates'][0]['content']['parts'][0]['text'];
+        if ($jsonChunk['candidates'][0]['content']['parts']) {
+            $part = $jsonChunk['candidates'][0]['content']['parts'][0];
+            // Extract Reasoning Status
+            if(isset($part['thought']) && $part['thought'] === true) {
+                $responseType = 'status';
+                $statusKey =  "reasoning";
+                $status = $part['text'] ?? 'in_progress';
+            }
+            else{
+                // Extract content
+                $content = $part['text'];
+            }
         }
 
         // Add search results
@@ -71,6 +80,11 @@ class GoogleStreamingRequest extends AbstractRequest
             ],
             usage: $this->extractUsage($model, $jsonChunk),
             isDone: $isDone,
+            type: $responseType ?? 'message',
+            status: [
+                'key' => $statusKey ?? null,
+                'value' => $status ?? null,
+            ],
         );
     }
 }

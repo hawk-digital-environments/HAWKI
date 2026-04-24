@@ -1253,7 +1253,13 @@ function createStatusElement(status, messageElement) {
     if (status.key === 'reasoning') {
         statElement.querySelector('video').style.display = 'none';
         statElement.querySelector('#grid-animation-block').classList.add('active');
-        statusText = __('Reasoning_Msg');
+        if(status.value === "in_progress"){
+            statusText = __('Reasoning_Msg');
+        }
+        else{
+            const match = status.value.match(/^\*\*(.+?)\*\*/);
+            statusText = match ? match[1] : null;
+        }
     }
     statElement.querySelector('.stat-txt').innerText = statusText;
     // tripleDotAnime(statElement, statusText)

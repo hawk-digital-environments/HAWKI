@@ -39,7 +39,7 @@ trait GoogleRequestTrait
         $apiUrl = $config->getApiUrl();
         $apiKey = $config->getApiKey();
         if($stream){
-            return $apiUrl . $model->getId() . ':streamGenerateContent?key=' . $apiKey;
+            return $apiUrl . $model->getId() . ':streamGenerateContent?alt=sse&key=' . $apiKey;
         }
         else {
             return $apiUrl . $model->getId() . ':generateContent?key=' . $apiKey;

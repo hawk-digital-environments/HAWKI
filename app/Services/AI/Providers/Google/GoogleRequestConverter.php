@@ -55,14 +55,6 @@ readonly class GoogleRequestConverter
             'stream' => $request->shouldStream(),
         ];
 
-        // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['params']['temperature'])) {
-            $payload['temperature'] = $rawPayload['params']['temperature'];
-        }
-        if (isset($rawPayload['params']['top_p'])) {
-            $payload['top_p'] = $rawPayload['params']['top_p'];
-        }
-
         // Set complete optional fields with content (default values if not present in $rawPayload)
         $payload['safetySettings'] = $rawPayload['safetySettings'] ?? [
             [
@@ -73,10 +65,14 @@ readonly class GoogleRequestConverter
 
         $payload['generationConfig'] = $rawPayload['generationConfig'] ?? [
             // 'stopSequences' => ["Title"],
-            'temperature' => 1.0,
-            'maxOutputTokens' => 800,
-            'topP' => 0.8,
-            'topK' => 10
+            'temperature' => $rawPayload['params']['temperature'] ?? 1.0,
+//            'maxOutputTokens' => 3000, // MAX TOKEN UNSET, AVOIDS BLOCKING THE MODEL WHEN REASONING.
+            'topP' => $rawPayload['params']['top_p'] ?? 0.8,
+            'topK' => 10,
+            "thinkingConfig"=> [
+                "includeThoughts"=> true,
+//                "thinkingBudget"=> 2048, // SET THINKING BUDGET TOKENS, COMING IN NEXT VERSION UI.
+            ]
         ];
 
         // Build tools from capabilities
@@ -107,6 +103,7 @@ readonly class GoogleRequestConverter
         }
 
         $payload['tools'] = $tools;
+        \Log::debug($payload);
         return $payload;
     }
 
