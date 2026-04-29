@@ -15,7 +15,7 @@ use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\StorageServiceFactory;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
-use Illuminate\Console\Scheduling\Event;
+use Illuminate\Console\Scheduling\Event as ScheduleEvent;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Route;
@@ -94,14 +94,14 @@ class AppServiceProvider extends ServiceProvider
              * @param array|null $parameters Optional parameters for the command.
              * @param mixed $interval The scheduling interval, which can be a string representing a scheduling method or the special "never" value.
              * @param mixed|null $intervalArgs Optional arguments for the scheduling method, which can be a JSON string, a single numeric value, or a simple string.
-             * @return Event|null Returns the scheduled Event if successful, or null if there was an error in scheduling due to invalid interval or arguments.
+             * @return ScheduleEvent|null Returns the scheduled Event if successful, or null if there was an error in scheduling due to invalid interval or arguments.
              */
             function (
                 string     $command,
                 array|null $parameters = null,
                 mixed      $interval = ScheduleWithDynamicIntervalFactory::NEVER_INTERVAL,
                 mixed      $intervalArgs = null
-            ) use ($app): Event|null {
+            ) use ($app): ScheduleEvent|null {
                 return $app->make(ScheduleWithDynamicIntervalFactory::class)->makeJob(
                     command: $command,
                     parameters: $parameters,

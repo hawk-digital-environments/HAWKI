@@ -12,6 +12,8 @@
 
 [//]: # (Describe what the user needs to do.)
 
+- Run the migrations to add the assistent model
+
 ## Notes
 
 [//]: # (Any additional warnings or tips for administrators performing the upgrade.)

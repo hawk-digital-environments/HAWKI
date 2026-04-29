@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssistantController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StreamController;
 use Illuminate\Http\Request;
@@ -18,4 +19,8 @@ Route::middleware(['api_isActive', 'auth:sanctum'])->group(function () {
     // ADD OTHER ENDPOINTS HERE
 
 
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::apiResource('assistants', AssistantController::class);
 });
