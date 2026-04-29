@@ -27,9 +27,11 @@ class CreateSanctumTokenForUserTest extends TestCase
         ], $overrides));
     }
 
-    private function bindTokenServiceForUser(?User $user): ApiTokenService
+    private function mockTokenServiceWithoutUser(): ApiTokenService
     {
-        $service = new ApiTokenService($user, $this->app->make(LoggerInterface::class));
+        $mockAuth = \Mockery::mock(\Illuminate\Auth\AuthManager::class);
+        $mockAuth->shouldReceive('user')->andReturn(null);
+        $service = new ApiTokenService($mockAuth, $this->app->make(LoggerInterface::class));
         $this->app->instance(ApiTokenService::class, $service);
         return $service;
     }
@@ -37,7 +39,6 @@ class CreateSanctumTokenForUserTest extends TestCase
     public function test_create_token_by_username(): void
     {
         $user = $this->createUser();
-        $this->bindTokenServiceForUser($user);
 
         $this->artisan('app:token')
             ->expectsOutput('You are about to create an API token for a user.')
@@ -53,7 +54,6 @@ class CreateSanctumTokenForUserTest extends TestCase
     public function test_create_token_by_email(): void
     {
         $user = $this->createUser();
-        $this->bindTokenServiceForUser($user);
 
         $this->artisan('app:token')
             ->expectsOutput('You are about to create an API token for a user.')
@@ -68,7 +68,6 @@ class CreateSanctumTokenForUserTest extends TestCase
     public function test_create_token_by_userid(): void
     {
         $user = $this->createUser();
-        $this->bindTokenServiceForUser($user);
 
         $this->artisan('app:token')
             ->expectsOutput('You are about to create an API token for a user.')
@@ -106,7 +105,6 @@ class CreateSanctumTokenForUserTest extends TestCase
     {
         $user = $this->createUser();
         $user->createToken('token-to-revoke');
-        $this->bindTokenServiceForUser($user);
 
         $this->artisan('app:token', ['--revoke' => true])
             ->expectsOutput('You are about to revoke an API token for a user.')
@@ -120,8 +118,7 @@ class CreateSanctumTokenForUserTest extends TestCase
 
     public function test_revoke_token_with_no_tokens(): void
     {
-        $user = $this->createUser();
-        $this->bindTokenServiceForUser($user);
+        $this->createUser();
 
         $this->artisan('app:token', ['--revoke' => true])
             ->expectsOutput('You are about to revoke an API token for a user.')
@@ -135,8 +132,7 @@ class CreateSanctumTokenForUserTest extends TestCase
 
     public function test_revoke_token_failure(): void
     {
-        $user = $this->createUser();
-        $this->bindTokenServiceForUser($user);
+        $this->createUser();
 
         $this->artisan('app:token', ['--revoke' => true])
             ->expectsOutput('You are about to revoke an API token for a user.')
@@ -150,8 +146,8 @@ class CreateSanctumTokenForUserTest extends TestCase
 
     public function test_create_token_failure(): void
     {
-        $user = $this->createUser();
-        $this->bindTokenServiceForUser(null);
+        $this->createUser();
+        $this->mockTokenServiceWithoutUser();
 
         $this->artisan('app:token')
             ->expectsOutput('You are about to create an API token for a user.')
