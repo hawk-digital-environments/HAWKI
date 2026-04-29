@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Assistant;
+
+use App\Events\AssistantCreated;
+use App\Models\Assistants\Assistant;
+use App\Models\User;
+use App\Services\Assistant\Repositories\AssistantRepository;
+use App\Services\Assistant\Repositories\OrganizationRepository;
+use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Support\Facades\Event;
+
+#[Singleton]
+readonly class AssistantService
+{
+    public function __construct(
+        private AssistantRepository $repository,
+        private OrganizationRepository $organizationRepository,
+        private DatabaseManager $db,
+    ) {}
+
+    public function remix(Assistant $source, User $creator): Assistant
+    {
+        return $this->db->transaction(function () use ($source, $creator) {
+            $source->load(['user_prompts', 'ai_tools', 'tags', 'attachments', 'versions']);
+
+            $organizationId = $this->organizationRepository->getForUser($creator)?->id;
+
+            $clone = $this->repository->clone($source, $creator->id, $organizationId);
+
+            $clone->user_prompts()->createMany(
+                $source->user_prompts->map(fn ($prompt) => ['text' => $prompt->text])->toArray()
+            );
+
+            $clone->tags()->attach($source->tags->pluck('id')->toArray());
+
+            $sourceCreator = $source->creator;
+            if ($this->organizationRepository->usersShareOrganization($creator, $sourceCreator)) {
+                $this->repository->syncTools($clone, $source->ai_tools->pluck('id')->toArray());
+            }
+
+            $latestVersion = $source->versions->sortByDesc('version')->first();
+            if ($latestVersion) {
+                $clone->versions()->create([
+                    'text' => $latestVersion->text,
+                    'version' => $latestVersion->version,
+                    'changed_keys' => $latestVersion->changed_keys,
+                ]);
+            }
+
+            foreach ($source->attachments as $attachment) {
+                $clone->attachments()->create(
+                    $attachment->only(['uuid', 'name', 'category', 'type', 'mime', 'user_id'])
+                );
+            }
+
+            Event::dispatch(new AssistantCreated($clone));
+
+            return $this->repository->loadRelations($clone, ['user_prompts', 'ai_tools', 'tags', 'attachments', 'versions']);
+        });
+    }
+
+    public function setFavorite(Assistant $assistant, User $user, bool $isFavorite): void
+    {
+        $this->repository->setFavorite($assistant, $user, $isFavorite);
+    }
+}

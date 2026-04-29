@@ -1,9 +1,8 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\AI\Providers\OpenWebUI;
-
 
 use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Value\AiRequest;
@@ -13,6 +12,7 @@ use Illuminate\Container\Attributes\Singleton;
 class OpenWebUiRequestConverter
 {
     use ToolAwareConverter;
+
     public function convertRequestToPayload(AiRequest $request): array
     {
         $rawPayload = $request->payload;
@@ -28,7 +28,7 @@ class OpenWebUiRequestConverter
         foreach ($messages as $message) {
             $formattedMessages[] = [
                 'role' => $message['role'],
-                'content' => $message['content']['text']
+                'content' => $message['content']['text'],
             ];
         }
 
@@ -40,25 +40,24 @@ class OpenWebUiRequestConverter
         ];
 
         // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['params']['temperature'])) {
-            $payload['temperature'] = $rawPayload['params']['temperature'];
+        if (isset($rawPayload['params']['temp'])) {
+            $payload['temperature'] = $rawPayload['params']['temp'];
         }
         if (isset($rawPayload['params']['top_p'])) {
             $payload['top_p'] = $rawPayload['params']['top_p'];
+        }
+        if (isset($rawPayload['params']['max_tokens'])) {
+            $payload['max_tokens'] = $rawPayload['params']['max_tokens'];
         }
 
         // Add tools from capabilities if not disabled
         $disableTools = $this->shouldDisableTools($rawPayload);
 
-        // Build selected tools from model capabilities
-        if (!$disableTools && !empty($rawPayload['tools'])) {
-            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
-            if (!empty($toolDefinitions)) {
-                //TODO: FINDOUT ABOUT OPEN WEB UI TOOL FORMAT
-                $payload['tools'] = array_map(fn($toolDef) => [
-                    'type' => 'function',
-                    'function' => $toolDef->toOpenAiChatFormat(),
-                ], $toolDefinitions);
+        if (! $disableTools && ! empty($rawPayload['tools'])) {
+            $tools = $this->resolveTools($model, $rawPayload['tools'], 'toOpenAiChatWrappedFormat');
+
+            if (! empty($tools)) {
+                $payload['tools'] = $tools;
             }
         }
 
@@ -84,10 +83,6 @@ class OpenWebUiRequestConverter
 
     /**
      * Handle special formatting requirements for specific models
-     *
-     * @param string $modelId
-     * @param array $messages
-     * @return array
      */
     protected function handleModelSpecificFormatting(string $modelId, array $messages): array
     {

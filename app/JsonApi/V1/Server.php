@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\JsonApi\V1;
+
+use App\JsonApi\V1\AiModels\AiModelSchema;
+use App\JsonApi\V1\AiModelStatuses\AiModelStatusSchema;
+use App\JsonApi\V1\AiProviders\AiProviderSchema;
+use App\JsonApi\V1\AiTools\AiToolSchema;
+use App\JsonApi\V1\AssistantAvatars\AssistantAvatarSchema;
+use App\JsonApi\V1\Assistants\AssistantSchema;
+use App\JsonApi\V1\AssistantSettings\AssistantSettingSchema;
+use App\JsonApi\V1\AssistantSettingValues\AssistantSettingValueSchema;
+use App\JsonApi\V1\Categories\CategorySchema;
+use App\JsonApi\V1\Feedback\FeedbackSchema;
+use App\JsonApi\V1\McpServers\McpServerSchema;
+use App\JsonApi\V1\Organizations\OrganizationSchema;
+use App\JsonApi\V1\Reviews\ReviewSchema;
+use App\JsonApi\V1\Tags\TagSchema;
+use App\JsonApi\V1\UserPrompts\UserPromptSchema;
+use App\JsonApi\V1\Users\UserSchema;
+use App\JsonApi\V1\Versions\VersionSchema;
+use LaravelJsonApi\Core\Server\Server as BaseServer;
+
+class Server extends BaseServer
+{
+    protected string $baseUri = '/api';
+
+    public function serving(): void
+    {
+        // no-op
+    }
+
+    protected function allSchemas(): array
+    {
+        return [
+            AssistantSchema::class,
+            AssistantAvatarSchema::class,
+            CategorySchema::class,
+            AssistantSettingSchema::class,
+            AssistantSettingValueSchema::class,
+            UserSchema::class,
+            TagSchema::class,
+            UserPromptSchema::class,
+            FeedbackSchema::class,
+            AiToolSchema::class,
+            McpServerSchema::class,
+            AiModelSchema::class,
+            AiModelStatusSchema::class,
+            AiProviderSchema::class,
+            ReviewSchema::class,
+            VersionSchema::class,
+            OrganizationSchema::class,
+        ];
+    }
+}

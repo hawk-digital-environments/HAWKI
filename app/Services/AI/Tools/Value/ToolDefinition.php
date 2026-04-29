@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services\AI\Tools\Value;
@@ -10,9 +11,7 @@ readonly class ToolDefinition
         public string $description,
         public array $parameters,  // JSON Schema format
         public bool $strict = false
-    )
-    {
-    }
+    ) {}
 
     /**
      * Convert to OpenAI Response API format (flat structure)
@@ -64,6 +63,27 @@ readonly class ToolDefinition
             'name' => $this->name,
             'description' => $this->description,
             'input_schema' => $this->parameters,
+        ];
+    }
+
+    public function toOpenAiChatWrappedFormat(): array
+    {
+        return [
+            'type' => 'function',
+            'function' => $this->toOpenAiChatFormat(),
+        ];
+    }
+
+    public function toGoogleResponseFormat(): array
+    {
+        return [
+            'functionDeclarations' => [
+                [
+                    'name' => $this->name,
+                    'description' => $this->description,
+                    'parameters' => $this->parameters,
+                ],
+            ],
         ];
     }
 

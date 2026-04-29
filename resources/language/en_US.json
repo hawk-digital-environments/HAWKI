@@ -193,5 +193,21 @@
 
     "MissingToolMsg" : "This message was generated with an obsolete tool: ",
     "Preview_Loading": "Loading preview...",
-    "Preview_Unavailable": "Preview unavailable"
+    "Preview_Unavailable": "Preview unavailable",
+
+    "ASST_Setting_Language_Label": "Language",
+    "ASST_Setting_Language_Description": "The language the assistant must use for every response.",
+
+    "ASST_Setting_Formality_Label": "Formality",
+    "ASST_Setting_Formality_Description": "The formality level of the assistant responses.",
+    "ASST_Setting_Formality_Option_Casual": "Casual",
+    "ASST_Setting_Formality_Option_Balanced": "Balanced",
+    "ASST_Setting_Formality_Option_Professional": "Professional",
+    "ASST_Setting_Formality_Option_Academic": "Academic",
+
+    "ASST_Setting_AnswerLength_Label": "Answer Length",
+    "ASST_Setting_AnswerLength_Description": "The verbosity level of the assistant responses.",
+    "ASST_Setting_AnswerLength_Option_Concise": "Concise",
+    "ASST_Setting_AnswerLength_Option_Balanced": "Balanced",
+    "ASST_Setting_AnswerLength_Option_Detailed": "Detailed"
 }

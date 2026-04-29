@@ -18,9 +18,7 @@ readonly class OpenAiRequestConverter
 
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
-    )
-    {
-    }
+    ) {}
 
     public function convertRequestToPayload(AiRequest $request): array
     {
@@ -49,11 +47,14 @@ readonly class OpenAiRequestConverter
         ];
 
         // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['params']['temperature'])) {
-            $payload['temperature'] = $rawPayload['params']['temperature'];
+        if (isset($rawPayload['params']['temp'])) {
+            $payload['temperature'] = $rawPayload['params']['temp'];
         }
         if (isset($rawPayload['params']['top_p'])) {
             $payload['top_p'] = $rawPayload['params']['top_p'];
+        }
+        if (isset($rawPayload['params']['max_tokens'])) {
+            $payload['max_output_tokens'] = $rawPayload['params']['max_tokens'];
         }
 
         if (isset($rawPayload['frequency_penalty'])) {
@@ -66,34 +67,39 @@ readonly class OpenAiRequestConverter
 
         // Add tools if not disabled
         $disableTools = $this->shouldDisableTools($rawPayload);
-        if (!$disableTools && !empty($rawPayload['tools'])) {
+        if (! $disableTools && ! empty($rawPayload['tools'])) {
             $tools = [];
 
-            // Check if model has native web_search capability
             $webSearchValue = $model->getCapabilityStrategy('web_search');
             if ($model->hasCapability('web_search') && $webSearchValue === 'native') {
                 if (in_array('web_search', $rawPayload['tools'], true)) {
                     $tools[] = [
-                        "type"=> "web_search",
-                        "external_web_access"=> true
+                        'type' => 'web_search',
+                        'external_web_access' => true,
                     ];
                 }
             }
 
-            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
-            foreach ($toolDefinitions as $toolDef) {
-                $tools[] = $toolDef->toOpenAiResponseFormat();
+            $tools = array_merge($tools, $this->resolveTools($model, $rawPayload['tools'], 'toOpenAiResponseFormat'));
+
+            foreach ($rawPayload['tools'] as $tool) {
+                if (is_array($tool) && isset($tool['type']) && $tool['type'] !== 'web_search') {
+                    $tools[] = $this->adaptPrebuiltTool($tool);
+                }
             }
 
-            if (!empty($tools)) {
+            if (! empty($tools)) {
                 $payload['tools'] = $tools;
             }
         }
 
-        if($modelId === 'gpt-5'){
-            $payload["text"]["verbosity"] = "low";
-            $payload["reasoning"]["effort"] = "medium";
+        if ($modelId === 'gpt-5') {
+            $payload['text']['verbosity'] = 'low';
+            $payload['reasoning']['effort'] = 'medium';
+            $payload['reasoning']['summary'] = 'auto';
+            unset($payload['temperature'], $payload['top_p']);
         }
+
         return $payload;
     }
 
@@ -104,7 +110,6 @@ readonly class OpenAiRequestConverter
     ): array {
         $role = $message['role'];
 
-
         $instructions = 'IMPORTANT: When using the tool results, always mention the references and url as inline citation';
 
         // Handle tool result messages - Response API requires them as user messages
@@ -114,8 +119,8 @@ readonly class OpenAiRequestConverter
                 'content' => [
                     [
                         'type' => 'input_text',
-                        'text' => 'AiTool result for ' . ($message['tool_call_id'] ?? 'unknown'). $instructions . ': ' . $message['content'],
-                    ]
+                        'text' => 'AiTool result for '.($message['tool_call_id'] ?? 'unknown').$instructions.': '.$message['content'],
+                    ],
                 ],
             ];
         }
@@ -126,7 +131,7 @@ readonly class OpenAiRequestConverter
             $toolCallSummary = [];
             foreach ($message['tool_calls'] as $tc) {
                 $functionName = is_array($tc) ? ($tc['function']['name'] ?? 'unknown') : $tc->name;
-                $toolCallSummary[] = 'Called function: ' . $functionName;
+                $toolCallSummary[] = 'Called function: '.$functionName;
             }
 
             return [
@@ -135,7 +140,7 @@ readonly class OpenAiRequestConverter
                     [
                         'type' => 'output_text',
                         'text' => implode(', ', $toolCallSummary),
-                    ]
+                    ],
                 ],
             ];
         }
@@ -152,14 +157,14 @@ readonly class OpenAiRequestConverter
          */
         if ($role === 'user' || $role === 'system') {
 
-            if (!empty($content['text'])) {
+            if (! empty($content['text'])) {
                 $formatted['content'][] = [
                     'type' => 'input_text',
                     'text' => $content['text'],
                 ];
             }
 
-            if (!empty($content['attachments'])) {
+            if (! empty($content['attachments'])) {
                 $this->processAttachments(
                     $content['attachments'],
                     $attachmentsMap,
@@ -176,7 +181,7 @@ readonly class OpenAiRequestConverter
          */
         if ($role === 'assistant') {
 
-            if (!empty($content['text'])) {
+            if (! empty($content['text'])) {
                 $formatted['content'][] = [
                     'type' => 'output_text',
                     'text' => $content['text'],
@@ -192,7 +197,6 @@ readonly class OpenAiRequestConverter
         throw new \InvalidArgumentException("Unsupported role: {$role}");
     }
 
-
     private function processAttachments(array $attachmentUuids, array $attachmentsMap, AiModel $model, array &$content): void
     {
         $attachmentService = app(AttachmentService::class);
@@ -200,7 +204,7 @@ readonly class OpenAiRequestConverter
 
         foreach ($attachmentUuids as $uuid) {
             $attachment = $attachmentsMap[$uuid] ?? null;
-            if (!$attachment) {
+            if (! $attachment) {
                 continue; // skip invalid
             }
 
@@ -209,7 +213,7 @@ readonly class OpenAiRequestConverter
                     if ($model->canProcessImage()) {
                         $content[] = $this->processImageAttachment($attachment, $attachmentService);
                     } else {
-                        $skippedAttachments[] = $attachment->name . ' (image not supported)';
+                        $skippedAttachments[] = $attachment->name.' (image not supported)';
                     }
                     break;
 
@@ -217,22 +221,22 @@ readonly class OpenAiRequestConverter
                     if ($model->canProcessDocument()) {
                         $content[] = $this->processDocumentAttachment($attachment, $attachmentService);
                     } else {
-                        $skippedAttachments[] = $attachment->name . ' (file upload not supported)';
+                        $skippedAttachments[] = $attachment->name.' (file upload not supported)';
                     }
                     break;
 
                 default:
-                    Log::warning('Unknown attachment type: ' . $attachment->type);
-                    $skippedAttachments[] = $attachment->name . ' (unsupported type)';
+                    Log::warning('Unknown attachment type: '.$attachment->type);
+                    $skippedAttachments[] = $attachment->name.' (unsupported type)';
                     break;
             }
         }
 
         // Notify about skipped attachments
-        if (!empty($skippedAttachments)) {
+        if (! empty($skippedAttachments)) {
             $content[] = [
                 'type' => 'text',
-                'text' => '[NOTE: The following attachments were not included because this model does not support them: ' . implode(', ', $skippedAttachments) . ']'
+                'text' => '[NOTE: The following attachments were not included because this model does not support them: '.implode(', ', $skippedAttachments).']',
             ];
         }
     }
@@ -256,31 +260,28 @@ readonly class OpenAiRequestConverter
         ];
     }
 
-
     private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
         try {
             $fileContent = $attachmentService->retrieve($attachment, 'md');
             $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
+
             return [
                 'type' => 'input_text',
-                'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---"
+                'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---",
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to process document attachment: ' . $e->getMessage());
+            Log::error('Failed to process document attachment: '.$e->getMessage());
+
             return [
                 'type' => 'input_text',
-                'text' => '[ERROR: Could not process document attachment: ' . $attachment->name . ']'
+                'text' => '[ERROR: Could not process document attachment: '.$attachment->name.']',
             ];
         }
     }
 
     /**
      * Handle special formatting requirements for specific models
-     *
-     * @param string $modelId
-     * @param array $messages
-     * @return array
      */
     protected function handleModelSpecificFormatting(string $modelId, array $messages): array
     {
@@ -290,5 +291,19 @@ readonly class OpenAiRequestConverter
         }
 
         return $messages;
+    }
+
+    private function adaptPrebuiltTool(array $tool): array
+    {
+        if (isset($tool['function']) && is_array($tool['function'])) {
+            return [
+                'type' => $tool['type'] ?? 'function',
+                'name' => $tool['function']['name'] ?? '',
+                'description' => $tool['function']['description'] ?? '',
+                'parameters' => $tool['function']['parameters'] ?? ['type' => 'object', 'properties' => new \stdClass],
+            ];
+        }
+
+        return $tool;
     }
 }

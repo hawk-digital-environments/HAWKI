@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services\AI\Providers\Traits;
@@ -29,7 +30,7 @@ trait ToolAwareConverter
      * - If value is false → Skip (not supported)
      * - If value is string → Look up tool and add definition
      *
-     * @param AiModel $model The model to build tools for
+     * @param  AiModel  $model  The model to build tools for
      * @return array Array of ToolDefinition objects
      */
     protected function buildAllTools(AiModel $model): array
@@ -50,8 +51,9 @@ trait ToolAwareConverter
             }
 
             // Value should be a tool name
-            if (!is_string($value)) {
-                Log::warning("Invalid tool value for capability '{$capability}': " . gettype($value));
+            if (! is_string($value)) {
+                Log::warning("Invalid tool value for capability '{$capability}': ".gettype($value));
+
                 continue;
             }
 
@@ -59,19 +61,21 @@ trait ToolAwareConverter
 
             // Get tool from registry
             $tool = $registry->get($toolName);
-            if (!$tool) {
+            if (! $tool) {
                 Log::warning("AiTool '{$toolName}' not found in registry for capability '{$capability}'");
+
                 continue;
             }
 
             // Check if MCP server is available (for MCP tools)
-            if ($tool instanceof MCPToolInterface && !$tool->isServerAvailable()) {
+            if ($tool instanceof MCPToolInterface && ! $tool->isServerAvailable()) {
                 Log::warning("MCP server not available for tool: {$toolName}");
+
                 continue;
             }
 
             $tools[] = $tool->getDefinition();
-//            Log::debug("Added tool for capability '{$capability}': {$toolName}");
+            //            Log::debug("Added tool for capability '{$capability}': {$toolName}");
         }
 
         return $tools;
@@ -84,21 +88,25 @@ trait ToolAwareConverter
         $registry = app(ToolRegistry::class);
 
         foreach ($modelTools as $modelCapability => $toolName) {
-            if($toolName === 'native') continue;
+            if ($toolName === 'native') {
+                continue;
+            }
 
             foreach ($capabilities as $capability) {
-                if($modelCapability === $capability) {
+                if ($modelCapability === $capability) {
 
                     // Get tool from registry
                     $tool = $registry->get($toolName);
-                    if (!$tool) {
+                    if (! $tool) {
                         Log::warning("AiTool '{$toolName}' not found in registry for capability '{$capability}'");
+
                         continue;
                     }
 
                     // Check if MCP server is available (for MCP tools)
-                    if ($tool instanceof MCPToolInterface && !$tool->isServerAvailable()) {
+                    if ($tool instanceof MCPToolInterface && ! $tool->isServerAvailable()) {
                         Log::warning("MCP server not available for tool: {$toolName}");
+
                         continue;
                     }
 
@@ -106,13 +114,13 @@ trait ToolAwareConverter
                 }
             }
         }
+
         return $tools;
     }
 
-
-
     /**
      * Build tool definitions for function calling
+     *
      * @deprecated Use buildAllTools() instead
      */
     protected function buildFunctionCallTools(AiModel $model): array
@@ -122,6 +130,7 @@ trait ToolAwareConverter
 
     /**
      * Build MCP tool definitions
+     *
      * @deprecated Use buildAllTools() instead
      */
     protected function buildMCPTools(AiModel $model): array
@@ -132,11 +141,37 @@ trait ToolAwareConverter
     /**
      * Check if tool features should be disabled for this request
      *
-     * @param array $rawPayload The raw request payload
+     * @param  array  $rawPayload  The raw request payload
      * @return bool True if tools should be disabled
      */
     protected function shouldDisableTools(array $rawPayload): bool
     {
         return $rawPayload['_disable_tools'] ?? false;
+    }
+
+    protected function resolveTools(AiModel $model, array $rawTools, string $formatMethod): array
+    {
+        $tools = [];
+        $capabilityNames = [];
+        $prebuiltTools = [];
+
+        foreach ($rawTools as $tool) {
+            if (is_array($tool) && isset($tool['type'])) {
+                $prebuiltTools[] = $tool;
+            } elseif (is_string($tool)) {
+                $capabilityNames[] = $tool;
+            }
+        }
+
+        $toolDefinitions = $this->buildSelectedTools($model, $capabilityNames);
+        foreach ($toolDefinitions as $toolDef) {
+            $tools[] = $toolDef->{$formatMethod}();
+        }
+
+        foreach ($prebuiltTools as $prebuilt) {
+            $tools[] = $prebuilt;
+        }
+
+        return $tools;
     }
 }

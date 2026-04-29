@@ -4,6 +4,8 @@
 
 [//]: # (- The main new features and changes in this version.)
 
+- The assistent model is introduced
+
 ### Quality of Life
 
 [//]: # (- Improvements and enhancements that improve the user experience.)

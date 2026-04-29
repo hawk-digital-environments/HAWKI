@@ -57,6 +57,13 @@ class StreamController extends Controller
         // Handle standard response
         $response = $this->aiService->sendRequest($payload);
 
+        if ($response->error !== null || empty($response->content['text'] ?? null)) {
+            return response()->json([
+                'success' => false,
+                'message' => $response->error ?? 'AI provider returned empty content',
+            ], 502);
+        }
+
         // Record usage
         $this->usageAnalyzer->submitUsageRecord($response->usage, 'api');
 
