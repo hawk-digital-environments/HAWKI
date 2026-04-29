@@ -73,7 +73,7 @@ class CreateSanctumTokenForUser extends Command
             return;
         }
 
-        if ($user->isRemoved === false) {
+        if ($user->isRemoved) {
             $this->error('User account is suspended!');
             return;
         }

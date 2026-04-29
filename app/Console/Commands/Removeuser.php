@@ -57,7 +57,7 @@ class Removeuser extends Command
                 $this->error('User not found!');
                 return;
             }
-            if($user->isRemoved === false){
+            if($user->isRemoved){
                 $this->error('User is already removed!');
                 return;
             }
