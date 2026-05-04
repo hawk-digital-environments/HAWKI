@@ -46,5 +46,13 @@ class AssistantPolicy
         return $user->id === $assistant->creator_id;
     }
 
+    /**
+     * Determine whether the user can remix the model.
+     */
+    public function remix(User $user, Assistant $assistant): bool
+    {
+        return (bool) $assistant->allow_remix;
+    }
+
 
 }

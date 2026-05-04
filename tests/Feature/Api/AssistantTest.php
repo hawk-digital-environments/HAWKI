@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -83,35 +84,35 @@ class AssistantTest extends TestCase
 
         foreach ($assistants as $i => $assistant) {
             $response
-            ->assertStatus(200)
-            ->assertJson([
-                'data' => [
-                    $i => [
-                        'id' => $assistant->id,
-                        'name' => $assistant->name,
-                        'handle' => $assistant->handle,
-                        'system_prompt' => $assistant->system_prompt,
-                        'greeting' => $assistant->greeting,
-                        'description' => $assistant->description,
-                        'detail_description' => $assistant->detail_description,
-                        'allow_remix' => (int) $assistant->allow_remix,
-                        'allow_model_select' => (int) $assistant->allow_model_select,
-                        'language' => $assistant->language,
-                        'category' => $assistant->category,
-                        'review_stage' => $assistant->review_stage,
-                        'formality' => $assistant->formality,
-                        'model' => $assistant->model,
-                        'model_length' => $assistant->model_length,
-                        'model_temp' => $assistant->model_temp,
-                        'model_top_p' => $assistant->model_top_p,
-                        'creator_id' => $assistant->creator_id,
-                        'original_creator_id' => $assistant->original_creator_id,
-                        'original_assistant_id' => null,
-                        'created_at' => $assistant->created_at->toJson(),
-                        'updated_at' => $assistant->updated_at->toJson(),
+                ->assertStatus(200)
+                ->assertJson([
+                    'data' => [
+                        $i => [
+                            'id' => $assistant->id,
+                            'name' => $assistant->name,
+                            'handle' => $assistant->handle,
+                            'system_prompt' => $assistant->system_prompt,
+                            'greeting' => $assistant->greeting,
+                            'description' => $assistant->description,
+                            'detail_description' => $assistant->detail_description,
+                            'allow_remix' => (int) $assistant->allow_remix,
+                            'allow_model_select' => (int) $assistant->allow_model_select,
+                            'language' => $assistant->language,
+                            'category' => $assistant->category,
+                            'review_stage' => $assistant->review_stage,
+                            'formality' => $assistant->formality,
+                            'model' => $assistant->model,
+                            'model_length' => $assistant->model_length,
+                            'model_temp' => $assistant->model_temp,
+                            'model_top_p' => $assistant->model_top_p,
+                            'creator_id' => $assistant->creator_id,
+                            'remixed_creator_id' => $assistant->remixed_creator_id,
+                            'remixed_assistant_id' => null,
+                            'created_at' => $assistant->created_at->toJson(),
+                            'updated_at' => $assistant->updated_at->toJson(),
+                        ],
                     ],
-                ],
-            ]);
+                ]);
         }
     }
 
@@ -158,40 +159,41 @@ class AssistantTest extends TestCase
         $this->assertDatabaseHas('assistants', [
             'name' => 'Test Assistant',
             'creator_id' => $user->id,
-            'original_creator_id' => $user->id,
+            'remixed_creator_id' => null,
         ]);
 
         $assistant = Assistant::first();
         $response
-         ->assertStatus(201)    
-        ->assertJson([
-            'data' => [
-                'id' => $assistant->id,
-                'name' => 'Test Assistant',
-                'handle' => null,
-                'system_prompt' => 'You are a helpful assistant.',
-                'greeting' => 'Hello!',
-                'description' => 'A test assistant.',
-                'detail_description' => 'Detailed description here.',
-                'allow_remix' => true,
-                'allow_model_select' => false,
-                'language' => 'en',
-                'category' => 'general',
-                'review_stage' => 'draft',
-                'formality' => 'neutral',
-                'model' => 'gpt-4',
-                'model_length' => 2048,
-                'model_temp' => 0.7,
-                'model_top_p' => 0.9,
-                'creator_id' => $user->id,
-                'original_creator_id' => $user->id,
-                'original_assistant_id' => null,
-                'created_at' => $assistant->created_at->toJson(),
-                'updated_at' => $assistant->updated_at->toJson(),
-                'user_prompts' => [],
-                'ai_tools' => [],
-            ],
-        ]);
+            ->assertStatus(201)
+            ->assertJson([
+                'data' => [
+                    'id' => $assistant->id,
+                    'name' => 'Test Assistant',
+                    'handle' => null,
+                    'system_prompt' => 'You are a helpful assistant.',
+                    'greeting' => 'Hello!',
+                    'description' => 'A test assistant.',
+                    'detail_description' => 'Detailed description here.',
+                    'allow_remix' => true,
+                    'allow_model_select' => false,
+                    'language' => 'en',
+                    'category' => 'general',
+                    'review_stage' => 'draft',
+                    'formality' => 'neutral',
+                    'model' => 'gpt-4',
+                    'model_length' => 2048,
+                    'model_temp' => 0.7,
+                    'model_top_p' => 0.9,
+                    'creator_id' => $user->id,
+                    'remixed_creator_id' => null,
+                    'remixed_assistant_id' => null,
+                    'created_at' => $assistant->created_at->toJson(),
+                    'updated_at' => $assistant->updated_at->toJson(),
+                    'user_prompts' => [],
+                    'ai_tools' => [],
+                    'tags' => [],
+                ],
+            ]);
     }
 
     public function test_can_create_assistant_with_user_prompts(): void
@@ -215,7 +217,7 @@ class AssistantTest extends TestCase
             'data' => [
                 'id' => $assistant->id,
                 'creator_id' => $user->id,
-                'original_creator_id' => $user->id,
+                'remixed_creator_id' => null,
                 'created_at' => $assistant->created_at->toJson(),
                 'updated_at' => $assistant->updated_at->toJson(),
                 'user_prompts' => [
@@ -247,7 +249,7 @@ class AssistantTest extends TestCase
             'data' => [
                 'id' => $assistant->id,
                 'creator_id' => $user->id,
-                'original_creator_id' => $user->id,
+                'remixed_creator_id' => null,
                 'created_at' => $assistant->created_at->toJson(),
                 'updated_at' => $assistant->updated_at->toJson(),
                 'ai_tools' => [
@@ -308,8 +310,8 @@ class AssistantTest extends TestCase
                     'model_temp' => $assistant->model_temp,
                     'model_top_p' => $assistant->model_top_p,
                     'creator_id' => $assistant->creator_id,
-                    'original_creator_id' => $assistant->original_creator_id,
-                    'original_assistant_id' => null,
+                    'remixed_creator_id' => $assistant->remixed_creator_id,
+                    'remixed_assistant_id' => null,
                     'created_at' => $assistant->created_at->toJson(),
                     'updated_at' => $assistant->updated_at->toJson(),
                 ],
@@ -343,7 +345,7 @@ class AssistantTest extends TestCase
     public function test_can_update_assistant(): void
     {
         $user = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id, 'remixed_creator_id' => null]);
 
         Sanctum::actingAs($user);
 
@@ -374,8 +376,8 @@ class AssistantTest extends TestCase
                 'model_temp' => $assistant->model_temp,
                 'model_top_p' => $assistant->model_top_p,
                 'creator_id' => $user->id,
-                'original_creator_id' => $assistant->original_creator_id,
-                'original_assistant_id' => null,
+                'remixed_creator_id' => null,
+                'remixed_assistant_id' => null,
                 'created_at' => $assistant->created_at->toJson(),
                 'updated_at' => $assistant->updated_at->toJson(),
             ],
@@ -562,5 +564,164 @@ class AssistantTest extends TestCase
         $this->assertArrayHasKey('versions', $json);
         $this->assertCount(1, $json['versions']);
         $this->assertEquals('Initial version', $json['versions'][0]['text']);
+    }
+
+    public function test_can_create_assistant_with_tags(): void
+    {
+        Tag::create(['text' => 'existing-tag']);
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $response = $this->postJson('/api/assistants', $this->createPayload([
+            'tags' => ['existing-tag', 'new-tag'],
+        ]))
+            ->assertCreated();
+
+        $this->assertDatabaseHas('tags', ['text' => 'existing-tag']);
+        $this->assertDatabaseHas('tags', ['text' => 'new-tag']);
+
+        $assistant = Assistant::first();
+        $this->assertEquals(2, $assistant->tags()->count());
+        $this->assertTrue($assistant->tags->pluck('text')->contains('existing-tag'));
+        $this->assertTrue($assistant->tags->pluck('text')->contains('new-tag'));
+
+        $response->assertJson([
+            'data' => [
+                'id' => $assistant->id,
+                'creator_id' => $user->id,
+                'remixed_creator_id' => null,
+            ],
+        ]);
+
+        $responseTags = collect($response->json('data.tags'));
+        $this->assertTrue($responseTags->pluck('text')->contains('existing-tag'));
+        $this->assertTrue($responseTags->pluck('text')->contains('new-tag'));
+    }
+
+    public function test_can_update_assistant_with_tags(): void
+    {
+        $tag1 = Tag::create(['text' => 'tag-one']);
+        $tag2 = Tag::create(['text' => 'tag-two']);
+
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+        $assistant->tags()->attach([$tag1->id, $tag2->id]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->putJson("/api/assistants/{$assistant->id}", [
+            'tags' => ['tag-two', 'tag-three'],
+        ])
+            ->assertOk();
+
+        $this->assertDatabaseMissing('assistant_tag', [
+            'assistant_id' => $assistant->id,
+            'tag_id' => $tag1->id,
+        ]);
+        $this->assertDatabaseHas('tags', ['text' => 'tag-three']);
+
+        $assistant->refresh();
+        $this->assertEquals(2, $assistant->tags()->count());
+        $this->assertTrue($assistant->tags->pluck('text')->contains('tag-two'));
+        $this->assertTrue($assistant->tags->pluck('text')->contains('tag-three'));
+
+        $responseTags = collect($response->json('data.tags'));
+        $this->assertTrue($responseTags->pluck('text')->contains('tag-two'));
+        $this->assertTrue($responseTags->pluck('text')->contains('tag-three'));
+    }
+
+    public function test_create_fails_for_nonexistent_tag(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/assistants', $this->createPayload([
+            'tags' => [12345],
+        ]))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['tags.0']);
+    }
+
+    public function test_can_remix_assistant(): void
+    {
+        $owner = User::factory()->create();
+        $remixUser = User::factory()->create();
+        $originalUser = User::factory()->create();
+
+        $tool = $this->createAiTool();
+        $tag = Tag::create(['text' => 'remix-tag']);
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'remixed_creator_id' => $originalUser->id,
+            'allow_remix' => true,
+        ]);
+        $assistant->userPrompts()->createMany([
+            ['text' => 'Prompt one'],
+            ['text' => 'Prompt two'],
+        ]);
+        $assistant->aiTools()->attach($tool->id);
+        $assistant->tags()->attach($tag->id);
+
+        Sanctum::actingAs($remixUser);
+
+        $response = $this->postJson("/api/assistants/{$assistant->id}/remix")
+            ->assertCreated();
+
+        $clone = Assistant::where('creator_id', $remixUser->id)->first();
+        $this->assertNotNull($clone);
+        $this->assertEquals($remixUser->id, $clone->creator_id);
+
+        $this->assertEquals($originalUser->id, $clone->remixed_creator_id);
+
+        $this->assertNotEquals($assistant->id, $clone->id);
+        $this->assertEquals($assistant->id, $clone->remixed_assistant_id);
+        $this->assertEquals($assistant->name, $clone->name);
+        $this->assertEquals($assistant->system_prompt, $clone->system_prompt);
+
+        $this->assertEquals(2, $clone->userPrompts()->count());
+        $this->assertTrue($clone->aiTools()->where('ai_tool_id', $tool->id)->exists());
+        $this->assertTrue($clone->tags()->where('tag_id', $tag->id)->exists());
+
+        $response->assertJson([
+            'data' => [
+                'id' => $clone->id,
+                'creator_id' => $remixUser->id,
+                'remixed_creator_id' => $originalUser->id,
+                'remixed_assistant_id' => $assistant->id,
+            ],
+        ]);
+    }
+
+    public function test_cannot_remix_when_not_allowed(): void
+    {
+        $owner = User::factory()->create();
+        $remixer = User::factory()->create();
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'allow_remix' => false,
+        ]);
+
+        Sanctum::actingAs($remixer);
+
+        $this->postJson("/api/assistants/{$assistant->id}/remix")
+            ->assertForbidden()
+            ->assertJson(['message' => 'This action is unauthorized.']);
+
+        $this->assertEquals(1, Assistant::count());
+    }
+
+    public function test_guest_cannot_remix_assistant(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'allow_remix' => true,
+        ]);
+
+        $this->postJson("/api/assistants/{$assistant->id}/remix")
+            ->assertUnauthorized();
     }
 }

@@ -43,6 +43,8 @@ class UpdateAssistantRequest extends FormRequest
             'user_prompts.*.text' => 'required_with:user_prompts|string',
             'ai_tools' => 'sometimes|array',
             'ai_tools.*.id' => 'required_with:ai_tools|exists:ai_tools,id',
+            'tags' => ['sometimes', 'array'],
+            'tags.*' => ['string', 'max:255'],
             'version_text' => 'sometimes|nullable|string',
         ];
     }

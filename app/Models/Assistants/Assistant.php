@@ -35,7 +35,7 @@ class Assistant extends Model
         'model_temp',
         'model_top_p',
         'creator_id',
-        'original_creator_id',
+        'remixed_creator_id',
     ];
 
     public function userPrompts(): HasMany
@@ -65,17 +65,17 @@ class Assistant extends Model
 
     public function original_creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'original_creator_id');
+        return $this->belongsTo(User::class, 'remixed_creator_id');
     }
 
     public function originalAgent(): BelongsTo
     {
-        return $this->belongsTo(Assistant::class, 'original_assistant_id');
+        return $this->belongsTo(Assistant::class, 'remixed_assistant_id');
     }
 
     public function copies(): HasMany
     {
-        return $this->hasMany(Assistant::class, 'original_assistant_id');
+        return $this->hasMany(Assistant::class, 'remixed_assistant_id');
     }
     public function aiTools(): BelongsToMany
     {

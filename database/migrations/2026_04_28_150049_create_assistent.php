@@ -46,12 +46,12 @@ return new class extends Migration
                 ->constrained('users')
                 ->nullOnDelete();
 
-            $table->foreignId('original_creator_id')
+            $table->foreignId('remixed_creator_id')
                 ->nullable()
                 ->constrained('users')
                 ->nullOnDelete();
 
-            $table->foreignId('original_assistant_id')
+            $table->foreignId('remixed_assistant_id')
                 ->nullable()
                 ->constrained('assistants')
                 ->nullOnDelete();

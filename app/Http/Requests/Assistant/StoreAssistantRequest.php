@@ -42,6 +42,8 @@ class StoreAssistantRequest extends FormRequest
             'user_prompts.*.text' => 'required|string',
             'ai_tools' => 'array',
             'ai_tools.*.id' => 'required|exists:ai_tools,id',
+            'tags' => ['array'],
+            'tags.*' => ['string', 'max:255'],
         ];
     }
 }

@@ -77,4 +77,16 @@ class AssistantController extends Controller
         $assistant -> delete();
         return response()->noContent();
     }
+
+    public function remix(Assistant $assistant): AssistantResource
+    {
+        $this->authorize('remix', $assistant);
+
+        $remixed = $this->assistantService->remix(
+            $assistant,
+            request()->user()->id,
+        );
+
+        return new AssistantResource($remixed);
+    }
 }

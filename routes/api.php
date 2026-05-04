@@ -23,4 +23,5 @@ Route::middleware(['api_isActive', 'auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('assistants', AssistantController::class);
+    Route::post('assistants/{assistant}/remix', [AssistantController::class, 'remix']);
 });

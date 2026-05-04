@@ -29,9 +29,25 @@ readonly class AssistantRepository
         $assistant->delete();
     }
 
+    public function clone(Assistant $source, int $creatorId): Assistant
+    {
+        $replica = $source->replicate();
+        $replica->handle = null;
+        $replica->creator_id = $creatorId;
+        $replica->remixed_assistant_id = $source->id;
+        $replica->push();
+
+        return $replica;
+    }
+
     public function syncTools(Assistant $assistant, array $toolIds): void
     {
         $assistant->aiTools()->sync($toolIds);
+    }
+
+    public function syncTags(Assistant $assistant, array $tagIds): void
+    {
+        $assistant->tags()->sync($tagIds);
     }
 
     public function replaceUserPrompts(Assistant $assistant, array $prompts): void

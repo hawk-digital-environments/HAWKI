@@ -31,7 +31,7 @@ class AssistantFactory extends Factory
             'model_temp' => fake()->randomFloat(2, 0, 1),
             'model_top_p' => fake()->randomFloat(2, 0, 1),
             'creator_id' => User::factory(),
-            'original_creator_id' => User::factory(),
+            'remixed_creator_id' => User::factory(),
         ];
     }
 
