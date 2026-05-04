@@ -11,10 +11,12 @@ Thank you for contributing to HAWKI. This guide covers everything you need: work
 3. [Architecture & Code Organization](#architecture--code-organization)
 4. [Code Standards](#code-standards)
 5. [Testing](#testing)
-6. [Pull Request Process](#pull-request-process)
-7. [Code Review](#code-review)
-8. [AI Agents](#ai-agents)
-9. [Getting Help](#getting-help)
+6. [Frontend Code](#frontend-code)
+7. [Styling](#styling)
+8. [Pull Request Process](#pull-request-process)
+9. [Code Review](#code-review)
+10. [AI Agents](#ai-agents)
+11. [Getting Help](#getting-help)
 
 ---
 
@@ -81,7 +83,7 @@ git push origin feature/your-feature-name --force-with-lease
 
 HAWKI follows a **lightweight Domain-Driven Design** approach. Code is organized around business concepts (domains) rather than technical layers, making the codebase easier to reason about as it grows.
 
-> **Note:** Laravel is not designed for DDD out of the box. We use a pragmatic "light" variant: business logic is organized into domains under `App\Services`, while Laravel-native classes (Controllers, Models, FormRequests, API Resources, Events, Listeners) remain in their conventional `app/` locations. This avoids fighting the framework while still gaining the organizational benefits of domain thinking.
+> **Note:** Laravel is not designed for DDD out of the box. We use a pragmatic "light" variant: business logic is organized into domains under `App\Services`, while Laravel-native classes (Controllers, Models, FormRequests, API Resources) remain in their conventional `app/` locations. Events and Listeners are domain concerns and live inside the domain under `App\Services\{Domain}\Events\` and `App\Services\{Domain}\Listeners\`. This avoids fighting the framework while still gaining the organizational benefits of domain thinking.
 >
 > For more background on Domain-Driven Design, see [martinfowler.com/bliki/DomainDrivenDesign](https://martinfowler.com/bliki/DomainDrivenDesign.html).
 
@@ -104,6 +106,10 @@ app/Services/
     │   └── ToolCallingClient.php
     ├── Contracts/              ← Interfaces for cross-domain communication
     │   └── ModelProviderInterface.php
+    ├── Events/                 ← Domain events (always at the domain root)
+    │   ├── ModelEvents/        ← optional sub-namespace for grouping
+    │   │   └── ModelStatusChanged.php
+    │   └── AiRequestCompleted.php
     ├── Repositories/           ← Database access (repositories + optional query objects)
     │   ├── Queries/
     │   │   └── FindActiveModelsByProviderQuery.php
@@ -113,7 +119,7 @@ app/Services/
     ├── Providers/              ← External provider integrations (structural namespace)
     ├── Values/                 ← Value objects, DTOs, enums
     │   ├── AiModelCollection.php
-    │   └── ModelUsageType.php  ← Enum (Type suffix)
+    │   └── UsageType.php  ← Enum (Type suffix)
     ├── AiFactory.php           ← Named collaborator, direct partner of AiService
     └── AiService.php           ← Domain service (@api)
 ```
@@ -126,9 +132,7 @@ app/
 │   ├── Controllers/Ai/
 │   ├── Requests/Ai/
 │   └── Resources/Ai/
-├── Models/Ai/
-├── Events/Ai/
-└── Listeners/Ai/
+└── Models/Ai/
 ```
 
 #### Domain Services & Public API
@@ -322,7 +326,7 @@ readonly class AiModelRepository
 {
     public function findActiveByProvider(string $providerId): Collection
     {
-        return AiModel::where('provider_id', $providerId)
+        return AiModelConfig::where('provider_id', $providerId)
             ->where('active', true)
             ->get();
     }
@@ -356,7 +360,7 @@ readonly class FindActiveModelsByProviderQuery
 {
     public function execute(string $providerId): Collection
     {
-        return AiModel::where('provider_id', $providerId)
+        return AiModelConfig::where('provider_id', $providerId)
             ->where('active', true)
             ->get();
     }
@@ -436,8 +440,8 @@ Use enums instead of plain strings for any constrained set of values. Enums live
 
 ```
 Values/
-├── ModelUsageType.php      ← enum
-├── ModelOnlineStatus.php   ← enum
+├── UsageType.php      ← enum
+├── OnlineStatus.php   ← enum
 └── StoredFileCategory.php  ← enum
 ```
 
@@ -516,10 +520,121 @@ throw $e; // and the next handler also logs $e
 
 #### Events & Listeners
 
-- Events: named in **past tense** (`MessageSent`, `UserRegistered`) — data carriers, no logic
-- Listeners: named as **actions** (`NotifyRoomMembers`, `LogMessageActivity`)
-- Follow the same domain subfolder structure as controllers
-- Register mappings in `EventServiceProvider`
+**Listeners** are named as **actions** (`NotifyRoomMembers`, `LogMessageActivity`) and live in `App\Services\{Domain}\Listeners\`, co-located with their domain. The application bootstrap auto-discovers listeners from `app/Services/*/Listeners`, so no manual registration is needed for domain listeners.
+
+**Events** live in `App\Services\{Domain}\Events\`, not in the global `app/Events/` folder (legacy, do not add to it). The `Events/` directory always sits at the domain root; events may be grouped into sub-namespaces for organizational purposes.
+
+```
+app/Services/
+└── Room/
+    ├── Events/                    ← always at the domain root
+    │   ├── Members/               ← optional sub-namespace for grouping
+    │   │   ├── MemberJoinedEvent.php
+    │   │   └── MemberLeftEvent.php
+    │   └── MessageSentEvent.php   ← ungrouped event, directly inside Events/
+    └── Listeners/
+        └── NotifyRoomMembers.php  ← listener, co-located with the domain
+```
+
+##### Naming events
+
+Event names must clearly express **when** the event occurs relative to the action, using one of three tenses:
+
+- **Past tense** — something completed: `MessageSentEvent`, `RoomCreatedEvent`
+- **Present progressive ("while")** — something ongoing: `CheckingHealthEvent`, `AiWritingStartedEvent`
+- **"Before" prefix** — something about #to happen: `BeforeCreatingRoomEvent`, `BeforeSendingMessageEvent`
+
+Always add the `Event` suffix to clearly identify the class as an event.
+
+##### Writing event classes
+
+Declare `readonly` on event classes. This is **best practice** — events are pure data carriers and immutability makes them easier to reason about. Deviation is sometimes valid (e.g., when integrating with framework serialization mechanisms), but if you feel the need to mutate an event, it is usually a sign of a design issue — see the mutable state section below.
+
+Always include `declare(strict_types=1)` and the `Dispatchable` trait. Constructor arguments must be **strongly typed** `public readonly` properties — never use untyped properties or raw `array` payloads. Use a typed value object instead.
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Services\Room\Events;
+
+use App\Models\Room;
+use Illuminate\Foundation\Events\Dispatchable;
+
+readonly class RoomCreatedEvent
+{
+    use Dispatchable;
+
+    public function __construct(
+        public Room $room,
+    ) {}
+}
+```
+
+##### Filter events
+
+A **filter event** is a special, explicitly mutable event that acts as a synchronous hook, allowing listeners to influence the execution logic of a core feature. Filter events are named with the `...FilterEvent` suffix (e.g., `ModelPermissionFilterEvent`, `BeforeSendingMessageFilterEvent`).
+
+**Rules:**
+
+- **Never** implement `ShouldBroadcast` or `ShouldQueue` — filter events are **always synchronous**.
+- Use `App\Events\Traits\DispatchableFilter` instead of `Illuminate\Foundation\Events\Dispatchable`. It omits `broadcast()` (banned for filter events) and returns the event instance from `dispatch()` so mutated state can be read immediately.
+- Properties are **private**, not `public readonly`. The event exposes a controlled API through **getters and setters**.
+- **Not all properties need to be writable.** Read-only context (e.g., the originating model or user) is exposed through a getter only. Only properties that listeners are expected to modify get a setter.
+- Do **not** declare the class `readonly` — it is intentionally mutable.
+
+```php
+<?php
+declare(strict_types=1);
+
+namespace App\Services\Ai\Events;
+
+use App\Events\Traits\DispatchableFilter;
+use App\Models\Ai\AiModel;
+use App\Models\User;
+
+class ModelPermissionFilterEvent
+{
+    use DispatchableFilter;
+
+    private bool $allowed;
+
+    public function __construct(
+        private readonly User $user,       // read-only context
+        private readonly AiModel $model,   // read-only context
+        bool $allowed = true,
+    ) {
+        $this->allowed = $allowed;
+    }
+
+    // Read-only context — getter only
+    public function getUser(): User { return $this->user; }
+    public function getModel(): AiModel { return $this->model; }
+
+    // Mutable result — getter + setter
+    public function isAllowed(): bool { return $this->allowed; }
+    public function setAllowed(bool $allowed): void { $this->allowed = $allowed; }
+}
+```
+
+A listener that denies access simply calls `$event->setAllowed(false)` and returns. Because `DispatchableFilter::dispatch()` returns the event instance, the calling service reads the final state immediately:
+
+```php
+$isAllowed = ModelPermissionFilterEvent::dispatch($user, $model)->isAllowed();
+```
+
+##### Broadcasting events (`ShouldBroadcast`)
+
+- Implement `ShouldBroadcast`.
+- Define `broadcastOn()` returning a `Channel` or `PrivateChannel`. Prefer `PrivateChannel` for user/room-scoped data.
+- Define `broadcastWith(): array` to control the payload explicitly — do not rely on default property serialization.
+
+**`SerializesModels`** — add this trait when the event carries Eloquent model instances **and** may be handled by queued listeners. It transparently serializes the model to its primary key and rehydrates it when the listener runs. Two caveats:
+
+- Eager-loaded relations are **not preserved** — they are reloaded from the database on deserialization, which may bypass your original query constraints.
+- If you only need a subset of data, consider passing a value object or scalar instead of the full model to avoid unexpected queries (use `withoutRelations()` on the model when passing it if relations are not needed).
+
+**`InteractsWithSockets`** — only add this trait when you need to **exclude the triggering user's own socket** from receiving the broadcast. It unlocks `dontBroadcastToCurrentUser()` / `toOthers()` / `broadcastToEveryone()`. If you don't need that control, omit it.
 
 > **TODO:** Detailed guidance on when to use events versus direct service calls, sync vs. async dispatch, and the role of events in the plugin architecture is deferred — it will be elaborated alongside the plugin system documentation.
 
@@ -655,7 +770,7 @@ Always declare parameter and return types. Use the most specific type possible; 
 
 ```php
 // ✅ Full types
-public function findModel(string $modelId): ?AiModel { ... }
+public function findModel(string $modelId): ?AiModelConfig { ... }
 
 // ✅ Union (PHP 8.0+)
 public function getId(): int|string { ... }
@@ -667,7 +782,7 @@ public function calculateTotal($quantity, $price) { ... }
 For complex array shapes or generic collections, add a DocBlock:
 
 ```php
-/** @return Collection<int, AiModel> */
+/** @return Collection<int, AiModelConfig> */
 public function getActiveModels(): Collection { ... }
 ```
 
@@ -937,6 +1052,447 @@ There is currently no automated frontend test suite. Frontend testing will be in
 
 ---
 
+## Frontend Code
+
+> **Planned Svelte rewrite:** The HAWKI frontend is planned to be rewritten as a full Svelte SPA. This section describes the first step in that direction. We are taking a **hybrid approach**: Blade templates remain the leading rendering layer, but we are progressively migrating UI sections into Svelte components that will later become part of the main SPA. **Do not add new code to the legacy vanilla-JS layer** (`public/js/`). All new frontend work must follow the patterns described here.
+
+### Technology Stack
+
+- **[Svelte 5](https://svelte.dev/)** with the Runes API (`$state`, `$derived`, `$props`, …) — no Options API / legacy Svelte 4 syntax
+- **TypeScript** — every `.svelte` and `.ts` file must be typed; avoid `any` where possible
+- **Vite** as the bundler (configured in `vite.config.js` / `svelte.config.js`)
+- **CSS custom properties + cascade layers** — design tokens in `resources/css/tokens/`, component styles in Svelte `<style>` blocks; no Tailwind, no CSS-in-JS
+- **`class-variance-authority` (CVA)** — declarative variant→class mapping for components that expose style-driving props (`size`, `intent`, …); `cx` re-exported from CVA is used internally by `mergeProps` for class merging
+
+### Directory Structure
+
+```
+resources/js/
+├── svelte/
+│   ├── components/       ← Reusable, general-purpose Svelte components
+│   ├── snippets/         ← Top-level Blade-embeddable snippet components (one per page slot)
+│   ├── stores/           ← Svelte 5 reactive store classes (*.svelte.ts)
+│   ├── types/            ← Shared TypeScript type definitions
+│   │   ├── ai.ts         ← AI model / system prompt resource types
+│   │   ├── connection.ts ← ConnectionConfig and related types
+│   │   └── translation.ts← Locale and translation types
+│   └── svelteSnippetLoader.ts ← Custom-element bridge for Blade integration
+└── util/
+    ├── hawkiConnection.ts ← Access to the server-rendered connection data blob
+    ├── translator.ts      ← Client-side translation helper (mirrors Laravel's Translator)
+    └── fileIconSvg.ts     ← File-type icon helper
+```
+
+### The Hybrid Approach: Snippets
+
+Until the full SPA rewrite is complete, Svelte is integrated into the server-rendered Blade UI through the concept of **Snippets**. A Snippet is a regular Svelte component that is mounted inside a server-rendered Blade template, acting as a self-contained "mini-app" for a specific section of the page. Over time, these Snippets will grow into the building blocks of the final SPA.
+
+This is a transitional architecture. The patterns below describe how to work within it correctly.
+
+#### Embedding Svelte in Blade: the `<x-svelte>` Component
+
+The bridge between Blade and Svelte is the `<x-svelte>` Blade component (implemented in `app/Services/Frontend/Connection/View/SvelteComponent.php`). It renders a `<svelte-snippet>` custom HTML element, which the `svelteSnippetLoader.ts` picks up and mounts the matching Svelte component inside.
+
+```blade
+{{-- Minimal --}}
+<x-svelte type="ChatInput" />
+
+{{-- With PHP props and extra HTML attributes --}}
+<x-svelte
+    type="ChatInput"
+    :props="['readonly' => true]"
+    class="my-class"
+/>
+```
+
+The `type` attribute is the filename of the Svelte component inside `resources/js/svelte/snippets/`, without the `.svelte` extension. Props are JSON-encoded by the Blade component automatically. Any extra HTML attributes (`class`, `id`, `data-*`, …) are forwarded verbatim to the rendered element.
+
+On the JavaScript side, the custom element is registered once via `registerSvelteSnippetLoader()` (called from `resources/js/app.js`). It discovers all files in `snippets/` automatically at build time using Vite's `import.meta.glob`, so **no manual import or registration is needed** when you add a new snippet.
+
+**Lifecycle:** the component is mounted when the element enters the DOM, destroyed when it leaves, and destroyed + remounted whenever the `type` or `props` attribute changes at runtime. Treat snippets as stateless from the outside — internal state is reset on every remount.
+
+#### Adding a New Snippet
+
+1. Create a `.svelte` file in `resources/js/svelte/snippets/`, e.g. `resources/js/svelte/snippets/MyWidget.svelte`.
+2. Use it in Blade: `<x-svelte type="MyWidget" />`.
+
+No imports or registrations are needed anywhere else.
+
+#### The `root` Prop
+
+Every snippet automatically receives a `root` prop that is a reference to the `<svelte-snippet>` DOM element itself. Use it to:
+
+- Read additional HTML attributes set by Blade
+- Dispatch custom DOM events to communicate state changes back to legacy vanilla-JS code
+
+```svelte
+<script lang="ts">
+    import {HTMLSvelteSnippetElement} from '../svelteSnippetLoader.js';
+
+    interface Props {
+        root: HTMLSvelteSnippetElement;
+    }
+
+    const {root}: Props = $props();
+
+    function notifyLegacy(value: string) {
+        root.dispatchEvent(new CustomEvent('myWidget:change', {detail: {value}, bubbles: true}));
+    }
+</script>
+```
+
+### Accessing Server Data: `hawkiConnection`
+
+> **Temporary API:** `hawkiConnection` is a stopgap that reads data injected by the server into the initial page HTML. It will be replaced by a more robust mechanism as part of the SPA rewrite.
+
+The backend injects a JSON blob into the page as a `<script id="frontend-connection">` element. Access it via the `hawkiConnection` utility from `resources/js/util/hawkiConnection.ts`:
+
+```ts
+import {hawkiConnection} from '../../util/hawkiConnection.js';
+
+// Full config object
+const config = hawkiConnection();
+
+// Single top-level key
+const aiConfig = hawkiConnection('ai');
+
+// Dot-notation path
+const mimeTypes = hawkiConnection('storage.allowedMimeTypes') as string[];
+```
+
+The return type is derived from `InternalConnectionConfig` (defined in `resources/js/svelte/types/connection.ts`). Add new fields there when the backend exposes new data.
+
+### Translations
+
+Use the `translate` helper from `resources/js/util/translator.ts`. It mirrors Laravel's `Translator::makeReplacements()` behaviour, including `:placeholder`, `:Placeholder`, `:PLACEHOLDER` casing variants and tag-callback replacements:
+
+```ts
+import {translate} from '../../util/translator.ts';
+
+translate('chat.send_button');
+translate('errors.file_too_large', {size: '10 MB'});
+translate('room.invite', {name: (inner) => `<strong>${inner}</strong>`});
+```
+
+Translation keys are sourced from the `translation.labels` entry in the connection data blob, which the backend populates from the language JSON files in `resources/language/`.
+
+### Reactive Stores
+
+Shared reactive state lives in `resources/js/svelte/stores/` as plain TypeScript classes using Svelte 5 Runes (`$state`, `$derived`). Store files use the `.svelte.ts` extension so the Svelte compiler processes the runes.
+
+Each store file exports both the class and a pre-constructed singleton instance:
+
+```ts
+// resources/js/svelte/stores/MyStore.svelte.ts
+export class MyStore {
+    public count = $state(0);
+    public doubled = $derived(this.count * 2);
+}
+
+export const myStore = new MyStore();
+```
+
+Import the singleton in any component:
+
+```svelte
+<script lang="ts">
+    import {myStore} from '../stores/MyStore.svelte.js';
+</script>
+
+<p>Count: {myStore.count}</p>
+```
+
+> Note the `.js` extension in imports — Vite resolves `.svelte.ts` files when a `.js` extension is used, which is the standard TypeScript ESM convention.
+
+### Types
+
+All shared TypeScript types live in `resources/js/svelte/types/`. The key files are:
+
+| File             | Contents                                                                                 |
+|------------------|------------------------------------------------------------------------------------------|
+| `ai.ts`          | `AiModelResource`, `SystemModelResource`, `SystemPromptResource`, capability/tool labels |
+| `connection.ts`  | `InternalConnectionConfig`, `CommonConnectionConfig`, route types                        |
+| `translation.ts` | `Locale`, `LocaleCode`, `LocaleRecord`                                                   |
+
+Extend these files when new data shapes are needed rather than defining one-off local interfaces in component files.
+
+### Component Documentation
+
+Every Svelte component must carry a `@component` block comment immediately before the `<script>` tag. This comment is picked up by tooling (e.g. VS Code Svelte extension) and shown in hover tooltips:
+
+```svelte
+<!--
+  @component General description of what this component does and when to use it.
+-->
+<script lang="ts">
+```
+
+All props must be documented with a JSDoc comment inside the `Props` interface. Mark deprecated props with `@deprecated` and include a migration hint.
+
+`Props` must always extend the appropriate `HTMLAttributes` type from `svelte/elements` so that TypeScript accepts standard HTML attributes (e.g. `class`, `id`, `aria-*`) on the component without explicit redeclaration:
+
+```svelte
+<script lang="ts">
+    import type {HTMLAttributes} from 'svelte/elements';
+
+    interface Props extends HTMLAttributes<HTMLDivElement> {
+        /**
+         * Description of what this prop does.
+         */
+        requiredProp: string;
+        /**
+         * Description of this optional prop.
+         * @deprecated — use `requiredProp` instead.
+         */
+        optionalProp?: string;
+    }
+
+    const { requiredProp, optionalProp, ...rest }: Props = $props();
+</script>
+```
+
+#### Resolving conflicting attribute types
+
+Sometimes a component prop shares a name with an attribute already defined on the HTML element but with an incompatible signature — for example, overriding `onchange` to accept a domain-specific value instead of a raw `Event`. TypeScript will reject the override directly, so use an intermediate interface that widens the conflicting member to `any` first, then narrow it in `Props`:
+
+```svelte
+<script lang="ts">
+    import type {HTMLAttributes} from 'svelte/elements';
+
+    interface NonConflictingProps extends HTMLAttributes<HTMLDivElement> {
+        onchange?: any; // widen to any so Props can redefine it safely
+    }
+
+    interface Props extends NonConflictingProps {
+        /**
+         * Executed when the selected value of the radio group changes.
+         * @param newValue The newly selected value.
+         */
+        onchange?: (newValue: string) => void;
+    }
+
+    const { onchange, ...rest }: Props = $props();
+</script>
+```
+
+### Component Organisation
+
+- **`snippets/`** — top-level entry points, one per embedded page slot. Keep them thin: pull state from stores and delegate rendering to components.
+- **`components/`** — reusable building blocks used by multiple snippets. A component should have no knowledge of which snippet uses it.
+- **`stores/`** — all reactive state that crosses component boundaries. Components read from and write to stores; they do not pass callbacks between siblings.
+
+---
+
+## Styling
+
+### Architecture
+
+The project uses a **CSS cascade layer system** to give explicit control over specificity. Layers are declared once in `resources/css/app.css`:
+
+```
+@layer reset, tokens, base, components, utilities;
+```
+
+Priority (lowest → highest): `reset` < `tokens` < `base` < `components` < `utilities`. This eliminates all need for `!important` — specificity is explicit and intentional.
+
+All design values — colors, spacing, typography, radii, shadows, transitions — are defined as CSS custom properties in `resources/css/tokens/`. Svelte scoped `<style>` blocks compile into the `components` layer automatically.
+
+```
+resources/css/
+├── app.css                   entry point: @layer declaration + imports
+├── tokens/
+│   ├── colors.css            OKLCH color scales + semantic aliases
+│   ├── typography.css        font sizes, weights, line heights
+│   ├── spacing.css           --space-1 through --space-16
+│   ├── radius.css            --corner-sm / md / lg / full
+│   ├── shadows.css           --elevation-none / 1 / 2
+│   └── transitions.css       --duration-* and --easing-*
+└── layers/
+    ├── reset.css             minimal modern reset
+    └── base.css              body, focus ring, scrollbar defaults
+```
+
+Dark mode is toggled via `[data-theme="dark"]` on `<html>`, with `@media (prefers-color-scheme: dark)` as an OS-level fallback. All color tokens update automatically — **components need no dark-mode-specific rules of their own**.
+
+### Token Reference
+
+All tokens are available as CSS custom properties on every element. Common groups:
+
+| Group       | Example tokens                                                                                                 |
+|-------------|----------------------------------------------------------------------------------------------------------------|
+| Colors      | `--color-bg`, `--color-surface`, `--color-text`, `--color-text-muted`, `--color-interactive`, `--color-border` |
+| Typography  | `--font-size-xs` → `--font-size-2xl`, `--font-weight-medium`, `--line-height-normal`                           |
+| Spacing     | `--space-1` (4px) → `--space-16` (64px)                                                                        |
+| Radius      | `--corner-sm` (5px), `--corner-md` (10px), `--corner-lg` (30px), `--corner-full`                               |
+| Shadows     | `--elevation-none`, `--elevation-1`, `--elevation-2`                                                           |
+| Transitions | `--duration-fast` (300ms), `--duration-normal`, `--easing-default`, `--easing-spring`                          |
+
+The full list of available tokens lives in the individual files under `resources/css/tokens/`.
+
+### Breakpoints
+
+Breakpoints are defined as [CSS Custom Media Queries](https://www.w3.org/TR/mediaqueries-5/#custom-mq) in `resources/css/tokens/breakpoints.css` and processed by [`postcss-custom-media`](https://github.com/csstools/postcss-plugins/tree/main/plugins/postcss-custom-media). They are made globally available across all CSS files (including Svelte `<style>` blocks) via `@csstools/postcss-global-data`.
+
+| Range | Min    | Max    |
+|-------|--------|--------|
+| `xxs` | 0      | 300px  |
+| `xs`  | 0      | 549px  |
+| `sm`  | 550px  | 767px  |
+| `md`  | 768px  | 991px  |
+| `lg`  | 992px  | 1199px |
+| `xl`  | 1200px | —      |
+
+Each range exposes several named queries:
+
+| Query                       | Matches                          |
+|-----------------------------|----------------------------------|
+| `--bp-{range}`              | Exactly that range               |
+| `--bp-{range}-and-smaller`  | That range and below             |
+| `--bp-{range}-and-bigger`   | That range and above             |
+| `--bp-smaller-than-{range}` | Everything below the range's min |
+| `--bp-bigger-than-{range}`  | Everything above the range's max |
+| `--bp-mode-mobile`          | `max-width: 850px`               |
+| `--bp-mode-desktop`         | `min-width: 851px`               |
+
+```css
+/* In any .svelte <style> block or .css file */
+@media (--bp-md-and-bigger) {
+    .sidebar {
+        display: flex;
+    }
+}
+
+@media (--bp-sm-and-smaller) {
+    .nav {
+        flex-direction: column;
+    }
+}
+```
+
+PostCSS expands these to standard `@media` queries at build time — no browser support concerns.
+
+### Writing Component Styles
+
+Write all component styles in the `<style>` block of the `.svelte` file. Svelte scopes them automatically — no BEM class naming is needed to prevent leakage between components.
+
+There are two levels of token use inside a component:
+
+1. **Reference globals directly** for properties that are set once and never vary across states: `border-radius: var(--corner-md)`, `padding: var(--space-6)`.
+2. **Declare a component-local token** at the root element of the component (the outermost DOM element — *not* CSS `:root`) for any value that either appears in multiple places *or* changes under a state rule. Reassigning the local token in a state rule then propagates the change to every property referencing it automatically, so each state override collapses to the minimum number of lines.
+
+If you want the component to be externally restylable (e.g. a reusable primitive), the fallback form `var(--card-elevation, var(--elevation-1))` lets a parent pass `--card-elevation` to customise without needing to pierce Svelte's scope.
+
+```svelte
+<!-- resources/js/svelte/components/Card.svelte -->
+<script lang="ts">
+    interface Props {
+        title: string;
+        children?: import('svelte').Snippet;
+    }
+    const { title, children }: Props = $props();
+</script>
+
+<div class="card">
+    <h2 class="card__title">{title}</h2>
+    {#if children}
+        <div class="card__body">{@render children()}</div>
+    {/if}
+</div>
+
+<style>
+    /*
+     * Declare a component-local token at the root element of the component
+     * (the outermost DOM element, not CSS :root) when the value either:
+     *   - appears in multiple properties, or
+     *   - needs to change under a state rule (:hover, :focus, [disabled], …)
+     * For single-use, never-changing values, reference the global token directly.
+     */
+    .card {
+        --card-bg:        var(--color-surface);
+        --card-border:    var(--color-border);
+        --card-elevation: var(--elevation-1);
+
+        background:    var(--card-bg);
+        border:        1px solid var(--card-border);
+        border-radius: var(--corner-md);         /* single-use — global token directly */
+        box-shadow:    var(--card-elevation);
+        padding:       var(--space-6);            /* single-use — global token directly */
+        transition:    box-shadow var(--duration-fast) var(--easing-default);
+    }
+
+    /*
+     * State rules reassign local tokens only — never repeat property declarations.
+     * The browser re-evaluates every property referencing the token automatically,
+     * so each state collapses to the minimum number of lines.
+     */
+    .card:hover {
+        --card-border:    var(--color-border-strong);
+        --card-elevation: var(--elevation-2);
+    }
+
+    .card__title {
+        font-size:     var(--font-size-lg);
+        font-weight:   var(--font-weight-bold);
+        color:         var(--color-text);
+        margin-bottom: var(--space-3);
+    }
+
+    .card__body {
+        color:     var(--color-text-muted);
+        font-size: var(--font-size-sm);
+    }
+</style>
+```
+
+Because color tokens automatically switch values under `[data-theme="dark"]`, this component works correctly in both themes with no additional CSS.
+
+### Variant Components (CVA)
+
+When a component exposes props that drive visual style (`size`, `intent`, `weight`, …), use `cva` from `class-variance-authority` instead of manually constructing class strings. This keeps the variant→class mapping declarative and gives you type-safe prop types for free:
+
+```svelte
+<script lang="ts">
+    import {cva, type VariantProps} from 'class-variance-authority';
+    import {mergeProps} from '../../util/mergeProps.js';
+    import type {HTMLAttributes} from 'svelte/elements';
+
+    const buttonVariants = cva('btn', {
+        variants: {
+            intent: {primary: 'btn--primary', secondary: 'btn--secondary'},
+            size:   {sm: 'btn--sm', md: 'btn--md'},
+        },
+        defaultVariants: {intent: 'primary', size: 'md'},
+    });
+
+    interface Props extends HTMLAttributes<HTMLButtonElement> {
+        intent?: VariantProps<typeof buttonVariants>['intent'];
+        size?:   VariantProps<typeof buttonVariants>['size'];
+    }
+
+    const {intent, size, ...restProps}: Props = $props();
+
+    const elementProps = $derived(mergeProps(
+        {class: buttonVariants({intent, size})},
+        restProps
+    ));
+</script>
+```
+
+`VariantProps<typeof buttonVariants>` automatically reflects the valid values from the definition — no manual union types needed. `defaultVariants` eliminates `?? 'fallback'` chains. Use `cx` (re-exported from `class-variance-authority`) directly when you need ad-hoc class merging without full variant definitions.
+
+### Rules
+
+- **No `!important`** — ever. Cascade layers make it unnecessary.
+- **No hardcoded colors** — always reference a token. If no suitable token exists, add one to `resources/css/tokens/colors.css`.
+- **No hardcoded sizes** — use spacing, radius, or typography tokens.
+- **States reassign component-local tokens**, not global ones. Because the browser re-evaluates every property referencing the token automatically, one reassignment line replaces what would otherwise be repeated property declarations in every state rule.
+- **No utility-class spam** — if a pattern repeats across 3+ components, extract a shared Svelte primitive, not a utility class.
+- **Dark mode is free** — do not add `[data-theme="dark"]` rules inside component styles. The token layer handles it globally.
+
+> **Migration note:** Legacy styles in `public/css/` continue to load alongside the new system during the transition to Svelte. New components must use the token system above. Do not add new rules to the legacy files.
+
+---
+
 ## Pull Request Process
 
 ### Before Creating a PR
@@ -1008,7 +1564,8 @@ You are welcome to use AI tools when contributing to HAWKI. AI assistants can he
 
 To help you succeed, we provide curated skills:
 
-- **[Contributing Skill](pathname://attachments/skills/contributing/SKILL.md)** — General guidelines for writing code that adheres to HAWKI's standards, architecture patterns, and best practices
+- **[HAWKI backend Skill](pathname://attachments/skills/hawki-backend/SKILL.md)** — The skill for working at our Laravel backend layer, including our architecture, coding standards, and best practices
+- **[HAWKI frontend Skill](pathname://attachments/skills/hawki-frontend/SKILL.md)** — The skill for working at our Svelte frontend layer, including our hybrid architecture, coding standards, and best practices
 - **[PHPUnit Testing Skill](pathname://attachments/skills/phpunit/SKILL.md)** — Comprehensive guidance for writing effective unit and feature tests, including assertions, data providers, mocking, and test structure
 
 Share these skills with your AI tool to provide context on HAWKI's expectations.

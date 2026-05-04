@@ -24,28 +24,31 @@ HAWKI's AI integration uses a layered service architecture with dependency injec
 The AI connection system is built with a layered architecture consisting of the following components:
 
 ### Service Layer
+
 - **AiService**: Main entry point for AI interactions, providing unified methods for model retrieval and request processing
 - **AiFactory**: Factory service responsible for creating provider instances, model contexts, and managing dependencies
 - **UsageAnalyzerService**: Tracks and records token usage for analytics and billing purposes
 
-### Provider Layer  
+### Provider Layer
+
 - **ModelProviderInterface**: Interface defining provider contract for model discovery and configuration
 - **ClientInterface**: Interface defining client contract for request execution and model status checks
 - **AbstractClient**: Base implementation providing common request validation and streaming fallback logic
 
 ### Provider Implementations
+
 - **OpenAI**: OpenAiClient, OpenAiRequestConverter, and specific request handlers
-- **GWDG**: GwdgClient, GwdgRequestConverter, and specific request handlers  
+- **GWDG**: GwdgClient, GwdgRequestConverter, and specific request handlers
 - **Google**: GoogleClient, GoogleRequestConverter, and specific request handlers
 - **Ollama**: OllamaClient, OllamaRequestConverter, and specific request handlers
 - **OpenWebUI**: OpenWebUiClient, OpenWebUiRequestConverter, and specific request handlers
 
 ### Value Objects
+
 - **AiRequest**: Immutable request object containing model reference and payload
 - **AiResponse**: Response object with content, usage data, and completion status
-- **AiModel**: Model definition with capabilities and context binding
+- **AiModelConfig**: Model definition with capabilities and context binding
 - **TokenUsage**: Usage tracking data structure
-
 
 ## Data Flow
 
@@ -67,12 +70,13 @@ The AI connection system is built with a layered architecture consisting of the 
 ```php
 class AiRequest
 {
-    public ?AiModel $model = null;
+    public ?AiModelConfig $model = null;
     public ?array $payload = null;
 }
 ```
 
 The payload array contains:
+
 ```php
 [
     'model' => 'gpt-4o',
@@ -105,6 +109,7 @@ class AiResponse
 ```
 
 Response content format:
+
 ```php
 [
     'content' => [
@@ -126,6 +131,7 @@ The new architecture separates concerns between model providers and clients, wit
 ### Core Interfaces
 
 **ModelProviderInterface** - Defines provider contract:
+
 ```php
 interface ModelProviderInterface
 {
@@ -135,12 +141,13 @@ interface ModelProviderInterface
 ```
 
 **ClientInterface** - Defines client contract:
+
 ```php
 interface ClientInterface
 {
     public function sendRequest(AiRequest $request): AiResponse;
     public function sendStreamRequest(AiRequest $request, callable $onData): void;
-    public function getStatus(AiModel $model): ModelOnlineStatus;
+    public function getStatus(AiModelConfig $model): OnlineStatus;
 }
 ```
 
@@ -149,7 +156,7 @@ interface ClientInterface
 Each provider follows this structure:
 
 1. **Provider Class** (e.g., `GenericModelProvider`): Handles model discovery and configuration
-2. **Client Class** (e.g., `OpenAiClient`): Manages request execution and delegation  
+2. **Client Class** (e.g., `OpenAiClient`): Manages request execution and delegation
 3. **Request Converter** (e.g., `OpenAiRequestConverter`): Transforms payloads to provider format
 4. **Request Handlers**: Specific implementations for streaming/non-streaming requests
 
@@ -160,14 +167,14 @@ class OpenAiClient extends AbstractClient
 {
     protected function executeRequest(AiRequest $request): AiResponse
     {
-        return (new OpenAiNonStreamingRequest(
+        return (new OpenAiNonStreamingClientRequest(
             $this->converter->convertRequestToPayload($request)
         ))->execute($request->model);
     }
     
     protected function executeStreamingRequest(AiRequest $request, callable $onData): void
     {
-        (new OpenAiStreamingRequest(
+        (new OpenAiStreamingClientRequest(
             $this->converter->convertRequestToPayload($request),
             $onData
         ))->execute($request->model);
@@ -224,6 +231,7 @@ Adding a new AI provider requires implementing the provider pattern with separat
 #### 1. Create Provider Directory Structure
 
 For a new provider (e.g., "MyProvider"), create the following structure:
+
 ```
 app/Services/AI/Providers/MyProvider/
 ├── MyProviderClient.php
@@ -239,9 +247,9 @@ app/Services/AI/Providers/MyProvider/
 ```php
 <?php
 
-namespace App\Services\AI\Providers\MyProvider;
+namespace App\Services\AI\Clients\MyProvider;
 
-use App\Services\AI\Providers\AbstractClient;
+use App\Services\AI\Clients\Implementations\AbstractClient;
 
 class MyProviderClient extends AbstractClient
 {
@@ -264,7 +272,7 @@ class MyProviderClient extends AbstractClient
         ))->execute($request->model);
     }
     
-    protected function resolveStatusList(AiModelStatusCollection $statusCollection): void
+    protected function resolveStatusList(AiModelOnlineStatusCollection $statusCollection): void
     {
         // Implement status checking for your provider's models
     }
@@ -276,9 +284,9 @@ class MyProviderClient extends AbstractClient
 ```php
 <?php
 
-namespace App\Services\AI\Providers\MyProvider;
+namespace App\Services\AI\Clients\MyProvider;
 
-use App\Services\AI\Value\AiRequest;
+use App\Services\AI\Clients\Requests\AiRequest;
 
 class MyProviderRequestConverter
 {
@@ -313,19 +321,17 @@ class MyProviderRequestConverter
 ```php
 <?php
 
-namespace App\Services\AI\Providers\MyProvider\Request;
+namespace App\Services\AI\Clients\MyProvider\Request;
 
-use App\Services\AI\Providers\AbstractRequest;
-use App\Services\AI\Value\AiModel;
-use App\Services\AI\Value\AiResponse;
+use App\Services\AI\Clients\Implementations\AbstractClientRequest;use App\Services\AI\Clients\Responses\AiResponse;use App\Services\AI\Values\AiModelConfig;
 
-class MyProviderNonStreamingRequest extends AbstractRequest
+class MyProviderNonStreamingRequest extends AbstractClientRequest
 {
     use MyProviderUsageTrait;
     
     public function __construct(private array $payload) {}
     
-    public function execute(AiModel $model): AiResponse
+    public function execute(AiModelConfig $model): AiResponse
     {
         return $this->executeNonStreamingRequest(
             model: $model,
@@ -365,6 +371,7 @@ Add your new provider to the `config/model_providers.php` file:
 #### 6. Register with Dependency Container
 
 The `AiFactory` automatically discovers providers by convention. Ensure your provider class follows the naming pattern:
+
 - Provider directory: `app/Services/AI/Providers/{ProviderName}/`
 - Client class: `{ProviderName}Client`
 - The factory will automatically instantiate and configure your provider when needed.
@@ -539,7 +546,7 @@ Usage is automatically tracked when processing AI responses:
 
 ```php
 // In request handlers, usage is extracted per provider
-protected function extractUsage(AiModel $model, array $data): ?TokenUsage
+protected function extractUsage(AiModelConfig $model, array $data): ?TokenUsage
 {
     if (!isset($data['usage'])) {
         return null;
@@ -556,6 +563,7 @@ protected function extractUsage(AiModel $model, array $data): ?TokenUsage
 ### Analytics Applications
 
 This structured approach enables:
+
 - **Real-time Cost Tracking**: Monitor token consumption across models
 - **Usage Pattern Analysis**: Identify high-usage patterns and optimize
 - **Billing Integration**: Accurate cost allocation per user/room

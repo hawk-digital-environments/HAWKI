@@ -1,7 +1,6 @@
 ---
-name: hawki-contributing
+name: hawki-backend
 description: HAWKI coding standards and architecture patterns. Use when writing or reviewing PHP code for HAWKI, creating new classes/services, or when asked about project structure, DDD patterns, or code conventions.
-user-invocable: false
 ---
 
 > **Note:** The current codebase may not fully follow these guidelines — folder names are inconsistent and some naming conventions are mid-migration. Follow these rules in all new code and refactor old code toward them when possible.
@@ -14,13 +13,16 @@ Business logic lives in `App\Services\{Domain}\`. Laravel-native classes (Contro
 
 - Domain namespaces: singular noun (`Auth`, `Storage`, `Announcement`)
 - Structural namespaces: plural for countable nouns (`Exceptions`, `Values`, `Contracts`, `Repositories`), singular for mass nouns (`Middleware`)
+- All namespace segments are `CamelCase`, including acronyms — `Ai` not `AI`, `Mcp` not `MCP`, `Http` not `HTTP`
 - Prefer `Contracts/` over `Interfaces/`
 - `Utils/` is always a classification failure — every class has a more precise home
 
 ```
 app/Services/Ai/
-├── Client/          # Group of ClientInterface decorators
+├── Clients/         # Group of ClientInterface decorators
 ├── Contracts/       # Interfaces for cross-domain communication
+├── Events/          # Domain events (always at domain root)
+├── Listeners/       # Domain listeners (auto-discovered from Services/*/Listeners)
 ├── Repositories/    # Database access (Repository + optional Queries/)
 │   └── Queries/     # Complex/reused query objects
 ├── Exceptions/      # Domain exceptions
@@ -29,14 +31,29 @@ app/Services/Ai/
 ├── AiFactory.php    # Named collaborator (direct partner of AiService)
 └── AiService.php    # Domain service (@api)
 
-app/Http/Controllers/Ai/   app/Models/Ai/
-app/Http/Requests/Ai/      app/Events/Ai/
-app/Http/Resources/Ai/     app/Listeners/Ai/
+app/Http/Controllers/Ai/
+app/Http/Requests/Ai/
+app/Http/Resources/Ai/
+app/Models/Ai/
 ```
 
 ## Layer Rules
 
 **Controllers** — HTTP only. Delegate validation to FormRequest, call one service method, return ApiResource. No business logic, no DB access.
+
+**FormRequests** — All validation and authorization logic lives here. Never validate in controllers.
+
+**API Resources** — Transform models into JSON responses. Live in `App\Http\Resources\{Domain}\`. Laravel instantiates these outside the container, so constructor injection is unavailable — use `ServiceLocatorTrait` when a service is needed.
+
+```php
+class MessageResource extends JsonResource {
+    use ServiceLocatorTrait;
+    public function toArray(Request $request): array {
+        $formatter = $this->getServiceInstance(MessageFormatterService::class);
+        return ['id' => $this->id, 'content' => $formatter->format($this->content)];
+    }
+}
+```
 
 **Services** (`@api`) — All business logic. Constructor-injected deps only. No HTTP/session/request dependencies. Always stateless, registered as `#[Singleton]`, lightweight at construction.
 
@@ -67,7 +84,7 @@ class RoomService {
 ```php
 readonly class AiModelRepository {
     public function findActiveByProvider(string $providerId): Collection {
-        return AiModel::where('provider_id', $providerId)->where('active', true)->get();
+        return AiModelConfig::where('provider_id', $providerId)->where('active', true)->get();
     }
 }
 ```
@@ -78,7 +95,7 @@ For complex or reused queries, extract a `Query` object into `Repositories/Queri
 // Repositories/Queries/FindActiveModelsByProviderQuery.php
 readonly class FindActiveModelsByProviderQuery {
     public function execute(string $providerId): Collection {
-        return AiModel::where('provider_id', $providerId)->where('active', true)->get();
+        return AiModelConfig::where('provider_id', $providerId)->where('active', true)->get();
     }
 }
 ```
@@ -124,15 +141,55 @@ Rules:
 - Log only at the catch site making a decision; never double-log
 - PSR log context: `['exception' => $e]` (reserved key — triggers stack trace formatting)
 
-**API Resources** — Live in `App\Http\Resources\{Domain}\`. When a service is needed, use `ServiceLocatorTrait` (see DI section).
+**API Resources** — see above.
 
-**Events** — past tense names (`MessageSent`). **Listeners** — action names (`NotifyRoomMembers`).
+**Events** — live in `App\Services\{Domain}\Events\`, not `app/Events/` (legacy). **Listeners** — action names (`NotifyRoomMembers`). Live in `App\Services\{Domain}\Listeners\`; auto-discovered.
+
+Event naming — pick one tense to express when the event occurs:
+
+- Past tense (completed): `MessageSentEvent`, `RoomCreatedEvent`
+- Present progressive (ongoing): `CheckingHealthEvent`, `AiWritingStartedEvent`
+- "Before" prefix (about to happen): `BeforeCreatingRoomEvent`
+
+Always add the `Event` suffix. Event classes are `readonly` by default (best practice — pure data carriers). Non-`readonly` is valid when required by framework serialization, but is usually a design smell. Always include `declare(strict_types=1)` and the `Dispatchable` trait. Constructor args must be strongly typed `public readonly` properties — never raw `array` payloads.
+
+```php
+readonly class RoomCreatedEvent
+{
+    use Dispatchable;
+    public function __construct(public Room $room) {}
+}
+```
+
+**Filter events** — Mutable synchronous hooks that let listeners influence core execution logic. Named with the `...FilterEvent` suffix. Never `readonly`, never `ShouldBroadcast` or `ShouldQueue`. Use `App\Events\Traits\DispatchableFilter` (not `Dispatchable`) — it omits `broadcast()` and returns the event instance from `dispatch()`. Properties are private; read-only context gets a getter only, mutable results get a getter + setter:
+
+```php
+class ModelPermissionFilterEvent {
+    use DispatchableFilter;
+    private bool $allowed;
+    public function __construct(
+        private readonly User $user,      // read-only context — getter only
+        private readonly AiModel $model,  // read-only context — getter only
+        bool $allowed = true,
+    ) { $this->allowed = $allowed; }
+    public function getUser(): User { return $this->user; }
+    public function getModel(): AiModel { return $this->model; }
+    public function isAllowed(): bool { return $this->allowed; }
+    public function setAllowed(bool $allowed): void { $this->allowed = $allowed; }
+}
+
+// Dispatch and read back mutated state in one line:
+$isAllowed = ModelPermissionFilterEvent::dispatch($user, $model)->isAllowed();
+```
+
+Broadcasting events (`ShouldBroadcast`): define `broadcastOn()` (prefer `PrivateChannel`) and `broadcastWith(): array` explicitly. Add `SerializesModels` when the event carries Eloquent models **and** may hit a queued listener — it serializes the model to its PK and rehydrates it on dispatch. Eager-loaded relations are not preserved; use `withoutRelations()` or pass a value object instead if that matters. Add `InteractsWithSockets` only when you need `dontBroadcastToCurrentUser()` / `toOthers()` to exclude the triggering socket.
 
 **Contracts (Interfaces)** — Only when multiple/replaceable implementations exist. No speculative interfaces.
 
 ## API Stability & Decoration
 
 - `@api` = stable public surface; class never `final`; no signature changes until next major version
+- Applies to interfaces too — interfaces without `@api` are internal to the domain only
 - `@deprecated` required before removal, with target version and migration path
 - Class `@api` without method tags = entire public+protected surface is stable
 
@@ -172,7 +229,7 @@ use \Throwable;
 **Types** — always declare param and return types; avoid `mixed`; DocBlock only for complex arrays or generic collections:
 
 ```php
-/** @return Collection<int, AiModel> */
+/** @return Collection<int, AiModelConfig> */
 public function getActiveModels(): Collection { ... }
 ```
 

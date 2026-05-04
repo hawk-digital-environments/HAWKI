@@ -46,6 +46,95 @@ domains: [ web, api, backend ]
 5. **Use `setUp` and `tearDown` consistently** -- Initialize shared objects in `setUp` and clean up in `tearDown` for test isolation.
 6. **Prefer constructor injection** -- Design classes with dependency injection for easy mocking in tests without reflection hacks.
 7. **Test exceptions with `expectException`** -- Verify both the exception class and message using `expectExceptionMessage` for precise error testing.
+8. **Use explicit injection points before the container** -- If the SUT exposes a test
+   setter (e.g. `setService()` from `ServiceLocatorTrait`) prefer that over
+   `$this->app->bind()`. Direct injection is faster, fully isolated, and makes the
+   dependency visible in the test. Only fall back to container bindings when no
+   dedicated injection point exists (And be verbose to the user about that!).
+
+## Laravel Projects
+
+### Events
+
+**Dispatching**: Inject `Illuminate\Contracts\Events\Dispatcher` instead of using `Dispatchable` trait or `event()` helper. Enables IDE type-checking and framework-free unit tests.
+
+```php
+use Illuminate\Contracts\Events\Dispatcher;
+
+class RegisterUser {
+    public function __construct(protected Dispatcher $dispatcher) {}
+
+    public function execute(string $userId): void {
+        $this->dispatcher->dispatch(new UserRegistered($userId));
+    }
+}
+```
+
+**Feature tests** (framework boots — extend `Tests\TestCase`):
+
+```php
+Event::fake(); // call AFTER factories — model events won't fire while faked
+
+Event::assertDispatched(OrderShipped::class);          // dispatched at least once
+Event::assertDispatched(OrderShipped::class, 2);       // dispatched exactly twice
+Event::assertDispatchedOnce(OrderShipped::class);      // dispatched exactly once
+Event::assertNotDispatched(OrderFailedToShip::class);  // never dispatched
+Event::assertNothingDispatched();                      // no events at all
+Event::assertListening(OrderShipped::class, SendShipmentNotification::class);
+
+// Closure truth test (passes if at least one matching event found):
+Event::assertDispatched(function (OrderShipped $event) use ($order) {
+    return $event->order->id === $order->id;
+});
+
+// Fake only specific events (others fire normally):
+Event::fake([OrderCreated::class]);
+
+// Fake all except specific events:
+Event::fake()->except([OrderCreated::class]);
+
+// Scoped fake (only inside closure; events fire normally after):
+$order = Event::fakeFor(function () {
+    $order = Order::factory()->create();
+    Event::assertDispatched(OrderCreated::class);
+    return $order;
+});
+```
+
+**Unit tests** (no framework boot — extend `PHPUnit\Framework\TestCase`):
+
+Construct `EventFake` directly and inject it:
+
+```php
+use Illuminate\Events\Dispatcher;
+use Illuminate\Events\NullDispatcher;
+use Illuminate\Support\Testing\Fakes\EventFake;
+
+$fakeDispatcher = new EventFake(new NullDispatcher(new Dispatcher()));
+$action = new RegisterUser($fakeDispatcher);
+$action->execute('testUserId');
+
+$fakeDispatcher->assertDispatched(UserRegistered::class, function (UserRegistered $event) {
+    return $event->userId === 'testUserId';
+});
+```
+
+Extract to a reusable trait:
+
+```php
+trait InteractsWithEvents
+{
+    private EventFake $dispatcher;
+
+    public function eventDispatcher(): EventFake
+    {
+        if (!isset($this->dispatcher)) {
+            $this->dispatcher = new EventFake(new NullDispatcher(new \Illuminate\Events\Dispatcher()));
+        }
+        return $this->dispatcher;
+    }
+}
+```
 
 ## Anti-Patterns
 
