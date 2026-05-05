@@ -3,6 +3,8 @@
 namespace Database\Factories\Assistants;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\Category;
+use App\Models\Assistants\Language;
 use App\Models\Assistants\Version;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,8 +24,8 @@ class AssistantFactory extends Factory
             'detail_description' => fake()->paragraph(),
             'allow_remix' => fake()->boolean(),
             'allow_model_select' => fake()->boolean(),
-            'language' => 'en',
-            'category' => 'general',
+            'language_id' => Language::factory(),
+            'category_id' => Category::factory(),
             'review_stage' => 'draft',
             'formality' => 'neutral',
             'model' => 'gpt-4',

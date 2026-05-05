@@ -9,9 +9,15 @@ use Illuminate\Support\Collection;
 
 readonly class AssistantRepository
 {
-    public function all(): Collection
+    public function all(array $filters = []): Collection
     {
-        return Assistant::all();
+        $query = Assistant::query();
+
+        if (isset($filters['category'])) {
+            $query->whereHas('category', fn ($q) => $q->where('text', $filters['category']));
+        }
+
+        return $query->get();
     }
 
     public function create(array $data): Assistant

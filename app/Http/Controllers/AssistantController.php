@@ -10,6 +10,7 @@ use App\Http\Resources\Assistant\AssistantResource;
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\AssistantService;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
 class AssistantController extends Controller
 {
@@ -19,27 +20,37 @@ class AssistantController extends Controller
         $this->authorizeResource(Assistant::class, 'assistant');
     }
 
-    private function parseRelations(): array
+    /**
+     * Returns optional model relations from request query.
+     * The model relations are defined in the model and migration files.
+     * The map uses the default json representation created by laravel for the model for the model fields.
+     */
+    private function getOptionalModelRelations(): array
     {
         $with = request()->query('with', '');
 
-        $map = [
+        $jsonToModelRelationMap = [
             'user_prompts' => 'userPrompts',
             'ai_tools' => 'aiTools',
             'tags' => 'tags',
             'creator' => 'creator',
+            'remix_creator' => 'remix_creator',
+            'original_assistent' => 'originalAssistent',
+            'copies' => 'copies',
             'versions' => 'versions',
+            'attachments' => 'attachments'
         ];
 
         $requested = explode(',', $with);
 
-        return array_values(array_intersect_key($map, array_flip($requested)));
+        return array_values(array_intersect_key($jsonToModelRelationMap, array_flip($requested)));
     }
 
     public function index(): AnonymousResourceCollection
     {
-        $relations = $this->parseRelations();
-        $assistants = $this->assistantService->list($relations);
+        $relations = $this->getOptionalModelRelations();
+        $filters = request()->only(['category']);
+        $assistants = $this->assistantService->list($relations, $filters);
 
         return AssistantResource::collection($assistants);
     }
@@ -56,7 +67,7 @@ class AssistantController extends Controller
 
     public function show(Assistant $assistant): AssistantResource
     {
-        $relations = $this->parseRelations();
+        $relations = $this->getOptionalModelRelations();
         $assistant = $this->assistantService->find($assistant, $relations);
 
         return new AssistantResource($assistant);
@@ -72,14 +83,15 @@ class AssistantController extends Controller
         return new AssistantResource($assistant);
     }
 
-    public function destroy(Assistant $assistant): \Illuminate\Http\Response
+    public function destroy(Assistant $assistant): Response
     {
         $assistant -> delete();
         return response()->noContent();
     }
 
     public function remix(Assistant $assistant): AssistantResource
-    {
+    {   
+        // TODO: HKI-73: Use remix rules
         $this->authorize('remix', $assistant);
 
         $remixed = $this->assistantService->remix(

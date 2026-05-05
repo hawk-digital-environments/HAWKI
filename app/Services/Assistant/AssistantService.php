@@ -7,7 +7,11 @@ namespace App\Services\Assistant;
 use App\Events\AssistantCreated;
 use App\Events\AssistantUpdated;
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\Category;
+use App\Models\Assistants\Language;
 use App\Services\Assistant\Repositories\AssistantRepository;
+use App\Services\Assistant\Repositories\CategoryRepository;
+use App\Services\Assistant\Repositories\LanguageRepository;
 use App\Services\Assistant\Repositories\TagRepository;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Database\DatabaseManager;
@@ -23,12 +27,16 @@ readonly class AssistantService
     public function __construct(
         private AssistantRepository $repository,
         private TagRepository $tagRepository,
+        private CategoryRepository $categoryRepository,
+        private LanguageRepository $languageRepository,
         private DatabaseManager $db,
     ) {}
 
-    public function list(array $relations = []): Collection
+    public function list(array $relations = [], array $filters = []): Collection
     {
-        $assistants = $this->repository->all();
+        $assistants = $this->repository->all($filters);
+
+        $relations = array_unique(array_merge($relations, ['category', 'language']));
 
         if ($relations !== []) {
             $assistants->load($relations);
@@ -39,6 +47,8 @@ readonly class AssistantService
 
     public function find(Assistant $assistant, array $relations = []): Assistant
     {
+        $relations = array_unique(array_merge($relations, ['category', 'language']));
+
         if ($relations !== []) {
             $this->repository->loadRelations($assistant, $relations);
         }
@@ -49,10 +59,20 @@ readonly class AssistantService
     public function create(array $data, int $creatorId): Assistant
     {
         return $this->db->transaction(function () use ($data, $creatorId) {
-            $assistant = $this->repository->create(array_merge($data, [
-                'creator_id' => $creatorId,
-                'remixed_creator_id' => null,
-            ]));
+            $category = $this->resolveCategory($data['category'] ?? null);
+            $language = $this->resolveLanguage($data['language'] ?? null);
+
+            $assistantData = collect($data)
+                ->except(['user_prompts', 'ai_tools', 'tags', 'category', 'language'])
+                ->merge([
+                    'creator_id' => $creatorId,
+                    'remixed_creator_id' => null,
+                    'category_id' => $category?->id,
+                    'language_id' => $language?->id,
+                ])
+                ->toArray();
+
+            $assistant = $this->repository->create($assistantData);
 
             $this->handleUserPrompts($assistant, $data['user_prompts'] ?? null);
             $this->handleAiTools($assistant, $data['ai_tools'] ?? null);
@@ -60,7 +80,7 @@ readonly class AssistantService
 
             Event::dispatch(new AssistantCreated($assistant));
 
-            return $this->repository->loadRelations($assistant, ['userPrompts', 'aiTools', 'tags']);
+            return $this->repository->loadRelations($assistant, ['userPrompts', 'aiTools', 'tags', 'category', 'language']);
         });
     }
 
@@ -70,8 +90,18 @@ readonly class AssistantService
             $versionText = $data['version_text'] ?? null;
 
             $assistantFields = collect($data)
-                ->except(['user_prompts', 'ai_tools', 'tags', 'version_text'])
+                ->except(['user_prompts', 'ai_tools', 'tags', 'version_text', 'category', 'language'])
                 ->toArray();
+
+            if (isset($data['category'])) {
+                $category = $this->resolveCategory($data['category']);
+                $assistantFields['category_id'] = $category?->id;
+            }
+
+            if (isset($data['language'])) {
+                $language = $this->resolveLanguage($data['language']);
+                $assistantFields['language_id'] = $language?->id;
+            }
 
             $this->repository->update($assistant, $assistantFields);
 
@@ -81,7 +111,7 @@ readonly class AssistantService
 
             Event::dispatch(new AssistantUpdated($assistant, $versionText));
 
-            return $this->repository->loadRelations($assistant, ['userPrompts', 'aiTools', 'tags']);
+            return $this->repository->loadRelations($assistant, ['userPrompts', 'aiTools', 'tags', 'category', 'language']);
         });
     }
 
@@ -105,8 +135,26 @@ readonly class AssistantService
 
             Event::dispatch(new AssistantCreated($clone));
 
-            return $this->repository->loadRelations($clone, ['userPrompts', 'aiTools', 'tags']);
+            return $this->repository->loadRelations($clone, ['userPrompts', 'aiTools', 'tags', 'category', 'language']);
         });
+    }
+
+    private function resolveCategory(?string $categoryText): ?Category
+    {
+        if ($categoryText === null) {
+            return null;
+        }
+
+        return $this->categoryRepository->findOrCreateByText($categoryText);
+    }
+
+    private function resolveLanguage(?string $languageText): ?Language
+    {
+        if ($languageText === null) {
+            return null;
+        }
+
+        return $this->languageRepository->findOrCreateByText($languageText);
     }
 
     private function handleUserPrompts(Assistant $assistant, ?array $prompts, bool $replace = false): void

@@ -4,6 +4,8 @@ namespace Tests\Feature\Api;
 
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\Category;
+use App\Models\Assistants\Language;
 use App\Models\Assistants\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -97,8 +99,8 @@ class AssistantTest extends TestCase
                             'detail_description' => $assistant->detail_description,
                             'allow_remix' => (int) $assistant->allow_remix,
                             'allow_model_select' => (int) $assistant->allow_model_select,
-                            'language' => $assistant->language,
-                            'category' => $assistant->category,
+                            'language' => $assistant->language->text,
+                            'category' => $assistant->category->text,
                             'review_stage' => $assistant->review_stage,
                             'formality' => $assistant->formality,
                             'model' => $assistant->model,
@@ -301,8 +303,8 @@ class AssistantTest extends TestCase
                     'detail_description' => $assistant->detail_description,
                     'allow_remix' => (int) $assistant->allow_remix,
                     'allow_model_select' => (int) $assistant->allow_model_select,
-                    'language' => $assistant->language,
-                    'category' => $assistant->category,
+                    'language' => $assistant->language->text,
+                    'category' => $assistant->category->text,
                     'review_stage' => $assistant->review_stage,
                     'formality' => $assistant->formality,
                     'model' => $assistant->model,
@@ -367,8 +369,8 @@ class AssistantTest extends TestCase
                 'detail_description' => $assistant->detail_description,
                 'allow_remix' => (int) $assistant->allow_remix,
                 'allow_model_select' => (int) $assistant->allow_model_select,
-                'language' => $assistant->language,
-                'category' => $assistant->category,
+                'language' => $assistant->language->text,
+                'category' => $assistant->category->text,
                 'review_stage' => $assistant->review_stage,
                 'formality' => $assistant->formality,
                 'model' => $assistant->model,
@@ -723,5 +725,48 @@ class AssistantTest extends TestCase
 
         $this->postJson("/api/assistants/{$assistant->id}/remix")
             ->assertUnauthorized();
+    }
+
+    public function test_can_filter_assistants_by_category(): void
+    {
+        $user = User::factory()->create();
+        $education = Category::factory()->create(['text' => 'education']);
+        $general = Category::factory()->create(['text' => 'general']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'category_id' => $education->id]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'category_id' => $general->id]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'category_id' => $education->id]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/assistants?category=education')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.category', 'education')
+            ->assertJsonPath('data.1.category', 'education');
+    }
+
+    public function test_filter_by_category_returns_empty_when_no_match(): void
+    {
+        $user = User::factory()->create();
+        $general = Category::factory()->create(['text' => 'general']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'category_id' => $general->id]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/assistants?category=nonexistent')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_list_without_category_filter_returns_all(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->count(3)->create(['creator_id' => $user->id]);
+
+        Sanctum::actingAs($user);
+
+        $this->getJson('/api/assistants')
+            ->assertOk()
+            ->assertJsonCount(3, 'data');
     }
 }

@@ -13,7 +13,7 @@ class Tag extends Model
         'text'
     ];
 
-    public function agents():BelongsToMany {
+    public function assistants():BelongsToMany {
         return $this->belongsToMany(Assistant::class);
     }
 }

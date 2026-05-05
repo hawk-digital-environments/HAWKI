@@ -7,8 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Table('categories')]
-class Category extends Model
+#[Table('languages')]
+class Language extends Model
 {
     use HasFactory;
 

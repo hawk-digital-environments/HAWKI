@@ -26,8 +26,8 @@ class Assistant extends Model
         'detail_description',
         'allow_remix',
         'allow_model_select',
-        'language',
-        'category',
+        'language_id',
+        'category_id',
         'review_stage',
         'formality',
         'model',
@@ -37,6 +37,16 @@ class Assistant extends Model
         'creator_id',
         'remixed_creator_id',
     ];
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    public function language(): BelongsTo
+    {
+        return $this->belongsTo(Language::class);
+    }
 
     public function userPrompts(): HasMany
     {
@@ -53,22 +63,17 @@ class Assistant extends Model
         return $this->belongsToMany(Tag::class);
     }
 
-    public function categories(): BelongsToMany
-    {
-        return $this->belongsToMany(Category::class);
-    }
-
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'creator_id');
     }
 
-    public function original_creator(): BelongsTo
+    public function remix_creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'remixed_creator_id');
     }
 
-    public function originalAgent(): BelongsTo
+    public function originalAssistent(): BelongsTo
     {
         return $this->belongsTo(Assistant::class, 'remixed_assistant_id');
     }

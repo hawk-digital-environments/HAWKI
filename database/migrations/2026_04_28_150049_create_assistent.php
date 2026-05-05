@@ -12,6 +12,18 @@ return new class extends Migration
     public function up(): void
     {
 
+        Schema::create('categories', function (Blueprint $table) {
+            $table->id();
+            $table->string('text')->unique();
+            $table->timestamps();
+        });
+
+        Schema::create('languages', function (Blueprint $table) {
+            $table->id();
+            $table->string('text')->unique();
+            $table->timestamps();
+        });
+
         Schema::create('assistants', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
@@ -27,8 +39,11 @@ return new class extends Migration
 
             $table->boolean('allow_remix');
 
-            $table->string('language');
-            $table->string('category');
+            $table->foreignId('language_id')
+                ->constrained('languages');
+
+            $table->foreignId('category_id')
+                ->constrained('categories');
 
             $table->string('review_stage');
 
@@ -109,6 +124,7 @@ return new class extends Migration
 
             $table->unique(['assistant_id', 'tag_id']);
         });
+
     }
 
     /**
@@ -122,5 +138,7 @@ return new class extends Migration
         Schema::dropIfExists('user_prompts');
         Schema::dropIfExists('assistants');
         Schema::dropIfExists('tags');
+        Schema::dropIfExists('categories');
+        Schema::dropIfExists('languages');
     }
 };
