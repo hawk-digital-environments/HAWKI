@@ -34,10 +34,13 @@ class LanguageTest extends TestCase
             $response->assertJson([
                 'data' => [
                     $i => [
-                        'id' => $language->id,
-                        'text' => $language->text,
-                        'created_at' => $language->created_at->toJson(),
-                        'updated_at' => $language->updated_at->toJson(),
+                        'id' => (string) $language->id,
+                        'type' => 'languages',
+                        'attributes' => [
+                            'text' => $language->text,
+                            'created_at' => $language->created_at->toJson(),
+                            'updated_at' => $language->updated_at->toJson(),
+                        ],
                     ],
                 ],
             ]);
@@ -68,10 +71,27 @@ class LanguageTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJson([
                 'data' => [
-                    ['text' => 'de'],
-                    ['text' => 'en'],
-                    ['text' => 'es'],
+                    ['attributes' => ['text' => 'de']],
+                    ['attributes' => ['text' => 'en']],
+                    ['attributes' => ['text' => 'es']],
                 ],
             ]);
+    }
+
+    public function test_languages_pagination(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        Language::factory()->count(20)->create();
+
+        $response = $this->getJson('/api/languages?per_page=5')
+            ->assertOk()
+            ->assertJsonCount(5, 'data');
+
+        $response->assertJsonStructure([
+            'meta' => ['current_page', 'total', 'per_page', 'last_page'],
+            'links' => ['first', 'last', 'prev', 'next'],
+        ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Models\Assistants;
 
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Attachment;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Table('assistants')]
 class Assistant extends Model
@@ -28,7 +30,7 @@ class Assistant extends Model
         'allow_model_select',
         'language_id',
         'category_id',
-        'review_stage',
+        'release_stage',
         'formality',
         'model',
         'model_length',
@@ -36,6 +38,8 @@ class Assistant extends Model
         'model_top_p',
         'creator_id',
         'remixed_creator_id',
+        'remixed_assistant_id',
+        'organization_id',
     ];
 
     public function category(): BelongsTo
@@ -43,12 +47,17 @@ class Assistant extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);
     }
 
-    public function userPrompts(): HasMany
+    public function user_prompts(): HasMany
     {
         return $this->hasMany(UserPrompt::class);
     }
@@ -73,7 +82,7 @@ class Assistant extends Model
         return $this->belongsTo(User::class, 'remixed_creator_id');
     }
 
-    public function originalAssistent(): BelongsTo
+    public function remixed_assistant(): BelongsTo
     {
         return $this->belongsTo(Assistant::class, 'remixed_assistant_id');
     }
@@ -82,12 +91,19 @@ class Assistant extends Model
     {
         return $this->hasMany(Assistant::class, 'remixed_assistant_id');
     }
-    public function aiTools(): BelongsToMany
+
+    public function ai_tools(): BelongsToMany
     {
         return $this->belongsToMany(AiTool::class, 'assistant_tools');
     }
+
     public function attachments()
     {
         return $this->morphMany(Attachment::class, 'attachable');
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
     }
 }

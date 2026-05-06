@@ -10,13 +10,15 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class CategoryController extends Controller
 {
+    use ApiTrait;
+
     public function __construct(
         private readonly CategoryService $categoryService,
     ) {}
 
     public function index(): AnonymousResourceCollection
     {
-        $categories = $this->categoryService->list();
+        $categories = $this->categoryService->list($this->pageSize());
 
         return CategoryResource::collection($categories);
     }

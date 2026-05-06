@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementUser;
+use App\Models\Organization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -30,6 +31,13 @@ class User extends Authenticatable
     public function members()
     {
         return $this->hasMany(Member::class)->where('isRemoved', false);
+    }
+
+    public function organizations()
+    {
+        return $this->belongsToMany(Organization::class, 'organization_user')
+            ->withPivot('role')
+            ->withTimestamps();
     }
 
     public function rooms()

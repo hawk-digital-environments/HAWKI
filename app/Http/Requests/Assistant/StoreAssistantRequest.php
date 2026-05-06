@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Assistant;
 
+use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreAssistantRequest extends FormRequest
 {
@@ -31,7 +33,7 @@ class StoreAssistantRequest extends FormRequest
             'allow_remix' => 'required|boolean',
             'allow_model_select' => 'required|boolean',
             'language' => 'required|string',
-            'review_stage' => 'required|string',
+            'release_stage' => ['required', Rule::enum(ReleaseStage::class)],
             'formality' => 'required|string',
             'category' => 'required|string',
             'model' => 'required|string',

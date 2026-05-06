@@ -4,7 +4,7 @@ namespace App\Listeners;
 
 use App\Events\AssistantUpdated;
 
-class CreateUpdatedVersion
+class AssistantUpdatedVersion
 {
     public function handle(AssistantUpdated $event): void
     {
@@ -13,6 +13,7 @@ class CreateUpdatedVersion
         $event->assistant->versions()->create([
             'text' => $event->versionText ?? 'Updated',
             'version' => $lastVersion + 1.0,
+            'changed_keys' => $event->changedKeys,
         ]);
     }
 }

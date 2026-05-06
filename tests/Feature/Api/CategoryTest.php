@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Api;
 
-use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Category;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,10 +34,13 @@ class CategoryTest extends TestCase
             $response->assertJson([
                 'data' => [
                     $i => [
-                        'id' => $category->id,
-                        'text' => $category->text,
-                        'created_at' => $category->created_at->toJson(),
-                        'updated_at' => $category->updated_at->toJson(),
+                        'id' => (string) $category->id,
+                        'type' => 'categories',
+                        'attributes' => [
+                            'text' => $category->text,
+                            'created_at' => $category->created_at->toJson(),
+                            'updated_at' => $category->updated_at->toJson(),
+                        ],
                     ],
                 ],
             ]);
@@ -69,10 +71,27 @@ class CategoryTest extends TestCase
             ->assertJsonCount(3, 'data')
             ->assertJson([
                 'data' => [
-                    ['text' => 'art'],
-                    ['text' => 'education'],
-                    ['text' => 'programming'],
+                    ['attributes' => ['text' => 'art']],
+                    ['attributes' => ['text' => 'education']],
+                    ['attributes' => ['text' => 'programming']],
                 ],
             ]);
+    }
+
+    public function test_categories_pagination(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+
+        Category::factory()->count(20)->create();
+
+        $response = $this->getJson('/api/categories?per_page=5')
+            ->assertOk()
+            ->assertJsonCount(5, 'data');
+
+        $response->assertJsonStructure([
+            'meta' => ['current_page', 'total', 'per_page', 'last_page'],
+            'links' => ['first', 'last', 'prev', 'next'],
+        ]);
     }
 }
