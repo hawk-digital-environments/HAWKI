@@ -127,6 +127,8 @@ return [
     |
     */
 
+    'api_page_size' => (int) env('APP_API_PAGE_SIZE', 15),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),

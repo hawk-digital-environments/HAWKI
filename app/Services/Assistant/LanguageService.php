@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Assistant;
 
 use App\Services\Assistant\Repositories\LanguageRepository;
-use Illuminate\Container\Attributes\Singleton;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 #[Singleton]
 readonly class LanguageService
@@ -15,8 +14,8 @@ readonly class LanguageService
         private LanguageRepository $repository,
     ) {}
 
-    public function list(): Collection
+    public function list(int $perPage = 15): LengthAwarePaginator
     {
-        return $this->repository->all();
+        return $this->repository->all($perPage);
     }
 }

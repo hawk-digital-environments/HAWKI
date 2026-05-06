@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Assistant;
 
+use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateAssistantRequest extends FormRequest
 {
@@ -33,7 +35,7 @@ class UpdateAssistantRequest extends FormRequest
             'allow_model_select' => 'sometimes|boolean',
             'language' => 'sometimes|string',
             'category' => 'sometimes|string',
-            'review_stage' => 'sometimes|string',
+            'release_stage' => ['sometimes', Rule::enum(ReleaseStage::class)],
             'formality' => 'sometimes|string',
             'model' => 'sometimes|string',
             'model_length' => 'sometimes|integer|min:1',

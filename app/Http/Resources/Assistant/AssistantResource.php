@@ -4,41 +4,47 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Assistant;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\AiTool\AiToolResource;
+use App\Http\Resources\Category\CategoryResource;
+use App\Http\Resources\Language\LanguageResource;
+use App\Http\Resources\Organization\OrganizationResource;
+use App\Http\Resources\Tag\TagResource;
+use App\Http\Resources\User\UserResource;
+use App\Http\Resources\UserPrompt\UserPromptResource;
+use App\Http\Resources\Version\VersionResource;
+use Illuminate\Http\Resources\JsonApi\JsonApiResource;
 
-class AssistantResource extends JsonResource
+class AssistantResource extends JsonApiResource
 {
-    public function toArray(Request $request): array
-    {
-        return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'handle' => $this->handle,
-            'system_prompt' => $this->system_prompt,
-            'greeting' => $this->greeting,
-            'description' => $this->description,
-            'detail_description' => $this->detail_description,
-            'allow_remix' => $this->allow_remix,
-            'allow_model_select' => $this->allow_model_select,
-            'language' => $this->language?->text,
-            'category' => $this->category?->text,
-            'review_stage' => $this->review_stage,
-            'formality' => $this->formality,
-            'model' => $this->model,
-            'model_length' => $this->model_length,
-            'model_temp' => $this->model_temp,
-            'model_top_p' => $this->model_top_p,
-            'creator_id' => $this->creator_id,
-            'remixed_creator_id' => $this->remixed_creator_id,
-            'remixed_assistant_id' => $this->remixed_assistant_id,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
-            'user_prompts' => $this->whenLoaded('userPrompts'),
-            'ai_tools' => $this->whenLoaded('aiTools'),
-            'tags' => $this->whenLoaded('tags'),
-            'creator' => $this->whenLoaded('creator'),
-            'versions' => $this->whenLoaded('versions'),
-        ];
-    }
+    public $attributes = [
+        'name',
+        'handle',
+        'system_prompt',
+        'greeting',
+        'description',
+        'detail_description',
+        'allow_remix',
+        'allow_model_select',
+        'release_stage',
+        'formality',
+        'model',
+        'model_length',
+        'model_temp',
+        'model_top_p',
+        'created_at',
+        'updated_at',
+    ];
+
+    public $relationships = [
+        'language' => LanguageResource::class,
+        'category' => CategoryResource::class,
+        'user_prompts' => UserPromptResource::class,
+        'ai_tools' => AiToolResource::class,
+        'tags' => TagResource::class,
+        'creator' => UserResource::class,
+        'remix_creator' => UserResource::class,
+        'remixed_assistant' => AssistantResource::class,
+        'versions' => VersionResource::class,
+        'organization' => OrganizationResource::class,
+    ];
 }

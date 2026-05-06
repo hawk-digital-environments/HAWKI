@@ -45,7 +45,7 @@ return new class extends Migration
             $table->foreignId('category_id')
                 ->constrained('categories');
 
-            $table->string('review_stage');
+            $table->string('release_stage');
 
             $table->string('formality');
 
@@ -79,6 +79,7 @@ return new class extends Migration
                 ->cascadeOnDelete();
             $table->text('text');
             $table->decimal('version', 8, 1)->default(1.0);
+            $table->json('changed_keys')->nullable();
             $table->timestamps();
         });
 
@@ -125,6 +126,17 @@ return new class extends Migration
             $table->unique(['assistant_id', 'tag_id']);
         });
 
+        Schema::create('reviews', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('assistant_id')
+                ->unique()
+                ->constrained('assistants')
+                ->cascadeOnDelete();
+            $table->string('status')->default('pending');
+            $table->text('reason')->nullable();
+            $table->timestamps();
+        });
+
     }
 
     /**
@@ -140,5 +152,6 @@ return new class extends Migration
         Schema::dropIfExists('tags');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('languages');
+        Schema::dropIfExists('reviews');
     }
 };

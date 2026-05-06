@@ -4,53 +4,34 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Assistant\ReleaseAssistantRequest;
 use App\Http\Requests\Assistant\StoreAssistantRequest;
 use App\Http\Requests\Assistant\UpdateAssistantRequest;
 use App\Http\Resources\Assistant\AssistantResource;
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\AssistantService;
+use App\Services\Assistant\Values\ReleaseStage;
+use Illuminate\Config\Repository;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
 class AssistantController extends Controller
 {
+    use ApiTrait;
+
     public function __construct(
         private readonly AssistantService $assistantService,
+        private readonly Repository $config,
     ) {
         $this->authorizeResource(Assistant::class, 'assistant');
     }
 
-    /**
-     * Returns optional model relations from request query.
-     * The model relations are defined in the model and migration files.
-     * The map uses the default json representation created by laravel for the model for the model fields.
-     */
-    private function getOptionalModelRelations(): array
-    {
-        $with = request()->query('with', '');
-
-        $jsonToModelRelationMap = [
-            'user_prompts' => 'userPrompts',
-            'ai_tools' => 'aiTools',
-            'tags' => 'tags',
-            'creator' => 'creator',
-            'remix_creator' => 'remix_creator',
-            'original_assistent' => 'originalAssistent',
-            'copies' => 'copies',
-            'versions' => 'versions',
-            'attachments' => 'attachments'
-        ];
-
-        $requested = explode(',', $with);
-
-        return array_values(array_intersect_key($jsonToModelRelationMap, array_flip($requested)));
-    }
-
     public function index(): AnonymousResourceCollection
     {
-        $relations = $this->getOptionalModelRelations();
-        $filters = request()->only(['category']);
-        $assistants = $this->assistantService->list($relations, $filters);
+        $assistants = $this->assistantService->list(
+            request()->user(),
+            $this->pageSize(),
+        );
 
         return AssistantResource::collection($assistants);
     }
@@ -59,17 +40,15 @@ class AssistantController extends Controller
     {
         $assistant = $this->assistantService->create(
             $request->validated(),
-            $request->user()->id,
+            $request->user(),
         );
 
-        return new AssistantResource($assistant);
+        return (new AssistantResource($assistant))
+            ->includePreviouslyLoadedRelationships();
     }
 
     public function show(Assistant $assistant): AssistantResource
     {
-        $relations = $this->getOptionalModelRelations();
-        $assistant = $this->assistantService->find($assistant, $relations);
-
         return new AssistantResource($assistant);
     }
 
@@ -80,25 +59,38 @@ class AssistantController extends Controller
             $request->validated(),
         );
 
-        return new AssistantResource($assistant);
+        return (new AssistantResource($assistant))
+            ->includePreviouslyLoadedRelationships();
     }
 
     public function destroy(Assistant $assistant): Response
     {
-        $assistant -> delete();
+        $assistant->delete();
         return response()->noContent();
     }
 
     public function remix(Assistant $assistant): AssistantResource
-    {   
-        // TODO: HKI-73: Use remix rules
+    {
         $this->authorize('remix', $assistant);
 
         $remixed = $this->assistantService->remix(
             $assistant,
-            request()->user()->id,
+            request()->user(),
         );
 
-        return new AssistantResource($remixed);
+        return (new AssistantResource($remixed))
+            ->includePreviouslyLoadedRelationships();
+    }
+
+    public function release(ReleaseAssistantRequest $request, Assistant $assistant): AssistantResource
+    {
+        $this->authorize('release', $assistant);
+
+        $assistant = $this->assistantService->release(
+            $assistant,
+            ReleaseStage::from($request->validated()['release_stage']),
+        );
+
+        return new AssistantResource($assistant);
     }
 }

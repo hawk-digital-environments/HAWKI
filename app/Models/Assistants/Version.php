@@ -13,10 +13,12 @@ class Version extends Model
         'assistant_id',
         'text',
         'version',
+        'changed_keys',
     ];
 
     protected $casts = [
         'version' => 'decimal:1',
+        'changed_keys' => 'array',
     ];
 
     public function assistant(): BelongsTo

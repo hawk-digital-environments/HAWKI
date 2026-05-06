@@ -9,5 +9,6 @@ class AssistantUpdated
     public function __construct(
         public readonly Assistant $assistant,
         public readonly ?string $versionText = null,
+        public readonly array $changedKeys = [],
     ) {}
 }

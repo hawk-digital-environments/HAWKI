@@ -5,19 +5,31 @@ declare(strict_types=1);
 namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Assistant;
-use Illuminate\Support\Collection;
+use App\Models\User;
+use App\Services\Assistant\Values\ReleaseStage;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 readonly class AssistantRepository
 {
-    public function all(array $filters = []): Collection
+    public function all(?User $user = null, int $perPage = 15): LengthAwarePaginator
     {
-        $query = Assistant::query();
+        return QueryBuilder::for(Assistant::class)
+            ->allowedFilters(
+                AllowedFilter::exact('category', 'category.text'),
+            )
+            ->when($user !== null, fn ($q) => $q->where(
+                fn ($q) => $q
+                    ->where('release_stage', '!=', 'private')
+                    ->orWhere('creator_id', $user->id)
+            ))
+            ->paginate($perPage);
+    }
 
-        if (isset($filters['category'])) {
-            $query->whereHas('category', fn ($q) => $q->where('text', $filters['category']));
-        }
-
-        return $query->get();
+    public function isVisibleTo(Assistant $assistant, User $user): bool
+    {
+        return $assistant->release_stage !== 'private' || $assistant->creator_id === $user->id;
     }
 
     public function create(array $data): Assistant
@@ -25,9 +37,13 @@ readonly class AssistantRepository
         return Assistant::create($data);
     }
 
-    public function update(Assistant $assistant, array $data): bool
+    public function update(Assistant $assistant, array $data): array
     {
-        return $assistant->update($data);
+        $assistant->fill($data);
+
+        $assistant->save();
+
+        return $assistant->getChanges();
     }
 
     public function delete(Assistant $assistant): void
@@ -35,31 +51,66 @@ readonly class AssistantRepository
         $assistant->delete();
     }
 
-    public function clone(Assistant $source, int $creatorId): Assistant
+    public function clone(Assistant $source, int $creatorId, ?int $organizationId = null): Assistant
     {
-        $replica = $source->replicate();
-        $replica->handle = null;
-        $replica->creator_id = $creatorId;
-        $replica->remixed_assistant_id = $source->id;
-        $replica->push();
-
-        return $replica;
+        return Assistant::create([
+            'name' => $source->name,
+            'description' => $source->description,
+            'system_prompt' => $source->system_prompt,
+            'greeting' => $source->greeting,
+            'allow_remix' => $source->allow_remix,
+            'allow_model_select' => $source->allow_model_select,
+            'model_length' => $source->model_length,
+            'model_temp' => $source->model_temp,
+            'model_top_p' => $source->model_top_p,
+            'model' => $source->model,
+            'formality' => $source->formality,
+            'detail_description' => $source->detail_description,
+            'language_id' => $source->language_id,
+            'category_id' => $source->category_id,
+            'creator_id' => $creatorId,
+            'remixed_creator_id' => $source->creator_id,
+            'remixed_assistant_id' => $source->id,
+            'release_stage' => 'private',
+            'organization_id' => $organizationId,
+        ]);
     }
 
-    public function syncTools(Assistant $assistant, array $toolIds): void
+    public function syncTools(Assistant $assistant, array $toolIds): array
     {
-        $assistant->aiTools()->sync($toolIds);
+        return $assistant->ai_tools()->sync($toolIds);
     }
 
-    public function syncTags(Assistant $assistant, array $tagIds): void
+    public function syncTags(Assistant $assistant, array $tagIds): array
     {
-        $assistant->tags()->sync($tagIds);
+        return $assistant->tags()->sync($tagIds);
     }
 
-    public function replaceUserPrompts(Assistant $assistant, array $prompts): void
+    public function replaceUserPrompts(Assistant $assistant, array $prompts): bool
     {
-        $assistant->userPrompts()->delete();
-        $assistant->userPrompts()->createMany($prompts);
+        $existing = $assistant->user_prompts->pluck('text')->toArray();
+        $new = collect($prompts)->pluck('text')->toArray();
+
+        if ($existing === $new) {
+            return false;
+        }
+
+        $assistant->user_prompts()->delete();
+        $assistant->user_prompts()->createMany($prompts);
+
+        return true;
+    }
+
+    public function setReleaseStage(Assistant $assistant, ReleaseStage $stage): bool
+    {
+        if ($assistant->release_stage === $stage->value) {
+            return false;
+        }
+
+        $assistant->release_stage = $stage->value;
+        $assistant->save();
+
+        return true;
     }
 
     public function loadRelations(Assistant $assistant, array $relations): Assistant

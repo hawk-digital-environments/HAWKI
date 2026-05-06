@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Language;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 readonly class LanguageRepository
 {
-    public function all(): Collection
+    public function all(int $perPage = 15): LengthAwarePaginator
     {
-        return Language::orderBy('text')->get();
+        return Language::orderBy('text')->paginate($perPage);
     }
 
     public function findOrCreateByText(string $text): Language

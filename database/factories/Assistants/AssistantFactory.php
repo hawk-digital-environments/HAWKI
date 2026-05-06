@@ -6,6 +6,7 @@ use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Category;
 use App\Models\Assistants\Language;
 use App\Models\Assistants\Version;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -26,7 +27,7 @@ class AssistantFactory extends Factory
             'allow_model_select' => fake()->boolean(),
             'language_id' => Language::factory(),
             'category_id' => Category::factory(),
-            'review_stage' => 'draft',
+            'release_stage' => 'private',
             'formality' => 'neutral',
             'model' => 'gpt-4',
             'model_length' => fake()->numberBetween(100, 4096),
@@ -34,6 +35,7 @@ class AssistantFactory extends Factory
             'model_top_p' => fake()->randomFloat(2, 0, 1),
             'creator_id' => User::factory(),
             'remixed_creator_id' => User::factory(),
+            'organization_id' => fn () => Organization::first()?->id,
         ];
     }
 
