@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Language;
+use App\Utils\JsonApiPagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 readonly class LanguageRepository
 {
     public function all(int $perPage = 15): LengthAwarePaginator
     {
-        return Language::orderBy('text')->paginate($perPage);
+        return Language::orderBy('text')->paginate($perPage, ['*'], JsonApiPagination::pageName(), JsonApiPagination::pageNumber());
     }
 
     public function findOrCreateByText(string $text): Language

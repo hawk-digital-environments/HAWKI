@@ -20,6 +20,8 @@ class AssistantLanguageController extends Controller
     {
         $languages = $this->languageService->list($this->pageSize());
 
-        return LanguageResource::collection($languages);
+        return LanguageResource::collection(
+            $this->applyPagination($languages)
+        );
     }
 }

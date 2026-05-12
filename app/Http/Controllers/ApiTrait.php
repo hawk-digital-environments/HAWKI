@@ -4,13 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Utils\JsonApiPagination;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
 trait ApiTrait
 {
     private function pageSize(): int
     {
-        return (int) request()->input(
-            'per_page',
-            config('app.api_page_size')
-        );
+        return JsonApiPagination::pageSize();
+    }
+
+    private function applyPagination(LengthAwarePaginator $paginator): LengthAwarePaginator
+    {
+        $queryParams = request()->except('page');
+        $queryParams['page']['size'] = $this->pageSize();
+
+        return $paginator->appends($queryParams);
     }
 }

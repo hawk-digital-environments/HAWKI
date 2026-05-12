@@ -85,7 +85,7 @@ class CategoryTest extends TestCase
 
         Category::factory()->count(20)->create();
 
-        $response = $this->getJson('/api/categories?per_page=5')
+        $response = $this->getJson('/api/categories?' . http_build_query(['page' => ['size' => 5]]))
             ->assertOk()
             ->assertJsonCount(5, 'data');
 

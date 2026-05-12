@@ -7,6 +7,7 @@ namespace App\Services\Assistant\Repositories;
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Assistant\Values\ReleaseStage;
+use App\Utils\JsonApiPagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -24,7 +25,7 @@ readonly class AssistantRepository
                     ->where('release_stage', '!=', 'private')
                     ->orWhere('creator_id', $user->id)
             ))
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], JsonApiPagination::pageName(), JsonApiPagination::pageNumber());
     }
 
     public function isVisibleTo(Assistant $assistant, User $user): bool

@@ -85,7 +85,7 @@ class LanguageTest extends TestCase
 
         Language::factory()->count(20)->create();
 
-        $response = $this->getJson('/api/languages?per_page=5')
+        $response = $this->getJson('/api/languages?' . http_build_query(['page' => ['size' => 5]]))
             ->assertOk()
             ->assertJsonCount(5, 'data');
 

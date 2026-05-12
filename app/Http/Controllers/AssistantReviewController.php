@@ -24,7 +24,9 @@ class AssistantReviewController extends Controller
     {
         $reviews = $this->reviewService->list($this->pageSize());
 
-        return AssistantReviewResource::collection($reviews);
+        return AssistantReviewResource::collection(
+            $this->applyPagination($reviews)
+        );
     }
 
     public function update(UpdateReviewRequest $request, Review $review): AssistantReviewResource

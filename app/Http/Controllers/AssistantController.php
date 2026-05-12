@@ -31,7 +31,9 @@ class AssistantController extends Controller
             $this->pageSize(),
         );
 
-        return AssistantResource::collection($assistants);
+        return AssistantResource::collection(
+            $this->applyPagination($assistants)
+        );
     }
 
     public function store(StoreAssistantRequest $request): AssistantResource

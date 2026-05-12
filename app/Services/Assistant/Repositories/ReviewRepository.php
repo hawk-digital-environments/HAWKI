@@ -6,13 +6,14 @@ namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Review;
 use App\Services\Assistant\Values\ReviewStatus;
+use App\Utils\JsonApiPagination;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 readonly class ReviewRepository
 {
     public function all(int $perPage = 15): LengthAwarePaginator
     {
-        return Review::query()->paginate($perPage);
+        return Review::query()->paginate($perPage, ['*'], JsonApiPagination::pageName(), JsonApiPagination::pageNumber());
     }
 
     public function find(Review $review): Review

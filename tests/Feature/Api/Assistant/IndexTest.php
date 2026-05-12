@@ -260,6 +260,70 @@ class IndexTest extends TestCase
             ->assertJsonCount(1, 'data');
     }
 
+    public function test_pagination_links_preserve_query_params(): void
+    {
+        $user = User::factory()->create();
+        $general = Category::factory()->create(['text' => 'general']);
+        Category::factory()->create(['text' => 'education']);
+        Assistant::factory()->count(20)->create([
+            'creator_id' => $user->id,
+            'category_id' => $general->id,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $query = http_build_query([
+            'include' => 'tags,category',
+            'fields' => ['tags' => 'text'],
+            'filter' => ['category' => 'general'],
+            'page' => ['size' => 5],
+        ]);
+
+        $response = $this->getJson("/api/assistants?{$query}")
+            ->assertOk()
+            ->assertJsonStructure([
+                'links' => ['first', 'last', 'prev', 'next'],
+            ]);
+
+        $links = $response->json('links');
+
+        $this->assertStringContainsString('include=tags%2Ccategory', $links['first']);
+        $this->assertStringContainsString('fields%5Btags%5D=text', $links['first']);
+        $this->assertStringContainsString('filter%5Bcategory%5D=general', $links['first']);
+        $this->assertStringContainsString('page%5Bsize%5D=5', $links['first']);
+        $this->assertStringContainsString('page%5Bnumber%5D=1', $links['first']);
+        $this->assertStringContainsString('page%5Bnumber%5D=2', $links['next']);
+    }
+
+    public function test_pagination_advances_pages_correctly(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->count(2)->create([
+            'creator_id' => $user->id,
+            'release_stage' => 'federated',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $page1Query = http_build_query(['page' => ['size' => 1]]);
+
+        $page1 = $this->getJson("/api/assistants?{$page1Query}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->assertStringContainsString('page%5Bnumber%5D=2', $page1->json('links.next'));
+        $this->assertNull($page1->json('links.prev'));
+
+        $page2Query = http_build_query(['page' => ['size' => 1, 'number' => 2]]);
+
+        $page2 = $this->getJson("/api/assistants?{$page2Query}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $this->assertStringContainsString('page%5Bnumber%5D=1', $page2->json('links.prev'));
+        $this->assertNull($page2->json('links.next'));
+    }
+
     public function test_user_can_see_federated_assistant_in_list(): void
     {
         $owner = User::factory()->create();

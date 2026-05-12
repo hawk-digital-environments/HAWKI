@@ -20,6 +20,8 @@ class CategoryController extends Controller
     {
         $categories = $this->categoryService->list($this->pageSize());
 
-        return CategoryResource::collection($categories);
+        return CategoryResource::collection(
+            $this->applyPagination($categories)
+        );
     }
 }
