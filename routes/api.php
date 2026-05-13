@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\AssistantController;
-use App\Http\Controllers\LanguageController;
+use App\Http\Controllers\AssistantLanguageController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\Route;
@@ -52,7 +52,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $relationships->hasMany('assistants')->readOnly();
                 });
 
-            $server->resource('languages', LanguageController::class)
+            $server->resource('languages', AssistantLanguageController::class)
                 ->only('index', 'show')
                 ->relationships(function ($relationships) {
                     $relationships->hasMany('assistants')->readOnly();
