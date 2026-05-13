@@ -17,6 +17,7 @@
         "blade-ui-kit/blade-icons": "^1.8.0",
         "hawk-hhg/hawki-crypto": "^0.5.3",
         "jumbojett/openid-connect-php": "^1.0.2",
+        "laravel-json-api/laravel": "^5.2",
         "laravel/framework": "^13.0",
         "laravel/reverb": "^1.6.0",
         "laravel/sanctum": "^4.2.0",
@@ -25,16 +26,16 @@
         "league/flysystem-sftp-v3": "^3.30.0",
         "league/flysystem-webdav": "^3.30.0",
         "neunerlei/dbg": "^3.3",
-        "spatie/laravel-backup": "^10.0",
-        "spatie/laravel-query-builder": "^7.3"
+        "phpunit/phpunit": "^13",
+        "spatie/laravel-backup": "^10.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
+        "laravel-json-api/testing": "^3.2",
         "laravel/pint": "^1.25.1",
         "laravel/sail": "^1.46.0",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8.2",
-        "phpunit/phpunit": "^12.0",
         "spatie/laravel-ignition": "^2.9.1"
     },
     "autoload": {

@@ -4,19 +4,52 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Assistant\ReleaseAssistantRequest;
-use App\Http\Requests\Assistant\StoreAssistantRequest;
-use App\Http\Requests\Assistant\UpdateAssistantRequest;
-use App\Http\Resources\Assistant\AssistantResource;
+use App\Http\Controllers\Controller;
+use App\JsonApi\V1\Assistants\AssistantQuery;
+use App\JsonApi\V1\Assistants\AssistantRequest;
+use App\JsonApi\V1\Assistants\AssistantSchema;
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\AssistantService;
+use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\Services\Assistant\Values\ReleaseStage;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Response;
+use LaravelJsonApi\Core\Responses\DataResponse;
+use LaravelJsonApi\Laravel\Http\Controllers\Actions;
 
 class AssistantController extends Controller
 {
-    use ApiTrait;
+    use Actions\FetchMany;
+    use Actions\FetchOne;
+
+    private const RELATIONS = ['language', 'category', 'tags', 'ai_tools', 'user_prompts'];
+
+    private function extractServiceDataForUpdateOrCreate(AssistantRequest $request): array
+    {
+        $validated = $request->validated();
+
+        $data = collect($validated)
+            ->except(['type', 'id', ...self::RELATIONS])
+            ->all();
+
+        if (isset($validated['language'])) {
+            $data['language_id'] = (int) $validated['language']['id'];
+        }
+        if (isset($validated['category'])) {
+            $data['category_id'] = (int) $validated['category']['id'];
+        }
+        if (isset($validated['tags'])) {
+            $data['tag_ids'] = collect($validated['tags'])->map(fn ($item) => (int) $item['id'])->all();
+        }
+        if (isset($validated['ai_tools'])) {
+            $data['ai_tool_ids'] = collect($validated['ai_tools'])->map(fn ($item) => (int) $item['id'])->all();
+        }
+        if (isset($validated['user_prompts'])) {
+            $data['user_prompt_ids'] = collect($validated['user_prompts'])->map(fn ($item) => (int) $item['id'])->all();
+        }
+
+        return $data;
+    }
 
     public function __construct(
         private readonly AssistantService $assistantService,
@@ -24,73 +57,60 @@ class AssistantController extends Controller
         $this->authorizeResource(Assistant::class, 'assistant');
     }
 
-    public function index(): AnonymousResourceCollection
+    public function store(AssistantRequest $request, AssistantSchema $schema, AssistantQuery $query): Responsable
     {
-        $assistants = $this->assistantService->list(
-            request()->user(),
-            $this->pageSize(),
-        );
+        $this->authorize('create', Assistant::class);
 
-        return AssistantResource::collection(
-            $this->applyPagination($assistants)
-        );
+        $data = $this->extractServiceDataForUpdateOrCreate($request);
+
+        $assistant = $this->assistantService->create($data, $request->user());
+
+        return DataResponse::make($assistant)
+            ->withQueryParameters($query)
+            ->didCreate();
     }
 
-    public function store(StoreAssistantRequest $request): AssistantResource
+    public function update(AssistantRequest $request, AssistantSchema $schema, AssistantQuery $query, Assistant $assistant): Responsable
     {
-        $assistant = $this->assistantService->create(
-            $request->validated(),
-            $request->user(),
-        );
+        $this->authorize('update', $assistant);
 
-        return (new AssistantResource($assistant))
-            ->includePreviouslyLoadedRelationships();
-    }
+        $data = $this->extractServiceDataForUpdateOrCreate($request);
 
-    public function show(Assistant $assistant): AssistantResource
-    {
-        return new AssistantResource($assistant);
-    }
+        $assistant = $this->assistantService->update($assistant, $data);
 
-    public function update(UpdateAssistantRequest $request, Assistant $assistant): AssistantResource
-    {
-        $assistant = $this->assistantService->update(
-            $assistant,
-            $request->validated(),
-        );
-
-        return (new AssistantResource($assistant))
-            ->includePreviouslyLoadedRelationships();
+        return DataResponse::make($assistant)
+            ->withQueryParameters($query);
     }
 
     public function destroy(Assistant $assistant): Response
     {
+        $this->authorize('delete', $assistant);
+
         $assistant->delete();
+
         return response()->noContent();
     }
 
-    public function remix(Assistant $assistant): AssistantResource
+    public function remix(AssistantSchema $schema, AssistantQuery $query, Assistant $assistant): Responsable
     {
         $this->authorize('remix', $assistant);
 
-        $remixed = $this->assistantService->remix(
-            $assistant,
-            request()->user(),
-        );
+        $remixed = $this->assistantService->remix($assistant, request()->user());
 
-        return (new AssistantResource($remixed))
-            ->includePreviouslyLoadedRelationships();
+        return DataResponse::make($remixed)
+            ->withQueryParameters($query)
+            ->didCreate();
     }
 
-    public function release(ReleaseAssistantRequest $request, Assistant $assistant): AssistantResource
+    public function release(ReleaseAssistantRequest $request, AssistantSchema $schema, AssistantQuery $query, Assistant $assistant): Responsable
     {
         $this->authorize('release', $assistant);
 
-        $assistant = $this->assistantService->release(
-            $assistant,
-            ReleaseStage::from($request->validated()['release_stage']),
-        );
+        $releaseStage = ReleaseStage::from($request->input('data.attributes.release_stage'));
 
-        return new AssistantResource($assistant);
+        $assistant = $this->assistantService->release($assistant, $releaseStage);
+
+        return DataResponse::make($assistant)
+            ->withQueryParameters($query);
     }
 }

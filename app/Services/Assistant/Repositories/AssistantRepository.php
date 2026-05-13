@@ -7,25 +7,22 @@ namespace App\Services\Assistant\Repositories;
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Assistant\Values\ReleaseStage;
-use App\Utils\JsonApiPagination;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
+use Illuminate\Database\Eloquent\Builder;
 
 readonly class AssistantRepository
 {
-    public function all(?User $user = null, int $perPage = 15): LengthAwarePaginator
+
+    /**
+     * Scope the query to only show assistants visible to the given user.
+     * Non-private assistants are visible to everyone;
+     * private assistants are only visible to their creator.
+     */
+    public function scopeVisible(Builder $query, User $user): Builder
     {
-        return QueryBuilder::for(Assistant::class)
-            ->allowedFilters(
-                AllowedFilter::exact('category', 'category.text'),
-            )
-            ->when($user !== null, fn ($q) => $q->where(
-                fn ($q) => $q
-                    ->where('release_stage', '!=', 'private')
-                    ->orWhere('creator_id', $user->id)
-            ))
-            ->paginate($perPage, ['*'], JsonApiPagination::pageName(), JsonApiPagination::pageNumber());
+        return $query->where(function ($q) use ($user) {
+            $q->where('release_stage', '!=', 'private')
+                ->orWhere('creator_id', $user->id);
+        });
     }
 
     public function isVisibleTo(Assistant $assistant, User $user): bool
@@ -87,17 +84,17 @@ readonly class AssistantRepository
         return $assistant->tags()->sync($tagIds);
     }
 
-    public function replaceUserPrompts(Assistant $assistant, array $prompts): bool
+    public function replaceUserPrompts(Assistant $assistant, array $promptIds): bool
     {
-        $existing = $assistant->user_prompts->pluck('text')->toArray();
-        $new = collect($prompts)->pluck('text')->toArray();
+        $existingIds = $assistant->user_prompts->pluck('id')->toArray();
 
-        if ($existing === $new) {
+        if ($existingIds === $promptIds) {
             return false;
         }
 
         $assistant->user_prompts()->delete();
-        $assistant->user_prompts()->createMany($prompts);
+        \App\Models\Assistants\UserPrompt::whereIn('id', $promptIds)
+            ->update(['assistant_id' => $assistant->id]);
 
         return true;
     }

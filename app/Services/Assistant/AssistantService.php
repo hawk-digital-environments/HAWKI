@@ -8,18 +8,13 @@ use App\Events\AssistantCreated;
 use App\Events\AssistantUpdated;
 use App\Events\AssistantTriggerReleaseStatus;
 use App\Models\Assistants\Assistant;
-use App\Models\Assistants\Category;
-use App\Models\Assistants\Language;
+use App\Models\Assistants\UserPrompt;
 use App\Models\User;
 use App\Services\Assistant\Repositories\AssistantRepository;
-use App\Services\Assistant\Repositories\CategoryRepository;
-use App\Services\Assistant\Repositories\LanguageRepository;
 use App\Services\Assistant\Repositories\OrganizationRepository;
-use App\Services\Assistant\Repositories\TagRepository;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Database\DatabaseManager;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Event;
 
 /**
@@ -30,17 +25,9 @@ readonly class AssistantService
 {
     public function __construct(
         private AssistantRepository $repository,
-        private TagRepository $tagRepository,
-        private CategoryRepository $categoryRepository,
-        private LanguageRepository $languageRepository,
         private OrganizationRepository $organizationRepository,
         private DatabaseManager $db,
     ) {}
-
-    public function list(?User $user = null, int $perPage = 15): LengthAwarePaginator
-    {
-        return $this->repository->all($user, $perPage);
-    }
 
     public function find(Assistant $assistant): Assistant
     {
@@ -50,25 +37,22 @@ readonly class AssistantService
     public function create(array $data, User $creator): Assistant
     {
         return $this->db->transaction(function () use ($data, $creator) {
-            $category = $this->resolveCategory($data['category'] ?? null);
-            $language = $this->resolveLanguage($data['language'] ?? null);
-
             $assistantData = collect($data)
-                ->except(['user_prompts', 'ai_tools', 'tags', 'category', 'language'])
+                ->except(['user_prompt_ids', 'ai_tool_ids', 'tag_ids', 'category_id', 'language_id'])
                 ->merge([
                     'creator_id' => $creator->id,
                     'remixed_creator_id' => null,
-                    'category_id' => $category?->id,
-                    'language_id' => $language?->id,
+                    'category_id' => $data['category_id'] ?? null,
+                    'language_id' => $data['language_id'] ?? null,
                     'organization_id' => $this->organizationRepository->getForUser($creator)?->id,
                 ])
                 ->toArray();
 
             $assistant = $this->repository->create($assistantData);
 
-            $this->handleUserPrompts($assistant, $data['user_prompts'] ?? null);
-            $this->handleAiTools($assistant, $data['ai_tools'] ?? null);
-            $this->handleTags($assistant, $data['tags'] ?? null);
+            $this->handleUserPrompts($assistant, $data['user_prompt_ids'] ?? null);
+            $this->handleAiTools($assistant, $data['ai_tool_ids'] ?? null);
+            $this->handleTags($assistant, $data['tag_ids'] ?? null);
 
             Event::dispatch(new AssistantCreated($assistant));
 
@@ -82,17 +66,15 @@ readonly class AssistantService
             $versionText = $data['version_text'] ?? null;
 
             $assistantFields = collect($data)
-                ->except(['user_prompts', 'ai_tools', 'tags', 'version_text', 'category', 'language'])
+                ->except(['user_prompt_ids', 'ai_tool_ids', 'tag_ids', 'version_text', 'category_id', 'language_id'])
                 ->toArray();
 
-            if (isset($data['category'])) {
-                $category = $this->resolveCategory($data['category']);
-                $assistantFields['category_id'] = $category?->id;
+            if (isset($data['category_id'])) {
+                $assistantFields['category_id'] = $data['category_id'];
             }
 
-            if (isset($data['language'])) {
-                $language = $this->resolveLanguage($data['language']);
-                $assistantFields['language_id'] = $language?->id;
+            if (isset($data['language_id'])) {
+                $assistantFields['language_id'] = $data['language_id'];
             }
 
             $changedKeys = array_values(array_filter(
@@ -100,15 +82,15 @@ readonly class AssistantService
                 fn (string $key) => $key !== 'updated_at',
             ));
 
-            if ($this->handleUserPrompts($assistant, $data['user_prompts'] ?? null, true)) {
+            if ($this->handleUserPrompts($assistant, $data['user_prompt_ids'] ?? null, true)) {
                 $changedKeys[] = 'user_prompts';
             }
 
-            if ($this->handleAiTools($assistant, $data['ai_tools'] ?? null)) {
+            if ($this->handleAiTools($assistant, $data['ai_tool_ids'] ?? null)) {
                 $changedKeys[] = 'ai_tools';
             }
 
-            if ($this->handleTags($assistant, $data['tags'] ?? null)) {
+            if ($this->handleTags($assistant, $data['tag_ids'] ?? null)) {
                 $changedKeys[] = 'tags';
             }
 
@@ -179,70 +161,40 @@ readonly class AssistantService
         return $assistant;
     }
 
-    private function resolveCategory(?string $categoryText): ?Category
+    private function handleUserPrompts(Assistant $assistant, ?array $promptIds, bool $replace = false): bool
     {
-        if ($categoryText === null) {
-            return null;
-        }
-
-        return $this->categoryRepository->findOrCreateByText($categoryText);
-    }
-
-    private function resolveLanguage(?string $languageText): ?Language
-    {
-        if ($languageText === null) {
-            return null;
-        }
-
-        return $this->languageRepository->findOrCreateByText($languageText);
-    }
-
-    private function handleUserPrompts(Assistant $assistant, ?array $prompts, bool $replace = false): bool
-    {
-        if ($prompts === null) {
+        if ($promptIds === null) {
             return false;
         }
 
         if ($replace) {
-            return $this->repository->replaceUserPrompts($assistant, $prompts);
+            return $this->repository->replaceUserPrompts($assistant, $promptIds);
         }
 
-        $assistant->user_prompts()->createMany($prompts);
+        UserPrompt::whereIn('id', $promptIds)
+            ->update(['assistant_id' => $assistant->id]);
 
         return true;
     }
 
-    private function handleAiTools(Assistant $assistant, ?array $tools): bool
+    private function handleAiTools(Assistant $assistant, ?array $toolIds): bool
     {
-        if ($tools === null) {
+        if ($toolIds === null) {
             return false;
         }
 
-        $toolIds = collect($tools)->pluck('id')->toArray();
         $result = $this->repository->syncTools($assistant, $toolIds);
 
         return $result['attached'] !== [] || $result['detached'] !== [] || $result['updated'] !== [];
     }
 
-    private function handleTags(Assistant $assistant, ?array $tags): bool
+    private function handleTags(Assistant $assistant, ?array $tagIds): bool
     {
-        if ($tags === null) {
+        if ($tagIds === null) {
             return false;
         }
 
-        $existing = $this->tagRepository->findIdsByTexts($tags);
-        $newTexts = collect($tags)->diff(array_keys($existing));
-
-        if ($newTexts->isNotEmpty()) {
-            $this->tagRepository->insertMany($newTexts->map(fn (string $text) => [
-                'text' => $text,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ])->toArray());
-            $existing = $this->tagRepository->findIdsByTexts($tags);
-        }
-
-        $result = $this->repository->syncTags($assistant, array_values($existing));
+        $result = $this->repository->syncTags($assistant, $tagIds);
 
         return $result['attached'] !== [] || $result['detached'] !== [] || $result['updated'] !== [];
     }

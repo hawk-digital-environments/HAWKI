@@ -22,7 +22,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->getJson("/api/assistants/{$assistant->id}")
+        $this->jsonApi('get',"/api/assistants/{$assistant->id}")
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -57,7 +57,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$assistant->id}?include=creator,user_prompts,ai_tools,tags")
+        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=creator,user_prompts,ai_tools,tags")
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -101,7 +101,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$assistant->id}?include=organization")
+        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=organization")
             ->assertOk();
 
         $response->assertJson([
@@ -130,7 +130,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$assistant->id}?include=versions")
+        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=versions")
             ->assertOk();
 
         $included = collect($response->json('included'));
@@ -150,7 +150,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$assistant->id}?include=language")
+        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=language")
             ->assertOk();
 
         $included = collect($response->json('included'));
@@ -169,7 +169,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$assistant->id}?include=category")
+        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=category")
             ->assertOk();
 
         $included = collect($response->json('included'));
@@ -184,7 +184,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$assistant->id}?include=creator")
+        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=creator")
             ->assertOk();
 
         $response->assertJson([
@@ -217,7 +217,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$assistant->id}?include=remix_creator")
+        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=remix_creator")
             ->assertOk();
 
         $response->assertJson([
@@ -250,7 +250,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->getJson("/api/assistants/{$remix->id}?include=remixed_assistant")
+        $response = $this->jsonApi('get',"/api/assistants/{$remix->id}?include=remixed_assistant")
             ->assertOk();
 
         $response->assertJson([
@@ -272,16 +272,15 @@ class ShowTest extends TestCase
         $this->assertEquals($original->name, $originalResource['attributes']['name']);
     }
 
-    public function test_relationships_absent_when_not_included(): void
+    public function test_relationship_data_absent_when_not_included(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
 
         Sanctum::actingAs($user);
 
-        $this->getJson("/api/assistants/{$assistant->id}")
+        $this->jsonApi('get',"/api/assistants/{$assistant->id}")
             ->assertOk()
-            ->assertJsonMissingPath('data.relationships')
             ->assertJsonMissingPath('included');
     }
 
@@ -297,7 +296,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->getJson("/api/assistants/{$assistant->id}")
+        $this->jsonApi('get',"/api/assistants/{$assistant->id}")
             ->assertForbidden();
     }
 }

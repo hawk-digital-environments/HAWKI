@@ -30,8 +30,14 @@ class ReleaseTest extends TestCase
         Sanctum::actingAs($user);
         Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $response = $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+                ],
+            ],
         ]);
 
         $response->assertOk();
@@ -56,11 +62,17 @@ class ReleaseTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+                ],
+            ],
         ])
             ->assertForbidden()
-            ->assertJson(['message' => 'This action is unauthorized.']);
+            ->assertJson(['errors' => [['detail' => 'This action is unauthorized.']]]);
     }
 
     public function test_guest_cannot_release_assistant(): void
@@ -71,8 +83,14 @@ class ReleaseTest extends TestCase
             'release_stage' => ReleaseStage::PRIVATE->value,
         ]);
 
-        $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+                ],
+            ],
         ])
             ->assertUnauthorized();
     }
@@ -88,8 +106,14 @@ class ReleaseTest extends TestCase
         Sanctum::actingAs($user);
         Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => ReleaseStage::PRIVATE->value,
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::PRIVATE->value,
+                ],
+            ],
         ])
             ->assertOk();
 
@@ -106,8 +130,14 @@ class ReleaseTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => 'invalid',
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => 'invalid',
+                ],
+            ],
         ])
             ->assertUnprocessable();
     }

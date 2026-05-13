@@ -14,9 +14,9 @@ class LanguageTest extends TestCase
 
     public function test_guest_cannot_list_languages(): void
     {
-        $this->getJson('/api/languages')
+        $this->jsonApi('get', '/api/languages')
             ->assertUnauthorized()
-            ->assertJson(['message' => 'Unauthenticated.']);
+            ->assertJson(['errors' => [['detail' => 'Unauthenticated.']]]);
     }
 
     public function test_can_list_languages(): void
@@ -26,7 +26,7 @@ class LanguageTest extends TestCase
 
         $languages = Language::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/languages')
+        $response = $this->jsonApi('get', '/api/languages')
             ->assertOk()
             ->assertJsonCount(3, 'data');
 
@@ -52,7 +52,7 @@ class LanguageTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->getJson('/api/languages')
+        $this->jsonApi('get', '/api/languages')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -66,7 +66,7 @@ class LanguageTest extends TestCase
         Language::factory()->create(['text' => 'de']);
         Language::factory()->create(['text' => 'en']);
 
-        $this->getJson('/api/languages')
+        $this->jsonApi('get', '/api/languages')
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJson([
@@ -85,13 +85,15 @@ class LanguageTest extends TestCase
 
         Language::factory()->count(20)->create();
 
-        $response = $this->getJson('/api/languages?' . http_build_query(['page' => ['size' => 5]]))
+        $response = $this->jsonApi('get', '/api/languages?' . http_build_query(['page' => ['size' => 5]]))
             ->assertOk()
             ->assertJsonCount(5, 'data');
 
         $response->assertJsonStructure([
-            'meta' => ['current_page', 'total', 'per_page', 'last_page'],
-            'links' => ['first', 'last', 'prev', 'next'],
+            'meta' => [
+                'page' => ['currentPage', 'from', 'to', 'perPage', 'lastPage', 'total'],
+            ],
+            'links' => ['first', 'last', 'next'],
         ]);
     }
 }

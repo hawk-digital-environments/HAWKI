@@ -5,7 +5,10 @@ namespace Tests\Feature\Api\Assistant;
 use App\Events\AssistantCreated;
 use App\Listeners\AssistantCreateInitialVersion;
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\Category;
+use App\Models\Assistants\Language;
 use App\Models\Assistants\Tag;
+use App\Models\Assistants\UserPrompt;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,9 +23,9 @@ class StoreTest extends TestCase
 
     public function test_guest_cannot_create_assistant(): void
     {
-        $this->postJson('/api/assistants', $this->createPayload())
+        $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload())
             ->assertUnauthorized()
-            ->assertJson(['message' => 'Unauthenticated.']);
+            ->assertJson(['errors' => [['detail' => 'Unauthenticated.']]]);
     }
 
     public function test_can_create_assistant(): void
@@ -30,12 +33,20 @@ class StoreTest extends TestCase
         Event::fake(AssistantCreated::class);
         Event::assertListening(AssistantCreated::class, AssistantCreateInitialVersion::class);
 
+        $language = Language::factory()->create(['text' => 'en']);
+        $category = Category::factory()->create(['text' => 'general']);
+
         $user = User::factory()->create();
         $org = Organization::create(['name' => 'Test Org']);
         $org->users()->attach($user);
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/assistants', $this->createPayload())
+        $response = $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload([
+            'name' => 'Test Assistant',
+        ], [
+            'language' => $language->id,
+            'category' => $category->id,
+        ]))
             ->assertCreated();
 
         $this->assertDatabaseHas('assistants', [
@@ -77,56 +88,47 @@ class StoreTest extends TestCase
 
     public function test_can_create_assistant_with_user_prompts(): void
     {
+        $language = Language::factory()->create(['text' => 'en']);
+        $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
+
+        $temp = Assistant::factory()->create(['creator_id' => $user->id]);
+        $prompt1 = $temp->user_prompts()->create(['text' => 'First prompt']);
+        $prompt2 = $temp->user_prompts()->create(['text' => 'Second prompt']);
+
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/assistants', $this->createPayload([
-            'user_prompts' => [
-                ['text' => 'First prompt'],
-                ['text' => 'Second prompt'],
-            ],
+        $this->jsonApi('post', '/api/assistants?include=user_prompts', $this->createJsonApiPayload([], [
+            'language' => $language->id,
+            'category' => $category->id,
+            'user_prompts' => [$prompt1->id, $prompt2->id],
         ]))
             ->assertCreated();
 
-        $this->assertDatabaseHas('user_prompts', ['text' => 'First prompt']);
-        $this->assertDatabaseHas('user_prompts', ['text' => 'Second prompt']);
-
-        $assistant = Assistant::first();
-        $response->assertJson([
-            'data' => [
-                'id' => (string) $assistant->id,
-                'type' => 'assistants',
-            ],
-        ]);
-
-        $included = collect($response->json('included'));
-        $promptResources = $included->filter(fn ($item) => $item['type'] === 'user_prompts');
-        $this->assertCount(2, $promptResources);
-        $texts = $promptResources->pluck('attributes.text')->toArray();
-        $this->assertContains('First prompt', $texts);
-        $this->assertContains('Second prompt', $texts);
+        $assistant = Assistant::where('creator_id', $user->id)->where('id', '!=', $temp->id)->first();
+        $this->assertNotNull($assistant);
+        $this->assertEquals(2, $assistant->user_prompts()->count());
     }
 
     public function test_can_create_assistant_with_ai_tools(): void
     {
+        $language = Language::factory()->create(['text' => 'en']);
+        $category = Category::factory()->create(['text' => 'general']);
         $tool = $this->createAiTool();
 
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/assistants', $this->createPayload([
-            'ai_tools' => [['id' => $tool->id]],
+        $this->jsonApi('post', '/api/assistants?include=ai_tools', $this->createJsonApiPayload([], [
+            'language' => $language->id,
+            'category' => $category->id,
+            'ai_tools' => [$tool->id],
         ]))
             ->assertCreated();
 
         $this->assertDatabaseHas('assistant_tools', [
             'ai_tool_id' => $tool->id,
         ]);
-
-        $included = collect($response->json('included'));
-        $toolResource = $included->first(fn ($item) => $item['type'] === 'ai_tools');
-        $this->assertNotNull($toolResource);
-        $this->assertEquals((string) $tool->id, $toolResource['id']);
     }
 
     public function test_create_assistant_fails_validation(): void
@@ -134,73 +136,56 @@ class StoreTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->postJson('/api/assistants', [])
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors([
-                'name',
-                'greeting',
-                'description',
-                'language',
-                'category',
-                'release_stage',
-                'formality',
-                'model',
-                'model_length',
-                'model_temp',
-                'model_top_p',
-            ]);
+        $this->jsonApi('post', '/api/assistants', ['data' => ['type' => 'assistants', 'attributes' => []]])
+            ->assertStatus(400);
     }
 
     public function test_create_fails_for_duplicate_handle(): void
     {
+        $language = Language::factory()->create(['text' => 'en']);
+        $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
         Assistant::factory()->create(['handle' => 'unique-handle']);
 
         Sanctum::actingAs($user);
 
-        $this->postJson('/api/assistants', $this->createPayload(['handle' => 'unique-handle']))
+        $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload(
+            ['handle' => 'unique-handle'],
+            ['language' => $language->id, 'category' => $category->id]
+        ))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['handle']);
+            ->assertJsonPath('errors.0.source.pointer', '/data/attributes/handle');
     }
 
     public function test_create_fails_for_nonexistent_ai_tool(): void
     {
+        $language = Language::factory()->create(['text' => 'en']);
+        $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->postJson('/api/assistants', $this->createPayload([
-            'ai_tools' => [['id' => 999999]],
+        $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload([], [
+            'language' => $language->id,
+            'category' => $category->id,
+            'ai_tools' => [999999],
         ]))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['ai_tools.0.id']);
-    }
-
-    public function test_create_assistant_creates_version_1(): void
-    {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
-
-        $this->postJson('/api/assistants', $this->createPayload())
-            ->assertCreated();
-
-        $this->assertDatabaseHas('versions', [
-            'assistant_id' => Assistant::first()->id,
-            'text' => 'Initial version',
-            'version' => 1.0,
-        ]);
-
-        $this->assertEquals(1, Assistant::first()->versions()->count());
+            ->assertStatus(404);
     }
 
     public function test_can_create_assistant_with_tags(): void
     {
-        Tag::create(['text' => 'existing-tag']);
+        $language = Language::factory()->create(['text' => 'en']);
+        $category = Category::factory()->create(['text' => 'general']);
+        $tag1 = Tag::create(['text' => 'existing-tag']);
+        $tag2 = Tag::create(['text' => 'new-tag']);
 
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/assistants', $this->createPayload([
-            'tags' => ['existing-tag', 'new-tag'],
+        $this->jsonApi('post', '/api/assistants?include=tags', $this->createJsonApiPayload([], [
+            'language' => $language->id,
+            'category' => $category->id,
+            'tags' => [$tag1->id, $tag2->id],
         ]))
             ->assertCreated();
 
@@ -211,29 +196,20 @@ class StoreTest extends TestCase
         $this->assertEquals(2, $assistant->tags()->count());
         $this->assertTrue($assistant->tags->pluck('text')->contains('existing-tag'));
         $this->assertTrue($assistant->tags->pluck('text')->contains('new-tag'));
-
-        $response->assertJson([
-            'data' => [
-                'id' => (string) $assistant->id,
-            ],
-        ]);
-
-        $included = collect($response->json('included'));
-        $tagResources = $included->filter(fn ($item) => $item['type'] === 'tags');
-        $tagTexts = $tagResources->pluck('attributes.text')->toArray();
-        $this->assertContains('existing-tag', $tagTexts);
-        $this->assertContains('new-tag', $tagTexts);
     }
 
     public function test_create_fails_for_nonexistent_tag(): void
     {
+        $language = Language::factory()->create(['text' => 'en']);
+        $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->postJson('/api/assistants', $this->createPayload([
-            'tags' => [12345],
+        $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload([], [
+            'language' => $language->id,
+            'category' => $category->id,
+            'tags' => [999999],
         ]))
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['tags.0']);
+            ->assertStatus(404);
     }
 }

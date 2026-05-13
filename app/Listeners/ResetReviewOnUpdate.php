@@ -19,7 +19,7 @@ class ResetReviewOnUpdate
             return;
         }
 
-        $this->reviewRepository->resetForAssistant(
+        $this->reviewRepository->resetReviewForAssistant(
             $event->assistant->id,
         );
     }

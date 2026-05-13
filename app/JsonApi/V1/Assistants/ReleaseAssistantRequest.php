@@ -1,8 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
-namespace App\Http\Requests\Assistant;
+namespace App\JsonApi\V1\Assistants;
 
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Foundation\Http\FormRequest;
@@ -18,7 +16,7 @@ class ReleaseAssistantRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'release_stage' => ['required', Rule::enum(ReleaseStage::class)],
+            'data.attributes.release_stage' => ['required', 'string', Rule::enum(ReleaseStage::class)],
         ];
     }
 }

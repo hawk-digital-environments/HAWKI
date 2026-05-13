@@ -2,19 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\AssistantReview;
+namespace App\JsonApi\V1\Reviews;
 
 use App\Services\Assistant\Values\ReviewStatus;
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use LaravelJsonApi\Laravel\Http\Requests\ResourceRequest;
 
-class UpdateReviewRequest extends FormRequest
+class ReviewRequest extends ResourceRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     public function rules(): array
     {
         return [

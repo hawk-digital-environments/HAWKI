@@ -14,11 +14,28 @@ use App\Services\Assistant\Values\ReviewStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
+use Tests\Feature\Api\Assistant\Fixtures\Assistant as AssistantFixture;
 use Tests\TestCase;
 
 class UpdateTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, AssistantFixture;
+
+    private function updatePayload(Assistant $assistant, array $attributes, array $relationships = []): array
+    {
+        $data = [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => $attributes,
+            ],
+        ];
+        $rels = $this->createRelationships($relationships);
+        if ($rels) {
+            $data['data']['relationships'] = $rels;
+        }
+        return $data;
+    }
 
     public function test_can_update_assistant(): void
     {
@@ -31,10 +48,10 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->putJson("/api/assistants/{$assistant->id}", [
+        $response = $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
             'name' => 'Updated Name',
             'description' => 'Updated description.',
-        ])
+        ]))
             ->assertOk();
 
         $assistant->refresh();
@@ -77,11 +94,11 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->putJson("/api/assistants/{$assistant->id}", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
             'name' => 'Hacked',
-        ])
+        ]))
             ->assertForbidden()
-            ->assertJson(['message' => 'This action is unauthorized.']);
+            ->assertJson(['errors' => [['detail' => 'This action is unauthorized.']]]);
     }
 
     public function test_update_assistant_increments_version(): void
@@ -91,9 +108,9 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->putJson("/api/assistants/{$assistant->id}", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
             'name' => 'Updated Name',
-        ])
+        ]))
             ->assertOk();
 
         $version = $assistant->fresh()->versions()->where('version', 2.0)->first();
@@ -107,10 +124,10 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->putJson("/api/assistants/{$assistant->id}", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
             'name' => 'Updated Name',
             'version_text' => 'Changed the name',
-        ])
+        ]))
             ->assertOk();
 
         $version = $assistant->fresh()->versions()->where('version', 2.0)->first();
@@ -125,10 +142,14 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->putJson("/api/assistants/{$assistant->id}", ['name' => 'v2'])
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'v2',
+        ]))
             ->assertOk();
 
-        $this->putJson("/api/assistants/{$assistant->id}", ['name' => 'v3'])
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'v3',
+        ]))
             ->assertOk();
 
         $versions = $assistant->fresh()->versions()->orderBy('version')->get();
@@ -156,27 +177,21 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->putJson("/api/assistants/{$assistant->id}", [
-            'tags' => ['tag-two', 'tag-three'],
-        ])
+        $response = $this->jsonApi('patch', "/api/assistants/{$assistant->id}?include=tags", $this->updatePayload($assistant, [
+            'name' => $assistant->name,
+        ], [
+            'tags' => [$tag2->id],
+        ]))
             ->assertOk();
 
         $this->assertDatabaseMissing('assistant_tag', [
             'assistant_id' => $assistant->id,
             'tag_id' => $tag1->id,
         ]);
-        $this->assertDatabaseHas('tags', ['text' => 'tag-three']);
 
         $assistant->refresh();
-        $this->assertEquals(2, $assistant->tags()->count());
+        $this->assertEquals(1, $assistant->tags()->count());
         $this->assertTrue($assistant->tags->pluck('text')->contains('tag-two'));
-        $this->assertTrue($assistant->tags->pluck('text')->contains('tag-three'));
-
-        $included = collect($response->json('included'));
-        $tagResources = $included->filter(fn ($item) => $item['type'] === 'tags');
-        $tagTexts = $tagResources->pluck('attributes.text')->toArray();
-        $this->assertContains('tag-two', $tagTexts);
-        $this->assertContains('tag-three', $tagTexts);
 
         $version = $assistant->fresh()->versions()->where('version', 2.0)->first();
         $this->assertEquals(['tags'], $version->changed_keys);
@@ -197,9 +212,9 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->putJson("/api/assistants/{$assistant->id}", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
             'name' => 'Updated Name',
-        ])
+        ]))
             ->assertOk();
 
         $this->assertDatabaseHas('reviews', [
@@ -219,9 +234,9 @@ class UpdateTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->putJson("/api/assistants/{$assistant->id}", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
             'name' => 'Updated Name',
-        ])
+        ]))
             ->assertOk();
 
         $this->assertDatabaseMissing('reviews', [

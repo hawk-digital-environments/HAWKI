@@ -14,9 +14,9 @@ class CategoryTest extends TestCase
 
     public function test_guest_cannot_list_categories(): void
     {
-        $this->getJson('/api/categories')
+        $this->jsonApi('get', '/api/categories')
             ->assertUnauthorized()
-            ->assertJson(['message' => 'Unauthenticated.']);
+            ->assertJson(['errors' => [['detail' => 'Unauthenticated.']]]);
     }
 
     public function test_can_list_categories(): void
@@ -26,7 +26,7 @@ class CategoryTest extends TestCase
 
         $categories = Category::factory()->count(3)->create();
 
-        $response = $this->getJson('/api/categories')
+        $response = $this->jsonApi('get', '/api/categories')
             ->assertOk()
             ->assertJsonCount(3, 'data');
 
@@ -52,7 +52,7 @@ class CategoryTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->getJson('/api/categories')
+        $this->jsonApi('get', '/api/categories')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -66,7 +66,7 @@ class CategoryTest extends TestCase
         Category::factory()->create(['text' => 'art']);
         Category::factory()->create(['text' => 'education']);
 
-        $this->getJson('/api/categories')
+        $this->jsonApi('get', '/api/categories')
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJson([
@@ -85,13 +85,15 @@ class CategoryTest extends TestCase
 
         Category::factory()->count(20)->create();
 
-        $response = $this->getJson('/api/categories?' . http_build_query(['page' => ['size' => 5]]))
+        $response = $this->jsonApi('get', '/api/categories?' . http_build_query(['page' => ['size' => 5]]))
             ->assertOk()
             ->assertJsonCount(5, 'data');
 
         $response->assertJsonStructure([
-            'meta' => ['current_page', 'total', 'per_page', 'last_page'],
-            'links' => ['first', 'last', 'prev', 'next'],
+            'meta' => [
+                'page' => ['currentPage', 'from', 'to', 'perPage', 'lastPage', 'total'],
+            ],
+            'links' => ['first', 'last', 'next'],
         ]);
     }
 }

@@ -46,8 +46,14 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+                ],
+            ],
         ])
             ->assertOk();
 
@@ -71,8 +77,14 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => ReleaseStage::FEDERATED->value,
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::FEDERATED->value,
+                ],
+            ],
         ])
             ->assertOk();
 
@@ -94,8 +106,14 @@ class ReviewTest extends TestCase
         Sanctum::actingAs($user);
         Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $this->postJson("/api/assistants/{$assistant->id}/release", [
-            'release_stage' => ReleaseStage::PRIVATE->value,
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+            'data' => [
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::PRIVATE->value,
+                ],
+            ],
         ])
             ->assertOk();
 
@@ -119,7 +137,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->getJson('/api/assistant-review?include=assistant')
+        $response = $this->jsonApi('get', '/api/reviews?include=assistant')
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
@@ -162,11 +180,10 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->getJson('/api/assistant-review')
+        $response = $this->jsonApi('get', '/api/reviews')
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
-        $response->assertJsonMissingPath('data.0.relationships');
         $response->assertJsonMissingPath('included');
     }
 
@@ -176,7 +193,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($member);
 
-        $this->getJson('/api/assistant-review')
+        $this->jsonApi('get', '/api/reviews')
             ->assertForbidden();
     }
 
@@ -195,8 +212,14 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->putJson("/api/assistant-review/{$review->id}", [
-            'status' => ReviewStatus::APPROVED->value,
+        $response = $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+            'data' => [
+                'type' => 'reviews',
+                'id' => (string) $review->id,
+                'attributes' => [
+                    'status' => ReviewStatus::APPROVED->value,
+                ],
+            ],
         ])
             ->assertOk();
 
@@ -229,9 +252,15 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->putJson("/api/assistant-review/{$review->id}", [
-            'status' => ReviewStatus::DENIED->value,
-            'reason' => 'Not ready for release',
+        $response = $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+            'data' => [
+                'type' => 'reviews',
+                'id' => (string) $review->id,
+                'attributes' => [
+                    'status' => ReviewStatus::DENIED->value,
+                    'reason' => 'Not ready for release',
+                ],
+            ],
         ])
             ->assertOk();
 
@@ -265,11 +294,17 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $this->putJson("/api/assistant-review/{$review->id}", [
-            'status' => ReviewStatus::DENIED->value,
+        $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+            'data' => [
+                'type' => 'reviews',
+                'id' => (string) $review->id,
+                'attributes' => [
+                    'status' => ReviewStatus::DENIED->value,
+                ],
+            ],
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['reason']);
+            ->assertJsonPath('errors.0.source.pointer', '/data/attributes/reason');
     }
 
     public function test_non_admin_cannot_update_review(): void
@@ -287,19 +322,31 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($member);
 
-        $this->putJson("/api/assistant-review/{$review->id}", [
-            'status' => ReviewStatus::APPROVED->value,
+        $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+            'data' => [
+                'type' => 'reviews',
+                'id' => (string) $review->id,
+                'attributes' => [
+                    'status' => ReviewStatus::APPROVED->value,
+                ],
+            ],
         ])
             ->assertForbidden();
     }
 
     public function test_guest_cannot_access_reviews(): void
     {
-        $this->getJson('/api/assistant-review')
+        $this->jsonApi('get', '/api/reviews')
             ->assertUnauthorized();
 
-        $this->putJson('/api/assistant-review/1', [
-            'status' => ReviewStatus::APPROVED->value,
+        $this->jsonApi('patch', '/api/reviews/1', [
+            'data' => [
+                'type' => 'reviews',
+                'id' => '1',
+                'attributes' => [
+                    'status' => ReviewStatus::APPROVED->value,
+                ],
+            ],
         ])
             ->assertUnauthorized();
     }

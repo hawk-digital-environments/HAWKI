@@ -37,7 +37,7 @@ readonly class ReviewRepository
         return $review;
     }
 
-    public function resetForAssistant(int $assistantId): void
+    public function resetReviewForAssistant(int $assistantId): void
     {
         $review = Review::where('assistant_id', $assistantId)->first();
 

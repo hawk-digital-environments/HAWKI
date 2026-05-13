@@ -19,7 +19,7 @@ class DestroyTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->deleteJson("/api/assistants/{$assistant->id}")
+        $this->jsonApi('delete',"/api/assistants/{$assistant->id}")
             ->assertNoContent();
 
         $this->assertDatabaseMissing('assistants', ['id' => $assistant->id]);
@@ -33,9 +33,9 @@ class DestroyTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->deleteJson("/api/assistants/{$assistant->id}")
+        $this->jsonApi('delete',"/api/assistants/{$assistant->id}")
             ->assertForbidden()
-            ->assertJson(['message' => 'This action is unauthorized.']);
+            ->assertJson(['errors' => [['detail' => 'This action is unauthorized.']]]);
 
         $this->assertDatabaseHas('assistants', ['id' => $assistant->id]);
     }
