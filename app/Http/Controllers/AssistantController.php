@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Events\AssistantCreated;
+use App\Events\AssistantUpdated;
 use App\JsonApi\V1\Assistants\AssistantQuery;
 use App\JsonApi\V1\Assistants\AssistantRequest;
 use App\JsonApi\V1\Assistants\AssistantSchema;
+use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\AssistantService;
-use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Event;
 use LaravelJsonApi\Core\Responses\DataResponse;
 use LaravelJsonApi\Laravel\Http\Controllers\Actions;
 
@@ -21,35 +23,9 @@ class AssistantController extends Controller
 {
     use Actions\FetchMany;
     use Actions\FetchOne;
-
-    private const RELATIONS = ['language', 'category', 'tags', 'ai_tools', 'user_prompts'];
-
-    private function extractServiceDataForUpdateOrCreate(AssistantRequest $request): array
-    {
-        $validated = $request->validated();
-
-        $data = collect($validated)
-            ->except(['type', 'id', ...self::RELATIONS])
-            ->all();
-
-        if (isset($validated['language'])) {
-            $data['language_id'] = (int) $validated['language']['id'];
-        }
-        if (isset($validated['category'])) {
-            $data['category_id'] = (int) $validated['category']['id'];
-        }
-        if (isset($validated['tags'])) {
-            $data['tag_ids'] = collect($validated['tags'])->map(fn ($item) => (int) $item['id'])->all();
-        }
-        if (isset($validated['ai_tools'])) {
-            $data['ai_tool_ids'] = collect($validated['ai_tools'])->map(fn ($item) => (int) $item['id'])->all();
-        }
-        if (isset($validated['user_prompts'])) {
-            $data['user_prompt_ids'] = collect($validated['user_prompts'])->map(fn ($item) => (int) $item['id'])->all();
-        }
-
-        return $data;
-    }
+    use Actions\Store;
+    use Actions\Update;
+    use Actions\Destroy;
 
     public function __construct(
         private readonly AssistantService $assistantService,
@@ -57,38 +33,36 @@ class AssistantController extends Controller
         $this->authorizeResource(Assistant::class, 'assistant');
     }
 
-    public function store(AssistantRequest $request, AssistantSchema $schema, AssistantQuery $query): Responsable
+    public function created(Assistant $assistant, AssistantRequest $request, AssistantQuery $query): void
     {
-        $this->authorize('create', Assistant::class);
-
-        $data = $this->extractServiceDataForUpdateOrCreate($request);
-
-        $assistant = $this->assistantService->create($data, $request->user());
-
-        return DataResponse::make($assistant)
-            ->withQueryParameters($query)
-            ->didCreate();
+        Event::dispatch(new AssistantCreated($assistant));
     }
 
-    public function update(AssistantRequest $request, AssistantSchema $schema, AssistantQuery $query, Assistant $assistant): Responsable
+    public function updated(Assistant $assistant, AssistantRequest $request, AssistantQuery $query): void
     {
-        $this->authorize('update', $assistant);
+        $changedKeys = array_values(array_filter(
+            array_keys($assistant->getChanges()),
+            fn(string $key) => $key !== 'updated_at',
+        ));
 
-        $data = $this->extractServiceDataForUpdateOrCreate($request);
+        $validated = $request->validated();
+        if (isset($validated['tags'])) {
+            $changedKeys[] = 'tags';
+        }
+        if (isset($validated['ai_tools'])) {
+            $changedKeys[] = 'ai_tools';
+        }
+        if (isset($validated['user_prompts'])) {
+            $changedKeys[] = 'user_prompts';
+        }
 
-        $assistant = $this->assistantService->update($assistant, $data);
-
-        return DataResponse::make($assistant)
-            ->withQueryParameters($query);
-    }
-
-    public function destroy(Assistant $assistant): Response
-    {
-        $this->authorize('delete', $assistant);
-
-        $assistant->delete();
-
-        return response()->noContent();
+        if ($changedKeys !== []) {
+            Event::dispatch(new AssistantUpdated(
+                $assistant,
+                $validated['version_text'] ?? null,
+                $changedKeys,
+            ));
+        }
     }
 
     public function remix(AssistantSchema $schema, AssistantQuery $query, Assistant $assistant): Responsable

@@ -11,13 +11,14 @@ use Illuminate\Database\Eloquent\Builder;
 
 readonly class AssistantRepository
 {
+    public function filterByCategoryText(Builder $query, string $text): Builder
+    {
+        return $query->whereHas('category', function ($q) use ($text) {
+            $q->where('text', $text);
+        });
+    }
 
-    /**
-     * Scope the query to only show assistants visible to the given user.
-     * Non-private assistants are visible to everyone;
-     * private assistants are only visible to their creator.
-     */
-    public function scopeVisible(Builder $query, User $user): Builder
+    public function filterVisibleForUser(Builder $query, User $user): Builder
     {
         return $query->where(function ($q) use ($user) {
             $q->where('release_stage', '!=', 'private')
@@ -28,25 +29,6 @@ readonly class AssistantRepository
     public function isVisibleTo(Assistant $assistant, User $user): bool
     {
         return $assistant->release_stage !== 'private' || $assistant->creator_id === $user->id;
-    }
-
-    public function create(array $data): Assistant
-    {
-        return Assistant::create($data);
-    }
-
-    public function update(Assistant $assistant, array $data): array
-    {
-        $assistant->fill($data);
-
-        $assistant->save();
-
-        return $assistant->getChanges();
-    }
-
-    public function delete(Assistant $assistant): void
-    {
-        $assistant->delete();
     }
 
     public function clone(Assistant $source, int $creatorId, ?int $organizationId = null): Assistant
@@ -82,21 +64,6 @@ readonly class AssistantRepository
     public function syncTags(Assistant $assistant, array $tagIds): array
     {
         return $assistant->tags()->sync($tagIds);
-    }
-
-    public function replaceUserPrompts(Assistant $assistant, array $promptIds): bool
-    {
-        $existingIds = $assistant->user_prompts->pluck('id')->toArray();
-
-        if ($existingIds === $promptIds) {
-            return false;
-        }
-
-        $assistant->user_prompts()->delete();
-        \App\Models\Assistants\UserPrompt::whereIn('id', $promptIds)
-            ->update(['assistant_id' => $assistant->id]);
-
-        return true;
     }
 
     public function setReleaseStage(Assistant $assistant, ReleaseStage $stage): bool

@@ -11,7 +11,6 @@ use App\Services\Assistant\Repositories\ReviewRepository;
 use App\Services\Assistant\Values\ReleaseStage;
 use App\Services\Assistant\Values\ReviewStatus;
 use Illuminate\Container\Attributes\Singleton;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Event;
 
 #[Singleton]
@@ -21,11 +20,6 @@ readonly class AssistantReviewService
         private ReviewRepository $reviewRepository,
         private AssistantRepository $assistantRepository,
     ) {}
-
-    public function list(int $perPage = 15): LengthAwarePaginator
-    {
-        return $this->reviewRepository->all($perPage);
-    }
 
     public function update(Review $review, array $data): Review
     {

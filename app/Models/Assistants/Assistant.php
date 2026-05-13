@@ -6,6 +6,7 @@ use App\Models\Ai\Tools\AiTool;
 use App\Models\Attachment;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Assistant\Repositories\OrganizationRepository;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -13,11 +14,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Auth;
 
 #[Table('assistants')]
 class Assistant extends Model
 {
     use HasFactory;
+
+    protected static function booted(): void
+    {
+        static::creating(function (Assistant $assistant) {
+            if ($assistant->creator_id !== null) {
+                return;
+            }
+
+            $user = Auth::user();
+            if ($user === null) {
+                return;
+            }
+
+            $assistant->creator_id = $user->id;
+            $assistant->remixed_creator_id ??= null;
+            $assistant->organization_id = app(OrganizationRepository::class)->getForUser($user)?->id;
+        });
+    }
 
     protected $fillable = [
         'name',
@@ -41,6 +61,14 @@ class Assistant extends Model
         'remixed_assistant_id',
         'organization_id',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'allow_remix' => 'boolean',
+            'allow_model_select' => 'boolean',
+        ];
+    }
 
     public function category(): BelongsTo
     {

@@ -7,6 +7,7 @@ namespace App\JsonApi\V1\Assistants;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Validation\Rule;
 use LaravelJsonApi\Laravel\Http\Requests\ResourceRequest;
+use LaravelJsonApi\Validation\Rule as JsonApiRule;
 
 class AssistantRequest extends ResourceRequest
 {
@@ -29,22 +30,15 @@ class AssistantRequest extends ResourceRequest
             'allow_model_select' => ['required', 'boolean'],
             'release_stage' => ['required', Rule::enum(ReleaseStage::class)],
             'formality' => ['required', 'string'],
-            'category' => ['required', 'array:type,id'],
-            'category.type' => ['required', 'in:categories'],
-            'category.id' => ['required', 'integer', 'exists:categories,id'],
-            'language' => ['required', 'array:type,id'],
-            'language.type' => ['required', 'in:languages'],
-            'language.id' => ['required', 'integer', 'exists:languages,id'],
+            'category' => ['required', JsonApiRule::toOne()],
+            'language' => ['required', JsonApiRule::toOne()],
             'model' => ['required', 'string'],
             'model_length' => ['required', 'integer', 'min:1'],
             'model_temp' => ['required', 'numeric', 'min:0', 'max:1'],
             'model_top_p' => ['required', 'numeric', 'min:0', 'max:1'],
-            'user_prompts' => ['array'],
-            'user_prompts.*.id' => ['required', 'integer', 'exists:user_prompts,id'],
-            'ai_tools' => ['array'],
-            'ai_tools.*.id' => ['required', 'integer', 'exists:ai_tools,id'],
-            'tags' => ['array'],
-            'tags.*.id' => ['required', 'integer', 'exists:tags,id'],
+            'user_prompts' => [JsonApiRule::toMany()],
+            'ai_tools' => [JsonApiRule::toMany()],
+            'tags' => [JsonApiRule::toMany()],
         ];
 
         if ($this->isUpdating()) {
@@ -65,21 +59,17 @@ class AssistantRequest extends ResourceRequest
             $rules['detail_description'] = ['sometimes', 'nullable', 'string'];
             $rules['allow_remix'] = ['sometimes', 'boolean'];
             $rules['allow_model_select'] = ['sometimes', 'boolean'];
-            $rules['category'] = ['sometimes', 'array:type,id'];
-            $rules['category.type'] = ['sometimes', 'in:categories'];
-            $rules['category.id'] = ['sometimes', 'integer', 'exists:categories,id'];
-            $rules['language'] = ['sometimes', 'array:type,id'];
-            $rules['language.type'] = ['sometimes', 'in:languages'];
-            $rules['language.id'] = ['sometimes', 'integer', 'exists:languages,id'];
+            $rules['category'] = ['sometimes', JsonApiRule::toOne()];
+            $rules['language'] = ['sometimes', JsonApiRule::toOne()];
             $rules['release_stage'] = ['sometimes', Rule::enum(ReleaseStage::class)];
             $rules['formality'] = ['sometimes', 'string'];
             $rules['model'] = ['sometimes', 'string'];
             $rules['model_length'] = ['sometimes', 'integer', 'min:1'];
             $rules['model_temp'] = ['sometimes', 'numeric', 'min:0', 'max:1'];
             $rules['model_top_p'] = ['sometimes', 'numeric', 'min:0', 'max:1'];
-            $rules['user_prompts'] = ['sometimes', 'array'];
-            $rules['ai_tools'] = ['sometimes', 'array'];
-            $rules['tags'] = ['sometimes', 'array'];
+            $rules['user_prompts'] = ['sometimes', JsonApiRule::toMany()];
+            $rules['ai_tools'] = ['sometimes', JsonApiRule::toMany()];
+            $rules['tags'] = ['sometimes', JsonApiRule::toMany()];
             $rules['version_text'] = ['sometimes', 'nullable', 'string'];
         }
 

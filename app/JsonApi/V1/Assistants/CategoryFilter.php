@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\JsonApi\V1\Assistants;
 
+use App\Services\Assistant\Repositories\AssistantRepository;
 use LaravelJsonApi\Eloquent\Contracts\Filter;
 use LaravelJsonApi\Eloquent\Filters\Concerns\DeserializesValue;
 use LaravelJsonApi\Eloquent\Filters\Concerns\IsSingular;
@@ -25,8 +26,6 @@ class CategoryFilter implements Filter
 
     public function apply($query, $value)
     {
-        return $query->whereHas('category', function ($q) use ($value) {
-            $q->where('text', $value);
-        });
+        return app(AssistantRepository::class)->filterByCategoryText($query, $value);
     }
 }

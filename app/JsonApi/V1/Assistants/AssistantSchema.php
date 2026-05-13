@@ -80,6 +80,6 @@ class AssistantSchema extends Schema
             return $query;
         }
 
-        return app(AssistantRepository::class)->scopeVisible($query, $user);
+        return app(AssistantRepository::class)->filterVisibleForUser($query, $user);
     }
 }
