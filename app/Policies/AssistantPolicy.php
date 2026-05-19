@@ -46,4 +46,9 @@ class AssistantPolicy
     {
         return $user->id === $assistant->creator_id;
     }
+
+    public function feedback(User $user, Assistant $assistant): bool
+    {
+        return $this->view($user, $assistant);
+    }
 }

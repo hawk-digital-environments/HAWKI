@@ -68,6 +68,10 @@ class IndexTest extends TestCase
                                     'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
                                     'meta' => ['message' => 'ALLOWED'],
                                 ],
+                                'feedback' => [
+                                    'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/feedback",
+                                    'meta' => ['message' => 'ALLOWED'],
+                                ],
                             ],
                         ],
                     ],
@@ -82,7 +86,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get','/api/assistants?include=creator,user_prompts')
+        $response = $this->jsonApi('get', '/api/assistants?include=creator,user_prompts')
             ->assertOk();
 
         $response->assertJsonPath('data.0.relationships.creator.data.id', (string) $user->id);
@@ -90,7 +94,7 @@ class IndexTest extends TestCase
         $response->assertJsonPath('data.0.relationships.user_prompts.data', []);
 
         $included = collect($response->json('included'));
-        $creatorResource = $included->first(fn ($item) => $item['type'] === 'users');
+        $creatorResource = $included->first(fn($item) => $item['type'] === 'users');
         $this->assertEquals($user->name, $creatorResource['attributes']['name']);
     }
 
@@ -101,11 +105,11 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get','/api/assistants?include=versions')
+        $response = $this->jsonApi('get', '/api/assistants?include=versions')
             ->assertOk();
 
         $included = collect($response->json('included'));
-        $versionResource = $included->first(fn ($item) => $item['type'] === 'versions');
+        $versionResource = $included->first(fn($item) => $item['type'] === 'versions');
         $this->assertEquals('Initial version', $versionResource['attributes']['text']);
         $this->assertEquals('1.0', $versionResource['attributes']['version']);
     }
@@ -121,12 +125,12 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get','/api/assistants?filter[category]=education&include=category')
+        $response = $this->jsonApi('get', '/api/assistants?filter[category]=education&include=category')
             ->assertOk()
             ->assertJsonCount(2, 'data');
 
         $included = collect($response->json('included'));
-        $catResources = $included->filter(fn ($item) => $item['type'] === 'assistant-categories');
+        $catResources = $included->filter(fn($item) => $item['type'] === 'assistant-categories');
         foreach ($catResources as $catResource) {
             $this->assertEquals('education', $catResource['attributes']['text']);
         }
@@ -140,7 +144,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get','/api/assistants?filter[category]=nonexistent')
+        $this->jsonApi('get', '/api/assistants?filter[category]=nonexistent')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -152,7 +156,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get','/api/assistants')
+        $this->jsonApi('get', '/api/assistants')
             ->assertOk()
             ->assertJsonCount(3, 'data');
     }
@@ -169,7 +173,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get','/api/assistants?include=organization')
+        $response = $this->jsonApi('get', '/api/assistants?include=organization')
             ->assertOk();
 
         $response->assertJson([
@@ -189,7 +193,7 @@ class IndexTest extends TestCase
         ]);
 
         $included = collect($response->json('included'));
-        $orgResource = $included->first(fn ($item) => $item['type'] === 'organizations');
+        $orgResource = $included->first(fn($item) => $item['type'] === 'organizations');
         $this->assertEquals($org->name, $orgResource['attributes']['name']);
     }
 
@@ -206,7 +210,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get','/api/assistants?include=language,category')
+        $response = $this->jsonApi('get', '/api/assistants?include=language,category')
             ->assertOk();
 
         $response->assertJson([
@@ -232,9 +236,9 @@ class IndexTest extends TestCase
         ]);
 
         $included = collect($response->json('included'));
-        $langResource = $included->first(fn ($item) => $item['type'] === 'assistant-languages');
+        $langResource = $included->first(fn($item) => $item['type'] === 'assistant-languages');
         $this->assertEquals('de', $langResource['attributes']['text']);
-        $catResource = $included->first(fn ($item) => $item['type'] === 'assistant-categories');
+        $catResource = $included->first(fn($item) => $item['type'] === 'assistant-categories');
         $this->assertEquals('education', $catResource['attributes']['text']);
     }
 
@@ -250,7 +254,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->jsonApi('get','/api/assistants')
+        $this->jsonApi('get', '/api/assistants')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -266,7 +270,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get','/api/assistants')
+        $this->jsonApi('get', '/api/assistants')
             ->assertOk()
             ->assertJsonCount(1, 'data');
     }
@@ -290,7 +294,7 @@ class IndexTest extends TestCase
             'page' => ['size' => 5],
         ]);
 
-        $response = $this->jsonApi('get',"/api/assistants?{$query}")
+        $response = $this->jsonApi('get', "/api/assistants?{$query}")
             ->assertOk()
             ->assertJsonStructure([
                 'links' => ['first', 'last', 'next'],
@@ -318,7 +322,7 @@ class IndexTest extends TestCase
 
         $page1Query = http_build_query(['page' => ['size' => 1]]);
 
-        $page1 = $this->jsonApi('get',"/api/assistants?{$page1Query}")
+        $page1 = $this->jsonApi('get', "/api/assistants?{$page1Query}")
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
@@ -327,7 +331,7 @@ class IndexTest extends TestCase
 
         $page2Query = http_build_query(['page' => ['size' => 1, 'number' => 2]]);
 
-        $page2 = $this->jsonApi('get',"/api/assistants?{$page2Query}")
+        $page2 = $this->jsonApi('get', "/api/assistants?{$page2Query}")
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
@@ -347,7 +351,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->jsonApi('get','/api/assistants')
+        $this->jsonApi('get', '/api/assistants')
             ->assertOk()
             ->assertJsonCount(1, 'data');
     }
@@ -380,6 +384,10 @@ class IndexTest extends TestCase
                         'release' => [
                             'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
                             'meta' => ['message' => 'DENIED'],
+                        ],
+                        'feedback' => [
+                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/feedback",
+                            'meta' => ['message' => 'ALLOWED'],
                         ],
                     ],
                 ],
