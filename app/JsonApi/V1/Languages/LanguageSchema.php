@@ -18,6 +18,11 @@ class LanguageSchema extends Schema
 {
     public static string $model = Language::class;
 
+    public static function type(): string
+    {
+        return 'assistant-languages';
+    }
+
     public function fields(): array
     {
         return [

@@ -21,6 +21,22 @@ class Assistant extends Model
 {
     use HasFactory;
 
+    protected $attributes = [
+        'name' => '',
+        'system_prompt' => '',
+        'greeting' => '',
+        'description' => '',
+        'detail_description' => '',
+        'allow_remix' => false,
+        'allow_model_select' => false,
+        'release_stage' => 'private',
+        'formality' => 'neutral',
+        'model' => '',
+        'model_length' => 0,
+        'model_temp' => 0.0,
+        'model_top_p' => 0.0,
+    ];
+
     protected static function booted(): void
     {
         static::creating(function (Assistant $assistant) {
@@ -123,6 +139,11 @@ class Assistant extends Model
     public function ai_tools(): BelongsToMany
     {
         return $this->belongsToMany(AiTool::class, 'assistant_tools');
+    }
+
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(Feedback::class);
     }
 
     public function attachments()

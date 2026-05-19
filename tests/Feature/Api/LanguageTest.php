@@ -14,7 +14,7 @@ class LanguageTest extends TestCase
 
     public function test_guest_cannot_list_languages(): void
     {
-        $this->jsonApi('get', '/api/languages')
+        $this->jsonApi('get', '/api/assistant-languages')
             ->assertUnauthorized()
             ->assertJson(['errors' => [['detail' => 'Unauthenticated.']]]);
     }
@@ -26,7 +26,7 @@ class LanguageTest extends TestCase
 
         $languages = Language::factory()->count(3)->create();
 
-        $response = $this->jsonApi('get', '/api/languages')
+        $response = $this->jsonApi('get', '/api/assistant-languages')
             ->assertOk()
             ->assertJsonCount(3, 'data');
 
@@ -35,7 +35,7 @@ class LanguageTest extends TestCase
                 'data' => [
                     $i => [
                         'id' => (string) $language->id,
-                        'type' => 'languages',
+                        'type' => 'assistant-languages',
                         'attributes' => [
                             'text' => $language->text,
                             'created_at' => $language->created_at->toJson(),
@@ -52,7 +52,7 @@ class LanguageTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/languages')
+        $this->jsonApi('get', '/api/assistant-languages')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -66,7 +66,7 @@ class LanguageTest extends TestCase
         Language::factory()->create(['text' => 'de']);
         Language::factory()->create(['text' => 'en']);
 
-        $this->jsonApi('get', '/api/languages')
+        $this->jsonApi('get', '/api/assistant-languages')
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJson([
@@ -85,7 +85,7 @@ class LanguageTest extends TestCase
 
         Language::factory()->count(20)->create();
 
-        $response = $this->jsonApi('get', '/api/languages?' . http_build_query(['page' => ['size' => 5]]))
+        $response = $this->jsonApi('get', '/api/assistant-languages?' . http_build_query(['page' => ['size' => 5]]))
             ->assertOk()
             ->assertJsonCount(5, 'data');
 

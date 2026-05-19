@@ -14,7 +14,7 @@ class CategoryTest extends TestCase
 
     public function test_guest_cannot_list_categories(): void
     {
-        $this->jsonApi('get', '/api/categories')
+        $this->jsonApi('get', '/api/assistant-categories')
             ->assertUnauthorized()
             ->assertJson(['errors' => [['detail' => 'Unauthenticated.']]]);
     }
@@ -26,7 +26,7 @@ class CategoryTest extends TestCase
 
         $categories = Category::factory()->count(3)->create();
 
-        $response = $this->jsonApi('get', '/api/categories')
+        $response = $this->jsonApi('get', '/api/assistant-categories')
             ->assertOk()
             ->assertJsonCount(3, 'data');
 
@@ -35,7 +35,7 @@ class CategoryTest extends TestCase
                 'data' => [
                     $i => [
                         'id' => (string) $category->id,
-                        'type' => 'categories',
+                        'type' => 'assistant-categories',
                         'attributes' => [
                             'text' => $category->text,
                             'created_at' => $category->created_at->toJson(),
@@ -52,7 +52,7 @@ class CategoryTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/categories')
+        $this->jsonApi('get', '/api/assistant-categories')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -66,7 +66,7 @@ class CategoryTest extends TestCase
         Category::factory()->create(['text' => 'art']);
         Category::factory()->create(['text' => 'education']);
 
-        $this->jsonApi('get', '/api/categories')
+        $this->jsonApi('get', '/api/assistant-categories')
             ->assertOk()
             ->assertJsonCount(3, 'data')
             ->assertJson([
@@ -85,7 +85,7 @@ class CategoryTest extends TestCase
 
         Category::factory()->count(20)->create();
 
-        $response = $this->jsonApi('get', '/api/categories?' . http_build_query(['page' => ['size' => 5]]))
+        $response = $this->jsonApi('get', '/api/assistant-categories?' . http_build_query(['page' => ['size' => 5]]))
             ->assertOk()
             ->assertJsonCount(5, 'data');
 

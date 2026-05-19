@@ -18,7 +18,7 @@ class ShowTest extends TestCase
     public function test_can_show_assistant(): void
     {
         $user = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id, 'allow_remix' => true]);
 
         Sanctum::actingAs($user);
 
@@ -45,6 +45,17 @@ class ShowTest extends TestCase
                         'model_top_p' => $assistant->model_top_p,
                         'created_at' => $assistant->created_at->toJson(),
                         'updated_at' => $assistant->updated_at->toJson(),
+                    ],
+                    'links' => [
+                        'self' => config('app.url') . "/api/assistants/{$assistant->id}",
+                        'remix' => [
+                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                            'meta' => ['message' => 'ALLOWED'],
+                        ],
+                        'release' => [
+                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                            'meta' => ['message' => 'ALLOWED'],
+                        ],
                     ],
                 ],
             ]);
@@ -154,7 +165,7 @@ class ShowTest extends TestCase
             ->assertOk();
 
         $included = collect($response->json('included'));
-        $langResource = $included->first(fn ($item) => $item['type'] === 'languages');
+        $langResource = $included->first(fn ($item) => $item['type'] === 'assistant-languages');
         $this->assertEquals('en', $langResource['attributes']['text']);
     }
 
@@ -173,7 +184,7 @@ class ShowTest extends TestCase
             ->assertOk();
 
         $included = collect($response->json('included'));
-        $catResource = $included->first(fn ($item) => $item['type'] === 'categories');
+        $catResource = $included->first(fn ($item) => $item['type'] === 'assistant-categories');
         $this->assertEquals('general', $catResource['attributes']['text']);
     }
 
@@ -298,5 +309,81 @@ class ShowTest extends TestCase
 
         $this->jsonApi('get',"/api/assistants/{$assistant->id}")
             ->assertForbidden();
+    }
+
+    public function test_show_assistant_shows_denied_release_link_for_non_owner(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'federated',
+            'allow_remix' => true,
+        ]);
+
+        Sanctum::actingAs($other);
+
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}")
+            ->assertOk();
+
+        $response->assertJson([
+            'data' => [
+                'id' => (string) $assistant->id,
+                'links' => [
+                    'remix' => [
+                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                        'meta' => ['message' => 'ALLOWED'],
+                    ],
+                    'release' => [
+                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                        'meta' => ['message' => 'DENIED'],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_show_assistant_shows_denied_remix_link_when_not_allowed(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'federated',
+            'allow_remix' => false,
+        ]);
+
+        Sanctum::actingAs($other);
+
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}")
+            ->assertOk();
+
+        $response->assertJson([
+            'data' => [
+                'id' => (string) $assistant->id,
+                'links' => [
+                    'remix' => [
+                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                        'meta' => ['message' => 'DENIED'],
+                    ],
+                    'release' => [
+                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                        'meta' => ['message' => 'DENIED'],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_show_assistant_has_no_action_links_when_unauthenticated(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => 'federated',
+        ]);
+
+        $this->jsonApi('get', "/api/assistants/{$assistant->id}")
+            ->assertUnauthorized();
     }
 }

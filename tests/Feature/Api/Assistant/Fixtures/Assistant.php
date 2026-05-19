@@ -30,10 +30,10 @@ trait Assistant
     {
         $defaults = [];
         if (isset($rels['language'])) {
-            $defaults['language'] = ['data' => ['type' => 'languages', 'id' => (string) $rels['language']]];
+            $defaults['language'] = ['data' => ['type' => 'assistant-languages', 'id' => (string) $rels['language']]];
         }
         if (isset($rels['category'])) {
-            $defaults['category'] = ['data' => ['type' => 'categories', 'id' => (string) $rels['category']]];
+            $defaults['category'] = ['data' => ['type' => 'assistant-categories', 'id' => (string) $rels['category']]];
         }
         if (isset($rels['tags'])) {
             $defaults['tags'] = ['data' => array_map(fn ($id) => ['type' => 'tags', 'id' => (string) $id], $rels['tags'])];

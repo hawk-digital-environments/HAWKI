@@ -40,10 +40,14 @@ return new class extends Migration
             $table->boolean('allow_remix');
 
             $table->foreignId('language_id')
-                ->constrained('languages');
+                ->nullable()
+                ->constrained('languages')
+                ->nullOnDelete();
 
             $table->foreignId('category_id')
-                ->constrained('categories');
+                ->nullable()
+                ->constrained('categories')
+                ->nullOnDelete();
 
             $table->string('release_stage');
 
@@ -137,6 +141,17 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('feedback', function (Blueprint $table) {
+            $table->id();
+
+            $table->text('text');
+
+            $table->foreignId('assistant_id')
+                ->constrained('assistants')
+                ->cascadeOnDelete();
+
+            $table->timestamps();
+        });
     }
 
     /**
@@ -153,5 +168,6 @@ return new class extends Migration
         Schema::dropIfExists('categories');
         Schema::dropIfExists('languages');
         Schema::dropIfExists('reviews');
+        Schema::dropIfExists('feedback');
     }
 };

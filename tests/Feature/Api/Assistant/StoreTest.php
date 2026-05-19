@@ -131,13 +131,69 @@ class StoreTest extends TestCase
         ]);
     }
 
+    public function test_can_create_empty_assistant(): void
+    {
+        Event::fake(AssistantCreated::class);
+
+        $user = User::factory()->create();
+        $org = Organization::create(['name' => 'Test Org']);
+        $org->users()->attach($user);
+        Sanctum::actingAs($user);
+
+        $response = $this->jsonApi('post', '/api/assistants', [
+            'data' => ['type' => 'assistants'],
+        ])
+            ->assertCreated();
+
+        $assistant = Assistant::first();
+        $this->assertEquals($user->id, $assistant->creator_id);
+        $this->assertNotNull($assistant->organization_id);
+        $this->assertNull($assistant->language_id);
+        $this->assertNull($assistant->category_id);
+        $this->assertEquals(0, $assistant->tags()->count());
+        $this->assertEquals(0, $assistant->ai_tools()->count());
+        $this->assertEquals(0, $assistant->user_prompts()->count());
+
+        $response->assertJson([
+            'data' => [
+                'id' => (string) $assistant->id,
+                'type' => 'assistants',
+                'attributes' => [
+                    'name' => '',
+                    'handle' => null,
+                    'system_prompt' => '',
+                    'greeting' => '',
+                    'description' => '',
+                    'detail_description' => '',
+                    'allow_remix' => false,
+                    'allow_model_select' => false,
+                    'release_stage' => 'private',
+                    'formality' => 'neutral',
+                    'model' => '',
+                    'model_length' => 0,
+                    'model_temp' => 0.0,
+                    'model_top_p' => 0.0,
+                ],
+            ],
+        ]);
+    }
+
     public function test_create_assistant_fails_validation(): void
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', '/api/assistants', ['data' => ['type' => 'assistants', 'attributes' => []]])
-            ->assertStatus(400);
+        $this->jsonApi('post', '/api/assistants', [
+            'data' => [
+                'type' => 'assistants',
+                'attributes' => [
+                    'name' => 12345,
+                    'release_stage' => 'invalid-stage',
+                    'model_temp' => 5.0,
+                ],
+            ],
+        ])
+            ->assertStatus(422);
     }
 
     public function test_create_fails_for_duplicate_handle(): void

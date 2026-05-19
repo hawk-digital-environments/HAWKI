@@ -30,7 +30,7 @@ class ReleaseTest extends TestCase
         Sanctum::actingAs($user);
         Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -62,7 +62,7 @@ class ReleaseTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -83,7 +83,7 @@ class ReleaseTest extends TestCase
             'release_stage' => ReleaseStage::PRIVATE->value,
         ]);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -106,7 +106,7 @@ class ReleaseTest extends TestCase
         Sanctum::actingAs($user);
         Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -130,7 +130,7 @@ class ReleaseTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,

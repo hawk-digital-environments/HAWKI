@@ -22,7 +22,7 @@ class ReviewController extends Controller
     public function __construct(
         private readonly AssistantReviewService $reviewService,
     ) {
-        $this->authorizeResource(Review::class, 'review');
+        $this->authorizeResource(Review::class, 'assistant_review');
     }
 
     public function update(ReviewRequest $request, ReviewSchema $schema, ReviewQuery $query, Review $review): Responsable

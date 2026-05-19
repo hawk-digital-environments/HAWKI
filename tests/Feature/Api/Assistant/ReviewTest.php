@@ -46,7 +46,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -77,7 +77,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -106,7 +106,7 @@ class ReviewTest extends TestCase
         Sanctum::actingAs($user);
         Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/release", [
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -137,14 +137,14 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->jsonApi('get', '/api/reviews?include=assistant')
+        $response = $this->jsonApi('get', '/api/assistant-reviews?include=assistant')
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
         $response->assertJson([
             'data' => [
                 [
-                    'type' => 'reviews',
+                    'type' => 'assistant-reviews',
                     'attributes' => [
                         'status' => ReviewStatus::PENDING->value,
                     ],
@@ -180,7 +180,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->jsonApi('get', '/api/reviews')
+        $response = $this->jsonApi('get', '/api/assistant-reviews')
             ->assertOk()
             ->assertJsonCount(1, 'data');
 
@@ -193,7 +193,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($member);
 
-        $this->jsonApi('get', '/api/reviews')
+        $this->jsonApi('get', '/api/assistant-reviews')
             ->assertForbidden();
     }
 
@@ -212,9 +212,9 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+        $response = $this->jsonApi('patch', "/api/assistant-reviews/{$review->id}", [
             'data' => [
-                'type' => 'reviews',
+                'type' => 'assistant-reviews',
                 'id' => (string) $review->id,
                 'attributes' => [
                     'status' => ReviewStatus::APPROVED->value,
@@ -226,7 +226,7 @@ class ReviewTest extends TestCase
         $response->assertJson([
             'data' => [
                 'id' => (string) $review->id,
-                'type' => 'reviews',
+                'type' => 'assistant-reviews',
                 'attributes' => [
                     'status' => ReviewStatus::APPROVED->value,
                 ],
@@ -252,9 +252,9 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $response = $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+        $response = $this->jsonApi('patch', "/api/assistant-reviews/{$review->id}", [
             'data' => [
-                'type' => 'reviews',
+                'type' => 'assistant-reviews',
                 'id' => (string) $review->id,
                 'attributes' => [
                     'status' => ReviewStatus::DENIED->value,
@@ -267,7 +267,7 @@ class ReviewTest extends TestCase
         $response->assertJson([
             'data' => [
                 'id' => (string) $review->id,
-                'type' => 'reviews',
+                'type' => 'assistant-reviews',
                 'attributes' => [
                     'status' => ReviewStatus::DENIED->value,
                     'reason' => 'Not ready for release',
@@ -294,9 +294,9 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+        $this->jsonApi('patch', "/api/assistant-reviews/{$review->id}", [
             'data' => [
-                'type' => 'reviews',
+                'type' => 'assistant-reviews',
                 'id' => (string) $review->id,
                 'attributes' => [
                     'status' => ReviewStatus::DENIED->value,
@@ -322,9 +322,9 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($member);
 
-        $this->jsonApi('patch', "/api/reviews/{$review->id}", [
+        $this->jsonApi('patch', "/api/assistant-reviews/{$review->id}", [
             'data' => [
-                'type' => 'reviews',
+                'type' => 'assistant-reviews',
                 'id' => (string) $review->id,
                 'attributes' => [
                     'status' => ReviewStatus::APPROVED->value,
@@ -336,12 +336,12 @@ class ReviewTest extends TestCase
 
     public function test_guest_cannot_access_reviews(): void
     {
-        $this->jsonApi('get', '/api/reviews')
+        $this->jsonApi('get', '/api/assistant-reviews')
             ->assertUnauthorized();
 
-        $this->jsonApi('patch', '/api/reviews/1', [
+        $this->jsonApi('patch', '/api/assistant-reviews/1', [
             'data' => [
-                'type' => 'reviews',
+                'type' => 'assistant-reviews',
                 'id' => '1',
                 'attributes' => [
                     'status' => ReviewStatus::APPROVED->value,

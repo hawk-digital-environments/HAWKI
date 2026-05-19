@@ -47,7 +47,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -104,7 +104,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -132,7 +132,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -158,7 +158,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -195,7 +195,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -220,7 +220,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -240,7 +240,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -261,7 +261,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertCreated();
 
         $clone = Assistant::where('creator_id', $remixUser->id)->first();
@@ -280,7 +280,7 @@ class RemixTest extends TestCase
 
         Sanctum::actingAs($remixer);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertForbidden()
             ->assertJson(['errors' => [['detail' => 'This action is unauthorized.']]]);
 
@@ -295,7 +295,7 @@ class RemixTest extends TestCase
             'allow_remix' => true,
         ]);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/-actions/remix")
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertUnauthorized();
     }
 }

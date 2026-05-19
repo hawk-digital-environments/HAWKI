@@ -16,6 +16,11 @@ class ReviewSchema extends Schema
 {
     public static string $model = Review::class;
 
+    public static function type(): string
+    {
+        return 'assistant-reviews';
+    }
+
     public function fields(): array
     {
         return [

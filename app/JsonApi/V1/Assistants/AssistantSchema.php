@@ -46,8 +46,8 @@ class AssistantSchema extends Schema
             DateTime::make('updated_at')->sortable()->readOnly(),
             Str::make('version_text')->hidden(),
 
-            BelongsTo::make('language'),
-            BelongsTo::make('category'),
+            BelongsTo::make('language')->type('assistant-languages'),
+            BelongsTo::make('category')->type('assistant-categories'),
             HasMany::make('user_prompts', 'user_prompts'),
             BelongsToMany::make('ai_tools', 'ai_tools'),
             BelongsToMany::make('tags', 'tags'),
@@ -56,7 +56,8 @@ class AssistantSchema extends Schema
             BelongsTo::make('remixed_assistant', 'remixed_assistant')->type('assistants')->readOnly(),
             HasMany::make('versions', 'versions')->readOnly(),
             BelongsTo::make('organization')->readOnly(),
-            HasOne::make('review', 'review')->readOnly(),
+            HasOne::make('review', 'review')->type('assistant-reviews')->readOnly(),
+            HasMany::make('feedback', 'feedback')->readOnly(),
         ];
     }
 
@@ -64,6 +65,7 @@ class AssistantSchema extends Schema
     {
         return [
             CategoryFilter::make(),
+            AssistantNameFilter::make(),
         ];
     }
 

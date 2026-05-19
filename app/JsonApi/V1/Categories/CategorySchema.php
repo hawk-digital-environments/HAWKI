@@ -18,6 +18,11 @@ class CategorySchema extends Schema
 {
     public static string $model = Category::class;
 
+    public static function type(): string
+    {
+        return 'assistant-categories';
+    }
+
     public function fields(): array
     {
         return [

@@ -18,6 +18,12 @@ readonly class AssistantRepository
         });
     }
 
+    public function filterByName(Builder $query, string $name): Builder
+    {
+        // Database independent case insensitive filter
+        return $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($name) . '%']);
+    }
+
     public function filterVisibleForUser(Builder $query, User $user): Builder
     {
         return $query->where(function ($q) use ($user) {

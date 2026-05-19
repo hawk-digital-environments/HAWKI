@@ -25,7 +25,7 @@ class IndexTest extends TestCase
     public function test_can_list_assistants(): void
     {
         $user = User::factory()->create();
-        $assistants = Assistant::factory()->count(3)->create(['creator_id' => $user->id]);
+        $assistants = Assistant::factory()->count(3)->create(['creator_id' => $user->id, 'allow_remix' => true]);
 
         Sanctum::actingAs($user);
 
@@ -57,6 +57,17 @@ class IndexTest extends TestCase
                                 'model_top_p' => $assistant->model_top_p,
                                 'created_at' => $assistant->created_at->toJson(),
                                 'updated_at' => $assistant->updated_at->toJson(),
+                            ],
+                            'links' => [
+                                'self' => config('app.url') . "/api/assistants/{$assistant->id}",
+                                'remix' => [
+                                    'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                                    'meta' => ['message' => 'ALLOWED'],
+                                ],
+                                'release' => [
+                                    'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                                    'meta' => ['message' => 'ALLOWED'],
+                                ],
                             ],
                         ],
                     ],
@@ -115,7 +126,7 @@ class IndexTest extends TestCase
             ->assertJsonCount(2, 'data');
 
         $included = collect($response->json('included'));
-        $catResources = $included->filter(fn ($item) => $item['type'] === 'categories');
+        $catResources = $included->filter(fn ($item) => $item['type'] === 'assistant-categories');
         foreach ($catResources as $catResource) {
             $this->assertEquals('education', $catResource['attributes']['text']);
         }
@@ -206,13 +217,13 @@ class IndexTest extends TestCase
                         'language' => [
                             'data' => [
                                 'id' => (string) $language->id,
-                                'type' => 'languages',
+                                'type' => 'assistant-languages',
                             ],
                         ],
                         'category' => [
                             'data' => [
                                 'id' => (string) $category->id,
-                                'type' => 'categories',
+                                'type' => 'assistant-categories',
                             ],
                         ],
                     ],
@@ -221,9 +232,9 @@ class IndexTest extends TestCase
         ]);
 
         $included = collect($response->json('included'));
-        $langResource = $included->first(fn ($item) => $item['type'] === 'languages');
+        $langResource = $included->first(fn ($item) => $item['type'] === 'assistant-languages');
         $this->assertEquals('de', $langResource['attributes']['text']);
-        $catResource = $included->first(fn ($item) => $item['type'] === 'categories');
+        $catResource = $included->first(fn ($item) => $item['type'] === 'assistant-categories');
         $this->assertEquals('education', $catResource['attributes']['text']);
     }
 
@@ -339,5 +350,78 @@ class IndexTest extends TestCase
         $this->jsonApi('get','/api/assistants')
             ->assertOk()
             ->assertJsonCount(1, 'data');
+    }
+
+    public function test_list_shows_denied_action_links_for_non_owner(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'federated',
+            'allow_remix' => false,
+        ]);
+
+        Sanctum::actingAs($other);
+
+        $response = $this->jsonApi('get', '/api/assistants')
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+
+        $response->assertJson([
+            'data' => [
+                [
+                    'id' => (string) $assistant->id,
+                    'links' => [
+                        'remix' => [
+                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                            'meta' => ['message' => 'DENIED'],
+                        ],
+                        'release' => [
+                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                            'meta' => ['message' => 'DENIED'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_can_filter_assistants_by_name_case_insensitive(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Code Helper']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Writing Assistant']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Code Reviewer']);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['name' => 'code']]))
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_filter_by_name_is_case_insensitive(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Code Helper']);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['name' => 'CODE']]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data');
+    }
+
+    public function test_filter_by_name_returns_empty_when_no_match(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Code Helper']);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['name' => 'nonexistent']]))
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
     }
 }

@@ -9,6 +9,7 @@ use App\Events\AssistantUpdated;
 use App\JsonApi\V1\Assistants\AssistantQuery;
 use App\JsonApi\V1\Assistants\AssistantRequest;
 use App\JsonApi\V1\Assistants\AssistantSchema;
+use App\JsonApi\V1\Assistants\FeedbackAssistantRequest;
 use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\AssistantService;
@@ -74,6 +75,22 @@ class AssistantController extends Controller
         return DataResponse::make($remixed)
             ->withQueryParameters($query)
             ->didCreate();
+    }
+
+    public function feedback(
+        FeedbackAssistantRequest $request,
+        AssistantSchema $schema,
+        AssistantQuery $query,
+        Assistant $assistant,
+    ): Responsable {
+        $this->authorize('view', $assistant);
+
+        $assistant->feedback()->create([
+            'text' => $request->input('data.attributes.text'),
+        ]);
+
+        return DataResponse::make($assistant)
+            ->withQueryParameters($query);
     }
 
     public function release(ReleaseAssistantRequest $request, AssistantSchema $schema, AssistantQuery $query, Assistant $assistant): Responsable

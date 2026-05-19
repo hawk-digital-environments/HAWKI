@@ -41,24 +41,25 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $relationships->hasOne('organization')->readOnly();
                     $relationships->hasOne('review')->readOnly();
                 })
-                ->actions('-actions', function (ActionRegistrar $actions) {
+                ->actions('actions', function (ActionRegistrar $actions) {
                     $actions->withId()->post('remix');
                     $actions->withId()->post('release');
+                    $actions->withId()->post('feedback');
                 });
 
-            $server->resource('categories', CategoryController::class)
+            $server->resource('assistant-categories', CategoryController::class)
                 ->only('index', 'show')
                 ->relationships(function ($relationships) {
                     $relationships->hasMany('assistants')->readOnly();
                 });
 
-            $server->resource('languages', AssistantLanguageController::class)
+            $server->resource('assistant-languages', AssistantLanguageController::class)
                 ->only('index', 'show')
                 ->relationships(function ($relationships) {
                     $relationships->hasMany('assistants')->readOnly();
                 });
 
-            $server->resource('reviews', ReviewController::class)
+            $server->resource('assistant-reviews', ReviewController::class)
                 ->only('index', 'show', 'update')
                 ->relationships(function ($relationships) {
                     $relationships->hasOne('assistant')->readOnly();
