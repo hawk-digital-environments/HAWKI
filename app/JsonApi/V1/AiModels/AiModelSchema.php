@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\JsonApi\V1\AiTools;
+namespace App\JsonApi\V1\AiModels;
 
-use App\Models\Ai\Tools\AiTool;
+use App\Models\Ai\AiModel;
 use LaravelJsonApi\Eloquent\Fields\ArrayHash;
+use LaravelJsonApi\Eloquent\Fields\ArrayList;
 use LaravelJsonApi\Eloquent\Fields\Boolean;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
@@ -15,13 +16,13 @@ use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 
-class AiToolSchema extends Schema
+class AiModelSchema extends Schema
 {
-    public static string $model = AiTool::class;
+    public static string $model = AiModel::class;
 
     public static function type(): string
     {
-        return 'ai-tools';
+        return 'ai-models';
     }
 
     protected bool $selfLink = false;
@@ -30,19 +31,18 @@ class AiToolSchema extends Schema
     {
         return [
             ID::make(),
-            Str::make('type'),
-            Str::make('name'),
-            Str::make('class_name'),
-            Str::make('description'),
-            Str::make('capability'),
-            Str::make('status'),
             Boolean::make('active'),
-            ArrayHash::make('inputSchema'),
+            Str::make('model_id'),
+            Str::make('label'),
+            ArrayList::make('input'),
+            ArrayList::make('output'),
+            ArrayList::make('tools'),
+            ArrayHash::make('default_params'),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
 
-            BelongsTo::make('server')->type('mcp-servers')->readOnly(),
-            BelongsToMany::make('models')->type('ai-models')->readOnly(),
+            BelongsTo::make('provider')->type('ai-providers')->readOnly(),
+            BelongsToMany::make('assignedTools', 'assignedTools')->type('ai-tools')->readOnly(),
         ];
     }
 

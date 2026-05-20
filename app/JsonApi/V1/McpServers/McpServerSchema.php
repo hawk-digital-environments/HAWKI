@@ -2,26 +2,23 @@
 
 declare(strict_types=1);
 
-namespace App\JsonApi\V1\AiTools;
+namespace App\JsonApi\V1\McpServers;
 
-use App\Models\Ai\Tools\AiTool;
-use LaravelJsonApi\Eloquent\Fields\ArrayHash;
-use LaravelJsonApi\Eloquent\Fields\Boolean;
+use App\Models\Ai\Tools\McpServer;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
-use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
-use LaravelJsonApi\Eloquent\Fields\Relations\BelongsToMany;
+use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 
-class AiToolSchema extends Schema
+class McpServerSchema extends Schema
 {
-    public static string $model = AiTool::class;
+    public static string $model = McpServer::class;
 
     public static function type(): string
     {
-        return 'ai-tools';
+        return 'mcp-servers';
     }
 
     protected bool $selfLink = false;
@@ -30,19 +27,18 @@ class AiToolSchema extends Schema
     {
         return [
             ID::make(),
-            Str::make('type'),
-            Str::make('name'),
-            Str::make('class_name'),
+            Str::make('url'),
+            Str::make('server_label'),
+            Str::make('version'),
+            Str::make('protocolVersion', 'protocolVersion'),
             Str::make('description'),
-            Str::make('capability'),
-            Str::make('status'),
-            Boolean::make('active'),
-            ArrayHash::make('inputSchema'),
+            Str::make('require_approval'),
+            Str::make('timeout'),
+            Str::make('discovery_timeout'),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
 
-            BelongsTo::make('server')->type('mcp-servers')->readOnly(),
-            BelongsToMany::make('models')->type('ai-models')->readOnly(),
+            HasMany::make('tools')->type('ai-tools')->readOnly(),
         ];
     }
 

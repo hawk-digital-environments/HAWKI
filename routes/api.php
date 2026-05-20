@@ -1,7 +1,10 @@
 <?php
 
+use App\Http\Controllers\AiModelController;
+use App\Http\Controllers\AiToolController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AssistantLanguageController;
+use App\Http\Controllers\McpServerController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +66,26 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->only('index', 'show', 'update')
                 ->relationships(function ($relationships) {
                     $relationships->hasOne('assistant')->readOnly();
+                });
+
+            $server->resource('ai-tools', AiToolController::class)
+                ->only('index', 'show')
+                ->relationships(function ($relationships) {
+                    $relationships->hasOne('server')->readOnly();
+                    $relationships->hasMany('models')->readOnly();
+                });
+
+            $server->resource('mcp-servers', McpServerController::class)
+                ->only('index', 'show')
+                ->relationships(function ($relationships) {
+                    $relationships->hasMany('tools')->readOnly();
+                });
+
+            $server->resource('ai-models', AiModelController::class)
+                ->only('index', 'show')
+                ->relationships(function ($relationships) {
+                    $relationships->hasOne('provider')->readOnly();
+                    $relationships->hasMany('assignedTools')->readOnly();
                 });
         });
 });
