@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiModelController;
+use App\Http\Controllers\AiProviderController;
 use App\Http\Controllers\AiToolController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AssistantLanguageController;
@@ -86,6 +87,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 ->relationships(function ($relationships) {
                     $relationships->hasOne('provider')->readOnly();
                     $relationships->hasMany('assignedTools')->readOnly();
+                    $relationships->hasOne('status')->readOnly();
+                });
+
+            $server->resource('ai-providers', AiProviderController::class)
+                ->only('index', 'show')
+                ->relationships(function ($relationships) {
+                    $relationships->hasMany('models')->readOnly();
                 });
         });
 });

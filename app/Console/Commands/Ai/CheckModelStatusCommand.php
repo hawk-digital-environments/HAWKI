@@ -32,7 +32,7 @@ class CheckModelStatusCommand extends Command
         $models = $this->aiService->getAvailableModels()->models;
         foreach ($models as $model) {
             $this->output->write("Checking model: {$model->getId()}");
-            $status = $model->getClient()->getStatus();
+            $status = $model->getClient()->getStatus($model);
             $this->output->writeln(" is " . $status->value);
             $this->modelStatusDb->setModelStatus($model, $status);
         }

@@ -12,6 +12,7 @@ use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsToMany;
+use LaravelJsonApi\Eloquent\Fields\Relations\HasOne;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
@@ -43,6 +44,7 @@ class AiModelSchema extends Schema
 
             BelongsTo::make('provider')->type('ai-providers')->readOnly(),
             BelongsToMany::make('assignedTools', 'assignedTools')->type('ai-tools')->readOnly(),
+            HasOne::make('status')->type('ai-model-statuses')->readOnly(),
         ];
     }
 

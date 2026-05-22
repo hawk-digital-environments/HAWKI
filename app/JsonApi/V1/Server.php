@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\JsonApi\V1;
 
 use App\JsonApi\V1\AiModels\AiModelSchema;
+use App\JsonApi\V1\AiModelStatuses\AiModelStatusSchema;
 use App\JsonApi\V1\AiProviders\AiProviderSchema;
 use App\JsonApi\V1\AiTools\AiToolSchema;
 use App\JsonApi\V1\Assistants\AssistantSchema;
@@ -40,6 +41,7 @@ class Server extends BaseServer
             AiToolSchema::class,
             McpServerSchema::class,
             AiModelSchema::class,
+            AiModelStatusSchema::class,
             AiProviderSchema::class,
             ReviewSchema::class,
             VersionSchema::class,

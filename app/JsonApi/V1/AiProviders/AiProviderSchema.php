@@ -24,6 +24,8 @@ class AiProviderSchema extends Schema
 
     protected bool $selfLink = false;
 
+    protected int $maxDepth = 2;
+
     public function fields(): array
     {
         return [
@@ -47,7 +49,9 @@ class AiProviderSchema extends Schema
 
     public function filters(): array
     {
-        return [];
+        return [
+            ToolCapabilityFilter::make(),
+        ];
     }
 
     public function pagination(): ?PagePagination
