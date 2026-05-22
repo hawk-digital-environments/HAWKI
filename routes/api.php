@@ -8,6 +8,7 @@ use App\Http\Controllers\AssistantLanguageController;
 use App\Http\Controllers\McpServerController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StreamController;
 use Illuminate\Http\Request;
@@ -53,6 +54,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
             $server->resource('assistant-categories', CategoryController::class)
                 ->only('index', 'show')
+                ->relationships(function ($relationships) {
+                    $relationships->hasMany('assistants')->readOnly();
+                });
+
+            $server->resource('tags', TagController::class)
+                ->only('index', 'show', 'store', 'destroy')
                 ->relationships(function ($relationships) {
                     $relationships->hasMany('assistants')->readOnly();
                 });
