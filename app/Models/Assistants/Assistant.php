@@ -7,6 +7,7 @@ use App\Models\Attachment;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Repositories\OrganizationRepository;
+use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Table;
@@ -29,7 +30,7 @@ class Assistant extends Model
         'detail_description' => '',
         'allow_remix' => false,
         'allow_model_select' => false,
-        'release_stage' => 'private',
+        'release_stage' => ReleaseStage::DRAFT,
         'formality' => 'neutral',
         'model' => '',
         'model_length' => 0,

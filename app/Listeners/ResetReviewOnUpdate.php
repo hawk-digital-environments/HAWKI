@@ -15,7 +15,7 @@ class ResetReviewOnUpdate
 
     public function handle(AssistantUpdated $event): void
     {
-        if ($event->assistant->release_stage === ReleaseStage::PRIVATE->value) {
+        if (in_array($event->assistant->release_stage, [ReleaseStage::PRIVATE->value, ReleaseStage::DRAFT->value], true)) {
             return;
         }
 

@@ -9,6 +9,7 @@ use App\Events\AssistantTriggerReleaseStatus;
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Assistant\Repositories\AssistantRepository;
+use App\Services\Assistant\Repositories\FeedbackRepository;
 use App\Services\Assistant\Repositories\OrganizationRepository;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Container\Attributes\Singleton;
@@ -20,6 +21,7 @@ readonly class AssistantService
 {
     public function __construct(
         private AssistantRepository $repository,
+        private FeedbackRepository $feedbackRepository,
         private OrganizationRepository $organizationRepository,
         private DatabaseManager $db,
     ) {}
@@ -63,6 +65,11 @@ readonly class AssistantService
 
             return $this->repository->loadRelations($clone, ['user_prompts', 'ai_tools', 'tags', 'attachments', 'versions']);
         });
+    }
+
+    public function feedback(Assistant $assistant, User $user, string $text): void
+    {
+        $this->feedbackRepository->create($assistant, $user, $text);
     }
 
     public function release(Assistant $assistant, ReleaseStage $newStage): Assistant

@@ -243,4 +243,54 @@ class UpdateTest extends TestCase
             'assistant_id' => $assistant->id,
         ]);
     }
+
+    public function test_update_does_not_increment_version_when_draft(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => ReleaseStage::DRAFT->value,
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'Updated Name',
+        ]))
+            ->assertOk();
+
+        $this->assertDatabaseHas('assistants', [
+            'id' => $assistant->id,
+            'name' => 'Updated Name',
+        ]);
+
+        $this->assertCount(1, $assistant->fresh()->versions);
+    }
+
+    public function test_update_does_not_reset_review_when_draft(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => ReleaseStage::DRAFT->value,
+        ]);
+        Review::create([
+            'assistant_id' => $assistant->id,
+            'status' => ReviewStatus::APPROVED->value,
+            'reason' => 'Looks good',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'Updated Name',
+        ]))
+            ->assertOk();
+
+        $this->assertDatabaseHas('reviews', [
+            'assistant_id' => $assistant->id,
+            'status' => ReviewStatus::APPROVED->value,
+            'reason' => 'Looks good',
+        ]);
+    }
 }

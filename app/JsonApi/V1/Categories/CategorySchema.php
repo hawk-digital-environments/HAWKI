@@ -9,6 +9,7 @@ use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Str;
+use LaravelJsonApi\Eloquent\Filters\WhereIn;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 use Illuminate\Database\Eloquent\Builder;
@@ -42,7 +43,9 @@ class CategorySchema extends Schema
 
     public function filters(): array
     {
-        return [];
+        return [
+            WhereIn::make('text')->delimiter(','),
+        ];
     }
 
     public function indexQuery(?Request $request, Builder $query): Builder

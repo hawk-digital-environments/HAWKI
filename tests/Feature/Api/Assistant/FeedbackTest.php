@@ -36,6 +36,7 @@ class FeedbackTest extends TestCase
 
         $this->assertDatabaseHas('feedback', [
             'assistant_id' => $assistant->id,
+            'user_id' => $viewer->id,
             'text' => 'Great assistant!',
         ]);
 
@@ -64,6 +65,7 @@ class FeedbackTest extends TestCase
 
         $this->assertDatabaseHas('feedback', [
             'assistant_id' => $assistant->id,
+            'user_id' => $owner->id,
             'text' => 'My own feedback',
         ]);
     }

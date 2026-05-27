@@ -15,6 +15,7 @@ use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
 use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Relations\HasOne;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsToMany;
+use LaravelJsonApi\Eloquent\Filters\WhereHas;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 use Illuminate\Http\Request;
@@ -64,7 +65,7 @@ class AssistantSchema extends Schema
     public function filters(): array
     {
         return [
-            CategoryFilter::make(),
+            WhereHas::make($this, 'category'),
             AssistantNameFilter::make(),
         ];
     }

@@ -85,9 +85,11 @@ class AssistantController extends Controller
     ): Responsable {
         $this->authorize('view', $assistant);
 
-        $assistant->feedback()->create([
-            'text' => $request->input('data.attributes.text'),
-        ]);
+        $this->assistantService->feedback(
+            $assistant,
+            $request->user(),
+            $request->input('data.attributes.text'),
+        );
 
         return DataResponse::make($assistant)
             ->withQueryParameters($query);

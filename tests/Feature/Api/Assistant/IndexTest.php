@@ -125,7 +125,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', '/api/assistants?filter[category]=education&include=category')
+        $response = $this->jsonApi('get', '/api/assistants?filter[category][text]=education&include=category')
             ->assertOk()
             ->assertJsonCount(2, 'data');
 
@@ -133,6 +133,29 @@ class IndexTest extends TestCase
         $catResources = $included->filter(fn($item) => $item['type'] === 'assistant-categories');
         foreach ($catResources as $catResource) {
             $this->assertEquals('education', $catResource['attributes']['text']);
+        }
+    }
+
+    public function test_can_filter_assistants_by_multiple_categories(): void
+    {
+        $user = User::factory()->create();
+        $education = Category::factory()->create(['text' => 'education']);
+        $general = Category::factory()->create(['text' => 'general']);
+        $science = Category::factory()->create(['text' => 'science']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'category_id' => $education->id]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'category_id' => $general->id]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'category_id' => $science->id]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->jsonApi('get', '/api/assistants?filter[category][text]=education,general&include=category')
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        $included = collect($response->json('included'));
+        $catResources = $included->filter(fn($item) => $item['type'] === 'assistant-categories');
+        foreach ($catResources as $catResource) {
+            $this->assertContains($catResource['attributes']['text'], ['education', 'general']);
         }
     }
 
@@ -144,7 +167,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistants?filter[category]=nonexistent')
+        $this->jsonApi('get', '/api/assistants?filter[category][text]=nonexistent')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -290,7 +313,7 @@ class IndexTest extends TestCase
         $query = http_build_query([
             'include' => 'tags,category',
             'fields' => ['tags' => 'text'],
-            'filter' => ['category' => 'general'],
+            'filter' => ['category' => ['text' => 'general']],
             'page' => ['size' => 5],
         ]);
 
@@ -304,7 +327,7 @@ class IndexTest extends TestCase
 
         $this->assertStringContainsString('include=tags%2Ccategory', $links['first']);
         $this->assertStringContainsString('fields%5Btags%5D=text', $links['first']);
-        $this->assertStringContainsString('filter%5Bcategory%5D=general', $links['first']);
+        $this->assertStringContainsString('filter%5Bcategory%5D%5Btext%5D=general', $links['first']);
         $this->assertStringContainsString('page%5Bsize%5D=5', $links['first']);
         $this->assertStringContainsString('page%5Bnumber%5D=1', $links['first']);
         $this->assertStringContainsString('page%5Bnumber%5D=2', $links['next']);

@@ -150,6 +150,10 @@ return new class extends Migration
                 ->constrained('assistants')
                 ->cascadeOnDelete();
 
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
+
             $table->timestamps();
         });
     }
