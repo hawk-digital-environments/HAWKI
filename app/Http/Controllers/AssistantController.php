@@ -10,6 +10,7 @@ use App\JsonApi\V1\Assistants\AssistantQuery;
 use App\JsonApi\V1\Assistants\AssistantRequest;
 use App\JsonApi\V1\Assistants\AssistantSchema;
 use App\JsonApi\V1\Assistants\FeedbackAssistantRequest;
+use App\JsonApi\V1\Assistants\FavoriteAssistantRequest;
 use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\AssistantService;
@@ -104,6 +105,24 @@ class AssistantController extends Controller
         $assistant = $this->assistantService->release($assistant, $releaseStage);
 
         return DataResponse::make($assistant)
+            ->withQueryParameters($query);
+    }
+
+    public function favorite(
+        FavoriteAssistantRequest $request,
+        AssistantSchema $schema,
+        AssistantQuery $query,
+        Assistant $assistant,
+    ): Responsable {
+        $this->authorize('favorite', $assistant);
+
+        $this->assistantService->setFavorite(
+            $assistant,
+            $request->user(),
+            $request->boolean('data.attributes.is_favorite'),
+        );
+
+        return DataResponse::make($assistant->fresh())
             ->withQueryParameters($query);
     }
 }

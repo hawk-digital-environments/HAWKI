@@ -156,6 +156,22 @@ return new class extends Migration
 
             $table->timestamps();
         });
+
+        Schema::create('assistant_favorite_users', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('assistant_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->timestamps();
+
+            $table->unique(['assistant_id', 'user_id']);
+        });
     }
 
     /**
@@ -171,7 +187,8 @@ return new class extends Migration
         Schema::dropIfExists('tags');
         Schema::dropIfExists('categories');
         Schema::dropIfExists('languages');
-        Schema::dropIfExists('reviews');
+        Schema::dropIfExists('assistant_favorite_users');
         Schema::dropIfExists('feedback');
+        Schema::dropIfExists('reviews');
     }
 };

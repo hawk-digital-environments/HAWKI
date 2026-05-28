@@ -84,4 +84,9 @@ readonly class AssistantService
 
         return $assistant;
     }
+
+    public function setFavorite(Assistant $assistant, User $user, bool $isFavorite): void
+    {
+        $this->repository->setFavorite($assistant, $user, $isFavorite);
+    }
 }

@@ -46,6 +46,7 @@ class AssistantSchema extends Schema
             DateTime::make('created_at')->sortable()->readOnly(),
             DateTime::make('updated_at')->sortable()->readOnly(),
             Str::make('version_text')->hidden(),
+            Boolean::make('is_favorite')->readOnly(),
 
             BelongsTo::make('language')->type('assistant-languages'),
             BelongsTo::make('category')->type('assistant-categories'),
@@ -67,6 +68,7 @@ class AssistantSchema extends Schema
         return [
             WhereHas::make($this, 'category'),
             AssistantNameFilter::make(),
+            AssistantFavoriteFilter::make(),
         ];
     }
 
@@ -83,6 +85,8 @@ class AssistantSchema extends Schema
             return $query;
         }
 
-        return app(AssistantRepository::class)->filterVisibleForUser($query, $user);
+        return app(AssistantRepository::class)
+            ->filterVisibleForUser($query, $user)
+            ->withCount(['favoritedByUsers as is_favorite' => fn($q) => $q->where('user_id', $user->id)]);
     }
 }

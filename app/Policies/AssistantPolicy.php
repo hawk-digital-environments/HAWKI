@@ -51,4 +51,9 @@ class AssistantPolicy
     {
         return $this->view($user, $assistant);
     }
+
+    public function favorite(User $user, Assistant $assistant): bool
+    {
+        return $this->view($user, $assistant);
+    }
 }

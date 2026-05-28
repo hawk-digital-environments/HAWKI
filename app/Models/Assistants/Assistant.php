@@ -156,4 +156,21 @@ class Assistant extends Model
     {
         return $this->hasOne(Review::class);
     }
+
+    public function favoritedByUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'assistant_favorite_users')
+            ->withTimestamps();
+    }
+
+    public function getIsFavoriteAttribute(): bool
+    {
+        if (array_key_exists('is_favorite', $this->attributes)) {
+            return (bool) $this->attributes['is_favorite'];
+        }
+
+        return $this->favoritedByUsers()
+            ->where('user_id', Auth::id())
+            ->exists();
+    }
 }

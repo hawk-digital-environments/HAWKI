@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementUser;
+use App\Models\Assistants\Assistant;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -50,6 +51,12 @@ class User extends Authenticatable
     public function conversations()
     {
         return $this->hasMany(AiConv::class);
+    }
+
+    public function favoriteAssistants()
+    {
+        return $this->belongsToMany(Assistant::class, 'assistant_favorite_users')
+            ->withTimestamps();
     }
 
     public function invitations()

@@ -455,4 +455,76 @@ class IndexTest extends TestCase
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
+
+    public function test_is_favorite_attribute_returned_in_list(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+        $user->favoriteAssistants()->attach($assistant->id);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants')
+            ->assertOk()
+            ->assertJsonPath('data.0.attributes.is_favorite', true);
+    }
+
+    public function test_is_favorite_is_false_when_not_favorited(): void
+    {
+        $user = User::factory()->create();
+        Assistant::factory()->create(['creator_id' => $user->id]);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants')
+            ->assertOk()
+            ->assertJsonPath('data.0.attributes.is_favorite', false);
+    }
+
+    public function test_can_filter_assistants_by_is_favorite_true(): void
+    {
+        $user = User::factory()->create();
+        $favorited = Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Favorited']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Not Favorited']);
+        $user->favoriteAssistants()->attach($favorited->id);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['is_favorite' => 'true']]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.attributes.name', 'Favorited');
+    }
+
+    public function test_can_filter_assistants_by_is_favorite_false(): void
+    {
+        $user = User::factory()->create();
+        $favorited = Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Favorited']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Not Favorited A']);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Not Favorited B']);
+        $user->favoriteAssistants()->attach($favorited->id);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['is_favorite' => 'false']]))
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+    }
+
+    public function test_is_favorite_filter_only_scopes_to_authenticated_user(): void
+    {
+        $userA = User::factory()->create();
+        $userB = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $userA->id,
+            'release_stage' => 'public',
+        ]);
+        $userA->favoriteAssistants()->attach($assistant->id);
+
+        Sanctum::actingAs($userB);
+
+        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['is_favorite' => 'true']]))
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
 }

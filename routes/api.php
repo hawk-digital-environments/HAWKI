@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $actions->withId()->post('remix');
                     $actions->withId()->post('release');
                     $actions->withId()->post('feedback');
+                    $actions->withId()->post('favorite');
                 });
 
             $server->resource('assistant-categories', CategoryController::class)

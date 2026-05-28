@@ -4,7 +4,6 @@ namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Tag;
-use App\Models\Attachment;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -8,7 +8,6 @@ use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Category;
 use App\Models\Assistants\Language;
 use App\Models\Assistants\Tag;
-use App\Models\Assistants\UserPrompt;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;

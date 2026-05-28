@@ -88,4 +88,20 @@ readonly class AssistantRepository
     {
         return $assistant->load($relations);
     }
+
+    public function filterByIsFavorite(Builder $query, User $user, bool $isFavorite): Builder
+    {
+        $method = $isFavorite ? 'whereHas' : 'whereDoesntHave';
+
+        return $query->$method('favoritedByUsers', fn($q) => $q->where('user_id', $user->id));
+    }
+
+    public function setFavorite(Assistant $assistant, User $user, bool $isFavorite): void
+    {
+        if ($isFavorite) {
+            $user->favoriteAssistants()->syncWithoutDetaching([$assistant->id]);
+        } else {
+            $user->favoriteAssistants()->detach($assistant->id);
+        }
+    }
 }

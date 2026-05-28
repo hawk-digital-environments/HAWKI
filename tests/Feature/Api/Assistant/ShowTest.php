@@ -386,4 +386,35 @@ class ShowTest extends TestCase
         $this->jsonApi('get', "/api/assistants/{$assistant->id}")
             ->assertUnauthorized();
     }
+
+    public function test_is_favorite_attribute_on_show_when_favorited(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'public',
+        ]);
+        $owner->favoriteAssistants()->attach($assistant->id);
+
+        Sanctum::actingAs($owner);
+
+        $this->jsonApi('get', "/api/assistants/{$assistant->id}")
+            ->assertOk()
+            ->assertJsonPath('data.attributes.is_favorite', true);
+    }
+
+    public function test_is_favorite_attribute_on_show_when_not_favorited(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'public',
+        ]);
+
+        Sanctum::actingAs($owner);
+
+        $this->jsonApi('get', "/api/assistants/{$assistant->id}")
+            ->assertOk()
+            ->assertJsonPath('data.attributes.is_favorite', false);
+    }
 }
