@@ -17,7 +17,7 @@
                 <div class="password-input-wrapper">
                     <input
                         class="passkey-input"
-                        placeholder="{{ $translation['Reg_SL5_PH1'] }}"
+                        placeholder="{{ $translation['HS_EnterPasskeyMsg'] }}"
                         id="passkey-input"
                         type="text"
                         autocomplete="new-password"
