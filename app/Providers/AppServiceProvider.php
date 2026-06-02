@@ -11,6 +11,8 @@ use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
+use App\Services\Assistant\Chat\AssistantChatRunnerInterface;
+use App\Services\Assistant\Chat\SimpleAssistantChatRunner;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\StorageServiceFactory;
@@ -26,7 +28,6 @@ use League\Flysystem\Filesystem;
 use League\Flysystem\WebDAV\WebDAVAdapter;
 use Sabre\DAV\Client;
 
-
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerMiddlewareAliases();
         $this->registerStorageServices();
+        $this->registerAssistantServices();
     }
 
     /**
@@ -51,12 +53,12 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(
             AvatarStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
+            fn (Application $app) => $app->make(StorageServiceFactory::class)->getAvatarStorage()
         );
 
         $this->app->singleton(
             FileStorageService::class,
-            fn(Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
+            fn (Application $app) => $app->make(StorageServiceFactory::class)->getFileStorage()
         );
     }
 
@@ -90,17 +92,17 @@ class AppServiceProvider extends ServiceProvider
              * Acts in the same way as the standard "command" method, but allows for dynamic scheduling intervals and arguments, which can be defined in the database or configuration.
              * This macro uses the {@see ScheduleWithDynamicIntervalFactory} to create the scheduled job, which handles the parsing and validation of the interval and arguments, and logs any errors that occur during scheduling.
              *
-             * @param string $command The command to be scheduled.
-             * @param array|null $parameters Optional parameters for the command.
-             * @param mixed $interval The scheduling interval, which can be a string representing a scheduling method or the special "never" value.
-             * @param mixed|null $intervalArgs Optional arguments for the scheduling method, which can be a JSON string, a single numeric value, or a simple string.
+             * @param  string  $command  The command to be scheduled.
+             * @param  array|null  $parameters  Optional parameters for the command.
+             * @param  mixed  $interval  The scheduling interval, which can be a string representing a scheduling method or the special "never" value.
+             * @param  mixed|null  $intervalArgs  Optional arguments for the scheduling method, which can be a JSON string, a single numeric value, or a simple string.
              * @return ScheduleEvent|null Returns the scheduled Event if successful, or null if there was an error in scheduling due to invalid interval or arguments.
              */
             function (
-                string     $command,
-                array|null $parameters = null,
-                mixed      $interval = ScheduleWithDynamicIntervalFactory::NEVER_INTERVAL,
-                mixed      $intervalArgs = null
+                string $command,
+                ?array $parameters = null,
+                mixed $interval = ScheduleWithDynamicIntervalFactory::NEVER_INTERVAL,
+                mixed $intervalArgs = null
             ) use ($app): ScheduleEvent|null {
                 return $app->make(ScheduleWithDynamicIntervalFactory::class)->makeJob(
                     command: $command,
@@ -123,5 +125,10 @@ class AppServiceProvider extends ServiceProvider
         Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
         Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
         Route::aliasMiddleware('deprecated', DeprecatedEndpointMiddleware::class);
+    }
+
+    protected function registerAssistantServices(): void
+    {
+        $this->app->singleton(AssistantChatRunnerInterface::class, SimpleAssistantChatRunner::class);
     }
 }

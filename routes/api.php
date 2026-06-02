@@ -5,18 +5,15 @@ use App\Http\Controllers\AiProviderController;
 use App\Http\Controllers\AiToolController;
 use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\AssistantLanguageController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\McpServerController;
 use App\Http\Controllers\ReviewController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\TagController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StreamController;
+use App\Http\Controllers\TagController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use LaravelJsonApi\Laravel\Facades\JsonApiRoute;
 use LaravelJsonApi\Laravel\Routing\ActionRegistrar;
-
-use App\Models\User;
-
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -51,6 +48,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $actions->withId()->post('release');
                     $actions->withId()->post('feedback');
                     $actions->withId()->post('favorite');
+                    $actions->withId()->post('chat-test');
                 });
 
             $server->resource('assistant-categories', CategoryController::class)
