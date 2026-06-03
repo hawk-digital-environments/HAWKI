@@ -77,7 +77,7 @@ class ChatTestTest extends TestCase
 
     private function mockRunner(array $chunks): void
     {
-        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner = $this->createStub(AssistantChatRunnerInterface::class);
         $runner->method('stream')->willReturn((function () use ($chunks) {
             foreach ($chunks as $chunk) {
                 yield $chunk;
@@ -249,7 +249,7 @@ class ChatTestTest extends TestCase
         ]);
         Sanctum::actingAs($user);
 
-        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner = $this->createStub(AssistantChatRunnerInterface::class);
         $runner->method('stream')->willThrowException(new \RuntimeException('AI provider error'));
         $this->app->instance(AssistantChatRunnerInterface::class, $runner);
 

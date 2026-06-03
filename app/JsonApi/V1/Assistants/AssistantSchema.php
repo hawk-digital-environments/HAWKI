@@ -20,6 +20,7 @@ use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
+use LaravelJsonApi\Eloquent\Filters\Where;
 
 class AssistantSchema extends Schema
 {
@@ -69,6 +70,7 @@ class AssistantSchema extends Schema
             WhereHas::make($this, 'category'),
             AssistantNameFilter::make(),
             AssistantFavoriteFilter::make(),
+            Where::make('release_stage')
         ];
     }
 

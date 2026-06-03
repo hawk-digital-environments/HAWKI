@@ -7,6 +7,7 @@ use App\Models\Assistants\Category;
 use App\Models\Assistants\Language;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -509,6 +510,21 @@ class IndexTest extends TestCase
         $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['is_favorite' => 'false']]))
             ->assertOk()
             ->assertJsonCount(2, 'data');
+    }
+
+    public function test_can_filter_assistant_release_status(): void
+    {
+        $user = User::factory()->create();
+        $draftAssistant = Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release draft', 'release_stage' => ReleaseStage::DRAFT]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release organizational', 'release_stage' => ReleaseStage::ORGANIZATIONAL]);
+        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release private', 'release_stage' => ReleaseStage::PRIVATE]);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['release_stage' => ReleaseStage::DRAFT]]))
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (string) $draftAssistant -> id);
     }
 
     public function test_is_favorite_filter_only_scopes_to_authenticated_user(): void
