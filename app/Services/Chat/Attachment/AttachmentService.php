@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 use Exception;
+use Illuminate\Http\UploadedFile;
 
 class AttachmentService{
 
@@ -115,6 +116,50 @@ class AttachmentService{
         }
         if(str_contains($mime, 'image')){
             return 'image';
+        }
+    }
+
+
+    /**
+     * Store a file and immediately create an Attachment record for API use.
+     * Unlike the web flow (which defers DB record creation until message send),
+     * this method creates the Attachment record right away so the UUID can be
+     * referenced in a subsequent AI request.
+     *
+     * @param UploadedFile $file
+     * @return array|null  Returns ['uuid', 'name', 'mime', 'type'] on success, null on failure.
+     */
+    public function storeForApi(UploadedFile $file): ?array
+    {
+        try {
+            $mime = $file->getMimeType();
+            $type = $this->convertToAttachmentType($mime);
+
+            if (!$type) {
+                throw new Exception("Unsupported file type: $mime");
+            }
+
+            $handler = AttachmentFactory::create($type);
+            $result  = $handler->store($file, 'private');
+
+            $attachment = Attachment::create([
+                'uuid'     => $result['uuid'],
+                'name'     => $file->getClientOriginalName(),
+                'category' => 'private',
+                'mime'     => $mime,
+                'type'     => $type,
+                'user_id'  => Auth::id(),
+            ]);
+
+            return [
+                'uuid' => $attachment->uuid,
+                'name' => $attachment->name,
+                'mime' => $attachment->mime,
+                'type' => $attachment->type,
+            ];
+        } catch (Exception $e) {
+            Log::error('Error storing API attachment', ['exception' => $e]);
+            return null;
         }
     }
 

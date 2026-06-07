@@ -37,11 +37,13 @@ class StreamController extends Controller
         try {
             // Validate request data
             $validatedData = $request->validate([
-                'payload.model' => 'required|string',
-                'payload.messages' => 'required|array',
-                'payload.messages.*.role' => 'required|string',
-                'payload.messages.*.content' => 'required|array',
-                'payload.messages.*.content.text' => 'required|string',
+                'payload.model'                              => 'required|string',
+                'payload.messages'                          => 'required|array',
+                'payload.messages.*.role'                   => 'required|string',
+                'payload.messages.*.content'                => 'required|array',
+                'payload.messages.*.content.text'           => 'nullable|string',
+                'payload.messages.*.content.attachments'    => 'nullable|array',
+                'payload.messages.*.content.attachments.*'  => 'string',
             ]);
         } catch (ValidationException $e) {
             // Return detailed validation error response
@@ -53,6 +55,45 @@ class StreamController extends Controller
         }
 
         $payload = $validatedData['payload'];
+
+        // Ensure every message has at least text or an attachment
+        foreach ($payload['messages'] as $index => $message) {
+            $text        = $message['content']['text'] ?? null;
+            $attachments = $message['content']['attachments'] ?? [];
+            if (empty($text) && empty($attachments)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation Error',
+                    'errors'  => [
+                        "payload.messages.{$index}.content" => [
+                            'Each message content must have either a non-empty text or at least one attachment.',
+                        ],
+                    ],
+                ], 422);
+            }
+        }
+
+        // Verify that all referenced attachment UUIDs belong to the authenticated user
+        $allUuids = collect($payload['messages'])
+            ->pluck('content.attachments')
+            ->filter()
+            ->flatten()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (!empty($allUuids)) {
+            $ownedCount = \App\Models\Attachment::whereIn('uuid', $allUuids)
+                ->where('user_id', $user->id)
+                ->count();
+
+            if ($ownedCount !== count($allUuids)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'One or more attachment UUIDs are invalid or do not belong to you.',
+                ], 403);
+            }
+        }
 
         // Handle standard response
         $response = $this->aiService->sendRequest($payload);
