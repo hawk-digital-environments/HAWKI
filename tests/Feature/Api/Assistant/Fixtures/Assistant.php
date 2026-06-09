@@ -20,9 +20,9 @@ trait Assistant
             'release_stage' => 'private',
             'formality' => 'neutral',
             'model' => 'gpt-4',
-            'model_length' => 2048,
-            'model_temp' => 0.7,
-            'model_top_p' => 0.9,
+            'max_tokens' => 2048,
+            'temp' => 0.7,
+            'top_p' => 0.9,
         ], $overrides);
     }
 
@@ -44,6 +44,7 @@ trait Assistant
         if (isset($rels['user_prompts'])) {
             $defaults['user_prompts'] = ['data' => array_map(fn ($id) => ['type' => 'user-prompts', 'id' => (string) $id], $rels['user_prompts'])];
         }
+
         return $defaults;
     }
 
@@ -59,14 +60,15 @@ trait Assistant
         if ($rels) {
             $doc['data']['relationships'] = $rels;
         }
+
         return $doc;
     }
 
     private function createAiTool(): AiTool
     {
         $serverId = DB::table('mcp_servers')->insertGetId([
-            'url' => 'https://example.com/mcp/' . uniqid(),
-            'server_label' => 'Test Server ' . uniqid(),
+            'url' => 'https://example.com/mcp/'.uniqid(),
+            'server_label' => 'Test Server '.uniqid(),
             'timeout' => '10',
             'discovery_timeout' => '10',
             'api_key' => 'test-key',
@@ -76,7 +78,7 @@ trait Assistant
 
         return AiTool::create([
             'type' => 'function',
-            'name' => 'test_tool_' . uniqid(),
+            'name' => 'test_tool_'.uniqid(),
             'description' => 'A test tool',
             'status' => 'active',
             'server_id' => $serverId,

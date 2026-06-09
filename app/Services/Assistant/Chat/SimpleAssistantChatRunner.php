@@ -27,7 +27,7 @@ class SimpleAssistantChatRunner implements AssistantChatRunnerInterface
 
         $onData = function (AiResponse $response) use (&$chunks): void {
             if ($response->error !== null) {
-                return;
+                throw new \RuntimeException('AI provider error: '.($response->content['error'] ?? $response->error));
             }
 
             if ($response->type === 'tool_call' && ! empty($response->content['tool_call_id'] ?? null)) {
@@ -63,6 +63,16 @@ class SimpleAssistantChatRunner implements AssistantChatRunnerInterface
                 ];
 
                 return;
+            }
+
+            if ($response->usage !== null) {
+                $chunks[] = [
+                    'type' => 'usage',
+                    'content' => [
+                        'prompt_tokens' => $response->usage->promptTokens,
+                        'completion_tokens' => $response->usage->completionTokens,
+                    ],
+                ];
             }
 
             if (! empty($response->content['text'] ?? null)) {

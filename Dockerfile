@@ -8,6 +8,27 @@ COPY --chown=www-data:www-data . .
 
 RUN npm ci && npm run build
 
+# -----------------------------------------------------
+# OPENAPI - BUILDER
+# -----------------------------------------------------
+FROM neunerlei/php-nginx:8.5 AS openapi_builder
+
+RUN --mount=type=bind,from=mlocati/php-extension-installer:2,source=/usr/bin/install-php-extensions,target=/usr/local/bin/install-php-extensions \
+    install-php-extensions ldap
+
+COPY --chown=www-data:www-data ./composer.json ./composer.json
+COPY --chown=www-data:www-data ./composer.lock ./composer.lock
+RUN composer install --no-cache --no-progress --no-interaction --verbose
+
+COPY --chown=www-data:www-data . .
+
+RUN mkdir -p /var/www/html/storage/framework/cache \
+    && mkdir -p /var/www/html/storage/framework/sessions \
+    && mkdir -p /var/www/html/storage/framework/views \
+    && mkdir -p /var/www/html/storage/logs \
+    && chown -R www-data:www-data /var/www/html/storage \
+    && php artisan openapi:generate --no-examples
+
 # =====================================================
 # APP service
 # =====================================================
@@ -98,6 +119,7 @@ RUN composer remove --no-cache --no-progress --no-interaction --verbose --no-scr
 # Add the app sources
 COPY --chown=www-data:www-data . .
 COPY --from=node_builder --chown=www-data:www-data /var/www/html/public/build /var/www/html/public/build
+COPY --from=openapi_builder --chown=www-data:www-data /var/www/html/public/docs /var/www/html/public/docs
 
 # Dump the autoload file and run the matching scripts, after all the project files are in the image
 # Laravel commands require some directories to be writeable by the web server user, so we need to create them and set the permissions before running the composer scripts

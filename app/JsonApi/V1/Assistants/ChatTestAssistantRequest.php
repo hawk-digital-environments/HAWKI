@@ -16,12 +16,9 @@ class ChatTestAssistantRequest extends FormRequest
         return [
             'data.type' => ['required', 'in:assistants'],
             'data.id' => ['required'],
-            'data.attributes.messages' => ['required', 'array'],
-            'data.attributes.messages.*.role' => ['required', 'string'],
-            'data.attributes.messages.*.content' => ['required', 'array'],
-            'data.attributes.messages.*.content.text' => ['nullable', 'string'],
-            'data.attributes.tools' => ['nullable', 'array'],
-            'data.attributes.params' => ['nullable', 'array'],
+            'data.attributes.input' => ['required', 'array', 'min:1'],
+            'data.attributes.input.*.role' => ['required', 'string', 'in:user,assistant,system,developer'],
+            'data.attributes.input.*.content' => ['required'],
         ];
     }
 }

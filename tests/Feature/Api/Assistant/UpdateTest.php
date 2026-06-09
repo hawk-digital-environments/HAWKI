@@ -19,7 +19,7 @@ use Tests\TestCase;
 
 class UpdateTest extends TestCase
 {
-    use RefreshDatabase, AssistantFixture;
+    use AssistantFixture, RefreshDatabase;
 
     private function updatePayload(Assistant $assistant, array $attributes, array $relationships = []): array
     {
@@ -34,6 +34,7 @@ class UpdateTest extends TestCase
         if ($rels) {
             $data['data']['relationships'] = $rels;
         }
+
         return $data;
     }
 
@@ -71,9 +72,9 @@ class UpdateTest extends TestCase
                     'release_stage' => $assistant->release_stage,
                     'formality' => $assistant->formality,
                     'model' => $assistant->model,
-                    'model_length' => $assistant->model_length,
-                    'model_temp' => $assistant->model_temp,
-                    'model_top_p' => $assistant->model_top_p,
+                    'max_tokens' => $assistant->max_tokens,
+                    'temp' => $assistant->temp,
+                    'top_p' => $assistant->top_p,
                     'created_at' => $assistant->created_at->toJson(),
                     'updated_at' => $assistant->updated_at->toJson(),
                 ],

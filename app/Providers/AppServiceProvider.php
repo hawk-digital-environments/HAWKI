@@ -11,6 +11,7 @@ use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
+use App\JsonApi\V1\Server;
 use App\Services\Assistant\Chat\AssistantChatRunnerInterface;
 use App\Services\Assistant\Chat\SimpleAssistantChatRunner;
 use App\Services\Storage\AvatarStorageService;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
+use LaravelJsonApi\Core\Support\AppResolver;
 use League\Flysystem\Filesystem;
 use League\Flysystem\WebDAV\WebDAVAdapter;
 use Sabre\DAV\Client;
@@ -38,6 +40,18 @@ class AppServiceProvider extends ServiceProvider
         $this->registerMiddlewareAliases();
         $this->registerStorageServices();
         $this->registerAssistantServices();
+        $this->registerJsonApiServer();
+    }
+
+    protected function registerJsonApiServer(): void
+    {
+        $this->app->singleton(
+            Server::class,
+            fn (Application $app) => new Server(
+                new AppResolver(fn () => $app),
+                'v1',
+            ),
+        );
     }
 
     /**

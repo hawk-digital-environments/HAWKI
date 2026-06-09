@@ -22,7 +22,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get',"/api/assistants/{$assistant->id}")
+        $this->jsonApi('get', "/api/assistants/{$assistant->id}")
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -40,20 +40,20 @@ class ShowTest extends TestCase
                         'release_stage' => $assistant->release_stage,
                         'formality' => $assistant->formality,
                         'model' => $assistant->model,
-                        'model_length' => $assistant->model_length,
-                        'model_temp' => $assistant->model_temp,
-                        'model_top_p' => $assistant->model_top_p,
+                        'max_tokens' => $assistant->max_tokens,
+                        'temp' => $assistant->temp,
+                        'top_p' => $assistant->top_p,
                         'created_at' => $assistant->created_at->toJson(),
                         'updated_at' => $assistant->updated_at->toJson(),
                     ],
                     'links' => [
-                        'self' => config('app.url') . "/api/assistants/{$assistant->id}",
+                        'self' => config('app.url')."/api/assistants/{$assistant->id}",
                         'remix' => [
-                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                             'meta' => ['message' => 'ALLOWED'],
                         ],
                         'release' => [
-                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
                             'meta' => ['message' => 'ALLOWED'],
                         ],
                     ],
@@ -68,7 +68,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=creator,user_prompts,ai_tools,tags")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=creator,user_prompts,ai_tools,tags")
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -112,7 +112,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=organization")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=organization")
             ->assertOk();
 
         $response->assertJson([
@@ -141,7 +141,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=versions")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=versions")
             ->assertOk();
 
         $included = collect($response->json('included'));
@@ -161,7 +161,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=language")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=language")
             ->assertOk();
 
         $included = collect($response->json('included'));
@@ -180,7 +180,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=category")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=category")
             ->assertOk();
 
         $included = collect($response->json('included'));
@@ -195,7 +195,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=creator")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=creator")
             ->assertOk();
 
         $response->assertJson([
@@ -228,7 +228,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$assistant->id}?include=remix_creator")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=remix_creator")
             ->assertOk();
 
         $response->assertJson([
@@ -261,7 +261,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get',"/api/assistants/{$remix->id}?include=remixed_assistant")
+        $response = $this->jsonApi('get', "/api/assistants/{$remix->id}?include=remixed_assistant")
             ->assertOk();
 
         $response->assertJson([
@@ -290,7 +290,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get',"/api/assistants/{$assistant->id}")
+        $this->jsonApi('get', "/api/assistants/{$assistant->id}")
             ->assertOk()
             ->assertJsonMissingPath('included');
     }
@@ -307,7 +307,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->jsonApi('get',"/api/assistants/{$assistant->id}")
+        $this->jsonApi('get', "/api/assistants/{$assistant->id}")
             ->assertForbidden();
     }
 
@@ -331,11 +331,11 @@ class ShowTest extends TestCase
                 'id' => (string) $assistant->id,
                 'links' => [
                     'remix' => [
-                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                         'meta' => ['message' => 'ALLOWED'],
                     ],
                     'release' => [
-                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
                         'meta' => ['message' => 'DENIED'],
                     ],
                 ],
@@ -363,11 +363,11 @@ class ShowTest extends TestCase
                 'id' => (string) $assistant->id,
                 'links' => [
                     'remix' => [
-                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                         'meta' => ['message' => 'DENIED'],
                     ],
                     'release' => [
-                        'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
                         'meta' => ['message' => 'DENIED'],
                     ],
                 ],

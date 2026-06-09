@@ -49,10 +49,75 @@ class AssistantPolicy
 
     public function feedback(User $user, Assistant $assistant): bool
     {
-        return $this->view($user, $assistant);
+        return $this->canViewAssistant($user, $assistant);
     }
 
     public function favorite(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewLanguage(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewCategory(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewUserPrompts(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewAiTools(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewTags(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewCreator(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewRemixCreator(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewRemixedAssistant(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewVersions(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewOrganization(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewReview(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    public function viewFeedback(User $user, Assistant $assistant): bool
+    {
+        return $this->canViewAssistant($user, $assistant);
+    }
+
+    private function canViewAssistant(User $user, Assistant $assistant): bool
     {
         return $this->view($user, $assistant);
     }

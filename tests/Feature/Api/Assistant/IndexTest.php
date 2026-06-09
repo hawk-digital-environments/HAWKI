@@ -53,24 +53,24 @@ class IndexTest extends TestCase
                                 'release_stage' => $assistant->release_stage,
                                 'formality' => $assistant->formality,
                                 'model' => $assistant->model,
-                                'model_length' => $assistant->model_length,
-                                'model_temp' => $assistant->model_temp,
-                                'model_top_p' => $assistant->model_top_p,
+                                'max_tokens' => $assistant->max_tokens,
+                                'temp' => $assistant->temp,
+                                'top_p' => $assistant->top_p,
                                 'created_at' => $assistant->created_at->toJson(),
                                 'updated_at' => $assistant->updated_at->toJson(),
                             ],
                             'links' => [
-                                'self' => config('app.url') . "/api/assistants/{$assistant->id}",
+                                'self' => config('app.url')."/api/assistants/{$assistant->id}",
                                 'remix' => [
-                                    'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                                    'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                                     'meta' => ['message' => 'ALLOWED'],
                                 ],
                                 'release' => [
-                                    'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                                    'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
                                     'meta' => ['message' => 'ALLOWED'],
                                 ],
                                 'feedback' => [
-                                    'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/feedback",
+                                    'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/feedback",
                                     'meta' => ['message' => 'ALLOWED'],
                                 ],
                             ],
@@ -95,7 +95,7 @@ class IndexTest extends TestCase
         $response->assertJsonPath('data.0.relationships.user_prompts.data', []);
 
         $included = collect($response->json('included'));
-        $creatorResource = $included->first(fn($item) => $item['type'] === 'users');
+        $creatorResource = $included->first(fn ($item) => $item['type'] === 'users');
         $this->assertEquals($user->name, $creatorResource['attributes']['name']);
     }
 
@@ -110,7 +110,7 @@ class IndexTest extends TestCase
             ->assertOk();
 
         $included = collect($response->json('included'));
-        $versionResource = $included->first(fn($item) => $item['type'] === 'versions');
+        $versionResource = $included->first(fn ($item) => $item['type'] === 'versions');
         $this->assertEquals('Initial version', $versionResource['attributes']['text']);
         $this->assertEquals('1.0', $versionResource['attributes']['version']);
     }
@@ -131,7 +131,7 @@ class IndexTest extends TestCase
             ->assertJsonCount(2, 'data');
 
         $included = collect($response->json('included'));
-        $catResources = $included->filter(fn($item) => $item['type'] === 'assistant-categories');
+        $catResources = $included->filter(fn ($item) => $item['type'] === 'assistant-categories');
         foreach ($catResources as $catResource) {
             $this->assertEquals('education', $catResource['attributes']['text']);
         }
@@ -154,7 +154,7 @@ class IndexTest extends TestCase
             ->assertJsonCount(2, 'data');
 
         $included = collect($response->json('included'));
-        $catResources = $included->filter(fn($item) => $item['type'] === 'assistant-categories');
+        $catResources = $included->filter(fn ($item) => $item['type'] === 'assistant-categories');
         foreach ($catResources as $catResource) {
             $this->assertContains($catResource['attributes']['text'], ['education', 'general']);
         }
@@ -217,7 +217,7 @@ class IndexTest extends TestCase
         ]);
 
         $included = collect($response->json('included'));
-        $orgResource = $included->first(fn($item) => $item['type'] === 'organizations');
+        $orgResource = $included->first(fn ($item) => $item['type'] === 'organizations');
         $this->assertEquals($org->name, $orgResource['attributes']['name']);
     }
 
@@ -260,9 +260,9 @@ class IndexTest extends TestCase
         ]);
 
         $included = collect($response->json('included'));
-        $langResource = $included->first(fn($item) => $item['type'] === 'assistant-languages');
+        $langResource = $included->first(fn ($item) => $item['type'] === 'assistant-languages');
         $this->assertEquals('de', $langResource['attributes']['text']);
-        $catResource = $included->first(fn($item) => $item['type'] === 'assistant-categories');
+        $catResource = $included->first(fn ($item) => $item['type'] === 'assistant-categories');
         $this->assertEquals('education', $catResource['attributes']['text']);
     }
 
@@ -402,15 +402,15 @@ class IndexTest extends TestCase
                     'id' => (string) $assistant->id,
                     'links' => [
                         'remix' => [
-                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/remix",
+                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                             'meta' => ['message' => 'DENIED'],
                         ],
                         'release' => [
-                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/release",
+                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
                             'meta' => ['message' => 'DENIED'],
                         ],
                         'feedback' => [
-                            'href' => config('app.url') . "/api/assistants/{$assistant->id}/actions/feedback",
+                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/feedback",
                             'meta' => ['message' => 'ALLOWED'],
                         ],
                     ],
@@ -428,7 +428,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['name' => 'code']]))
+        $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['name' => 'code']]))
             ->assertOk()
             ->assertJsonCount(2, 'data');
     }
@@ -440,7 +440,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['name' => 'CODE']]))
+        $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['name' => 'CODE']]))
             ->assertOk()
             ->assertJsonCount(1, 'data');
     }
@@ -452,7 +452,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['name' => 'nonexistent']]))
+        $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['name' => 'nonexistent']]))
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }
@@ -491,7 +491,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['is_favorite' => 'true']]))
+        $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['is_favorite' => 'true']]))
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.attributes.name', 'Favorited');
@@ -507,7 +507,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['is_favorite' => 'false']]))
+        $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['is_favorite' => 'false']]))
             ->assertOk()
             ->assertJsonCount(2, 'data');
     }
@@ -521,10 +521,10 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['release_stage' => ReleaseStage::DRAFT]]))
+        $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['release_stage' => ReleaseStage::DRAFT]]))
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', (string) $draftAssistant -> id);
+            ->assertJsonPath('data.0.id', (string) $draftAssistant->id);
     }
 
     public function test_is_favorite_filter_only_scopes_to_authenticated_user(): void
@@ -539,7 +539,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($userB);
 
-        $this->jsonApi('get', '/api/assistants?' . http_build_query(['filter' => ['is_favorite' => 'true']]))
+        $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['is_favorite' => 'true']]))
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }

@@ -12,6 +12,16 @@ class ReviewPolicy
         return $this->isOrgAdmin($user);
     }
 
+    public function view(User $user, Review $review): bool
+    {
+        return $this->isOrgAdminOf($user, $review->assistant->organization_id);
+    }
+
+    public function viewAssistant(User $user, Review $review): bool
+    {
+        return $this->view($user, $review);
+    }
+
     public function update(User $user, Review $review): bool
     {
         return $this->isOrgAdminOf($user, $review->assistant->organization_id);

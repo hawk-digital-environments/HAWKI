@@ -21,7 +21,7 @@ readonly class AssistantRepository
     public function filterByName(Builder $query, string $name): Builder
     {
         // Database independent case insensitive filter
-        return $query->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($name) . '%']);
+        return $query->whereRaw('LOWER(name) LIKE ?', ['%'.strtolower($name).'%']);
     }
 
     public function filterVisibleForUser(Builder $query, User $user): Builder
@@ -46,9 +46,9 @@ readonly class AssistantRepository
             'greeting' => $source->greeting,
             'allow_remix' => $source->allow_remix,
             'allow_model_select' => $source->allow_model_select,
-            'model_length' => $source->model_length,
-            'model_temp' => $source->model_temp,
-            'model_top_p' => $source->model_top_p,
+            'max_tokens' => $source->max_tokens,
+            'temp' => $source->temp,
+            'top_p' => $source->top_p,
             'model' => $source->model,
             'formality' => $source->formality,
             'detail_description' => $source->detail_description,
@@ -93,7 +93,7 @@ readonly class AssistantRepository
     {
         $method = $isFavorite ? 'whereHas' : 'whereDoesntHave';
 
-        return $query->$method('favoritedByUsers', fn($q) => $q->where('user_id', $user->id));
+        return $query->$method('favoritedByUsers', fn ($q) => $q->where('user_id', $user->id));
     }
 
     public function setFavorite(Assistant $assistant, User $user, bool $isFavorite): void

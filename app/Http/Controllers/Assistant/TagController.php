@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Assistant;
 
+use App\Http\Controllers\Controller;
 use LaravelJsonApi\Laravel\Http\Controllers\Actions;
 
 class TagController extends Controller
 {
+    use Actions\Destroy;
     use Actions\FetchMany;
     use Actions\FetchOne;
+    use Actions\FetchRelated;
+    use Actions\FetchRelationship;
     use Actions\Store;
-    use Actions\Destroy;
 }

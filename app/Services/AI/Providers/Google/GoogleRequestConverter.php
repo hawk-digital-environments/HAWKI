@@ -18,9 +18,7 @@ readonly class GoogleRequestConverter
 
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
-    )
-    {
-    }
+    ) {}
 
     public function convertRequestToPayload(AiRequest $request): array
     {
@@ -36,9 +34,9 @@ readonly class GoogleRequestConverter
         $systemInstruction = [];
         if (isset($messages[0]) && $messages[0]['role'] === 'system') {
             $systemInstruction = [
-            'parts' => [
-                'text' => $messages[0]['content']['text'] ?? ''
-            ]
+                'parts' => [
+                    'text' => $messages[0]['content']['text'] ?? '',
+                ],
             ];
             array_shift($messages);
         }
@@ -49,7 +47,6 @@ readonly class GoogleRequestConverter
             $formattedMessages[] = $this->formatMessage($message, $attachmentsMap, $model);
         }
 
-
         $payload = [
             'model' => $modelId,
             'system_instruction' => $systemInstruction,
@@ -58,8 +55,8 @@ readonly class GoogleRequestConverter
         ];
 
         // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['params']['temperature'])) {
-            $payload['temperature'] = $rawPayload['params']['temperature'];
+        if (isset($rawPayload['params']['temp'])) {
+            $payload['temperature'] = $rawPayload['params']['temp'];
         }
         if (isset($rawPayload['params']['top_p'])) {
             $payload['top_p'] = $rawPayload['params']['top_p'];
@@ -69,46 +66,41 @@ readonly class GoogleRequestConverter
         $payload['safetySettings'] = $rawPayload['safetySettings'] ?? [
             [
                 'category' => 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                'threshold' => 'BLOCK_ONLY_HIGH'
-            ]
+                'threshold' => 'BLOCK_ONLY_HIGH',
+            ],
         ];
 
-        $payload['generationConfig'] = $rawPayload['generationConfig'] ?? [
-            // 'stopSequences' => ["Title"],
+        $generationConfig = $rawPayload['generationConfig'] ?? [
             'temperature' => 1.0,
             'maxOutputTokens' => 800,
             'topP' => 0.8,
-            'topK' => 10
+            'topK' => 10,
         ];
+
+        if (isset($rawPayload['params']['max_tokens'])) {
+            $generationConfig['maxOutputTokens'] = $rawPayload['params']['max_tokens'];
+        }
+
+        $payload['generationConfig'] = $generationConfig;
 
         // Build tools from capabilities
         $disableTools = $this->shouldDisableTools($rawPayload);
 
         $tools = [];
 
-        if (!$disableTools && !empty($rawPayload['tools'])) {
-            // Native Google Search (WEB_SEARCH capability)
-            // Google Search only works with gemini >= 2.0
-            // Search tool is context sensitive, this means the llm decides if a search is necessary for an answer
-
-            // Check if model supports web_search (handles both boolean and string format)
+        if (! $disableTools && ! empty($rawPayload['tools'])) {
             $webSearchValue = $model->getCapabilityStrategy('web_search');
             if ($model->hasCapability('web_search') && $webSearchValue === 'native') {
                 if (in_array('web_search', $rawPayload['tools'], true)) {
-                    $tools[] = ["google_search" => new \stdClass()];
+                    $tools[] = ['google_search' => new \stdClass];
                 }
             }
 
-            // Google may not support custom function tools or MCP integration yet
-            // When implementing, use buildFunctionCallTools() and buildMCPTools()
-            // and convert to Google's format using toGoogleFormat()
-            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
-            foreach ($toolDefinitions as $toolDef) {
-                $tools[] = $toolDef->toGoogleResponseFormat();
-            }
+            $tools = array_merge($tools, $this->resolveTools($model, $rawPayload['tools'], 'toGoogleResponseFormat'));
         }
 
         $payload['tools'] = $tools;
+
         return $payload;
     }
 
@@ -125,11 +117,11 @@ readonly class GoogleRequestConverter
                         'functionResponse' => [
                             'name' => $message['tool_call_id'],
                             'response' => [
-                                'content' => $message['content']
-                            ]
-                        ]
-                    ]
-                ]
+                                'content' => $message['content'],
+                            ],
+                        ],
+                    ],
+                ],
             ];
         }
 
@@ -140,33 +132,33 @@ readonly class GoogleRequestConverter
                 $parts[] = [
                     'functionCall' => [
                         'name' => $toolCall['function']['name'],
-                        'args' => json_decode($toolCall['function']['arguments'], true)
-                    ]
+                        'args' => json_decode($toolCall['function']['arguments'], true),
+                    ],
                 ];
             }
 
             return [
                 'role' => 'model',
-                'parts' => $parts
+                'parts' => $parts,
             ];
         }
 
         $formatted = [
             'role' => $role === 'assistant' ? 'model' : 'user',
-            'parts' => []
+            'parts' => [],
         ];
 
         $content = $message['content'] ?? [];
 
         // Add text if present
-        if (!empty($content['text'])) {
+        if (! empty($content['text'])) {
             $formatted['parts'][] = [
                 'text' => $content['text'],
             ];
         }
 
         // Handle attachments with permission checks
-        if (!empty($content['attachments'])) {
+        if (! empty($content['attachments'])) {
             $this->processAttachments($content['attachments'], $attachmentsMap, $model, $formatted['parts']);
         }
 
@@ -180,7 +172,7 @@ readonly class GoogleRequestConverter
 
         foreach ($attachmentUuids as $uuid) {
             $attachment = $attachmentsMap[$uuid] ?? null;
-            if (!$attachment) {
+            if (! $attachment) {
                 continue; // skip invalid
             }
 
@@ -189,7 +181,7 @@ readonly class GoogleRequestConverter
                     if ($model->canProcessImage()) {
                         $parts[] = $this->processImageAttachment($attachment, $attachmentService);
                     } else {
-                        $skippedAttachments[] = $attachment->name . ' (image not supported)';
+                        $skippedAttachments[] = $attachment->name.' (image not supported)';
                     }
                     break;
 
@@ -197,58 +189,60 @@ readonly class GoogleRequestConverter
                     if ($model->canProcessDocument()) {
                         $parts[] = $this->processDocumentAttachment($attachment, $attachmentService);
                     } else {
-                        $skippedAttachments[] = $attachment->name . ' (file upload not supported)';
+                        $skippedAttachments[] = $attachment->name.' (file upload not supported)';
                     }
                     break;
 
                 default:
-                    Log::warning('Unknown attachment type: ' . $attachment->type);
-                    $skippedAttachments[] = $attachment->name . ' (unsupported type)';
+                    Log::warning('Unknown attachment type: '.$attachment->type);
+                    $skippedAttachments[] = $attachment->name.' (unsupported type)';
                     break;
             }
         }
 
         // Notify about skipped attachments
-        if (!empty($skippedAttachments)) {
+        if (! empty($skippedAttachments)) {
             $parts[] = [
-                'text' => '[NOTE : The following attachments were not included because this model does not support them: ' . implode(', ', $skippedAttachments) . ']'
+                'text' => '[NOTE : The following attachments were not included because this model does not support them: '.implode(', ', $skippedAttachments).']',
             ];
         }
     }
-
 
     private function processImageAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
         try {
             $file = $attachmentService->retrieve($attachment);
             $imageData = base64_encode($file);
-            return  [
+
+            return [
                 'inline_data' => [
                     'mime_type' => $attachment->mime,
                     'data' => $imageData,
-                ]
+                ],
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to process image attachment: ' . $e->getMessage());
+            Log::error('Failed to process image attachment: '.$e->getMessage());
+
             return $parts[] = [
-                'text' => '[ERROR: Could not process image attachment: ' . $attachment->name . ']'
+                'text' => '[ERROR: Could not process image attachment: '.$attachment->name.']',
             ];
         }
     }
 
     private function processDocumentAttachment(Attachment $attachment, AttachmentService $attachmentService): array
     {
-        try
-        {
+        try {
             $fileContent = $attachmentService->retrieve($attachment, 'md');
             $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
+
             return [
-                'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---"
+                'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---",
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to process document attachment: ' . $e->getMessage());
+            Log::error('Failed to process document attachment: '.$e->getMessage());
+
             return [
-                'text' => '[ERROR: Could not process document attachment: ' . $attachment->name . ']'
+                'text' => '[ERROR: Could not process document attachment: '.$attachment->name.']',
             ];
         }
 

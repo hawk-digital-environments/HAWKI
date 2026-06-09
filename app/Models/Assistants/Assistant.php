@@ -8,12 +8,12 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Repositories\OrganizationRepository;
 use App\Services\Assistant\Values\ReleaseStage;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,9 +33,9 @@ class Assistant extends Model
         'release_stage' => ReleaseStage::DRAFT,
         'formality' => 'neutral',
         'model' => '',
-        'model_length' => 0,
-        'model_temp' => 0.0,
-        'model_top_p' => 0.0,
+        'max_tokens' => 0,
+        'temp' => 0.0,
+        'top_p' => 0.0,
     ];
 
     protected static function booted(): void
@@ -70,9 +70,9 @@ class Assistant extends Model
         'release_stage',
         'formality',
         'model',
-        'model_length',
-        'model_temp',
-        'model_top_p',
+        'max_tokens',
+        'temp',
+        'top_p',
         'creator_id',
         'remixed_creator_id',
         'remixed_assistant_id',

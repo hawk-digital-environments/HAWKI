@@ -18,9 +18,7 @@ readonly class GwdgRequestConverter
 
     public function __construct(
         private MessageAttachmentFinder $attachmentFinder
-    )
-    {
-    }
+    ) {}
 
     public function convertRequestToPayload(AiRequest $request): array
     {
@@ -47,28 +45,28 @@ readonly class GwdgRequestConverter
             'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
         ];
         // Add optional parameters if present in the raw payload
-        if (isset($rawPayload['params']['temperature'])) {
-            $payload['temperature'] = $rawPayload['params']['temperature'];
+        if (isset($rawPayload['params']['temp'])) {
+            $payload['temperature'] = $rawPayload['params']['temp'];
         }
         if (isset($rawPayload['params']['top_p'])) {
             $payload['top_p'] = $rawPayload['params']['top_p'];
+        }
+        if (isset($rawPayload['params']['max_tokens'])) {
+            $payload['max_tokens'] = $rawPayload['params']['max_tokens'];
         }
 
         // Add tools from capabilities if not disabled
         $disableTools = $this->shouldDisableTools($rawPayload);
 
-        // Build selected tools from model capabilities
-        if (!$disableTools && !empty($rawPayload['tools'])) {
-            $toolDefinitions = $this->buildSelectedTools($model, $rawPayload['tools']);
-            if (!empty($toolDefinitions)) {
-                $payload['tools'] = array_map(fn($toolDef) => [
-                    'type' => 'function',
-                    'function' => $toolDef->toOpenAiChatFormat(),
-                ], $toolDefinitions);
+        if (! $disableTools && ! empty($rawPayload['tools'])) {
+            $tools = $this->resolveTools($model, $rawPayload['tools'], 'toOpenAiChatWrappedFormat');
+
+            if (! empty($tools)) {
+                $payload['tools'] = $tools;
             }
         }
 
-//        \Log::info($payload);
+        //        \Log::info($payload);
         return $payload;
     }
 
@@ -84,8 +82,8 @@ readonly class GwdgRequestConverter
                 'content' => [
                     [
                         'type' => 'text',
-                        'text' => "Here is the result from the tool call:\n\n" . $message['content'],
-                    ]
+                        'text' => "Here is the result from the tool call:\n\n".$message['content'],
+                    ],
                 ],
             ];
         }
@@ -118,7 +116,7 @@ readonly class GwdgRequestConverter
             ];
         } else {
             // Handle structured content
-            if (!empty($content['text'])) {
+            if (! empty($content['text'])) {
                 $formattedContent[] = [
                     'type' => 'text',
                     'text' => $content['text'],
@@ -126,14 +124,14 @@ readonly class GwdgRequestConverter
             }
 
             // Handle attachments with permission checks
-            if (!empty($content['attachments'])) {
+            if (! empty($content['attachments'])) {
                 $this->processAttachments($content['attachments'], $attachmentsMap, $model, $formattedContent);
             }
         }
 
         return [
             'role' => $role,
-            'content' => $formattedContent
+            'content' => $formattedContent,
         ];
     }
 
@@ -148,6 +146,7 @@ readonly class GwdgRequestConverter
                 $merged[] = $msg;
             }
         }
+
         return $merged;
     }
 
@@ -158,7 +157,7 @@ readonly class GwdgRequestConverter
 
         foreach ($attachmentUuids as $uuid) {
             $attachment = $attachmentsMap[$uuid] ?? null;
-            if (!$attachment) {
+            if (! $attachment) {
                 continue; // skip invalid
             }
 
@@ -167,7 +166,7 @@ readonly class GwdgRequestConverter
                     if ($model->canProcessImage()) {
                         $content[] = $this->processImageAttachment($attachment, $attachmentService);
                     } else {
-                        $skippedAttachments[] = $attachment->name . ' (image not supported)';
+                        $skippedAttachments[] = $attachment->name.' (image not supported)';
                     }
                     break;
 
@@ -175,22 +174,22 @@ readonly class GwdgRequestConverter
                     if ($model->canProcessDocument()) {
                         $content[] = $this->processDocumentAttachment($attachment, $attachmentService);
                     } else {
-                        $skippedAttachments[] = $attachment->name . ' (file upload not supported)';
+                        $skippedAttachments[] = $attachment->name.' (file upload not supported)';
                     }
                     break;
 
                 default:
-                    Log::warning('Unknown attachment type: ' . $attachment->type);
-                    $skippedAttachments[] = $attachment->name . ' (unsupported type)';
+                    Log::warning('Unknown attachment type: '.$attachment->type);
+                    $skippedAttachments[] = $attachment->name.' (unsupported type)';
                     break;
             }
         }
 
         // Notify about skipped attachments
-        if (!empty($skippedAttachments)) {
+        if (! empty($skippedAttachments)) {
             $content[] = [
                 'type' => 'text',
-                'text' => '[NOTE: The following attachments were not included because this model does not support them: ' . implode(', ', $skippedAttachments) . ']'
+                'text' => '[NOTE: The following attachments were not included because this model does not support them: '.implode(', ', $skippedAttachments).']',
             ];
         }
     }
@@ -200,6 +199,7 @@ readonly class GwdgRequestConverter
         try {
             $file = $attachmentService->retrieve($attachment);
             $imageData = base64_encode($file);
+
             return [
                 'type' => 'image_url',
                 'image_url' => [
@@ -207,10 +207,11 @@ readonly class GwdgRequestConverter
                 ],
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to process image attachment: ' . $e->getMessage());
+            Log::error('Failed to process image attachment: '.$e->getMessage());
+
             return [
                 'type' => 'text',
-                'text' => '[ERROR: Could not process image attachment: ' . $attachment->name . ']'
+                'text' => '[ERROR: Could not process image attachment: '.$attachment->name.']',
             ];
         }
     }
@@ -220,17 +221,18 @@ readonly class GwdgRequestConverter
         try {
             $fileContent = $attachmentService->retrieve($attachment, 'md');
             $html_safe = htmlspecialchars($fileContent, ENT_QUOTES, 'UTF-8');
+
             return [
                 'type' => 'text',
-                'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---"
+                'text' => "[ATTACHED FILE: {$attachment->name}]\n---\n{$html_safe}\n---",
             ];
         } catch (\Exception $e) {
-            Log::error('Failed to process document attachment: ' . $e->getMessage());
+            Log::error('Failed to process document attachment: '.$e->getMessage());
+
             return [
                 'type' => 'text',
-                'text' => '[ERROR: Could not process document attachment: ' . $attachment->name . ']'
+                'text' => '[ERROR: Could not process document attachment: '.$attachment->name.']',
             ];
         }
     }
-
 }

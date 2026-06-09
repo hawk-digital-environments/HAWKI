@@ -20,8 +20,8 @@ class ChatTestTest extends TestCase
                 'type' => 'assistants',
                 'id' => (string) ($overrides['id'] ?? '1'),
                 'attributes' => array_merge([
-                    'messages' => [
-                        ['role' => 'user', 'content' => ['text' => 'Hello']],
+                    'input' => [
+                        ['role' => 'user', 'content' => 'Hello'],
                     ],
                 ], $overrides['attributes'] ?? []),
             ],
@@ -143,7 +143,41 @@ class ChatTestTest extends TestCase
         $this->assertStringStartsWith('text/event-stream', $response->headers->get('Content-Type'));
     }
 
-    public function test_chat_test_streams_text_deltas(): void
+    public function test_chat_test_emits_response_created_and_in_progress(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => 'private',
+            'model' => 'gpt-4',
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->mockRunner([
+            ['type' => 'text_delta', 'content' => 'Hi'],
+        ]);
+
+        [$response, $body] = $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            $this->createChatTestPayload(['id' => $assistant->id]),
+        );
+
+        $response->assertStatus(200);
+        $events = $this->parseSseEvents($body);
+        $eventTypes = array_map(fn ($e) => $e['event'], $events);
+
+        $this->assertContains('response.created', $eventTypes);
+        $this->assertContains('response.in_progress', $eventTypes);
+
+        $createdEvent = array_values(array_filter($events, fn ($e) => $e['event'] === 'response.created'))[0];
+        $this->assertEquals('response', $createdEvent['data']['response']['object']);
+        $this->assertEquals('in_progress', $createdEvent['data']['response']['status']);
+        $this->assertEquals('gpt-4', $createdEvent['data']['response']['model']);
+        $this->assertStringStartsWith('resp_', $createdEvent['data']['response']['id']);
+        $this->assertEquals(0, $createdEvent['data']['sequence_number']);
+    }
+
+    public function test_chat_test_streams_text_deltas_with_full_hierarchy(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -165,14 +199,21 @@ class ChatTestTest extends TestCase
 
         $response->assertStatus(200);
         $events = $this->parseSseEvents($body);
+        $eventTypes = array_map(fn ($e) => $e['event'], $events);
 
-        $deltas = array_filter($events, fn ($e) => $e['event'] === 'text_delta');
+        $this->assertContains('response.output_item.added', $eventTypes);
+        $this->assertContains('response.content_part.added', $eventTypes);
+
+        $deltas = array_values(array_filter($events, fn ($e) => $e['event'] === 'response.output_text.delta'));
         $this->assertCount(2, $deltas);
-        $this->assertEquals('Hel', $events[1]['data']);
-        $this->assertEquals('lo', $events[2]['data']);
+        $this->assertEquals('Hel', $deltas[0]['data']['delta']);
+        $this->assertEquals('lo', $deltas[1]['data']['delta']);
+        $this->assertStringStartsWith('msg_', $deltas[0]['data']['item_id']);
+        $this->assertSame(0, $deltas[0]['data']['output_index']);
+        $this->assertSame(0, $deltas[0]['data']['content_index']);
     }
 
-    public function test_chat_test_sends_message_event_with_full_content(): void
+    public function test_chat_test_emits_output_text_done_and_item_done(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -195,17 +236,20 @@ class ChatTestTest extends TestCase
         $response->assertStatus(200);
         $events = $this->parseSseEvents($body);
 
-        $messageEvents = array_filter($events, fn ($e) => $e['event'] === 'message');
-        $this->assertCount(1, $messageEvents);
+        $textDoneEvents = array_filter($events, fn ($e) => $e['event'] === 'response.output_text.done');
+        $this->assertCount(1, $textDoneEvents);
+        $textDone = array_values($textDoneEvents)[0];
+        $this->assertEquals('Hello world', $textDone['data']['text']);
 
-        $messageEvent = array_values($messageEvents)[0];
-        $this->assertEquals('messages', $messageEvent['data']['type']);
-        $this->assertEquals('completed', $messageEvent['data']['attributes']['status']);
-        $this->assertEquals('gpt-4', $messageEvent['data']['attributes']['model']);
-        $this->assertEquals('Hello world', $messageEvent['data']['attributes']['content']);
+        $itemDoneEvents = array_filter($events, fn ($e) => $e['event'] === 'response.output_item.done');
+        $this->assertCount(1, $itemDoneEvents);
+        $itemDone = array_values($itemDoneEvents)[0];
+        $this->assertEquals('message', $itemDone['data']['item']['type']);
+        $this->assertEquals('completed', $itemDone['data']['item']['status']);
+        $this->assertEquals('Hello world', $itemDone['data']['item']['content'][0]['text']);
     }
 
-    public function test_chat_test_sends_stream_start_and_end(): void
+    public function test_chat_test_emits_response_completed_with_output(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
@@ -227,16 +271,17 @@ class ChatTestTest extends TestCase
         $response->assertStatus(200);
         $events = $this->parseSseEvents($body);
 
-        $eventTypes = array_map(fn ($e) => $e['event'], $events);
-        $this->assertContains('stream_start', $eventTypes);
-        $this->assertContains('stream_end', $eventTypes);
-        $this->assertContains('message', $eventTypes);
+        $completedEvents = array_filter($events, fn ($e) => $e['event'] === 'response.completed');
+        $this->assertCount(1, $completedEvents);
 
-        $startEvent = array_values(array_filter($events, fn ($e) => $e['event'] === 'stream_start'))[0];
-        $this->assertEquals('gpt-4', $startEvent['data']['model']);
-
-        $endEvent = array_values(array_filter($events, fn ($e) => $e['event'] === 'stream_end'))[0];
-        $this->assertEquals('stop', $endEvent['data']['reason']);
+        $completed = array_values($completedEvents)[0];
+        $resp = $completed['data']['response'];
+        $this->assertEquals('completed', $resp['status']);
+        $this->assertEquals('gpt-4', $resp['model']);
+        $this->assertCount(1, $resp['output']);
+        $this->assertEquals('message', $resp['output'][0]['type']);
+        $this->assertEquals('test', $resp['output'][0]['content'][0]['text']);
+        $this->assertArrayHasKey('usage', $resp);
     }
 
     public function test_chat_test_handles_error(): void
@@ -261,11 +306,12 @@ class ChatTestTest extends TestCase
         $response->assertStatus(200);
         $events = $this->parseSseEvents($body);
 
-        $failedEvents = array_filter($events, fn ($e) => $e['event'] === 'stream_failed');
-        $this->assertCount(1, $failedEvents);
+        $errorEvents = array_filter($events, fn ($e) => $e['event'] === 'error');
+        $this->assertCount(1, $errorEvents);
 
-        $failedEvent = array_values($failedEvents)[0];
-        $this->assertStringContainsString('AI provider error', $failedEvent['data']['message']);
+        $errorEvent = array_values($errorEvents)[0];
+        $this->assertEquals('error', $errorEvent['data']['type']);
+        $this->assertStringContainsString('AI provider error', $errorEvent['data']['message']);
     }
 
     public function test_chat_test_streams_tool_call_and_result(): void
@@ -293,21 +339,25 @@ class ChatTestTest extends TestCase
         $events = $this->parseSseEvents($body);
         $eventTypes = array_map(fn ($e) => $e['event'], $events);
 
-        $this->assertContains('tool_call', $eventTypes);
-        $this->assertContains('tool_result', $eventTypes);
-        $this->assertContains('text_delta', $eventTypes);
+        $this->assertContains('response.output_item.added', $eventTypes);
+        $this->assertContains('response.function_call_arguments.delta', $eventTypes);
+        $this->assertContains('response.function_call_arguments.done', $eventTypes);
+        $this->assertContains('response.output_item.done', $eventTypes);
+        $this->assertContains('response.output_text.delta', $eventTypes);
+        $this->assertContains('response.completed', $eventTypes);
 
-        $toolCallEvents = array_values(array_filter($events, fn ($e) => $e['event'] === 'tool_call'));
-        $this->assertEquals('t1', $toolCallEvents[0]['data']['tool_id']);
-        $this->assertEquals('search', $toolCallEvents[0]['data']['tool_name']);
-        $this->assertEquals(['q' => 'test'], $toolCallEvents[0]['data']['arguments']);
+        $fcArgDone = array_values(array_filter($events, fn ($e) => $e['event'] === 'response.function_call_arguments.done'))[0];
+        $this->assertEquals('search', $fcArgDone['data']['name']);
+        $this->assertArrayHasKey('arguments', $fcArgDone['data']);
 
-        $toolResultEvents = array_values(array_filter($events, fn ($e) => $e['event'] === 'tool_result'));
-        $this->assertEquals('t1', $toolResultEvents[0]['data']['tool_id']);
-        $this->assertEquals('found', $toolResultEvents[0]['data']['result']);
+        $completed = array_values(array_filter($events, fn ($e) => $e['event'] === 'response.completed'))[0];
+        $output = $completed['data']['response']['output'];
+        $functionCallItems = array_values(array_filter($output, fn ($item) => $item['type'] === 'function_call'));
+        $this->assertNotEmpty($functionCallItems);
+        $this->assertEquals('search', $functionCallItems[0]['name']);
     }
 
-    public function test_chat_test_validates_required_messages(): void
+    public function test_chat_test_validates_required_input(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
@@ -323,13 +373,17 @@ class ChatTestTest extends TestCase
             ->assertStatus(422);
     }
 
-    public function test_chat_test_passes_system_prompt_to_runner(): void
+    public function test_chat_test_passes_assistant_params_to_runner(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
+            'language_id' => null,
             'model' => 'gpt-4',
             'system_prompt' => 'You are a helpful test assistant.',
+            'temp' => 0.7,
+            'top_p' => 0.9,
+            'max_tokens' => 2048,
         ]);
         Sanctum::actingAs($user);
 
@@ -339,7 +393,12 @@ class ChatTestTest extends TestCase
             $this->callback(fn ($v) => is_array($v)),
             'gpt-4',
             $this->callback(fn ($v) => is_array($v)),
-            $this->callback(fn ($v) => is_array($v)),
+            $this->callback(function (array $params) {
+                return isset($params['temp'], $params['top_p'], $params['max_tokens'])
+                    && $params['temp'] === 0.7
+                    && $params['top_p'] === 0.9
+                    && $params['max_tokens'] === 2048;
+            }),
         )->willReturn((function () {
             yield from [];
         })());
@@ -347,13 +406,88 @@ class ChatTestTest extends TestCase
 
         $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload([
-                'id' => $assistant->id,
-                'attributes' => [
-                    'tools' => [['type' => 'function']],
-                    'params' => ['temperature' => 0.7],
+            $this->createChatTestPayload(['id' => $assistant->id]),
+        );
+    }
+
+    public function test_chat_test_includes_usage_in_response_completed(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => 'private',
+            'model' => 'gpt-4',
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->mockRunner([
+            ['type' => 'text_delta', 'content' => 'test'],
+            ['type' => 'usage', 'content' => ['prompt_tokens' => 15, 'completion_tokens' => 8]],
+        ]);
+
+        [$response, $body] = $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            $this->createChatTestPayload(['id' => $assistant->id]),
+        );
+
+        $response->assertStatus(200);
+        $events = $this->parseSseEvents($body);
+
+        $completedEvents = array_filter($events, fn ($e) => $e['event'] === 'response.completed');
+        $completed = array_values($completedEvents)[0];
+        $usage = $completed['data']['response']['usage'];
+
+        $this->assertEquals(15, $usage['input_tokens']);
+        $this->assertEquals(8, $usage['output_tokens']);
+        $this->assertEquals(23, $usage['total_tokens']);
+    }
+
+    public function test_chat_test_accepts_input_text_content_parts(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => 'private',
+            'model' => 'gpt-4',
+        ]);
+        Sanctum::actingAs($user);
+
+        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner->expects($this->once())->method('stream')->with(
+            $this->anything(),
+            $this->callback(function (array $messages) {
+                $userMsg = array_filter($messages, fn ($m) => $m['role'] === 'user');
+                $last = array_values($userMsg);
+                $last = $last[count($last) - 1] ?? null;
+
+                return $last !== null
+                    && isset($last['content']['text'])
+                    && $last['content']['text'] === 'Helloworld';
+            }),
+            'gpt-4',
+            $this->anything(),
+            $this->anything(),
+        )->willReturn((function () {
+            yield from [];
+        })());
+        $this->app->instance(AssistantChatRunnerInterface::class, $runner);
+
+        $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            [
+                'data' => [
+                    'type' => 'assistants',
+                    'id' => (string) $assistant->id,
+                    'attributes' => [
+                        'input' => [
+                            ['role' => 'user', 'content' => [
+                                ['type' => 'input_text', 'text' => 'Hello'],
+                                ['type' => 'input_text', 'text' => 'world'],
+                            ]],
+                        ],
+                    ],
                 ],
-            ]),
+            ],
         );
     }
 }

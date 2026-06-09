@@ -40,7 +40,7 @@ class AiModelTest extends TestCase
             'input' => ['text', 'image'],
             'output' => ['text'],
             'tools' => ['stream'],
-            'default_params' => ['temperature' => 0.7],
+            'default_params' => ['temp' => 0.7],
             'provider_id' => $provider->id,
         ]);
 
@@ -62,7 +62,7 @@ class AiModelTest extends TestCase
                         'input' => ['text', 'image'],
                         'output' => ['text'],
                         'tools' => ['stream'],
-                        'default_params' => ['temperature' => 0.7],
+                        'default_params' => ['temp' => 0.7],
                         'created_at' => $model->created_at->toJson(),
                         'updated_at' => $model->updated_at->toJson(),
                     ],

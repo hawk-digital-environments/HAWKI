@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Assistant;
 
+use App\Http\Controllers\Controller;
 use App\JsonApi\V1\Reviews\ReviewQuery;
 use App\JsonApi\V1\Reviews\ReviewRequest;
 use App\JsonApi\V1\Reviews\ReviewSchema;
@@ -18,6 +19,8 @@ class ReviewController extends Controller
 {
     use Actions\FetchMany;
     use Actions\FetchOne;
+    use Actions\FetchRelated;
+    use Actions\FetchRelationship;
 
     public function __construct(
         private readonly AssistantReviewService $reviewService,

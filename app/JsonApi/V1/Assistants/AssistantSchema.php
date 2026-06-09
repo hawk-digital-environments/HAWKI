@@ -6,21 +6,21 @@ namespace App\JsonApi\V1\Assistants;
 
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\Repositories\AssistantRepository;
-use LaravelJsonApi\Eloquent\Fields\ID;
-use LaravelJsonApi\Eloquent\Fields\Str;
-use LaravelJsonApi\Eloquent\Fields\Number;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use LaravelJsonApi\Eloquent\Fields\Boolean;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
+use LaravelJsonApi\Eloquent\Fields\ID;
+use LaravelJsonApi\Eloquent\Fields\Number;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
+use LaravelJsonApi\Eloquent\Fields\Relations\BelongsToMany;
 use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Relations\HasOne;
-use LaravelJsonApi\Eloquent\Fields\Relations\BelongsToMany;
+use LaravelJsonApi\Eloquent\Fields\Str;
+use LaravelJsonApi\Eloquent\Filters\Where;
 use LaravelJsonApi\Eloquent\Filters\WhereHas;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
-use LaravelJsonApi\Eloquent\Filters\Where;
 
 class AssistantSchema extends Schema
 {
@@ -41,9 +41,9 @@ class AssistantSchema extends Schema
             Str::make('release_stage'),
             Str::make('formality'),
             Str::make('model'),
-            Number::make('model_length'),
-            Number::make('model_temp'),
-            Number::make('model_top_p'),
+            Number::make('max_tokens'),
+            Number::make('temp'),
+            Number::make('top_p'),
             DateTime::make('created_at')->sortable()->readOnly(),
             DateTime::make('updated_at')->sortable()->readOnly(),
             Str::make('version_text')->hidden(),
@@ -70,7 +70,7 @@ class AssistantSchema extends Schema
             WhereHas::make($this, 'category'),
             AssistantNameFilter::make(),
             AssistantFavoriteFilter::make(),
-            Where::make('release_stage')
+            Where::make('release_stage'),
         ];
     }
 
@@ -89,6 +89,6 @@ class AssistantSchema extends Schema
 
         return app(AssistantRepository::class)
             ->filterVisibleForUser($query, $user)
-            ->withCount(['favoritedByUsers as is_favorite' => fn($q) => $q->where('user_id', $user->id)]);
+            ->withCount(['favoritedByUsers as is_favorite' => fn ($q) => $q->where('user_id', $user->id)]);
     }
 }

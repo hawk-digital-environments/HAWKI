@@ -13,7 +13,7 @@ use Tests\TestCase;
 
 class RemixTest extends TestCase
 {
-    use RefreshDatabase, AssistantFixture;
+    use AssistantFixture, RefreshDatabase;
 
     public function test_can_remix_assistant(): void
     {
@@ -63,9 +63,9 @@ class RemixTest extends TestCase
         $this->assertEquals($assistant->greeting, $clone->greeting);
         $this->assertEquals($assistant->allow_remix, $clone->allow_remix);
         $this->assertEquals($assistant->allow_model_select, $clone->allow_model_select);
-        $this->assertEquals($assistant->model_length, $clone->model_length);
-        $this->assertEquals($assistant->model_temp, $clone->model_temp);
-        $this->assertEquals($assistant->model_top_p, $clone->model_top_p);
+        $this->assertEquals($assistant->max_tokens, $clone->max_tokens);
+        $this->assertEquals($assistant->temp, $clone->temp);
+        $this->assertEquals($assistant->top_p, $clone->top_p);
         $this->assertEquals($assistant->model, $clone->model);
         $this->assertEquals($assistant->formality, $clone->formality);
         $this->assertEquals($assistant->detail_description, $clone->detail_description);

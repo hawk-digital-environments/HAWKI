@@ -18,7 +18,7 @@ use Tests\TestCase;
 
 class StoreTest extends TestCase
 {
-    use RefreshDatabase, AssistantFixture;
+    use AssistantFixture, RefreshDatabase;
 
     public function test_guest_cannot_create_assistant(): void
     {
@@ -75,9 +75,9 @@ class StoreTest extends TestCase
                         'release_stage' => 'private',
                         'formality' => 'neutral',
                         'model' => 'gpt-4',
-                        'model_length' => 2048,
-                        'model_temp' => 0.7,
-                        'model_top_p' => 0.9,
+                        'max_tokens' => 2048,
+                        'temp' => 0.7,
+                        'top_p' => 0.9,
                         'created_at' => $assistant->created_at->toJson(),
                         'updated_at' => $assistant->updated_at->toJson(),
                     ],
@@ -169,9 +169,9 @@ class StoreTest extends TestCase
                     'release_stage' => 'draft',
                     'formality' => 'neutral',
                     'model' => '',
-                    'model_length' => 0,
-                    'model_temp' => 0,
-                    'model_top_p' => 0,
+                    'max_tokens' => 0,
+                    'temp' => 0,
+                    'top_p' => 0,
                 ],
             ],
         ]);
@@ -188,7 +188,7 @@ class StoreTest extends TestCase
                 'attributes' => [
                     'name' => 12345,
                     'release_stage' => 'invalid-stage',
-                    'model_temp' => 5.0,
+                    'temp' => 5.0,
                 ],
             ],
         ])
@@ -265,6 +265,16 @@ class StoreTest extends TestCase
             'category' => $category->id,
             'tags' => [999999],
         ]))
-            ->assertStatus(404);
+            ->assertStatus(404)
+            ->assertJson([
+                'errors' => [
+                    [
+                        'status' => '404',
+                        'title' => 'Not Found',
+                        'detail' => 'The related resource does not exist.',
+                        'source' => ['pointer' => '/data/relationships/tags/data/0'],
+                    ],
+                ],
+            ]);
     }
 }

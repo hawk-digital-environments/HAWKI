@@ -56,9 +56,9 @@ return new class extends Migration
             $table->boolean('allow_model_select');
 
             $table->text('model');
-            $table->integer('model_length');
-            $table->float('model_temp');
-            $table->float('model_top_p');
+            $table->integer('max_tokens');
+            $table->float('temp');
+            $table->float('top_p');
 
             $table->foreignId('creator_id')
                 ->nullable()

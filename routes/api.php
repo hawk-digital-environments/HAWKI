@@ -3,13 +3,13 @@
 use App\Http\Controllers\AiModelController;
 use App\Http\Controllers\AiProviderController;
 use App\Http\Controllers\AiToolController;
-use App\Http\Controllers\AssistantController;
-use App\Http\Controllers\AssistantLanguageController;
-use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\Assistant\AssistantController;
+use App\Http\Controllers\Assistant\CategoryController;
+use App\Http\Controllers\Assistant\LanguageController;
 use App\Http\Controllers\McpServerController;
-use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Assistant\ReviewController;
 use App\Http\Controllers\StreamController;
-use App\Http\Controllers\TagController;
+use App\Http\Controllers\Assistant\TagController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use LaravelJsonApi\Laravel\Facades\JsonApiRoute;
@@ -63,7 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $relationships->hasMany('assistants')->readOnly();
                 });
 
-            $server->resource('assistant-languages', AssistantLanguageController::class)
+            $server->resource('assistant-languages', LanguageController::class)
                 ->only('index', 'show')
                 ->relationships(function ($relationships) {
                     $relationships->hasMany('assistants')->readOnly();
