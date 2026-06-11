@@ -148,6 +148,7 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
     let msg = "";
     let messageObj;
     let metadata;
+    let toolCallInProgress = false;
 
     // Start buildRequestObject processing
     buildRequestObject(msgAttributes, async (data, done) => {
@@ -180,7 +181,16 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 
             if(data.type === "status"){
                 createStatusElement(data.status, messageElement);
+            if(data.status && data.status.key === "tool_call"){
+                toolCallInProgress = true;
+            }
                 return;
+            }
+
+            if(toolCallInProgress && data.type === "message" && content !== ""){
+                msg = content;
+                initializeMessageFormating();
+                toolCallInProgress = false;
             }
 
 
