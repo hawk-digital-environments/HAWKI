@@ -31,7 +31,6 @@ class Assistant extends Model
         'allow_remix' => false,
         'allow_model_select' => false,
         'release_stage' => ReleaseStage::DRAFT,
-        'formality' => 'neutral',
         'model' => '',
         'max_tokens' => 0,
         'temp' => 0.0,
@@ -65,10 +64,8 @@ class Assistant extends Model
         'detail_description',
         'allow_remix',
         'allow_model_select',
-        'language_id',
         'category_id',
         'release_stage',
-        'formality',
         'model',
         'max_tokens',
         'temp',
@@ -97,9 +94,9 @@ class Assistant extends Model
         return $this->belongsTo(Organization::class);
     }
 
-    public function language(): BelongsTo
+    public function settingValues(): HasMany
     {
-        return $this->belongsTo(Language::class);
+        return $this->hasMany(AssistantSettingValue::class);
     }
 
     public function user_prompts(): HasMany

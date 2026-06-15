@@ -4,7 +4,6 @@ namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Category;
-use App\Models\Assistants\Language;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Values\ReleaseStage;
@@ -51,7 +50,6 @@ class IndexTest extends TestCase
                                 'allow_remix' => (int) $assistant->allow_remix,
                                 'allow_model_select' => (int) $assistant->allow_model_select,
                                 'release_stage' => $assistant->release_stage,
-                                'formality' => $assistant->formality,
                                 'model' => $assistant->model,
                                 'max_tokens' => $assistant->max_tokens,
                                 'temp' => $assistant->temp,
@@ -221,20 +219,25 @@ class IndexTest extends TestCase
         $this->assertEquals($org->name, $orgResource['attributes']['name']);
     }
 
-    public function test_can_list_assistants_with_language_and_category(): void
+    public function test_can_list_assistants_with_setting_values_and_category(): void
     {
-        $language = Language::factory()->create(['text' => 'de']);
+        $this->seed(\Database\Seeders\SettingSeeder::class);
+        $setting = \App\Models\Assistants\AssistantSetting::where('key', 'language')->firstOrFail();
         $category = Category::factory()->create(['text' => 'education']);
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
-            'language_id' => $language->id,
             'category_id' => $category->id,
+        ]);
+        \App\Models\Assistants\AssistantSettingValue::create([
+            'assistant_id' => $assistant->id,
+            'setting_id' => $setting->id,
+            'value' => 'de',
         ]);
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', '/api/assistants?include=language,category')
+        $response = $this->jsonApi('get', '/api/assistants?include=setting_values,category')
             ->assertOk();
 
         $response->assertJson([
@@ -242,10 +245,12 @@ class IndexTest extends TestCase
                 [
                     'id' => (string) $assistant->id,
                     'relationships' => [
-                        'language' => [
+                        'setting_values' => [
                             'data' => [
-                                'id' => (string) $language->id,
-                                'type' => 'assistant-languages',
+                                [
+                                    'id' => (string) $assistant->settingValues->first()->id,
+                                    'type' => 'assistant-setting-values',
+                                ],
                             ],
                         ],
                         'category' => [
@@ -260,8 +265,8 @@ class IndexTest extends TestCase
         ]);
 
         $included = collect($response->json('included'));
-        $langResource = $included->first(fn ($item) => $item['type'] === 'assistant-languages');
-        $this->assertEquals('de', $langResource['attributes']['text']);
+        $valueResource = $included->first(fn ($item) => $item['type'] === 'assistant-setting-values');
+        $this->assertEquals('de', $valueResource['attributes']['value']);
         $catResource = $included->first(fn ($item) => $item['type'] === 'assistant-categories');
         $this->assertEquals('education', $catResource['attributes']['text']);
     }

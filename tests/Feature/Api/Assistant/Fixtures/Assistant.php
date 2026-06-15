@@ -18,7 +18,6 @@ trait Assistant
             'allow_remix' => true,
             'allow_model_select' => false,
             'release_stage' => 'private',
-            'formality' => 'neutral',
             'model' => 'gpt-4',
             'max_tokens' => 2048,
             'temp' => 0.7,
@@ -29,9 +28,6 @@ trait Assistant
     private function createRelationships(array $rels = []): array
     {
         $defaults = [];
-        if (isset($rels['language'])) {
-            $defaults['language'] = ['data' => ['type' => 'assistant-languages', 'id' => (string) $rels['language']]];
-        }
         if (isset($rels['category'])) {
             $defaults['category'] = ['data' => ['type' => 'assistant-categories', 'id' => (string) $rels['category']]];
         }

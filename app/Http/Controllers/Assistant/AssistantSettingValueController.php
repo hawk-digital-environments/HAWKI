@@ -7,10 +7,13 @@ namespace App\Http\Controllers\Assistant;
 use App\Http\Controllers\Controller;
 use LaravelJsonApi\Laravel\Http\Controllers\Actions;
 
-class LanguageController extends Controller
+class AssistantSettingValueController extends Controller
 {
     use Actions\FetchMany;
     use Actions\FetchOne;
     use Actions\FetchRelated;
     use Actions\FetchRelationship;
+    use Actions\Store;
+    use Actions\Update;
+    use Actions\Destroy;
 }

@@ -4,7 +4,6 @@ namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Category;
-use App\Models\Assistants\Language;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,7 +37,6 @@ class ShowTest extends TestCase
                         'allow_remix' => (int) $assistant->allow_remix,
                         'allow_model_select' => (int) $assistant->allow_model_select,
                         'release_stage' => $assistant->release_stage,
-                        'formality' => $assistant->formality,
                         'model' => $assistant->model,
                         'max_tokens' => $assistant->max_tokens,
                         'temp' => $assistant->temp,
@@ -150,23 +148,28 @@ class ShowTest extends TestCase
         $this->assertEquals('1.0', $versionResource['attributes']['version']);
     }
 
-    public function test_can_show_assistant_with_language(): void
+    public function test_can_show_assistant_with_setting_values(): void
     {
+        $this->seed(\Database\Seeders\SettingSeeder::class);
         $user = User::factory()->create();
-        $language = Language::factory()->create(['text' => 'en']);
+        $setting = \App\Models\Assistants\AssistantSetting::where('key', 'language')->firstOrFail();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
-            'language_id' => $language->id,
+        ]);
+        \App\Models\Assistants\AssistantSettingValue::create([
+            'assistant_id' => $assistant->id,
+            'setting_id' => $setting->id,
+            'value' => 'en',
         ]);
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=language")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=setting_values")
             ->assertOk();
 
         $included = collect($response->json('included'));
-        $langResource = $included->first(fn ($item) => $item['type'] === 'assistant-languages');
-        $this->assertEquals('en', $langResource['attributes']['text']);
+        $valueResource = $included->first(fn ($item) => $item['type'] === 'assistant-setting-values');
+        $this->assertEquals('en', $valueResource['attributes']['value']);
     }
 
     public function test_can_show_assistant_with_category(): void

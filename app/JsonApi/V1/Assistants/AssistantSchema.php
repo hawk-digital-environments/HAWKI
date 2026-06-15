@@ -39,7 +39,6 @@ class AssistantSchema extends Schema
             Boolean::make('allow_remix'),
             Boolean::make('allow_model_select'),
             Str::make('release_stage'),
-            Str::make('formality'),
             Str::make('model'),
             Number::make('max_tokens'),
             Number::make('temp'),
@@ -49,8 +48,8 @@ class AssistantSchema extends Schema
             Str::make('version_text')->hidden(),
             Boolean::make('is_favorite')->readOnly(),
 
-            BelongsTo::make('language')->type('assistant-languages'),
             BelongsTo::make('category')->type('assistant-categories'),
+            HasMany::make('setting_values', 'settingValues')->type('assistant-setting-values'),
             HasMany::make('user_prompts', 'user_prompts'),
             BelongsToMany::make('ai_tools', 'ai_tools'),
             BelongsToMany::make('tags', 'tags'),

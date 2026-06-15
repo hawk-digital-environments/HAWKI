@@ -29,9 +29,8 @@ class AssistantRequest extends ResourceRequest
             'allow_remix' => ['nullable', 'boolean'],
             'allow_model_select' => ['nullable', 'boolean'],
             'release_stage' => ['nullable', Rule::enum(ReleaseStage::class)],
-            'formality' => ['nullable', 'string'],
             'category' => ['nullable', JsonApiRule::toOne()],
-            'language' => ['nullable', JsonApiRule::toOne()],
+            'setting_values' => ['nullable', JsonApiRule::toMany()],
             'model' => ['nullable', 'string'],
             'max_tokens' => ['nullable', 'integer', 'min:1'],
             'temp' => ['nullable', 'numeric', 'min:0', 'max:1'],
@@ -60,9 +59,8 @@ class AssistantRequest extends ResourceRequest
             $rules['allow_remix'] = ['sometimes', 'boolean'];
             $rules['allow_model_select'] = ['sometimes', 'boolean'];
             $rules['category'] = ['sometimes', JsonApiRule::toOne()];
-            $rules['language'] = ['sometimes', JsonApiRule::toOne()];
+            $rules['setting_values'] = ['sometimes', JsonApiRule::toMany()];
             $rules['release_stage'] = ['sometimes', Rule::enum(ReleaseStage::class)];
-            $rules['formality'] = ['sometimes', 'string'];
             $rules['model'] = ['sometimes', 'string'];
             $rules['max_tokens'] = ['sometimes', 'integer', 'min:1'];
             $rules['temp'] = ['sometimes', 'numeric', 'min:0', 'max:1'];

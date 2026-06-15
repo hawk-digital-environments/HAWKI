@@ -4,8 +4,9 @@ use App\Http\Controllers\AiModelController;
 use App\Http\Controllers\AiProviderController;
 use App\Http\Controllers\AiToolController;
 use App\Http\Controllers\Assistant\AssistantController;
+use App\Http\Controllers\Assistant\AssistantSettingController;
+use App\Http\Controllers\Assistant\AssistantSettingValueController;
 use App\Http\Controllers\Assistant\CategoryController;
-use App\Http\Controllers\Assistant\LanguageController;
 use App\Http\Controllers\McpServerController;
 use App\Http\Controllers\Assistant\ReviewController;
 use App\Http\Controllers\StreamController;
@@ -31,8 +32,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->resources(function ($server) {
             $server->resource('assistants', AssistantController::class)
                 ->relationships(function ($relationships) {
-                    $relationships->hasOne('language')->readOnly();
                     $relationships->hasOne('category')->readOnly();
+                    $relationships->hasMany('setting_values')->readOnly();
                     $relationships->hasMany('user_prompts')->readOnly();
                     $relationships->hasMany('ai_tools')->readOnly();
                     $relationships->hasMany('tags')->readOnly();
@@ -63,10 +64,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $relationships->hasMany('assistants')->readOnly();
                 });
 
-            $server->resource('assistant-languages', LanguageController::class)
+            $server->resource('assistant-settings', AssistantSettingController::class)
                 ->only('index', 'show')
                 ->relationships(function ($relationships) {
-                    $relationships->hasMany('assistants')->readOnly();
+                    $relationships->hasMany('values')->readOnly();
+                });
+
+            $server->resource('assistant-setting-values', AssistantSettingValueController::class)
+                ->only('index', 'show', 'store', 'update', 'destroy')
+                ->relationships(function ($relationships) {
+                    $relationships->hasOne('assistant')->readOnly();
+                    $relationships->hasOne('setting')->readOnly();
                 });
 
             $server->resource('assistant-reviews', ReviewController::class)

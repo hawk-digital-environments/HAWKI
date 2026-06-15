@@ -70,7 +70,6 @@ class UpdateTest extends TestCase
                     'allow_remix' => (int) $assistant->allow_remix,
                     'allow_model_select' => (int) $assistant->allow_model_select,
                     'release_stage' => $assistant->release_stage,
-                    'formality' => $assistant->formality,
                     'model' => $assistant->model,
                     'max_tokens' => $assistant->max_tokens,
                     'temp' => $assistant->temp,

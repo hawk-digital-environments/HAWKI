@@ -193,6 +193,22 @@
 
     "MissingToolMsg" : "Diese Nachricht wurde mit einem veralteten Tool erstellt: ",
     "Preview_Loading": "Suche läuft...",
-    "Preview_Unavailable": "Vorschau nicht verfügbar"
+    "Preview_Unavailable": "Vorschau nicht verfügbar",
+
+    "ASST_Setting_Language_Label": "Sprache",
+    "ASST_Setting_Language_Description": "Die Sprache, die der Assistent für jede Antwort verwenden muss.",
+
+    "ASST_Setting_Formality_Label": "Formalität",
+    "ASST_Setting_Formality_Description": "Die Formalität der Assistentenantworten.",
+    "ASST_Setting_Formality_Option_Casual": "Locker",
+    "ASST_Setting_Formality_Option_Balanced": "Ausgewogen",
+    "ASST_Setting_Formality_Option_Professional": "Professionell",
+    "ASST_Setting_Formality_Option_Academic": "Akademisch",
+
+    "ASST_Setting_AnswerLength_Label": "Antwortlänge",
+    "ASST_Setting_AnswerLength_Description": "Die Ausführlichkeit der Assistentenantworten.",
+    "ASST_Setting_AnswerLength_Option_Concise": "Knapp",
+    "ASST_Setting_AnswerLength_Option_Balanced": "Ausgewogen",
+    "ASST_Setting_AnswerLength_Option_Detailed": "Detailliert"
 
 }

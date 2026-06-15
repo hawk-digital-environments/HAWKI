@@ -378,7 +378,6 @@ class ChatTestTest extends TestCase
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
-            'language_id' => null,
             'model' => 'gpt-4',
             'system_prompt' => 'You are a helpful test assistant.',
             'temp' => 0.7,

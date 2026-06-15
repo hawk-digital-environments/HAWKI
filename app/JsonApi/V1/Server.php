@@ -8,9 +8,10 @@ use App\JsonApi\V1\AiModels\AiModelSchema;
 use App\JsonApi\V1\AiModelStatuses\AiModelStatusSchema;
 use App\JsonApi\V1\AiProviders\AiProviderSchema;
 use App\JsonApi\V1\AiTools\AiToolSchema;
+use App\JsonApi\V1\AssistantSettings\AssistantSettingSchema;
+use App\JsonApi\V1\AssistantSettingValues\AssistantSettingValueSchema;
 use App\JsonApi\V1\Assistants\AssistantSchema;
 use App\JsonApi\V1\Categories\CategorySchema;
-use App\JsonApi\V1\Languages\LanguageSchema;
 use App\JsonApi\V1\McpServers\McpServerSchema;
 use App\JsonApi\V1\Organizations\OrganizationSchema;
 use App\JsonApi\V1\Reviews\ReviewSchema;
@@ -34,7 +35,8 @@ class Server extends BaseServer
         return [
             AssistantSchema::class,
             CategorySchema::class,
-            LanguageSchema::class,
+            AssistantSettingSchema::class,
+            AssistantSettingValueSchema::class,
             UserSchema::class,
             TagSchema::class,
             UserPromptSchema::class,

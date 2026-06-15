@@ -67,10 +67,21 @@ class RemixTest extends TestCase
         $this->assertEquals($assistant->temp, $clone->temp);
         $this->assertEquals($assistant->top_p, $clone->top_p);
         $this->assertEquals($assistant->model, $clone->model);
-        $this->assertEquals($assistant->formality, $clone->formality);
         $this->assertEquals($assistant->detail_description, $clone->detail_description);
-        $this->assertEquals($assistant->language_id, $clone->language_id);
         $this->assertEquals($assistant->category_id, $clone->category_id);
+
+        $this->assertEquals(
+            $assistant->settingValues()->count(),
+            $clone->settingValues()->count()
+        );
+        foreach ($assistant->settingValues as $value) {
+            $this->assertTrue(
+                $clone->settingValues()
+                    ->where('setting_id', $value->setting_id)
+                    ->where('value', $value->value)
+                    ->exists()
+            );
+        }
 
         $this->assertNull($clone->handle);
 

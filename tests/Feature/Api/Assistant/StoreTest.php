@@ -6,7 +6,6 @@ use App\Events\AssistantCreated;
 use App\Listeners\AssistantCreateInitialVersion;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Category;
-use App\Models\Assistants\Language;
 use App\Models\Assistants\Tag;
 use App\Models\Organization;
 use App\Models\User;
@@ -32,7 +31,6 @@ class StoreTest extends TestCase
         Event::fake(AssistantCreated::class);
         Event::assertListening(AssistantCreated::class, AssistantCreateInitialVersion::class);
 
-        $language = Language::factory()->create(['text' => 'en']);
         $category = Category::factory()->create(['text' => 'general']);
 
         $user = User::factory()->create();
@@ -43,7 +41,6 @@ class StoreTest extends TestCase
         $response = $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload([
             'name' => 'Test Assistant',
         ], [
-            'language' => $language->id,
             'category' => $category->id,
         ]))
             ->assertCreated();
@@ -73,7 +70,6 @@ class StoreTest extends TestCase
                         'allow_remix' => true,
                         'allow_model_select' => false,
                         'release_stage' => 'private',
-                        'formality' => 'neutral',
                         'model' => 'gpt-4',
                         'max_tokens' => 2048,
                         'temp' => 0.7,
@@ -87,7 +83,6 @@ class StoreTest extends TestCase
 
     public function test_can_create_assistant_with_user_prompts(): void
     {
-        $language = Language::factory()->create(['text' => 'en']);
         $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
 
@@ -98,7 +93,6 @@ class StoreTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->jsonApi('post', '/api/assistants?include=user_prompts', $this->createJsonApiPayload([], [
-            'language' => $language->id,
             'category' => $category->id,
             'user_prompts' => [$prompt1->id, $prompt2->id],
         ]))
@@ -111,7 +105,6 @@ class StoreTest extends TestCase
 
     public function test_can_create_assistant_with_ai_tools(): void
     {
-        $language = Language::factory()->create(['text' => 'en']);
         $category = Category::factory()->create(['text' => 'general']);
         $tool = $this->createAiTool();
 
@@ -119,7 +112,6 @@ class StoreTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->jsonApi('post', '/api/assistants?include=ai_tools', $this->createJsonApiPayload([], [
-            'language' => $language->id,
             'category' => $category->id,
             'ai_tools' => [$tool->id],
         ]))
@@ -147,7 +139,6 @@ class StoreTest extends TestCase
         $assistant = Assistant::first();
         $this->assertEquals($user->id, $assistant->creator_id);
         $this->assertNotNull($assistant->organization_id);
-        $this->assertNull($assistant->language_id);
         $this->assertNull($assistant->category_id);
         $this->assertEquals(0, $assistant->tags()->count());
         $this->assertEquals(0, $assistant->ai_tools()->count());
@@ -167,7 +158,6 @@ class StoreTest extends TestCase
                     'allow_remix' => false,
                     'allow_model_select' => false,
                     'release_stage' => 'draft',
-                    'formality' => 'neutral',
                     'model' => '',
                     'max_tokens' => 0,
                     'temp' => 0,
@@ -197,7 +187,6 @@ class StoreTest extends TestCase
 
     public function test_create_fails_for_duplicate_handle(): void
     {
-        $language = Language::factory()->create(['text' => 'en']);
         $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
         Assistant::factory()->create(['handle' => 'unique-handle']);
@@ -206,7 +195,7 @@ class StoreTest extends TestCase
 
         $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload(
             ['handle' => 'unique-handle'],
-            ['language' => $language->id, 'category' => $category->id]
+            ['category' => $category->id]
         ))
             ->assertUnprocessable()
             ->assertJsonPath('errors.0.source.pointer', '/data/attributes/handle');
@@ -214,13 +203,11 @@ class StoreTest extends TestCase
 
     public function test_create_fails_for_nonexistent_ai_tool(): void
     {
-        $language = Language::factory()->create(['text' => 'en']);
         $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
         $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload([], [
-            'language' => $language->id,
             'category' => $category->id,
             'ai_tools' => [999999],
         ]))
@@ -229,7 +216,6 @@ class StoreTest extends TestCase
 
     public function test_can_create_assistant_with_tags(): void
     {
-        $language = Language::factory()->create(['text' => 'en']);
         $category = Category::factory()->create(['text' => 'general']);
         $tag1 = Tag::create(['text' => 'existing-tag']);
         $tag2 = Tag::create(['text' => 'new-tag']);
@@ -238,7 +224,6 @@ class StoreTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->jsonApi('post', '/api/assistants?include=tags', $this->createJsonApiPayload([], [
-            'language' => $language->id,
             'category' => $category->id,
             'tags' => [$tag1->id, $tag2->id],
         ]))
@@ -255,13 +240,11 @@ class StoreTest extends TestCase
 
     public function test_create_fails_for_nonexistent_tag(): void
     {
-        $language = Language::factory()->create(['text' => 'en']);
         $category = Category::factory()->create(['text' => 'general']);
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
         $this->jsonApi('post', '/api/assistants', $this->createJsonApiPayload([], [
-            'language' => $language->id,
             'category' => $category->id,
             'tags' => [999999],
         ]))

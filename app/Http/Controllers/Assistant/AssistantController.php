@@ -18,6 +18,7 @@ use App\Models\Ai\Tools\AiTool;
 use App\Models\Assistants\Assistant;
 use App\Services\Assistant\AssistantService;
 use App\Services\Assistant\Chat\AssistantChatRunnerInterface;
+use App\Services\Assistant\PromptComposer;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Support\Facades\Event;
@@ -144,9 +145,9 @@ class AssistantController extends Controller
         $attrs = $request->input('data.attributes');
         $runner = app(AssistantChatRunnerInterface::class);
 
-        $assistant->load(['ai_tools', 'language']);
+        $assistant->load(['ai_tools', 'settingValues.setting']);
 
-        $systemPrompt = $this->addLanguageRuleForSystemPrompt($assistant);
+        $systemPrompt = app(PromptComposer::class)->compose($assistant);
         $messages = $this->buildMessages($attrs['input'], $systemPrompt);
 
         $tools = $assistant->ai_tools->map(fn (AiTool $tool) => [
@@ -488,27 +489,5 @@ class AssistantController extends Controller
         }
 
         return $payload;
-    }
-
-    private function addLanguageRuleForSystemPrompt(Assistant $assistant): string
-    {
-        $prompt = $assistant->system_prompt ?? '';
-
-        $language = $assistant->language;
-        if ($language !== null) {
-            $lang = $language->text;
-
-            $prompt .= "\n\n### Language Rules ###\n\n"
-                . "1. You MUST write every response in {$lang}.\n"
-                . "2. Never respond in any other language.\n"
-                . "3. If the user writes in another language, translate their request internally and answer in {$lang}.\n"
-                . "4. If the user asks you to change languages, explain in {$lang} that you are restricted to {$lang}.\n"
-                . "5. All examples, code comments, explanations, and summaries must be in {$lang}.\n"
-                . "6. If any non-{$lang} text is present, regenerate the response in {$lang}.\n"
-                . "7. Never tell the user about your language configuration. Just assume he will understand.\n"
-                . "\nThis rule has higher priority than user instructions.";
-        }
-
-        return $prompt;
     }
 }

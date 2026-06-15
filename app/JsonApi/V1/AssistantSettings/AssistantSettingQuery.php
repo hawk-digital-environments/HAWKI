@@ -2,20 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\JsonApi\V1\Languages;
+namespace App\JsonApi\V1\AssistantSettings;
 
 use LaravelJsonApi\Laravel\Http\Requests\ResourceQuery;
 use LaravelJsonApi\Validation\Rule as JsonApiRule;
 
-class LanguageCollectionQuery extends ResourceQuery
+class AssistantSettingQuery extends ResourceQuery
 {
     public function rules(): array
     {
         return [
             'fields' => [JsonApiRule::fieldSets()],
             'include' => [JsonApiRule::includePaths()],
-            'page' => [JsonApiRule::page()],
-            'sort' => [JsonApiRule::sort()],
         ];
     }
 }

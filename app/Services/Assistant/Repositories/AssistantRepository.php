@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantSettingValue;
 use App\Models\User;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,7 +40,7 @@ readonly class AssistantRepository
 
     public function clone(Assistant $source, int $creatorId, ?int $organizationId = null): Assistant
     {
-        return Assistant::create([
+        $clone = Assistant::create([
             'name' => $source->name,
             'description' => $source->description,
             'system_prompt' => $source->system_prompt,
@@ -50,9 +51,7 @@ readonly class AssistantRepository
             'temp' => $source->temp,
             'top_p' => $source->top_p,
             'model' => $source->model,
-            'formality' => $source->formality,
             'detail_description' => $source->detail_description,
-            'language_id' => $source->language_id,
             'category_id' => $source->category_id,
             'creator_id' => $creatorId,
             'remixed_creator_id' => $source->creator_id,
@@ -60,6 +59,16 @@ readonly class AssistantRepository
             'release_stage' => 'private',
             'organization_id' => $organizationId,
         ]);
+
+        foreach ($source->settingValues()->get() as $value) {
+            AssistantSettingValue::create([
+                'assistant_id' => $clone->id,
+                'setting_id' => $value->setting_id,
+                'value' => $value->value,
+            ]);
+        }
+
+        return $clone;
     }
 
     public function syncTools(Assistant $assistant, array $toolIds): array

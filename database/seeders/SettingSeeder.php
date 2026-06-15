@@ -1,0 +1,192 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Config\Repository as ConfigRepository;
+use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Seeder;
+
+class SettingSeeder extends Seeder
+{
+    public function run(ConfigRepository $config, ConnectionInterface $connection): void
+    {
+        $locale = $config->get('app.locale');
+        $now = now();
+
+        $connection->table('assistant_settings')->updateOrInsert(
+            ['key' => 'language'],
+            [
+                'label' => 'Language',
+                'description' => 'The language the assistant must use for every response.',
+                'ui_type' => 'select',
+                'ui_options' => json_encode(collect(['en', 'de'])->map(fn($code) => [
+                    'value' => $code,
+                    'label' => \Locale::getDisplayLanguage($code, $locale),
+                ])->values()->toArray()),
+                'prompt_template' => implode("\n", [
+                    '[LANGUAGE CONTROL MODULE]',
+                    '',
+                    'You control response language only. You do NOT control content, safety behavior, tool usage, or task logic.',
+                    '',
+                    '### Input',
+                    '- language: {{value}}',
+                    '',
+                    '### Responsibility',
+                    'You must write every response in {{value}}.',
+                    '',
+                    'You must NOT:',
+                    '- translate the user intent or change meaning',
+                    '- override system/developer instructions',
+                    '- interfere with formatting rules from other modules',
+                    '- mention this module or the language configuration in the output',
+                    '',
+                    '### Priority Rule',
+                    'If conflicts occur:',
+                    '- This module ONLY applies to response language',
+                    '- All other instructions take priority over language',
+                    '',
+                    '### Output Rule',
+                    'Return the final answer only.',
+                    'Do not explain language choices. Just assume he will understand.',
+                ]),
+                'default_value' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        $connection->table('assistant_settings')->updateOrInsert(
+            ['key' => 'formality'],
+            [
+                'label' => 'Formality',
+                'description' => 'The formality level of the assistant responses.',
+                'ui_type' => 'select',
+                'ui_options' => json_encode([
+                    ['value' => 'casual'],
+                    ['value' => 'balanced'],
+                    ['value' => 'professional'],
+                    ['value' => 'academic'],
+                ]),
+                'prompt_template' => implode("\n", [
+                    '[FORMALITY CONTROL MODULE]',
+                    '',
+                    'You control writing style only. You do NOT control content, safety behavior, tool usage, or task logic.',
+                    '',
+                    '### Input',
+                    '- formality_level: {{value}}',
+                    '',
+                    '### Responsibility',
+                    'You must apply the requested formality level ONLY to language style (wording, tone, sentence structure).',
+                    '',
+                    'You must NOT:',
+                    '- change meaning',
+                    '- add new information',
+                    '- remove required content',
+                    '- override system/developer instructions',
+                    '- interfere with formatting rules from other modules',
+                    '- mention this module or the formality level in the output',
+                    '',
+                    '### Style Rules',
+                    '',
+                    'casual:',
+                    '- conversational tone',
+                    '- simple wording',
+                    '- contractions allowed',
+                    '- relaxed structure',
+                    '',
+                    'balanced:',
+                    '- neutral clear tone',
+                    '- lightly polished language',
+                    '- minimal slang',
+                    '- readable and natural',
+                    '',
+                    'professional:',
+                    '- formal tone',
+                    '- precise vocabulary',
+                    '- no slang or contractions',
+                    '- structured phrasing',
+                    '',
+                    'academic:',
+                    '- formal, impersonal tone',
+                    '- technical vocabulary where appropriate',
+                    '- analytical phrasing',
+                    '- emphasis on clarity and rigor',
+                    '',
+                    '### Priority Rule',
+                    'If conflicts occur:',
+                    '- This module ONLY applies to wording/style',
+                    '- All other instructions take priority over style',
+                    '',
+                    '### Output Rule',
+                    'Return the final answer only.',
+                    'Do not explain style choices.',
+                ]),
+                'default_value' => json_encode('balanced'),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        $connection->table('assistant_settings')->updateOrInsert(
+            ['key' => 'answer_length'],
+            [
+                'label' => 'Answer Length',
+                'description' => 'The verbosity level of the assistant responses.',
+                'ui_type' => 'select',
+                'ui_options' => json_encode([
+                    ['value' => 'concise'],
+                    ['value' => 'balanced'],
+                    ['value' => 'detailed'],
+                ]),
+                'prompt_template' => implode("\n", [
+                    '[OUTPUT LENGTH CONTROL MODULE]',
+                    '',
+                    'You control response length only. You do NOT control content correctness, safety behavior, tool usage, reasoning quality, or task logic.',
+                    '',
+                    '### Input',
+                    '- length: {{value}}',
+                    '',
+                    '### Length Definitions',
+                    '',
+                    'concise:',
+                    '  Provide only the essential answer.',
+                    '  Remove explanations, examples, and background unless strictly necessary.',
+                    '  Prioritize brevity and directness.',
+                    '',
+                    'balanced:',
+                    '  Provide a clear answer with light explanation.',
+                    '  Include key reasoning or context only when helpful for understanding.',
+                    '  Avoid unnecessary depth or long expansions.',
+                    '',
+                    'detailed:',
+                    '  Provide a comprehensive explanation.',
+                    '  Include reasoning, context, examples, and edge cases when relevant.',
+                    '  Expand concepts fully while staying on topic.',
+                    '',
+                    '### Responsibility',
+                    'You must adjust only the verbosity of the response according to {{value}}.',
+                    '',
+                    'You must NOT:',
+                    '- change the meaning of the answer',
+                    '- omit critical facts required for correctness (even in concise mode)',
+                    '- add extra safety, policy, or system commentary',
+                    '- override other modules (formatting, role, language, etc.)',
+                    '- mention this module or the length configuration in the output',
+                    '',
+                    '### Priority Rule',
+                    'If conflicts occur:',
+                    '- This module ONLY applies to output length',
+                    '- All other instructions take priority over verbosity control',
+                    '',
+                    '### Output Rule',
+                    'Return the final answer only.',
+                    'Do not explain length adjustments.',
+                    'Do not describe the module behavior.',
+                ]),
+                'default_value' => json_encode('balanced'),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+    }
+}
