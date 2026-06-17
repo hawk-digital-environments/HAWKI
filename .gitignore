@@ -30,3 +30,4 @@ _docker_production_test
 .devcontainer
 .agents
 skills-lock.json
+.opencode

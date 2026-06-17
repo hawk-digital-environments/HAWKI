@@ -401,7 +401,39 @@ Examples are placed at the **media-type level** (sibling of `schema` under `cont
 
 ## SSE / chat-test Streaming
 
-The `POST /assistants/{id}/actions/chat-test` endpoint returns `text/event-stream` (Server-Sent Events) using the **OpenAI Responses API** compatible event format. This is documented with:
+The `POST /assistants/{id}/actions/chat-test` endpoint returns `text/event-stream` (Server-Sent Events) using the **OpenAI Responses API** compatible event format.
+
+### Request Format
+
+The request body uses **flat JSON** (no JSON:API envelope) at `application/json` content type for compatibility with OpenAI SDK clients:
+
+```json
+{
+  "input": [{ "role": "user", "content": "Hello" }]
+}
+```
+
+The `input` field accepts:
+- A **string** (treated as a single user message with `role: user`)
+- An **array** of `{role, content}` items where `content` is a string or array of `{type: "input_text", text: "..."}` content parts
+
+The `model`, `instructions` (via `PromptComposer`), `tools`, `temperature`, and `max_tokens` are derived from the assistant.
+
+### Stream Adapter Architecture
+
+The streaming response is produced by a reusable adapter under `app/Services/AI/Stream/` that follows the same pattern as the neuron-ai stream adapters:
+
+| File | Role |
+|---|---|
+| `StreamAdapterInterface.php` | Contract: `transform(chunk)`, `start()`, `end()`, `error()`, `getHeaders()` |
+| `SSEAdapter.php` | Abstract base: SSE formatting (`formatEvent`), ID generation, default headers |
+| `OpenAIResponsesAdapter.php` | Converts runner chunks (`text_delta`, `tool_call`, `tool_result`, `usage`) into OpenAI Responses API SSE events |
+
+The controller is thin — it creates the adapter, delegates via `start()` / `transform()` / `end()` / `error()`, and echoes the yielded lines.
+
+### OpenAPI Documentation
+
+The endpoint is documented with:
 
 - A `text/event-stream` content type (not `application/vnd.api+json`)
 - A `oneOf` referencing 12 SSE event component schemas

@@ -546,10 +546,11 @@ class PathBuilder
 
         if ($requestClass !== null) {
             $requestExample = $this->exampleBuilder->getActionRequestExample($resource, $action);
+            $mediaType = $isChatTest ? 'application/json' : 'application/vnd.api+json';
             $operation['requestBody'] = [
                 'required' => true,
                 'content' => [
-                    'application/vnd.api+json' => $this->withExample(
+                    $mediaType => $this->withExample(
                         "#/components/schemas/{$schemaName}",
                         $requestExample,
                     ),

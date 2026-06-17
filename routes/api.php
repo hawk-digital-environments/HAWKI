@@ -25,8 +25,11 @@ Route::middleware(['api_isActive', 'auth:sanctum'])->group(function () {
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
 
 });
-
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    Route::post('assistants/{assistantId}/actions/chat-test{tail?}', [AssistantController::class, 'chatTest'])
+        ->where('tail', '/.*');
+
     JsonApiRoute::server('v1')
         ->prefix('')
         ->resources(function ($server) {
@@ -49,7 +52,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $actions->withId()->post('release');
                     $actions->withId()->post('feedback');
                     $actions->withId()->post('favorite');
-                    $actions->withId()->post('chat-test');
                 });
 
             $server->resource('assistant-categories', CategoryController::class)

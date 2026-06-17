@@ -22,7 +22,6 @@ class SimpleAssistantChatRunner implements AssistantChatRunnerInterface
         array $params = [],
     ): Generator {
         $payload = $this->buildPayload($systemPrompt, $messages, $model, $tools, $params);
-
         $chunks = [];
 
         $onData = function (AiResponse $response) use (&$chunks): void {

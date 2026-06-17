@@ -153,15 +153,10 @@ class ExampleBuilder
     private const ACTION_EXAMPLES = [
         'assistants.chat-test' => [
             'request' => [
-                'data' => [
-                    'type' => 'assistants',
-                    'id' => '1',
-                    'attributes' => [
-                        'input' => [
-                            ['role' => 'user', 'content' => 'Hello'],
-                        ],
-                    ],
+                'input' => [
+                    ['role' => 'user', 'content' => 'Hello'],
                 ],
+                'model' => 'gpt-4',
             ],
             'response' => "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_abc123\",\"object\":\"response\",\"status\":\"in_progress\",\"model\":\"gpt-4\",\"output\":[],\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"total_tokens\":0},\"created_at\":1718000000},\"sequence_number\":0}\n\nevent: response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_abc123\",\"object\":\"response\",\"status\":\"in_progress\",\"model\":\"gpt-4\",\"output\":[],\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"total_tokens\":0},\"created_at\":1718000000},\"sequence_number\":1}\n\nevent: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_abc123\",\"object\":\"response\",\"status\":\"completed\",\"model\":\"gpt-4\",\"output\":[{\"id\":\"msg_xyz\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"Hello!\",\"annotations\":[]}],\"status\":\"completed\"}],\"usage\":{\"input_tokens\":10,\"output_tokens\":5,\"total_tokens\":15},\"created_at\":1718000000},\"sequence_number\":8}\n\n",
         ],

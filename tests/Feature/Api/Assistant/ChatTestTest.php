@@ -15,17 +15,11 @@ class ChatTestTest extends TestCase
 
     private function createChatTestPayload(array $overrides = []): array
     {
-        return [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) ($overrides['id'] ?? '1'),
-                'attributes' => array_merge([
-                    'input' => [
-                        ['role' => 'user', 'content' => 'Hello'],
-                    ],
-                ], $overrides['attributes'] ?? []),
+        return array_merge([
+            'input' => [
+                ['role' => 'user', 'content' => 'Hello'],
             ],
-        ];
+        ], $overrides);
     }
 
     private function parseSseEvents(string $body): array
@@ -59,7 +53,7 @@ class ChatTestTest extends TestCase
 
             return '';
         });
-        $response = $this->jsonApi('post', $uri, $data);
+        $response = $this->postJson($uri, $data);
         ob_end_clean();
 
         if ($captured === '') {
@@ -95,7 +89,7 @@ class ChatTestTest extends TestCase
             'release_stage' => 'public',
         ]);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/chat-test", $this->createChatTestPayload(['id' => $assistant->id]))
+        $this->postJson("/api/assistants/{$assistant->id}/actions/chat-test", $this->createChatTestPayload())
             ->assertUnauthorized();
     }
 
@@ -104,7 +98,7 @@ class ChatTestTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', '/api/assistants/999/actions/chat-test', $this->createChatTestPayload(['id' => 999]))
+        $this->postJson('/api/assistants/999/actions/chat-test', $this->createChatTestPayload())
             ->assertNotFound();
     }
 
@@ -119,7 +113,7 @@ class ChatTestTest extends TestCase
         $otherUser = User::factory()->create();
         Sanctum::actingAs($otherUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/chat-test", $this->createChatTestPayload(['id' => $assistant->id]))
+        $this->postJson("/api/assistants/{$assistant->id}/actions/chat-test", $this->createChatTestPayload())
             ->assertForbidden();
     }
 
@@ -137,7 +131,7 @@ class ChatTestTest extends TestCase
             ['type' => 'text_delta', 'content' => 'Hi'],
         ]);
 
-        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/chat-test", $this->createChatTestPayload(['id' => $assistant->id]));
+        $response = $this->postJson("/api/assistants/{$assistant->id}/actions/chat-test", $this->createChatTestPayload());
 
         $response->assertStatus(200);
         $this->assertStringStartsWith('text/event-stream', $response->headers->get('Content-Type'));
@@ -159,7 +153,7 @@ class ChatTestTest extends TestCase
 
         [$response, $body] = $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
 
         $response->assertStatus(200);
@@ -194,7 +188,7 @@ class ChatTestTest extends TestCase
 
         [$response, $body] = $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
 
         $response->assertStatus(200);
@@ -230,7 +224,7 @@ class ChatTestTest extends TestCase
 
         [$response, $body] = $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
 
         $response->assertStatus(200);
@@ -265,7 +259,7 @@ class ChatTestTest extends TestCase
 
         [$response, $body] = $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
 
         $response->assertStatus(200);
@@ -300,7 +294,7 @@ class ChatTestTest extends TestCase
 
         [$response, $body] = $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
 
         $response->assertStatus(200);
@@ -332,7 +326,7 @@ class ChatTestTest extends TestCase
 
         [$response, $body] = $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
 
         $response->assertStatus(200);
@@ -363,13 +357,7 @@ class ChatTestTest extends TestCase
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/chat-test", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [],
-            ],
-        ])
+        $this->postJson("/api/assistants/{$assistant->id}/actions/chat-test", [])
             ->assertStatus(422);
     }
 
@@ -405,8 +393,106 @@ class ChatTestTest extends TestCase
 
         $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
+    }
+
+    public function test_chat_test_uses_requested_model_when_allow_model_select(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'model' => 'gpt-4',
+            'allow_model_select' => true,
+            'system_prompt' => 'test.',
+            'temp' => 0.5,
+            'top_p' => 0.5,
+            'max_tokens' => 100,
+        ]);
+        Sanctum::actingAs($user);
+
+        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner->expects($this->once())->method('stream')->with(
+            'test.',
+            $this->callback(fn ($v) => is_array($v)),
+            'gpt-4.1',
+            $this->callback(fn ($v) => is_array($v)),
+            $this->anything(),
+        )->willReturn((function () {
+            yield from [];
+        })());
+        $this->app->instance(AssistantChatRunnerInterface::class, $runner);
+
+        $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            $this->createChatTestPayload(['model' => 'gpt-4.1']),
+        );
+    }
+
+    public function test_chat_test_allows_default_model_without_allow_model_select(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'model' => 'gpt-5',
+            'allow_model_select' => false,
+            'system_prompt' => 'test.',
+            'temp' => 0.5,
+            'top_p' => 0.5,
+            'max_tokens' => 100,
+        ]);
+        Sanctum::actingAs($user);
+
+        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner->expects($this->once())->method('stream')->with(
+            'test.',
+            $this->callback(fn ($v) => is_array($v)),
+            'gpt-5',
+            $this->callback(fn ($v) => is_array($v)),
+            $this->anything(),
+        )->willReturn((function () {
+            yield from [];
+        })());
+        $this->app->instance(AssistantChatRunnerInterface::class, $runner);
+
+        $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            $this->createChatTestPayload(['model' => 'gpt-5']),
+        );
+    }
+
+    public function test_chat_test_rejects_different_model_when_allow_model_select_false(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'model' => 'gpt-5',
+            'allow_model_select' => false,
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->postJson(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            $this->createChatTestPayload(['model' => 'gpt-4.1'])
+        )->assertStatus(422)
+         ->assertJsonPath('errors.model.0', fn ($msg) => str_contains($msg, 'not allowed'));
+    }
+
+    public function test_chat_test_rejects_nonexistent_model(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'model' => 'gpt-4',
+            'allow_model_select' => true,
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->postJson(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            $this->createChatTestPayload(['model' => 'nonexistent-model-12345'])
+        )->assertStatus(422)
+         ->assertJsonPath('errors.model.0', fn ($msg) => str_contains($msg, 'not available'));
     }
 
     public function test_chat_test_includes_usage_in_response_completed(): void
@@ -426,7 +512,7 @@ class ChatTestTest extends TestCase
 
         [$response, $body] = $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-            $this->createChatTestPayload(['id' => $assistant->id]),
+            $this->createChatTestPayload(),
         );
 
         $response->assertStatus(200);
@@ -474,19 +560,50 @@ class ChatTestTest extends TestCase
         $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
             [
-                'data' => [
-                    'type' => 'assistants',
-                    'id' => (string) $assistant->id,
-                    'attributes' => [
-                        'input' => [
-                            ['role' => 'user', 'content' => [
-                                ['type' => 'input_text', 'text' => 'Hello'],
-                                ['type' => 'input_text', 'text' => 'world'],
-                            ]],
-                        ],
-                    ],
+                'input' => [
+                    ['role' => 'user', 'content' => [
+                        ['type' => 'input_text', 'text' => 'Hello'],
+                        ['type' => 'input_text', 'text' => 'world'],
+                    ]],
                 ],
             ],
         );
     }
+
+    public function test_chat_test_accepts_string_input(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => 'private',
+            'model' => 'gpt-4',
+        ]);
+        Sanctum::actingAs($user);
+
+        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner->expects($this->once())->method('stream')->with(
+            $this->anything(),
+            $this->callback(function (array $messages) {
+                $userMsg = array_filter($messages, fn ($m) => $m['role'] === 'user');
+                $last = array_values($userMsg);
+                $last = $last[count($last) - 1] ?? null;
+
+                return $last !== null
+                    && isset($last['content']['text'])
+                    && $last['content']['text'] === 'Hello world';
+            }),
+            'gpt-4',
+            $this->anything(),
+            $this->anything(),
+        )->willReturn((function () {
+            yield from [];
+        })());
+        $this->app->instance(AssistantChatRunnerInterface::class, $runner);
+
+        $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+             ['input' => 'Hello world'],
+        );
+    }
+
 }
