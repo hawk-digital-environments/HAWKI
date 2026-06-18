@@ -23,6 +23,7 @@ use App\Services\Assistant\PromptComposer;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use LaravelJsonApi\Core\Responses\DataResponse;
 use LaravelJsonApi\Laravel\Http\Controllers\Actions;
@@ -168,11 +169,20 @@ class AssistantController extends Controller
             'max_tokens' => $assistant->max_tokens,
         ]);
 
-        return response()->stream(function () use ($adapter, $runner, $messages, $assistant, $tools, $params, $systemPrompt, $model) {
+        Log::debug('chatTest: request', ['model' => $model, 'msgs' => count($messages)]);
+
+        return response()->stream(function () use ($adapter, $runner, $messages, $model, $tools, $params, $systemPrompt) {
             foreach ($adapter->start() as $line) {
                 echo $line;
                 flush();
             }
+
+            $sink = function (array $chunk) use ($adapter): void {
+                foreach ($adapter->transform($chunk) as $line) {
+                    echo $line;
+                    flush();
+                }
+            };
 
             try {
                 $generator = $runner->stream(
@@ -181,23 +191,10 @@ class AssistantController extends Controller
                     model: $model,
                     tools: $tools,
                     params: $params,
+                    sink: $sink,
                 );
-
-                $chunkCount = 0;
-                foreach ($generator as $chunk) {
-                    $chunkCount++;
-                    foreach ($adapter->transform($chunk) as $line) {
-                        echo $line;
-                        flush();
-                    }
-                }
-
-                if ($chunkCount === 0) {
-                    foreach ($adapter->transform(['type' => 'text_delta', 'content' => "The model returned an empty response. This may be because the model does not support tool/function calling. Try an assistant with no tools configured, or use a model that supports function calling."]) as $line) {
-                        echo $line;
-                        flush();
-                    }
-                }
+                // consume generator to trigger sink callbacks
+                foreach ($generator as $_chunk) {}
             } catch (\Throwable $e) {
                 foreach ($adapter->error($e) as $line) {
                     echo $line;
@@ -254,8 +251,13 @@ class AssistantController extends Controller
                     ->implode('')];
             }
 
+            $role = $item['role'] ?? 'user';
+            if ($role === 'developer') {
+                $role = 'system';
+            }
+
             $payload[] = [
-                'role' => $item['role'] ?? 'user',
+                'role' => $role,
                 'content' => $content,
             ];
         }

@@ -101,6 +101,38 @@ class OpenAiStreamingRequest extends AbstractRequest
                 // No text content, just metadata events
                 break;
 
+            // Thinking / reasoning events (summary)
+            case 'response.reasoning_summary_part.added':
+                $responseType = 'thinking';
+                $status = 'thinking_start';
+                $statusKey = 'reasoning';
+                break;
+            case 'response.reasoning_summary_text.delta':
+                $responseType = 'thinking';
+                $content = $jsonChunk['delta'] ?? '';
+                $status = 'thinking_delta';
+                $statusKey = 'reasoning';
+                break;
+            case 'response.reasoning_summary_part.done':
+                $responseType = 'thinking';
+                $status = 'thinking_done';
+                $statusKey = 'reasoning';
+                break;
+
+            // Thinking / reasoning events (full text)
+            case 'response.reasoning_text.delta':
+                $responseType = 'thinking';
+                $content = $jsonChunk['delta'] ?? '';
+                $status = 'thinking_delta';
+                $statusKey = 'reasoning_text';
+                break;
+            case 'response.reasoning_text.done':
+                $responseType = 'thinking';
+                $content = $jsonChunk['text'] ?? '';
+                $status = 'thinking_done';
+                $statusKey = 'reasoning_text';
+                break;
+
             default:
                 // Unknown or unsupported type — ignore or log it
                 break;

@@ -96,6 +96,8 @@ readonly class OpenAiRequestConverter
         if ($modelId === 'gpt-5') {
             $payload['text']['verbosity'] = 'low';
             $payload['reasoning']['effort'] = 'medium';
+            $payload['reasoning']['summary'] = 'auto';
+            unset($payload['temperature'], $payload['top_p']);
         }
 
         return $payload;

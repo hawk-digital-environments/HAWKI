@@ -9,6 +9,8 @@ use Generator;
 interface AssistantChatRunnerInterface
 {
     /**
+     * @param  callable|null  $sink  Real-time callback invoked as chunks are collected via the AI callback.
+     *                                 When set, the chunk is pushed immediately without waiting for the full stream.
      * @return Generator<array{type: string, content: mixed}>
      */
     public function stream(
@@ -17,5 +19,6 @@ interface AssistantChatRunnerInterface
         string $model,
         array $tools = [],
         array $params = [],
+        ?callable $sink = null,
     ): Generator;
 }

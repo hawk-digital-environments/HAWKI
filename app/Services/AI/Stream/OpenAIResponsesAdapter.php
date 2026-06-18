@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\AI\Stream;
 
+/**
+ * Implementation according to spec:
+ * https://github.com/openai/openai-openapi
+ * For a refernce implementation see https://github.com/vercel/ai/blob/83877a1e/packages/openai/src/responses/openai-responses-language-model.ts#L1163
+ *
+ */
 class OpenAIResponsesAdapter extends SSEAdapter
 {
     private int $seq = 0;
@@ -14,6 +20,9 @@ class OpenAIResponsesAdapter extends SSEAdapter
     private array $outputItems = [];
     private array $usage = ['input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0];
     private int $createdAt;
+    private bool $inThinking = false;
+    private ?string $thinkingItemId = null;
+    private string $fullThinkingText = '';
 
     public function __construct(
         private readonly string $responseId,
@@ -40,6 +49,7 @@ class OpenAIResponsesAdapter extends SSEAdapter
     {
         yield from match ($chunk['type']) {
             'text_delta' => $this->handleTextDelta($chunk['content']),
+            'thinking_delta' => $this->handleThinkingDelta($chunk['content']),
             'tool_call' => $this->handleToolCall($chunk['content']),
             'tool_result' => $this->handleToolResult($chunk['content']),
             'usage' => $this->handleUsage($chunk['content']),
@@ -50,6 +60,10 @@ class OpenAIResponsesAdapter extends SSEAdapter
 
     public function end(): iterable
     {
+        if ($this->inThinking) {
+            yield from $this->closeThinking();
+        }
+
         if ($this->inMessage) {
             yield from $this->closeMessageItem();
         }
@@ -91,6 +105,10 @@ class OpenAIResponsesAdapter extends SSEAdapter
 
     private function handleTextDelta(string $delta): iterable
     {
+        if ($this->inThinking) {
+            yield from $this->closeThinking();
+        }
+
         if (! $this->inMessage) {
             $this->msgItemId = $this->generateId('msg');
             $this->inMessage = true;
@@ -129,6 +147,10 @@ class OpenAIResponsesAdapter extends SSEAdapter
 
     private function handleToolCall(array $content): iterable
     {
+        if ($this->inThinking) {
+            yield from $this->closeThinking();
+        }
+
         if ($this->inMessage) {
             yield from $this->closeMessageItem();
         }
@@ -260,5 +282,71 @@ class OpenAIResponsesAdapter extends SSEAdapter
         $this->inMessage = false;
         $this->fullContent = '';
         $this->msgItemId = null;
+    }
+
+    private function handleThinkingDelta(string $delta): iterable
+    {
+        if (! $this->inThinking) {
+            $this->thinkingItemId = $this->generateId('think');
+            $this->inThinking = true;
+
+            yield $this->formatEvent('response.output_item.added', [
+                'output_index' => $this->outputIndex,
+                'item' => [
+                    'id' => $this->thinkingItemId,
+                    'type' => 'reasoning',
+                ],
+                'sequence_number' => $this->nextSeq(),
+            ]);
+
+            yield $this->formatEvent('response.reasoning_summary_part.added', [
+                'item_id' => $this->thinkingItemId,
+                'output_index' => $this->outputIndex,
+                'summary_index' => 0,
+                'sequence_number' => $this->nextSeq(),
+            ]);
+        }
+
+        yield $this->formatEvent('response.reasoning_summary_text.delta', [
+            'item_id' => $this->thinkingItemId,
+            'output_index' => $this->outputIndex,
+            'summary_index' => 0,
+            'delta' => $delta,
+            'sequence_number' => $this->nextSeq(),
+        ]);
+
+        $this->fullThinkingText .= $delta;
+    }
+
+    private function closeThinking(): iterable
+    {
+        yield $this->formatEvent('response.reasoning_summary_text.done', [
+            'item_id' => $this->thinkingItemId,
+            'output_index' => $this->outputIndex,
+            'summary_index' => 0,
+            'text' => $this->fullThinkingText,
+            'sequence_number' => $this->nextSeq(),
+        ]);
+
+        yield $this->formatEvent('response.reasoning_summary_part.done', [
+            'item_id' => $this->thinkingItemId,
+            'output_index' => $this->outputIndex,
+            'summary_index' => 0,
+            'sequence_number' => $this->nextSeq(),
+        ]);
+
+        yield $this->formatEvent('response.output_item.done', [
+            'output_index' => $this->outputIndex,
+            'item' => [
+                'id' => $this->thinkingItemId,
+                'type' => 'reasoning',
+            ],
+            'sequence_number' => $this->nextSeq(),
+        ]);
+
+        $this->outputIndex++;
+        $this->inThinking = false;
+        $this->thinkingItemId = null;
+        $this->fullThinkingText = '';
     }
 }

@@ -72,11 +72,21 @@ class ChatTestTest extends TestCase
     private function mockRunner(array $chunks): void
     {
         $runner = $this->createStub(AssistantChatRunnerInterface::class);
-        $runner->method('stream')->willReturn((function () use ($chunks) {
+        $runner->method('stream')->willReturnCallback(function (
+            string $systemPrompt, array $messages, string $model, array $tools, array $params, ?callable $sink
+        ) use ($chunks) {
             foreach ($chunks as $chunk) {
-                yield $chunk;
+                if ($sink) {
+                    $sink($chunk);
+                }
             }
-        })());
+
+            return (function () use ($chunks) {
+                foreach ($chunks as $chunk) {
+                    yield $chunk;
+                }
+            })();
+        });
 
         $this->app->instance(AssistantChatRunnerInterface::class, $runner);
     }
@@ -288,8 +298,11 @@ class ChatTestTest extends TestCase
         ]);
         Sanctum::actingAs($user);
 
-        $runner = $this->createStub(AssistantChatRunnerInterface::class);
-        $runner->method('stream')->willThrowException(new \RuntimeException('AI provider error'));
+        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner->method('stream')->willReturn((function () {
+            yield ['type' => 'status', 'content' => 'starting'];
+            throw new \RuntimeException('AI provider error');
+        })());
         $this->app->instance(AssistantChatRunnerInterface::class, $runner);
 
         [$response, $body] = $this->performStreamingRequest(
@@ -386,6 +399,7 @@ class ChatTestTest extends TestCase
                     && $params['top_p'] === 0.9
                     && $params['max_tokens'] === 2048;
             }),
+            $this->anything(),
         )->willReturn((function () {
             yield from [];
         })());
@@ -606,4 +620,43 @@ class ChatTestTest extends TestCase
         );
     }
 
+    public function test_chat_test_passes_sink_callback_to_runner(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'model' => 'gpt-4',
+            'system_prompt' => 'test.',
+            'temp' => 0.5,
+            'top_p' => 0.5,
+            'max_tokens' => 100,
+        ]);
+        Sanctum::actingAs($user);
+
+        $runnerCalled = false;
+        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner->expects($this->once())->method('stream')->willReturnCallback(function (
+            string $systemPrompt, array $messages, string $model, array $tools, array $params, ?callable $sink
+        ) use (&$runnerCalled) {
+            $runnerCalled = true;
+            $this->assertNotNull($sink, 'Sink callback should be passed to runner');
+
+            // Simulate real-time: call sink before returning generator
+            $sink(['type' => 'text_delta', 'content' => 'real-time']);
+
+            return (function () {
+                yield ['type' => 'usage', 'content' => ['prompt_tokens' => 1, 'completion_tokens' => 1]];
+            })();
+        });
+        $this->app->instance(AssistantChatRunnerInterface::class, $runner);
+
+        [$response, $body] = $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            $this->createChatTestPayload(),
+        );
+
+        $response->assertStatus(200);
+        $this->assertTrue($runnerCalled);
+        $this->assertStringContainsString('"delta":"real-time"', $body);
+    }
 }

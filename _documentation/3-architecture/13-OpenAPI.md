@@ -417,19 +417,21 @@ The `input` field accepts:
 - A **string** (treated as a single user message with `role: user`)
 - An **array** of `{role, content}` items where `content` is a string or array of `{type: "input_text", text: "..."}` content parts
 
-The `model`, `instructions` (via `PromptComposer`), `tools`, `temperature`, and `max_tokens` are derived from the assistant.
+OpenAI SDKs may send `role: "developer"` for reasoning models; this is internally mapped to `role: "system"` for compatibility with the AI provider.
+
+The `model` field can be overridden by the client when the assistant has `allow_model_select` enabled, otherwise only the assistant's default model is used. The `stream` parameter is accepted for compatibility. `instructions` (via `PromptComposer`), `tools` (the assistant's own `ai_tools`), `temperature`, and `max_tokens` are derived from the assistant.
 
 ### Stream Adapter Architecture
 
 The streaming response is produced by a reusable adapter under `app/Services/AI/Stream/` that follows the same pattern as the neuron-ai stream adapters:
 
 | File | Role |
-|---|---|
+|---|---|---|
 | `StreamAdapterInterface.php` | Contract: `transform(chunk)`, `start()`, `end()`, `error()`, `getHeaders()` |
 | `SSEAdapter.php` | Abstract base: SSE formatting (`formatEvent`), ID generation, default headers |
-| `OpenAIResponsesAdapter.php` | Converts runner chunks (`text_delta`, `tool_call`, `tool_result`, `usage`) into OpenAI Responses API SSE events |
+| `OpenAIResponsesAdapter.php` | Converts runner chunks (`text_delta`, `thinking_delta`, `tool_call`, `tool_result`, `usage`) into OpenAI Responses API SSE events |
 
-The controller is thin — it creates the adapter, delegates via `start()` / `transform()` / `end()` / `error()`, and echoes the yielded lines.
+The controller emits `start()` events, then passes a **sink callback** to the runner for real-time streaming. Each chunk fires the sink immediately via the AI provider's HTTP callback, so output reaches the client as the model generates it — no buffering. On completion, `end()` finalises the stream. The runner interface accepts an optional `$sink` parameter for this pattern.
 
 ### OpenAPI Documentation
 
@@ -455,12 +457,16 @@ The endpoint is documented with:
 |--------|------------|-------------|
 | `SseResponseCreatedEvent` | `response.created` | Emitted when the response is created. Always first. |
 | `SseResponseInProgressEvent` | `response.in_progress` | Emitted when processing starts. |
-| `SseOutputItemAddedEvent` | `response.output_item.added` | New output item (message or function_call) added. |
+| `SseOutputItemAddedEvent` | `response.output_item.added` | New output item added. Used for `message`, `function_call`, and `reasoning` items. |
 | `SseContentPartAddedEvent` | `response.content_part.added` | New content part added to a message. |
 | `SseOutputTextDeltaEvent` | `response.output_text.delta` | Text fragment. 0 or more per stream. |
 | `SseOutputTextDoneEvent` | `response.output_text.done` | Complete text content finalized. |
 | `SseContentPartDoneEvent` | `response.content_part.done` | Content part completed. |
-| `SseOutputItemDoneEvent` | `response.output_item.done` | Output item completed with full content. |
+| `SseOutputItemDoneEvent` | `response.output_item.done` | Output item completed. Used for `message`, `function_call`, and `reasoning` items. |
+| `SseReasoningSummaryPartAddedEvent` | `response.reasoning_summary_part.added` | New reasoning summary part added. Requires `output_item.added` (reasoning) first. |
+| `SseReasoningSummaryTextDeltaEvent` | `response.reasoning_summary_text.delta` | Reasoning text fragment. 0 or more per stream. |
+| `SseReasoningSummaryTextDoneEvent` | `response.reasoning_summary_text.done` | Complete accumulated reasoning text. |
+| `SseReasoningSummaryPartDoneEvent` | `response.reasoning_summary_part.done` | Reasoning summary part completed. Followed by `output_item.done` (reasoning). |
 | `SseFunctionCallArgumentsDeltaEvent` | `response.function_call_arguments.delta` | Partial JSON arguments for a function call. |
 | `SseFunctionCallArgumentsDoneEvent` | `response.function_call_arguments.done` | Complete function call arguments. |
 | `SseResponseCompletedEvent` | `response.completed` | Final success event with full response object. |
@@ -477,8 +483,26 @@ data: {"type":"response.created","response":{"id":"resp_abc123","object":"respon
 event: response.in_progress
 data: {"type":"response.in_progress","response":{...},"sequence_number":1}
 
+event: response.output_item.added
+data: {"type":"response.output_item.added","output_index":0,"item":{"id":"think_...","type":"reasoning"},"sequence_number":2}
+
+event: response.reasoning_summary_part.added
+data: {"type":"response.reasoning_summary_part.added","item_id":"think_...","output_index":0,"summary_index":0,"sequence_number":3}
+
+event: response.reasoning_summary_text.delta
+data: {"type":"response.reasoning_summary_text.delta","item_id":"think_...","output_index":0,"summary_index":0,"delta":"I should fetch the file...","sequence_number":4}
+
+event: response.reasoning_summary_text.done
+data: {"type":"response.reasoning_summary_text.done","item_id":"think_...","output_index":0,"summary_index":0,"text":"I should fetch the file from GitHub...","sequence_number":6}
+
+event: response.reasoning_summary_part.done
+data: {"type":"response.reasoning_summary_part.done","item_id":"think_...","output_index":0,"summary_index":0,"sequence_number":7}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","output_index":0,"item":{"id":"think_...","type":"reasoning"},"sequence_number":8}
+
 event: response.completed
-data: {"type":"response.completed","response":{"id":"resp_abc123","status":"completed","output":[...],"usage":{...}},"sequence_number":8}
+data: {"type":"response.completed","response":{"id":"resp_abc123","status":"completed","output":[...],"usage":{...}},"sequence_number":9}
 ```
 
 ---

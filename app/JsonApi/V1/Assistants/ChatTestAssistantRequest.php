@@ -6,6 +6,7 @@ use App\Models\Assistants\Assistant;
 use App\Services\AI\AiService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Support\Facades\Log;
 
 class ChatTestAssistantRequest extends FormRequest
 {
@@ -58,7 +59,24 @@ class ChatTestAssistantRequest extends FormRequest
                         "The model '{$model}' is not available."
                     );
                 }
+
+                if ($validator->errors()->isNotEmpty()) {
+                    Log::debug('chatTest: validation failed', [
+                        'errors' => $validator->errors()->toArray(),
+                        'input_keys' => array_keys($this->all()),
+                    ]);
+                }
             },
         ];
+    }
+
+    protected function failedValidation(Validator $validator): void
+    {
+        Log::debug('chatTest: basic validation failed', [
+            'errors' => $validator->errors()->toArray(),
+            'input_keys' => array_keys($this->all()),
+        ]);
+
+        parent::failedValidation($validator);
     }
 }

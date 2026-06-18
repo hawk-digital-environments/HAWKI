@@ -37,7 +37,7 @@ class AiModelSchema extends Schema
             Str::make('label'),
             ArrayList::make('input'),
             ArrayList::make('output'),
-            ArrayList::make('tools'),
+            ArrayHash::make('tools'),
             ArrayHash::make('default_params'),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
