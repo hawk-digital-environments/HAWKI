@@ -92,24 +92,6 @@ class UserKeychainRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Finds keychain values for a user based on the given constraints.
-     * Used for the full sync log generation.
-     * @param SyncLogEntryConstraints $constraints
-     * @return Collection<int, UserKeychainValue>
-     */
-    public function findForSyncLogConstraints(SyncLogEntryConstraints $constraints): Collection
-    {
-        $query = UserKeychainValue::where('user_id', $constraints->user->id);
-        if ($constraints->limit) {
-            $query->limit($constraints->limit);
-        }
-        if ($constraints->offset) {
-            $query->offset($constraints->offset);
-        }
-        return $query->get();
-    }
-
-    /**
      * Finds all keychain values for a user.
      * Used for migration purposes.
      * @param User $user The user to find the values for.

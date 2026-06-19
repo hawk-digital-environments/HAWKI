@@ -11,9 +11,9 @@ use App\Services\System\Database\Eloquent\ContextualScopes\Contexts\ScopeContext
 
 trait HasContextualScopesTrait
 {
-    private static ServiceLocator $hcst_serviceLocator;
-    private static ScopeContext $hcst_scopeContext;
-    private static bool $hcst_booted = false;
+    protected static ServiceLocator $hcst_serviceLocator;
+    protected static ScopeContext $hcst_scopeContext;
+    protected static bool $hcst_booted = false;
 
     abstract protected static function registerScopes(ScopeRegistrar $registrar): void;
 

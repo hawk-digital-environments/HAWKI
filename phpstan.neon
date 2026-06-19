@@ -4,6 +4,8 @@ includes:
 parameters:
     paths:
         - app/
+    excludePaths:
+        - app/Services/_AI
 
     level: 5
     stubFiles:
