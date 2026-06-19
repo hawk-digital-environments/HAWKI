@@ -82,7 +82,7 @@
 
     <script>
         window.waitUntilBootstrap((bootstrapper) => {
-            bootstrapper.onStageReached('migration', async () => {
+            bootstrapper.onStage('migration', async () => {
                 if (await getPassKey()) {
                     // This runs the migrations if the user has a passkey already stored in the local storage.
                     // The call in handshake_functions.js at verifyEnteredPassKey runs the same migration when the user is logging fresh

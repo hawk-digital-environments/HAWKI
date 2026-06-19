@@ -41,6 +41,8 @@ let parsedConfigCache: Partial<Record<keyof ConfigSchemaRegistry, any>> = {};
  */
 export async function loadConfig(): Promise<void> {
     currentConfig = (await getResourceFromApi<any>('configs', 'public')).list ?? null;
+    // @todo remove
+    console.log('Loaded config:', currentConfig);
     parsedConfigCache = {};
 }
 

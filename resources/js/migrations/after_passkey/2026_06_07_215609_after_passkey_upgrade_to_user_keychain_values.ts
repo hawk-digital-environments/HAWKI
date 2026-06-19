@@ -8,6 +8,7 @@ import type {UserKeychainValueType} from '$lib/schemas/resources/user-keychain-v
 import {loadPrivateKey, loadPublicKey} from '$lib/encryption/asymmetric.js';
 
 export async function migrate({name, data}: MigrationContext) {
+    console.warn(getConfig());
     // No data means the user is probably new and is already on the new keychain system, so we can skip the migration.
     if (!data || !data.blob) {
         return;
