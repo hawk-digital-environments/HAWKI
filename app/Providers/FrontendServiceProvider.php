@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\Config\Registries\PublicConfigRegistry;
 use App\Services\Frontend\Config\SecurityConfig;
 use App\Services\Frontend\Config\TransferConfig;
+use App\Services\Frontend\View\CssLayers;
 use App\Services\Frontend\View\EarlyFrontendBridge;
 use App\Services\Frontend\View\SettingsPanelComponent;
 use App\Services\Frontend\View\SvelteComponent;
@@ -28,6 +29,7 @@ class FrontendServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Blade::component('svelte', SvelteComponent::class);
+        Blade::component('css-layers', CssLayers::class);
         Blade::component('early-frontend-bridge', EarlyFrontendBridge::class);
         Blade::component('settings-panel', SettingsPanelComponent::class);
     }

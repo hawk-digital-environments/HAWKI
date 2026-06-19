@@ -8,7 +8,7 @@
             - @yield('title')
         @endif</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
-
+    <x-css-layers/>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/apps_connect_style.css') }}">
     @yield('styles')
