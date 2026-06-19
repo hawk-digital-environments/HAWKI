@@ -192,4 +192,64 @@ class SettingsTest extends TestCase
             ],
         ])->assertStatus(422);
     }
+
+    public function test_updating_settings_records_version_when_organizational(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'organizational',
+        ]);
+        $initialVersionCount = $assistant->versions()->count();
+
+        Sanctum::actingAs($owner);
+
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
+            ['key' => 'formality', 'value' => 'professional'],
+        ]))->assertSuccessful();
+
+        $assistant->fresh();
+        $this->assertSame($initialVersionCount + 1, $assistant->versions()->count());
+
+        $version = $assistant->versions()->latest('version')->first();
+        $this->assertSame('Updated', $version->text);
+        $this->assertEquals(['setting_values'], $version->changed_keys);
+    }
+
+    public function test_updating_settings_skips_version_when_private(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'private',
+        ]);
+        $initialVersionCount = $assistant->versions()->count();
+
+        Sanctum::actingAs($owner);
+
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
+            ['key' => 'formality', 'value' => 'professional'],
+        ]))->assertSuccessful();
+
+        $this->assertSame($initialVersionCount, $assistant->fresh()->versions()->count());
+        $this->assertSame('professional', $assistant->fresh()->settingValues->firstWhere('setting_id', $this->formality->id)->value);
+    }
+
+    public function test_updating_settings_skips_version_when_draft(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'draft',
+        ]);
+        $initialVersionCount = $assistant->versions()->count();
+
+        Sanctum::actingAs($owner);
+
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
+            ['key' => 'formality', 'value' => 'professional'],
+        ]))->assertSuccessful();
+
+        $this->assertSame($initialVersionCount, $assistant->fresh()->versions()->count());
+    }
 }

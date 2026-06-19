@@ -150,7 +150,14 @@ class AssistantController extends Controller
             $request->input('data.attributes.settings'),
         );
 
-        return DataResponse::make($assistant->fresh()->load('settingValues'))
+        $assistant = $assistant->fresh()->load('settingValues');
+
+        $guardedStages = [ReleaseStage::DRAFT->value, ReleaseStage::PRIVATE->value];
+        if (! in_array($assistant->release_stage, $guardedStages, true)) {
+            Event::dispatch(new AssistantUpdated($assistant, null, ['setting_values']));
+        }
+
+        return DataResponse::make($assistant)
             ->withQueryParameters($query);
     }
 
