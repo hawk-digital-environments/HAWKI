@@ -304,8 +304,10 @@ async function verifyEnteredPassKey(provider) {
 
     if (await window.userKeychain.validateKeychainPassword(enteredKey)) {
         await setPassKey(enteredKey);
-        await window.oldUiBridge.runMigrations('after_passkey');
-        window.location.href = '/chat';
+        window.waitUntilReadyToMigrate(async () => {
+            await window.oldUiBridge.runMigrations('after_passkey');
+            window.location.href = '/chat';
+        });
     } else {
         errorMessage.innerText = 'Failed to verify passkey. Please try again.';
         setTimeout(() => {
