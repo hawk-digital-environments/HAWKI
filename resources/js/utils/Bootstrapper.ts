@@ -84,12 +84,14 @@ export class Bootstrapper {
     }
 
     public run(): Promise<void> {
+        console.log('Bootstrapper starting run sequence');
         if (this._runPromise) {
             return this._runPromise;
         }
 
         this._runPromise = new Promise<void>(async (resolve) => {
             for (const stage of bootStages) {
+                console.log('RUNNING BOOTSTRAP STAGE', stage);
                 this._currentStage = stage;
                 this._currentStateTiming = TIMING_BEFORE;
                 await this.reached.trigger(stage, this);
