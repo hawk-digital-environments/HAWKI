@@ -63,7 +63,7 @@ export const aiModelStore = new AiModelStore();
 
 /**
  * Fetches all AI models and system-model assignments from the API and populates
- * {@link aiModelStore}. Called during bootstrap via {@link runBeforeReady}.
+ * {@link aiModelStore}. Called during bootstrap.
  * No-ops for unauthenticated connections.
  */
 export async function loadAiModels() {

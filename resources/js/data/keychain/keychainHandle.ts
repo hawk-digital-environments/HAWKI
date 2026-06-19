@@ -6,7 +6,7 @@ import type {UserKeychainValue, UserKeychainValueType} from '$lib/schemas/resour
 import {getFromResourceAction, getResourceCollectionFromApi} from '$lib/data/api/api.js';
 import {type BatchKeychainUpdater, type BatchKeychainUpdaterArgs, collectDeferredBatchUpdates, runBatchUpdate} from '$lib/data/keychain/batchUpdater.js';
 import z from 'zod';
-import {ModernEventTarget} from '$lib/utils/ModernEventTarget.js';
+import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
 export type KeychainHandle = Awaited<ReturnType<typeof createKeychainHandle>>;
 
@@ -30,10 +30,10 @@ export interface RoomKeys {
 }
 
 export function createKeychainHandle(passkeyProvider: () => string) {
-    const eventTarget = new ModernEventTarget();
+    const sync = new SyncPipeline<{ change: void }>();
 
-    const onChange = (callback: () => void) => eventTarget.on('change', callback);
-    const triggerChange = () => eventTarget.trigger('change');
+    const onChange = (callback: () => void) => sync.on('change', callback);
+    const triggerChange = () => sync.trigger('change');
 
     let loadedPasskey: CryptoKey | null = null;
     let loadedKeys: Partial<Record<UserKeychainValueType, Record<string, CryptoKey>>> = {};

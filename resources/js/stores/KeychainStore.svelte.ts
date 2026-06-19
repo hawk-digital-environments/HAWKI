@@ -34,12 +34,10 @@ export class KeychainStore {
         $effect.root(() => {
             $effect(() => {
                 if (!passkeyProvider()) {
-                    console.warn('No passkey available yet, waiting to load keychain until it becomes available...');
                     return;
                 }
 
                 if (connectionProvider().type !== 'internal_authenticated') {
-                    console.warn('Connection is not authenticated yet, waiting to load keychain until it is authenticated...');
                     return;
                 }
 

@@ -109,7 +109,7 @@ export const aiToolStore = new AiToolStore();
 
 /**
  * Fetches all AI tools and capability definitions from the API and populates
- * {@link aiToolStore}. Called during bootstrap via {@link runBeforeReady}.
+ * {@link aiToolStore}. Called during bootstrap.
  */
 export async function loadAiToolsAndCapabilities() {
     if (getConnection().type !== 'internal_authenticated') {

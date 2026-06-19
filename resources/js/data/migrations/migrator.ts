@@ -76,6 +76,11 @@ export function hasPendingMigrations(): boolean {
 export async function applyMigrations(
     runType: MigrationRunType
 ): Promise<void> {
+    if (!hasPendingMigrations()) {
+        console.warn('applyMigrations called but no pending migrations reported by server, skipping!');
+        return;
+    }
+
     const applicableMigrations = await getResourceCollectionFromApi('migrations');
 
     for (const {id: name, data} of applicableMigrations) {
@@ -110,47 +115,5 @@ export async function applyMigrations(
         }
 
         await postToResourceAction('migrations', 'actions/apply', {migration_name: name});
-    }
-}
-
-// ------------------------------------------------
-// This is code to support the legacy ui
-// After we migrated completely to svelte we can remove this and just run all migrations at the right times
-// ------------------------------------------------
-
-let isReadyToMigrate = false;
-const waitingUntilReadyToMigrateCallbacks: Array<() => Promise<void>> = [];
-
-/**
- * Defers `callback` until the app signals it is safe to run migrations (e.g. after the
- * legacy UI has finished its own login-time migrations). If migration is already
- * allowed when this is called, the callback fires immediately.
- *
- * Used by legacy integration code. New Svelte code should run migrations via
- * {@link OldUiBridge.runMigrations} instead.
- */
-export function waitUntilReadyToMigrate(callback: () => Promise<void>): void {
-    if (isReadyToMigrate) {
-        callback();
-        return;
-    }
-
-    waitingUntilReadyToMigrateCallbacks.push(callback);
-}
-
-export async function applyWaitingUntilReadyToMigrate(): Promise<void> {
-    isReadyToMigrate = true;
-    if (waitingUntilReadyToMigrateCallbacks.length === 0) {
-        if (window.OLD_UI_MIGHT_NEED_MIGRATION) {
-            for (let i = 0; i < 20; i++) {
-                // Just wait a bit to give the old UI time to trigger any migrations it needs to after login, since we don't have a good way to know when it's done with that
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-        }
-        return Promise.resolve();
-    }
-
-    for (const callback of waitingUntilReadyToMigrateCallbacks) {
-        await callback();
     }
 }

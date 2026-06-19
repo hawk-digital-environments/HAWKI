@@ -1,4 +1,3 @@
-import {applyMigrations, hasPendingMigrations, type MigrationRunType} from '$lib/data/migrations/migrator.js';
 import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
 import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
 import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
@@ -6,8 +5,8 @@ import type {ComposerMode, ComposerModeRegistry, ComposerModeWithIs} from '$lib/
 import type {ChatModeInterface} from '$lib/components/chat/composer/contexts/modes/contracts/ChatModeInterface.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import type {ResponseBody, SendMessageResponse} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
-import {ModernEventTarget} from '$lib/utils/ModernEventTarget.js';
-import {HookQueue} from '$lib/utils/HookQueue.js';
+import {AsyncPipeline} from '$lib/utils/flows/AsyncPipeline.js';
+import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
 export interface OldUiConversationMessage {
     author: {
@@ -71,60 +70,56 @@ export interface OldUiSendMessagePayload {
     parameters: OldUiModelParams | null;
 }
 
-const UPDATE_SYSTEM_PROMPT_EVENT = 'updateSystemPrompt';
-const UPDATE_CURRENT_CHAT_MODEL_ID_EVENT = 'updateCurrentChatModelId';
-const CLEAR_ACTIVE_CONVERSATION_EVENT = 'clearActiveConversation';
-const TRIGGER_EXPORT_EVENT = 'triggerExport';
-const SEND_MESSAGE_EVENT = 'sendMessage';
-const LOAD_INITIAL_MODEL_EVENT = 'loadInitialModel';
-const LOAD_SYSTEM_PROMPT_EVENT = 'loadSystemPrompt';
-const CONTEXT_READY_EVENT = 'contextReady';
-const EXIT_THREAD_EVENT = 'exitThread';
-const ENTER_MODE_EVENT = 'enterMode';
-const EXIT_MODE_EVENT = 'exitMode';
-const OPEN_CHAT_EVENT = 'openChat';
-const NEW_CHAT_EVENT = 'newChat';
-const RENAME_CHAT_EVENT = 'renameChat';
-const DELETE_CHAT_EVENT = 'deleteChat';
-const SET_ABORT_CONTROLLER_EVENT = 'abortController';
-const IMPROVE_MESSAGE_EVENT = 'improveMessage';
-const SEND_TOAST_EVENT = 'sendToast';
+const UPDATE_SYSTEM_PROMPT_PIPELINE = 'updateSystemPrompt';
+const UPDATE_CURRENT_CHAT_MODEL_ID_PIPELINE = 'updateCurrentChatModelId';
+const CLEAR_ACTIVE_CONVERSATION_PIPELINE = 'clearActiveConversation';
+const TRIGGER_EXPORT_PIPELINE = 'triggerExport';
+const LOAD_INITIAL_MODEL_PIPELINE = 'loadInitialModel';
+const LOAD_SYSTEM_PROMPT_PIPELINE = 'loadSystemPrompt';
+const CONTEXT_READY_PIPELINE = 'contextReady';
+const EXIT_THREAD_PIPELINE = 'exitThread';
+const ENTER_MODE_PIPELINE = 'enterMode';
+const EXIT_MODE_PIPELINE = 'exitMode';
+const OPEN_CHAT_PIPELINE = 'openChat';
+const NEW_CHAT_PIPELINE = 'newChat';
+const RENAME_CHAT_PIPELINE = 'renameChat';
+const DELETE_CHAT_PIPELINE = 'deleteChat';
+const SET_ABORT_CONTROLLER_PIPELINE = 'abortController';
+const SEND_TOAST_PIPELINE = 'sendToast';
 
-interface EventList {
-    [UPDATE_SYSTEM_PROMPT_EVENT]: string;
-    [UPDATE_CURRENT_CHAT_MODEL_ID_EVENT]: string | null;
-    [CLEAR_ACTIVE_CONVERSATION_EVENT]: void;
-    [TRIGGER_EXPORT_EVENT]: OldUiExportType;
-    [SEND_MESSAGE_EVENT]: OldUiSendMessagePayload;
-    [LOAD_INITIAL_MODEL_EVENT]: AiModel;
-    [LOAD_SYSTEM_PROMPT_EVENT]: string;
-    [CONTEXT_READY_EVENT]: void;
-    [EXIT_THREAD_EVENT]: void;
-    [ENTER_MODE_EVENT]: { mode: ComposerModeWithIs, data: unknown };
-    [EXIT_MODE_EVENT]: ComposerModeWithIs;
-    [OPEN_CHAT_EVENT]: string;
-    [NEW_CHAT_EVENT]: void;
-    [RENAME_CHAT_EVENT]: { chatSlug: string, newName: string };
-    [DELETE_CHAT_EVENT]: string;
-    [SET_ABORT_CONTROLLER_EVENT]: AbortController;
-    [IMPROVE_MESSAGE_EVENT]: { message: string, systemPrompt: string };
-    [SEND_TOAST_EVENT]: { message: string, type: 'success' | 'error' | 'info' };
+interface SyncFlowList {
+    [UPDATE_SYSTEM_PROMPT_PIPELINE]: string;
+    [UPDATE_CURRENT_CHAT_MODEL_ID_PIPELINE]: string | null;
+    [CLEAR_ACTIVE_CONVERSATION_PIPELINE]: void;
+    [TRIGGER_EXPORT_PIPELINE]: OldUiExportType;
+    [LOAD_INITIAL_MODEL_PIPELINE]: AiModel;
+    [LOAD_SYSTEM_PROMPT_PIPELINE]: string;
+    [CONTEXT_READY_PIPELINE]: void;
+    [EXIT_THREAD_PIPELINE]: void;
+    [ENTER_MODE_PIPELINE]: { mode: ComposerModeWithIs, data: unknown };
+    [EXIT_MODE_PIPELINE]: ComposerModeWithIs;
+    [OPEN_CHAT_PIPELINE]: string;
+    [NEW_CHAT_PIPELINE]: void;
+    [RENAME_CHAT_PIPELINE]: { chatSlug: string, newName: string };
+    [DELETE_CHAT_PIPELINE]: string;
+    [SET_ABORT_CONTROLLER_PIPELINE]: AbortController;
+    [SEND_TOAST_PIPELINE]: { message: string, type: 'success' | 'error' | 'info' };
 }
 
-const SEND_MESSAGE_HOOK = 'sendMessageHook';
-const IMPROVE_MESSAGE_HOOK = 'improveMessageHook';
+const SEND_MESSAGE_PIPELINE = 'sendMessage';
+const IMPROVE_MESSAGE_PIPELINE = 'improveMessage';
 
-interface HookList {
-    [SEND_MESSAGE_HOOK]: OldUiSendMessagePayload;
-    [IMPROVE_MESSAGE_HOOK]: { message: string, systemPrompt: string };
+interface ASYNC_PIPELINE_LIST {
+    [SEND_MESSAGE_PIPELINE]: OldUiSendMessagePayload;
+    [IMPROVE_MESSAGE_PIPELINE]: { message: string, systemPrompt: string, improvedMessage?: string };
 }
 
 /**
  * This is a bridge to share state and events between the new Svelte-based UI and the old spaghetti UI.
  */
 export class OldUiBridge {
-    private eventTarget = new ModernEventTarget<EventList>();
-    private hookQueue = new HookQueue<HookList>();
+    private sync = new SyncPipeline<SyncFlowList>();
+    private async = new AsyncPipeline<ASYNC_PIPELINE_LIST>();
     private isSendingMessage = false;
 
     /** The user's decrypted passkey for the current session. `null` until the user unlocks. */
@@ -134,58 +129,58 @@ export class OldUiBridge {
      * Asks the legacy UI to update the system prompt of the active conversation.
      */
     public updateActiveConversationSystemPrompt(newSystemPrompt: string): void {
-        this.eventTarget.trigger(UPDATE_SYSTEM_PROMPT_EVENT, newSystemPrompt);
+        this.sync.trigger(UPDATE_SYSTEM_PROMPT_PIPELINE, newSystemPrompt);
     }
 
     /** Registers a handler called whenever the legacy UI receives a system-prompt update request. */
     public onActiveConversationSystemPromptUpdate(handler: (newSystemPrompt: string) => void): () => void {
-        return this.eventTarget.on(UPDATE_SYSTEM_PROMPT_EVENT, handler);
+        return this.sync.on(UPDATE_SYSTEM_PROMPT_PIPELINE, handler);
     }
 
     public onClearActiveConversation(handler: () => void): () => void {
-        return this.eventTarget.on(CLEAR_ACTIVE_CONVERSATION_EVENT, handler);
+        return this.sync.on(CLEAR_ACTIVE_CONVERSATION_PIPELINE, handler);
     }
 
     public triggerClearActiveConversation(): void {
-        this.eventTarget.trigger(CLEAR_ACTIVE_CONVERSATION_EVENT);
+        this.sync.trigger(CLEAR_ACTIVE_CONVERSATION_PIPELINE);
     }
 
     public triggerLoadInitialModel(model: AiModel): void {
-        this.eventTarget.trigger(LOAD_INITIAL_MODEL_EVENT, model);
+        this.sync.trigger(LOAD_INITIAL_MODEL_PIPELINE, model);
     }
 
     public onLoadInitialModel(handler: (model: AiModel) => void): () => void {
-        return this.eventTarget.on(LOAD_INITIAL_MODEL_EVENT, handler);
+        return this.sync.on(LOAD_INITIAL_MODEL_PIPELINE, handler);
     }
 
     public onLoadSystemPrompt(handler: (systemPrompt: string) => void): () => void {
-        return this.eventTarget.on(LOAD_SYSTEM_PROMPT_EVENT, handler);
+        return this.sync.on(LOAD_SYSTEM_PROMPT_PIPELINE, handler);
     }
 
     public triggerLoadSystemPrompt(systemPrompt: string): void {
-        this.eventTarget.trigger(LOAD_SYSTEM_PROMPT_EVENT, systemPrompt);
+        this.sync.trigger(LOAD_SYSTEM_PROMPT_PIPELINE, systemPrompt);
     }
 
     /**
      * Requests a model change in the legacy UI.
      */
     public updateCurrentChatModelId(newModelId: string | null): void {
-        this.eventTarget.trigger(UPDATE_CURRENT_CHAT_MODEL_ID_EVENT, newModelId);
+        this.sync.trigger(UPDATE_CURRENT_CHAT_MODEL_ID_PIPELINE, newModelId);
     }
 
     /** Registers a handler called whenever the active model ID changes. */
     public onCurrentChatModelIdUpdate(handler: (newModelId: string | null) => void): () => void {
-        return this.eventTarget.on(UPDATE_CURRENT_CHAT_MODEL_ID_EVENT, handler);
+        return this.sync.on(UPDATE_CURRENT_CHAT_MODEL_ID_PIPELINE, handler);
     }
 
     /** Asks the legacy UI to export the active conversation in the given format. */
     public triggerExport(exportType: OldUiExportType): void {
-        this.eventTarget.trigger(TRIGGER_EXPORT_EVENT, exportType);
+        this.sync.trigger(TRIGGER_EXPORT_PIPELINE, exportType);
     }
 
     /** Registers a handler called whenever an export is requested. */
     public onExportTrigger(handler: (exportType: OldUiExportType) => void): () => void {
-        return this.eventTarget.on(TRIGGER_EXPORT_EVENT, handler);
+        return this.sync.on(TRIGGER_EXPORT_PIPELINE, handler);
     }
 
     public async triggerSendMessage(payload: OldUiSendMessagePayload): Promise<void> {
@@ -198,7 +193,7 @@ export class OldUiBridge {
              */
             waitForResponse: (handler: (tracker: SendMessageResponse) => void | Promise<void>): void => {
                 payload.waitForResponse((response) => {
-                    const clean = this.eventTarget.on(SET_ABORT_CONTROLLER_EVENT, (ctrl) => {
+                    const clean = this.sync.on(SET_ABORT_CONTROLLER_PIPELINE, (ctrl) => {
                         response.setAbortController(ctrl);
                     });
                     response.onDone(() => clean());
@@ -210,14 +205,14 @@ export class OldUiBridge {
 
         try {
             this.isSendingMessage = true;
-            await this.hookQueue.trigger(SEND_MESSAGE_HOOK, extendedPayload);
+            await this.async.trigger(SEND_MESSAGE_PIPELINE, extendedPayload);
         } finally {
             this.isSendingMessage = false;
         }
     }
 
     public onSendMessage(contextType: ComposerContextType, handler: (payload: OldUiSendMessagePayload) => void | Promise<void>): () => void {
-        return this.hookQueue.onResultless(SEND_MESSAGE_HOOK, async (payload) => {
+        return this.async.on(SEND_MESSAGE_PIPELINE, async (payload) => {
             if (payload.contextType === contextType) {
                 await handler(payload);
             }
@@ -225,43 +220,30 @@ export class OldUiBridge {
     }
 
     public bindAbortController(abortController: AbortController): void {
-        this.eventTarget.trigger(SET_ABORT_CONTROLLER_EVENT, abortController);
-    }
-
-    /**
-     * Runs any pending data migrations of the given type.
-     * Returns `false` when there are no pending migrations, `true` after they complete.
-     */
-    public async runMigrations(runType: MigrationRunType): Promise<boolean> {
-        if (!hasPendingMigrations()) {
-            return false;
-        }
-
-        await applyMigrations(runType);
-        return true;
+        this.sync.trigger(SET_ABORT_CONTROLLER_PIPELINE, abortController);
     }
 
     public onContextReady(handler: () => void): () => void {
-        return this.eventTarget.on(CONTEXT_READY_EVENT, handler);
+        return this.sync.on(CONTEXT_READY_PIPELINE, handler);
     }
 
     public triggerContextReady(): void {
-        this.eventTarget.trigger(CONTEXT_READY_EVENT);
+        this.sync.trigger(CONTEXT_READY_PIPELINE);
     }
 
     public onExitThread(handler: () => void): () => void {
-        return this.eventTarget.on(EXIT_THREAD_EVENT, handler);
+        return this.sync.on(EXIT_THREAD_PIPELINE, handler);
     }
 
     public triggerExitThread(): void {
         if (this.isSendingMessage) {
             return;
         }
-        this.eventTarget.trigger(EXIT_THREAD_EVENT);
+        this.sync.trigger(EXIT_THREAD_PIPELINE);
     }
 
     public onEnterMode<TMode extends Exclude<ComposerMode, 'default'>>(handler: (mode: TMode, data: Extract<ComposerModeRegistry[TMode], { mode: ChatModeInterface }>['data']) => void): () => void {
-        return this.eventTarget.on(ENTER_MODE_EVENT, ({mode, data}) => {
+        return this.sync.on(ENTER_MODE_PIPELINE, ({mode, data}) => {
             handler(mode as TMode, data as any);
         });
     }
@@ -271,48 +253,48 @@ export class OldUiBridge {
             console.warn(`Cannot enter mode ${mode} while sending a message`);
             return;
         }
-        this.eventTarget.trigger(ENTER_MODE_EVENT, {mode, data});
+        this.sync.trigger(ENTER_MODE_PIPELINE, {mode, data});
     }
 
     public onExitMode(handler: (mode: ComposerModeWithIs) => void): () => void {
-        return this.eventTarget.on(EXIT_MODE_EVENT, handler);
+        return this.sync.on(EXIT_MODE_PIPELINE, handler);
     }
 
     public triggerExitMode(mode: ComposerModeWithIs): void {
         if (this.isSendingMessage) {
             return;
         }
-        this.eventTarget.trigger(EXIT_MODE_EVENT, mode);
+        this.sync.trigger(EXIT_MODE_PIPELINE, mode);
     }
 
     public triggerOpenChat(slug: string): void {
         if (this.isSendingMessage) {
             return;
         }
-        this.eventTarget.trigger(OPEN_CHAT_EVENT, slug);
+        this.sync.trigger(OPEN_CHAT_PIPELINE, slug);
     }
 
     public onOpenChat(handler: (slug: string) => void): () => void {
-        return this.eventTarget.on(OPEN_CHAT_EVENT, handler);
+        return this.sync.on(OPEN_CHAT_PIPELINE, handler);
     }
 
     public triggerNewChat(): void {
         if (this.isSendingMessage) {
             return;
         }
-        this.eventTarget.trigger(NEW_CHAT_EVENT);
+        this.sync.trigger(NEW_CHAT_PIPELINE);
     }
 
     public onNewChat(handler: () => void): () => void {
-        return this.eventTarget.on(NEW_CHAT_EVENT, handler);
+        return this.sync.on(NEW_CHAT_PIPELINE, handler);
     }
 
     public triggerRenameChat(chatSlug: string, newName: string): void {
-        this.eventTarget.trigger(RENAME_CHAT_EVENT, {chatSlug, newName});
+        this.sync.trigger(RENAME_CHAT_PIPELINE, {chatSlug, newName});
     }
 
     public onRenameChat(handler: (chatSlug: string, newName: string) => void): () => void {
-        return this.eventTarget.on(RENAME_CHAT_EVENT, ({chatSlug, newName}) => {
+        return this.sync.on(RENAME_CHAT_PIPELINE, ({chatSlug, newName}) => {
             handler(chatSlug, newName);
         });
     }
@@ -321,40 +303,34 @@ export class OldUiBridge {
         if (this.isSendingMessage) {
             return;
         }
-        this.eventTarget.trigger(DELETE_CHAT_EVENT, slug);
+        this.sync.trigger(DELETE_CHAT_PIPELINE, slug);
     }
 
     public onDeleteChat(handler: (slug: string) => void): () => void {
-        return this.eventTarget.on(DELETE_CHAT_EVENT, handler);
+        return this.sync.on(DELETE_CHAT_PIPELINE, handler);
     }
 
-    public triggerImproveMessage(message: string, systemPrompt: string): Promise<string> {
+    public async triggerImproveMessage(message: string, systemPrompt: string): Promise<string> {
         if (this.isSendingMessage) {
             return Promise.resolve(message);
         }
 
-        return this.hookQueue.trigger(IMPROVE_MESSAGE_HOOK, {message, systemPrompt}).then(r => r.message);
+        const r = await this.async.trigger(IMPROVE_MESSAGE_PIPELINE, {message, systemPrompt});
+        return r.message;
     }
 
     public onImproveMessage(handler: (data: { message: string, systemPrompt: string }) => string | Promise<string>): () => void {
-        return this.hookQueue.on(IMPROVE_MESSAGE_HOOK,
-            async (data) => {
-                return {
-                    ...data,
-                    message: await handler(data)
-                };
-            }
-        );
+        return this.async.on(IMPROVE_MESSAGE_PIPELINE, async (data) => {
+            data.improvedMessage = await handler(data);
+        });
     }
 
     public triggerSendToast(message: string, type: 'success' | 'error' | 'info'): void {
-        this.eventTarget.trigger(SEND_TOAST_EVENT, {message, type});
+        this.sync.trigger(SEND_TOAST_PIPELINE, {message, type});
     }
 
     public onSendToast(handler: (message: string, type: 'success' | 'error' | 'info') => void): () => void {
-        return this.eventTarget.on(SEND_TOAST_EVENT, ({message, type}) => {
-            handler(message, type);
-        });
+        return this.sync.on(SEND_TOAST_PIPELINE, ({message, type}) => handler(message, type));
     }
 }
 

@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset('css/apps_connect_style.css') }}">
     @yield('styles')
 
+    <x-early-frontend-bridge/>
     @vite('resources/js/app.js')
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     @yield('scripts')

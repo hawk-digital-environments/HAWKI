@@ -1,11 +1,3 @@
-// Ensure "waitUntilReady" is defined
-window.__earlyWaitUntilReadyQueue = [];
-if (typeof window.waitUntilReady !== 'function') {
-    window.waitUntilReady = function (callback) {
-        window.__earlyWaitUntilReadyQueue.push(callback);
-    };
-}
-
 //#region Overlay
 async function setOverlay(activation, smooth = true) {
     const overlay = document.getElementById('overlay');

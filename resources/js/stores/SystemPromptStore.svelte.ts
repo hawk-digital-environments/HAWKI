@@ -28,7 +28,7 @@ export const systemPromptStore = new SystemPromptStore();
 
 /**
  * Fetches all system prompts from the API and populates {@link systemPromptStore}.
- * Called during bootstrap via {@link runBeforeReady}. No-ops for unauthenticated connections.
+ * Called during bootstrap. No-ops for unauthenticated connections.
  */
 export async function loadSystemPrompts() {
     if (getConnection().type !== 'internal_authenticated') {

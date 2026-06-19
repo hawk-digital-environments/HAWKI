@@ -20,6 +20,7 @@
     @vite('resources/js/app.js')
     @vite('resources/css/app.css')
 
+    <x-early-frontend-bridge/>
     <script src="{{ asset('js/functions.js') }}"></script>
     <script src="{{ asset('js/home_functions.js') }}"></script>
     <script src="{{ asset('js/stream_functions.js') }}"></script>
