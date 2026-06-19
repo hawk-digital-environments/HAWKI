@@ -8,7 +8,7 @@
     <title>{{ env('APP_NAME') }}</title>
 
     <link rel="icon" href="{{ asset('favicon.ico') }}">
-
+    <x-css-layers/>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/login_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">

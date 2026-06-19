@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HAWKI IS UPDATING!</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <x-css-layers/>
     <x-early-frontend-bridge/>
 </head>
 <body>

@@ -11,7 +11,7 @@
 
     <title>{{ env('APP_NAME') }}</title>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
-
+    <x-css-layers/>
     <link rel="stylesheet" href="{{ asset('css/print_styles.css') }}">
     <!-- <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}"> -->
 

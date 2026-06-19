@@ -7,7 +7,7 @@
 
 
     <title>{{ env('APP_NAME') }}</title>
-
+    <x-css-layers/>
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/handshake_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">

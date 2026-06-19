@@ -9,7 +9,6 @@
    - components: Svelte scoped <style> blocks land here automatically
    - utilities:  .u-* helper classes — always win against component styles
    ========================================================================== */
-@layer reset, legacy, tokens, base, components, utilities;
 @import "pdfjs-dist/web/pdf_viewer.css";
 
 @import './tokens/breakpoints.css';
