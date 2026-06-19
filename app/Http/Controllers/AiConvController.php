@@ -62,7 +62,8 @@ class AiConvController extends Controller
     public function update(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            'system_prompt' => 'string'
+            'system_prompt' => 'string',
+            'conv_name' => 'string|max:255',
         ]);
         $this->aiConvService->update($validatedData, $slug);
 
@@ -102,7 +103,7 @@ class AiConvController extends Controller
 
         return response()->json([
             'success' => true,
-            'messageData' => $message->toResource(AiConvMsgResource::class)->resolve()
+            'messageData' => $message->toResource(AiConvMsgResource::class)->resolve(),
         ]);
     }
 
@@ -128,13 +129,14 @@ class AiConvController extends Controller
         return response()->json([
             'success' => true,
             'messageData' => $messageData,
+            'legacyResource' => $message->toResource(AiConvMsgResource::class)->resolve(),
         ]);
     }
 
     public function deleteMessage(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            "message_id" => 'required|string|size:5'
+            "message_id" => 'required|string|min:5'
         ]);
 
         $conv = AiConv::where('slug', $slug)->first();

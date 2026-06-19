@@ -53,6 +53,9 @@ class ProfileController extends Controller
         ]);
     }
 
+    /**
+     * @deprecated This method is deprecated and will be removed in HAWKI v3. There will be no replacement.
+     */
     public function validatePasskey(Request $request)
     {
         $passkey = $request->getContent();

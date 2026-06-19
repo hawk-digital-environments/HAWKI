@@ -33,31 +33,9 @@ function initializeGroupChatModule(roomsData) {
     });
 
     const input = document.getElementById('input-container');
-    initFileUploader(input);
 
     initializeChatlogFunctions();
 }
-
-//#region INPUT EVENTS
-function onHandleKeydownRoom(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        selectActiveThread(event.target);
-        onSendMessageToRoom(event.target);
-    }
-}
-
-function onSendClickRoom(btn) {
-    selectActiveThread(btn);
-
-    //get inputfield relative to the button for multiple inputfields
-    const inputWrapper = btn.closest('.input');
-    const inputField = inputWrapper.querySelector('.input-field');
-    onSendMessageToRoom(inputField);
-}
-
-
-//#endregion
 
 
 //#region MESSAGE CONTROLLS
@@ -68,6 +46,10 @@ async function onSendMessageToRoom(inputField) {
         return;
     }
 
+    const plainContent = {
+        text: inputField.value.trim()
+    };
+
     inputText = escapeHTML(inputField.value.trim());
 
     /// UPLOAD ATTACHMENTS
@@ -75,7 +57,7 @@ async function onSendMessageToRoom(inputField) {
     const attachments = await uploadAttachmentQueue(input.id, 'room', activeRoom.slug);
 
 
-    const roomKey = await keychainGet(activeRoom.slug);
+    const roomKey = window.userKeychain.roomKeys[activeRoom.slug] || null;
     const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
 
     const tools = input
@@ -95,7 +77,7 @@ async function onSendMessageToRoom(inputField) {
         'threadId': activeThreadIndex
     };
 
-    const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`);
+    const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`, plainContent);
     submittedObj.content.text = inputText;
     submittedObj.filteredContent = detectMentioning(inputText);
 
@@ -111,7 +93,7 @@ async function onSendMessageToRoom(inputField) {
 
     /// if HAWKI is targeted send copy to stream controller
     if (submittedObj.filteredContent.aiMention && submittedObj.filteredContent.aiMention.toLowerCase().includes(aiHandle.toLowerCase())) {
-        const aiCryptoSalt = hawkiConnection('salts.ai');
+        const aiCryptoSalt = window.getConfig().salts.ai;
         const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
         const aiKeyRaw = await exportSymmetricKey(aiKey);
         const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
@@ -137,55 +119,58 @@ async function onSendMessageToRoom(inputField) {
 
 
 const connectWebSocket = (roomSlug) => {
-    const webSocketChannel = `Rooms.${roomSlug}`;
+    waitUntilReady(() => {
+        const webSocketChannel = `Rooms.${roomSlug}`;
 
-    window.Echo.private(webSocketChannel)
-        .listen('RoomMessageEvent', async (e) => {
-            try {
-                const receivedPacket = e.data;
-                // console.log('Received Packet', receivedPacket);
-                if (receivedPacket.type === 'message') {
-                    const messageData = await requestMessageContent(receivedPacket.data.message_id,
-                        receivedPacket.data.slug);
+        window.Echo.private(webSocketChannel)
+            .listen('RoomMessageEvent', async (e) => {
+                try {
+                    const receivedPacket = e.data;
+                    // console.log('Received Packet', receivedPacket);
+                    if (receivedPacket.type === 'message') {
+                        const messageData = await requestMessageContent(receivedPacket.data.message_id,
+                            receivedPacket.data.slug);
 
-                    if (activeRoom && activeRoom.slug === roomSlug) {
-                        if (messageData.message_role !== 'assistant') {
-                            await handleUserMessages(messageData, roomSlug);
+                        if (activeRoom && activeRoom.slug === roomSlug) {
+                            if (messageData.message_role !== 'assistant') {
+                                await handleUserMessages(messageData, roomSlug);
+                            } else {
+                                await handleAIMessage(messageData, roomSlug);
+                            }
+                            if (messageData.author.username !== userInfo.username) {
+                                playSound('in');
+                            }
                         } else {
-                            await handleAIMessage(messageData, roomSlug);
+                            if (messageData.author.username !== userInfo.username) {
+                                playSound('out');
+                            }
+                            flagRoomUnreadMessages(roomSlug, true);
                         }
-                        if (messageData.author.username !== userInfo.username) {
-                            playSound('in');
-                        }
-                    } else {
-                        if (messageData.author.username !== userInfo.username) {
-                            playSound('out');
-                        }
-                        flagRoomUnreadMessages(roomSlug, true);
                     }
-                }
 
-                if (receivedPacket.type === 'messageUpdate') {
-                    const messageData = await requestMessageContent(receivedPacket.data.message_id,
-                        receivedPacket.data.slug);
-                    console.log(messageData);
-                    await handleUpdateMessage(messageData, roomSlug);
-                }
-
-                if (receivedPacket.type === 'status') {
-                    if (receivedPacket.data.isGenerating) {
-                        // Display the typing indicator for the user
-                        addUserToTypingList(receivedPacket.data.model);
-                    } else {
-                        // Hide the typing indicator for the user
-                        removeUserFromTypingList(receivedPacket.data.model);
+                    if (receivedPacket.type === 'messageUpdate') {
+                        const messageData = await requestMessageContent(receivedPacket.data.message_id,
+                            receivedPacket.data.slug);
+                        console.log(messageData);
+                        await handleUpdateMessage(messageData, roomSlug);
                     }
-                }
 
-            } catch (error) {
-                console.error('Failed to decompress message:', error);
-            }
-        });
+                    if (receivedPacket.type === 'status') {
+                        if (receivedPacket.data.isGenerating) {
+                            // Display the typing indicator for the user
+                            addUserToTypingList(receivedPacket.data.model);
+                        } else {
+                            // Hide the typing indicator for the user
+                            removeUserFromTypingList(receivedPacket.data.model);
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Failed to decompress message:', error);
+                }
+            });
+    });
+
 };
 
 async function requestMessageContent(messageId, slug) {
@@ -212,7 +197,7 @@ async function requestMessageContent(messageId, slug) {
 
 
 async function handleUserMessages(messageData, slug) {
-    const roomKey = await keychainGet(slug);
+    const roomKey = (window.userKeychain.roomKeys[slug] || {}).roomKey;
     messageData.content.text = await decryptWithSymKey(roomKey,
         messageData.content.text.ciphertext,
         messageData.content.text.iv,
@@ -239,9 +224,7 @@ async function handleUserMessages(messageData, slug) {
 
 async function handleAIMessage(messageData, slug) {
 
-    const roomKey = await keychainGet(slug);
-    const aiCryptoSalt = hawkiConnection('salts.ai');
-    const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
+    const aiKey = (window.userKeychain.roomKeys[slug] || {}).aiKey;
 
     messageData.content.text = await decryptWithSymKey(aiKey,
         messageData.content.text.ciphertext,
@@ -269,13 +252,10 @@ async function handleAIMessage(messageData, slug) {
 
 async function handleUpdateMessage(messageData, slug) {
     let key;
-    const roomKey = await keychainGet(slug);
-
     if (messageData.message_role === 'assistant') {
-        const aiCryptoSalt = hawkiConnection('salts.ai');
-        key = await deriveKey(roomKey, slug, aiCryptoSalt);
+        key = (window.userKeychain.roomKeys[slug] || {}).aiKey;
     } else {
-        key = roomKey;
+        key = (window.userKeychain.roomKeys[slug] || {}).roomKey;
     }
 
     messageData.content.text = await decryptWithSymKey(key,
@@ -333,40 +313,45 @@ function onGroupchatType() {
 function startTyping() {
     const webSocketChannel = `Rooms.${activeRoom.slug}`;
 
-    Echo.private(webSocketChannel)
-        .whisper('typing', {
-            user: userInfo.username,
-            typing: true
-        });
+    waitUntilReady(() => {
+        Echo.private(webSocketChannel)
+            .whisper('typing', {
+                user: userInfo.username,
+                typing: true
+            });
+    });
 }
 
 function stopTyping() {
     isTyping = false;
     const webSocketChannel = `Rooms.${activeRoom.slug}`;
 
-    Echo.private(webSocketChannel)
-        .whisper('typing', {
-            user: userInfo.username,
-            typing: false
-        });
+    waitUntilReady(() => {
+        Echo.private(webSocketChannel)
+            .whisper('typing', {
+                user: userInfo.username,
+                typing: false
+            });
+    });
 }
 
 function connectWhisperSocket(roomSlug) {
+    waitUntilReady(() => {
+        const webSocketChannel = `Rooms.${roomSlug}`;
+        Echo.private(webSocketChannel)
+            .listenForWhisper('typing', (e) => {
+                if (activeRoom.slug !== roomSlug) return;
 
-    const webSocketChannel = `Rooms.${roomSlug}`;
-    Echo.private(webSocketChannel)
-        .listenForWhisper('typing', (e) => {
-            if (activeRoom.slug !== roomSlug) return;
-
-            if (e.typing) {
-                // Display the typing indicator for the user
-                addUserToTypingList(e.user);
-            } else {
-                // Hide the typing indicator for the user
-                removeUserFromTypingList(e.user);
-            }
-            updateTypingStatus();
-        });
+                if (e.typing) {
+                    // Display the typing indicator for the user
+                    addUserToTypingList(e.user);
+                } else {
+                    // Hide the typing indicator for the user
+                    removeUserFromTypingList(e.user);
+                }
+                updateTypingStatus();
+            });
+    });
 }
 
 
@@ -426,8 +411,6 @@ function openRoomCreatorPanel() {
 
     const roomCreationPanel = document.getElementById('room-creation');
 
-    defaultPrompt = __('Default_Prompt');
-
     roomCreationPanel.querySelector('#chat-name-input').value = '';
     roomCreationPanel.querySelector('#user-search-bar').value = '';
     roomCreationPanel.querySelector('#room-description-input').value = '';
@@ -435,7 +418,7 @@ function openRoomCreatorPanel() {
     roomCreationPanel.querySelector('#room-creation-avatar').style.display = 'none';
 
 
-    roomCreationPanel.querySelector('#system-prompt-input').value = defaultPrompt;
+    roomCreationPanel.querySelector('#system-prompt-input').value = window.getSystemPrompt('default');
     resizeInputField(roomCreationPanel.querySelector('#system-prompt-input'));
 }
 
@@ -509,10 +492,8 @@ async function onSuccessfulRoomCreation(roomData) {
     const image = roomCreationAvatarBlob;
 
     //generate encryption key
-    const roomKey = await generateKey();
-
-    //save key in keychain (don't need to wait for it)
-    await keychainSet(roomData.slug, roomKey, true);
+    const roomKeys = await window.userKeychain.createNewRoomKey(roomData.slug);
+    const roomKey = roomKeys.roomKey;
 
     //encrypt room description and system prompt
     const cryptDescription = await encryptWithSymKey(roomKey, description, false);
@@ -591,7 +572,7 @@ async function sendInvitation(btn) {
 
 async function createAndSendInvitations(usersList, roomSlug) {
 
-    const roomKey = await keychainGet(roomSlug);
+    const roomKey = (window.userKeychain.roomKeys[slug] || {}).roomKey;
     const invitations = [];
     for (const invitee of usersList) {
         let invitation;
@@ -683,7 +664,7 @@ async function handleUserInvitations() {
         if (data.formattedInvitations) {
 
             const invitations = data.formattedInvitations;
-            const privateKey = await keychainGet('privateKey');
+            const privateKey = window.userKeychain.privateKey;
             for (const inv of invitations) {
                 try {
 
@@ -751,9 +732,7 @@ async function finishInvitationHandling(invitation_id, roomKey) {
 
     const data = await response.json();
     if (data.success) {
-
-        await keychainSet(data.room.slug, roomKey, true);
-
+        await window.userKeychain.importRoomKey(roomKey, data.room.slug);
         createRoomItem(data.room);
         connectWebSocket(data.room.slug);
         connectWhisperSocket(data.room.slug);
@@ -843,9 +822,10 @@ async function loadRoom(btn = null, slug = null) {
 
     loadRoomMembers(roomData);
 
-    const roomKey = await keychainGet(slug);
-    const aiCryptoSalt = hawkiConnection('salts.ai');
-    const aiKey = await deriveKey(roomKey, slug, aiCryptoSalt);
+    const roomKeys = (window.userKeychain.roomKeys[slug] || {});
+    const roomKey = roomKeys.roomKey;
+    const aiKey = roomKeys.aiKey;
+    const legacyAiKey = roomKeys.aiLegacyKey;
 
     if (roomData.room_description) {
         const descriptObj = JSON.parse(roomData.room_description);
@@ -863,9 +843,16 @@ async function loadRoom(btn = null, slug = null) {
 
     for (const msgData of roomData.messagesData) {
         const key = msgData.message_role === 'assistant' ? aiKey : roomKey;
-        msgData.content.text = await decryptWithSymKey(key, msgData.content.text.ciphertext,
-            msgData.content.text.iv,
-            msgData.content.text.tag, false);
+        try {
+            msgData.content.text = await decryptWithSymKey(key, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
+        } catch (error) {
+            if (msgData.message_role === 'assistant') {
+                // If decryption fails for AI messages, try legacy key
+                msgData.content.text = await decryptWithSymKey(legacyAiKey, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
+            } else {
+                throw error;
+            }
+        }
     }
     filterRoleElements(roomData.role);
     loadMessagesOnGUI(roomData.messagesData);
@@ -1261,7 +1248,7 @@ async function submitInfoField() {
     const description = roomCP.querySelector('#description-field').textContent;
     const systemPrompt = roomCP.querySelector('#system_prompt-field').textContent;
 
-    const roomKey = await keychainGet(activeRoom.slug);
+    const roomKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).roomKey;
 
     const cryptDescription = await encryptWithSymKey(roomKey, description, false);
     const descriptionStr = JSON.stringify({

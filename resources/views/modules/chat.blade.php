@@ -1,95 +1,98 @@
 @extends('layouts.home')
 @section('content')
-<div class="main-panel-grid">
-	<div class="dy-sidebar expanded" id="chat-sidebar">
-		<div class="dy-sidebar-wrapper">
-			<!-- <div class="welcome-panel">
+    <div class="main-panel-grid">
+        <div class="dy-sidebar expanded" id="chat-sidebar">
+            <div class="dy-sidebar-wrapper">
+                <!-- <div class="welcome-panel">
 				<h1>{{ Auth::user()->name }}</h1>
 			</div> -->
-			<div class="header">
-				@php $tooltipId = str()->uuid() @endphp
-				<button class="btn-md-stroke" onclick="startNewChat()" aria-labelledby="{{ $tooltipId }}">
-					<div class="icon" aria-hidden="true">
-						<x-icon name="plus"/>
-					</div>
-					<div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ __("StartNewChat") }}</strong></div>
-				</button>
-				<h3 class="title">{{ __("History") }}</h3>
+                <div class="header">
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-md-stroke" onclick="startNewChat()" aria-labelledby="{{ $tooltipId }}">
+                        <div class="icon" aria-hidden="true">
+                            <x-icon name="plus"/>
+                        </div>
+                        <div class="label" aria-hidden="true" id="{{ $tooltipId }}"><strong>{{ __("StartNewChat") }}</strong></div>
+                    </button>
+                    <h3 class="title">{{ __("History") }}</h3>
 
-			</div>
-			<div class="dy-sidebar-content-panel" tabindex="-1">
-				<div class="dy-sidebar-scroll-panel">
-					<div class="selection-list" id="chats-list">
-
-
-					</div>
-				</div>
-			</div>
-
-			<div class="dy-sidebar-expand-btn" onclick="togglePanelClass('chat-sidebar', 'expanded')">
-				<x-icon name="chevron-right"/>
-			</div>
-
-		</div>
-	</div>
+                </div>
+                <div class="dy-sidebar-content-panel" tabindex="-1">
+                    <div class="dy-sidebar-scroll-panel">
+                        <div class="selection-list" id="chats-list">
 
 
+                        </div>
+                    </div>
+                </div>
 
-	<div class="dy-main-panel">
+                <div class="dy-sidebar-expand-btn" onclick="togglePanelClass('chat-sidebar', 'expanded')">
+                    <x-icon name="chevron-right"/>
+                </div>
 
-		<div class="dy-main-content" id="chat">
-
-			<div class="chat-info">
-				<div class="system-prompt"></div>
-			</div>
-
-
-			<div class="chatlog">
-				<div class="chatlog-container">
-
-					<div class="scroll-container">
-						<div class="scroll-panel">
-
-							<div class="thread trunk" id="0">
-
-							</div>
-						</div>
-					</div>
-
-				</div>
-				<h1 id="start-title">{{ __("StartBanner") }}</h1>
-
-				@include('partials.home.input-field', ['lite' => false])
-
-			</div>
-			<p class="warning">{{ __("MistakeWarning") }}</p>
-
-		</div>
-	</div>
-
-</div>
+            </div>
+        </div>
 
 
-<script>
+        <div class="dy-main-panel">
+
+            <div class="dy-main-content" id="chat">
+
+                <div class="chat-info">
+                    <div class="system-prompt"></div>
+                </div>
 
 
-window.addEventListener('DOMContentLoaded', async function (){
+                <div class="chatlog">
+                    <div class="chatlog-container">
 
-	initializeAiChatModule(@json($userData['convs']))
+                        <div class="scroll-container">
+                            <div class="scroll-panel">
 
-	const slug = @json($slug);
+                                <div class="thread trunk" id="0">
 
-	if (slug){
-		await loadConv(null, slug);
-	}
-	else{
-        switchDyMainContent('chat');
-	}
-});
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <h1 id="start-title">{{ __("StartBanner") }}</h1>
+
+                    <x-svelte type="ChatHeader" :props="['context' => 'aiConv']"/>
+                </div>
+
+                <div class="input-container admin-only editor-only">
+                    <x-svelte type="ChatComposer" :props="['context' => 'aiConv']"/>
+                </div>
+
+                <p class="warning">{{ __("MistakeWarning") }}</p>
+
+            </div>
+        </div>
+
+    </div>
 
 
+    <script>
 
-</script>
 
+        window.waitUntilReady(async function () {
+
+            initializeAiChatModule(@json($userData['convs']));
+
+            const slug = @json($slug);
+
+            window.userKeychain.waitingToLoad.then(async () => {
+                if (slug) {
+                    await loadConv(null, slug);
+                } else {
+                    switchDyMainContent('chat');
+                }
+            });
+        });
+
+
+    </script>
 
 @endsection

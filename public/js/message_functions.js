@@ -35,16 +35,20 @@ function addMessageToChatlog(messageObj, isFromServer = false) {
     /// CLASSES & AVATARS
     // add classes AI ME MEMBER to the element
     if (messageObj.message_role === 'assistant') {
+        const aiConfig = window.getConfig().ai;
         messageElement.classList.add('AI');
         messageElement.querySelector('.user-inits').remove();
-        messageElement.querySelector('.icon-img').src = hawkiAvatarUrl;
+        if (aiConfig && aiConfig.hawkiUserAvatar) {
+            messageElement.querySelector('.icon-img').src = window.buildStorageFileUrl(aiConfig.hawkiUserAvatar);
+        }
     } else {
+        const userInfo = window.getAuthenticatedConnection().userinfo;
         if (messageObj.author.name && messageObj.author.username === userInfo.username) {
             messageElement.classList.add('me');
-            if (userAvatarUrl) {
+            if (userInfo.avatar) {
                 messageElement.querySelector('.user-inits').style.display = 'none';
                 messageElement.querySelector('.icon-img').style.display = 'block';
-                messageElement.querySelector('.icon-img').src = userAvatarUrl;
+                messageElement.querySelector('.icon-img').src = window.buildStorageFileUrl(userInfo.avatar);
             } else {
                 messageElement.querySelector('.icon-img').style.display = 'none';
                 messageElement.querySelector('.user-inits').style.display = 'block';
@@ -73,7 +77,7 @@ function addMessageToChatlog(messageObj, isFromServer = false) {
 
     /// Set Author Name
     if (messageObj.model && messageObj.message_role === 'assistant') {
-        model = modelsList.find(m => m.id === messageObj.model);
+        const model = window.getAiModel(messageObj.model);
         messageElement.querySelector('.message-author').innerHTML =
             model ?
                 `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>` :
@@ -198,21 +202,17 @@ function addMessageToChatlog(messageObj, isFromServer = false) {
         const threadElement = threadTemplate.content.cloneNode(true);
         threadDiv = threadElement.querySelector('.thread');
         threadDiv.classList.add('branch');
-        threadDiv.querySelector('.model-selector-label').innerHTML = activeModel.label;
 
         if (messageObj.message_id) {
             threadDiv.id = messageObj.message_id.split('.')[0];
-            threadDiv.querySelector('.input').id = threadDiv.id;
+            // threadDiv.querySelector('.input').id = threadDiv.id;
         }
-
-        const input = threadDiv.querySelector('.input-container');
 
         messageElement.appendChild(threadDiv);
         activeThread.appendChild(messageElement);
-        initFileUploader(input);
 
     } else {
-        const branchInput = activeThread.querySelector('.input-container');
+        const branchInput = activeThread.querySelector('div[data-id="thread-active-indicator"]');
         messageElement.querySelector('#thread-btn').remove();
         const messageChildrenCount = Array.from(activeThread.children).filter(child => child.classList.contains('message')).length + 1;
         const cmtCount = activeThread.closest('.message').querySelector('#comment-count');
@@ -227,7 +227,7 @@ function addMessageToChatlog(messageObj, isFromServer = false) {
 }
 
 
-function updateMessageElement(messageElement, messageObj, updateContent = false) {
+function updateMessageElement(messageElement, messageObj, updateContent = false, attachmentUpdate = null) {
 
     messageElement.id = messageObj.message_id;
     if (messageObj.metadata) {
@@ -238,7 +238,7 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
 
     if (messageElement.querySelector('.thread')) {
         messageElement.querySelector('.thread').id = messageObj.message_id.split('.')[0];
-        messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0];
+        // messageElement.querySelector('.input').id = messageObj.message_id.split('.')[0];
     }
 
     if (messageElement.classList.contains('me')) {
@@ -258,12 +258,26 @@ function updateMessageElement(messageElement, messageObj, updateContent = false)
 
     if (messageElement.classList.contains('AI')) {
         const username = messageElement.dataset.author;
-        const model = modelsList.find(m => m.id === messageObj.model);
+        const model = window.getAiModel(messageObj.model);
         messageElement.querySelector('.message-author').innerHTML =
             model ?
                 `<span>${username} </span><span class="message-author-model">(${model.label})</span>` :
                 `<span>${username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
         messageElement.dataset.model = messageObj.model;
+    }
+
+    ///ATTACHMENTS
+    if (Array.isArray(attachmentUpdate) && attachmentUpdate.length != 0) {
+
+        const attachmentContainer = messageElement.querySelector('.attachments');
+        attachmentContainer.innerHTML = '';
+
+        attachmentUpdate.forEach(attachment => {
+
+            const thumbnail = createAttachmentThumbnail(attachment.fileData, 'message');
+            // Add to file preview container
+            attachmentContainer.appendChild(thumbnail);
+        });
     }
 
     if (updateContent) {
@@ -372,7 +386,7 @@ function setDateSpan(activeThread, msgDate, formatDay = true) {
             if (activeThread.id === '0') {
                 activeThread.appendChild(dateSpan);
             } else {
-                const branchInput = activeThread.querySelector('.input-container');
+                const branchInput = activeThread.querySelector('div[data-id="thread-active-indicator"]');
                 activeThread.insertBefore(dateSpan, branchInput);
             }
         }
@@ -555,129 +569,36 @@ function copyCodeBlockToClipboard(provider) {
 
 
 function editMessage(provider) {
-    const msgControls = provider.closest('.message-controls');
-    const controls = msgControls.querySelector('.controls');
-    const editControls = msgControls.querySelector('.edit-bar');
 
-    controls.style.display = 'none';
-    editControls.style.display = 'flex';
-
-    const message = provider.closest('.message');
-    const wrapper = message.querySelector('.message-wrapper');
-    wrapper.classList.add('edit-mode');
-
-    const content = message.querySelector('.message-content');
-
-    /// PASTE STYLE
-    content.addEventListener('paste', function (e) {
-        e.preventDefault();
-
-        // Get the plain text from clipboard
-        let text = (e.clipboardData || window.clipboardData).getData('text/plain');
-
-        // Get selection and range
-        const selection = window.getSelection();
-        if (!selection.rangeCount) return;
-        const range = selection.getRangeAt(0);
-
-        // Split text by lines
-        const lines = text.split(/\r?\n/);
-        // Create a DocumentFragment to hold nodes
-        const fragment = document.createDocumentFragment();
-
-        for (let i = 0; i < lines.length; i++) {
-            if (i > 0) fragment.appendChild(document.createElement('br'));
-            fragment.appendChild(document.createTextNode(lines[i]));
-        }
-
-        // Insert the fragment at the cursor
-        range.deleteContents();
-        range.insertNode(fragment);
-
-        // Move cursor to the end of the pasted content
-        // Create a new range after the inserted content
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
-    });
-
-
-    content.setAttribute('contenteditable', true);
-    content.dataset.tempContent = content.innerHTML;
-    const rawMsg = content.closest('.message').dataset.rawMsg;
-    content.innerHTML = escapeHTML(rawMsg).replace(/\n/g, '<br>');
-
-    content.focus();
-
-    var range, selection;
-    if (document.createRange) {
-        range = document.createRange();
-        range.selectNodeContents(content);
-        range.collapse(false);
-        selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-    } else if (document.selection) {
-        range = document.body.createTextRange();
-        range.moveToElementText(content);
-        range.collapse(false);
-        range.select();
+    const messageId = provider.closest('.message').id;
+    if (activeModule === 'chat') {
+        const message = window.oldUiMessageHistory.findMessageById(messageId);
+        console.log('message to edit', message);
+        window.oldUiBridge.triggerEnterMode('edit', message);
+        return;
     }
+
+    console.error('NOT IMPLEMENTED FOR', activeModule);
 }
 
-function abortEditMessage(provider) {
-    const msgControls = provider.closest('.message-controls');
-    const controls = msgControls.querySelector('.controls');
-    const editControls = msgControls.querySelector('.edit-bar');
-    controls.style.display = 'flex';
-    editControls.style.display = 'none';
-
-
-    const wrapper = provider.closest('.message-wrapper');
-    wrapper.classList.remove('edit-mode');
-
-
-    // if(wrapper.querySelectorAll('.attachment').length > 0){
-    //     const atchs = wrapper.querySelectorAll('.attachment');
-    //     atchs.forEach(atch => {
-    //         atch.classList.remove('edit-mode');
-    //         const rmBtn = atch.querySelector('.remove-btn');
-    //         rmBtn.disabled = true;
-    //         rmBtn.style.display = 'none';
-    //     })
-    // };
-
-
-    const content = wrapper.querySelector('.message-content');
-    content.setAttribute('contenteditable', false);
-    content.innerHTML = content.dataset.tempContent;
-    content.removeAttribute('data-temp-content');
-}
-
-async function confirmEditMessage(provider) {
-    const msgControls = provider.closest('.message-controls');
-    const messageElement = provider.closest('.message');
+/**
+ * @param {OldUiSendMessagePayload} payload
+ * @return {Promise<void>}
+ */
+async function confirmEditMessage(payload) {
+    if (payload.mode.is !== 'edit') {
+        throw new Error('Invalid mode for confirmEditMessage. Expected "edit".');
+    }
+    const messageElement = document.getElementById(payload.mode.messageId);
+    if (!messageElement) {
+        throw new Error(`Message element with ID ${payload.mode.messageId} not found.`);
+    }
 
     if (!messageElement.classList.contains('me')) {
         return;
     }
 
-    const controls = msgControls.querySelector('.controls');
-    const editControls = msgControls.querySelector('.edit-bar');
-    controls.style.display = 'flex';
-    editControls.style.display = 'none';
-
-    const wrapper = provider.closest('.message-wrapper');
-    wrapper.classList.remove('edit-mode');
-
-    const content = wrapper.querySelector('.message-content');
-    content.setAttribute('contenteditable', false);
-
-    const cont = content.innerText;
-    messageElement.dataset.rawMsg = cont;
-
-    content.innerHTML = content.dataset.tempContent;
-    content.removeAttribute('data-temp-content');
+    const cont = payload.message;
 
     messageElement.dataset.rawMsg = cont;
     messageElement.querySelector('.message-text').innerHTML = detectMentioning(cont).modifiedText;
@@ -685,23 +606,27 @@ async function confirmEditMessage(provider) {
     let key;
     let url;
 
-    switch (activeModule) {
-        case('chat'):
+    switch (payload.contextType) {
+        case('aiConv'):
             url = `/req/conv/updateMessage/${activeConv.slug}`;
-            key = await keychainGet('aiConvKey');
+            key = window.userKeychain.aiConvKey;
             break;
-        case('groupchat'):
+        case('room'):
             url = `/req/room/updateMessage/${activeRoom.slug}`;
-            const roomKey = await keychainGet(`${activeRoom.slug}`);
+            const roomKey = window.userKeychain.roomKeys[activeRoom.slug] || {};
 
             if (messageElement.dataset.role === 'assistant') {
-                const aiCryptoSalt = hawkiConnection('salts.ai');
-                key = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+                key = roomKey.aiKey;
             } else {
-                key = roomKey;
+                key = roomKey.roomKey;
             }
             break;
     }
+
+    // Build attachments array for legacy format
+    const attachments = payload.attachments
+        .map(file => payload.status.getFileUuid(file))
+        .filter(uuid => uuid !== null);
 
     const cryptoMsg = await encryptWithSymKey(key, cont, false);
     const messageObj = {
@@ -710,7 +635,8 @@ async function confirmEditMessage(provider) {
                 'ciphertext': cryptoMsg.ciphertext,
                 'iv': cryptoMsg.iv,
                 'tag': cryptoMsg.tag
-            }
+            },
+            'attachments': attachments
         },
         'isAi': false,
         'model': '',
@@ -718,7 +644,7 @@ async function confirmEditMessage(provider) {
         'message_id': messageElement.id
     };
 
-    requestMsgUpdate(messageObj, messageElement, url);
+    await requestMsgUpdate(messageObj, messageElement, url, {text: cont});
 }
 
 //#endregion
@@ -798,345 +724,36 @@ let menu;
 let regenerateButtonRef = null;
 
 function openRegenerateDropDown(sender) {
-    menu = document.getElementById('regenerate-controls');
-    regenerateButtonRef = sender;
-    const btnRect = sender.getBoundingClientRect();
-
-    menu.style.top = `${btnRect.bottom}px`;
-    menu.style.left = `${btnRect.left}px`;
-    sender.classList.add('active');
-    menu.style.display = `block`;
-
-    setTimeout(() => {
-        menu.style.width = `${menu.getBoundingClientRect().width + 10}px`;
-        menu.style.opacity = `1`;
-    }, 50);
-
-    const msgElement = sender.closest('.message');
-
-    regenerateState.messageElement = msgElement;
-    const modelId = msgElement.dataset.model;
-    const model = modelsList.find(m => m.id === modelId);
-    regenerateState.model = model || activeModel;
-    const msgTools = JSON.parse(msgElement.dataset.tools);
-    let tools = [];
-    let missingTools = [];
-    msgTools.forEach(msgTool => {
-        if (toolKit.includes(msgTool)) {
-            tools.push(msgTool);
-        } else {
-            missingTools.push(msgTool);
-        }
-    });
-    regenerateState.tools = new Set(tools);
-
-    if (missingTools.length > 0) {
-        menu.querySelector('#expired-tool-warning').style.display = 'block';
-        menu.querySelector('#expired-tool-warning')
-            .querySelector('.expired-tool-name').innerText = missingTools.join(', ');
-    } else {
-        menu.querySelector('#expired-tool-warning').style.display = 'none';
+    const messageId = sender.closest('.message').id;
+    if (activeModule === 'chat') {
+        const message = window.oldUiMessageHistory.findMessageById(messageId);
+        console.log('CONV', activeConv, message);
+        window.oldUiBridge.triggerEnterMode('regen', message);
+        return;
     }
+    console.log('REGEN', sender);
 
-
-    const storedParams = JSON.parse(msgElement.dataset.params || '{}');
-    regenerateState.params = {
-        temperature: storedParams.temperature ?? activeModel.params?.temperature ?? null,
-        top_p: storedParams.top_p ?? activeModel.params?.top_p ?? null
-    };
-    // Initialize regeneration filters based on current tools
-    setRegenerationFilters(Array.from(regenerateState.tools));
-
-    initModelSubMenu(regenerateState.model);
-    initToolSubMenu(regenerateState.tools);
-    initParamsSubMenu(regenerateState.params);
-
-    bindRegenerateMenuEvents();
-    updateIndicators();
-
-    // Apply initial model filtering based on current tools
-    refreshModelList(null, 'regeneration');
-
-    // Add outside click listener after a small delay to prevent immediate closing
-    setTimeout(() => {
-        document.addEventListener('click', handleOutsideClick);
-    }, 100);
 }
 
-
-function bindRegenerateMenuEvents() {
-
-    menu.querySelectorAll('.reg-submenu-btn')
-        .forEach(btn => {
-            btn.onclick = () => {
-                toggleSubMenu(btn.getAttribute('reference'));
-            };
-        });
-
-    menu.querySelectorAll('.model-selector')
-        .forEach(btn => {
-            btn.onclick = handleModelSelection;
-        });
-
-    menu.querySelectorAll('.tool-selector')
-        .forEach(btn => {
-            btn.onclick = handleToolToggle;
-        });
-
-    menu.querySelector('.confirm')
-        .onclick = handleRegenerateClick;
-}
-
-function updateIndicators() {
-    const modelId = typeof regenerateState.model === 'string' ? regenerateState.model : regenerateState.model?.id;
-    const modelLabel = typeof regenerateState.model === 'string'
-        ? modelsList.find(m => m.id === modelId)?.label || modelId
-        : regenerateState.model?.label || modelId;
-
-    menu.querySelector('.reg-submenu-btn[reference="models-list"]')
-        .querySelector('.indicator').innerText = modelLabel || '';
-    menu.querySelector('.reg-submenu-btn[reference="tools-list"]')
-        .querySelector('.indicator').innerText = regenerateState.tools.size;
-}
-
-
-function initModelSubMenu(model) {
-    const selectors = menu.querySelectorAll('.model-selector');
-    const modelId = typeof model === 'string' ? model : model?.id;
-
-    selectors.forEach(btn => {
-        btn.classList.toggle(
-            'active',
-            btn.dataset.modelId === modelId
-        );
-    });
-}
-
-function handleModelSelection(e) {
-    const btn = e.currentTarget;
-
-    // Prevent selecting disabled models
-    if (btn.disabled) {
+/**
+ *
+ * @param {OldUiSendMessagePayload} payload
+ * @return {Promise<void>}
+ */
+async function regenerateMessage(payload) {
+    if (!payload.model) {
         return;
     }
 
-    btn.parentElement
-        .querySelectorAll('.model-selector.active')
-        .forEach(el => el.classList.remove('active'));
-
-    btn.classList.add('active');
-    regenerateState.model = JSON.parse(btn.value);
-    updateIndicators();
-}
-
-
-function initToolSubMenu(tools) {
-    menu.querySelectorAll(`.tool-selector`).forEach(btn => {
-        btn.classList.remove('active');
-    });
-    tools.forEach(tool => {
-        const btn = menu.querySelector(`.tool-selector[data-reference="${tool}"]`);
-        btn.classList.add('active');
-    });
-}
-
-function handleToolToggle(e) {
-    const btn = e.currentTarget;
-    const tool = btn.dataset.reference;
-
-    btn.classList.toggle('active');
-
-    if (btn.classList.contains('active')) {
-        regenerateState.tools.add(tool);
-        addRegenerationFilter(tool);
-    } else {
-        regenerateState.tools.delete(tool);
-        removeRegenerationFilter(tool);
-    }
-
-    // Check if current model is still compatible
-    const updatedModel = refreshRegenerationModelList(regenerateState.model);
-
-    if (updatedModel && updatedModel !== regenerateState.model) {
-        // Model was changed to a fallback
-        regenerateState.model = updatedModel;
-        initModelSubMenu(updatedModel);
-    } else if (!updatedModel) {
-        // No compatible models found - revert tool selection
-        btn.classList.toggle('active');
-        if (btn.classList.contains('active')) {
-            regenerateState.tools.add(tool);
-            addRegenerationFilter(tool);
-        } else {
-            regenerateState.tools.delete(tool);
-            removeRegenerationFilter(tool);
-        }
-
-        // Show error message in menu
-        showRegenerationError(__('Input_Err_FilterConflict') || 'No compatible models available for selected tools');
-        return;
-    }
-
-    // Refresh the model list UI (enable/disable buttons)
-    refreshModelList(null, 'regeneration');
-    updateIndicators();
-}
-
-
-function initParamsSubMenu(params) {
-
-    menu.querySelectorAll('input[type="range"]').forEach(el => {
-        el.addEventListener('input', () => {
-            handleSliderInput(el);
-            setParamValues(el);
-        });
-    });
-
-    setSliderValue(
-        menu.querySelector('#temperature-input'),
-        params.temperature
-    );
-    setSliderValue(
-        menu.querySelector('#top-p-input'),
-        params.top_p
-    );
-}
-
-function setParamValues(el) {
-    if (el.dataset.param === 'temperature') {
-        regenerateState.params.temperature = parseFloat(el.value);
-    }
-    if (el.dataset.param === 'top_p') {
-        regenerateState.params.top_p = parseFloat(el.value);
-    }
-}
-
-
-function handleRegenerateClick() {
-    const {messageElement, model, tools, params} = regenerateState;
-
-    if (!model) {
-        console.error('No model selected for regeneration');
-        return;
-    }
-
+    const messageElement = document.getElementById(payload.mode.messageId);
     if (!messageElement) {
-        console.error('No message element for regeneration');
-        return;
+        throw new Error(`Message element with ID ${payload.mode.messageId} not found.`);
     }
+
     const metadata = {
-        'tools': Array.from(tools),
-        'params': params
+        'tools': payload.tools.map(tool => tool.name),
+        'params': payload.parameters
     };
-    regenerateMessage(
-        messageElement,
-        model,
-        metadata
-    );
-
-    closeRegenerateMenu();
-}
-
-function showRegenerationError(message) {
-    // Find or create error message element in menu
-    let errorEl = menu.querySelector('.regeneration-error');
-
-    if (!errorEl) {
-        errorEl = document.createElement('div');
-        errorEl.className = 'regeneration-error';
-        errorEl.style.cssText = 'color: #ff4444; padding: 8px; font-size: 12px; text-align: center;';
-        menu.querySelector('.reg-wrapper').appendChild(errorEl);
-    }
-
-    errorEl.textContent = message;
-    errorEl.style.display = 'block';
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-        errorEl.style.display = 'none';
-    }, 3000);
-}
-
-function handleOutsideClick(event) {
-    const menu = document.getElementById('regenerate-controls');
-
-    // Check if menu is visible
-    if (!menu || menu.style.display === 'none') {
-        return;
-    }
-
-    // Check if click is outside both the menu and the regenerate button
-    const isClickInsideMenu = menu.contains(event.target);
-    const isClickOnButton = regenerateButtonRef && regenerateButtonRef.contains(event.target);
-
-    if (!isClickInsideMenu && !isClickOnButton) {
-        closeRegenerateMenu();
-    }
-}
-
-function closeRegenerateMenu() {
-    menu.style.opacity = '0';
-    closeAllSubMenus();
-    setTimeout(() => {
-        menu.style.display = 'none';
-    }, 150);
-
-    // Remove active state from button
-    if (regenerateButtonRef) {
-        regenerateButtonRef.classList.remove('active');
-        regenerateButtonRef = null;
-    }
-
-    // Clear regeneration filters
-    clearRegenerationFilters();
-
-    // Remove outside click listener
-    document.removeEventListener('click', handleOutsideClick);
-
-    regenerateState = {
-        messageElement: null,
-        model: null,
-        tools: new Set(),
-        params: []
-    };
-}
-
-
-function toggleSubMenu(id) {
-    const subMenus = menu.querySelectorAll('.sub-menu');
-    subMenus.forEach((subMenu) => {
-        if (subMenu.id === id && !subMenu.classList.contains('active')) {
-            handlesSubMenuToggle(subMenu, true);
-        } else {
-            handlesSubMenuToggle(subMenu, false);
-        }
-    });
-}
-
-function closeAllSubMenus() {
-    menu.querySelectorAll('.sub-menu').forEach((subMenu) => {
-        handlesSubMenuToggle(subMenu, false);
-    });
-
-}
-
-function handlesSubMenuToggle(menu, active) {
-    if (active) {
-        menu.style.display = 'block';
-        menu.classList.add('active');
-    } else {
-        menu.classList.remove('active');
-        setTimeout(() => {
-            menu.style.display = 'none';
-        }, 300);
-    }
-}
-
-
-async function regenerateMessage(messageElement, model, metadata, Done = null) {
-    if (!messageElement.classList.contains('AI')) {
-        return;
-    }
 
     const threadIndex = messageElement.closest('.thread').id;
 
@@ -1145,52 +762,55 @@ async function regenerateMessage(messageElement, model, metadata, Done = null) {
     messageElement.dataset.rawMsg = '';
     initializeMessageFormating();
 
-    let msgAttributes = {};
-    switch (activeModule) {
-        case('chat'):
-            msgAttributes = {
-                'threadIndex': threadIndex,
-                'broadcasting': false,
-                'slug': '',
-                'regenerationElement': messageElement,
-                'stream': !!(model.capabilities && model.capabilities.stream),
-                'model': model.id,
-                'metadata': metadata
-            };
+    payload.waitForResponse(async (response) => {
+        let msgAttributes = {};
+        switch (activeModule) {
+            case('chat'):
+                msgAttributes = {
+                    'threadIndex': threadIndex,
+                    'broadcasting': false,
+                    'slug': '',
+                    'regenerationElement': messageElement,
+                    'stream': true,
+                    'model': payload.model.model_id,
+                    'metadata': metadata
+                };
 
-            await buildRequestObjectForAiConv(msgAttributes, messageElement, true, async (isDone) => {
-                if (Done) {
-                    Done(true);
-                }
-            });
-            break;
-        case('groupchat'):
-            const roomKey = await keychainGet(activeRoom.slug);
-            const aiCryptoSalt = hawkiConnection('salts.ai');
-            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-            const aiKeyRaw = await exportSymmetricKey(aiKey);
-            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
+                await buildRequestObjectForAiConv(
+                    response,
+                    msgAttributes,
+                    messageElement,
+                    true,
+                    async (isDone) => void 0);
+                break;
+            case('groupchat'):
+                const roomKey = window.userKeychain.roomKeys[activeRoom.slug] || null;
+                const aiCryptoSalt = window.getConfig().salts.ai;
+                const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+                const aiKeyRaw = await exportSymmetricKey(aiKey);
+                const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
 
-            msgAttributes = {
-                'threadIndex': threadIndex,
-                'broadcasting': true,
-                'slug': activeRoom.slug,
-                'key': aiKeyBase64,
-                'regenerationElement': messageElement,
-                'stream': false,
-                'model': model.id,
-                'metadata': metadata
-            };
-            buildRequestObject(msgAttributes, async (updatedText, done) => {
-            });
-            break;
-    }
+                msgAttributes = {
+                    'threadIndex': threadIndex,
+                    'broadcasting': true,
+                    'slug': activeRoom.slug,
+                    'key': aiKeyBase64,
+                    'regenerationElement': messageElement,
+                    'stream': false,
+                    'model': payload.model.model_id,
+                    'metadata': metadata
+                };
+                buildRequestObject(msgAttributes, async (updatedText, done) => {
+                });
+                break;
+        }
+    });
 }
 
 //#endregion
 let GEN_STAT_VIDEO_URL = null;
-document.addEventListener('DOMContentLoaded', async () => {
-    const src = darkMode === 'disabled'
+window.waitUntilReady(async () => {
+    const src = (typeof darkMode !== 'undefined' && darkMode === 'disabled')
         ? '/animations/DocSearch-lightMode.webm'
         : '/animations/DocSearch-darkMode.webm';
     const response = await fetch(src);
@@ -1204,6 +824,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function createStatusElement(status, messageElement) {
+    console.log('HIER', status);
 
     let statElement = messageElement.querySelector(`.gen-stat-element`);
     //create a new element for first status
@@ -1222,9 +843,12 @@ function createStatusElement(status, messageElement) {
         statElement.querySelector('video').style.display = 'flex';
 
         // const list = JSON.parse(status);
-        const locales = hawkiConnection('locale.available');
-        const preferredLocale = hawkiConnection('locale.preferred');
-        const activeLocale = locales[preferredLocale] || locales[Object.keys(locales)[0]];
+        const locales = window.getConfig().locale.available;
+        const preferredLocale = window.getConfig().locale.current;
+        const activeLocale =
+            locales.find(loc => loc.lang === preferredLocale)
+            || locales.find(loc => loc.lang === window.getConfig().locale.default)
+            || locales[0];
         const formatter = new Intl.ListFormat(
             activeLocale.shortName,
             {
@@ -1257,22 +881,4 @@ function createStatusElement(status, messageElement) {
     }
     statElement.querySelector('.stat-txt').innerText = statusText;
     // tripleDotAnime(statElement, statusText)
-}
-
-
-function tripleDotAnime(statElement, status) {
-    // ---- Clear any existing interval ----
-    if (statElement._dotsIntervalId) {
-        clearInterval(statElement._dotsIntervalId);
-    }
-
-    const textEl = statElement.querySelector('.stat-txt');
-    let frame = 0;
-    const frames = [' ', ' .', ' ..', ' ...'];
-
-    // ---- Start new interval and store its id ----
-    setInterval(() => {
-        textEl.innerText = status + frames[frame];
-        frame = (frame + 1) % frames.length;
-    }, 500);
 }

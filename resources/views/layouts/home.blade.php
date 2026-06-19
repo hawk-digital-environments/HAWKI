@@ -39,7 +39,6 @@
     <script src="{{ asset('js/model_list_filtering.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
     <script src="{{ asset('js/link_preview.js') }}"></script>
-    <script src="{{ asset('js/model_functions.js') }}"></script>
 
     @if(config('external_access.enabled'))
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
@@ -48,10 +47,8 @@
     <x-settings-panel/>
     <script>
         SwitchDarkMode(false);
-        UpdateSettingsLanguage('<x-current-locale/>');
+        UpdateSettingsLanguage();
     </script>
-
-    <x-internal-frontend-connection/>
 </head>
 <body>
 
@@ -62,9 +59,6 @@
         @yield('content')
     </div>
 </div>
-@include('partials.home.components.regenerationControls')
-@include('partials.home.components.model-parameters-controller')
-
 @include('partials.home.modals.guidelines-modal')
 @include('partials.home.modals.add-member-modal')
 @include('partials.home.modals.session-expiry-modal')
@@ -88,27 +82,12 @@
 
 <script>
 
-    const userInfo = @json($user);
-    const userAvatarUrl = @json($userData['avatar_url']);
-    const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
     const activeModule = @json($activeModule);
-    const hawkiUsername = @json($userData['hawki_username'])
-
-    const modelsList = @json($models).models;
-    const defaultModels = @json($models).defaultModels;
-    const systemModels = @json($models).systemModels;
-    const toolKit = @json($toolKit);
-    const toolKitLabels = @json($toolKitLabels);
-    const aiHandle = "{{ config('hawki.aiHandle') }}";
-
     const announcementList = @json($announcements);
 
-    window.addEventListener('DOMContentLoaded', async (event) => {
-        setModel();
-
+    window.waitUntilReady(async (event) => {
         const passkey = await getPassKey();
         if (!passkey) {
-            console.log('passkey not found!');
             window.location.href = '/handshake';
         }
 
@@ -127,6 +106,8 @@
         setActiveSidebarButton(activeModule);
 
         const sidebarBtn = document.getElementById('profile-sb-btn');
+        const userInfo = window.getConnection().userinfo;
+        const userAvatarUrl = window.buildStorageFileUrl(userInfo.avatar);
         if (userAvatarUrl) {
             sidebarBtn.querySelector('.user-inits').style.display = 'none';
             sidebarBtn.querySelector('.icon-img').style.display = 'flex';
@@ -140,7 +121,7 @@
 
 
         initializeGUI();
-        checkWindowSize(800, 200);
+        checkWindowSize(1150, 200);
 
         initAnnouncements(announcementList);
 

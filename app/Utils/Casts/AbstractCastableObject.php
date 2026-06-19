@@ -245,7 +245,10 @@ abstract class AbstractCastableObject
     final private function __construct(array $attributes, string $sourceType = self::SOURCE_STRING_ARRAY)
     {
         foreach ($this->getPropertyReflections() as $name => $prop) {
-            if (!\array_key_exists($name, $attributes) || $attributes[$name] === null) {
+            if (!\array_key_exists($name, $attributes)) {
+                if ($attributes[$name] === null && !isset($attributes[$name])) {
+                    $prop->setValue($this, null);
+                }
                 continue;
             }
 

@@ -7,19 +7,19 @@ namespace App\Services\ExtApp\Listeners;
 
 use App\Events\ExtAppUserRemovedEvent;
 use App\Events\PersonalAccessTokenRemovedEvent;
-use App\Services\ExtApp\Db\AppUserDb;
+use App\Services\ExtApp\Repositories\ExtAppUserRepository;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
 class PersonalAccessTokenRemoveListener
 {
     public function __construct(
-        protected AppUserDb       $appUserDb,
-        protected LoggerInterface $log
+        protected ExtAppUserRepository $appUserDb,
+        protected LoggerInterface      $log
     )
     {
     }
-    
+
     /**
      * @throws Throwable
      */

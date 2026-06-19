@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
-use App\Casts\AsAsymmetricPublicKeyCast;
+use App\Casts\AsAsymmetricPublicKey;
 use App\Events\ExtExtAppCreatedEvent;
 use App\Events\ExtExtAppRemovedEvent;
+use App\Policies\ExtAppPolicy;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+#[UsePolicy(ExtAppPolicy::class)]
 class ExtApp extends Model
 {
     /**
@@ -67,7 +70,7 @@ class ExtApp extends Model
     ];
 
     protected $casts = [
-        'app_public_key' => AsAsymmetricPublicKeyCast::class,
+        'app_public_key' => AsAsymmetricPublicKey::class,
     ];
 
     /**

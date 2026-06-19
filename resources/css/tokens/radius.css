@@ -1,0 +1,15 @@
+/* ==========================================================================
+   Border Radius Tokens
+   Derived from existing: --border-radius-tight=5px, --border-radius-normal=10px,
+   --border-radius-large=30px
+   ========================================================================== */
+
+@layer tokens {
+    :root {
+        --corner-xs:   8px;
+        --corner-sm:   12px;    /* --border-radius-tight */
+        --corner-md:   16px;    /* --border-radius-normal */
+        --corner-lg:   24px;    /* --border-radius-large */
+        --corner-full: 9999px;
+    }
+}

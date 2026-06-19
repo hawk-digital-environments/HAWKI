@@ -247,9 +247,9 @@ app/Services/AI/Providers/MyProvider/
 ```php
 <?php
 
-namespace App\Services\AI\Clients\MyProvider;
+namespace App\Services\Ai\Clients\MyProvider;
 
-use App\Services\AI\Clients\Implementations\AbstractClient;
+use App\Services\Ai\Clients\Implementations\AbstractClient;
 
 class MyProviderClient extends AbstractClient
 {
@@ -284,9 +284,9 @@ class MyProviderClient extends AbstractClient
 ```php
 <?php
 
-namespace App\Services\AI\Clients\MyProvider;
+namespace App\Services\Ai\Clients\MyProvider;
 
-use App\Services\AI\Clients\Requests\AiRequest;
+use App\Services\Ai\Clients\Requests\AiRequest;
 
 class MyProviderRequestConverter
 {
@@ -321,9 +321,9 @@ class MyProviderRequestConverter
 ```php
 <?php
 
-namespace App\Services\AI\Clients\MyProvider\Request;
+namespace App\Services\Ai\Clients\MyProvider\Request;
 
-use App\Services\AI\Clients\Implementations\AbstractClientRequest;use App\Services\AI\Clients\Responses\AiResponse;use App\Services\AI\Values\AiModelConfig;
+use App\Services\Ai\Clients\Implementations\AbstractClientRequest;use App\Services\Ai\Clients\Responses\AiResponse;use App\Services\Ai\Values\AiModelConfig;
 
 class MyProviderNonStreamingRequest extends AbstractClientRequest
 {

@@ -7,7 +7,6 @@ namespace App\Services\Chat\Room\SyncLog;
 
 use App\Events\InvitationCreatedEvent;
 use App\Events\InvitationUpdatedEvent;
-use App\Http\Resources\InvitationResource;
 use App\Models\Invitation;
 use App\Services\SyncLog\Handlers\AbstractSyncLogHandler;
 use App\Services\SyncLog\Value\SyncLogEntryConstraints;
@@ -53,7 +52,7 @@ class InvitationHandler extends AbstractSyncLogHandler
      */
     public function convertModelToResource(mixed $model): JsonResource
     {
-        return new InvitationResource($model);
+//        return new InvitationResource($model);
     }
 
     /**

@@ -16,17 +16,19 @@ readonly class LocaleSettingMiddleware
     )
     {
     }
-    
+
     public function handle(Request $request, Closure $next)
     {
-        if ($request->hasHeader('X-App-Locale')) {
-            $requestLocale = $this->localeService->getMostLikelyLocale($request->header('X-App-Locale'));
-            $this->localeService->setCurrentLocale($requestLocale, false);
-        } else if ($request->query('lang')) {
-            $requestLocale = $this->localeService->getMostLikelyLocale($request->query('lang'));
-            $this->localeService->setCurrentLocale($requestLocale, true);
+        $localeValue = $request->header('X-App-Locale') ?? $request->query('lang');
+        if (!empty($localeValue)) {
+            $requestLocale = $this->localeService->getMostLikelyLocale($localeValue);
+            $this->localeService->setCurrentLocale($requestLocale);
+        } else {
+            $requestLocale = $this->localeService->getCurrentLocale();
         }
-        
+
+        $request->setLocale(strtolower($requestLocale->shortName));
+
         return $next($request);
     }
 }

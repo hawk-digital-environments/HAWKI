@@ -83,6 +83,33 @@ class PrivateMessageHandler extends AbstractMessageHandler
             ]
         ]);
 
+        // Add newly added attachments
+        if (is_array($data['content']['attachments'] ?? null)) {
+            foreach ($data['content']['attachments'] as $uuid) {
+                $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, $uuid);
+                if ($this->attachmentService->findOneByStoredFileIdentifier($identifier)) {
+                    continue; //skip already attached files
+                }
+                $this->storageService->persistTemporaryFile($identifier);
+                $storedFile = $this->storageService->retrieve($identifier);
+                if ($storedFile) {
+                    $this->attachmentService->assignToMessage($message, $storedFile, Auth::user());
+                }
+            }
+        }
+
+        // Clean up removed attachments
+        foreach ($message?->attachments()->pluck('uuid')->toArray() ?? [] as $existingUuid) {
+            if (!in_array($existingUuid, $data['content']['attachments'] ?? [], true)) {
+                //attachment removed, delete the record and the file
+                $identifier = StoredFileIdentifier::fromCategoryAndUuid(StoredFileCategory::PRIVATE, $existingUuid);
+                $attachment = $this->attachmentService->findOneByStoredFileIdentifier($identifier);
+                if ($attachment) {
+                    $attachment->delete();
+                    $this->storageService->delete($identifier);
+                }
+            }
+        }
         return $message;
     }
 

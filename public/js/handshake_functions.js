@@ -64,6 +64,9 @@ async function checkPasskey() {
     const repeatWrapper = document.getElementById('passkey-repeat');
 
     //Show Repeat Passkey
+    if (!repeatWrapper) {
+        return;
+    }
     if (repeatWrapper.style.display === 'none') {
         repeatWrapper.style.display = 'flex';
         repeatWrapper.querySelector('input').focus();
@@ -104,8 +107,9 @@ async function checkPasskey() {
     backupHash = generatePasskeyBackupHash();
 
     document.querySelector('#backup-hash').innerText = backupHash;
+    const userInfo = await window.getConnectionWithUserInfo().userinfo;
     // derive key from backup hash
-    const passkeyBackupSalt = hawkiConnection('salts.backup');
+    const passkeyBackupSalt = window.getConfig().salts.backup;
     const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
     //encrypt Passkey as plaintext
     const cryptoPasskey = await encryptWithSymKey(derivedKey, enteredPasskey, false);
@@ -274,8 +278,8 @@ async function completeRegistration() {
 
         const data = await response.json();
         if (data.success) {
-            userInfo = data.userData;
-            await initializeNewKeychain();
+            await window.userKeychain.initializeNewKeychain();
+
             window.location.href = data.redirectUri;
         }
 
@@ -298,10 +302,9 @@ async function verifyEnteredPassKey(provider) {
         return;
     }
 
-    isVerified = await verifyPasskey(enteredKey);
-
-    if (isVerified) {
+    if (await window.userKeychain.validateKeychainPassword(enteredKey)) {
         await setPassKey(enteredKey);
+        await window.oldUiBridge.runMigrations('after_passkey');
         window.location.href = '/chat';
     } else {
         errorMessage.innerText = 'Failed to verify passkey. Please try again.';
@@ -311,11 +314,6 @@ async function verifyEnteredPassKey(provider) {
     }
 
 }
-
-async function verifyPasskey(passkey) {
-    return canPasskeyDecryptKeychain(passkey);
-}
-
 
 function uploadTextFile() {
     // Create a file input element
@@ -372,7 +370,7 @@ async function extractPasskey() {
     }
 
     // derive Key from entered backupkey
-    const passkeyBackupSalt = hawkiConnection('salts.backup');
+    const passkeyBackupSalt = window.getConfig().salts.backup;
     const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
     // console.log(derivedKey);
     try {
@@ -383,7 +381,7 @@ async function extractPasskey() {
             passkeyBackup.tag,
             false);
 
-        if (await verifyPasskey(passkey)) {
+        if (await window.userKeychain.validateKeychainPassword(passkey)) {
             await setPassKey(passkey);
             switchSlide(4);
             document.querySelector('#passkey-field').innerText = passkey;

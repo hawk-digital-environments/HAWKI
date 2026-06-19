@@ -7,18 +7,25 @@ use App\Events\MemberRemovedFromRoomEvent;
 use App\Events\MemberUpdatedEvent;
 use App\Events\RoomDeletingEvent;
 use App\Events\RoomUpdatedEvent;
+use App\Models\Scopes\RoomAccessScope;
+use App\Policies\RoomPolicy;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
-use App\Services\Chat\Message\MessageHandlerFactory;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
+use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
+use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use Exception;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
+#[UsePolicy(RoomPolicy::class)]
 class Room extends Model
 {
+    use HasContextualScopesTrait;
+
     private array|null $deferredMemberEvents = null;
 
     protected $fillable = [
@@ -36,6 +43,11 @@ class Room extends Model
         // the audience for sync logs.
         'updated' => RoomUpdatedEvent::class
     ];
+
+    protected static function registerScopes(ScopeRegistrar $registrar): void
+    {
+        $registrar->addScope('access', RoomAccessScope::class);
+    }
 
     protected static function boot()
     {

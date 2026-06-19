@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Middleware\LocaleSettingMiddleware;
+use App\Http\Middleware\SystemContextBootingMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use LaravelJsonApi\Core\Exceptions\JsonApiException;
+use LaravelJsonApi\Exceptions\ExceptionParser;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,8 +21,20 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__ . '/../app/Services/*/Listeners'
     ])
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->prepend(LocaleSettingMiddleware::class);
         $middleware->redirectGuestsTo('/login');
+        $middleware->statefulApi();
+        $middleware->web(
+            append: [
+                LocaleSettingMiddleware::class,
+                SystemContextBootingMiddleware::class
+            ]
+        );
+        $middleware->api(
+            append: [
+                LocaleSettingMiddleware::class,
+                SystemContextBootingMiddleware::class,
+            ]
+        );
     })
     ->withBroadcasting(
         channels: __DIR__ . '/../routes/channels.php',
@@ -29,8 +44,21 @@ return Application::configure(basePath: dirname(__DIR__))
         ]
     )
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->dontReport(
+            JsonApiException::class,
+        );
+        $exceptions->render(
+            ExceptionParser::renderer(),
+        );
         $exceptions->shouldRenderJsonWhen(function (Request $request) {
             return $request->expectsJson() || $request->is('api/*');
+        });
+        // Ensures that if we are in our api endpoint, we always return exception responses in the json api format
+        $exceptions->renderable(function (\Throwable $e, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return ExceptionParser::make()->accept(fn() => true)->render($e, $request);
+            }
+            return null;
         });
     })
     ->create();

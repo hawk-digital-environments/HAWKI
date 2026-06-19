@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Casts;
 
-use App\Casts\AsSymmetricCryptoValueCast;
+use App\Casts\AsSymmetricCryptoValue;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
-#[CoversClass(AsSymmetricCryptoValueCast::class)]
+#[CoversClass(AsSymmetricCryptoValue::class)]
 class AsSymmetricCryptoValueCastTest extends TestCase
 {
     // =========================================================================
@@ -19,8 +19,8 @@ class AsSymmetricCryptoValueCastTest extends TestCase
 
     public function testItConstructs(): void
     {
-        $sut = new AsSymmetricCryptoValueCast();
-        static::assertInstanceOf(AsSymmetricCryptoValueCast::class, $sut);
+        $sut = new AsSymmetricCryptoValue();
+        static::assertInstanceOf(AsSymmetricCryptoValue::class, $sut);
     }
 
     // =========================================================================
@@ -30,9 +30,9 @@ class AsSymmetricCryptoValueCastTest extends TestCase
     public function testItGetCastsStringToSymmetricCryptoValue(): void
     {
         $expected = new SymmetricCryptoValue('iv', 'tag', 'ciphertext');
-        $serialized = (string) $expected;
+        $serialized = (string)$expected;
 
-        $sut = new AsSymmetricCryptoValueCast();
+        $sut = new AsSymmetricCryptoValue();
         $model = $this->createMock(Model::class);
 
         $result = $sut->get($model, 'key', $serialized, []);
@@ -51,17 +51,17 @@ class AsSymmetricCryptoValueCastTest extends TestCase
     {
         $value = new SymmetricCryptoValue('iv', 'tag', 'ciphertext');
 
-        $sut = new AsSymmetricCryptoValueCast();
+        $sut = new AsSymmetricCryptoValue();
         $model = $this->createMock(Model::class);
 
         $result = $sut->set($model, 'key', $value, []);
 
-        static::assertSame((string) $value, $result);
+        static::assertSame((string)$value, $result);
     }
 
     public function testItSetPassesThroughStringValue(): void
     {
-        $sut = new AsSymmetricCryptoValueCast();
+        $sut = new AsSymmetricCryptoValue();
         $model = $this->createMock(Model::class);
 
         $result = $sut->set($model, 'key', 'raw-string-value', []);

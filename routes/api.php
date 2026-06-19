@@ -1,106 +1,161 @@
 <?php
 
-use App\Http\Controllers\ExtAppController;
-use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RoomController;
+use App\Http\Controllers\Api\V1\AiCapabilityController;
+use App\Http\Controllers\Api\V1\AiModelController;
+use App\Http\Controllers\Api\V1\AiProviderController;
+use App\Http\Controllers\Api\V1\AiToolController;
+use App\Http\Controllers\Api\V1\ConfigController;
+use App\Http\Controllers\Api\V1\ConnectionController;
+use App\Http\Controllers\Api\V1\ExtAppController;
+use App\Http\Controllers\Api\V1\GenericChatController;
+use App\Http\Controllers\Api\V1\McpServerController;
+use App\Http\Controllers\Api\V1\MigrationController;
+use App\Http\Controllers\Api\V1\RoomMemberController;
+use App\Http\Controllers\Api\V1\RoomMessageController;
+use App\Http\Controllers\Api\V1\SystemModelController;
+use App\Http\Controllers\Api\V1\SystemPromptController;
+use App\Http\Controllers\Api\V1\TranslationLabelController;
+use App\Http\Controllers\Api\V1\UserKeychainValueController;
+use App\Http\Controllers\Api\V1\UsersController;
 use App\Http\Controllers\StorageProxyController;
 use App\Http\Controllers\StreamController;
-use App\Http\Controllers\SyncLogController;
-use App\Http\Controllers\UserKeychainController;
-use App\Http\Middleware\SyncLogResponseEnrichingMiddleware;
+use App\Http\Middleware\Api\ApiDataScopeContextSettingMiddleware;
+use App\Http\Middleware\Api\BlockExtAppsIfNotAllowedMiddleware;
+use App\Http\Middleware\ExtApp\AppTokenForbiddenMiddleware;
+use App\Http\Middleware\ExtApp\ExtAppUserOrTokenForbiddenMiddleware;
+use App\Http\Middleware\ExternalAccessRequiredMiddleware;
+use App\JsonApi\V1\Server;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use LaravelJsonApi\Laravel\Facades\JsonApiRoute;
+use LaravelJsonApi\Laravel\Routing\ActionRegistrar;
+use LaravelJsonApi\Laravel\Routing\Relationships;
+use LaravelJsonApi\Laravel\Routing\ResourceRegistrar;
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
+Route::middleware(['auth:sanctum', 'deprecated:/api/hawki/v1/users/me'])->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Routes for external apps (with enforced app access -> Meaning the user requesting is the app itself not a regular user)
-Route::middleware(['external_access:enabled,apps', 'auth:sanctum', 'app_access:enforcedToken'])
-    ->attribute('prefix', 'apps')
-    ->group(static function () {
-        Route::group(['prefix' => 'connection'], static function () {
-            Route::get('/{ext_user_id}', [ExtAppController::class, 'getConnection']);
-            Route::post('/{ext_user_id}', [ExtAppController::class, 'createConnection']);
-        });
-    });
-
-// Routes that do not allow apps
-Route::middleware(['external_access:enabled', 'auth:sanctum', 'app_access:declined'])->group(function () {
-    
+Route::middleware([
+    ExternalAccessRequiredMiddleware::class,
+    'auth:sanctum',
+    BlockExtAppsIfNotAllowedMiddleware::class,
+    AppTokenForbiddenMiddleware::class
+])->group(function () {
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
-    
-    // The route collection for external apps
-    Route::middleware([
-        'external_access:enabled,apps',
-        SyncLogResponseEnrichingMiddleware::class
-    ])
-        ->attribute('prefix', 'apps')
-        ->group(function () {
-            Route::group(['prefix' => 'sync'], static function () {
-                Route::get('/', [SyncLogController::class, 'index'])
-                    ->name('api.external_app.syncLog');
-            });
-            
-            Route::group(['prefix' => 'keychain'], static function () {
-                Route::post('/', [UserKeychainController::class, 'update'])
-                    ->name('api.external_app.keychainUpdate');
-                Route::get('/validator', [UserKeychainController::class, 'getPasskeyValidator'])
-                    ->name('api.external_app.keychainPasskeyValidator');
-            });
-            
-            Route::get('/proxy/storage/{category}/{filename}', [StorageProxyController::class, 'streamRouted'])
-                ->where(['filename' => '.*'])
-                ->name('api.external_app.storage.proxy');
-            
-            Route::group(['prefix' => 'profile'], static function () {
-                Route::put('/', [ProfileController::class, 'update'])
-                    ->name('api.external_app.profileUpdate');
-                Route::post('/avatar', [ProfileController::class, 'uploadAvatar'])
-                    ->name('api.external_app.profileAvatarUpload');
-            });
-            
-            Route::group(['prefix' => 'rooms'], static function () {
-                Route::post('/', [RoomController::class, 'create'])
-                    ->name('api.external_app.roomCreate');
-                Route::post('/{slug}/messages/mark-read', [RoomController::class, 'markAsRead'])
-                    ->name('api.external_app.roomMessagesMarkRead');
-                Route::delete('/{slug}/membership', [RoomController::class, 'leaveRoom'])
-                    ->name('api.external_app.roomLeave');
-                
-                Route::post('/invitation/accept', [InvitationController::class, 'onAcceptInvitation'])
-                    ->name('api.external_app.roomInvitationAccept');
-                
-                Route::middleware('roomEditor')->group(function () {
-                    Route::post('/{slug}/messages', [RoomController::class, 'sendMessage'])
-                        ->name('api.external_app.roomMessagesSend');
-                    Route::post('/{slug}/messages/attachments', [RoomController::class, 'storeAttachment'])
-                        ->name('api.external_app.roomMessagesAttachmentUpload');
-                    Route::put('/{slug}/messages', [RoomController::class, 'updateMessage'])
-                        ->name('api.external_app.roomMessagesEdit');
-                    Route::post('/{slug}/messages/stream-ai', [StreamController::class, 'handleAiConnectionRequest'])
-                        ->middleware('external_access:apps_groups_ai')
-                        ->name('api.external_app.roomMessagesAiSend');
-                });
-                
-                Route::middleware('roomAdmin')->group(function () {
-                    Route::put('/{slug}', [RoomController::class, 'update'])
-                        ->name('api.external_app.roomUpdate');
-                    Route::post('/{slug}/avatar', [RoomController::class, 'uploadAvatar'])
-                        ->name('api.external_app.roomAvatarUpload');
-                    Route::delete('/{slug}', [RoomController::class, 'delete'])
-                        ->name('api.external_app.roomRemove');
-                    
-                    Route::post('/{slug}/member-candidate-search', [RoomController::class, 'searchUser'])
-                        ->name('api.external_app.roomMemberCandidateSearch');
-                    Route::post('/{slug}/members', [InvitationController::class, 'storeInvitations'])
-                        ->name('api.external_app.roomInviteMember');
-                    Route::put('/{slug}/members', [RoomController::class, 'addMember'])
-                        ->name('api.external_app.roomEditMember');
-                    Route::delete('/{slug}/members', [RoomController::class, 'kickMember'])
-                        ->name('api.external_app.roomRemoveMember');
-                });
-            });
-        });
+
+    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function () {
+    });
 });
+
+Route::middleware([
+    'auth:sanctum',
+    BlockExtAppsIfNotAllowedMiddleware::class,
+    AppTokenForbiddenMiddleware::class
+])->group(function () {
+    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function () {
+
+        Route::get('/proxy/storage/{identifier}', [StorageProxyController::class, 'streamRouted'])
+            ->where(['identifier' => '.*']);
+
+    });
+});
+
+JsonApiRoute::server('v1')
+    ->prefix(Server::BASE_URL_PREFIX)
+    ->middleware(
+        BlockExtAppsIfNotAllowedMiddleware::class,
+        AppTokenForbiddenMiddleware::class,
+        ApiDataScopeContextSettingMiddleware::class,
+    )
+    ->resources(function (ResourceRegistrar $server) {
+        $server->resource('connections', ConnectionController::class)
+            ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
+            ->only('show');
+
+        $server->resource('migrations', MigrationController::class)
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/apply', 'markMigrationAsApplied');
+            })
+            ->only('index', 'show');
+
+        $server->resource('ext-apps', ExtAppController::class)
+            ->withoutMiddleware(ExternalAccessRequiredMiddleware::class)
+            ->middleware(ExtAppUserOrTokenForbiddenMiddleware::class)
+            ->only('show')
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/establish-connection', 'establishConnection');
+                $actions->get('actions/proxy-logo/{appId}', 'logoProxy')
+                    ->name('proxyLogo')
+                    ->middleware('signed');
+            });
+
+        $server->resource('configs', ConfigController::class)
+            ->only('show');
+
+        $server->resource('translation-labels', TranslationLabelController::class)
+            ->only('show');
+
+        $server->resource('mcp-servers', McpServerController::class)
+            ->only('index', 'show')
+            ->relationships(function ($relationships) {
+                $relationships->hasMany('tools')->readOnly();
+            });
+
+        $server->resource('ai-tools', AiToolController::class)
+            ->only('index', 'show')
+            ->relationships(function ($relationships) {
+                $relationships->hasOne('server')->readOnly();
+                $relationships->hasMany('models')->readOnly();
+            });
+
+        $server->resource('ai-tool-capabilities', AiCapabilityController::class)
+            ->only('index');
+
+        $server->resource('ai-providers', AiProviderController::class)
+            ->only('index', 'show')
+            ->relationships(function ($relationships) {
+                $relationships->hasMany('models')->readOnly();
+            });
+
+        $server->resource('ai-models', AiModelController::class)
+            ->only('index', 'show')
+            ->relationships(function ($relationships) {
+                $relationships->hasOne('provider')->readOnly();
+                $relationships->hasMany('tools')->readOnly();
+            });
+
+        $server->resource('system-models', SystemModelController::class)
+            ->readOnly()
+            ->relationships(function (Relationships $relationships) {
+                $relationships->hasOne('model')->readOnly();
+            });
+
+        $server->resource('system-prompts', SystemPromptController::class)
+            ->readOnly();
+
+        $server->resource('users', UsersController::class)
+            ->readOnly()
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->get('me', 'handleMe')
+                    ->withoutMiddleware(AppTokenForbiddenMiddleware::class);
+            });
+
+        $server->resource('user-keychain-values', UserKeychainValueController::class)
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->get('actions/validator', 'getPasskeyValidator')
+                    ->name('validator');
+                $actions->post('actions/batch-update', 'batchUpdate')
+                    ->name('batchUpdate');
+            })
+            ->readOnly();
+
+        $server->resource('rooms', \App\Http\Controllers\Api\V1\RoomController::class)
+            ->readOnly();
+
+        $server->resource('room-messages', RoomMessageController::class)
+            ->readOnly();
+
+        $server->resource('room-members', RoomMemberController::class)
+            ->readOnly();
+    });

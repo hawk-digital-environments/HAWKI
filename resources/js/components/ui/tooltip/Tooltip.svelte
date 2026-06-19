@@ -1,0 +1,134 @@
+<script lang="ts">
+    import {mergeProps, Tooltip as TooltipPrimitive, type TooltipContentProps} from 'bits-ui';
+    import type {Snippet} from 'svelte';
+    import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
+    import type {HTMLAttributes} from 'svelte/elements';
+    import SnippetOrStringTrigger from '$lib/components/util/snippetOrString/SnippetOrStringTrigger.svelte';
+
+    type Props = Omit<HTMLAttributes<HTMLDivElement>, 'children'> & Partial<{
+        /** Delay in milliseconds before the tooltip is shown after hovering over the trigger. Default is 200ms. */
+        delayDuration?: number;
+        /** The content to display inside the tooltip. Can be a string or a Svelte snippet. */
+        tooltip: Snippet | string;
+        /** Preferred side relative to the trigger. */
+        side?: 'top' | 'right' | 'bottom' | 'left';
+        /** Offset in pixels from the trigger. */
+        sideOffset?: number;
+        /**
+         * The content that triggers the tooltip, typically an icon or button. Can be a string or a Svelte snippet.
+         * If a snippet is provided, it will receive a `props` object as an argument, which MUST be used to spread onto the root element of the snippet.
+         * This ensures proper functionality of the tooltip trigger.
+         */
+        children?: Snippet<[{ props: Record<string, any> }]> | Snippet | string;
+    }>;
+
+    const {
+        delayDuration = 1000,
+        tooltip,
+        children,
+        side = 'top',
+        sideOffset = 4,
+        ...restProps
+    }: Props = $props();
+
+    const longPress = $state.raw({
+        timer: null as ReturnType<typeof setTimeout> | null
+    });
+
+    let open = $state(false);
+
+    function handleTouchStart(e: TouchEvent) {
+        longPress.timer = setTimeout(() => {
+            open = true;
+        }, 300);
+    }
+
+    function handleTouchEnd() {
+        if (longPress.timer) {
+            clearTimeout(longPress.timer);
+            longPress.timer = null;
+        }
+    }
+</script>
+
+<TooltipPrimitive.Provider>
+    <TooltipPrimitive.Root
+        delayDuration={delayDuration}
+        open={open}
+        onOpenChange={o => open = o}
+        ignoreNonKeyboardFocus>
+        <TooltipPrimitive.Trigger>
+            {#snippet child(a)}
+                <SnippetOrStringTrigger value={children as string|Snippet} snippetArgs={{
+                    props: mergeProps(
+                        a.props,
+                        {
+                            ontouchstart: handleTouchStart,
+                            ontouchend: handleTouchEnd,
+                            ontouchcancel: handleTouchEnd,
+                            oncontextmenu: (e: Event) => e.preventDefault() // Prevent context menu on long press
+                        }
+                    )
+                }}/>
+            {/snippet}
+        </TooltipPrimitive.Trigger>
+        <TooltipPrimitive.Portal>
+            <TooltipPrimitive.Content
+                {...mergeProps({class: 'tooltip-content', side, sideOffset}, restProps) as TooltipContentProps}
+            >
+                <SnippetOrString value={tooltip}/>
+            </TooltipPrimitive.Content>
+        </TooltipPrimitive.Portal>
+    </TooltipPrimitive.Root>
+</TooltipPrimitive.Provider>
+
+<style>
+    :global(.tooltip-content) {
+        --tooltip-bg: var(--color-surface-raised);
+        --tooltip-text: var(--color-text);
+
+        position: relative;
+        border-radius: var(--corner-sm);
+        border: var(--border);
+        padding-inline: var(--space-3);
+        padding-block: var(--space-1);
+        font-size: var(--font-size-xxs);
+        line-height: var(--line-height-normal);
+        background-color: var(--tooltip-bg);
+        color: var(--tooltip-text);
+        box-shadow: var(--elevation-1);
+        z-index: 100;
+        max-width: 300px;
+
+        &[data-state="delayed-open"],
+        &[data-state="instant-open"] {
+            animation: tooltip-in 100ms var(--easing-default, ease);
+        }
+
+        &[data-state="closed"] {
+            animation: tooltip-out 100ms var(--easing-default, ease);
+        }
+    }
+
+    @keyframes tooltip-in {
+        from {
+            opacity: 0;
+            scale: 0.96;
+        }
+        to {
+            opacity: 1;
+            scale: 1;
+        }
+    }
+
+    @keyframes tooltip-out {
+        from {
+            opacity: 1;
+            scale: 1;
+        }
+        to {
+            opacity: 0;
+            scale: 0.96;
+        }
+    }
+</style>

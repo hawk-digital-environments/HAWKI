@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use App\Events\MessageUpdatedEvent;
+use App\Policies\RoomMessagePolicy;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
-
+#[UsePolicy(RoomMessagePolicy::class)]
 class Message extends Model
 {
     // NOTE: CONTENT = RAW CONTENT
@@ -31,7 +34,6 @@ class Message extends Model
         'metadata' => 'array',
     ];
 
-
     /**
      * @return BelongsTo<Room, $this>
      */
@@ -49,11 +51,19 @@ class Message extends Model
     }
 
     /**
-     * @return User|null
+     * @return HasOneThrough<User, Member, $this>
      */
-    public function user(): ?User
+    public function user(): HasOneThrough
     {
-        return $this->member?->user;
+        return $this->hasOneThrough(User::class, Member::class, 'id', 'id', 'member_id', 'user_id');
+    }
+
+    /**
+     * @return MorphMany<Attachment, $this>
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 
     /**
@@ -79,14 +89,6 @@ class Message extends Model
             MessageUpdatedEvent::dispatch($this);
             $this->save();
         }
-    }
-
-    /**
-     * @return MorphMany<Attachment, $this>
-     */
-    public function attachments(): MorphMany
-    {
-        return $this->morphMany(Attachment::class, 'attachable');
     }
 
     /**

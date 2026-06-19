@@ -8,9 +8,15 @@ use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Room;
 use App\Models\User;
-use App\Services\AI\AiService;
-use App\Services\AI\UsageAnalyzerService;
-use App\Services\AI\Value\AiResponse;
+use App\Services\Ai\Agent\Chat\ChatRequestFactory;
+use App\Services\Ai\Agent\Chat\Values\ChatRequest;
+use App\Services\Ai\Agent\Chat\Values\ChatResponse;
+use App\Services\Ai\Agent\Chat\Values\StreamingChatResponse;
+use App\Services\Ai\AiService;
+use App\Services\Ai\UsageAnalyzerService;
+use App\Services\Ai\Values\Chunks\MaxToolExecutionsChunk;
+use App\Services\Ai\Values\Chunks\StreamDoneChunk;
+use App\Services\Ai\Values\TokenUsage;
 use App\Services\Api\ApiRequestMigrator;
 use App\Services\Api\Value\ApiRequestFieldConfig;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
@@ -20,6 +26,11 @@ use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use NeuronAI\Chat\Messages\Stream\Chunks\ReasoningChunk;
+use NeuronAI\Chat\Messages\Stream\Chunks\TextChunk;
+use NeuronAI\Chat\Messages\Stream\Chunks\ToolCallChunk;
+use NeuronAI\Chat\Messages\Stream\Chunks\ToolResultChunk;
+use Psr\Log\LoggerInterface;
 
 class StreamController extends Controller
 {
@@ -27,7 +38,9 @@ class StreamController extends Controller
         private readonly UsageAnalyzerService $usageAnalyzer,
         private readonly AiService            $aiService,
         private readonly AvatarStorageService $avatarStorage,
-        private readonly GroupMessageHandler  $groupMessageHandler
+        private readonly GroupMessageHandler  $groupMessageHandler,
+        private readonly ChatRequestFactory   $chatRequestFactory,
+        private readonly LoggerInterface      $logger
     )
     {
     }
@@ -61,7 +74,7 @@ class StreamController extends Controller
         $payload = $validatedData['payload'];
 
         // Handle standard response
-        $response = $this->aiService->sendRequest($payload);
+        $response = $this->aiService->sendRequestToAgent($payload);
 
         // Record usage
         $this->usageAnalyzer->submitUsageRecord($response->usage, 'api');
@@ -125,7 +138,7 @@ class StreamController extends Controller
         if ($validatedData['broadcast']) {
             $room = Room::where('slug', $validatedData['slug'])->firstOrFail();
             try {
-                $model = $this->aiService->getModelOrFail($validatedData['payload']['model']);
+                $model = $this->aiService->getModels()->findOneOrFail($validatedData['payload']['model']);
             } catch (\Throwable) {
                 return response()->json(['error' => 'The requested model is not available.'], 400);
             }
@@ -158,36 +171,52 @@ class StreamController extends Controller
         $hawki = User::find(1); // HAWKI user
         $avatar_url = $this->avatarStorage->retrieve(StoredFileIdentifier::tryFromUserAvatar($hawki))?->getUrl();
 
-        if ($validatedData['payload']['stream']) {
-            // Handle streaming response
-            $this->handleStreamingRequest($validatedData['payload'], $hawki, $avatar_url);
-        } else {
-            // Handle standard response
-            $response = $this->aiService->sendRequest($validatedData['payload']);
-
-            $this->usageAnalyzer->submitUsageRecord($response->usage, 'private');
-
-            // Return response to client
-            return response()->json([
-                'author' => [
-                    'username' => $hawki->username,
-                    'name' => $hawki->name,
-                    'avatar_url' => $avatar_url,
-                ],
-                'model' => $validatedData['payload']['model'],
-                'isDone' => true,
-                'content' => json_encode($response->content),
-                'tools' => $validatedData['payload']['tools'] ?? null,
-            ]);
+        try {
+            $agentRequest = $this->aiService->getAgentRequestFactory()->createFromPayload($validatedData['payload']);
+        } catch (\Throwable $e) {
+            $this->logger->error('Error creating agent request from payload', ['exception' => $e]);
+            return response()->json(['success' => false], 400);
         }
 
-        return null;
+        try {
+            $response = $this->aiService->sendRequestToAgent($agentRequest);
+        } catch (\Throwable $e) {
+            $this->logger->error('Error sending request to agent', ['exception' => $e]);
+            return response()->json(['success' => false], 500);
+        }
+
+        if ($agentRequest instanceof ChatRequest && $response instanceof StreamingChatResponse) {
+            $this->handleStreamingRequest($agentRequest, $response, $hawki, $avatar_url);
+            return null;
+        }
+
+        if (!$response instanceof ChatResponse) {
+            $this->logger->error('Unexpected response type from agent', ['response' => $response]);
+            return response()->json(['success' => false], 500);
+        }
+
+//        $this->usageAnalyzer->submitUsageRecord($response->usage, 'private');
+
+        // Return response to client
+        return response()->json([
+            'author' => [
+                'username' => $hawki->username,
+                'name' => $hawki->name,
+                'avatar_url' => $avatar_url,
+            ],
+            'model' => $validatedData['payload']['model'],
+            'isDone' => true,
+            'content' => json_encode([
+                'text' => $response->content
+            ]),
+            'tools' => $validatedData['payload']['tools'] ?? null,
+        ]);
     }
 
     /**
      * Handle streaming request with the new architecture
      */
-    private function handleStreamingRequest(array $payload, User $user, ?string $avatar_url)
+    private function handleStreamingRequest(ChatRequest $request, StreamingChatResponse $response, User $user, ?string $avatar_url): void
     {
         // Disable output buffering
         while (ob_get_level() > 0) {
@@ -201,34 +230,92 @@ class StreamController extends Controller
         header('Access-Control-Allow-Origin: *');
         header('X-Accel-Buffering: no');
 
-        $onData = function (AiResponse $response) use ($user, $avatar_url, $payload) {
-
-//            \Log::debug('AI Response', $response->jsonSerialize());
-
-            $this->usageAnalyzer->submitUsageRecord(
-                $response->usage,
-                'private',
-            );
-
+        $sendData = function (
+            string     $content,
+            string     $type,
+            bool       $isDone = false,
+            array|null $status = null
+        ) use ($user, $avatar_url, $request) {
             $messageData = [
                 'author' => [
                     'username' => $user->username,
                     'name' => $user->name,
                     'avatar_url' => $avatar_url,
                 ],
-                'model' => $payload['model'],
-                'tools' => $payload['tools'] ?? null,
-                'isDone' => $response->isDone,
-                'content' => json_encode($response->content),
-                'type' => $response->type,
-                'status' => $response->status,
+                'model' => $request->model->model_id,
+                'tools' => $request->tools,
+                'isDone' => $isDone,
+                'content' => json_encode([
+                    'text' => $content
+                ]),
+                'type' => $type,
+                'status' => $status,
             ];
 
             echo json_encode($messageData) . "\n";
             flush();
         };
 
-        $this->aiService->sendStreamRequest($payload, $onData);
+        $sendStatus = function (string $statusKey, mixed $value) use ($sendData) {
+            $sendData(
+                content: '',
+                type: 'status',
+                isDone: false,
+                status: [
+                    'key' => $statusKey,
+                    'value' => $value
+                ]
+            );
+        };
+
+        $lastChunkType = null;
+
+        $sendStatusOnChange = function (string $chunkType, string $statusKey, mixed $value) use (&$lastChunkType, $sendStatus) {
+            if ($lastChunkType === null || $chunkType !== $lastChunkType) {
+                $sendStatus($statusKey, $value);
+            }
+        };
+
+        foreach ($response->chunks() as $chunk) {
+            if ($chunk instanceof TextChunk) {
+                $sendData(
+                    content: $chunk->content,
+                    type: 'message',
+                    isDone: false,
+                );
+            }
+            if ($chunk instanceof ReasoningChunk) {
+                $sendStatusOnChange(ReasoningChunk::class, 'reasoning', 'Thinking...');
+                $sendData(
+                    content: $chunk->content,
+                    type: 'message',
+                    isDone: false,
+                );
+            }
+            if ($chunk instanceof ToolCallChunk) {
+                $sendStatusOnChange(ToolCallChunk::class, 'tool_call', [$chunk->tool->getName()]);
+            }
+            if ($chunk instanceof ToolResultChunk) {
+                $sendStatusOnChange(ToolResultChunk::class, 'tool_result', 'Received result from tool: ' . $chunk->tool->getName());
+            }
+            if ($chunk instanceof MaxToolExecutionsChunk) {
+                $sendStatus('max_execution', 'Maximum tool execution rounds reached. Generating final response...');
+            }
+            if ($chunk instanceof StreamDoneChunk) {
+                $sendData(content: '', type: 'message', isDone: true);
+                $this->usageAnalyzer->submitUsageRecord(
+                    new TokenUsage(
+                        model: $request->model,
+                        promptTokens: $chunk->getMessage()->getUsage()->inputTokens,
+                        completionTokens: $chunk->getMessage()->getUsage()->outputTokens,
+                    ),
+                    'private',
+                );
+                return;
+            }
+
+            $lastChunkType = get_class($chunk);
+        }
     }
 
     /**
@@ -252,7 +339,7 @@ class StreamController extends Controller
         broadcast(new RoomMessageEvent($generationStatus));
 
         // Process the request
-        $response = $this->aiService->sendRequest($data['payload']);
+        $response = $this->aiService->sendRequestToAgent($data['payload']);
 
         // Record usage
         $this->usageAnalyzer->submitUsageRecord(
@@ -323,7 +410,7 @@ class StreamController extends Controller
         ];
         SendMessage::dispatch($broadcastObject, $isUpdate)->onQueue('message_broadcast');
 
-        $model = $this->aiService->getModel($data['payload']['model']);
+        $model = $this->aiService->getModels()->findOne($data['payload']['model']);
         if ($model) {
             RoomAiWritingEndedEvent::dispatch($room, $model);
         }

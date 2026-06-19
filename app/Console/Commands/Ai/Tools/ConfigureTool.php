@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Ai\Tools;
 
 use App\Models\Ai\AiModel;
-use App\Models\Ai\Tools\AiTool;
+use App\Models\Ai\AiTool;
 use Illuminate\Console\Command;
 
 class ConfigureTool extends Command
@@ -42,7 +42,7 @@ class ConfigureTool extends Command
                 break;
             }
 
-            $field = (int) $selected[0];
+            $field = (int)$selected[0];
 
             // @phpstan-ignore-next-line - we validate input via choice options
             match ($field) {
@@ -70,7 +70,7 @@ class ConfigureTool extends Command
     private function editActive(AiTool $tool): bool
     {
         $current = $tool->active ? 'enabled' : 'disabled';
-        $new     = $tool->active ? 'disabled' : 'enabled';
+        $new = $tool->active ? 'disabled' : 'enabled';
         if ($this->confirm("Toggle active state from <fg=cyan>{$current}</> to <fg=cyan>{$new}</>?", true)) {
             $tool->active = !$tool->active;
             $this->info("  ✓ Active → <fg=cyan>{$new}</>");
@@ -89,8 +89,8 @@ class ConfigureTool extends Command
             ->toArray();
 
         $newOption = '[+ Enter a new capability]';
-        $choices   = array_merge([$newOption], $existing);
-        $choice    = $this->choice(
+        $choices = array_merge([$newOption], $existing);
+        $choice = $this->choice(
             "Select or enter a capability  <fg=gray>(current: {$tool->capability}</>)",
             $choices,
             0
@@ -153,7 +153,7 @@ class ConfigureTool extends Command
         ))->toArray();
 
         $chosen = $this->choice('Select a tool to configure', $labels);
-        $index  = array_search($chosen, $labels);
+        $index = array_search($chosen, $labels);
 
         return $tools[$index] ?? null;
     }

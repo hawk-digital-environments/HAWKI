@@ -81,31 +81,27 @@
     </div>
 
     <script>
-        let userInfo = @json($userInfo);
+        window.OLD_UI_MIGHT_NEED_MIGRATION = true;
 
-        window.addEventListener('DOMContentLoaded', async function () {
-
-            if (await getPassKey()) {
-                window.location.href = '/chat';
-            } else {
-                console.log('opening passkey panel');
-                switchSlide(1);
-                setTimeout(() => {
-                    if (@json($activeOverlay)) {
-                        setOverlay(false, true);
-                    }
-                }, 100);
-            }
+        window.waitUntilReady(async function () {
+            window.waitUntilReadyToMigrate(async () => {
+                if (await getPassKey()) {
+                    await window.oldUiBridge.runMigrations('after_passkey');
+                    window.location.href = '/chat';
+                } else {
+                    await window.oldUiBridge.runMigrations('after_login');
+                    switchSlide(1);
+                    setTimeout(() => {
+                        if (@json($activeOverlay)) {
+                            setOverlay(false, true);
+                        }
+                    }, 100);
+                }
+            });
         });
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const doAllowPaste = @json($allowPaste);
-            const charLimit = @json($charLimit);
-            initializePasskeyInputs(
-                false,
-                doAllowPaste,
-                charLimit
-            );
+        window.waitUntilReady(function () {
+            initializePasskeyInputs(false);
         });
     </script>
 @endsection

@@ -7,18 +7,18 @@ namespace App\Services\ExtApp\Listeners;
 
 use App\Events\ExtAppUserRemovedEvent;
 use App\Events\UserRemovedEvent;
-use App\Services\ExtApp\Db\AppUserDb;
+use App\Services\ExtApp\Repositories\ExtAppUserRepository;
 use Psr\Log\LoggerInterface;
 
 class UserRemovalListener
 {
     public function __construct(
-        protected AppUserDb       $appUserDb,
-        protected LoggerInterface $log
+        protected ExtAppUserRepository $appUserDb,
+        protected LoggerInterface      $log
     )
     {
     }
-    
+
     public function handle(UserRemovedEvent $event): void
     {
         foreach ($this->appUserDb->findByUserId($event->user->id) as $appUser) {

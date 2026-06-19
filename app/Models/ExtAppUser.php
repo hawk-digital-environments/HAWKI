@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Casts\AsAsymmetricPublicKeyCast;
-use App\Casts\AsHybridCryptoValueCast;
+use App\Casts\AsAsymmetricPublicKey;
+use App\Casts\AsHybridCryptoValue;
 use App\Events\ExtAppUserCreatedEvent;
 use App\Events\ExtAppUserRemovedEvent;
 use Illuminate\Database\Eloquent\Model;
@@ -24,9 +24,9 @@ class ExtAppUser extends Model
     ];
 
     protected $casts = [
-        'user_public_key' => AsAsymmetricPublicKeyCast::class,
-        'user_private_key' => AsHybridCryptoValueCast::class,
-        'api_token' => AsHybridCryptoValueCast::class,
+        'user_public_key' => AsAsymmetricPublicKey::class,
+        'user_private_key' => AsHybridCryptoValue::class,
+        'api_token' => AsHybridCryptoValue::class,
     ];
 
     protected $dispatchesEvents = [
@@ -39,7 +39,7 @@ class ExtAppUser extends Model
      */
     public function app(): BelongsTo
     {
-        return $this->belongsTo(ExtApp::class);
+        return $this->belongsTo(ExtApp::class, 'ext_app_id');
     }
 
     /**

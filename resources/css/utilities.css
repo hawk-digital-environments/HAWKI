@@ -1,0 +1,107 @@
+/* ==========================================================================
+   Utilities Layer
+   Minimal, purposeful helpers. Do NOT add utilities here speculatively —
+   only add a class once it has been needed in 3+ separate components.
+   ========================================================================== */
+
+@layer utilities {
+    /* ── Display ────────────────────────────────────────────────────────── */
+    .u-flex {
+        display: flex;
+    }
+
+    .u-flex-col {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .u-grid {
+        display: grid;
+    }
+
+    .u-hidden {
+        display: none;
+    }
+
+    .u-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* ── Flex alignment ─────────────────────────────────────────────────── */
+    .u-items-center {
+        align-items: center;
+    }
+
+    .u-items-start {
+        align-items: flex-start;
+    }
+
+    .u-items-end {
+        align-items: flex-end;
+    }
+
+    .u-justify-center {
+        justify-content: center;
+    }
+
+    .u-justify-between {
+        justify-content: space-between;
+    }
+
+    .u-justify-end {
+        justify-content: flex-end;
+    }
+
+    /* ── Text ───────────────────────────────────────────────────────────── */
+    .u-text-center {
+        text-align: center;
+    }
+
+    .u-text-muted {
+        color: var(--color-text-muted);
+    }
+
+    .u-text-accent {
+        color: var(--color-accent-text);
+    }
+
+    .u-truncate {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ── Spacing ────────────────────────────────────────────────────────── */
+    .u-gap-1 {
+        gap: var(--space-1);
+    }
+
+    .u-gap-2 {
+        gap: var(--space-2);
+    }
+
+    .u-gap-3 {
+        gap: var(--space-3);
+    }
+
+    .u-gap-4 {
+        gap: var(--space-4);
+    }
+
+    /* ── Interaction ────────────────────────────────────────────────────── */
+    .u-clickable {
+        cursor: pointer;
+    }
+
+    .u-no-select {
+        user-select: none;
+    }
+}

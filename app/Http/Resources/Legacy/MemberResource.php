@@ -5,7 +5,7 @@ namespace App\Http\Resources\Legacy;
 use App\Models\Member;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
-use App\Utils\ServiceLocatorTrait;
+use App\Services\System\Container\ServiceLocatorTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,7 +16,7 @@ class MemberResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $avatarStorage = $this->getServiceInstance(AvatarStorageService::class);
+        $avatarStorage = $this->getService(AvatarStorageService::class);
 
         return [
             'user_id' => $this->user->id,

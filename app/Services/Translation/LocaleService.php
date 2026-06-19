@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Translation;
 
 
-use App\Services\Translation\Exception\DefaultLocaleIsNotActiveException;
+use App\Services\Translation\Config\LocaleConfig;
 use App\Services\Translation\Exception\SettingUnavailableLocaleException;
 use App\Services\Translation\Value\Locale;
-use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Cookie\CookieJar;
@@ -19,38 +18,18 @@ use Stringable;
 #[Singleton]
 class LocaleService
 {
-    private const SESSION_LANGUAGE_KEY = 'language';
-    private const LAST_LANGUAGE_COOKIE_KEY = 'lastLanguage_cookie';
+    private const string SESSION_LANGUAGE_KEY = 'language';
+    private const string LAST_LANGUAGE_COOKIE_KEY = 'lastLanguage_cookie';
 
     private Locale|null $currentLocale = null;
 
-    /**
-     * @var Locale[]
-     */
-    private array $locales;
-    /**
-     * @var string[]
-     */
-    private array $activeLocaleIds;
-
     public function __construct(
-        private readonly Application $application,
-        private readonly Session     $session,
-        private readonly CookieJar   $cookieJar,
-        #[Config('locale.default_language')]
-        private readonly string      $defaultLocale,
-        #[Config('locale.langs')]
-        array                        $localeConfig
+        private readonly Application  $application,
+        private readonly Session      $session,
+        private readonly CookieJar    $cookieJar,
+        private readonly LocaleConfig $localeConfig
     )
     {
-        $this->locales = Locale::createListByConfig($localeConfig);
-        $this->activeLocaleIds = array_map(static fn(Locale $locale) => $locale->lang, $this->locales);
-        if (!in_array($this->defaultLocale, $this->activeLocaleIds, true)) {
-            throw new DefaultLocaleIsNotActiveException(
-                defaultLocale: $this->defaultLocale,
-                activeLocaleIds: $this->activeLocaleIds,
-            );
-        }
     }
 
     /**
@@ -69,7 +48,7 @@ class LocaleService
      */
     public function getAvailableLocales(): array
     {
-        return $this->locales;
+        return $this->localeConfig->available;
     }
 
     /**
@@ -98,7 +77,7 @@ class LocaleService
         if ($validatedLocale === null) {
             throw new SettingUnavailableLocaleException(
                 $locale,
-                $this->activeLocaleIds,
+                array_map(static fn(Locale $locale) => $locale->lang, $this->getAvailableLocales())
             );
         }
 
@@ -117,7 +96,7 @@ class LocaleService
      */
     public function getDefaultLocale(): Locale
     {
-        return $this->resolveLocaleObject($this->defaultLocale);
+        return $this->localeConfig->default;
     }
 
     /**
@@ -255,18 +234,28 @@ class LocaleService
 
         if (strlen($locale) === 2) {
             // If the locale is given as a 2-letter code, we try to find a matching locale by comparing the first 2 letters of the active locales.
-            foreach ($this->locales as $configuredLocale) {
+            foreach ($this->localeConfig->available as $configuredLocale) {
                 if (stripos($configuredLocale->lang, $locale) === 0) {
                     return $configuredLocale;
                 }
             }
-        } else {
-            foreach ($this->locales as $configuredLocale) {
-                if (strtolower($configuredLocale->lang) === $locale) {
-                    return $configuredLocale;
-                }
+        }
+
+        // We compare the given locale with the active locales in a case-insensitive way, and return the first match we find.
+        foreach ($this->localeConfig->available as $configuredLocale) {
+            if (strtolower($configuredLocale->lang) === $locale) {
+                return $configuredLocale;
             }
         }
+
+        // If not found, try to match only the first two letters of the locale (e.g. "en" for "en_US")
+        $localePrefix = substr($locale, 0, 2);
+        foreach ($this->localeConfig->available as $configuredLocale) {
+            if (stripos($configuredLocale->lang, $localePrefix) === 0) {
+                return $configuredLocale;
+            }
+        }
+
 
         return null;
     }

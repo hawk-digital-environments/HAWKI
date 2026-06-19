@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-	<meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
 
     <title>{{ env('APP_NAME') }}</title>
@@ -23,15 +23,13 @@
     <x-settings-panel/>
 
     <script>
-		SwitchDarkMode(false);
-        UpdateSettingsLanguage('<x-current-locale/>');
-	</script>
-
-    <x-internal-frontend-connection/>
+        SwitchDarkMode(false);
+        UpdateSettingsLanguage();
+    </script>
 </head>
 <body>
-    @include('partials.overlay')
+@include('partials.overlay')
 
-    @yield('content')
+@yield('content')
 </body>
 </html>

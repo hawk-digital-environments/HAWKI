@@ -1,0 +1,146 @@
+{
+    "chat": {
+        "nameMenu": {
+            "emptyNameError": "Der Chatname darf nicht leer sein",
+            "leaveAction": "Chat verlassen",
+            "deleteAction": "Chat löschen",
+            "leaveConfirmDescription": "Bist du sicher, dass du diesen Chat verlassen möchtest? Du kannst jederzeit wieder beitreten, wenn es sich um einen Gruppenchat handelt.",
+            "deleteConfirmDescription": "Bist du sicher, dass du diesen Chat löschen möchtest? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+            "leaveConfirmTitle": "Raum :name verlassen",
+            "deleteConfirmTitle": "Chat :name löschen",
+            "newNameAriaLabel": "Neuer Chatname",
+            "actionsTooltip": "Chat Aktionen",
+            "rename": "Umbenennen"
+        },
+        "attachments": {
+            "fileTooLarge": "Die Datei \":name\" konnte nicht angehängt werden, da sie mit :size die maximale Dateigröße von :maxSize überschreitet.",
+            "unsupportedFileType": "Die Datei \":name\" konnte nicht angehängt werden, da der Dateityp \":type\" nicht unterstützt wird."
+        },
+        "export": {
+            "title": "Exportieren",
+            "tooltip": "Wähle eine Option um diese Konversation zu exportieren",
+            "print": "Print",
+            "pdf": "PDF",
+            "word": "WORD",
+            "csv": "CSV",
+            "json": "JSON"
+        },
+        "composer": {
+            "textareaPlaceholder": "Hier kannst du deine Anfrage stellen…",
+            "attachFileTooltip": "Datei anhängen",
+            "systemPromptDialog": {
+                "title": "Systemprompt bearbeiten",
+                "description": "Der Systemprompt definiert das Verhalten des Modells für diese Sitzung.",
+                "cancel": "Abbrechen",
+                "save": "Speichern",
+                "placeholder": "Du bist ein hilfreicher Assistent für akademische Arbeit…"
+            },
+            "modePanel": {
+                "editTitle": "Nachricht bearbeiten",
+                "regenTitle": "KI Nachricht regenerieren",
+                "threadTitle": "Nachricht in Thread schreiben",
+                "defaultTitle": "Modus",
+                "cancelEdit": "Bearbeitungsmodus verlassen",
+                "cancelRegen": "Regenerieren abbrechen",
+                "cancelThread": "Thread-Ansicht verlassen",
+                "cancelDefault": "Modus verlassen",
+                "actionBusy": "You can not do this right now. Please wait until the current action is finished."
+            },
+            "settings": {
+                "presetCreative": "Kreativ",
+                "presetBalanced": "Ausgeglichen",
+                "presetPrecise": "Präzise",
+                "systemPromptHeading": "Systemprompt",
+                "resetSystemPrompt": "Auf Standard-Systemprompt zurücksetzen",
+                "noSystemPrompt": "Kein Systemprompt gesetzt",
+                "settingsHeading": "Einstellungen",
+                "resetModelSettings": "Auf Model-Standard zurücksetzen",
+                "temperature": "Temperatur",
+                "temperatureInfo": "Steuert die Kreativität der Antworten der KI. Höhere Werte (z. B. 0,8) führen zu vielfältigeren und einfallsreicheren Ergebnissen; niedrigere Werte (z. B. 0,2) machen die Antworten fokussierter und vorhersehbarer.",
+                "temperatureAriaLabel": "Temperature einstellen",
+                "topP": "Top P",
+                "topPInfo": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
+                "topPAriaLabel": "Top P einstellen",
+                "adjustSettingsTooltip": "Modelleinstellungen anpassen",
+                "settingsTitle": "Modelleinstellungen"
+            },
+            "statusDot": {
+                "onlineLabel": "Online",
+                "onlineTooltip": "Online — voll verfügbar",
+                "unknownLabel": "Unbekannt",
+                "unknownAvailability": "Unbekannte Verfügbarkeit",
+                "unknownTooltip": "Unbekannte Verfügbarkeit — erhöhte Fehlerquote",
+                "offlineLabel": "Offline",
+                "offlineTooltip": "Offline — derzeit nicht erreichbar",
+                "tool": {
+                    "notSupportedLabel": "Nicht unterstützt von :model",
+                    "notSupportedTooltip": "Dieses Tool wird von :model nicht unterstützt",
+                    "offlineLabel": "Nicht verfügbar (offline)"
+                }
+            },
+            "toolMenu": {
+                "manageTools": "Tools verwalten",
+                "backButton": "Tools",
+                "deactivateTool": "Tool deaktivieren",
+                "activateTool": "Tool aktivieren",
+                "showGroupDescription": ":label — Beschreibung anzeigen",
+                "capabilitiesLabel": "Fähigkeiten",
+                "hawkiToolsLabel": "HAWKI Tools",
+                "hawkiToolsDescription": "Tools, die von HAWKI selbst zur Verfügung gestellt werden",
+                "mcpToolsLabel": "MCP-Tools",
+                "infoOffline": "(offline) | Klick für weitere Informationen",
+                "infoUnsupported": "(nicht von aktuellem Model unterstützt) | Klick für weitere Informationen",
+                "infoDefault": "Weitere Informationen zum Tool anzeigen",
+                "clickForInfo": "Klick für weitere Informationen"
+            },
+            "modelPicker": {
+                "switchModel": "Aktuelles Modell wechseln",
+                "placeholder": "Modellauswahl"
+            },
+            "fileChips": {
+                "conflictMessage": "Vom aktuellen Modell nicht unterstützt",
+                "uploadError": "Fehler beim Hochladen: :issue"
+            },
+            "fileDrop": {
+                "dropLabel": "Dateien hier ablegen"
+            },
+            "toolChips": {
+                "showMore": ":count weitere Tools anzeigen"
+            },
+            "actions": {
+                "invalidModelTooltip": "Bitte wähle ein anderes Modell oder entferne inkompatible Tools/Dateien",
+                "emptyMessageTooltip": "Bitte gib eine Nachricht ein",
+                "sendTooltip": "Nachricht senden",
+                "saveLabel": "Speichern",
+                "regenerateLabel": "Regenerieren",
+                "sendLabel": "Senden",
+                "cancelRegeneration": "Regeneration abbrechen",
+                "leaveThread": "Thread verlassen",
+                "cancelEdit": "Bearbeitung abbrechen",
+                "cancelResponse": "KI-Antwort abbrechen",
+                "improvementError": "Verbesserungsvorschläge konnten nicht geladen werden",
+                "improveTooltip": "Verbessere deine Eingabe mit KI-gestützten Vorschlägen",
+                "cancelLabel": "Abbrechen"
+            },
+            "demandBars": {
+                "low": "Niedrig",
+                "lowTooltip": "Geringe Auslastung — schnelle Antworten",
+                "medium": "Mittel",
+                "mediumTooltip": "Mittlere Auslastung — leicht verzögert",
+                "high": "Hoch",
+                "highTooltip": "Hohe Auslastung — Antworten verzögert",
+                "ariaLabel": "Auslastung: :label"
+            },
+            "regen": {
+                "onlyAssistantMessages": "Only assistant messages can be regenerated",
+                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
+                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
+                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
+            },
+            "sending": {
+                "responseError": "An error occurred while processing the response.",
+                "sendError": "An error occurred while sending the message."
+            }
+        }
+    }
+}

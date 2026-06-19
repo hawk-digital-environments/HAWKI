@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+window.waitUntilReady(function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const errorAlert = document.getElementById('app-alert-error');
     const waitingAlert = document.getElementById('app-alert-waiting');
@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             const hideWaitingAlert = showWaitingAlert();
             const passkey = await getPassKey();
-            const passkeyEncrypted = await encryptWithHybrid(passkey, publicKey);
+            const passkeyEncrypted = await window.hawkiCrypto.encryptHybrid(passkey, publicKey);
             try {
                 window.location.href = await requestRedirectUrl(confirmPostUrl, {
                     passkey: passkeyEncrypted.toString()

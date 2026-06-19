@@ -8,7 +8,6 @@ namespace App\Services\Chat\Room\SyncLog;
 use App\Events\RoomCreatedEvent;
 use App\Events\RoomDeletingEvent;
 use App\Events\RoomUpdatedEvent;
-use App\Http\Resources\RoomResource;
 use App\Models\Room;
 use App\Services\SyncLog\Handlers\AbstractSyncLogHandler;
 use App\Services\SyncLog\Value\SyncLogEntryConstraints;
@@ -62,7 +61,7 @@ class RoomHandler extends AbstractSyncLogHandler
      */
     public function convertModelToResource(mixed $model): JsonResource
     {
-        return new RoomResource($model);
+//        return new RoomResource($model);
     }
 
     /**

@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Models\Ai\Tools\AiTool;
-use App\Services\AI\Tools\Implementations\DynamicMCPTool;
-use App\Services\AI\Tools\ToolRegistry;
-use App\Services\AI\Tools\Value\ToolDefinition;
+use App\Models\Ai\AiTool;
+use App\Services\Ai\Tools\Implementations\DynamicMCPTool;
+use App\Services\Ai\Tools\ToolRegistry;
+use App\Services\Ai\Tools\Values\McpToolDefinition;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 
@@ -42,8 +42,8 @@ class ToolServiceProvider extends ServiceProvider
             foreach ($query->get() as $tool) {
                 match ($tool->type) {
                     'function' => $this->registerFunctionTool($tool, $registry),
-                    'mcp'      => $this->registerMcpTool($tool, $registry),
-                    default    => null,
+                    'mcp' => $this->registerMcpTool($tool, $registry),
+                    default => null,
                 };
             }
         } catch (\Exception $e) {
@@ -77,24 +77,24 @@ class ToolServiceProvider extends ServiceProvider
 
         $server = $tool->server;
 
-        $definition = new ToolDefinition(
+        $definition = new McpToolDefinition(
             name: $tool->name,
             description: $tool->description ?? '',
             parameters: $tool->inputSchema ?? ['type' => 'object', 'properties' => []]
         );
 
         // Derive the raw MCP tool name by stripping the server_label prefix.
-        $prefix      = $server->server_label . '-';
+        $prefix = $server->server_label . '-';
         $mcpToolName = str_starts_with($tool->name, $prefix)
             ? substr($tool->name, strlen($prefix))
             : $tool->name;
 
         $serverConfig = [
-            'url'              => $server->url,
-            'server_label'     => $server->server_label,
+            'url' => $server->url,
+            'server_label' => $server->server_label,
             'require_approval' => $server->require_approval,
-            'timeout'          => (int) $server->timeout,
-            'api_key'          => $server->api_key ?: null,
+            'timeout' => (int)$server->timeout,
+            'api_key' => $server->api_key ?: null,
         ];
 
         $registry->register(new DynamicMCPTool($tool->name, $definition, $mcpToolName, $serverConfig));

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AiConvMsg;
 use App\Models\Message;
 use App\Models\User;
-use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
 use App\Services\Routing\CacheBusting\CacheBusterGenerator;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Exception\InvalidStorageFileIdentifierStringGivenException;
@@ -23,7 +23,7 @@ class StorageProxyController extends Controller
     public function __construct(
         private readonly CacheBusterGenerator $cacheBusterGenerator,
         private readonly AvatarStorageService $avatarStorage,
-        private readonly AttachmentDb         $attachmentService,
+        private readonly AttachmentRepository $attachmentService,
         private readonly FileStorageService   $fileStorageService,
         #[CurrentUser]
         private readonly User                 $currentUser
@@ -58,7 +58,7 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentService->findByStoredFileIdentifier($identifier)?->attachable;
+        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
         if (!$attachable instanceof Message) {
             abort(400, 'Invalid request, attachment is not linked to a message');
         }
@@ -79,7 +79,7 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentService->findByStoredFileIdentifier($identifier)?->attachable;
+        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
         if (!$attachable instanceof AiConvMsg) {
             abort(400, 'Invalid request, attachment is not linked to a private ai conversation');
         }

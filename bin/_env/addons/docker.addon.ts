@@ -121,7 +121,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .alias('open')
             .description('opens the current project in your browser.')
             .action(() => {
-                exec(`open ${context.docker.projectHost}`);
+                exec(`open ${context.docker.projectUrl}`);
             });
 
         program

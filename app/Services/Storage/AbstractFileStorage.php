@@ -207,7 +207,7 @@ abstract class AbstractFileStorage implements StorageServiceInterface
 
         $storageDiskFilePath = reset($directFiles);
 
-        $attachment = $this->context->attachmentDb->findByStoredFileIdentifier($identifier);
+        $attachment = $this->context->attachmentDb->findOneByStoredFileIdentifier($identifier);
         if ($attachment !== null) {
             $originalFilename = $attachment->name;
         } else {

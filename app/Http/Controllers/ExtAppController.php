@@ -8,10 +8,10 @@ use App\Models\ExtAppUserRequest;
 use App\Services\ExtApp\AppUserRequestActionHandler;
 use App\Services\ExtApp\AppUserRequestCreator;
 use App\Services\ExtApp\AppUserRequestSessionStorage;
-use App\Services\ExtApp\Db\AppDb;
-use App\Services\ExtApp\Db\AppUserDb;
-use App\Services\ExtApp\Db\AppUserRequestDb;
-use App\Services\ExtApp\Value\AppUserRequestSessionValue;
+use App\Services\ExtApp\Repositories\ExtAppRepository;
+use App\Services\ExtApp\Repositories\ExtAppUserRepository;
+use App\Services\ExtApp\Repositories\ExtAppUserRequestRepository;
+use App\Services\ExtApp\Values\AppUserRequestSessionValue;
 use App\Services\Frontend\Connection\ConnectionFactory;
 use GuzzleHttp\Client;
 use Illuminate\Http\JsonResponse;
@@ -24,12 +24,12 @@ use Psr\Log\LoggerInterface;
 class ExtAppController extends Controller
 {
     public function __construct(
-        protected AppDb     $appDb,
-        protected AppUserDb $appUserDb,
+        protected ExtAppRepository     $appDb,
+        protected ExtAppUserRepository $appUserDb,
     )
     {
     }
-    
+
     public function getConnection(
         Request           $request,
         ConnectionFactory $connectionFactory
@@ -38,15 +38,15 @@ class ExtAppController extends Controller
         $app = $this->resolveAppOrFail($request);
         $externalId = $this->resolveExtUserIdOrFail($request);
         $appUser = $this->resolveAppUserOrFail($app, $externalId);
-        
+
         return response()->json($connectionFactory->createExtAppConnection($appUser));
     }
-    
+
     public function createConnection(
-        Request               $request,
-        AppUserRequestDb      $appUserRequestDb,
-        AppUserRequestCreator $requestCreator,
-        ConnectionFactory $connectionFactory,
+        Request                     $request,
+        ExtAppUserRequestRepository $appUserRequestDb,
+        AppUserRequestCreator       $requestCreator,
+        ConnectionFactory           $connectionFactory,
     ): JsonResponse
     {
         $app = $this->resolveAppOrFail($request);
@@ -55,17 +55,17 @@ class ExtAppController extends Controller
         if ($this->appUserDb->findByExternalId($app, $externalId)) {
             abort(400, 'There is already an active connection for this user.');
         }
-        
+
         return response()->json(
             $connectionFactory->createExtAppRequestConnection(
                 $requestCreator->create($app, $externalId)
             )
         );
     }
-    
+
     public function receiveAppConnectRequest(
         Request                      $request,
-        AppUserRequestDb             $appUserRequestDb,
+        ExtAppUserRequestRepository  $appUserRequestDb,
         AppUserRequestSessionStorage $sessionStorage,
     ): View|RedirectResponse
     {
@@ -74,32 +74,32 @@ class ExtAppController extends Controller
             $sessionStorage->clear();
             return view('modules.apps.request_timeout');
         }
-        
+
         $sessionStorage->store($userRequest);
-        
+
         $userRequest->delete();
-        
+
         return redirect(route('login'));
     }
-    
+
     public function confirmAppConnectRequest(
         AppUserRequestSessionStorage $sessionStorage,
         AppUserRequestSessionValue   $userRequest,
         Request                      $request
     ): View
     {
-        $app = $this->appDb->findById($userRequest->appId);
+        $app = $this->appDb->findOne($userRequest->appId);
         if (!$app) {
             $sessionStorage->clear();
             return view('modules.apps.confirm_error');
         }
-        
+
         $urlWithoutPath = static function (string $url): string {
             $parsedUrl = parse_url($url);
             $port = isset($parsedUrl['port']) ? ':' . $parsedUrl['port'] : '';
             return $parsedUrl['scheme'] . '://' . $parsedUrl['host'] . $port;
         };
-        
+
         return view('modules.apps.confirm', [
             'app_name' => $app->name,
             'user' => $request->user(),
@@ -109,7 +109,7 @@ class ExtAppController extends Controller
             'user_public_key' => $userRequest->userPublicKey->web,
         ]);
     }
-    
+
     public function acceptAppConnectRequestAction(
         Request                     $request,
         AppUserRequestSessionValue  $userRequest,
@@ -119,7 +119,7 @@ class ExtAppController extends Controller
         ['passkey' => $passkey] = $request->validate([
             'passkey' => 'required|string',
         ]);
-        
+
         return response()->json([
             'success' => true,
             'redirect_url' => $actionHandler->accept(
@@ -129,7 +129,7 @@ class ExtAppController extends Controller
             )
         ]);
     }
-    
+
     public function declineAppConnectRequestAction(
         AppUserRequestSessionValue  $userRequest,
         AppUserRequestActionHandler $actionHandler
@@ -140,7 +140,7 @@ class ExtAppController extends Controller
             'redirect_url' => $actionHandler->decline($userRequest)
         ]);
     }
-    
+
     public function appLogoProxy(
         Request         $request,
         Client          $client,
@@ -148,15 +148,15 @@ class ExtAppController extends Controller
     ): Response
     {
         $appId = (int)$request->route('app_id');
-        $app = $this->appDb->findById($appId);
+        $app = $this->appDb->findOne($appId);
         if (!$app) {
             abort(404, 'App not found.');
         }
-        
+
         if (!$app->logo_url) {
             abort(404, 'App logo not found.');
         }
-        
+
         try {
             $response = $client->request(
                 'GET',
@@ -166,7 +166,7 @@ class ExtAppController extends Controller
                     'follow_redirects' => true,
                 ]
             );
-            
+
             return response(
                 $response->getBody(),
                 $response->getStatusCode()
@@ -180,21 +180,21 @@ class ExtAppController extends Controller
             abort(404, 'App logo could not be fetched.');
         }
     }
-    
+
     protected function resolveAppOrFail(Request $request): ExtApp
     {
-        $app = $this->appDb->findByUser($request->user());
+        $app = $this->appDb->findOneByUser($request->user());
         abort_if(!$app, 403, 'The user requesting is not linked to an app.');
         return $app;
     }
-    
+
     protected function resolveExtUserIdOrFail(Request $request): string
     {
         $externalId = $request->route()?->parameter('ext_user_id');
         abort_if(empty($externalId), 400, 'External user ID is required.');
         return $externalId;
     }
-    
+
     protected function resolveAppUserOrFail(ExtApp $app, string $externalId): ExtAppUser
     {
         $appUser = $this->appUserDb->findByExternalId($app, $externalId);

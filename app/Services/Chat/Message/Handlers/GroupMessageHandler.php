@@ -9,7 +9,7 @@ use App\Models\AiConv;
 use App\Models\Message;
 use App\Models\Room;
 use App\Models\User;
-use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
 use App\Services\Message\ThreadIdHelper;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Values\StoredFileCategory;
@@ -22,7 +22,7 @@ class GroupMessageHandler extends AbstractMessageHandler
 {
     public function __construct(
         private readonly ThreadIdHelper $threadIdHelper,
-        AttachmentDb                    $attachmentService,
+        AttachmentRepository            $attachmentService,
         FileStorageService              $storageService
     )
     {

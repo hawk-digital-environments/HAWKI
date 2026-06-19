@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\System\Http\UrlResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +26,7 @@ class LinkPreviewController extends Controller
                 ->withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (compatible; HAWKI Link Preview Bot/1.0)',
                 ])
-                ->get($url);
+                ->getSsrfSafe($url);
 
             if (!$response->successful()) {
                 return response()->json([
@@ -135,46 +136,16 @@ class LinkPreviewController extends Controller
         $node = $faviconNodes->item(0);
         if ($node instanceof \DOMElement) {
             $favicon = $node->getAttribute('href');
-            $metadata['favicon'] = $this->resolveUrl($url, $favicon);
+            $metadata['favicon'] = UrlResolver::resolve($url, $favicon);
         } else {
             $metadata['favicon'] = "https://www.google.com/s2/favicons?domain={$metadata['domain']}&sz=32";
         }
 
         // Resolve relative image URL
         if ($metadata['image'] && !filter_var($metadata['image'], FILTER_VALIDATE_URL)) {
-            $metadata['image'] = $this->resolveUrl($url, $metadata['image']);
+            $metadata['image'] = UrlResolver::resolve($url, $metadata['image']);
         }
 
         return $metadata;
-    }
-
-    /**
-     * Resolve relative URL to absolute
-     */
-    private function resolveUrl($baseUrl, $relativeUrl)
-    {
-        // If already absolute, return as is
-        if (filter_var($relativeUrl, FILTER_VALIDATE_URL)) {
-            return $relativeUrl;
-        }
-
-        $base = parse_url($baseUrl);
-        $scheme = $base['scheme'] ?? 'https';
-        $host = $base['host'] ?? '';
-
-        // Handle protocol-relative URLs
-        if (substr($relativeUrl, 0, 2) === '//') {
-            return $scheme . ':' . $relativeUrl;
-        }
-
-        // Handle absolute paths
-        if (substr($relativeUrl, 0, 1) === '/') {
-            return $scheme . '://' . $host . $relativeUrl;
-        }
-
-        // Handle relative paths
-        $basePath = $base['path'] ?? '/';
-        $basePath = dirname($basePath);
-        return $scheme . '://' . $host . $basePath . '/' . $relativeUrl;
     }
 }

@@ -81,6 +81,7 @@ class KreuzbergConverter extends AbstractFileConverter
                                     'auto_adjust_dpi' => true,
                                     'inject_placeholders' => true,
                                 ],
+                                'include_document_structure' => true,
                                 'pages' => [
                                     'extract_pages' => false,
                                     'insert_page_markers' => true,

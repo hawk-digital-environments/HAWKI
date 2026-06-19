@@ -251,7 +251,7 @@ class MessageResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $formatter = $this->getServiceInstance(MessageFormatterService::class);
+        $formatter = $this->getService(MessageFormatterService::class);
         return [
             'id'      => $this->id,
             'content' => $formatter->format($this->content),
@@ -747,7 +747,7 @@ Every PHP file must declare `strict_types=1`:
 
 declare(strict_types=1);
 
-namespace App\Services\AI;
+namespace App\Services\Ai;
 ```
 
 ### PHP Native Classes — Fully Qualified Names
@@ -831,7 +831,7 @@ class UserResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $service = $this->getServiceInstance(AvatarStorageService::class);
+        $service = $this->getService(AvatarStorageService::class);
         // ...
     }
 }
@@ -1070,6 +1070,7 @@ There is currently no automated frontend test suite. Frontend testing will be in
 resources/js/
 ├── svelte/
 │   ├── components/       ← Reusable, general-purpose Svelte components
+│   │   └── ui/           ← Low-level primitive components (shadcn-style, no business logic)
 │   ├── snippets/         ← Top-level Blade-embeddable snippet components (one per page slot)
 │   ├── stores/           ← Svelte 5 reactive store classes (*.svelte.ts)
 │   ├── types/            ← Shared TypeScript type definitions
@@ -1275,11 +1276,248 @@ Sometimes a component prop shares a name with an attribute already defined on th
 </script>
 ```
 
+#### Unique ID Generation
+
+Components that need a stable `id` for accessibility (e.g. `<label for="...">`, `aria-describedby`) should generate one with `$props.id()` and fall back to any explicitly provided `id` prop:
+
+```svelte
+<script lang="ts">
+    import type {HTMLAttributes} from 'svelte/elements';
+
+    interface Props extends HTMLAttributes<HTMLDivElement> {
+        /** Explicit id — generated automatically if omitted. */
+        id?: string;
+        label?: string;
+    }
+
+    const {id, label, ...restProps}: Props = $props();
+
+    const generatedId = $props.id();
+    const finalId = id || generatedId;
+</script>
+
+<div {...restProps}>
+    <label for={finalId}>{label}</label>
+    <input id={finalId} />
+</div>
+```
+
+`$props.id()` is stable across renders for the same component instance and guaranteed unique across all instances — never use `Math.random()` or a module-level counter for this purpose.
+
 ### Component Organisation
 
 - **`snippets/`** — top-level entry points, one per embedded page slot. Keep them thin: pull state from stores and delegate rendering to components.
 - **`components/`** — reusable building blocks used by multiple snippets. A component should have no knowledge of which snippet uses it.
+- **`components/ui/`** — low-level primitive components (buttons, inputs, links, chips, …) with no business logic and no dependency on app state or domain types. Modelled after the shadcn/ui pattern: each file is a single focused primitive that higher-level components in `components/` compose. Snippets import from `components/`, not directly from `ui/`, unless the usage is trivially simple.
 - **`stores/`** — all reactive state that crosses component boundaries. Components read from and write to stores; they do not pass callbacks between siblings.
+
+### `mergeProps` — Prop Merging
+
+`mergeProps` (in `resources/js/util/mergeProps.ts`) is the standard way to forward rest-props onto a root element while keeping component-owned defaults. It accepts up to 6 objects and applies these merge rules:
+
+| Key type             | Merge behaviour                                               |
+|----------------------|---------------------------------------------------------------|
+| `on*` event handlers | Both handlers are called in sequence — neither is overwritten |
+| `class`              | Accumulated into an array; falsy entries filtered out         |
+| Everything else      | Last value wins (standard overwrite)                          |
+
+```svelte
+<script lang="ts">
+    import {mergeProps} from '../../util/mergeProps.js';
+    import type {HTMLAttributes} from 'svelte/elements';
+
+    interface Props extends HTMLAttributes<HTMLDivElement> {}
+    const {...restProps}: Props = $props();
+
+    let focused = $state(false);
+</script>
+
+<!--
+  restProps spreads first so the component's own handlers/classes come last
+  and win for non-event, non-class keys. Events and classes are always merged
+  regardless of order.
+-->
+<div {...mergeProps(
+    restProps,
+    {
+        class: ['my-component', focused && 'my-component--focused'],
+        onfocus: () => { focused = true; },
+        onblur:  () => { focused = false; },
+    }
+)}>
+```
+
+**Spread order matters** for non-event, non-class props: put `restProps` first so component-internal values take precedence as the last argument.
+
+Use `cx` (re-exported from `class-variance-authority`) directly when you only need ad-hoc class merging without a full `mergeProps` call:
+
+```ts
+import {cx} from 'class-variance-authority';
+const cls = cx('base', isActive && 'active', className);
+```
+
+### `$bindable()` — Two-Way Binding
+
+Form and input components expose their value for two-way binding using the `$bindable()` rune. Declare the bindable prop with a sensible default:
+
+```svelte
+<script lang="ts">
+    interface Props {
+        /** Current text value. Supports bind:value. */
+        value?: string;
+        /** Toggle state. Supports bind:checked. */
+        checked?: boolean;
+    }
+
+    const {
+        value = $bindable(''),
+        checked = $bindable(false),
+    }: Props = $props();
+</script>
+
+<input bind:value={value} />
+<input type="checkbox" bind:checked={checked} />
+```
+
+Callers use standard Svelte binding syntax:
+
+```svelte
+<MyInput bind:value={localVar} />
+```
+
+**Rules:**
+
+- Only use `$bindable()` for values the parent genuinely needs to read back (form field values, toggle states). Props that only flow downward stay as plain props.
+- Always provide a default inside `$bindable(default)` so the component works without a binding.
+- For grouped inputs (checkbox groups), bind an array: `value = $bindable([])`.
+
+### `SnippetOrString` — Polymorphic Content Props
+
+When a prop can be either a plain string or a rich Svelte Snippet (e.g. `label`, `description`, `error`), type it as `string | Snippet` and render both cases:
+
+```svelte
+<script lang="ts">
+    import type {Snippet} from 'svelte';
+
+    interface Props {
+        /** Plain text or a snippet for rich content. */
+        label?: string | Snippet;
+        /** Validation error message or snippet. */
+        error?: string | Snippet;
+    }
+
+    const {label, error}: Props = $props();
+</script>
+
+{#if label}
+    {#if typeof label === 'string'}
+        <span>{label}</span>
+    {:else}
+        {@render label()}
+    {/if}
+{/if}
+```
+
+When the same pattern appears in multiple components, extract it into a small utility component (e.g. `components/ui/SnippetOrString.svelte`) to avoid repetition. The utility can be generic to pass typed arguments into the snippet:
+
+```svelte
+<!-- components/ui/SnippetOrString.svelte -->
+<script lang="ts" generics="T">
+    import type {Snippet} from 'svelte';
+    interface Props { value: string | Snippet<[T | undefined]>; snippetArgs?: T; }
+    const {value, snippetArgs}: Props = $props();
+</script>
+{#if typeof value === 'string'}{value}{:else}{@render value(snippetArgs)}{/if}
+```
+
+### Runed `Context` — Parent-Child Communication
+
+Use Runed's `Context` class (from the `runed` package) instead of Svelte's built-in `setContext` / `getContext` when a parent component needs to share reactive state with deeply nested children without prop-drilling (e.g. a radio group sharing its selected value with individual radio card children).
+
+Define the context in a dedicated file:
+
+```ts
+// RadioCardContext.ts
+import {Context} from 'runed';
+
+interface RadioCardContext {
+    getValue: () => string;
+    setValue: (newValue: string) => void;
+    isDisabled: () => boolean;
+}
+
+export const radioCardContext = new Context<RadioCardContext>('radio-card');
+```
+
+**Parent** — set the context once, exposing getter/setter functions so children always read current state:
+
+```svelte
+<!-- RadioCardGroup.svelte -->
+<script lang="ts">
+    import {radioCardContext} from './RadioCardContext.js';
+
+    const {disabled = false, onchange}: Props = $props();
+    let selected = $state('');
+
+    radioCardContext.set({
+        getValue:   () => selected,
+        setValue:   (v) => { selected = v; onchange?.(v); },
+        isDisabled: () => disabled,
+    });
+</script>
+<slot />
+```
+
+**Child** — call the getter functions inside the template so Svelte's reactivity tracks them:
+
+```svelte
+<!-- RadioCard.svelte -->
+<script lang="ts">
+    import {radioCardContext} from './RadioCardContext.js';
+    const {value}: Props = $props();
+    const ctx = radioCardContext.get();
+</script>
+
+<button
+    aria-pressed={ctx.getValue() === value}
+    disabled={ctx.isDisabled()}
+    onclick={() => ctx.setValue(value)}
+>
+    <slot />
+</button>
+```
+
+Wrapping mutable values in **getter functions** (rather than storing plain values in the context object) is required for reactivity: Svelte re-evaluates template expressions that call the function whenever the underlying `$state` in the parent changes. The string name passed to `new Context(name)` aids debugging in Svelte DevTools.
+
+### Link — Accessible Anchor Primitive
+
+`components/ui/Link.svelte` is the standard anchor component. Always use it instead of a bare `<a>` tag when you need:
+
+- Automatic `rel="noopener noreferrer"` on `target="_blank"` links (prevents tabnabbing)
+- A `disabled` state that blocks navigation without removing the element from the DOM
+- A consistent `disabled` CSS class for styling
+
+```svelte
+<Link href="/dashboard">Dashboard</Link>
+
+<!-- rel set automatically -->
+<Link href="https://example.com" target="_blank">External link</Link>
+
+<!-- navigation blocked, disabled class applied -->
+<Link href="/action" disabled>Unavailable</Link>
+```
+
+**Props:**
+
+| Prop       | Type      | Default | Description                                                                                                   |
+|------------|-----------|---------|---------------------------------------------------------------------------------------------------------------|
+| `href`     | `string`  | `''`    | Navigation target. Set to `javascript:void(0)` when empty or `disabled`.                                      |
+| `target`   | `string`  | `''`    | Standard anchor `target`.                                                                                     |
+| `rel`      | `string`  | `''`    | Overrides the automatic `rel`. Defaults to `noopener noreferrer` when `target="_blank"` and `rel` is not set. |
+| `disabled` | `boolean` | `false` | Prevents navigation and applies a `disabled` class.                                                           |
+| `children` | `Snippet` | —       | Link content.                                                                                                 |
+
+All other `HTMLAnchorAttributes` (`class`, `aria-*`, `data-*`, …) are forwarded via rest-props. `href`, `rel`, and `onclick` are computed with `$derived.by()` so they react to `disabled` and `target` changes. Attributes with no value (empty `target`, empty `rel`, no `onclick`) are omitted from the rendered `<a>` to keep the HTML clean.
 
 ---
 

@@ -3,7 +3,7 @@ function InitializePreDomSettings() {
 }
 
 
-document.addEventListener('DOMContentLoaded', function () {
+window.waitUntilReady(function () {
     // Changing the language will refresh the page.
     // check if settings was open before changing language to prevent closing the settings menu.
     const settingsStatus = getLSwithExpiry('settingsPanelOpen');
@@ -179,10 +179,12 @@ async function setupLoginBackgroud() {
 
 
 /// Change active language button in settings panel.
-function UpdateSettingsLanguage(lang) {
-    const btn = document.getElementById(lang + '_btn');
-    btn.classList.add('accentText');
-    btn.style.fontWeight = '700';
+function UpdateSettingsLanguage() {
+    window.waitUntilReady(async function () {
+        const btn = document.getElementById(window.getConnection().locale + '_btn');
+        btn.classList.add('accentText');
+        btn.style.fontWeight = '700';
+    });
 }
 
 

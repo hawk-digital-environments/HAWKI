@@ -1,0 +1,229 @@
+/* ==========================================================================
+   HAWKI Tailwind Token Override
+   ============================================================================
+   Purpose: make the tailwind-to-css converter output project-relative CSS
+   variable references instead of hardcoded values.
+
+   How it works:
+     1. @import pulls in the project's design tokens so all --color-*, --space-*
+        etc. vars are defined in the Tailwind theme build.
+     2. The :root block below maps Tailwind's built-in token names to project
+        token names via var(). The converter's single-pass var resolver then
+        rewrites e.g. `color: var(--color-gray-900)` → `color: var(--color-text)`,
+        which resolves correctly at runtime inside the project (including dark mode).
+
+   Note: breakpoints.css uses @custom-media (PostCSS plugin, not native CSS) and
+   is intentionally excluded — breakpoints are not design tokens used in @apply.
+   ========================================================================== */
+
+@import "./resources/css/tokens/colors.css";
+@import "./resources/css/tokens/typography.css";
+@import "./resources/css/tokens/spacing.css";
+@import "./resources/css/tokens/radius.css";
+@import "./resources/css/tokens/shadows.css";
+@import "./resources/css/tokens/transitions.css";
+
+/* Unlayered :root — wins over @layer tokens imports above, and over Tailwind's
+   own defaults (which are also layered). Maps Tailwind's namespace to ours. */
+:root {
+    /* ── Blue / Indigo / Violet / Purple → primary scale ───────────────── */
+    /* The project's primary is a blue-purple (#2F2ABF family), so these
+       Tailwind hue families all map to our primary scale.                   */
+    --color-blue-50: var(--color-primary-100);
+    --color-blue-100: var(--color-primary-100);
+    --color-blue-200: var(--color-primary-200);
+    --color-blue-300: var(--color-primary-300);
+    --color-blue-400: var(--color-primary-400);
+    --color-blue-500: var(--color-primary-500);
+    --color-blue-600: var(--color-primary-600);
+    --color-blue-700: var(--color-primary-700);
+    --color-blue-800: var(--color-primary-800);
+    --color-blue-900: var(--color-primary-900);
+    --color-blue-950: var(--color-primary-900);
+
+    --color-indigo-50: var(--color-primary-100);
+    --color-indigo-100: var(--color-primary-100);
+    --color-indigo-200: var(--color-primary-200);
+    --color-indigo-300: var(--color-primary-300);
+    --color-indigo-400: var(--color-primary-400);
+    --color-indigo-500: var(--color-primary-500);
+    --color-indigo-600: var(--color-primary-600);
+    --color-indigo-700: var(--color-primary-700);
+    --color-indigo-800: var(--color-primary-800);
+    --color-indigo-900: var(--color-primary-900);
+    --color-indigo-950: var(--color-primary-900);
+
+    --color-violet-50: var(--color-primary-100);
+    --color-violet-100: var(--color-primary-100);
+    --color-violet-200: var(--color-primary-200);
+    --color-violet-300: var(--color-primary-300);
+    --color-violet-400: var(--color-primary-400);
+    --color-violet-500: var(--color-primary-500);
+    --color-violet-600: var(--color-primary-600);
+    --color-violet-700: var(--color-primary-700);
+    --color-violet-800: var(--color-primary-800);
+    --color-violet-900: var(--color-primary-900);
+    --color-violet-950: var(--color-primary-900);
+
+    --color-purple-50: var(--color-primary-100);
+    --color-purple-100: var(--color-primary-100);
+    --color-purple-200: var(--color-primary-200);
+    --color-purple-300: var(--color-primary-300);
+    --color-purple-400: var(--color-primary-400);
+    --color-purple-500: var(--color-primary-500);
+    --color-purple-600: var(--color-primary-600);
+    --color-purple-700: var(--color-primary-700);
+    --color-purple-800: var(--color-primary-800);
+    --color-purple-900: var(--color-primary-900);
+    --color-purple-950: var(--color-primary-900);
+
+    /* ── Gray / Zinc / Slate / Stone / Neutral → neutral tokens ────────── */
+    --color-gray-50: var(--color-bg-secondary);
+    --color-gray-100: var(--color-surface);
+    --color-gray-200: var(--color-border);
+    --color-gray-300: var(--color-border);
+    --color-gray-400: var(--color-text-disabled);
+    --color-gray-500: var(--color-text-muted);
+    --color-gray-600: var(--color-text-muted);
+    --color-gray-700: var(--color-text);
+    --color-gray-800: var(--color-text);
+    --color-gray-900: var(--color-text);
+    --color-gray-950: var(--color-text);
+
+    --color-zinc-50: var(--color-bg-secondary);
+    --color-zinc-100: var(--color-surface);
+    --color-zinc-200: var(--color-border);
+    --color-zinc-300: var(--color-border);
+    --color-zinc-400: var(--color-text-disabled);
+    --color-zinc-500: var(--color-text-muted);
+    --color-zinc-600: var(--color-text-muted);
+    --color-zinc-700: var(--color-text);
+    --color-zinc-800: var(--color-text);
+    --color-zinc-900: var(--color-text);
+    --color-zinc-950: var(--color-text);
+
+    --color-slate-50: var(--color-bg-secondary);
+    --color-slate-100: var(--color-surface);
+    --color-slate-200: var(--color-border);
+    --color-slate-300: var(--color-border);
+    --color-slate-400: var(--color-text-disabled);
+    --color-slate-500: var(--color-text-muted);
+    --color-slate-600: var(--color-text-muted);
+    --color-slate-700: var(--color-text);
+    --color-slate-800: var(--color-text);
+    --color-slate-900: var(--color-text);
+    --color-slate-950: var(--color-text);
+
+    --color-stone-50: var(--color-bg-secondary);
+    --color-stone-100: var(--color-surface);
+    --color-stone-200: var(--color-border);
+    --color-stone-300: var(--color-border);
+    --color-stone-400: var(--color-text-disabled);
+    --color-stone-500: var(--color-text-muted);
+    --color-stone-600: var(--color-text-muted);
+    --color-stone-700: var(--color-text);
+    --color-stone-800: var(--color-text);
+    --color-stone-900: var(--color-text);
+    --color-stone-950: var(--color-text);
+
+    --color-neutral-50: var(--color-bg-secondary);
+    --color-neutral-100: var(--color-surface);
+    --color-neutral-200: var(--color-border);
+    --color-neutral-300: var(--color-border);
+    --color-neutral-400: var(--color-text-disabled);
+    --color-neutral-500: var(--color-text-muted);
+    --color-neutral-600: var(--color-text-muted);
+    --color-neutral-700: var(--color-text);
+    --color-neutral-800: var(--color-text);
+    --color-neutral-900: var(--color-text);
+    --color-neutral-950: var(--color-text);
+
+    /* ── Status colors ──────────────────────────────────────────────────── */
+    --color-green-400: var(--color-success);
+    --color-green-500: var(--color-success);
+    --color-green-600: var(--color-success);
+    --color-emerald-400: var(--color-success);
+    --color-emerald-500: var(--color-success);
+    --color-emerald-600: var(--color-success);
+
+    --color-yellow-400: var(--color-warning);
+    --color-yellow-500: var(--color-warning);
+    --color-amber-400: var(--color-warning);
+    --color-amber-500: var(--color-warning);
+    --color-orange-400: var(--color-warning);
+    --color-orange-500: var(--color-warning);
+
+    --color-red-400: var(--color-error);
+    --color-red-500: var(--color-error);
+    --color-red-600: var(--color-error);
+    --color-rose-400: var(--color-error);
+    --color-rose-500: var(--color-error);
+    --color-rose-600: var(--color-error);
+
+    --color-cyan-400: var(--color-info);
+    --color-cyan-500: var(--color-info);
+    --color-sky-400: var(--color-info);
+    --color-sky-500: var(--color-info);
+    --color-teal-400: var(--color-info);
+    --color-teal-500: var(--color-info);
+
+    /* ── White / Black ──────────────────────────────────────────────────── */
+    --color-white: var(--color-surface-raised);
+    --color-black: var(--color-text);
+
+    /* ── Border radius: Tailwind --radius-* → project --corner-* ───────── */
+    --radius-xs: var(--corner-xs);
+    --radius-sm: var(--corner-sm);
+    --radius-md: var(--corner-md);
+    --radius-lg: var(--corner-md);
+    --radius-xl: var(--corner-md);
+    --radius-2xl: var(--corner-lg);
+    --radius-full: var(--corner-full);
+
+    /* ── Shadows: Tailwind --shadow-* → project --elevation-* ──────────── */
+    --shadow-sm: var(--elevation-1);
+    --shadow-md: var(--elevation-1);
+    --shadow-lg: var(--elevation-2);
+    --shadow-xl: var(--elevation-2);
+    --shadow-2xl: var(--elevation-2);
+
+    /* ── Font sizes: Tailwind --text-* → project --font-size-* ──────────
+       Mapping by closest px size; everything above 2xl caps at --font-size-2xl.
+       Project scale: xxs=0.70 xs=0.85 sm=1 base=1.10 lg=1.25 xl=1.80 2xl=2.50rem */
+    --text-xs: var(--font-size-xxs); /* 0.75rem → 0.70rem */
+    --text-sm: var(--font-size-xs); /* 0.875rem → 0.85rem */
+    --text-base: var(--font-size-sm); /* 1rem     → 1rem (exact) */
+    --text-lg: var(--font-size-base); /* 1.125rem → 1.10rem */
+    --text-xl: var(--font-size-lg); /* 1.25rem  → 1.25rem (exact) */
+    --text-2xl: var(--font-size-xl); /* 1.5rem   → 1.80rem */
+    --text-3xl: var(--font-size-xl); /* 1.875rem → 1.80rem */
+    --text-4xl: var(--font-size-2xl); /* 2.25rem  → 2.50rem */
+    --text-5xl: var(--font-size-2xl); /* 3rem     → capped at 2xl */
+    --text-6xl: var(--font-size-2xl);
+    --text-7xl: var(--font-size-2xl);
+    --text-8xl: var(--font-size-2xl);
+    --text-9xl: var(--font-size-2xl);
+
+    /* ── Line heights: Tailwind --text-*--line-height → project tokens ──
+       Thresholds: < 1.35 → tight (1.2)  |  1.35–1.65 → normal (1.5)
+       xs ≈1.33 → tight  |  sm ≈1.43, base=1.5, lg ≈1.56, xl=1.4 → normal
+       2xl ≈1.33, 3xl=1.2, 4xl–9xl ≤1.11 → tight                          */
+    --text-xs--line-height: var(--line-height-tight);
+    --text-sm--line-height: var(--line-height-normal);
+    --text-base--line-height: var(--line-height-normal);
+    --text-lg--line-height: var(--line-height-normal);
+    --text-xl--line-height: var(--line-height-normal);
+    --text-2xl--line-height: var(--line-height-tight);
+    --text-3xl--line-height: var(--line-height-tight);
+    --text-4xl--line-height: var(--line-height-tight);
+    --text-5xl--line-height: var(--line-height-tight);
+    --text-6xl--line-height: var(--line-height-tight);
+    --text-7xl--line-height: var(--line-height-tight);
+    --text-8xl--line-height: var(--line-height-tight);
+    --text-9xl--line-height: var(--line-height-tight);
+
+    /* ── Font family: sans-serif → project base font ─────────────────── */
+    /* font-serif and font-mono have no project equivalent; the converter
+       falls through to their built-in font stacks automatically.          */
+    --font-sans: var(--font-family-base);
+}

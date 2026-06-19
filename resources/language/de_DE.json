@@ -1,47 +1,36 @@
 {
     "Guidelines": "Leitfaden zum Umgang mit HAWKI",
-
-    "Chat":"Chat",
-    "Groupchat":"Gruppenchat",
-    "Logout":"Ausloggen",
-    "PromptImprovement":"Promptverbesserung",
+    "Chat": "Chat",
+    "Groupchat": "Gruppenchat",
+    "Logout": "Ausloggen",
+    "PromptImprovement": "Promptverbesserung",
     "Upload": "Hochladen",
-
-
     "Cnf_deleteConv": "Möchtest du dieses Gespräch wirklich löschen?",
     "Cnf_deleteFile": "Möchtest du diese Datei wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden!",
     "Cnf_deleteRoom": "Möchtest du diesen Raum wirklich löschen?",
     "Cnf_leaveRoom": "Möchtest du diesen Raum wirklich verlassen?",
     "Cnf_removeMember": "Möchtest du dieses Mitglied wirklich entfernen?",
     "Cnf_checkMembersAdded": "Bitte fügen Sie mindestens ein Mitglied hinzu.",
-
     "Cnf_tokenMsg1": "Bitte bewahre diesen Token sicher auf und verwende ihn mit Bedacht, um dein Konto zu schützen. Wenn HAWKI verdächtiges Verhalten feststellt, wird dieser Token widerrufen.",
     "Cnf_tokenMsg2": "Sobald du dieses Fenster schließt, kannst du diesen Schlüssel nicht mehr erneut abrufen.",
     "Cnf_tokenMsgSuccess": "Token erfolgreich erstellt",
     "Cnf_tokenRevoke": "Bist du sicher, dass du den Token widerrufen möchtest?",
     "Cnf_passkeyRemove": "Durch die Bestätigung werden dein Passwort und deine Schlüsselbunddaten aus diesem Browser entfernt. Bitte beachte, dass wir derzeit keine Lösungen zur Wiederherstellung von Passwörtern anbieten. <br> <b>Bitte stelle sicher, dass du eine sichere Sicherung deines Passworts hast, bevor du fortfährst.<b>",
-
-    "Cnf_RemoveFile":"Möchtest du diese Datei wirklich löschen?",
-
-    "Logout_Warning":"Um HAWKI weiterhin zu nutzen, müssen Sie diese Bedingungen akzeptieren.<strong>Klicken Sie auf „Bestätigen“, um sich von HAWKI abzumelden.</strong>",
-
+    "Cnf_RemoveFile": "Möchtest du diese Datei wirklich löschen?",
+    "Logout_Warning": "Um HAWKI weiterhin zu nutzen, müssen Sie diese Bedingungen akzeptieren.<strong>Klicken Sie auf „Bestätigen“, um sich von HAWKI abzumelden.</strong>",
     "Input_Err_UploadFailed": "Fehler beim Hochladen der Datei!",
     "Input_Err_NotSupported": "Dateityp wird nicht unterstützt:",
     "Input_Err_MaxSize": "Dateigröße überschreitet das zulässige Maximum.",
-    "Input_Err_FilterConflict": "You can't use the selected tools at the same time",
-
-    "Exp_Title":"SESSION-TIMEOUT",
-    "Exp_MSG":"Bitte logg dich erneut ein!",
-
+    "Input_Err_ModelHasNoVision": "Das aktuell ausgewählte Modell unterstützt keine Bildverarbeitung. Bitte wähle ein anderes Modell aus, um Bilder zu verwenden.",
+    "Exp_Title": "SESSION-TIMEOUT",
+    "Exp_MSG": "Bitte logg dich erneut ein!",
     "Summery": "Zusammenfassung",
-    "Auto_Generated":"automatisiert erstellt",
-    "Exported_At":"Exportiert aus HAWKI am:",
-    "By":"von",
-    "Chatlog":"Verlauf",
+    "Auto_Generated": "automatisiert erstellt",
+    "Exported_At": "Exportiert aus HAWKI am:",
+    "By": "von",
+    "Chatlog": "Verlauf",
     "Rooms": "Räume",
-
     "RemovedMember": "nicht verfügbar",
-
     "Abort": "Abbrechen",
     "AboutHAWKI": "Über HAWKI",
     "AboutHAWKI_ArianInfo": " | Wissenschaftlicher Mitarbeiter | HAWKI",
@@ -89,27 +78,21 @@
     "Description": "Beschreibung",
     "Download": "herunterladen",
     "Export": "Exportieren",
-    "WebSearch":"Web Suche",
+    "WebSearch": "Web Suche",
     "ExtAccToken": "Externe Zugangstoken",
     "General": "Allgemein",
     "History": "Verlauf",
-
     "HS_EnterBackupMsg": "Bitte gib deinen Wiederherstellungscode ein.",
     "HS_EnterPasskeyMsg": "Bitte gib deinen Datakey ein.",
     "HS_ForgottenPasskey": "Datakey vergessen?",
     "HS_ForgottenBackup": "Wiederherstellungscode verloren?",
     "HS_PasskeyIs": "Dein Datakey ist:",
     "HS_ResetProfile": "Profil zurücksetzen",
-
     "HS_RepeatPassKey": "Bitte wiederhole das Datakey.",
     "HS_DifferentEntries": "Die Eingaben sind nicht gleich!",
-
     "HS_LostBothT": "Hast du sowohl deinen Datakey als auch den Wiederherstellungscode verloren?",
     "HS_LostBothB": "Leider können wir, wenn du sowohl deinen Datakey als auch den Wiederherstellungscode verloren hast, deine Profildaten nicht wiederherstellen. Um fortzufahren, müssen wir dein Profil zurücksetzen und dir einen neuen Zugang gewähren. Dadurch werden alle deine vorherigen Daten, einschließlich aller Chats und Räume, entfernt. Möchtest du fortfahren?",
-
     "HS_Allowed_PK_Characters": "Erlaubte Zeichen: A–Z, a–z, 0–9 sowie ! @ # $ % ^ & * ( ) _ + -",
-
-
     "ImgUpload": "Bild hochladen",
     "ImgUploadDesc": "Wähle ein Bild aus oder ziehe es hierher.<br>Doppelklicken, um in den Bearbeitungsmodus zu wechseln.",
     "Impressum": "Impressum",
@@ -144,10 +127,8 @@
     "Reg_SL5_T": "<strong>Bitte beachte:</strong> Deine Chatnachrichten werden sicher verschlüsselt. Wenn du deinen Datakey verlierst, kannst du nicht mehr auf deine bisherigen Chats zugreifen. Bewahre deinen Datakey deshalb gut auf und schütze ihn vor dem Zugriff Dritter.",
     "Reg_SL6_H": "Sichere deinen Wiederherstellungscode! 🔒",
     "Reg_SL6_T": "Mit diesem Wiederherstellungscode kannst du deinen Datakey wiederherstellen, falls du ihn vergessen oder verloren hast. Lade deinen Code auf dein Endgerät und speichere ihn an einem sicheren Ort, z.B. auf einem USB-Stick oder in einer geschützten Umgebung.",
-
     "Reg_SL5_PH1": "Erstelle hier einen Datakey",
     "Reg_SL5_PH2": "Wiederhole hier einen Datakey",
-
     "RoomDesc": "Raumbeschreibung",
     "RoomName": "Raumname",
     "Save": "Speichern",
@@ -179,7 +160,6 @@
     "Upload_Overlay_Invalid_Single": "Du ziehst gerade eine Datei vom Typ :type, der von HAWKI nicht unterstützt wird.",
     "Upload_Overlay_Invalid_Multiple": "Du ziehst gerade Dateien mit folgenden Typen: :types – diese werden von HAWKI nicht unterstützt.",
     "Yesterday": "Gestern",
-
     "Tools": "Werkzeuge",
     "Add_Tool": "Werkzeug Hinzufügen",
     "Tool_web_search": "Websuche",
@@ -188,10 +168,9 @@
     "The_web_search": "das Web",
     "The_knowledge_base": "die Vektordatenbank",
     "Reasoning_Msg": "Vergleiche mögliche Optionen",
-
     "Parameters": "Einstellungen",
     "Temperature": "Temperatur",
-    "Precise" : "Präzise",
+    "Precise": "Präzise",
     "Balanced": "Ausgewogen",
     "Creative": "Kreativ",
     "ResetToDefault": "Zurücksetzen",
@@ -199,9 +178,7 @@
     "Default": "Standard",
     "TT_Temp": "Steuert die Kreativität der Antworten der KI. Höhere Werte (z. B. 0,8) führen zu vielfältigeren und einfallsreicheren Ergebnissen; niedrigere Werte (z. B. 0,2) machen die Antworten fokussierter und vorhersehbarer.",
     "TT_Top_P": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
-
-    "MissingToolMsg" : "Diese Nachricht wurde mit einem veralteten Tool erstellt: ",
+    "MissingToolMsg": "Diese Nachricht wurde mit einem veralteten Tool erstellt: ",
     "Preview_Loading": "Suche läuft...",
     "Preview_Unavailable": "Vorschau nicht verfügbar"
-
 }

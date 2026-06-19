@@ -9,7 +9,6 @@ use App\Events\AttachmentAssignedToMessageEvent;
 use App\Events\AttachmentRemovedFromMessageEvent;
 use App\Events\MessageSentEvent;
 use App\Events\MessageUpdatedEvent;
-use App\Http\Resources\RoomMessageResource;
 use App\Models\Message;
 use App\Models\Room;
 use App\Models\User;
@@ -61,7 +60,7 @@ class RoomMessageHandler extends AbstractSyncLogHandler
      */
     public function convertModelToResource(mixed $model): JsonResource
     {
-        return new RoomMessageResource($model);
+//        return new RoomMessageResource($model);
     }
 
     /**

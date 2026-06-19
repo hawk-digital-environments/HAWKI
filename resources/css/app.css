@@ -1,5 +1,30 @@
+/* ==========================================================================
+   Cascade Layer Declaration
+   This single line controls ALL specificity ordering for new Svelte components.
+   Order = lowest priority first → highest priority last.
 
-
-
+   - reset:      box-sizing, margin resets
+   - tokens:     CSS custom properties (:root variables)
+   - base:       element defaults (body, :focus-visible, scrollbar, a)
+   - components: Svelte scoped <style> blocks land here automatically
+   - utilities:  .u-* helper classes — always win against component styles
+   ========================================================================== */
+@layer reset, legacy, tokens, base, components, utilities;
 @import "pdfjs-dist/web/pdf_viewer.css";
 
+@import './tokens/breakpoints.css';
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+@import './tokens/radius.css';
+@import './tokens/borders.css';
+@import './tokens/shadows.css';
+@import './tokens/transitions.css';
+@import './layers/reset.css';
+@import './layers/base.css';
+@import './utilities.css';
+
+/* ── Svelte custom element display fix ──────────────────────────────────── */
+svelte-snippet {
+    display: block;
+}

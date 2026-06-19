@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Scopes\RoomMemberAccessScope;
+use App\Policies\RoomMemberPolicy;
+use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
+use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[UsePolicy(RoomMemberPolicy::class)]
 class Member extends Model
 {
+    use HasContextualScopesTrait;
+
     const ROLE_ADMIN = 'admin';
     const ROLE_EDITOR = 'editor';
     const ROLE_VIEWER = 'viewer';
@@ -20,6 +28,11 @@ class Member extends Model
         'last_read',
         'isRemoved'
     ];
+
+    protected static function registerScopes(ScopeRegistrar $registrar): void
+    {
+        $registrar->addScope('access', new RoomMemberAccessScope());
+    }
 
     /**
      * @return BelongsTo<Room, $this>

@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands\Ai\Tools\Mcp;
 
-use App\Models\Ai\Tools\McpServer;
+use App\Models\Ai\McpServer;
 use Illuminate\Console\Command;
 
 class ListMcpServers extends Command

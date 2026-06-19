@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Casts;
 
-use App\Casts\AsAsymmetricPublicKeyCast;
+use App\Casts\AsAsymmetricPublicKey;
 use Hawk\HawkiCrypto\Value\AsymmetricPublicKey;
 use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
-#[CoversClass(AsAsymmetricPublicKeyCast::class)]
+#[CoversClass(AsAsymmetricPublicKey::class)]
 class AsAsymmetricPublicKeyCastTest extends TestCase
 {
     // =========================================================================
@@ -19,8 +19,8 @@ class AsAsymmetricPublicKeyCastTest extends TestCase
 
     public function testItConstructs(): void
     {
-        $sut = new AsAsymmetricPublicKeyCast();
-        static::assertInstanceOf(AsAsymmetricPublicKeyCast::class, $sut);
+        $sut = new AsAsymmetricPublicKey();
+        static::assertInstanceOf(AsAsymmetricPublicKey::class, $sut);
     }
 
     // =========================================================================
@@ -30,9 +30,9 @@ class AsAsymmetricPublicKeyCastTest extends TestCase
     public function testItGetCastsStringToAsymmetricPublicKey(): void
     {
         $expected = new AsymmetricPublicKey('serverKey', 'webKey');
-        $serialized = (string) $expected;
+        $serialized = (string)$expected;
 
-        $sut = new AsAsymmetricPublicKeyCast();
+        $sut = new AsAsymmetricPublicKey();
         $model = $this->createMock(Model::class);
 
         $result = $sut->get($model, 'key', $serialized, []);
@@ -50,17 +50,17 @@ class AsAsymmetricPublicKeyCastTest extends TestCase
     {
         $value = new AsymmetricPublicKey('serverKey', 'webKey');
 
-        $sut = new AsAsymmetricPublicKeyCast();
+        $sut = new AsAsymmetricPublicKey();
         $model = $this->createMock(Model::class);
 
         $result = $sut->set($model, 'key', $value, []);
 
-        static::assertSame((string) $value, $result);
+        static::assertSame((string)$value, $result);
     }
 
     public function testItSetPassesThroughStringValue(): void
     {
-        $sut = new AsAsymmetricPublicKeyCast();
+        $sut = new AsAsymmetricPublicKey();
         $model = $this->createMock(Model::class);
 
         $result = $sut->set($model, 'key', 'raw-string-value', []);

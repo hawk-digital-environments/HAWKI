@@ -18,7 +18,7 @@
     @yield('scripts')
     <script>
         SwitchDarkMode(false);
-        UpdateSettingsLanguage('<x-current-locale/>');
+        UpdateSettingsLanguage();
     </script>
 </head>
 <body>

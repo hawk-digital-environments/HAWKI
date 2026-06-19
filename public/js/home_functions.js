@@ -1,13 +1,13 @@
 //#region Requests And Redirections
 
-function initializeGUI(){
+function initializeGUI() {
 
     //prepare text areas
     const textareas = document.querySelectorAll('.singleLineTextarea');
     textareas.forEach(textarea => {
-        textarea.addEventListener('keydown', function(e) {
+        textarea.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
-            e.preventDefault(); // Prevent the default behavior, which is to insert a newline
+                e.preventDefault(); // Prevent the default behavior, which is to insert a newline
             }
         });
     });
@@ -16,10 +16,9 @@ function initializeGUI(){
 }
 
 
-
-function onSidebarButtonDown(pageID){
-    if(pageID === activeModule){
-        if(document.getElementById(`${pageID}-sidebar`) != null){
+function onSidebarButtonDown(pageID) {
+    if (pageID === activeModule) {
+        if (document.getElementById(`${pageID}-sidebar`) != null) {
             togglePanelClass(`${pageID}-sidebar`, 'expanded');
 
             document.querySelector('.dy-main-content').classList.toggle('expanded');
@@ -27,25 +26,35 @@ function onSidebarButtonDown(pageID){
             const sidebar = document.getElementById(`${pageID}-sidebar`);
             const manualExpanded = sidebar.classList.contains('expanded');
             sidebar.dataset.manualExpanded = manualExpanded;
+            console.log('SIDEBAR', pageID);
+
+            const content = document.getElementById(pageID);
+            if (content) {
+                if (manualExpanded) {
+                    const windowWidth = window.innerWidth;
+                    content.style.minWidth = `${windowWidth - 100}px`;
+                } else {
+                    content.style.minWidth = '';
+                }
+            }
         }
-    }
-    else{
+    } else {
         redirectToModule(pageID);
     }
 }
 
-function redirectToModule(pageID){
+function redirectToModule(pageID) {
     window.location.href = `/${pageID}`;
 }
 
-function setActiveSidebarButton(activeModule){
+function setActiveSidebarButton(activeModule) {
 
     const sidebarButtons = document.querySelectorAll('.sidebar-btn');
     const targetId = `${activeModule}-sb-btn`;
-		// console.log(targetId);
+    // console.log(targetId);
 
     sidebarButtons.forEach(sbb => {
-        if(sbb.classList.contains('active')){
+        if (sbb.classList.contains('active')) {
             sbb.classList.remove('active');
         }
     });
@@ -54,34 +63,31 @@ function setActiveSidebarButton(activeModule){
 }
 
 
-
-
-
 //#endregion
 
 
-
 // //#region Modals
-function modalClick(button){
+function modalClick(button) {
     const modal = button.closest('.modal');
-    localStorage.setItem(modal.id, "true")
+    localStorage.setItem(modal.id, 'true');
     modal.remove();
 }
 
-function CheckModals(){
+function CheckModals() {
     const modals = document.querySelectorAll('.modal');
-    for(let i = 0; i < modals.length; i++){
+    for (let i = 0; i < modals.length; i++) {
         const modal = modals[i];
-        if(localStorage.getItem(modal.id) === 'true'){
+        if (localStorage.getItem(modal.id) === 'true') {
             modal.remove();
         }
     }
 }
+
 // //#endregion
 
 
 //#region Panel Controls
-function togglePanelClass(targetID, className){
+function togglePanelClass(targetID, className) {
     const panel = document.getElementById(targetID);
     panel.classList.toggle(className);
 }
@@ -100,16 +106,16 @@ function toggleRelativePanelClass(targetID, sender, className, activation = null
             let siblings = parentElement.children;
             for (let sibling of siblings) {
                 if (sibling.id === targetID) {
-                    switch(activation){
+                    switch (activation) {
                         case true:
                             sibling.classList.add(className);
-                        break;
+                            break;
                         case false:
                             sibling.classList.remove(className);
-                        break;
+                            break;
                         case null:
                             sibling.classList.toggle(className);
-                        break;
+                            break;
                     }
                     return;
                 }
@@ -118,23 +124,24 @@ function toggleRelativePanelClass(targetID, sender, className, activation = null
         currentElement = parentElement;
     }
 }
+
 //#endregion
 
 
 //#region Burgers & Dropdown Click Events
 
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     let clickedElement = event.target;
     let detectedInputPanel;
     let clickedBurgerMenu = null;
     //interate back until we find the input-container
     while (clickedElement) {
 
-        if(clickedElement.classList.contains('burger-btn') ||
-            clickedElement.classList.contains('burger-item') ){
+        if (clickedElement.classList.contains('burger-btn') ||
+            clickedElement.classList.contains('burger-item')) {
             return;
         }
-        if(clickedElement.classList.contains('params-wrapper')){
+        if (clickedElement.classList.contains('params-wrapper')) {
             return;
         }
         if (clickedElement.id === 'quick-actions' || clickedElement.id === 'quick-actions') {
@@ -158,17 +165,16 @@ document.addEventListener('click', function(event) {
     }
 
     closeBurgerMenus(clickedBurgerMenu);
-    toggleOffInputControls(detectedInputPanel);
 });
 
 
 let burgerId = 0;
-function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = true){
+
+function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = true) {
     let menu;
-    if(isRelativeToElement){
-        menu = sender.parentElement.querySelector(`#${id}`)
-    }
-    else{
+    if (isRelativeToElement) {
+        menu = sender.parentElement.querySelector(`#${id}`);
+    } else {
         menu = document.getElementById(`${id}`);
     }
     //close all other menus
@@ -177,7 +183,7 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
     //reset style to fit content
     menu.style.width = 'fit-content';
 
-    if(alignToElement){
+    if (alignToElement) {
         const btnRect = sender.getBoundingClientRect();
         menu.style.top = `${btnRect.bottom}px`;
         menu.style.left = `${btnRect.left}px`;
@@ -185,15 +191,14 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
 
     const isAlreadyOpen = menu.getAttribute('data-menu-state') === 'open';
 
+    console.log('menu', menu, 'isAlreadyOpen', isAlreadyOpen, 'toggleOnSenderClick', toggleOnSenderClick);
     if (toggleOnSenderClick && isAlreadyOpen) {
         if (closeMenuOnSelect) {
             closeBurgerMenus(null);
-        }
-        else{
+        } else {
             closeBurgerMenus(menu);
         }
-    }
-    else{
+    } else {
         const menuId = burgerId++;
         menu.setAttribute('data-menu-id', `${menuId}`);
         menu.setAttribute('data-menu-state', 'open');
@@ -241,22 +246,21 @@ function closeBurgerMenus(clickedBurgerMenu) {
     const menus = document.querySelectorAll('.burger-dropdown');
 
     menus.forEach(menu => {
-        if(clickedBurgerMenu && menu.id === clickedBurgerMenu.id){
+        if (clickedBurgerMenu && menu.id === clickedBurgerMenu.id) {
             return;
-        }
-        else if(menu.style.opacity !== '0'){
+        } else if (menu.style.opacity !== '0') {
             const icon = menu.parentElement.querySelector('.icon');
-            if(icon && icon.classList.contains('active')){
-                icon.classList.remove('active')
+            if (icon && icon.classList.contains('active')) {
+                icon.classList.remove('active');
             }
 
-            menu.style.opacity = "0";
+            menu.style.opacity = '0';
             document.querySelectorAll('.burger-btn').forEach(btn => {
                 btn.classList.remove('active');
-            })
+            });
 
             setTimeout(() => {
-                menu.style.display = "none";
+                menu.style.display = 'none';
             }, 300);
         }
         menu.setAttribute('data-menu-state', 'closed');
@@ -264,12 +268,10 @@ function closeBurgerMenus(clickedBurgerMenu) {
 }
 
 
-
 //#endregion
 
 
-
-function closeModal(closeBtn){
+function closeModal(closeBtn) {
     const modal = closeBtn.closest('.modal');
     modal.style.display = 'none';
 
@@ -313,7 +315,7 @@ async function smoothDeleteWords(element, totalTime) {
 }
 
 
-function playSound(type){
+function playSound(type) {
 
     let audioFile;
     let vol = 1.0;
@@ -348,11 +350,11 @@ function playSound(type){
 
 // Function to handle button scaling and reaction display
 
-function reactionMouseDown(button){
+function reactionMouseDown(button) {
     button.style.transform = 'scale(1.1)';
 }
 
-function reactionMouseUp(button){
+function reactionMouseUp(button) {
     // Reset scale on mouse up
     button.style.transform = 'scale(1.0)';
 
@@ -370,14 +372,13 @@ function reactionMouseUp(button){
 
             // Set display to none after the fade-out transition
             setTimeout(() => {
-            reaction.style.display = 'none';
+                reaction.style.display = 'none';
             }, 500); // Match transition duration
         }, 3000); // Time before fading starts
     }
 }
 
 //#endregion
-
 
 
 function checkWindowSize(thresholdWidth, thresholdHeight) {
@@ -387,16 +388,16 @@ function checkWindowSize(thresholdWidth, thresholdHeight) {
         const currentHeight = window.innerHeight;
         const sidebar = document.getElementById(`${activeModule}-sidebar`) ? document.getElementById(`${activeModule}-sidebar`) : null;
         if (currentWidth < thresholdWidth || currentHeight < thresholdHeight) {
-            if(sidebar){
-                if(!sidebar.dataset.manualExpanded){
+            if (sidebar) {
+                if (!sidebar.dataset.manualExpanded) {
                     document.getElementById(`${activeModule}-sidebar`).classList.remove('expanded');
                     document.querySelector('.dy-main-content').classList.remove('expanded');
                 }
             }
         } else {
 
-            if(sidebar){
-                if(!sidebar.dataset.manualExpanded){
+            if (sidebar) {
+                if (!sidebar.dataset.manualExpanded) {
                     document.getElementById(`${activeModule}-sidebar`).classList.add('expanded');
                     document.querySelector('.dy-main-content').classList.add('expanded');
 
@@ -418,20 +419,19 @@ function checkWindowSize(thresholdWidth, thresholdHeight) {
 
 //#region Notification
 
-function setSessionCheckerTimer(time){
+function setSessionCheckerTimer(time) {
     setTimeout(() => {
         fetch('/check-session')
-        .then(response => response.json())
-        .then(data => {
+            .then(response => response.json())
+            .then(data => {
 
-            if (data.expired || data.remaining === 0) {
-                const expModal = document.getElementById('session-expiry-modal');
-                expModal.style.display = 'flex';
-            }
-            else{
-                setSessionCheckerTimer(data.remaining);
-            }
-        });
+                if (data.expired || data.remaining === 0) {
+                    const expModal = document.getElementById('session-expiry-modal');
+                    expModal.style.display = 'flex';
+                } else {
+                    setSessionCheckerTimer(data.remaining);
+                }
+            });
     }, time * 1000);
 }
 

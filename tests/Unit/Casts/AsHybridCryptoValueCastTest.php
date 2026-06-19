@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Casts;
 
-use App\Casts\AsHybridCryptoValueCast;
+use App\Casts\AsHybridCryptoValue;
 use Hawk\HawkiCrypto\Value\HybridCryptoValue;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 use Illuminate\Database\Eloquent\Model;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
-#[CoversClass(AsHybridCryptoValueCast::class)]
+#[CoversClass(AsHybridCryptoValue::class)]
 class AsHybridCryptoValueCastTest extends TestCase
 {
     // =========================================================================
@@ -20,8 +20,8 @@ class AsHybridCryptoValueCastTest extends TestCase
 
     public function testItConstructs(): void
     {
-        $sut = new AsHybridCryptoValueCast();
-        static::assertInstanceOf(AsHybridCryptoValueCast::class, $sut);
+        $sut = new AsHybridCryptoValue();
+        static::assertInstanceOf(AsHybridCryptoValue::class, $sut);
     }
 
     // =========================================================================
@@ -32,9 +32,9 @@ class AsHybridCryptoValueCastTest extends TestCase
     {
         $symmetricValue = new SymmetricCryptoValue('iv', 'tag', 'ciphertext');
         $expected = new HybridCryptoValue('passphrase', $symmetricValue);
-        $serialized = (string) $expected;
+        $serialized = (string)$expected;
 
-        $sut = new AsHybridCryptoValueCast();
+        $sut = new AsHybridCryptoValue();
         $model = $this->createMock(Model::class);
 
         $result = $sut->get($model, 'key', $serialized, []);
@@ -55,17 +55,17 @@ class AsHybridCryptoValueCastTest extends TestCase
         $symmetricValue = new SymmetricCryptoValue('iv', 'tag', 'ciphertext');
         $value = new HybridCryptoValue('passphrase', $symmetricValue);
 
-        $sut = new AsHybridCryptoValueCast();
+        $sut = new AsHybridCryptoValue();
         $model = $this->createMock(Model::class);
 
         $result = $sut->set($model, 'key', $value, []);
 
-        static::assertSame((string) $value, $result);
+        static::assertSame((string)$value, $result);
     }
 
     public function testItSetPassesThroughStringValue(): void
     {
-        $sut = new AsHybridCryptoValueCast();
+        $sut = new AsHybridCryptoValue();
         $model = $this->createMock(Model::class);
 
         $result = $sut->set($model, 'key', 'raw-string-value', []);

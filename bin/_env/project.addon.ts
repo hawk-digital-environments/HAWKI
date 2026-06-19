@@ -23,7 +23,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .allowUnknownOption(true)
             .helpOption(false)
             .action(async (options, command) => {
-                await context.docker.executeCommandInService('app', ['php', 'artisan', ...command.args], {interactive: true});
+                await context.docker.executeCommandInService('app', ['gosu', 'www-data', 'php', 'artisan', ...command.args], {interactive: true});
             });
 
         program
@@ -95,6 +95,13 @@ export const addon: AddonEntrypoint = async (context) => ({
             .helpOption(false)
             .action(async (options, command) => {
                 await context.docker.executeCommandInService('node', ['node', ...command.args], {interactive: true});
+            });
+
+        program
+            .command('helper-code')
+            .description('runs the helper code generator to generate helper code for your IDE')
+            .action(async () => {
+                await context.docker.executeCommandInService('app', ['gosu', 'www-data', 'php', 'artisan', 'dev:helper:repository'], {interactive: true});
             });
 
         // =============================================================================

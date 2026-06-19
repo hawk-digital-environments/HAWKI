@@ -1,11 +1,13 @@
-function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = true, charLimit = false){
-
+function initializePasskeyInputs(applyCharacterLimitation = false) {
+    const config = window.getConfig();
+    const allowPaste = config.security.passkeyAllowPaste;
+    const charLimit = config.security.passkeyRestrictCharacters;
     const inputWrappers = document.querySelectorAll('.password-input-wrapper');
 
     inputWrappers.forEach(wrapper => {
         const input = wrapper.querySelector('.passkey-input');
         const toggleBtn = wrapper.querySelector('.btn-xs');
-        input.dataset.visible = 'false'
+        input.dataset.visible = 'false';
 
         //random name will prevent chrome from auto filling.
         const rand = generateTempHash();
@@ -13,7 +15,6 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
 
         // Initialize the real value in a dataset
         input.dataset.realValue = '';
-
 
 
         // Handle Enter key
@@ -27,13 +28,13 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
         // Mask input and store real value
         input.addEventListener('beforeinput', function (e) {
 
-            if(applyCharacterLimitation){
+            if (applyCharacterLimitation) {
                 // Input filter for allowed characters
                 if (event.inputType.startsWith('insert')) {
                     if (charLimit && !/^[A-Za-z0-9!@#$%^&*()_+-]+$/.test(event.data)) {
                         event.preventDefault();
                         showAllowedCharactersMessage();
-                        input.parentElement.style.border = '1px solid red'
+                        input.parentElement.style.border = '1px solid red';
 
                         setTimeout(() => {
                             input.parentElement.style.border = 'var(--border-stroke-thin)';
@@ -74,15 +75,15 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
                         updated = real.slice(0, start - 1) + real.slice(end);
                         resultingCaret = start - 1;
                     } else {
-                        updated = real; resultingCaret = 0;
+                        updated = real;
+                        resultingCaret = 0;
                     }
                 } else {
                     // selection removed
                     updated = real.slice(0, start) + real.slice(end);
                     resultingCaret = start;
                 }
-            }
-            else if (e.inputType === 'deleteContentForward') {
+            } else if (e.inputType === 'deleteContentForward') {
                 if (start === end) {
                     // delete key deletes the character at caret
                     updated = real.slice(0, start) + real.slice(start + 1);
@@ -130,7 +131,8 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
                 const caret = Math.max(0, Math.min(updatedLength, Number(input._pendingCaret) || 0));
                 try {
                     input.setSelectionRange(caret, caret);
-                } catch (_) {}
+                } catch (_) {
+                }
             }
 
             // clean up pending caret after processing
@@ -154,7 +156,6 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
         }
 
 
-
         // Toggle visibility (unchanged, but will read dataset.realValue)
         toggleBtn.addEventListener('click', function () {
             const real = input.dataset.realValue || '';
@@ -168,8 +169,7 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
                 eye.style.display = 'none';
                 eyeOff.style.display = 'inline-block';
                 input.dataset.visible = 'true';
-            }
-            else {
+            } else {
                 input.value = '*'.repeat(real.length);
                 eye.style.display = 'inline-block';
                 eyeOff.style.display = 'none';
@@ -180,7 +180,7 @@ function initializePasskeyInputs(applyCharacterLimitation = false, allowPaste = 
 }
 
 
-function showAllowedCharactersMessage(){
+function showAllowedCharactersMessage() {
     const msg = document.querySelector('#alert-message');
     msg.innerText = __('HS_Allowed_PK_Characters');
 }
