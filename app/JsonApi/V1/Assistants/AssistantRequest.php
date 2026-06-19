@@ -35,6 +35,7 @@ class AssistantRequest extends ResourceRequest
             'max_tokens' => ['nullable', 'integer', 'min:1'],
             'temp' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'top_p' => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'avatar_id' => ['nullable', 'string', 'exists:assistant_avatars,uuid'],
             'user_prompts' => [JsonApiRule::toMany()],
             'ai_tools' => [JsonApiRule::toMany()],
             'tags' => [JsonApiRule::toMany()],
@@ -65,6 +66,7 @@ class AssistantRequest extends ResourceRequest
             $rules['max_tokens'] = ['sometimes', 'integer', 'min:1'];
             $rules['temp'] = ['sometimes', 'numeric', 'min:0', 'max:1'];
             $rules['top_p'] = ['sometimes', 'numeric', 'min:0', 'max:1'];
+            $rules['avatar_id'] = ['sometimes', 'nullable', 'string', 'exists:assistant_avatars,uuid'];
             $rules['user_prompts'] = ['sometimes', JsonApiRule::toMany()];
             $rules['ai_tools'] = ['sometimes', JsonApiRule::toMany()];
             $rules['tags'] = ['sometimes', JsonApiRule::toMany()];

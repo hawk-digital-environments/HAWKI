@@ -14,5 +14,6 @@ class DatabaseSeeder extends Seeder
         // Ensure you call the correct seeder class here
         $this->call(UserSeeder::class);
         $this->call(SettingSeeder::class);
+        $this->call(AssistantAvatarSeeder::class);
     }
 }

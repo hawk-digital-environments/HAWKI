@@ -7,6 +7,7 @@ namespace App\Services\Assistant;
 use App\Events\AssistantCreated;
 use App\Events\AssistantTriggerReleaseStatus;
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantSetting;
 use App\Models\User;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use App\Services\Assistant\Repositories\FeedbackRepository;
@@ -88,5 +89,27 @@ readonly class AssistantService
     public function setFavorite(Assistant $assistant, User $user, bool $isFavorite): void
     {
         $this->repository->setFavorite($assistant, $user, $isFavorite);
+    }
+
+    public function updateSettings(Assistant $assistant, array $settings): void
+    {
+        $this->db->transaction(function () use ($assistant, $settings) {
+            $keys = array_column($settings, 'key');
+            $ids = AssistantSetting::whereIn('key', $keys)->pluck('id', 'key');
+
+            foreach ($settings as $entry) {
+                $key = $entry['key'] ?? null;
+                $settingId = $key !== null ? ($ids[$key] ?? null) : null;
+
+                if ($settingId === null) {
+                    continue;
+                }
+
+                $assistant->settingValues()->updateOrCreate(
+                    ['setting_id' => $settingId],
+                    ['value' => $entry['value']],
+                );
+            }
+        });
     }
 }

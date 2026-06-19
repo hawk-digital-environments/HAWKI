@@ -4,6 +4,7 @@ use App\Http\Controllers\AiModelController;
 use App\Http\Controllers\AiProviderController;
 use App\Http\Controllers\AiToolController;
 use App\Http\Controllers\Assistant\AssistantController;
+use App\Http\Controllers\Assistant\AssistantAvatarController;
 use App\Http\Controllers\Assistant\AssistantSettingController;
 use App\Http\Controllers\Assistant\AssistantSettingValueController;
 use App\Http\Controllers\Assistant\CategoryController;
@@ -52,7 +53,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $actions->withId()->post('release');
                     $actions->withId()->post('feedback');
                     $actions->withId()->post('favorite');
+                    $actions->withId()->post('settings');
                 });
+
+            $server->resource('assistant-avatars', AssistantAvatarController::class)
+                ->only('index', 'show');
 
             $server->resource('assistant-categories', CategoryController::class)
                 ->only('index', 'show')
@@ -73,7 +78,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 });
 
             $server->resource('assistant-setting-values', AssistantSettingValueController::class)
-                ->only('index', 'show', 'store', 'update', 'destroy')
+                ->only('index', 'show')
                 ->relationships(function ($relationships) {
                     $relationships->hasOne('assistant')->readOnly();
                     $relationships->hasOne('setting')->readOnly();

@@ -3,5 +3,6 @@
 !public/images/
 !public/profile_avatars/
 !public/room_avatars/
+!public/assistant_avatars/
 !test_users.json.example
 !.gitignore

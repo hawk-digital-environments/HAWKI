@@ -14,6 +14,7 @@ use App\JsonApi\V1\Assistants\ChatTestAssistantRequest;
 use App\JsonApi\V1\Assistants\FavoriteAssistantRequest;
 use App\JsonApi\V1\Assistants\FeedbackAssistantRequest;
 use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
+use App\JsonApi\V1\Assistants\SettingsAssistantRequest;
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Assistants\Assistant;
 use App\Services\AI\Stream\OpenAIResponsesAdapter;
@@ -133,6 +134,23 @@ class AssistantController extends Controller
         );
 
         return DataResponse::make($assistant->fresh())
+            ->withQueryParameters($query);
+    }
+
+    public function settings(
+        SettingsAssistantRequest $request,
+        AssistantSchema $schema,
+        AssistantQuery $query,
+        Assistant $assistant,
+    ): Responsable {
+        $this->authorize('update', $assistant);
+
+        $this->assistantService->updateSettings(
+            $assistant,
+            $request->input('data.attributes.settings'),
+        );
+
+        return DataResponse::make($assistant->fresh()->load('settingValues'))
             ->withQueryParameters($query);
     }
 

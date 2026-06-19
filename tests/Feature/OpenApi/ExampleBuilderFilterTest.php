@@ -2,9 +2,6 @@
 
 namespace Tests\Feature\OpenApi;
 
-use App\JsonApi\V1\AiProviders\AiProviderSchema;
-use App\JsonApi\V1\Assistants\AssistantSchema;
-use App\JsonApi\V1\Categories\CategorySchema;
 use App\JsonApi\V1\Server;
 use App\Services\OpenApi\Builders\ExampleBuilder;
 use App\Services\OpenApi\Builders\SchemaBuilder;
@@ -23,10 +20,11 @@ class ExampleBuilderFilterTest extends TestCase
         parent::setUp();
 
         $server = new Server(new AppResolver(fn () => app()), 'v1');
+        $schemas = $server->schemas();
         $this->schemas = [
-            'assistants' => new AssistantSchema($server),
-            'assistant-categories' => new CategorySchema($server),
-            'ai-providers' => new AiProviderSchema($server),
+            'assistants' => $schemas->schemaFor('assistants'),
+            'assistant-categories' => $schemas->schemaFor('assistant-categories'),
+            'ai-providers' => $schemas->schemaFor('ai-providers'),
         ];
 
         $this->builder = new ExampleBuilder(new SchemaBuilder);

@@ -191,6 +191,21 @@ class ExampleBuilder
                 'data' => ['id' => '2', 'type' => 'assistants'],
             ],
         ],
+        'assistants.settings' => [
+            'request' => [
+                'data' => [
+                    'type' => 'assistants',
+                    'id' => '1',
+                    'attributes' => [
+                        'settings' => [
+                            ['key' => 'formality', 'value' => 'professional'],
+                            ['key' => 'language', 'value' => 'en'],
+                            ['key' => 'answer_length', 'value' => 'concise'],
+                        ],
+                    ],
+                ],
+            ],
+        ],
     ];
 
     /**

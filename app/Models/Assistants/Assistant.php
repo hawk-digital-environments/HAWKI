@@ -35,6 +35,7 @@ class Assistant extends Model
         'max_tokens' => 0,
         'temp' => 0.0,
         'top_p' => 0.0,
+        'avatar_id' => null,
     ];
 
     protected static function booted(): void
@@ -70,6 +71,7 @@ class Assistant extends Model
         'max_tokens',
         'temp',
         'top_p',
+        'avatar_id',
         'creator_id',
         'remixed_creator_id',
         'remixed_assistant_id',

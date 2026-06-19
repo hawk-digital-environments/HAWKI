@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\Assistants;
 
 use App\Models\Assistants\Assistant;
+use App\Services\Assistant\AssistantAvatarUrlResolver;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use LaravelJsonApi\Contracts\Server\Server;
 use LaravelJsonApi\Eloquent\Fields\Boolean;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
@@ -26,6 +28,14 @@ class AssistantSchema extends Schema
 {
     public static string $model = Assistant::class;
 
+    public function __construct(
+        Server $server,
+        private AssistantAvatarUrlResolver $urlResolver,
+        private AssistantRepository $repository,
+    ) {
+        parent::__construct($server);
+    }
+
     public function fields(): array
     {
         return [
@@ -43,6 +53,10 @@ class AssistantSchema extends Schema
             Number::make('max_tokens'),
             Number::make('temp'),
             Number::make('top_p'),
+            Str::make('avatar_id'),
+            Str::make('avatar_url')->readOnly()->extractUsing(
+                fn (Assistant $model) => $this->urlResolver->forUuid($model->avatar_id),
+            ),
             DateTime::make('created_at')->sortable()->readOnly(),
             DateTime::make('updated_at')->sortable()->readOnly(),
             Str::make('version_text')->hidden(),
@@ -86,7 +100,7 @@ class AssistantSchema extends Schema
             return $query;
         }
 
-        return app(AssistantRepository::class)
+        return $this->repository
             ->filterVisibleForUser($query, $user)
             ->withCount(['favoritedByUsers as is_favorite' => fn ($q) => $q->where('user_id', $user->id)]);
     }

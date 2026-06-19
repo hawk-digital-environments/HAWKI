@@ -28,7 +28,7 @@ class OpenApiGenerator
      * Build the complete OpenAPI 3.0.3 specification array.
      *
      * Pipeline:
-     *  1. Instantiate the JSON:API Server and discover all registered schema classes via reflection.
+     *  1. Discover all registered schema classes for the JSON:API Server and resolve each through the container (so schema dependencies are injected).
      *  2. For each schema: build attributes, relationships, resource objects, request/response schemas.
      *  3. Scan API routes and generate path operations.
      *  4. Build action request schemas from controller reflection.
@@ -45,8 +45,8 @@ class OpenApiGenerator
         $actionRequestSchemas = [];
 
         foreach ($schemaClasses as $schemaClass) {
-            $schema = new $schemaClass($this->server);
             $type = $schemaClass::type();
+            $schema = $this->server->schemas()->schemaFor($type);
             $className = $this->schemaBuilder->typeToClassName($type);
 
             $attrs = $this->schemaBuilder->buildAttributes($schema);
