@@ -1,4 +1,3 @@
-import {markBootstrapCompleted, runBeforeReady, waitUntilReady} from '$lib/utils/waitUntilReady.js';
 import {getAuthenticatedConnection, getConnection, getConnectionWithUserInfo, getRegisteringUserConnection, loadConnection} from '$lib/data/connection/connection.js';
 import {autoRegisterConfigSchemas, getConfig, loadConfig} from '$lib/data/config/config.js';
 import {initializeEcho} from '$lib/echo.js';
@@ -6,7 +5,7 @@ import {autoRegisterResourceSchemas} from '$lib/data/resources/resourceRegistry.
 import {__, hasTranslation, loadTranslationLabels} from '$lib/utils/translator.js';
 import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
 import {buildStorageFileUrl} from '$lib/utils/storageFileProxy.js';
-import {applyWaitingUntilReadyToMigrate, autoRegisterMigrations, waitUntilReadyToMigrate} from '$lib/data/migrations/migrator.js';
+import {applyMigrations, autoRegisterMigrations} from '$lib/data/migrations/migrator.js';
 import {aiModelStore, loadAiModels} from '$lib/stores/AiModelStore.svelte.js';
 import {registerSvelteSnippetLoader} from '$lib/svelteSnippetLoader.js';
 import {loadSystemPrompts, systemPromptStore} from '$lib/stores/SystemPromptStore.svelte.js';
@@ -18,24 +17,28 @@ import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
 import type {WellKnownSystemPromptType} from '$lib/schemas/resources/system-prompts.schema.js';
 import {getFileIconSvg} from '$lib/utils/fileIconSvg.js';
 import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
+import {Bootstrapper} from '$lib/utils/Bootstrapper.js';
 
 // Augment the global Window interface to include our globals, so that they can be accessed without TypeScript errors.
 // WARNING: This is only here for legacy support! Do not use global variables in new code!
 declare global {
     interface Window {
-        __earlyWaitUntilReadyQueue: Array<() => Promise<void>>;
+        hawkiEarlyWaitUntilBootstrapQueue: Array<(bootstrapper: Bootstrapper) => Promise<void>>;
+        hawkiEarlyWaitUntilReadyQueue: Array<() => Promise<void>>;
+        hawkiBootstrap: Bootstrapper;
+        hawkiIsReady: boolean;
+        waitUntilBootstrap: (cb: (bootstrapper: Bootstrapper) => Promise<void> | void) => void;
+        waitUntilReady: (cb: () => Promise<void> | void) => void;
         getConnection: typeof getConnection;
         getAuthenticatedConnection: typeof getAuthenticatedConnection;
         getRegisteringUserConnection: typeof getRegisteringUserConnection;
         getConnectionWithUserInfo: typeof getConnectionWithUserInfo;
         getConfig: typeof getConfig;
+        applyMigrations: typeof applyMigrations;
         __: typeof __;
         hasTranslation: typeof hasTranslation;
-        waitUntilReady: typeof waitUntilReady;
         oldUiBridge: typeof oldUiBridge;
         oldUiMessageHistory: typeof oldUiMessageHistory;
-        OLD_UI_MIGHT_NEED_MIGRATION: boolean;
-        waitUntilReadyToMigrate: typeof waitUntilReadyToMigrate;
         buildStorageFileUrl: typeof buildStorageFileUrl;
         userKeychain: KeychainStore;
         getAiModels: () => AiModel[];
@@ -48,10 +51,6 @@ declare global {
         };
     }
 }
-
-const EARLY_BOOT_PRIORITY = 0;
-const LATE_BOOT_PRIORITY = 50;
-const FINAL_BOOT_PRIORITY = 100;
 
 export function run() {
     autoRegisterResourceSchemas();
@@ -66,9 +65,8 @@ export function run() {
     window.getConfig = getConfig;
     window.__ = __;
     window.hasTranslation = hasTranslation;
-    window.waitUntilReady = waitUntilReady;
-    window.waitUntilReadyToMigrate = waitUntilReadyToMigrate;
     window.buildStorageFileUrl = buildStorageFileUrl;
+    window.applyMigrations = applyMigrations;
     window.userKeychain = keychainStore;
     window.oldUiBridge = oldUiBridge;
     window.oldUiMessageHistory = oldUiMessageHistory;
@@ -85,27 +83,24 @@ export function run() {
     };
     window.getFileIconSvg = getFileIconSvg;
 
+    const bootstrapper = new Bootstrapper();
+
     // Before the bootstrap, we must load the connection and config, since everything else depends on them.
     // They are loaded simultaneously, but before the rest of the bootstrap steps, to minimize the time spent waiting for them.
-    runBeforeReady(loadConnection, EARLY_BOOT_PRIORITY);
-    runBeforeReady(loadConfig, EARLY_BOOT_PRIORITY);
-
-    // Special step because we need to sync the new migrations, with the old UI.
-    // When the old ui tells us that it will run migrations (by setting the OLD_UI_MIGHT_NEED_MIGRATION flag)
-    // we wait until the old UI has run its migrations before we go on with the remaining bootstrap steps.
-    runBeforeReady(applyWaitingUntilReadyToMigrate, EARLY_BOOT_PRIORITY + 1);
+    bootstrapper.onPreparationStage(loadConnection);
+    bootstrapper.onPreparationStage(loadConfig);
 
     // Main bootstrap, these can be run in parallel, but they must be run after the connection and config are loaded.
-    runBeforeReady(loadTranslationLabels);
-    runBeforeReady(loadAiModels);
-    runBeforeReady(loadAiToolsAndCapabilities);
-    runBeforeReady(loadSystemPrompts);
+    bootstrapper.onMainStage(loadTranslationLabels);
+    bootstrapper.onMainStage(loadAiModels);
+    bootstrapper.onMainStage(loadAiToolsAndCapabilities);
+    bootstrapper.onMainStage(loadSystemPrompts);
 
     // Next, we initialize some globals, such as the Echo instance for real-time events.
-    runBeforeReady(initializeEcho, LATE_BOOT_PRIORITY);
+    bootstrapper.onLateStage(initializeEcho);
 
     // As a last step, we wait until the DOM is fully loaded
-    runBeforeReady(() => new Promise(resolve => {
+    bootstrapper.onFinalizationStage(() => new Promise(resolve => {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 resolve();
@@ -113,14 +108,28 @@ export function run() {
         } else {
             resolve();
         }
-    }), FINAL_BOOT_PRIORITY);
-    runBeforeReady(async () => registerSvelteSnippetLoader(), FINAL_BOOT_PRIORITY);
+    }));
+    bootstrapper.onFinalizationStage(registerSvelteSnippetLoader);
 
-    // Inherit any before-ready tasks that were registered before we could start the bootstrap.
-    if (Array.isArray(window.__earlyWaitUntilReadyQueue)) {
-        window.__earlyWaitUntilReadyQueue.forEach(cb => waitUntilReady(cb));
-        window.__earlyWaitUntilReadyQueue = [];
-    }
+    return new Promise<void>(async (resolve) => {
+        window.hawkiBootstrap = bootstrapper;
+        if (Array.isArray(window.hawkiEarlyWaitUntilBootstrapQueue)) {
+            for (const cb of window.hawkiEarlyWaitUntilBootstrapQueue) {
+                await cb(bootstrapper);
+            }
+        }
 
-    return markBootstrapCompleted();
+        await bootstrapper.run();
+
+        window.hawkiIsReady = true;
+        if (Array.isArray(window.hawkiEarlyWaitUntilReadyQueue)) {
+            for (const cb of window.hawkiEarlyWaitUntilReadyQueue) {
+                await cb();
+            }
+        }
+
+        console.log('Bootstrap complete, application is ready.');
+
+        resolve();
+    });
 }

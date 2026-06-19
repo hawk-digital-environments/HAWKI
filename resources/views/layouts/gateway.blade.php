@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ asset('css/handshake_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
 
+    <x-early-frontend-bridge/>
     <script src="{{ asset('js/functions.js') }}"></script>
     <script src="{{ asset('js/handshake_functions.js') }}"></script>
     <script src="{{ asset('js/encryption.js') }}"></script>

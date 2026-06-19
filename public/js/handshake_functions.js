@@ -304,10 +304,10 @@ async function verifyEnteredPassKey(provider) {
 
     if (await window.userKeychain.validateKeychainPassword(enteredKey)) {
         await setPassKey(enteredKey);
-        window.waitUntilReadyToMigrate(async () => {
-            await window.oldUiBridge.runMigrations('after_passkey');
-            window.location.href = '/chat';
-        });
+        // This is the trigger for the migrations when the user logged in but did not have a passkey already in local storage.
+        // The call in handshake.blade.php is used to trigger the migration for users who already have a passkey in local storage when they login.
+        await window.applyMigrations('after_passkey');
+        window.location.href = '/chat';
     } else {
         errorMessage.innerText = 'Failed to verify passkey. Please try again.';
         setTimeout(() => {

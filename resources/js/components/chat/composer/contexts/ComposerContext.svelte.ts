@@ -18,12 +18,16 @@ import {GuardAspect} from '$lib/components/chat/composer/contexts/aspects/GuardA
 import {MessageSender} from '$lib/components/chat/composer/contexts/sending/MessageSender.js';
 import {OldUiBridgeTransport} from '$lib/components/chat/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
-import {ModernEventTarget} from '$lib/utils/ModernEventTarget.js';
+import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
 const allowedContextTypes = ['aiConv', 'room'] as const;
 export type ComposerContextType = typeof allowedContextTypes[number];
 
-const FOCUS_INPUT_EVENT = 'focusInput';
+const FOCUS_INPUT_PIPELINE = 'focusInput';
+
+interface FlowList {
+    [FOCUS_INPUT_PIPELINE]: void;
+}
 
 export class ComposerContext {
 
@@ -70,7 +74,7 @@ export class ComposerContext {
         });
     }
 
-    private eventTarget = new ModernEventTarget();
+    private sync = new SyncPipeline<FlowList>();
     private _systemPrompt: string;
     private _sendStatus = $state(null as SendMessageStatus | null);
 
@@ -94,11 +98,11 @@ export class ComposerContext {
     }
 
     public focusInput(): void {
-        this.eventTarget.trigger(FOCUS_INPUT_EVENT);
+        this.sync.trigger(FOCUS_INPUT_PIPELINE);
     }
 
     public onFocusInput(handler: () => void): () => void {
-        return this.eventTarget.on(FOCUS_INPUT_EVENT, handler);
+        return this.sync.on(FOCUS_INPUT_PIPELINE, handler);
     }
 
     public send(): SendMessageStatus | null {

@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="{{ asset('css/print_styles.css') }}">
     <!-- <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}"> -->
 
+    <x-early-frontend-bridge/>
     @vite('resources/js/app.js')
 
     <script src="{{ asset('js/functions.js') }}"></script>

@@ -1,18 +1,18 @@
-import {ModernEventTarget} from '$lib/utils/ModernEventTarget.js';
-
-const BODY_CHUNK_EVENT = 'body-chunk';
-const RECEIVED_EVENT = 'complete';
-const ERROR_EVENT = 'error';
-const ABORT_EVENT = 'abort';
+import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
 export type ResponseBodyChunk = string;
 export type ResponseBody = string | Array<ResponseBodyChunk> | null;
 
-interface EventList {
-    [BODY_CHUNK_EVENT]: ResponseBodyChunk;
-    [RECEIVED_EVENT]: ResponseBody;
-    [ERROR_EVENT]: string;
-    [ABORT_EVENT]: void;
+const BODY_CHUNK_PIPELINE = 'body-chunk';
+const RECEIVED_PIPELINE = 'complete';
+const ERROR_PIPELINE = 'error';
+const ABORT_PIPELINE = 'abort';
+
+interface FlowList {
+    [BODY_CHUNK_PIPELINE]: ResponseBodyChunk;
+    [RECEIVED_PIPELINE]: ResponseBody;
+    [ERROR_PIPELINE]: string;
+    [ABORT_PIPELINE]: void;
 }
 
 export class SendMessageResponse {
@@ -26,7 +26,7 @@ export class SendMessageResponse {
 
     public readonly body: Promise<ResponseBody>;
     private readonly resolveBodyPromise: (body: ResponseBody) => void;
-    private readonly eventTarget = new ModernEventTarget<EventList>();
+    private readonly sync = new SyncPipeline<FlowList>();
 
     private abortController = $state<AbortController | null>(null);
     private _received = $state(false);
@@ -61,16 +61,16 @@ export class SendMessageResponse {
     }
 
     public onBodyChunk(handler: (chunk: unknown) => void): () => void {
-        return this.eventTarget.on(BODY_CHUNK_EVENT, handler);
+        return this.sync.on(BODY_CHUNK_PIPELINE, handler);
     }
 
     public triggerBodyChunk(chunk: ResponseBodyChunk): void {
         this.chunks.push(chunk);
-        this.eventTarget.trigger(BODY_CHUNK_EVENT, chunk);
+        this.sync.trigger(BODY_CHUNK_PIPELINE, chunk);
     }
 
     public onReceived(handler: (body: unknown) => void): () => void {
-        return this.eventTarget.on(RECEIVED_EVENT, handler);
+        return this.sync.on(RECEIVED_PIPELINE, handler);
     }
 
     public triggerReceived(body?: ResponseBody): void {
@@ -92,11 +92,11 @@ export class SendMessageResponse {
 
         this._received = true;
         this.resolveBodyPromise(body);
-        this.eventTarget.trigger(RECEIVED_EVENT, body);
+        this.sync.trigger(RECEIVED_PIPELINE, body);
     }
 
     public onError(handler: (error: string) => void): () => void {
-        return this.eventTarget.on(ERROR_EVENT, handler);
+        return this.sync.on(ERROR_PIPELINE, handler);
     }
 
     public triggerError(error: string): void {
@@ -107,7 +107,7 @@ export class SendMessageResponse {
 
         this._failed = true;
         this.resolveBodyPromise(null);
-        this.eventTarget.trigger(ERROR_EVENT, error);
+        this.sync.trigger(ERROR_PIPELINE, error);
     }
 
     public onDone(handler: () => void): () => void {

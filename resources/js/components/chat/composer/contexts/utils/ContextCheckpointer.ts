@@ -4,14 +4,14 @@ import {ModelParameterAspect} from '$lib/components/chat/composer/contexts/aspec
 import type {ModeAspect} from '$lib/components/chat/composer/contexts/aspects/ModeAspect.svelte.js';
 import type {ToolAspect} from '$lib/components/chat/composer/contexts/aspects/ToolAspect.svelte.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
-import {ModernEventTarget} from '$lib/utils/ModernEventTarget.js';
+import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
-const CREATE_CHECKPOINT_EVENT = 'createCheckpoint';
-const RESTORE_CHECKPOINT_EVENT = 'restoreCheckpoint';
+const CREATE_CHECKPOINT_PIPELINE = 'createCheckpoint';
+const RESTORE_CHECKPOINT_PIPELINE = 'restoreCheckpoint';
 
-interface EventList {
-    [CREATE_CHECKPOINT_EVENT]: boolean;
-    [RESTORE_CHECKPOINT_EVENT]: void;
+interface FlowList {
+    [CREATE_CHECKPOINT_PIPELINE]: boolean;
+    [RESTORE_CHECKPOINT_PIPELINE]: void;
 }
 
 interface ComposerContextCheckpoint {
@@ -32,7 +32,7 @@ interface ComposerContextCheckpointWithMeta {
 
 export class ContextCheckpointer {
     private _checkpoints: ComposerContextCheckpointWithMeta[] = [];
-    private eventTarget = new ModernEventTarget<EventList>();
+    private sync = new SyncPipeline<FlowList>();
 
     public get hasCheckpoint(): boolean {
         return this._checkpoints.length > 0;
@@ -49,19 +49,19 @@ export class ContextCheckpointer {
         if (this.hasCheckpoint && !this.allowsNestedCheckpoints) {
             return;
         }
-        this.eventTarget.trigger(CREATE_CHECKPOINT_EVENT, allowsNested ?? false);
+        this.sync.trigger(CREATE_CHECKPOINT_PIPELINE, allowsNested ?? false);
     }
 
     public restoreCheckpoint(): void {
         if (!this.hasCheckpoint) {
             return;
         }
-        this.eventTarget.trigger(RESTORE_CHECKPOINT_EVENT);
+        this.sync.trigger(RESTORE_CHECKPOINT_PIPELINE);
         this._checkpoints.pop();
     }
 
     public onCreateCheckpoint(listener: (check: ((value: ComposerContextCheckpoint) => void)) => void): () => void {
-        return this.eventTarget.on(CREATE_CHECKPOINT_EVENT, (allowsNested) => {
+        return this.sync.on(CREATE_CHECKPOINT_PIPELINE, (allowsNested) => {
             listener((checkpoint: ComposerContextCheckpoint) => {
                 this._checkpoints.push({allowsNested, checkpoint});
             });
@@ -69,7 +69,7 @@ export class ContextCheckpointer {
     }
 
     public onRestoreCheckpoint(listener: (value: ComposerContextCheckpoint) => void): () => void {
-        return this.eventTarget.on(RESTORE_CHECKPOINT_EVENT, () => {
+        return this.sync.on(RESTORE_CHECKPOINT_PIPELINE, () => {
             const checkpoint = this._checkpoints[this._checkpoints.length - 1];
             if (checkpoint) {
                 listener(checkpoint.checkpoint);

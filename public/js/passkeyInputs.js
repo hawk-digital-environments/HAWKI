@@ -1,4 +1,4 @@
-function initializePasskeyInputs(applyCharacterLimitation = false) {
+function initializePasskeyInputs(applyCharacterLimitation = false, forLogin = false) {
     const config = window.getConfig();
     const allowPaste = config.security.passkeyAllowPaste;
     const charLimit = config.security.passkeyRestrictCharacters;
@@ -21,7 +21,12 @@ function initializePasskeyInputs(applyCharacterLimitation = false) {
         input.addEventListener('keypress', function (event) {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                checkPasskey();
+                if (forLogin) {
+                    verifyEnteredPassKey(input);
+                } else {
+                    checkPasskey();
+                }
+
             }
         });
 

@@ -81,27 +81,35 @@
     </div>
 
     <script>
-        window.OLD_UI_MIGHT_NEED_MIGRATION = true;
-
-        window.waitUntilReady(async function () {
-            window.waitUntilReadyToMigrate(async () => {
+        window.waitUntilBootstrap((bootstrapper) => {
+            bootstrapper.onStageReached('migration', async () => {
                 if (await getPassKey()) {
-                    await window.oldUiBridge.runMigrations('after_passkey');
+                    // This runs the migrations if the user has a passkey already stored in the local storage.
+                    // The call in handshake_functions.js at verifyEnteredPassKey runs the same migration when the user is logging fresh
+                    // Nothing in local storage. This is the case when the user runs into the "else-block" below with "switchSlide(1)"
+                    await window.applyMigrations('after_passkey');
                     window.location.href = '/chat';
                 } else {
-                    await window.oldUiBridge.runMigrations('after_login');
+                    await window.applyMigrations('after_login');
                     switchSlide(1);
                     setTimeout(() => {
                         if (@json($activeOverlay)) {
                             setOverlay(false, true);
                         }
                     }, 100);
+                    const isLogin = window.getConnection().type !== 'internal_registering_user';
+                    initializePasskeyInputs(false, isLogin);
+
+                    let isWaitingForPasskey = true;
+                    while (isWaitingForPasskey) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        if (await getPassKey()) {
+                            isWaitingForPasskey = false;
+                        }
+                    }
                 }
             });
         });
 
-        window.waitUntilReady(function () {
-            initializePasskeyInputs(false);
-        });
     </script>
 @endsection

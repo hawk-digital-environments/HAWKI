@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset('css/login_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
 
+    <x-early-frontend-bridge/>
     <script src="{{ asset('js/functions.js') }}"></script>
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>

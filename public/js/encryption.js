@@ -313,7 +313,6 @@ async function getPassKey() {
                 return null;
             }
         } catch (error) {
-            console.log('Passkey not found:', error);
             return null;
         }
     }
