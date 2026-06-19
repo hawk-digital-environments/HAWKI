@@ -127,8 +127,8 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         if (!empty($config['tools']) && is_array($config['tools'])) {
             $tools = $config['tools'];
 
-            $settings->setUseTools($tools['tool_calling'] === true);
-            $settings->setHandleFiles($tools['file_upload'] === true);
+            $settings->setUseTools(($tools['tool_calling'] ?? false) === true);
+            $settings->setHandleFiles(($tools['file_upload'] ?? false) === true);
 
             foreach ([
                          WellKnownCapabilities::WEB_SEARCH,

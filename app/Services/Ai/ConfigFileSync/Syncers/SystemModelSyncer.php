@@ -22,7 +22,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
     public function __construct(
         #[Config('model_providers.system_models')]
         private array                 $systemModels,
-        #[Config('model_providers.system_models_ext_app')]
+        #[Config('model_providers.system_models_ext_app', [])]
         private array                 $extAppSystemModels,
         private Repository            $configRepository,
         private SystemModelRepository $systemModelRepository,
