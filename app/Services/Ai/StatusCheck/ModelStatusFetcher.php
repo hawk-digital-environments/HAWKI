@@ -76,6 +76,13 @@ readonly class ModelStatusFetcher
     public function get(string $url): HttpResponse
     {
         $url = $this->modelStatusUrl ?? $url;
+
+        // If the url is absolute, reset the base uri of the client to avoid incorrect concatenation
+        /** @noinspection BypassedUrlValidationInspection */
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            $this->client->withBaseUri('');
+        }
+
         $response = $this->client->request(HttpRequest::get($url));
         if (!$response->isSuccessful()) {
             throw new \RuntimeException(sprintf('Failed to fetch model status from %s: %s', $url, $response->body));
