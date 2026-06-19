@@ -1,0 +1,25 @@
+<?php
+declare(strict_types=1);
+
+namespace Tests\Unit\Services\System\JsonApi\Eloquent\ScopedSchema\ScopedSchemaServerTraitTestFixtures;
+
+use App\Services\System\JsonApi\Eloquent\ScopedSchema\ScopedSchemaInterface;
+use LaravelJsonApi\Eloquent\Schema;
+
+/**
+ * Points to a model class that does not extend Eloquent Model — triggers the "invalid model" error.
+ */
+class SchemaWithInvalidModelFixture extends Schema implements ScopedSchemaInterface
+{
+    public static string $model = NotAModelFixture::class;
+
+    public static function scopes(): iterable
+    {
+        yield new ValidScopeFixture();
+    }
+
+    public function fields(): iterable
+    {
+        return [];
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "legacy": {
+        "stream": {
+            "connectionErrorMessage": "Something went wrong while we tried to connect to the AI. Please try again.",
+            "connectionErrorTitle": "Something went wrong"
+        },
+        "aiChat": {
+            "streamProcessingError": "An error occurred while processing the AI response. Please try again."
+        },
+        "export": {
+            "noDataError": "There is no data available to export"
+        },
+        "fileManager": {
+            "invalidServerResponse": "The server returned an invalid response",
+            "networkError": "A network error occurred during upload. Please check your internet connection and try again."
+        }
+    }
+}

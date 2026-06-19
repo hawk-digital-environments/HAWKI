@@ -3,13 +3,13 @@
 namespace App\Services\Storage;
 
 use App\Services\Storage\Interfaces\StorageServiceInterface;
-use App\Services\Storage\Value\FileCollection;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\StorageServiceContext;
-use App\Services\Storage\Value\StoredFile;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileExtract;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\FileCollection;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StorageServiceContext;
+use App\Services\Storage\Values\StoredFile;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileExtract;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use JsonException;
 use Symfony\Component\Filesystem\Path;
@@ -207,7 +207,7 @@ abstract class AbstractFileStorage implements StorageServiceInterface
 
         $storageDiskFilePath = reset($directFiles);
 
-        $attachment = $this->context->attachmentDb->findByStoredFileIdentifier($identifier);
+        $attachment = $this->context->attachmentDb->findOneByStoredFileIdentifier($identifier);
         if ($attachment !== null) {
             $originalFilename = $attachment->name;
         } else {

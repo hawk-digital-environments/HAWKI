@@ -45,6 +45,7 @@ namespace App\Utils;
  * echo $decorated->foo(); // outputs 'overridden'
  * echo $decorated->baz(); // outputs 'value'
  * ```
+ * @api
  */
 trait DecoratorTrait
 {

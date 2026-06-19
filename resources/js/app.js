@@ -1,8 +1,5 @@
-import './echo.js';
-import {hawkiConnection} from './util/hawkiConnection.js';
-import {hasTranslation, translate} from './util/translator.js';
-
-import jQuery from 'jquery';
+// @ts-nocheck
+import './echo.ts';
 import Cropper from 'cropperjs';
 import jsPDF from 'jspdf';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -16,13 +13,9 @@ import katex from 'katex';
 import renderMathInElement from 'katex/contrib/auto-render/auto-render.js';
 import pako from 'pako';
 import markdownit from 'markdown-it';
-import {getFileIconSvg} from './util/fileIconSvg.js';
-
-window.$ = jQuery;
-
+import {run} from '$lib/bootstrap.ts';
 
 window.Cropper = Cropper;
-
 
 window.jsPDF = jsPDF;
 
@@ -34,16 +27,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 // window.TextLayerBuilder = TextLayerBuilder;
 window.PDFPageView = PDFPageView;
 window.EventBus = EventBus;
-
-
 window.docx = docx;
-
 window.docxPreview = docxPreview;
-
-
 window.hljs = hljs;
-
-
 window.katex = katex;
 window.renderMathInElement = renderMathInElement;
 
@@ -87,7 +73,4 @@ const md = markdownit({
 });
 window.md = md;
 
-window.hawkiConnection = hawkiConnection;
-window.__ = translate;
-window.hasTranslation = hasTranslation;
-window.getFileIconSvg = getFileIconSvg;
+run();

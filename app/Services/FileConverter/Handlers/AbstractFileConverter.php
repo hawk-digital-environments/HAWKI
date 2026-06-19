@@ -6,7 +6,7 @@ namespace App\Services\FileConverter\Handlers;
 
 
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
-use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Values\FileReference;
 use Illuminate\Http\UploadedFile;
 use Symfony\Component\Finder\SplFileInfo;
 

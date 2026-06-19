@@ -7,13 +7,12 @@ use App\Models\AiConv;
 use App\Models\AiConvMsg;
 use App\Models\Attachment;
 use App\Services\Chat\AiConv\AiConvService;
-use App\Services\Chat\Attachment\Db\AttachmentDb;
 use App\Services\Chat\Message\Handlers\PrivateMessageHandler;
 use App\Services\Chat\Message\MessageContentValidator;
 use App\Services\Storage\FileStorageService;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +24,6 @@ use Illuminate\Support\Facades\Log;
 class AiConvController extends Controller
 {
     public function __construct(
-        protected readonly AttachmentDb            $attachmentService,
         protected readonly AiConvService           $aiConvService,
         protected readonly MessageContentValidator $contentValidator,
         protected readonly PrivateMessageHandler   $messageHandler
@@ -64,7 +62,8 @@ class AiConvController extends Controller
     public function update(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            'system_prompt' => 'string'
+            'system_prompt' => 'string',
+            'conv_name' => 'string|max:255',
         ]);
         $this->aiConvService->update($validatedData, $slug);
 
@@ -104,7 +103,7 @@ class AiConvController extends Controller
 
         return response()->json([
             'success' => true,
-            'messageData' => $message->toResource(AiConvMsgResource::class)->resolve()
+            'messageData' => $message->toResource(AiConvMsgResource::class)->resolve(),
         ]);
     }
 
@@ -130,13 +129,14 @@ class AiConvController extends Controller
         return response()->json([
             'success' => true,
             'messageData' => $messageData,
+            'legacyResource' => $message->toResource(AiConvMsgResource::class)->resolve(),
         ]);
     }
 
     public function deleteMessage(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            "message_id" => 'required|string|size:5'
+            "message_id" => 'required|string|min:5'
         ]);
 
         $conv = AiConv::where('slug', $slug)->first();
@@ -213,7 +213,7 @@ class AiConvController extends Controller
                 ], 500);
             }
 
-            $result = $this->attachmentService->delete($attachment);
+            $result = $attachment->delete();
             return response()->json([
                 "success" => $result
             ]);

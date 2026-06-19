@@ -3,8 +3,8 @@
 namespace App\Services\Storage;
 
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
-use App\Services\Storage\Value\PlainTextLanguageType;
-use App\Services\Storage\Value\StorageServiceContext;
+use App\Services\Storage\Values\PlainTextLanguageType;
+use App\Services\Storage\Values\StorageServiceContext;
 use Symfony\Component\Mime\MimeTypes;
 
 class FileStorageService extends AbstractFileStorage

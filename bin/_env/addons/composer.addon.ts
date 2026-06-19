@@ -11,6 +11,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .description('runs a certain composer command for the project')
             .allowExcessArguments(true)
             .allowUnknownOption(true)
+            .helpOption(false)
             .action((_, command) => context.composer.exec(command.args));
     }
 });

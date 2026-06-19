@@ -11,8 +11,8 @@ use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Interfaces\FileInterface;
-use App\Services\Storage\Value\StoredFile;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\StoredFile;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -109,17 +109,6 @@ abstract class AbstractAttachmentFormatter
 
                 foreach ($this->resolveFormattableFiles($attachment, $file) as $formattableFile) {
                     try {
-                        if (!$formattableFile instanceof FileInterface) {
-                            $this->logger->error(sprintf(
-                                'The Attachment formatter "%s" resolved a formattable file of type: "%s" which is not supported. Only objects implementing "%s" are allowed.',
-                                static::class,
-                                get_debug_type($formattableFile),
-                                FileInterface::class
-                            ));
-
-                            continue;
-                        }
-
                         $result = $this->formatFile($formattableFile, $attachment, $model);
 
                         if ($result === null) {
@@ -173,15 +162,6 @@ abstract class AbstractAttachmentFormatter
                 $this->logger->warning(sprintf(
                     'Attachment with uuid "%s" was not found in the attachments map, skipping.',
                     $uuid
-                ));
-                continue;
-            }
-
-            if (!$attachment instanceof Attachment) {
-                $this->logger->error(sprintf(
-                    'The provided attachments map contains a non-Attachment value for uuid "%s" of type "%s".',
-                    $uuid,
-                    get_debug_type($attachment)
                 ));
                 continue;
             }

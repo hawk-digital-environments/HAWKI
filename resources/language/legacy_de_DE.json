@@ -1,0 +1,18 @@
+{
+    "legacy": {
+        "stream": {
+            "connectionErrorMessage": "Bei der Verbindung zum KI-Stream ist ein Fehler aufgetreten. Bitte überprüfe deine Internetverbindung und versuche es erneut.",
+            "connectionErrorTitle": "Kein Anschluss unter diesem Chat"
+        },
+        "aiChat": {
+            "streamProcessingError": "Es ist ein Fehler aufgetreten, während die KI-Antwort verarbeitet wurde. Bitte versuche es erneut."
+        },
+        "export": {
+            "noDataError": "Es liegen keine Daten zum Export vor"
+        },
+        "fileManager": {
+            "invalidServerResponse": "Der Server hat eine ungültige Antwort zurückgegeben",
+            "networkError": "Es gab ein Problem mit der Netzwerkverbindung. Bitte überprüfe deine Internetverbindung und versuche es erneut."
+        }
+    }
+}

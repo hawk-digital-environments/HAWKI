@@ -33,7 +33,7 @@ readonly class DisplayNameBuilder
         }
 
         $values = [];
-        foreach (Str::of($definition)->explode(',')->map('trim')->filter()->all() as $field) {
+        foreach (Str::of($definition)->explode(',')->map(fn($v) => trim($v))->filter()->all() as $field) {
             try {
                 $value = $valueResolver($field);
                 if ($value instanceof Stringable) {

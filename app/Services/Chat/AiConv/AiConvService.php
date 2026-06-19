@@ -7,13 +7,13 @@ use App\Models\AiConv;
 use App\Services\Chat\Message\Handlers\PrivateMessageHandler;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 
-class AiConvService{
+class AiConvService
+{
 
     public function __construct(
         protected PrivateMessageHandler $messageHandler
@@ -31,7 +31,7 @@ class AiConvService{
             'conv_name' => $validatedData['conv_name'],
             'user_id' => Auth::id(), // Associate the conversation with the user
             'slug' => Str::slug(Str::random(16)), // Create a unique slug
-            'system_prompt'=> $validatedData['system_prompt'],
+            'system_prompt' => $validatedData['system_prompt'],
         ]);
     }
 
@@ -49,7 +49,8 @@ class AiConvService{
     }
 
 
-    public function update($requestData, $slug): bool{
+    public function update($requestData, $slug): bool
+    {
         $user = Auth::user();
         $conv = AiConv::where('slug', $slug)->firstOrFail();
 
@@ -57,40 +58,43 @@ class AiConvService{
             throw new AuthorizationException();
         }
 
-        try{
-            $conv->update(['system_prompt' => $requestData['system_prompt']]);
+        try {
+            $data = [];
+            if (!empty($requestData['conv_name'])) {
+                $data['conv_name'] = $requestData['conv_name'];
+            }
+            if (!empty($requestData['system_prompt'])) {
+                $data['system_prompt'] = $requestData['system_prompt'];
+            }
+            if (!empty($data)) {
+                $conv->update($data);
+            }
             return true;
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             Log::error("Failed to update Conv. Error: $e");
             return false;
         }
     }
 
 
-    public function delete($slug){
+    public function delete($slug)
+    {
         $user = Auth::user();
         $conv = AiConv::where('slug', $slug)->firstOrFail();
-
-        // Check if the conv exists
-        if (!$conv) {
-            throw new ModelNotFoundException();
-        }
 
         if ($conv->user_id !== $user->id) {
             throw new AuthorizationException();
         }
-        try{
+        try {
             // Delete related messages and members
             $messages = $conv->messages()->get();
-            foreach($messages as $message){
+            foreach ($messages as $message) {
                 $this->messageHandler->delete($conv, $message->toArray());
             }
 
             $conv->delete();
             return true;
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             Log::error("Failed to remove Conv. Error: $e");
             return false;
         }

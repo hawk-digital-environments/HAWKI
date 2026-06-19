@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Utils\Arrays;
 
-
+/**
+ * @api
+ */
 final class RecursiveMerger
 {
     private static bool $mergeNumeric;
@@ -48,8 +50,10 @@ final class RecursiveMerger
                     continue;
                 }
 
+                // @codeCoverageIgnoreStart
                 // @phpstan-ignore-next-line Technically, unreachable code, but I want to be safe in case more options are added in the future
                 continue;
+                // @codeCoverageIgnoreEnd
             }
 
             $argsClean[] = $arg;

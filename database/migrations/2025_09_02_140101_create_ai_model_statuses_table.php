@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\AI\Value\ModelOnlineStatus;
+use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,10 +11,10 @@ return new class extends Migration {
         Schema::create('ai_model_statuses', function (Blueprint $table) {
             $table->string('model_id')->primary();
             $table->enum('status', [
-                ModelOnlineStatus::ONLINE->value,
-                ModelOnlineStatus::OFFLINE->value,
-                ModelOnlineStatus::UNKNOWN->value,
-            ]);
+                OnlineStatus::ONLINE->value,
+                OnlineStatus::OFFLINE->value,
+                OnlineStatus::UNKNOWN->value,
+            ])->default(OnlineStatus::UNKNOWN->value);
             $table->timestamps();
         });
     }

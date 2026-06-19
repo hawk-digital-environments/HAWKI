@@ -3,8 +3,8 @@ const FILTER_RULES = {
     vision: {
         implies: ['file_upload'],
         onlyIf: [],
-        prohibits: [],
-    },
+        prohibits: []
+    }
     // Add more rules as needed
 };
 
@@ -13,7 +13,7 @@ let inputFilters = new Map();                // Per fieldId => [user filters]
 let regenerationFilters = [];                // Temporary filters for regeneration menu
 
 
-function initModelFilter(){
+function initModelFilter() {
     inputFilters = new Map();
     regenerationFilters = [];
 }
@@ -61,9 +61,9 @@ function isModelEligible(model, filters) {
     // A capability is considered supported when its value is a non-empty, non-false,
     // non-'unsupported' entry — covering booleans, 'native', and tool-name strings
     // injected from DB assignments.
+    const capabilitiesOfModel = hawkiConnection('ai.legacy.capabilitiesOfModels')[model.modelId] || [];
     return expandedFilters.every(f => {
-        const val = model.capabilities?.[f];
-        return val !== undefined && val !== null && val !== false && val !== 'unsupported';
+        return capabilitiesOfModel.includes(f);
     });
 }
 
@@ -73,27 +73,27 @@ function filterModels(fieldId = null, filters = null) {
     // If filters are provided directly, use them (for regeneration)
     // Otherwise, get filters from inputFilters Map (for input fields)
     const activeFilters = filters !== null ? filters : (inputFilters.get(fieldId) || []);
-    return modelsList.filter(model => isModelEligible(model, activeFilters));
+    return hawkiConnection('ai.legacy.models').filter(model => isModelEligible(model, activeFilters));
 }
 
 // === Refresh UI: Enable/Disable model selectors ===
 function refreshModelList(fieldId, context = 'input') {
     const success = selectFallbackModel(fieldId, context);
-    if(success) {
+    if (success) {
         const filters = context === 'regeneration' ? regenerationFilters : (inputFilters.get(fieldId) || []);
         const filteredModels = filterModels(fieldId, filters);
-        const allowedIds = new Set(filteredModels.map(m => m.id));
+        const allowedIds = new Set(filteredModels.map(m => m.modelId));
 
         let container;
-        if(context === 'regeneration') {
+        if (context === 'regeneration') {
             container = document.getElementById('regenerate-controls');
         } else {
             container = document.querySelector(`.input[id="${fieldId}"]`)?.closest('.input-container');
         }
 
-        if(container) {
+        if (container) {
             container.querySelectorAll('.model-selector').forEach(button => {
-                if(button.dataset.status === 'offline'){
+                if (button.dataset.status === 'offline') {
                     return;
                 }
                 button.disabled = !allowedIds.has(button.dataset.modelId);
@@ -105,34 +105,42 @@ function refreshModelList(fieldId, context = 'input') {
 
 // === Add Input Filter ===
 function addInputFilter(fieldId, filterName) {
+    if (!filterName) {
+        throw new Error('Filter name must be provided to addInputFilter');
+    }
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.add(filterName);
-    console.log(filters)
     inputFilters.set(fieldId, Array.from(filters));
-    return refreshModelList(fieldId);
+    dispatchModelStateChange();
+    return true;
+}
+
+function getInputFilters(fieldId) {
+    return inputFilters.get(fieldId) || [];
 }
 
 // === Remove Input Filter ===
 function removeInputFilter(fieldId, filterName) {
     const filters = new Set(inputFilters.get(fieldId) || []);
     filters.delete(filterName);
-    console.log(filters)
 
     inputFilters.set(fieldId, Array.from(filters));
-    return refreshModelList(fieldId);
+    dispatchModelStateChange();
+    return true;
 }
 
 // === Clear Input Filters for Field ===
 function clearInputFilters(fieldId) {
     inputFilters.set(fieldId, []);
-    return refreshModelList(fieldId);
+    dispatchModelStateChange();
+    return true;
 }
 
 // === If the model is incapable, switch to default model ===
 function selectFallbackModel(fieldId, context = 'input', currentModel = null) {
     const filters = context === 'regeneration' ? regenerationFilters : (inputFilters.get(fieldId) || []);
     const filteredModels = filterModels(fieldId, filters);
-    const availableModelIds = new Set(filteredModels.map(m => m.id));
+    const availableModelIds = new Set(filteredModels.map(m => m.modelId));
 
     // For regeneration context, use the provided currentModel; otherwise use activeModel
     const modelToCheck = context === 'regeneration' ? currentModel : activeModel;
@@ -143,24 +151,20 @@ function selectFallbackModel(fieldId, context = 'input', currentModel = null) {
     }
 
     // 2️⃣ priority-based fallback
-    const priorityList = [
-        { filter: 'web_search', fallbackKey: 'default_web_search_model' },
-        { filter: 'vision', fallbackKey: 'default_vision_model' },
-        { filter: 'file_upload', fallbackKey: 'default_file_upload_model' },
-        { filter: null, fallbackKey: 'default_model' }
-    ];
+    const systemModels = hawkiConnection('ai.legacy.systemModels');
+    const systemModelKeys = Object.keys(systemModels);
+    for (const systemModelKey of systemModelKeys) {
+        if (systemModelKey && !filters.includes(systemModelKey)) {
+            continue;
+        }
 
-    for (const { filter, fallbackKey } of priorityList) {
-        if (filter && !filters.includes(filter)) continue;
-
-        let candidateId = defaultModels[fallbackKey];
-        let candidate = modelsList.find(m => m.id === candidateId);
-
+        const candidateId = systemModels[systemModelKey];
+        const candidate = hawkiConnection('ai.legacy.models').find(m => m.modelId === candidateId);
         if (isModelUsable(candidate, filters, availableModelIds)) {
             if (context === 'regeneration') {
                 return candidate; // Return the model for regeneration context
             } else {
-                setModel(candidate.id);
+                setModel(candidate.modelId);
                 return true;
             }
         }
@@ -206,8 +210,7 @@ function formatFilterName(filter) {
 
 function isModelUsable(model, filters, availableModelIds) {
     if (!model) return false;
-    if (!model.active) return false;
-    if (!availableModelIds.has(model.id)) return false;
+    if (!availableModelIds.has(model.modelId)) return false;
 
     return isModelEligible(model, filters);
 }
@@ -224,15 +227,15 @@ function checkFilterCombination(fieldId, newFilter) {
 
     // Simulate adding the new filter and get eligible models
     const combinedFilters = [...filters, newFilter];
-    const candidateModels = modelsList.filter(model => isModelEligible(model, combinedFilters));
+    const candidateModels = hawkiConnection('ai.legacy.models').filter(model => isModelEligible(model, combinedFilters));
 
     return candidateModels.length > 0;
 }
 
 
-function getFilterFromMime(mime){
+function getFilterFromMime(mime) {
     const type = checkFileFormat(mime);
-    switch(type){
+    switch (type) {
         case('image'):
             return 'vision';
         default:
@@ -263,7 +266,9 @@ function removeRegenerationFilter(filterName) {
 
 // Clear regeneration filters
 function clearRegenerationFilters() {
-    menu.querySelectorAll(`.tool-selector`).forEach(btn => {btn.classList.remove('active')});
+    menu.querySelectorAll(`.tool-selector`).forEach(btn => {
+        btn.classList.remove('active');
+    });
 
     regenerationFilters = [];
 }
@@ -282,4 +287,70 @@ function refreshRegenerationModelList(currentModel) {
         // No valid models available
         return null;
     }
+}
+
+/**
+ * @param {string|HTMLButtonElement} inputId
+ * @param {string|string[]|null} [capabilities]
+ * @param {string|string[]|null} [tools]
+ */
+function getListOfModelsSupporting(inputId, capabilities, tools) {
+    return [];
+    if (inputId instanceof HTMLButtonElement) {
+        let resolvedId = inputId.closest('.input')?.id;
+        // If we do not find an input parent, it might be because the button is outside the input element,
+        // but still within the input container. In that case, we should look for the closest input container and then find the input within it.
+        if (!resolvedId) {
+            const closestInputContainer = inputId.closest('.input-container');
+            resolvedId = closestInputContainer?.querySelector('.input')?.id;
+            if (!resolvedId) {
+                console.error('Could not find parent input element for button', inputId, 'falling back to empty model list');
+                return [];
+            }
+        }
+        inputId = resolvedId;
+    }
+
+    const models = hawkiConnection('ai.legacy.models');
+    const capabilitiesOfModels = hawkiConnection('ai.legacy.capabilitiesOfModels');
+    const toolsOfModels = hawkiConnection('ai.legacy.toolsOfModels');
+
+    // Filters do not differentiate between capabilities and tools, so we need to separate them based on known lists
+    const knownTools = Object.keys(hawkiConnection('ai.legacy.toolLabels'));
+    const knownCapabilities = Object.keys(hawkiConnection('ai.legacy.capabilityLabels'));
+    const activeFilters = getInputFilters(inputId);
+    const activeCapabilityConstraints = activeFilters.filter(f => knownCapabilities.includes(f));
+    const activeToolConstraints = activeFilters.filter(f => knownTools.includes(f));
+
+    // We must intelligently merge the active constraints with the provided ones, ensuring we don't lose any existing constraints while also adding new ones.
+    function arrayFormMergeUnique(active, provided) {
+        const providedArray = Array.isArray(provided) ? provided : (provided ? [provided] : []);
+        const mergedSet = new Set([...active, ...providedArray]);
+        return Array.from(mergedSet);
+    }
+
+    const capabilityConstraints = arrayFormMergeUnique(activeCapabilityConstraints, capabilities);
+    const toolConstraints = arrayFormMergeUnique(activeToolConstraints, tools);
+
+    console.log('Filtering models for input', inputId, 'with capability constraints', capabilityConstraints, 'and tool constraints', toolConstraints);
+
+    return models.filter(model => {
+        const modelCapabilities = capabilitiesOfModels[model.modelId] || [];
+        const modelTools = toolsOfModels[model.modelId] || [];
+
+        const hasCapabilities = capabilityConstraints.every(c => modelCapabilities.includes(c));
+        const hasTools = toolConstraints.every(t => modelTools.includes(t));
+
+        return hasCapabilities && hasTools;
+    });
+}
+
+function canSupportAdding(inputId, newCapability, newTool, activeModel) {
+    const models = getListOfModelsSupporting(inputId, newCapability, newTool);
+    if (activeModel) {
+        const activeModelId = typeof activeModel === 'string' ? activeModel : activeModel.modelId;
+        console.log('SUPPORTING IDS', models.map(m => m.modelId), 'ACTIVE MODEL ID', activeModelId);
+        return models.some(m => m.modelId === activeModelId);
+    }
+    return models.length > 0;
 }

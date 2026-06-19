@@ -30,7 +30,7 @@ class AdminAccess
         if($member->hasRole('admin')){
             return $next($request);
         }
-   
+
         // Optionally, you can redirect back or return a response with a 403 error.
         return response()->json(['response' => 'Forbidden'], 403);
     }

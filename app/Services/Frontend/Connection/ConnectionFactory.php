@@ -5,187 +5,193 @@ declare(strict_types=1);
 namespace App\Services\Frontend\Connection;
 
 
+use App\Models\ExtApp;
 use App\Models\User;
-use App\Services\AI\AiService;
-use App\Services\Encryption\SaltProvider;
-use App\Services\Frontend\Connection\Value\AiConfig;
-use App\Services\Frontend\Connection\Value\Builder\RouteConfigBuilder;
-use App\Services\Frontend\Connection\Value\Connection\InternalConnection;
-use App\Services\Frontend\Connection\Value\Connection\InternalLoginConnection;
-use App\Services\Frontend\Connection\Value\FeatureFlags;
-use App\Services\Frontend\Connection\Value\InternalSecrets;
-use App\Services\Frontend\Connection\Value\LocaleConfig;
-use App\Services\Frontend\Connection\Value\RouteConfig;
-use App\Services\Frontend\Connection\Value\Salts;
-use App\Services\Frontend\Connection\Value\StorageConfig;
-use App\Services\Frontend\Connection\Value\TransferConfig;
-use App\Services\Frontend\Connection\Value\TranslatorConfig;
-use App\Services\Frontend\Connection\Value\Userinfo;
-use App\Services\Frontend\Connection\Value\WebsocketConfig;
-use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\FileStorageService;
+use App\Services\ExtApp\ConnectRequestCrypto as ExtAppConnectRequestCrypto;
+use App\Services\ExtApp\Repositories\ExtAppRepository;
+use App\Services\ExtApp\Repositories\ExtAppUserRepository;
+use App\Services\Frontend\Connection\Values\Connection;
+use App\Services\Frontend\Connection\Values\ConnectionType;
+use App\Services\Frontend\Connection\Values\ExtAppConnectRequestPayload;
+use App\Services\Frontend\Connection\Values\ExtAppSecrets;
+use App\Services\Frontend\Connection\Values\Userinfo;
+use App\Services\Frontend\Migrations\Repositories\FrontendMigrationRepository;
+use App\Services\Storage\Values\StoredFileIdentifier;
+use App\Services\System\UserTypes\Values\RegisteringUser;
 use App\Services\Translation\LocaleService;
-use Illuminate\Config\Repository;
-use Illuminate\Translation\Translator;
-use Route;
-use Symfony\Component\Mime\MimeTypes;
+use Illuminate\Container\Attributes\Config;
+use Illuminate\Container\Attributes\Singleton;
+use Illuminate\Http\Request;
+use Psr\Log\LoggerInterface;
 
+#[Singleton]
 readonly class ConnectionFactory
 {
     public function __construct(
-        private SaltProvider         $saltProvider,
-        private Repository           $config,
-        private AiService            $aiService,
-        private AvatarStorageService $avatarStorageService,
-        private FileStorageService   $fileStorageService,
-        private LocaleService $localeService,
-        private Translator    $translator
+        #[Config('app.version')]
+        private string                      $version,
+        private ExtAppConnectRequestCrypto  $connectRequestCrypto,
+        private ExtAppRepository            $extAppRepository,
+        private ExtAppUserRepository        $extAppUserRepository,
+        private Request                     $request,
+        private FrontendMigrationRepository $migrationRepository,
+        private LoggerInterface             $logger,
+        private LocaleService               $localeService
     )
     {
     }
 
-    public function createInternalLoginConnection(): InternalLoginConnection
+    public function createHawkiConnection(): Connection|null
     {
-        return new InternalLoginConnection(
-            version: $this->config->get('app.version'),
-            locale: $this->createLocaleConfig(),
-            translation: $this->createInternalTranslatorConfig()
-        );
-    }
+        $userContext = $this->request->getUserContext();
+        if (!$this->request->getUsageContext()->isMainApp()) {
+            $this->logger->warning('Attempt to access hawki connection from non-main app', [
+                'usageContext' => $this->request->getUsageContext()->get(),
+                'userContext' => $userContext->get(),
+            ]);
+            return null;
+        }
 
-    public function createInternalConnection(User $user): InternalConnection
-    {
-        return new InternalConnection(
-            version: $this->config->get('app.version'),
-            locale: $this->createLocaleConfig(),
-            featureFlags: FeatureFlags::createAllowAll(),
-            ai: $this->createAiConfig(false),
-            userinfo: $this->createUserinfo($user),
-            salts: $this->createSalts(),
-            storage: $this->createStorageConfig(),
-            transfer: $this->createTransferConfig(
-                $this->createInternalRouteConfig()
-            ),
-            secrets: $this->createInternalSecrets(),
-            translation: $this->createInternalTranslatorConfig()
-        );
-    }
-
-    private function createSalts(): Salts
-    {
-        return new Salts(
-            userdata: $this->saltProvider->getSaltForUserDataEncryption(),
-            invitation: $this->saltProvider->getSaltForInvitation(),
-            ai: $this->saltProvider->getSaltForAiCrypto(),
-            passkey: $this->saltProvider->getSaltForPasskey(),
-            backup: $this->saltProvider->getSaltForBackup(),
-        );
-    }
-
-    private function createUserinfo(User $user): Userinfo
-    {
-        return new Userinfo(
-            id: $user->id,
-            username: $user->username,
-            email: $user->email,
-            hash: md5($user->id . '-' . $user->publicKey)
-        );
-    }
-
-    private function createTransferConfig(RouteConfig $routes): TransferConfig
-    {
-        $appUrl = $this->config->get('app.url');
-        $appUrlScheme = parse_url($appUrl, PHP_URL_SCHEME) ?? 'http';
-        $appUrlHost = parse_url($appUrl, PHP_URL_HOST) ?? 'localhost';
-        $appUrlPath = parse_url($appUrl, PHP_URL_PATH);
-        $appUrlPort = parse_url($appUrl, PHP_URL_PORT) ?? ($appUrlScheme === 'https' ? 443 : 80);
-        return new TransferConfig(
-            baseUrl: $appUrl,
-            websocket: new WebsocketConfig(
-                key: $this->config->get('reverb.frontend.key'),
-                host: $appUrlHost,
-                port: $appUrlPort,
-                forceTLS: $this->config->get('reverb.frontend.scheme', 'https') === 'https',
-                path: $appUrlPath,
-            ),
-            routes: $routes
-        );
-    }
-
-    private function createStorageConfig(): StorageConfig
-    {
-        $extensionsFromMimeTypes = static function (array $mimeTypes) {
-            $mime = new MimeTypes();
-            $extensions = [];
-            foreach ($mimeTypes as $mimeType) {
-                $extensions[] = $mime->getExtensions($mimeType);
+        $type = (static function () use ($userContext) {
+            if ($userContext->isUser()) {
+                return ConnectionType::INTERNAL_AUTHENTICATED;
             }
-            return array_values(
-                array_filter(
-                    array_unique(array_merge(...$extensions)),
-                    static function ($ext) {
-                        // Some extensions are weird like "[1-9]", we want to filter those out, basically contain only characters and numbers
-                        return preg_match('/^[a-zA-Z0-9+]+$/', $ext);
-                    }
-                )
-            );
+            if ($userContext->isRegisteringUser()) {
+                return ConnectionType::INTERNAL_REGISTERING_USER;
+            }
+            return ConnectionType::INTERNAL;
+        })();
+
+        $userinfo = match ($type) {
+            ConnectionType::INTERNAL_AUTHENTICATED => $this->makeUserinfo($this->request->user()),
+            ConnectionType::INTERNAL_REGISTERING_USER => $this->makeUserinfo($userContext->getRegisteringUser()),
+            default => null
         };
 
-        $allowedMimeTypes = array_values(array_unique($this->fileStorageService->getAllowedMimeTypes()));
-        $allowedAvatarMimeTypes = array_values(array_unique($this->avatarStorageService->getAllowedMimeTypes()));
-        return new StorageConfig(
-            maxFileSize: $this->fileStorageService->getMaxFileSize(),
-            maxAvatarFileSize: $this->avatarStorageService->getMaxFileSize(),
-            allowedMimeTypes: $allowedMimeTypes,
-            allowedExtensions: $extensionsFromMimeTypes($allowedMimeTypes),
-            allowedAvatarMimeTypes: $allowedAvatarMimeTypes,
-            allowedAvatarExtensions: $extensionsFromMimeTypes($allowedAvatarMimeTypes),
-            maxAttachmentFiles: $this->config->get('filesystems.upload_limits.max_attachment_files')
+        return new Connection(
+            id: 'hawki',
+            type: $type,
+            version: $this->version,
+            locale: $this->localeService->getCurrentLocale(),
+            userinfo: $userinfo,
+            migrationsToApply: $this->countMigrationsToApply()
         );
     }
 
-    private function createAiConfig(bool $externalApp): AiConfig
+    public function createExtAppConnection(string $extAppUserId): Connection|null
     {
-        return new AiConfig(
-            handle: $this->aiService->getAiHandle(),
-            models: $this->aiService->getAvailableModels($externalApp),
+        $app = $this->tryFindingExtApp();
+        if (!$app) {
+            return null;
+        }
+
+        $appUser = $this->extAppUserRepository->findByExternalId($app, $extAppUserId);
+        if (!$appUser) {
+            $this->logger->debug(sprintf(
+                'No app user %s found for app %s',
+                $extAppUserId,
+                $app->id
+            ));
+
+            return $this->createExtAppConnectConnection($app, $extAppUserId);
+        }
+
+        $userinfo = $this->makeUserinfo($appUser->user);
+
+        return new Connection(
+            id: $extAppUserId,
+            type: ConnectionType::EXTERNAL_APP_AUTHENTICATED,
+            version: $this->version,
+            locale: $this->localeService->getCurrentLocale(),
+            userinfo: $userinfo,
+            extAppSecrets: new ExtAppSecrets(
+                passkey: (string)$appUser->user->passkey,
+                apiToken: (string)$appUser->user->api_token,
+                privateKey: (string)$appUser->user->user_private_key,
+            )
         );
     }
 
-    private function createInternalSecrets(): InternalSecrets
+    private function createExtAppConnectConnection(ExtApp $app, string $extAppUserId): Connection|null
     {
-        return new InternalSecrets(
-            csrfToken: csrf_token(),
+        $payload = ExtAppConnectRequestPayload::fromArray([
+            'appId' => $app->id,
+            'version' => $this->version,
+            'extAppUserId' => $extAppUserId,
+        ]);
+
+        return new Connection(
+            id: $extAppUserId,
+            type: ConnectionType::EXTERNAL_APP,
+            version: $this->version,
+            locale: $this->localeService->getCurrentLocale(),
+            extAppConnectRequest: $this->connectRequestCrypto->encryptPayload($payload, $app)
         );
     }
 
-    private function createRouteConfigBuilder(): RouteConfigBuilder
+    private function tryFindingExtApp(): ExtApp|null
     {
-        $builder = new RouteConfigBuilder(Route::getRoutes());
+        // Only when coming from an external app, we want to find ext app connections
+        if (!$this->request->getUsageContext()->isExternalApp()) {
+            $this->logger->warning('Attempt to access external app connection from non-external app', [
+                'usageContext' => $this->request->getUsageContext()->get(),
+                'userContext' => $this->request->getUserContext()->get(),
+            ]);
+            return null;
+        }
 
-        // @todo this will be added in a future version
+        // Only the app itself (not one of its users) can access the connection resource for an external app.
+        if (!$this->request->getUserContext()->isExternalApp()) {
+            $this->logger->warning('Attempt to access external app connection with non-external app user context', [
+                'usageContext' => $this->request->getUsageContext()->get(),
+                'userContext' => $this->request->getUserContext()->get(),
+            ]);
+            return null;
+        }
 
-        return $builder;
+        $requestUser = $this->request->user();
+        $app = $this->extAppRepository->findOneByUser($requestUser);
+        if (!$app) {
+            $this->logger->warning('Attempt to access external app connection with user that is not associated with an app', [
+                'usageContext' => $this->request->getUsageContext()->get(),
+                'userContext' => $this->request->getUserContext()->get(),
+                'requestUserId' => $requestUser->id,
+            ]);
+            return null;
+        }
+
+        return $app;
     }
 
-    private function createInternalRouteConfig(): RouteConfig
+    private function makeUserinfo(User|RegisteringUser $user): Userinfo
     {
-        return $this->createRouteConfigBuilder()->buildInternalRouteConfig();
-    }
+        if ($user instanceof RegisteringUser) {
+            return new Userinfo(
+                id: 0,
+                name: $user->name,
+                username: $user->username,
+                email: $user->email,
+                hash: '',
+                avatar: null
+            );
+        }
 
-    private function createLocaleConfig(): LocaleConfig
-    {
-        return new LocaleConfig(
-            preferred: $this->localeService->getCurrentLocale(),
-            default: $this->localeService->getDefaultLocale(),
-            available: $this->localeService->getAvailableLocales()
+        return new Userinfo(
+            id: $user->id,
+            name: $user->name,
+            username: $user->username,
+            email: $user->email,
+            hash: md5($user->id . '-' . $user->publicKey),
+            avatar: StoredFileIdentifier::tryFromUserAvatar($user),
+            bio: $user->bio
         );
     }
 
-    private function createInternalTranslatorConfig(): TranslatorConfig
+    private function countMigrationsToApply(): int
     {
-        return new TranslatorConfig(
-            labels: $this->translator->get('*', locale: $this->localeService->getCurrentLocale()->lang)
-        );
+        if (!$this->request->user()) {
+            return 0;
+        }
+        return $this->migrationRepository->findAllMigrationsToApplyForUser($this->request->user())?->count();
     }
 }

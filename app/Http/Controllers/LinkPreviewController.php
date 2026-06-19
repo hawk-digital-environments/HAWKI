@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\System\Http\UrlResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -25,7 +26,7 @@ class LinkPreviewController extends Controller
                 ->withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (compatible; HAWKI Link Preview Bot/1.0)',
                 ])
-                ->get($url);
+                ->getSsrfSafe($url);
 
             if (!$response->successful()) {
                 return response()->json([
@@ -80,8 +81,9 @@ class LinkPreviewController extends Controller
 
         foreach ($ogTags as $property => $key) {
             $nodes = $xpath->query("//meta[@property='$property']");
-            if ($nodes->length > 0) {
-                $content = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $content = $node->getAttribute('content');
                 if (!empty($content)) {
                     $metadata[$key] = $content;
                 }
@@ -91,22 +93,25 @@ class LinkPreviewController extends Controller
         // Fallback to Twitter Card tags
         if (!$metadata['title']) {
             $nodes = $xpath->query("//meta[@name='twitter:title']");
-            if ($nodes->length > 0) {
-                $metadata['title'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['title'] = $node->getAttribute('content');
             }
         }
 
         if (!$metadata['description']) {
             $nodes = $xpath->query("//meta[@name='twitter:description']");
-            if ($nodes->length > 0) {
-                $metadata['description'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['description'] = $node->getAttribute('content');
             }
         }
 
         if (!$metadata['image']) {
             $nodes = $xpath->query("//meta[@name='twitter:image']");
-            if ($nodes->length > 0) {
-                $metadata['image'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['image'] = $node->getAttribute('content');
             }
         }
 
@@ -120,56 +125,27 @@ class LinkPreviewController extends Controller
 
         if (!$metadata['description']) {
             $nodes = $xpath->query("//meta[@name='description']");
-            if ($nodes->length > 0) {
-                $metadata['description'] = $nodes->item(0)->getAttribute('content');
+            $node = $nodes->item(0);
+            if ($node instanceof \DOMElement) {
+                $metadata['description'] = $node->getAttribute('content');
             }
         }
 
         // Get favicon
         $faviconNodes = $xpath->query("//link[@rel='icon' or @rel='shortcut icon']");
-        if ($faviconNodes->length > 0) {
-            $favicon = $faviconNodes->item(0)->getAttribute('href');
-            $metadata['favicon'] = $this->resolveUrl($url, $favicon);
+        $node = $faviconNodes->item(0);
+        if ($node instanceof \DOMElement) {
+            $favicon = $node->getAttribute('href');
+            $metadata['favicon'] = UrlResolver::resolve($url, $favicon);
         } else {
-            // Default to Google favicon service
             $metadata['favicon'] = "https://www.google.com/s2/favicons?domain={$metadata['domain']}&sz=32";
         }
 
         // Resolve relative image URL
         if ($metadata['image'] && !filter_var($metadata['image'], FILTER_VALIDATE_URL)) {
-            $metadata['image'] = $this->resolveUrl($url, $metadata['image']);
+            $metadata['image'] = UrlResolver::resolve($url, $metadata['image']);
         }
 
         return $metadata;
-    }
-
-    /**
-     * Resolve relative URL to absolute
-     */
-    private function resolveUrl($baseUrl, $relativeUrl)
-    {
-        // If already absolute, return as is
-        if (filter_var($relativeUrl, FILTER_VALIDATE_URL)) {
-            return $relativeUrl;
-        }
-
-        $base = parse_url($baseUrl);
-        $scheme = $base['scheme'] ?? 'https';
-        $host = $base['host'] ?? '';
-
-        // Handle protocol-relative URLs
-        if (substr($relativeUrl, 0, 2) === '//') {
-            return $scheme . ':' . $relativeUrl;
-        }
-
-        // Handle absolute paths
-        if (substr($relativeUrl, 0, 1) === '/') {
-            return $scheme . '://' . $host . $relativeUrl;
-        }
-
-        // Handle relative paths
-        $basePath = $base['path'] ?? '/';
-        $basePath = dirname($basePath);
-        return $scheme . '://' . $host . $basePath . '/' . $relativeUrl;
     }
 }

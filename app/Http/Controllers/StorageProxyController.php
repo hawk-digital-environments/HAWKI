@@ -5,15 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\AiConvMsg;
 use App\Models\Message;
 use App\Models\User;
-use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
 use App\Services\Routing\CacheBusting\CacheBusterGenerator;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Exception\InvalidStorageFileIdentifierStringGivenException;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\Interfaces\StorageServiceInterface;
-use App\Services\Storage\Value\StoredFile;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\StoredFile;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,7 +23,7 @@ class StorageProxyController extends Controller
     public function __construct(
         private readonly CacheBusterGenerator $cacheBusterGenerator,
         private readonly AvatarStorageService $avatarStorage,
-        private readonly AttachmentDb         $attachmentService,
+        private readonly AttachmentRepository $attachmentService,
         private readonly FileStorageService   $fileStorageService,
         #[CurrentUser]
         private readonly User                 $currentUser
@@ -58,12 +58,14 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentService->findByStoredFileIdentifier($identifier)?->attachable;
+        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
         if (!$attachable instanceof Message) {
             abort(400, 'Invalid request, attachment is not linked to a message');
         }
 
-        if (!$attachable->room->isMember($this->currentUser->id)) {
+        $room = $attachable->room;
+
+        if (!$room->isMember($this->currentUser->id)) {
             abort(403, 'You are not a member of the room this attachment belongs to');
         }
 
@@ -77,7 +79,7 @@ class StorageProxyController extends Controller
     {
         $file = $this->getFileOrFail($this->fileStorageService, $identifier);
 
-        $attachable = $this->attachmentService->findByStoredFileIdentifier($identifier)?->attachable;
+        $attachable = $this->attachmentService->findOneByStoredFileIdentifier($identifier)?->attachable;
         if (!$attachable instanceof AiConvMsg) {
             abort(400, 'Invalid request, attachment is not linked to a private ai conversation');
         }

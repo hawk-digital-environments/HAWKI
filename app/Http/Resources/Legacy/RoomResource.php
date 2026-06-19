@@ -4,8 +4,8 @@ namespace App\Http\Resources\Legacy;
 
 use App\Models\Room;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\StoredFileIdentifier;
-use App\Utils\ServiceLocatorTrait;
+use App\Services\Storage\Values\StoredFileIdentifier;
+use App\Services\System\Container\ServiceLocatorTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -24,7 +24,7 @@ class RoomResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $avatarStorage = $this->getServiceInstance(AvatarStorageService::class);
+        $avatarStorage = $this->getService(AvatarStorageService::class);
 
         return [
             'id' => $this->id,

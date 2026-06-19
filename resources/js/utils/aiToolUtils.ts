@@ -1,0 +1,43 @@
+import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
+import {__} from '$lib/utils/translator.js';
+import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
+
+/**
+ * Helpers for rendering AI tool metadata in the UI.
+ *
+ * Both functions resolve the tool's linked capability first and pull the
+ * translated label from there. They fall back to a humanised version of the
+ * raw tool name when no capability or translation is found, so they are always
+ * safe to call without null-checks.
+ *
+ * @example
+ * import {toolDisplayName, toolDisplayDescription} from '$lib/utils/aiToolUtils.js';
+ * <span>{toolDisplayName(tool)}</span>
+ * {#if toolDisplayDescription(tool)}<p>{toolDisplayDescription(tool)}</p>{/if}
+ */
+
+function humanizeName(name: string) {
+    return name
+        .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space before capital letters
+        .replace(/[-_]+/g, ' ') // Replace dashes and underscores with space
+        .replace(/\b\w/g, char => char.toUpperCase()); // Capitalize first letter of each word
+}
+
+export function toolDisplayName(tool: AiTool): string {
+    const capability = aiToolStore.getCapabilityForTool(tool);
+    if (capability) {
+        return __(capability.title_label) || humanizeName(tool.name);
+    }
+    return humanizeName(tool.name);
+}
+
+export function toolDisplayDescription(tool: AiTool): string | null {
+    const capability = aiToolStore.getCapabilityForTool(tool);
+    if (capability && capability.description_label) {
+        return __(capability.description_label) || null;
+    }
+    if (tool.description) {
+        return tool.description;
+    }
+    return null;
+}

@@ -6,8 +6,8 @@ namespace App\Services\FileConverter\Handlers;
 
 
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
-use App\Services\Storage\Value\FileCollection;
-use App\Services\Storage\Value\FileReference;
+use App\Services\Storage\Values\FileCollection;
+use App\Services\Storage\Values\FileReference;
 
 /**
  * A file converter that does nothing and returns an empty array.

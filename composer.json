@@ -12,27 +12,37 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
+        "ext-curl": "*",
+        "ext-dom": "*",
+        "ext-fileinfo": "*",
+        "ext-libxml": "*",
+        "ext-openssl": "*",
         "ext-pdo": "*",
         "ext-zip": "*",
-        "ext-fileinfo": "*",
         "blade-ui-kit/blade-icons": "^1.8.0",
         "hawk-hhg/hawki-crypto": "^0.5.3",
         "jumbojett/openid-connect-php": "^1.0.2",
-        "laravel/framework": "^12.35.1",
+        "laravel-json-api/laravel": "^5.2",
+        "laravel-json-api/non-eloquent": "^4.3",
+        "laravel/framework": "^13.0",
         "laravel/reverb": "^1.6.0",
         "laravel/sanctum": "^4.2.0",
-        "laravel/tinker": "^2.10.1",
         "league/flysystem-aws-s3-v3": "^3.30.1",
         "league/flysystem-sftp-v3": "^3.30.0",
         "league/flysystem-webdav": "^3.30.0",
+        "logiscape/mcp-sdk-php": "^1.7",
         "neunerlei/dbg": "^3.3",
-        "spatie/laravel-backup": "^9.3.4"
+        "neuron-core/neuron-ai": "^3.3",
+        "phpseclib/phpseclib": "^3.0",
+        "spatie/laravel-backup": "^10.0"
     },
     "require-dev": {
+        "ergebnis/php-cs-fixer-config": "^6.61",
         "fakerphp/faker": "^1.24.1",
+        "laravel-json-api/testing": "^3.2",
+        "friendsofphp/php-cs-fixer": "^3.95",
         "larastan/larastan": "^3.9",
-        "laravel/pint": "^1.25.1",
         "laravel/sail": "^1.46.0",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8.2",
@@ -54,13 +64,9 @@
     },
     "scripts": {
         "hawki": "php hawki",
-        "whoami": "id",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
-        ],
-        "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
@@ -72,14 +78,24 @@
         ],
         "queue": [
             "Composer\\Config::disableProcessTimeout",
-            "@php artisan queue:work -vv --queue=default,mails,message_broadcast"
+            "@php artisan queue:work -vv --queue=default,mails,message_broadcast --timeout=0"
         ],
         "websocket": [
             "Composer\\Config::disableProcessTimeout",
             "@php artisan reverb:start --debug"
         ],
-        "stan": [
-            "./vendor/bin/phpstan analyse"
+        "php-cs-fixer": "./vendor/bin/php-cs-fixer fix",
+        "test:stan": "./vendor/bin/phpstan analyse",
+        "test:unit": "phpunit --testsuite unit",
+        "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-html ./.phpunit.coverage",
+        "test:unit:coverage:text": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-text",
+        "test:unit:coverage:clover": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-clover .phpunit.coverage/coverage-clover.xml",
+        "test:feature": "phpunit --testsuite feature",
+        "test:feature:coverage": "XDEBUG_MODE=coverage phpunit --testsuite feature --coverage-html ./.phpunit.feature.coverage; cp ./tests/coverage.dark.css .phpunit.feature.coverage/_css/custom.css",
+        "test:all": [
+            "composer test:stan",
+            "composer test:unit",
+            "composer test:feature"
         ]
     },
     "extra": {

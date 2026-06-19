@@ -6,7 +6,6 @@ use App\Services\AI\Providers\Traits\ToolAwareConverter;
 use App\Services\AI\Utils\MessageAttachmentFinder;
 use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiRequest;
-use App\Services\Storage\FileStorageService;
 use Illuminate\Container\Attributes\Singleton;
 use Psr\Log\LoggerInterface;
 
@@ -17,7 +16,6 @@ readonly class OpenAiRequestConverter
 
     public function __construct(
         private MessageAttachmentFinder   $attachmentFinder,
-        private FileStorageService        $storageService,
         private LoggerInterface           $logger,
         private OpenAiAttachmentFormatter $attachmentFormatter
     )

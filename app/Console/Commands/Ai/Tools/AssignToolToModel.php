@@ -4,7 +4,7 @@ namespace App\Console\Commands\Ai\Tools;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
-use App\Models\Ai\Tools\AiTool;
+use App\Models\Ai\AiTool;
 use Illuminate\Console\Command;
 
 class AssignToolToModel extends Command
@@ -112,7 +112,7 @@ class AssignToolToModel extends Command
     {
         // ── Resolve tool ───────────────────────────────────────────────────────
         $toolSearch = $this->option('tool');
-        $tool       = null;
+        $tool = null;
 
         if ($toolSearch) {
             $tool = AiTool::where('name', $toolSearch)
@@ -127,7 +127,7 @@ class AssignToolToModel extends Command
                 return [null, []];
             }
             $choice = $this->choice('Select a tool', $tools->pluck('name')->toArray());
-            $tool   = $tools->firstWhere('name', $choice);
+            $tool = $tools->firstWhere('name', $choice);
         }
 
         if (!$tool) {
@@ -136,9 +136,9 @@ class AssignToolToModel extends Command
         }
 
         // ── Resolve models ─────────────────────────────────────────────────────
-        $modelSearch    = $this->option('model');
+        $modelSearch = $this->option('model');
         $providerSearch = $this->option('provider');
-        $models         = [];
+        $models = [];
 
         if ($modelSearch) {
             // Non-interactive: find by model_id
@@ -194,7 +194,7 @@ class AssignToolToModel extends Command
     }
 
     /**
-     * Interactive provider selection — returns array of eligible AiModel instances.
+     * Interactive provider selection — returns array of eligible AiModelConfig instances.
      */
     private function selectByProvider(AiTool $tool): array
     {
@@ -242,7 +242,7 @@ class AssignToolToModel extends Command
     }
 
     /**
-     * Interactive model selection — returns array of selected AiModel instances.
+     * Interactive model selection — returns array of selected AiModelConfig instances.
      */
     private function selectByModel(AiTool $tool): array
     {

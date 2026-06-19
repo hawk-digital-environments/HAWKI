@@ -4,9 +4,9 @@ namespace App\Console\Commands\Ai\Tools\Mcp;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
-use App\Models\Ai\Tools\AiTool;
-use App\Models\Ai\Tools\McpServer;
-use App\Services\AI\Tools\MCP\MCPSSEClient;
+use App\Models\Ai\AiTool;
+use App\Models\Ai\McpServer;
+use App\Services\Ai\Tools\Mcp\McpSseClient;
 use Illuminate\Console\Command;
 
 class AddMcpServer extends Command
@@ -69,7 +69,7 @@ class AddMcpServer extends Command
             return Command::FAILURE;
         }
 
-        $tools   = $result['tools'];
+        $tools = $result['tools'];
         $toolMap = [];
 
         $this->newLine();
@@ -81,7 +81,7 @@ class AddMcpServer extends Command
         $this->newLine();
 
         // ── 3. Select tools to register ───────────────────────────────────────
-        $toolOptions   = array_keys($toolMap);
+        $toolOptions = array_keys($toolMap);
         $selectedNames = $this->choice(
             'Select which tools to register (comma-separate multiple, or press Enter for all)',
             $toolOptions,
@@ -113,8 +113,8 @@ class AddMcpServer extends Command
                 continue;
             }
 
-            $capability     = $this->askCapability($name, $existingCapabilities);
-            $aiTool         = $server->setupTools($toolMap[$name], $capability);
+            $capability = $this->askCapability($name, $existingCapabilities);
+            $aiTool = $server->setupTools($toolMap[$name], $capability);
             $createdTools[] = $aiTool;
 
             // Make newly chosen capability available for subsequent tools in this run
@@ -179,12 +179,12 @@ class AddMcpServer extends Command
         $this->line("  This determines how the tool appears in the UI and how models are filtered.");
 
         $newOption = '[+ Define a new capability]';
-        $choices   = array_merge([$newOption], $existingCapabilities);
+        $choices = array_merge([$newOption], $existingCapabilities);
 
         $choice = $this->choice('  Select or create a capability', $choices, 0);
 
         if ($choice === $newOption) {
-            $default    = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $toolName));
+            $default = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $toolName));
             $capability = $this->ask(
                 '  Enter capability name (snake_case, e.g. knowledge_base)',
                 $default
@@ -197,18 +197,18 @@ class AddMcpServer extends Command
 
     private function createNewServer(string $url): McpServer|int
     {
-        $label            = $this->option('label');
-        $description      = $this->option('description');
-        $requireApproval  = $this->option('require_approval');
-        $timeout          = $this->option('timeout');
+        $label = $this->option('label');
+        $description = $this->option('description');
+        $requireApproval = $this->option('require_approval');
+        $timeout = $this->option('timeout');
         $discoveryTimeout = $this->option('discovery_timeout');
-        $apiKey           = $this->option('api_key');
+        $apiKey = $this->option('api_key');
 
         if (empty($apiKey)) {
             $apiKey = $this->secret('Please enter the API key for the MCP server (leave blank if none)') ?: null;
         }
 
-        $client = new MCPSSEClient(
+        $client = new McpSseClient(
             serverUrl: $url,
             timeout: 5,
             apiKey: $apiKey
@@ -364,18 +364,19 @@ class AddMcpServer extends Command
         string  $timeout,
         string  $discoveryTimeout,
         ?string $apiKey
-    ): McpServer|int {
+    ): McpServer|int
+    {
         try {
             $server = McpServer::create([
-                'url'               => $url,
-                'server_label'      => $label,
-                'version'           => $version,
-                'protocolVersion'   => $protocolVersion,
-                'description'       => $description,
-                'require_approval'  => $requireApproval,
-                'timeout'           => (int) $timeout,
-                'discovery_timeout' => (int) $discoveryTimeout,
-                'api_key'           => $apiKey ?? '',
+                'url' => $url,
+                'server_label' => $label,
+                'version' => $version,
+                'protocolVersion' => $protocolVersion,
+                'description' => $description,
+                'require_approval' => $requireApproval,
+                'timeout' => (int)$timeout,
+                'discovery_timeout' => (int)$discoveryTimeout,
+                'api_key' => $apiKey ?? '',
             ]);
 
             $this->info("MCP server added successfully!");

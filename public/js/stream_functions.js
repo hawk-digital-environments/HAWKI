@@ -1,13 +1,10 @@
 let abortCtrl = new AbortController();
 
 
-
-function buildRequestObject(msgAttributes, onData) {
+function buildRequestObject(msgAttributes, onData, onError) {
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
     const isUpdate = msgAttributes['regenerationElement'] ? true : false;
     const msgID = msgAttributes['regenerationElement'] ? msgAttributes['regenerationElement'].id : null;
-    const stream = activeModel.capabilities.stream ? msgAttributes['stream'] : false;
-
     const requestObject = {
         broadcast: msgAttributes['broadcasting'],
         threadIndex: msgAttributes['threadIndex'],
@@ -18,37 +15,39 @@ function buildRequestObject(msgAttributes, onData) {
 
         key: msgAttributes['key'],
 
-        payload:{
-            model: msgAttributes.model ?? activeModel.id,
-            stream: stream,
+        payload: {
+            model: msgAttributes.model ?? activeModel.modelId,
+            stream: true,
             messages: msgs,
             tools: msgAttributes['metadata']?.tools ?? null,
-            params: msgAttributes['metadata']?.params ?? null,
+            params: msgAttributes['metadata']?.params ?? null
         }
     };
 
     // POST request to initiate the AI stream or broadcast
     postData(requestObject)
-    .then(response => {
-
-        // Check if broadcasting is true
-        if (!msgAttributes['broadcasting']) {
-            if(stream){
-                if(response === 'AbortError'){
+        .then(response => {
+            // Check if broadcasting is true
+            if (!msgAttributes['broadcasting']) {
+                if (response === 'AbortError') {
                     onData('AbortError');
                 }
                 // pass stream callback (response) to processStream
                 processStream(response.body, onData);
             }
-            else{
-                processResponse(response, onData);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (onData) onData(null, true);
+            if (onError) {
+                onError(error);
+            } else {
+                modalError(
+                    window.__('legacy.stream.connectionErrorMessage'),
+                    window.__('legacy.stream.connectionErrorTitle')
+                );
             }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        if (onData) onData(null, true);
-    });
+        });
 }
 
 
@@ -56,29 +55,30 @@ async function postData(data) {
 
     abortCtrl = new AbortController();
     const signal = abortCtrl.signal;
+    window.oldUiBridge.bindAbortController(abortCtrl);
 
-    const url = data.broadcast ? `/req/room/streamAI/${activeRoom.slug}` : '/req/streamAI'
+    const url = data.broadcast ? `/req/room/streamAI/${activeRoom.slug}` : '/req/streamAI';
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    try{
+    try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(data),
             signal: signal
         });
-                // Check for HTTP errors
+        // Check for HTTP errors
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! Status: ${response.status}, ${errorText}`);
         }
         return response;
 
-    } catch(error){
+    } catch (error) {
         console.log('Error while posting data', data, 'resulted in', error);
         throw new Error('An error occurred while fetching data.');
     }
@@ -90,12 +90,12 @@ async function processStream(stream, onData) {
     }
 
     const reader = stream.getReader();
-    const textDecoder = new TextDecoder("utf-8");
-    try{
-        let buffer = "";
+    const textDecoder = new TextDecoder('utf-8');
+    try {
+        let buffer = '';
         while (true) {
 
-            const { done, value } = await reader.read();
+            const {done, value} = await reader.read();
 
             if (done) {
                 onData(null, true);
@@ -104,43 +104,36 @@ async function processStream(stream, onData) {
 
 
             // Append the latest chunk to the buffer
-            buffer += textDecoder.decode(value, { stream: true });
+            buffer += textDecoder.decode(value, {stream: true});
             // Split the buffer string on newline characters
-            const parts = buffer.split("\n");
+            const parts = buffer.split('\n');
             // The last part might be incomplete, keep it in the buffer
             buffer = parts.pop();
             for (const part of parts) {
                 if (part.trim()) {
-                    try {
-                        const data = JSON.parse(part);
-                        //send back the data
-                        if(data.isDone){
-                            onData(data, true);
-                            return;
-                        }
-                        onData(data, false);
-
-
-                    } catch (error) {
-                        console.error('Error parsing JSON:', error);
+                    const data = JSON.parse(part);
+                    //send back the data
+                    if (data.isDone) {
+                        onData(data, true);
+                        return;
                     }
+                    onData(data, false);
                 }
             }
 
         }
-    }
-    catch (error) {
+    } catch (error) {
         if (error.name === 'AbortError') {
             console.log('Fetch aborted while reading response body stream.');
         } else {
-            console.error('Error:', error);
+            throw error; // re-throw the error if it's not an AbortError
         }
         onData(null, true);
     }
 
 }
 
-async function processResponse(response, onData){
+async function processResponse(response, onData) {
 
     const responseJson = await response.json();
     onData(responseJson, true);
@@ -148,14 +141,14 @@ async function processResponse(response, onData){
 }
 
 
-function createMessageLogForAI(regenerationElement = null){
-    const systemPromptContent = document.querySelector('#system_prompt_field').textContent;
+function createMessageLogForAI(regenerationElement = null) {
+    const systemPromptContent = activeConv.system_prompt || window.getSystemPrompt('default');
     systemPrompt = {
         role: 'system',
-        content:{
+        content: {
             text: systemPromptContent
         }
-    }
+    };
 
     //create a selection array starting with systam prompt
     let selection = [systemPrompt];
@@ -163,14 +156,13 @@ function createMessageLogForAI(regenerationElement = null){
     //find the last msg in the thread.
     //if thead is a comment thread last child is the input field -> get the prevous one...
     let lastMsgId;
-    if(!regenerationElement){
+    if (!regenerationElement) {
         const activeThread = document.querySelector(`.thread#${CSS.escape(activeThreadIndex)}`);
         const lastMsg = activeThreadIndex === 0
-                        ? activeThread.lastElementChild
-                        : [...activeThread.querySelectorAll('.message')].pop();
+            ? activeThread.lastElementChild
+            : [...activeThread.querySelectorAll('.message')].pop();
         lastMsgId = lastMsg.id;
-    }
-    else{
+    } else {
         lastMsgId = regenerationElement.previousElementSibling.id;
     }
 
@@ -200,10 +192,9 @@ function createMessageLogForAI(regenerationElement = null){
 }
 
 
-
-function createMsgObject(msg){
+function createMsgObject(msg) {
     const role = msg.dataset.role === 'assistant' ? 'assistant' : 'user';
-    const msgTxt = msg.querySelector(".message-text").textContent;
+    const msgTxt = msg.querySelector('.message-text').textContent;
     const filteredText = detectMentioning(msgTxt).filteredText;
 
     const attachmentEls = msg.querySelectorAll('.attachment');
@@ -211,51 +202,44 @@ function createMsgObject(msg){
 
     return {
         role: role,
-        content:{
+        content: {
             text: filteredText,
             attachments: attachments
         }
-    }
+    };
 }
 
 
+async function requestPromptImprovement(message, chatSystemPrompt) {
+    const language = window.getConnection().locale;
 
+    let prompt = `
+This is the message you should improve:
+[[[MESSAGE_START]]]
+${message}
+[[[MESSAGE_END]]]
 
-async function requestPromptImprovement(sender, type) {
-    let prompt = '';
-    let inputField;
-    let message;
+The current chat contains the following system prompt, use this only as context for improving the message!
+[[[SYSTEM_PROMPT_START]]]
+${chatSystemPrompt}
+[[[SYSTEM_PROMPT_END]]]
 
-    if(type === 'input'){
-        inputField = sender.closest('.input').querySelector('.input-field');
-        prompt = inputField.value.trim();
-        if(prompt === ''){
-            return;
-        }
-
-        await smoothDeleteWords(inputField, 700)
-    }
-    if(type === 'message'){
-        message = sender.closest('.message').querySelector('.message-content');
-        prompt = message.innerText.trim();
-        if(prompt === ''){
-            return;
-        }
-    }
+You MUST answer in the language with code: ${language}
+    `;
 
     const requestObject = {
         payload: {
-            model: systemModels.prompt_improver,
+            model: window.getSystemModel('prompt_improvement').model_id,
             stream: true,
             messages: [
                 {
-                    role: "system",
+                    role: 'system',
                     content: {
                         text: __('Improvement_Prompt')
-                    },
+                    }
                 },
                 {
-                    role: "user",
+                    role: 'user',
                     content: {
                         text: prompt
                     }
@@ -268,52 +252,36 @@ async function requestPromptImprovement(sender, type) {
     };
 
     let result = '';
-    postData(requestObject)
-    .then(response => {
-        const onData = (data, done) => {
-            if (data && data.content != "") {
-                result += deconstContent(JSON.parse(data.content).text).messageText
-                if(type === 'input'){
-                    inputField.value = result.trim();
-                    resizeInputField(inputField);
-                }
-                else{
-                    message = sender.closest('.message').querySelector('.message-content');
-                    message.innerText = result;
-                }
+    const response = await postData(requestObject);
 
 
-            }
-            if (done) {
-                // console.log('done');
-            }
-        };
-        processStream(response.body, onData);
-    })
-    .catch((error) => {
-        // console.log(error);
-    });
-    // write a cool math formula
+    const onData = (data) => {
+        if (data && data.content !== '') {
+            result += deconstContent(JSON.parse(data.content).text).messageText;
+        }
+    };
 
+    await processStream(response.body, onData);
+
+    return result;
 }
-
 
 
 async function requestChatlogSummery(msgs = null) {
     // shift removes the first element which is system prompt
-    if(!msgs){
+    if (!msgs) {
         msgs = createMessageLogForAI();
     }
 
     const messages = [
         {
-            role: "system",
+            role: 'system',
             content: {
-                text: __('Summary_Prompt')
-            },
+                text: window.getSystemPrompt('summary')
+            }
         },
         {
-            role: "user",
+            role: 'user',
             content: {
                 text: JSON.stringify(msgs)
             }
@@ -324,8 +292,8 @@ async function requestChatlogSummery(msgs = null) {
         broadcast: false,
         threadIndex: '',
         slug: '',
-        payload:{
-            model: systemModels.summarizer,
+        payload: {
+            model: window.getSystemModel('summary').model_id,
             stream: false,
             messages: messages
         }
@@ -347,20 +315,20 @@ async function requestChatlogSummery(msgs = null) {
 }
 
 
-function convertMsgObjToLog(messages){
+function convertMsgObjToLog(messages) {
     // console.log(messages);
     let list = [];
-    for(let i = 0; i < messages.length; i++){
+    for (let i = 0; i < messages.length; i++) {
         msg = messages[i];
         const role = msg.message_role === 'assistant' ? 'assistant' : 'user';
         const msgTxt = msg.content.hasOwnProperty('text') ? msg.content.text : msg.content;
         const filteredText = detectMentioning(msgTxt).filteredText;
         const messageObject = {
             role: role,
-            content:{
-                text: filteredText,
+            content: {
+                text: filteredText
             }
-        }
+        };
         list.push(messageObject);
     }
 

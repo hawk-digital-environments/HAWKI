@@ -1,0 +1,24 @@
+/* ==========================================================================
+   Transition Tokens
+   Derived from existing --transition-* vars in custom-styles.css.
+
+   Note: --color-transition-duration starts at 0ms in legacy code to prevent
+   theme-switch flicker on page load. That pattern is not replicated here —
+   new components should use standard durations; handle load-flicker at the
+   HTML/JS layer if needed.
+   ========================================================================== */
+
+@layer tokens {
+    :root {
+        --duration-extra-fast: 200ms;   /* --transition-extra-fast */
+        --duration-fast:       300ms;   /* --transition-fast */
+        --duration-medium:     500ms;   /* --transition-medium */
+        --duration-slow:       1000ms;  /* --transition-slow */
+        --duration-extra-slow: 3000ms;  /* --transition-extra-slow */
+
+        --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+        --easing-spring:  cubic-bezier(0.22, 1, 0.36, 1);
+        --easing-out:     cubic-bezier(0, 0, 0.2, 1);
+        --easing-in:      cubic-bezier(0.4, 0, 1, 1);
+    }
+}

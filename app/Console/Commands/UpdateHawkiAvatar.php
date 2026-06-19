@@ -4,10 +4,10 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\FileType;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\FileType;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Console\Command;
 
 class UpdateHawkiAvatar extends Command
@@ -32,7 +32,7 @@ class UpdateHawkiAvatar extends Command
         $path = $this->argument('path');
 
         $hawki = User::find(1);
-        if($hawki->username != config('hawki.migration.username')){
+        if ($hawki->username != config('hawki.migration.username')) {
             $this->error('HAWKI user does not exist or is manipulated. Please double check your migration file and hawki config.');
             return 1;
         }

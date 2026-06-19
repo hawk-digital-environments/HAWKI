@@ -1,51 +1,50 @@
-
 let announcement_queue = [];
 let currentAnnouncementIndex = 0;
 let anchored_queue;
-let currentAnchoredAnnouncementIndex=0;
+let currentAnchoredAnnouncementIndex = 0;
 
-function initAnnouncements(announcementList){
+function initAnnouncements(announcementList) {
     announcement_queue = (announcementList || []).filter(a => a.anchor === null);
+    anchored_queue = (announcementList || []).filter(a => a.anchor !== null);
     if (announcement_queue.length > 0) {
         currentAnnouncementIndex = 0;
         renderNextAnnouncement();
     }
 }
 
-function queueAnchoredAnnouncements(targetAnchor){
-    anchored_queue = (announcementList || []).filter(a => a.anchor === targetAnchor);
-    if (anchored_queue.length > 0) {
+function queueAnchoredAnnouncements(targetAnchor) {
+    const filteredQueue = (anchored_queue || []).filter(a => a.anchor === targetAnchor);
+    if (filteredQueue.length > 0) {
         currentAnnouncementIndex = 0;
-        renderNextAnnouncementInQueue(anchored_queue);
+        renderNextAnnouncementInQueue(filteredQueue);
     }
 }
 
 
-function renderNextAnnouncement(){
+function renderNextAnnouncement() {
     if (currentAnnouncementIndex < announcement_queue.length) {
         renderAnnouncement(announcement_queue[currentAnnouncementIndex]);
     }
 }
 
-function renderNextAnnouncementInQueue(queue){
+function renderNextAnnouncementInQueue(queue) {
     if (currentAnchoredAnnouncementIndex < queue.length) {
         renderAnnouncement(queue[currentAnchoredAnnouncementIndex]);
     }
 }
 
 
-async function renderAnnouncement(announcement, show = true){
-    try{
+async function renderAnnouncement(announcement, show = true) {
+    try {
         // Request announcement render from server
         const response = await fetch(`/req/announcement/render/${announcement.id}`, {
             method: 'GET',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             }
-        })
+        });
         const data = await response.json();
         if (data.success) {
             if (show) {
@@ -57,18 +56,17 @@ async function renderAnnouncement(announcement, show = true){
                 // If show is false, return the server-rendered view
                 return data.view;
             }
-        }
-        else{
+        } else {
             console.error('Error loading announcement:', error);
             // Skip to next announcement on error
             moveToNextAnnouncement();
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.error('Error loading announcement:', error);
         // Skip to next announcement on error
         moveToNextAnnouncement();
-    };
+    }
+    ;
 }
 
 function showAnnouncementModal(announcement, view) {
@@ -85,13 +83,12 @@ function showAnnouncementModal(announcement, view) {
     // Render Markdown content
     const modal = document.querySelector('#announcements-modal');
     const contentWrapper = modal.querySelector('.content-box');
-    const html = md.render(processedView);
-    contentWrapper.innerHTML = html;
+    contentWrapper.innerHTML = md.render(processedView);
 
     // Set link targets and security attributes
     contentWrapper.querySelectorAll('a').forEach(a => {
         a.setAttribute('target', '_blank');
-        a.setAttribute("rel", "noopener noreferrer");
+        a.setAttribute('rel', 'noopener noreferrer');
     });
 
     // Create the button bar
@@ -102,7 +99,7 @@ function showAnnouncementModal(announcement, view) {
         // Add buttons as defined in markdown tags
         if (declineTag) {
             const declineBtn = document.createElement('button');
-            declineBtn.className = "btn-lg-stroke align-end";
+            declineBtn.className = 'btn-lg-stroke align-end';
             declineBtn.textContent = declineTag[1];
             declineBtn.addEventListener('click', () => {
                 // Action for decline, customize as needed:
@@ -116,9 +113,9 @@ function showAnnouncementModal(announcement, view) {
         }
         if (confirmTag) {
             const confirmBtn = document.createElement('button');
-            confirmBtn.className = "btn-lg-fill align-end";
+            confirmBtn.className = 'btn-lg-fill align-end';
             confirmBtn.textContent = confirmTag[1];
-            confirmBtn.addEventListener('click', function() {
+            confirmBtn.addEventListener('click', function () {
                 reportAnnouncementFeedback(announcement.id);
                 closeAnnouncementModal(modal);
             });
@@ -128,15 +125,15 @@ function showAnnouncementModal(announcement, view) {
 
         // Fallback: the default logic (Confirm, and Cancel if forced)
         const confirmBtn = document.createElement('button');
-        confirmBtn.className = "btn-lg-fill align-end";
+        confirmBtn.className = 'btn-lg-fill align-end';
         confirmBtn.textContent = __('Confirm');
-        confirmBtn.addEventListener('click', function() {
+        confirmBtn.addEventListener('click', function () {
             reportAnnouncementFeedback(announcement.id);
             closeAnnouncementModal(modal);
         });
-        if (announcement.isForced == true) {
+        if (announcement.isForced === true) {
             const cancelBtn = document.createElement('button');
-            cancelBtn.className = "btn-lg-stroke align-end";
+            cancelBtn.className = 'btn-lg-stroke align-end';
             cancelBtn.textContent = __('Cancel');
             cancelBtn.addEventListener('click', () => {
                 forceLogoutUser();
@@ -145,7 +142,7 @@ function showAnnouncementModal(announcement, view) {
         }
         btnBar.appendChild(confirmBtn);
     }
-    if (btnBar.childElementCount == 1){
+    if (btnBar.childElementCount === 1) {
         btnBar.style.justifyContent = 'center';
     }
 
@@ -155,12 +152,12 @@ function showAnnouncementModal(announcement, view) {
 
 function closeAnnouncementModal(annModal) {
     annModal.style.display = 'none';
-    annModal.querySelector('.content-box').innerHTML = "";
+    annModal.querySelector('.content-box').innerHTML = '';
     moveToNextAnnouncement();
 }
 
 
-async function forceLogoutUser(){
+async function forceLogoutUser() {
     const confirmed = await openModal(ModalType.WARNING, __('Logout_Warning'));
     if (!confirmed) {
         return;
@@ -183,31 +180,28 @@ function markAnnouncementAsSeen(announcementId) {
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     })
-    .catch(error => console.error('Error marking announcement as seen:', error));
+        .catch(error => console.error('Error marking announcement as seen:', error));
 }
 
-function reportAnnouncementFeedback(announcementId){
-
+function reportAnnouncementFeedback(announcementId) {
     fetch(`/req/announcement/report/${announcementId}`, {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log(`Announcement Confirmed`);
-        }
-    })
-    .catch(error => console.error('Error reporting announcement feedback:', error));
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                anchored_queue = anchored_queue.filter(a => a.id !== announcementId);
+            }
+        })
+        .catch(error => console.error('Error reporting announcement feedback:', error));
 }
 
 
@@ -219,8 +213,8 @@ async function fetchLatestPolicy() {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
+                'Accept': 'application/json'
+            }
         });
         if (!response.ok) {
             return null;
@@ -230,7 +224,7 @@ async function fetchLatestPolicy() {
             return {
                 'announcement': data.announcement,
                 'view': data.view
-            }
+            };
         }
     } catch (error) {
         console.error('Error reporting announcement feedback:', error);

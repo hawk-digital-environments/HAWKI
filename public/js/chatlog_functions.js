@@ -1,19 +1,18 @@
-
 let activeThreadIndex = 0;
 let activeModel;
 let isScrolling = false; // Flag to track if the user is scrolling
 let observer;
-function initializeChatlogFunctions(){
+
+function initializeChatlogFunctions() {
     initializeInputField();
-    setSendBtnStatus(SendBtnStatus.SENDABLE);
 
     const scrollContainer = document.querySelector('.chatlog .scroll-container');
 
     if (scrollContainer) {
-        scrollContainer.addEventListener('scroll', function() {
+        scrollContainer.addEventListener('scroll', function () {
             isScrolling = true;
             clearTimeout(scrollTimeout); // Clear any existing timeout
-            scrollTimeout = setTimeout(function() {
+            scrollTimeout = setTimeout(function () {
                 isScrolling = false;
             }, 800); // After 800ms, user is considered not scrolling
         });
@@ -34,58 +33,66 @@ function initializeChatlogFunctions(){
         threshold: 0.5 // Adjust threshold as needed
     });
 
-
+    window.oldUiBridge.onExitMode((state) => {
+        if (state.is === 'thread') {
+            const thread = findThreadWithID(state.threadId);
+            if (thread) {
+                // Keep open if there are messages in the thread
+                if (thread.querySelectorAll('.message').length > 0) {
+                    return;
+                }
+                onThreadButtonEvent(thread.querySelector('button'));
+            }
+        }
+    });
 }
 
-function switchDyMainContent(contentID){
-
-
+function switchDyMainContent(contentID) {
     const mainPanel = document.querySelector('.dy-main-panel');
 
     const contents = mainPanel.querySelectorAll('.dy-main-content');
 
     contents.forEach(content => {
-        if(content.id === contentID){
-            content.style.display = "flex";
-        }
-        else{
-            content.style.display = "none";
+        if (content.id === contentID) {
+            content.style.display = 'flex';
+        } else {
+            content.style.display = 'none';
         }
     });
 }
 
-
-
-function clearChatlog(){
-    const content = document.querySelector('.trunk')
+function clearChatlog() {
+    const content = document.querySelector('.trunk');
     while (content.firstChild) {
         content.removeChild(content.lastChild);
     }
 }
 
-function clearInput(){
-    const input = document.querySelector('.input');
-    input.querySelector('.attachments-list').querySelectorAll('.attachment').forEach(atch => {
-        removeAtchFromList(atch.dataset.fileId, input.id);
-    })
-    input.querySelector('.input-field').value = '';
+function clearInput() {
+    window.oldUiBridge.triggerClearActiveConversation();
 }
 
-
-async function submitMessageToServer(requestObj, url){
+async function submitMessageToServer(requestObj, url, plainContent) {
     try {
         const response = await fetch(url, {
-            method: "POST",
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(requestObj)
         });
 
         const data = await response.json();
         if (data.success) {
+            window.oldUiMessageHistory.addMessageToConversation({
+                ...data.messageData,
+                content: {
+                    ...data.messageData.content,
+                    ...plainContent
+                }
+            });
             return data.messageData;
             // updateMessageElement(messageElement, data.messageData);
         } else {
@@ -97,22 +104,29 @@ async function submitMessageToServer(requestObj, url){
     }
 }
 
-async function requestMsgUpdate(messageObj, messageElement, url){
+async function requestMsgUpdate(messageObj, messageElement, url, plainContent) {
     const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     try {
         const response = await fetch(url, {
-            method: "POST",
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrf,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(messageObj)
         });
 
         const data = await response.json();
         if (data.success) {
-            updateMessageElement(messageElement, data.messageData);
+            window.oldUiMessageHistory.updateMessageInConversation({
+                ...data.legacyResource,
+                content: {
+                    ...data.legacyResource.content,
+                    ...plainContent
+                }
+            });
+            updateMessageElement(messageElement, data.messageData, false, data.legacyResource.content.attachments || []);
         } else {
             // Handle unexpected response
             console.error('Unexpected response:', data);
@@ -122,91 +136,51 @@ async function requestMsgUpdate(messageObj, messageElement, url){
     }
 }
 
-
-//#region SendButton Status
-
-const SendBtnStatus = {
-    SENDABLE: 'sendable',
-    LOADING: 'loading',
-    STOPPABLE: 'stoppable',
-};
-let sendbtnstat;
-
-function setSendBtnStatus(status) {
-    // Get all elements with the class 'send-btn'
-    const sendBtns = document.querySelectorAll('#send-btn');
-
-    // Iterate through each send button
-    sendBtns.forEach((sendBtn) => {
-        switch (status) {
-            case SendBtnStatus.SENDABLE:
-                sendBtn.querySelector('#send-icon').style.display = 'flex';
-                sendBtn.querySelector('#loading-icon').style.display = 'none';
-                sendBtn.querySelector('#stop-icon').style.display = 'none';
-                break;
-            case SendBtnStatus.LOADING:
-                sendBtn.querySelector('#send-icon').style.display = 'none';
-                sendBtn.querySelector('#loading-icon').style.display = 'flex';
-                sendBtn.querySelector('#stop-icon').style.display = 'none';
-                break;
-            case SendBtnStatus.STOPPABLE:
-                sendBtn.querySelector('#send-icon').style.display = 'none';
-                sendBtn.querySelector('#loading-icon').style.display = 'none';
-                sendBtn.querySelector('#stop-icon').style.display = 'flex';
-                break;
-            default:
-                console.error("Invalid status");
-                break;
-        }
-    });
-
-    // Update the sendbtnstat variable
-    // Update the sendbtnstat variable
-    sendbtnstat = status;
-}
-function getSendBtnStat(){
-    return sendbtnstat;
-}
-
-
-
-
-//#endregion
-
-//#region EVENTS
-
-function onThreadButtonEvent(btn){
+function onThreadButtonEvent(btn) {
     const thread = btn.closest('.message').querySelector('.thread');
 
-    if(thread.classList.contains('visible')){
+    if (!thread) {
+        return;
+    }
+
+    if (thread.classList.contains('visible')) {
         thread.classList.remove('visible');
-    }else{
+        if (thread && thread.id) {
+            console.log('Triggering exit thread for thread ID:', thread.id);
+            window.oldUiBridge.triggerExitThread();
+        }
+    } else {
         thread.classList.add('visible');
-        thread.querySelector('.input-field').focus();
+        if (thread.querySelectorAll('.message').length === 0) {
+            onEditThreadButtonEvent(btn);
+        }
     }
 }
 
-//#endregion
+function onEditThreadButtonEvent(btn) {
+    const thread = btn.closest('.message').querySelector('.thread');
 
+    if (!thread || !thread.id) {
+        console.error('Thread ID not found for edit button');
+        return;
+    }
 
-//#region THREAD FUNCTIONS
+    window.oldUiBridge.triggerEnterMode('thread', thread.id);
+}
 
-function selectActiveThread(sender){
+function selectActiveThread(sender) {
     const thread = sender.closest('.thread');
 
-    if(!thread){
+    if (!thread) {
         activeThreadIndex = 0;
-        return
+        return;
     }
     activeThreadIndex = Number(thread.id);
 }
 
-function findThreadWithID(threadId){
-    return document.querySelector(`.thread#${CSS.escape(threadId)}`)
+function findThreadWithID(threadId) {
+    return document.querySelector(`.thread#${CSS.escape(threadId)}`);
 }
-
-//#endregion
-
 
 
 //#region Message
@@ -218,19 +192,16 @@ function loadMessagesOnGUI(messages) {
         return +a.message_id - +b.message_id;
     });
 
-    // Add all main messages to the chat log and observe them
-    activeThreadIndex = 0;
-    let threads = []
+    let threads = [];
     messages.forEach(messageObj => {
         const addedMsg = addMessageToChatlog(messageObj, true);
         updateMessageElement(addedMsg, messageObj, true);
 
-
         // Observe unread messages
-        if(addedMsg.dataset.read_stat === 'false'){
+        if (addedMsg.dataset.read_stat === 'false') {
             observer.observe(addedMsg);
         }
-        if(addedMsg.querySelector('.branch')){
+        if (addedMsg.querySelector('.branch')) {
             threads.push(addedMsg.querySelector('.branch'));
         }
     });
@@ -248,19 +219,18 @@ function checkThreadUnreadMessages(thread) {
 
     // Show or hide the unread icon based on the number of unread messages
     if (unread_msgs.length !== 0) { // Corrected to 'length'
-        parentMsg.querySelector('#unread-thread-icon').style.display = "block";
+        parentMsg.querySelector('#unread-thread-icon').style.display = 'block';
     } else {
-        parentMsg.querySelector('#unread-thread-icon').style.display = "none";
+        parentMsg.querySelector('#unread-thread-icon').style.display = 'none';
     }
 }
 
-function flagRoomUnreadMessages(slug, active){
-    const selector = document.querySelector(`.selection-item[slug="${slug}"`)
-    if(active){
-        selector.querySelector('#unread-msg-flag').style.display = 'block'
-        document.getElementById('mark-as-read-btn').removeAttribute("disabled");
-    }
-    else{
+function flagRoomUnreadMessages(slug, active) {
+    const selector = document.querySelector(`.selection-item[slug="${slug}"`);
+    if (active) {
+        selector.querySelector('#unread-msg-flag').style.display = 'block';
+        document.getElementById('mark-as-read-btn').removeAttribute('disabled');
+    } else {
         selector.querySelector('#unread-msg-flag').style.display = 'none';
         document.getElementById('mark-as-read-btn').setAttribute('disabled', true);
     }
@@ -271,29 +241,29 @@ async function markAsSeen(element) {
     setTimeout(() => {
         setMessageStatusAsRead(element);
 
-        if(document.querySelectorAll('.message[data-read_stat="false"]').length === 0){
+        if (document.querySelectorAll('.message[data-read_stat="false"]').length === 0) {
             flagRoomUnreadMessages(activeRoom.slug, false);
         }
 
-        if(element.id.split('.')[1] !== '000'){
+        if (element.id.split('.')[1] !== '000') {
             const thread = element.closest('.message').querySelector('.branch');
-            if(thread){
+            if (thread) {
                 checkThreadUnreadMessages(thread);
             }
         }
     }, 3000);
 }
 
-function markAllAsRead(){
+function markAllAsRead() {
     const unread_msgs = document.querySelectorAll('.message[data-read_stat="false"]');
 
     unread_msgs.forEach(element => {
         observer.unobserve(element);
         setMessageStatusAsRead(element);
         sendReadStatToServer(element.id);
-        if(element.id.split('.')[1] !== '000'){
+        if (element.id.split('.')[1] !== '000') {
             const thread = element.closest('.message').querySelector('.branch');
-            if(thread){
+            if (thread) {
                 checkThreadUnreadMessages(thread);
             }
         }
@@ -301,8 +271,8 @@ function markAllAsRead(){
     flagRoomUnreadMessages(activeRoom.slug, false);
 }
 
-async function sendReadStatToServer(message_id){
-    url = `/req/room/readstat/${activeRoom.slug}`
+async function sendReadStatToServer(message_id) {
+    url = `/req/room/readstat/${activeRoom.slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     try {
         const response = await fetch(url, {
@@ -310,9 +280,9 @@ async function sendReadStatToServer(message_id){
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
-            body: JSON.stringify({'message_id': message_id,})
+            body: JSON.stringify({'message_id': message_id})
         });
         const data = await response.json();
 
@@ -325,9 +295,6 @@ async function sendReadStatToServer(message_id){
 }
 
 //#endregion
-
-
-
 
 
 //#region Scrolling Controls
@@ -364,7 +331,7 @@ function scrollToLast(forceScroll, targetElement = null) {
 
 
             // Position should include parent message position plus the position within the thread
-            scrollTargetPosition =  threadTopOffset + messageTopOffset;
+            scrollTargetPosition = threadTopOffset + messageTopOffset;
 
 
             // Add some padding to ensure message is fully visible
@@ -395,20 +362,18 @@ function scrollToLast(forceScroll, targetElement = null) {
         msgsPanel.scrollTo({
             top: scrollTargetPosition,
             left: 0,
-            behavior: "smooth",
+            behavior: 'smooth'
         });
     }
 }
 
-function scrollPanelToLast(panel){
+function scrollPanelToLast(panel) {
     const panelHeight = panel.scrollHeight;
     const currentScroll = panel.scrollTop + panel.clientHeight;
     panel.scrollTo({
         top: panel.scrollHeight,
-        left: 0,
+        left: 0
     });
 }
 
 //#endregion
-
-

@@ -4,8 +4,6 @@ use Laravel\Sanctum\Sanctum;
 
 return [
 
-    'allow_external_communication'=> env('ALLOW_EXTERNAL_COMMUNICATION', false),
-    'allow_user_token'=> env('ALLOW_USER_TOKEN_CREATION', false),
 
     /*
     |--------------------------------------------------------------------------
@@ -20,7 +18,7 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
+        'localhost,localhost:3000,hawki.dev.local,127.0.0.1,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort()
     ))),
 

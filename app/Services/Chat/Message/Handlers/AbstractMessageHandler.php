@@ -5,17 +5,17 @@ namespace App\Services\Chat\Message\Handlers;
 
 use App\Models\AiConv;
 use App\Models\Room;
-use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
 use App\Services\Chat\Message\Interfaces\MessageInterface;
 use App\Services\Storage\FileStorageService;
 
 
 abstract class AbstractMessageHandler implements MessageInterface
 {
-    protected AttachmentDb $attachmentService;
+    protected AttachmentRepository $attachmentService;
     protected FileStorageService $storageService;
 
-    public function __construct(AttachmentDb $attachmentService, FileStorageService $storageService)
+    public function __construct(AttachmentRepository $attachmentService, FileStorageService $storageService)
     {
         $this->attachmentService = $attachmentService;
         $this->storageService = $storageService;
@@ -28,10 +28,10 @@ abstract class AbstractMessageHandler implements MessageInterface
         if ($threadId == 0) {
             // Fetch all messages with whole number IDs (e.g., "0.0", "1.0", etc.)
             $allMessages = $conv->messages()
-                                ->get()
-                                ->filter(function ($message) {
-                                    return floor(floatval($message->message_id)) == floatval($message->message_id);
-                                });
+                ->get()
+                ->filter(function ($message) {
+                    return floor(floatval($message->message_id)) == floatval($message->message_id);
+                });
 
             if ($allMessages->isNotEmpty()) {
                 // Find the message with the highest whole number
@@ -49,8 +49,8 @@ abstract class AbstractMessageHandler implements MessageInterface
         } else {
             // Fetch all messages that belong to the specified threadId
             $allMessages = $conv->messages()
-                                ->where('message_id', 'like', "$threadId.%")
-                                ->get();
+                ->where('message_id', 'like', "$threadId.%")
+                ->get();
 
             if ($allMessages->isNotEmpty()) {
                 // Find the message with the highest decimal part
@@ -61,7 +61,7 @@ abstract class AbstractMessageHandler implements MessageInterface
                 // Increment the decimal part
                 $parts = explode('.', $lastMessage->message_id);
                 $newDecimal = intval($parts[1]) + 1;
-                $newMessageId = $parts[0] . '.' . str_pad($newDecimal, $decimalPadding, '0', STR_PAD_LEFT);
+                $newMessageId = $parts[0] . '.' . str_pad((string)$newDecimal, $decimalPadding, '0', STR_PAD_LEFT);
             } else {
                 // If no sub-messages exist, start from threadId.001
                 $newMessageId = $threadId . '.001';
@@ -70,7 +70,6 @@ abstract class AbstractMessageHandler implements MessageInterface
 
         return $newMessageId;
     }
-
 
 
 }

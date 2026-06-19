@@ -1,0 +1,37 @@
+/* ==========================================================================
+   Reset Layer
+   Minimal modern reset. Opinionated only where the legacy CSS would conflict
+   with new components (box-sizing, margin, font inheritance).
+   ========================================================================== */
+
+@layer reset {
+    /* Temporary specific targeting, in the future *, *::before, *::after */
+    svelte-snippet,
+    [id^="bits-"] {
+        & *,
+        & *::before,
+        & *::after {
+            box-sizing: border-box;
+        }
+
+        & * {
+            margin: 0;
+        }
+
+        & input,
+        & button,
+        & textarea,
+        & select {
+            font: inherit;
+        }
+
+        & p, & h1, & h2, & h3, & h4, & h5, & h6 {
+            overflow-wrap: break-word;
+        }
+    }
+
+    img, video {
+        max-width: 100%;
+        display: block;
+    }
+}

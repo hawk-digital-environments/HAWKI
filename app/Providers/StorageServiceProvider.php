@@ -2,13 +2,17 @@
 
 namespace App\Providers;
 
-use App\Services\Chat\Attachment\Db\AttachmentDb;
+use App\Services\Chat\Attachment\Repositories\AttachmentRepository;
+use App\Services\Config\Registries\PublicConfigRegistry;
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\Config\AvatarStorageConfig;
+use App\Services\Storage\Config\FileStorageConfig;
 use App\Services\Storage\FileStorageService;
 use App\Services\Storage\UrlGenerator;
 use App\Services\Storage\Utils\ContentExtractor;
-use App\Services\Storage\Value\StorageServiceContext;
+use App\Services\Storage\Values\StorageServiceContext;
+use App\Services\System\UsageTypes\UsageContext;
 use Illuminate\Config\Repository;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Foundation\Application;
@@ -25,7 +29,10 @@ class StorageServiceProvider extends ServiceProvider
         $this->app->singleton(
             UrlGenerator::class,
             function (Application $app) {
-                return new UrlGenerator('web.storage.proxy');
+                $routeName = $app->get(UsageContext::class)->isExternalApp()
+                    ? 'api.external_app.storage.proxy'
+                    : 'web.storage.proxy';
+                return new UrlGenerator($routeName);
             }
         );
 
@@ -44,7 +51,7 @@ class StorageServiceProvider extends ServiceProvider
                         filesystem: $filesystem,
                         urlGenerator: $app->get(UrlGenerator::class),
                         contentExtractor: $app->get(ContentExtractor::class),
-                        attachmentDb: $app->get(AttachmentDb::class)
+                        attachmentDb: $app->get(AttachmentRepository::class)
                     )
                 );
             }
@@ -65,10 +72,19 @@ class StorageServiceProvider extends ServiceProvider
                         filesystem: $filesystem,
                         urlGenerator: $app->get(UrlGenerator::class),
                         contentExtractor: $app->get(ContentExtractor::class),
-                        attachmentDb: $app->get(AttachmentDb::class)
+                        attachmentDb: $app->get(AttachmentRepository::class)
                     ),
                     fileConverter: $this->app->get(FileConverterInterface::class)
                 );
+            }
+        );
+
+        $this->app->extend(
+            PublicConfigRegistry::class,
+            function (PublicConfigRegistry $registry) {
+                return $registry
+                    ->declare(AvatarStorageConfig::class)
+                    ->declare(FileStorageConfig::class);
             }
         );
     }

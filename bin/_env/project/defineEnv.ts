@@ -3,8 +3,12 @@ import type {AddonConfig} from '@/loadAddons.ts';
 import {base64Encode, createDeterministicRandomString} from '@/util.ts';
 
 export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
-    const isInstalled = envFile.get('DOCKER_PROJECT_INSTALLED') === 'true';
+    const isInstalled = !envFile.isEmpty('DOCKER_PROJECT_IP');
     definition
+        .define('COMPOSE_PROJECT_NAME', {
+            help: 'The name of the docker compose project. This is used to prefix the docker containers and network.',
+            default: 'hawki'
+        })
         .define('APP_KEY', {
             help: 'Laravel Encryption key: 32 random characters',
             default: createDeterministicRandomString(32, 'APP_KEY')
@@ -26,10 +30,18 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
             help: 'If set to true, it is possible to login with the test user "tester" and password "tester".',
             default: 'true'
         })
-        .define('APP_URL', {
-            help: 'The URL of your application. This is used for generating links and redirects.',
-            default: isInstalled ? 'https://' + envFile.get('DOCKER_PROJECT_DOMAIN') : 'http://localhost'
-        })
+        .define('APP_URL', (() => {
+            if (!envFile.isEmpty('DOCKER_PROJECT_HOST') && !envFile.isEmpty('DOCKER_PROJECT_PROTOCOL')) {
+                return {
+                    remove: 'APP_URL is generated from DOCKER_PROJECT_PROTOCOL and DOCKER_PROJECT_HOST'
+                };
+            } else {
+                return {
+                    help: 'The URL to use for the application. This is used to generate links in emails and for the reverb app.',
+                    default: 'http://localhost'
+                };
+            }
+        })())
         .define('DB_HOST', {
             help: 'The host of your database server. "mysql" is the name of the provided docker-compose service.',
             default: 'mysql'
@@ -110,7 +122,6 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
             help: 'The salt to use for the backup encryption. This is used to encrypt the backups.',
             default: base64Encode(createDeterministicRandomString(128, 'BACKUP_SALT'))
         })
-        // @todo store this as json
         .define('FILE_CONVERTER', {
             help: 'The file converter to use. By default, we use the built-in HAWKI file converter service.',
             default: 'hawki_converter'
@@ -122,5 +133,15 @@ export const defineEnv: AddonConfig['env'] = async (definition, envFile) => {
         .define('HAWKI_FILE_CONVERTER_API_KEY', {
             help: 'The API key to use for the HAWKI file converter service.',
             default: createDeterministicRandomString(32, 'HAWKI_FILE_CONVERTER_API_KEY')
-        });
+        })
+        .define('DB_BACKUP_INTERVAL', {
+            remove: 'Backups are not supported in a dockerized environment'
+        })
+        .define('DB_BACKUP_INTERVAL_ARGS', {
+            remove: 'Backups are not supported in a dockerized environment'
+        })
+        .define('DB_BACKUP_DUMPER_BINARY_DIR', {
+            remove: 'Backups are not supported in a dockerized environment'
+        })
+    ;
 };

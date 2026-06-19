@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
-	<meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ env('APP_NAME') }}</title>
 
@@ -21,11 +21,9 @@
     <x-settings-panel/>
 
     <script>
-		InitializePreDomSettings(false);
-        UpdateSettingsLanguage('<x-current-locale/>');
-	</script>
-
-    <x-internal-frontend-connection-login/>
+        InitializePreDomSettings(false);
+        UpdateSettingsLanguage();
+    </script>
 
 </head>
 <body>
@@ -34,7 +32,7 @@
         <div class="logo"></div>
 
         <div class="loginPanel">
-			{!! $authForms !!}
+            {!! $authForms !!}
         </div>
 
 
@@ -42,8 +40,8 @@
             @php $tooltipId = str()->uuid() @endphp
             <button class="btn-sm" onclick="toggleSettingsPanel(true)" aria-labelledby="{{ $tooltipId }}">
                 <x-icon name="settings-icon" aria-hidden="true"/>
-                 <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
-                     {{ __("Settings") }}
+                <div class="label tooltip tt-abs-left" aria-hidden="true" id="{{ $tooltipId }}">
+                    {{ __("Settings") }}
                 </div>
             </button>
             <div class="impressumPanel">
@@ -68,33 +66,33 @@
 </html>
 
 <script>
-    window.addEventListener('DOMContentLoaded', () => {
-        if(window.innerWidth < 480){
-            const bgVideo = document.querySelector(".image_preview_container");
+    window.waitUntilReady(() => {
+        if (window.innerWidth < 480) {
+            const bgVideo = document.querySelector('.image_preview_container');
             bgVideo.remove();
         }
 
         setTimeout(() => {
-            if(@json($activeOverlay)){
+            if (@json($activeOverlay)) {
                 // console.log('close overlay');
-                setOverlay(false, true)
+                setOverlay(false, true);
             }
         }, 100);
     });
 
-    function onLoginKeydown(event){
-        if(event.key === "Enter"){
+    function onLoginKeydown(event) {
+        if (event.key === 'Enter') {
             const username = document.getElementById('account');
             // console.log(username.value);
-            if(!username.value){
+            if (!username.value) {
                 return;
             }
             const password = document.getElementById('password');
-            if(document.activeElement !== password){
+            if (document.activeElement !== password) {
                 password.focus();
                 return;
             }
-            if(username.value && password.value){
+            if (username.value && password.value) {
                 submitLogin();
             }
         }

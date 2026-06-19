@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
-use App\Services\Frontend\Connection\View\InternalFrontendConnectionComponent;
-use App\Services\Frontend\Connection\View\InternalFrontendLoginConnectionComponent;
+use App\Services\Config\Registries\PublicConfigRegistry;
+use App\Services\Frontend\Config\SecurityConfig;
+use App\Services\Frontend\Config\TransferConfig;
 use App\Services\Frontend\View\SettingsPanelComponent;
+use App\Services\Frontend\View\SvelteComponent;
 use Blade;
 use Illuminate\Support\ServiceProvider;
 
@@ -12,12 +14,19 @@ class FrontendServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->extend(
+            PublicConfigRegistry::class,
+            function (PublicConfigRegistry $registry) {
+                return $registry
+                    ->declare(TransferConfig::class)
+                    ->declare(SecurityConfig::class);
+            }
+        );
     }
 
     public function boot(): void
     {
-        Blade::component('internal-frontend-connection', InternalFrontendConnectionComponent::class);
-        Blade::component('internal-frontend-connection-login', InternalFrontendLoginConnectionComponent::class);
+        Blade::component('svelte', SvelteComponent::class);
         Blade::component('settings-panel', SettingsPanelComponent::class);
     }
 }

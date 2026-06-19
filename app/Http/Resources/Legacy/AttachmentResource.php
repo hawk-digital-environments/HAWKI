@@ -4,8 +4,8 @@ namespace App\Http\Resources\Legacy;
 
 use App\Models\Attachment;
 use App\Services\Storage\FileStorageService;
-use App\Services\Storage\Value\StoredFileIdentifier;
-use App\Utils\ServiceLocatorTrait;
+use App\Services\Storage\Values\StoredFileIdentifier;
+use App\Services\System\Container\ServiceLocatorTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,10 +13,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class AttachmentResource extends JsonResource
 {
     use ServiceLocatorTrait;
-    
+
     public function toArray(Request $request): array
     {
-        $storageService = $this->getServiceInstance(FileStorageService::class);
+        $storageService = $this->getService(FileStorageService::class);
 
         return [
             'fileData' => [

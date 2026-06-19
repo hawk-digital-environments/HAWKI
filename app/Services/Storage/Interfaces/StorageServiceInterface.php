@@ -2,10 +2,10 @@
 
 namespace App\Services\Storage\Interfaces;
 
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\StoredFile;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFile;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 
 interface StorageServiceInterface
 {

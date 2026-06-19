@@ -20,7 +20,7 @@ abstract class AbstractRequest
      * @param array $payload The request payload to send.
      * @param callable(AiResponse $response): void $onData Callback executed for each chunk of data received.
      * @param callable(AiModel $model, string $chunk): AiResponse $chunkToResponse Callback to transform a chunk into a response.
-     * @param callable():array|null $getHttpHeaders Optional callback to generate HTTP headers.
+     * @param callable(AiModel):array|null $getHttpHeaders Optional callback to generate HTTP headers.
      * @param string|null $apiUrl Optional API URL to override the model's default.
      * @param int|null $timeout Optional timeout for the request in seconds.
      * @return void
@@ -144,9 +144,9 @@ abstract class AbstractRequest
      */
     protected function setCommonCurlOptions(\CurlHandle $ch, array $payload, array $headers): void
     {
-        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
     }

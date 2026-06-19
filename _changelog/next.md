@@ -6,10 +6,16 @@
 
 - Added configuration settings for file uploads, that allow administrators to specify allowed file types and maximum file sizes, enhancing security and control over user uploads. See the [environment variables](../_documentation/3-architecture/10-dot%20Env.md#File-Upload-Settings) documentation for more details.
 - Improved accessiblity of the frontend by adding ARIA attributes and improving keyboard navigation, making it easier for users with disabilities to use the application. Thanks to [Thomas Orgeldinger](https://github.com/there-it-is) for the tremendous help!
-- Extended supported file formats for attachments: documents (PPTX, XLSX, HTML, Markdown, AsciiDoc, CSV, WebVTT) and additional image formats (SVG, TIFF, PSD, EPS, AI, BMP, ICO) are now handled via an image pre-processing pipeline using `rsvg-convert` and ImageMagick — auto-detected from `$PATH` when available. See the [optional dependencies](../_documentation/2-GettingStarted/1-Local%20Installation.md#optional-dependencies) documentation for installation instructions.
+- Extended supported file formats for attachments: documents (PPTX, XLSX, HTML, Markdown, AsciiDoc, CSV, WebVTT) and additional image formats (SVG, TIFF, PSD, EPS, AI, BMP, ICO) are now handled via an image pre-processing pipeline using `rsvg-convert` and ImageMagick — auto-detected from `$PATH` when available. **Note:** PostScript-based formats (EPS, AI, PS) require `ghostscript` to be installed alongside ImageMagick. See the [optional dependencies](../_documentation/2-GettingStarted/1-Local%20Installation.md#optional-dependencies) documentation for installation instructions.
 - Added support for the [Kreuzberg](https://github.com/kreuzberg-dev/kreuzberg) open-source document extraction API as a new file converter option. Configure via `KREUZBERG_FILE_CONVERTER_API_URL` in the `.env` file. No API key is required.
 - All file access (attachments and avatars) is now securely proxied through the application via a dedicated storage proxy controller, with proper access control enforced for all file types and storage backends. Direct storage URLs are no longer exposed to clients.
 - Drag-and-drop file upload now provides real-time visual feedback: files are classified as valid or invalid against the server-configured allowed MIME types before the upload begins, and the file picker's `accept` attribute is automatically populated to match.
+- We now have an official [Contribution guide](https://docs.hawki.infoContributing) that provides detailed instructions and guidelines for contributing to the project, including coding standards, testing procedures, and how to submit pull requests. This should make it easier for new contributors to get started and ensure a consistent codebase.
+- Introduced the **External App (ExtApp) system**, enabling third-party applications to integrate with HAWKI via an OAuth-like connection flow with cryptographic keypairs. Includes app user management, feature-level access control (e.g. AI in group chats), and a user-facing confirmation page. Manage apps via artisan commands: `ext-app:create`, `ext-app:list`, `ext-app:remove`. See `config/external_access.php` for feature toggle configuration.
+- Added the **SyncLog system** for real-time synchronization of server-side state changes. Supports both incremental and full sync strategies with entity-specific handlers (rooms, messages, users, members, invitations, AI models, etc.). Provides a REST API endpoint and broadcasts events via WebSocket, enabling clients to stay in sync efficiently.
+- Added **User Keychain** — a secure per-user storage system for cryptographic key material and configuration data. Supports symmetric, asymmetric, and hybrid crypto value types with dedicated Eloquent casts. Includes REST endpoints for managing keychain values.
+- Added **message threading support**. Messages can now belong to threads via `thread_id` and `has_thread` columns. Thread parent tracking is handled automatically via event listeners. Existing messages are backfilled via migrations.
+- Added **System Prompt management** via `SystemPromptProvider`. Supports multiple prompt types (DEFAULT, SUMMARY, IMPROVEMENT, NAME) with locale-aware resolution and caching.
 
 ### Quality of Life
 
@@ -21,6 +27,9 @@
 - Cryptographic salts are now delivered via the frontend connection payload instead of individual network requests, reducing initial page load latency.
 - The frontend translation system has been rewritten. Translations are now available via a unified `__()` helper function, consistent with Laravel's backend translation API.
 - HAWKI's locale and settings panel are now also available on the login and gateway pages, enabling translated UI before a user is authenticated.
+- Development workflow improvements: new `phpunit`, `phpstan`, `prettier`, and `php-cs-fixer` tools are now integrated to make testing and code formatting easier. Run `bin/env test all` for tests and static analysis, or `bin/env style php` / `bin/env style js` for code formatting.
+- CSRF tokens are now automatically included in response headers (`X-HAWKI-CSRF-TOKEN`), allowing frontend applications to retrieve tokens without additional requests.
+- API responses now include sync log entries in a `_hawki_sync_log` field automatically, enabling reactive frontends to process state changes immediately without waiting for WebSocket messages.
 
 ### Bugfix
 
@@ -38,14 +47,14 @@
 [//]: # (- Changes that are mostly relevant to maintainers and contributors, such as refactors, dependency updates, CI changes, etc.)
 
 - Refactoring of the "file converter" logic, improving the handling of file conversions and reducing potential errors. Also implemented a lot of logging in this area to make it easier to debug issues related to file conversions.
-- Refactoring and code cleanup of the tool calling logic, improving readability and maintainability.
+- Refactoring and code cleanup of the tool calling logic, improving readability and maintainability. The `ToolCallingClient` now properly validates that incoming requests contain a model; requests without a model are logged with a warning and passed through to the underlying client without tool calling support.
 - Inherited a lot of code from the `external-chat` branch, as preparation for V3 merge and to avoid merge conflicts later on. This also allows us to use the new "connection" logic to pass backend information to the frontend.
 - It is now possible to implement "custom file converters" using the "file_converter.converters" array in the configuration. This allows for more flexibility and extensibility in handling file conversions, as users can now easily add their own custom converters without modifying the core codebase. A new "class" property has been added to the converter configuration, which specifies the class that should be used for the converter. This class must implement the `FileConverterInterface` and can be autoloaded using Composer's PSR-4 autoloading.
 - The `FileConverterFactory` has been removed, to retrieve the converter simply ask for the `FileConverterInterface`, which will always provide you the currently configured converter. To determine if the converter is active (e.g. configured or not) check the `isAvailable()` method on the converter instance.
 - Complete overhaul of the storage layer with a new value-object-driven architecture. Key new types: `StoredFile`, `FileReference`, `StoredFileIdentifier`, `StoredFileCategory`, `FileCollection`, `FileType`, `PlainTextLanguageType`. All storage service method signatures have changed — any custom code calling `FileStorageService` or `AvatarStorageService` directly must be updated.
 - Every stored file now has a `.meta.json` sidecar written alongside it, capturing original filename, MIME type, extracted content references, and creation timestamp. Files without a sidecar (pre-existing uploads) have their metadata generated retroactively on first access.
 - Attachment formatting for AI providers has been extracted into dedicated per-provider classes (`GoogleAttachmentFormatter`, `GwdgAttachmentFormatter`, `OllamaAttachmentFormatter`, `OpenAiAttachmentFormatter`), replacing duplicated inline logic in each request converter.
-- The `AttachmentService` and `AttachmentFactory` have been replaced by a leaner `AttachmentDb` service. Stored file cleanup on attachment deletion is now handled automatically via the new `AttachmentDeleting` model event and a dedicated event listener.
+- The `AttachmentService` and `AttachmentFactory` have been replaced by a leaner `AttachmentRepository` service. Stored file cleanup on attachment deletion is now handled automatically via the new `AttachmentDeleting` model event and a dedicated event listener.
 - The `MessageHandlerFactory` has been removed. Message handlers (`PrivateMessageHandler`, `GroupMessageHandler`) are now resolved via Laravel's service container.
 - Six new `JsonResource` classes under `Http/Resources/Legacy/` standardize JSON serialization for existing API endpoints, replacing manual inline array construction scattered across models and services.
 - A new `TranslationServiceProvider` overrides Laravel's built-in translation loader to merge HAWKI's own JSON language files on top of any Laravel fallback translations. Translation labels are now embedded in the frontend connection payload.
@@ -53,8 +62,22 @@
 - `AiErrorResponse` now captures a stack trace at construction time and exposes it in `toArray()` when `app.debug` is enabled, making AI provider errors significantly easier to trace during development.
 - Event listeners in `app/Services/*/Listeners` are now auto-discovered via a glob registered in `bootstrap/app.php`.
 - `ext-fileinfo` is now declared as a required PHP extension in `composer.json`.
+- Introduced `AbstractCastableObject` (`App\Utils\Casts`) — a foundational reflection-based utility for hydrating and serializing typed PHP objects from/to string arrays. Supports built-in type casting (int, float, bool, string, array), enums, dates, encrypted values, and custom casters via `#[CastedValue]` annotations. Serves as the base for the upcoming database-backed configuration layer (`AbstractConfig`).
 - Added phpstan for static analysis which should help catch potential bugs and improve code quality. Run `composer run stan` to execute the static analysis checks. Currently NOT in the pipeline, because there are still some issues to fix, but we will get there eventually.
+- Achieved 100% test coverage for `App\Utils` module with comprehensive PHPUnit tests for utility classes like `Assert`, `Arrays`, and `Casts` helpers.
 - The model config files of `config/model_providers.php` and `config/model_lists` are now automatically copied to `_docker_production` when a new release branch is created.
+- The `jquery` library has been removed from the frontend dependencies, as it is not used in the codebase. This reduces the overall bundle size and improves performance.
+- Update of all major frontend dependencies.
+- Add `prettier` and `php-cs-fixer` configurations to enforce consistent code formatting across the codebase. Run `bin/env style php` or `bin/env style js` to automatically format the code according to the defined standards.
+- Added `phpunit` and `phpstan` to run tests and static analysis of the main application. Run `bin/env test unit` to execute the unit tests and `bin/env test stan` to run static analysis. Run all tests and checks with `bin/env test all`.
+- Comprehensive domain event system with abstract base classes for all major entities (`AbstractRoomEvent`, `AbstractMessageEvent`, `AbstractUserEvent`, `AbstractMemberEvent`, `AbstractInvitationEvent`, `AbstractExtAppEvent`, etc.). Events are dispatched automatically on model lifecycle changes and power the SyncLog broadcasting.
+- New `JsonResource` classes under `Http/Resources/` (non-legacy) for the new API: `RoomResource`, `UserResource`, `MemberResource`, `RoomMessageResource`, `AttachmentResource`, `AiModelResource`, `SystemPromptResource`, `SyncLogEntryResource`, `InvitationResource`, `PrivateUserDataResource`, `UserKeychainValueResource`.
+- Added `ApiRequestMigrator` for version-based API request format translation (v2 to legacy), supporting field mapping and ID conversion for backwards compatibility.
+- Added Eloquent casts for cryptographic types: `AsAsymmetricPublicKeyCast`, `AsHybridCryptoValueCast`, `AsSymmetricCryptoValueCast` — enabling transparent encryption/decryption of model attributes.
+- Added `AiModelIdMap` model and `ModelIdMapDb` service for database-backed mapping between internal numeric IDs and external AI model identifiers.
+- Added `CastableObjectCaster` to `AbstractCastableObject`, enabling nested castable objects as typed properties.
+- Storage value objects have been moved from `Value/` to `Values/` namespace (`App\Services\Storage\Values`).
+- The `ExternalCommunicationCheck` middleware has been replaced by the new `ExternalAccessMiddleware` and `AppAccessMiddleware` with fine-grained feature flag control.
 
 ### Deprecation
 

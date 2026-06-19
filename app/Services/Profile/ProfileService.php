@@ -4,14 +4,16 @@ namespace App\Services\Profile;
 
 
 use App\Models\PasskeyBackup;
-use App\Models\PrivateUserData;
 use App\Models\User;
 use App\Services\Chat\Room\RoomService;
+use App\Services\Frontend\Migrations\Repositories\AppliedFrontendMigrationRepository;
+use App\Services\Frontend\Migrations\Repositories\FrontendMigrationUserdataRepository;
 use App\Services\Storage\AvatarStorageService;
-use App\Services\Storage\Value\FileReference;
-use App\Services\Storage\Value\StoredFileCategory;
-use App\Services\Storage\Value\StoredFileIdentifier;
-use App\Utils\ServiceLocatorTrait;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
+use App\Services\System\Container\ServiceLocatorTrait;
+use App\Services\Users\Keychain\Repositories\UserKeychainRepository;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -90,14 +92,12 @@ class ProfileService
     {
 
         try {
-            $roomService = $this->getServiceInstance(RoomService::class);
+            $roomService = $this->getService(RoomService::class);
             $rooms = $user->rooms()->get();
 
             foreach ($rooms as $room) {
                 $member = $room->members()->where('user_id', $user->id)->firstOrFail();
-                if ($member) {
-                    $response = $roomService->removeMember($member, $room);
-                }
+                $roomService->removeMember($member, $room);
             }
 
             $convs = $user->conversations()->get();
@@ -112,10 +112,9 @@ class ProfileService
                 $inv->delete();
             }
 
-            $prvUserData = PrivateUserData::where('user_id', $user->id)->get();
-            foreach ($prvUserData as $data) {
-                $data->delete();
-            }
+            $this->getService(AppliedFrontendMigrationRepository::class)->dropAllForUser($user);
+            $this->getService(FrontendMigrationUserdataRepository::class)->dropAllForUser($user);
+            $this->getService(UserKeychainRepository::class)->dropAllForUser($user);
 
             $backups = PasskeyBackup::where('username', $user->username)->get();
 
@@ -133,28 +132,4 @@ class ProfileService
             throw $e;
         }
     }
-
-
-    /// Sends back user's encrypted keychain
-    public function fetchUserKeychain(): string
-    {
-
-        $user = Auth::user();
-        $prvUserData = PrivateUserData::where('user_id', $user->id)->first();
-
-        // Corrupted user data, force re-registration
-        if ($prvUserData === null) {
-            $this->deleteUserData($user);
-            redirect()->route('login')
-                ->withErrors(['login_error' => 'User data corrupted. Please register again.'])->send();
-            exit();
-        }
-
-        return json_encode([
-            'keychain' => $prvUserData->keychain,
-            'KCIV' => $prvUserData->KCIV,
-            'KCTAG' => $prvUserData->KCTAG,
-        ]);
-    }
-
 }

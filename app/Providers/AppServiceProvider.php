@@ -5,16 +5,29 @@ namespace App\Providers;
 use App\Http\Middleware\AdminAccess;
 use App\Http\Middleware\DeprecatedEndpointMiddleware;
 use App\Http\Middleware\EditorAccess;
-use App\Http\Middleware\ExternalCommunicationCheck;
 use App\Http\Middleware\MandatorySignatureCheck;
 use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
+use App\Services\System\Http\Exceptions\SsrfBlockedException;
+use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
+use App\Services\System\UsageTypes\UsageContext;
+use App\Services\System\UserTypes\UserContext;
+use App\Services\Translation\LocaleService;
 use App\Utils\Arrays\RecursiveMergeOption;
 use App\Utils\Arrays\RecursiveMerger;
+use Illuminate\Auth\AuthManager;
+use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Console\Scheduling\Event;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
+use Illuminate\Http\Request;
+use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schedule;
@@ -29,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerMiddlewareAliases();
+        $this->registerDisablingGlobalScopesForEloquentUserProvider();
     }
 
     /**
@@ -38,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->bootSchedulerMacros();
         $this->bootArrMacros();
+        $this->bootUrlGeneratorMacros();
+        $this->bootRequestMacros();
+        $this->bootHttpMacros();
     }
 
     /** @noinspection StaticClosureCanBeUsedInspection */
@@ -72,6 +89,7 @@ class AppServiceProvider extends ServiceProvider
         );
     }
 
+    /** @noinspection StaticClosureCanBeUsedInspection */
     private function bootArrMacros(): void
     {
         Arr::macro(
@@ -94,16 +112,94 @@ class AppServiceProvider extends ServiceProvider
             });
     }
 
+    private function bootUrlGeneratorMacros(): void
+    {
+        UrlGenerator::macro('getForcedRoot',
+            function () {
+                /* @phpstan-ignore-next-line property.protected */
+                return $this->forcedRoot;
+            }
+        );
+    }
+
+    private function bootRequestMacros(): void
+    {
+        $app = $this->app;
+        Request::macro(
+            'getUsageContext',
+            /**
+             * Retrieves the UsageContext instance for this request.
+             */
+            static function () use ($app): UsageContext {
+                return $app->get(UsageContext::class);
+            });
+        Request::macro(
+            'getUserContext',
+            /**
+             * Retrieves the UserContext instance for this request.
+             */
+            static function () use ($app): UserContext {
+                return $app->get(UserContext::class);
+            }
+        );
+        Request::macro(
+            'getLocaleContext',
+            /**
+             * Retrieves the LocaleService instance for this request, which provides information about the user's locale and language preferences.
+             */
+            static function () use ($app): LocaleService {
+                return $app->get(LocaleService::class);
+            }
+        );
+    }
+
+    private function bootHttpMacros(): void
+    {
+        PendingRequest::macro(
+            'getSsrfSafe',
+            /**
+             * A wrapper around the standard "get" method that performs additional checks to prevent SSRF vulnerabilities.
+             * This macro uses the {@see SsrfSafeGetterMacro} to execute the GET request, which validates the URL and query parameters against a whitelist and logs any blocked attempts.
+             *
+             * @param string $url The URL to send the GET request to.
+             * @param array|null|string $query Optional query parameters for the GET request, which can be an array, a JSON string, or a simple string.
+             * @return Response Returns the HTTP response from the GET request if successful
+             * @throws SsrfBlockedException if the URL or query parameters were blocked by the SSRF protection mechanism.
+             * @throws ConnectionException if there was an error connecting to the URL.
+             */
+            function (
+                string            $url,
+                array|null|string $query = null
+            ): Response {
+                return SsrfSafeGetterMacro::execute($this, $url, $query);
+            }
+        );
+    }
+
     private function registerMiddlewareAliases(): void
     {
         Route::aliasMiddleware('registrationAccess', RegistrationAccess::class);
         Route::aliasMiddleware('roomAdmin', AdminAccess::class);
         Route::aliasMiddleware('roomEditor', EditorAccess::class);
-        Route::aliasMiddleware('api_isActive', ExternalCommunicationCheck::class);
         Route::aliasMiddleware('prevent_back', PreventBackHistory::class);
         Route::aliasMiddleware('expiry_check', SessionExpiryChecker::class);
         Route::aliasMiddleware('token_creation', TokenCreationCheck::class);
         Route::aliasMiddleware('signature_check', MandatorySignatureCheck::class);
         Route::aliasMiddleware('deprecated', DeprecatedEndpointMiddleware::class);
+    }
+
+    private function registerDisablingGlobalScopesForEloquentUserProvider(): void
+    {
+        // Because our User model uses the KnownUsersAccessScope, which relies on the request declaring a user,
+        // we create an infinite loop when Laravel tries to find the user.
+        // To avoid this, we reconfigure the "eloquent" user provider to disable all global scopes on the User model, which includes the KnownUsersAccessScope.
+        // see \Illuminate\Auth\CreatesUserProviders::createEloquentProvider where this normally happens
+        $this->app->resolving('auth', function (AuthManager $authManager) {
+            $authManager->provider('eloquent', static function (Application $app, array $config) {
+                return (new EloquentUserProvider($app['hash'], $config['model']))->withQuery(function (Builder $query) {
+                    $query->withoutGlobalScopes();
+                });
+            });
+        });
     }
 }

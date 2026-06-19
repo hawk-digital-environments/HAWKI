@@ -1,0 +1,5 @@
+import type {MigrationContext} from '$lib/data/migrations/migrator.js';
+
+export async function migrate({name}: MigrationContext) {
+    console.log(`Running dummy migration ${name}...`);
+}

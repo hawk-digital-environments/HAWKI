@@ -22,7 +22,15 @@ const config = {
     projectName: githubProject, // Update with your actual project name
 
     onBrokenLinks: 'throw',
-    onBrokenMarkdownLinks: 'warn',
+
+    markdown: {
+        hooks: {
+            onBrokenMarkdownImages: 'warn',
+            onBrokenMarkdownLinks: 'throw'
+        }
+    },
+
+    staticDirectories: ['static', '../_documentation/static'],
 
     i18n: {
         defaultLocale: 'en',
@@ -43,6 +51,23 @@ const config = {
                     return changelogSorter(docs, githubOrganization, githubProject);
                 }
             }
+        ],
+        [
+            require.resolve('@easyops-cn/docusaurus-search-local'),
+            /** @type {import('@easyops-cn/docusaurus-search-local').PluginOptions} */
+            {
+                hashed: true,
+                indexBlog: false,
+                docsRouteBasePath: [
+                    '/changelog',
+                    '/'
+                ],
+                docsDir: [
+                    '../_changelog',
+                    '../_documentation'
+                ]
+            }
+
         ]
     ],
 
@@ -53,6 +78,7 @@ const config = {
             ({
                 docs: {
                     path: '../_documentation',
+                    exclude: ['**/assets/**', '**/static/**'],
                     routeBasePath: '/',
                     sidebarPath: require.resolve('./sidebars-docs.js'),
                     editUrl: editUrl,

@@ -9,8 +9,8 @@ use App\Models\Attachment;
 use App\Services\AI\Providers\AbstractAttachmentFormatter;
 use App\Services\AI\Value\AiModel;
 use App\Services\Storage\Interfaces\FileInterface;
-use App\Services\Storage\Value\FileType;
-use App\Services\Storage\Value\StoredFile;
+use App\Services\Storage\Values\FileType;
+use App\Services\Storage\Values\StoredFile;
 
 class OllamaAttachmentFormatter extends AbstractAttachmentFormatter
 {
