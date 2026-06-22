@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai\Tools\Neuron;
 
 
+use App\Collections\AiToolCollection;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiTool;
 use App\Services\Ai\Registries\AiModelCapabilityRegistry;
@@ -64,7 +65,10 @@ readonly class NeuronToolProvider
      * );
      * $agent->addTool($tools);
      * ```
-     * @return ToolInterface[] Neuron-compatible tools to be used for the current request.
+     * @param ParameterSource $parameterSource
+     * @param string[] $requestedCapabilities
+     * @param string[] $requestedTools
+     * @return Array<ToolInterface|ProviderToolInterface> Neuron-compatible tools to be used for the current request.
      */
     public function getTools(
         ParameterSource $parameterSource,
@@ -104,6 +108,10 @@ readonly class NeuronToolProvider
      *
      * Also produces the $noCustomToolsForCapabilities side-channel that tells the second pass
      * which capabilities must not be served by a custom tool (because the rule is NO or NATIVE).
+     * @param ParameterSource $parameterSource
+     * @param string[] $requestedCapabilities
+     * @param string[] $requestedTools
+     * @return Array<AiTool|ProviderToolInterface|mixed>
      */
     private function resolveHawkiToolsToConvert(
         ParameterSource $parameterSource,
@@ -128,6 +136,8 @@ readonly class NeuronToolProvider
      * capability name whose rule blocks custom tools (NO or NATIVE), so the requested-tools
      * pass can skip them.
      *
+     * @param ParameterSource $parameterSource
+     * @param string[] $requestedCapabilities
      * @param string[] $noCustomToolsForCapabilities Passed by reference; capability names
      *        for which custom tools must not be added are appended here.
      * @return array<ProviderToolInterface|AiTool>
@@ -220,6 +230,7 @@ readonly class NeuronToolProvider
     ): array
     {
         $model = $parameterSource->getModel();
+        /** @var AiToolCollection $modelTools */
         $modelTools = $model->tools;
 
         $tools = [];

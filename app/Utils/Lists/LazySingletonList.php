@@ -111,6 +111,4 @@ class LazySingletonList implements \IteratorAggregate, \Countable
     {
         return count($this->instances);
     }
-
-
 }

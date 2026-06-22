@@ -205,8 +205,8 @@ use App\Utils\Casts\Values\ResolvedCaster;
  */
 abstract class AbstractCastableObject
 {
-    private const SOURCE_STRING_ARRAY = 'stringArray';
-    private const SOURCE_ARRAY = 'array';
+    private const string SOURCE_STRING_ARRAY = 'stringArray';
+    private const string SOURCE_ARRAY = 'array';
 
     /**
      * Per-class cache of cast maps derived from {@see CastedValue} attributes.

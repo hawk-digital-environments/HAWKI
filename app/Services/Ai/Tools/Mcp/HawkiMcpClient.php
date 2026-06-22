@@ -35,13 +35,13 @@ class HawkiMcpClient
     public function getName(): string
     {
         $this->initializeIfNotAlready();
-        return $this->session->getInitializeResult()->serverInfo->name ?? 'unknown';
+        return $this->session?->getInitializeResult()->serverInfo->name ?? 'unknown';
     }
 
     public function getVersion(): string
     {
         $this->initializeIfNotAlready();
-        return $this->session->getInitializeResult()->serverInfo->version ?? 'unknown';
+        return $this->session?->getInitializeResult()->serverInfo->version ?? 'unknown';
     }
 
     public function ping(): bool

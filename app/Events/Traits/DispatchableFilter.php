@@ -30,6 +30,7 @@ trait DispatchableFilter
      */
     public static function dispatch(mixed ...$arguments): static
     {
+        // @phpstan-ignore new.static
         $event = new static(...$arguments);
         event($event);
         return $event;

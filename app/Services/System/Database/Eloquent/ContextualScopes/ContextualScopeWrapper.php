@@ -99,6 +99,7 @@ class ContextualScopeWrapper implements Scope
             if (is_string($definition)) {
                 return $this->serviceLocator->get($definition);
             }
+            // @phpstan-ignore-next-line deadCode.unreachable
             throw InvalidScopeDefinitionException::forInvalidDefinitionType($this->scopeKey, $this->registrar->modelClass);
         })();
 

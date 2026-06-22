@@ -122,7 +122,7 @@ readonly class ChatRequestFactory implements AgentRequestFactoryInterface
                 if (in_array($toolName, $capabilityStrings, true)) {
                     continue; // This is a capability, not a tool, so we skip the tool validation for it.
                 }
-                throw new \InvalidArgumentException(sprintf('Tool "%s" is not available for model "%s".', $toolName, $model->name));
+                throw new \InvalidArgumentException(sprintf('Tool "%s" is not available for model "%s".', $toolName, $model->label));
             }
             $validatedTools[] = $toolName;
         }
@@ -150,7 +150,7 @@ readonly class ChatRequestFactory implements AgentRequestFactoryInterface
                 // @todo exception
                 throw new \InvalidArgumentException(sprintf(
                     'Invalid message role "%s". Allowed roles are "%s" and "%s".',
-                    $payloadRole?->value ?? $payloadMessage['role'],
+                    $payloadRole->value ?? $payloadMessage['role'],
                     MessageRole::USER->value,
                     MessageRole::ASSISTANT->value
                 ));

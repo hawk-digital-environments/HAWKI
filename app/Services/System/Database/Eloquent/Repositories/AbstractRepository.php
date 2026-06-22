@@ -6,8 +6,8 @@ namespace App\Services\System\Database\Eloquent\Repositories;
 use App\Services\System\Database\Eloquent\Repositories\Traits\GuessesModelNameTrait;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 
 /**
@@ -45,6 +45,7 @@ abstract class AbstractRepository
      */
     public function findAll(): Collection
     {
+        /** @var Collection<int, TModel> */
         return $this->getQuery()->get();
     }
 
@@ -80,6 +81,7 @@ abstract class AbstractRepository
      */
     protected function getQuery(): Builder
     {
+        /** @var Builder<TModel> */
         return $this->getEloquentInstance()->newQuery();
     }
 
@@ -88,6 +90,7 @@ abstract class AbstractRepository
      */
     protected function getQueryWithoutAnyScopes(): Builder
     {
+        /** @var Builder<TModel> */
         return $this->getEloquentInstance()->newQueryWithoutScopes();
     }
 }

@@ -53,7 +53,6 @@ declare global {
 }
 
 export function run() {
-    console.log('EXECUTING RUN FUNCTION TO INITIALIZE BOOTSTRAPPER');
     autoRegisterResourceSchemas();
     autoRegisterConfigSchemas();
     autoRegisterMigrations();
@@ -112,7 +111,6 @@ export function run() {
     }));
     bootstrapper.onFinalizationStage(registerSvelteSnippetLoader);
 
-    console.log('CORE BOOTSTRAP REGISTERED');
     return new Promise<void>(async (resolve) => {
         window.hawkiBootstrap = bootstrapper;
         if (Array.isArray(window.hawkiEarlyWaitUntilBootstrapQueue)) {
@@ -121,9 +119,7 @@ export function run() {
             }
         }
 
-        console.log('Legacy bootstrap code registered', window.hawkiBootstrap);
         await bootstrapper.run();
-        console.log('Bootstrapper has finished running all stages.');
 
         window.hawkiIsReady = true;
         if (Array.isArray(window.hawkiEarlyWaitUntilReadyQueue)) {
@@ -131,9 +127,6 @@ export function run() {
                 await cb();
             }
         }
-        console.log('All ready callbacks have been executed.', window.hawkiIsReady);
-
-        console.log('Bootstrap complete, application is ready.');
 
         resolve();
     });

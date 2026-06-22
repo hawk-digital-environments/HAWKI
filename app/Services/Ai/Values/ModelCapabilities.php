@@ -54,7 +54,7 @@ use Illuminate\Support\Traits\Macroable;
  *
  * @api
  */
-class ModelCapabilities implements \JsonSerializable, CastableInstanceInterface
+final class ModelCapabilities implements \JsonSerializable, CastableInstanceInterface
 {
     use Macroable;
 
@@ -171,7 +171,7 @@ class ModelCapabilities implements \JsonSerializable, CastableInstanceInterface
      */
     public static function fromArray(array $data, ?AiModelCapabilityRegistry $capabilityRegistry = null): static
     {
-        return new static(
+        return new self(
         // Ensure that we are creating a self-fixing declaration that silently removes
         // any invalid capabilities that might be present in the input data, to prevent issues with typos or outdated capability keys.
             capabilities: array_filter(

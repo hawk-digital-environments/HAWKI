@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Ai\Tools\Mcp;
 
 use App\Models\Ai\McpServer;
+use App\Services\Ai\Values\McpServerTimeouts;
 use Illuminate\Console\Command;
 
 class ListMcpServers extends Command
@@ -31,18 +32,33 @@ class ListMcpServers extends Command
             $s->server_label,
             $s->url,
             $s->require_approval,
-            "{$s->timeout}s",
+            $this->formatTimeouts($s->timeouts),
             $s->tools_count,
             $s->api_key ? '***' : '—',
         ])->toArray();
 
         $this->newLine();
         $this->table(
-            ['ID', 'Label', 'URL', 'Approval', 'Timeout', 'Tools', 'API Key'],
+            ['ID', 'Label', 'URL', 'Approval', 'Timeouts', 'Tools', 'API Key'],
             $rows
         );
         $this->newLine();
 
         return Command::SUCCESS;
+    }
+
+    private function formatTimeouts(McpServerTimeouts $t): string
+    {
+        $parts = [];
+        if ($t->connectionTimeout !== null) {
+            $parts[] = "connect={$t->connectionTimeout}s";
+        }
+        if ($t->readTimeout !== null) {
+            $parts[] = "read={$t->readTimeout}s";
+        }
+        if ($t->sseIdleTimeout !== null) {
+            $parts[] = "sse={$t->sseIdleTimeout}s";
+        }
+        return $parts !== [] ? implode(' ', $parts) : '—';
     }
 }

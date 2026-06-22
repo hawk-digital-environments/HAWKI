@@ -48,7 +48,7 @@ use Illuminate\Support\Traits\Macroable;
  *
  * @api
  */
-class ModelSettings implements \JsonSerializable, CastableInstanceInterface
+final class ModelSettings implements \JsonSerializable, CastableInstanceInterface
 {
     use Macroable;
 
@@ -173,7 +173,7 @@ class ModelSettings implements \JsonSerializable, CastableInstanceInterface
      */
     public static function fromArray(array $data, ?AiModelSettingRegistry $settingRegistry = null): static
     {
-        return new static(
+        return new self(
             settings: $data,
             settingRegistry: $settingRegistry ?? app(AiModelSettingRegistry::class)
         );

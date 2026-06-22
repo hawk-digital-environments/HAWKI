@@ -10,7 +10,9 @@ use App\Models\User;
 use App\Services\Frontend\Migrations\Values\MigrationToApply;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Crypt;
 
 #[UseModel(FrontendMigration::class)]
@@ -25,12 +27,6 @@ class FrontendMigrationRepository extends AbstractRepository
             'migration_name' => $migrationName,
             'has_userdata' => $hasUserdata,
         ]);
-    }
-
-    /** @return Collection<int, FrontendMigration> */
-    public function findAll(): Collection
-    {
-        return $this->getQuery()->get();
     }
 
     /** @return Collection<int, FrontendMigration> */
@@ -49,7 +45,7 @@ class FrontendMigrationRepository extends AbstractRepository
         $migration->delete();
     }
 
-    public function findAllMigrationsToApplyForUser(User $user): Collection
+    public function findAllMigrationsToApplyForUser(User $user): SupportCollection
     {
         return $this->getQuery()
             ->leftJoin('applied_frontend_migrations', function ($join) use ($user) {
@@ -63,9 +59,10 @@ class FrontendMigrationRepository extends AbstractRepository
             ->whereNull('applied_frontend_migrations.id')
             ->select('frontend_migrations.*', 'frontend_migration_userdata.data as userdata')
             ->get()
-            ->map(function (FrontendMigration $migration) {
+            ->map(function (FrontendMigration|Model $migration) {
                 return new MigrationToApply(
                     name: $migration->migration_name,
+                    // @phpstan-ignore property.notFound
                     data: $migration->userdata
                         ? json_decode(Crypt::decrypt($migration->userdata, false), true)
                         : null

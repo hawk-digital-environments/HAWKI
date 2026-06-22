@@ -14,7 +14,6 @@ use Hawk\HawkiCrypto\SymmetricCrypto;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
-use Psr\Clock\ClockInterface;
 
 #[Singleton]
 readonly class ConnectRequestCrypto
@@ -28,7 +27,7 @@ readonly class ConnectRequestCrypto
         private ExtAppConfig     $config,
         private SymmetricCrypto  $crypto,
         private ExtAppRepository $extAppRepository,
-        private ClockInterface   $clock = new Clock()
+        private Clock            $clock = new Clock()
     )
     {
     }

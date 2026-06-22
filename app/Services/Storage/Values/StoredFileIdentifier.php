@@ -75,7 +75,7 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
 
     public static function tryFromUserAvatar(User|null $user): self|null
     {
-        if (empty($user?->avatar_id)) {
+        if (empty($user->avatar_id)) {
             return null;
         }
 

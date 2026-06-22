@@ -82,7 +82,7 @@ readonly class McpClientFactory
                 commandOrUrl: $url,
                 args: $clientArgs,
                 env: $clientEnv,
-                readTimeout: (float)($timeout ?? 10)
+                readTimeout: (float)($timeouts->readTimeout ?? 10)
             ),
             logger: $this->logger
         );

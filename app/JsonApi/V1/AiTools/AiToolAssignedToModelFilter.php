@@ -22,14 +22,16 @@ class AiToolAssignedToModelFilter implements Filter
     /**
      * @inheritDoc
      */
-    public function apply($query, $value): void
+    public function apply($query, $value)
     {
         if ($value) {
             $query->whereHas('models');
-            return;
+            return $query;
         }
 
         $query->whereDoesntHave('models');
+
+        return $query;
     }
 
     /**

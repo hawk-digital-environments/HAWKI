@@ -12,7 +12,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @property-read McpServerTimeouts $timeouts
+ * @property McpServerTimeouts $timeouts
+ * @property OnlineStatus $status
+ * @property McpServerType $type
+ * @property array $additional_config
  */
 #[UsePolicy(McpServerPolicy::class)]
 class McpServer extends Model

@@ -44,7 +44,7 @@ class UrlResolver
             return $scheme . ':' . $relativeUrl;
         }
 
-        $host = $base['host'] ?? '';
+        $host = $base['host'];
         $port = isset($base['port']) ? ':' . $base['port'] : '';
         $baseUri = $scheme . '://' . $host . $port;
 

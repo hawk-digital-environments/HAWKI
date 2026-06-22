@@ -42,7 +42,7 @@ class MigrationController extends Controller
 
         return new DataResponse([new MigrationToApply(
             $migration->migration_name,
-            $userData?->data ?? []
+            $userData->data ?? []
         )]);
     }
 }

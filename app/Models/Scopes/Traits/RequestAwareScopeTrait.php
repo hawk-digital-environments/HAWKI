@@ -8,6 +8,7 @@ namespace App\Models\Scopes\Traits;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
 
+// @phpstan-ignore trait.unused
 trait RequestAwareScopeTrait
 {
     use ServiceLocatingScopeTrait;
