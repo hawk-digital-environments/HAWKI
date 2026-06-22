@@ -37,6 +37,11 @@ class AssistantPolicy
         return $user->id === $assistant->creator_id;
     }
 
+    public function settings(User $user, Assistant $assistant): bool
+    {
+        return $this->update($user, $assistant);
+    }
+
     public function remix(User $user, Assistant $assistant): bool
     {
         return (bool) $assistant->allow_remix;

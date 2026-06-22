@@ -271,7 +271,7 @@ class AssistantController extends Controller
                 $content = ['text' => $content];
             } elseif (is_array($content) && isset($content[0]['type'])) {
                 $content = ['text' => collect($content)
-                    ->where('type', 'input_text')
+                    ->whereIn('type', ['input_text', 'output_text', 'text'])
                     ->pluck('text')
                     ->implode('')];
             }

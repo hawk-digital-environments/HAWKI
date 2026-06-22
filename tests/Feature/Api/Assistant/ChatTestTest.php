@@ -584,6 +584,50 @@ class ChatTestTest extends TestCase
         );
     }
 
+    public function test_chat_test_preserves_assistant_output_text_in_history(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+            'release_stage' => 'private',
+            'model' => 'gpt-4',
+        ]);
+        Sanctum::actingAs($user);
+
+        $runner = $this->createMock(AssistantChatRunnerInterface::class);
+        $runner->expects($this->once())->method('stream')->with(
+            $this->anything(),
+            $this->callback(function (array $messages) {
+                $assistantMessages = array_values(array_filter($messages, fn ($m) => $m['role'] === 'assistant'));
+                $userMessages = array_values(array_filter($messages, fn ($m) => $m['role'] === 'user'));
+
+                return count($assistantMessages) === 1
+                    && isset($assistantMessages[0]['content']['text'])
+                    && $assistantMessages[0]['content']['text'] === 'Hi there'
+                    && count($userMessages) === 2
+                    && isset($userMessages[1]['content']['text'])
+                    && $userMessages[1]['content']['text'] === 'How are you?';
+            }),
+            'gpt-4',
+            $this->anything(),
+            $this->anything(),
+        )->willReturn((function () {
+            yield from [];
+        })());
+        $this->app->instance(AssistantChatRunnerInterface::class, $runner);
+
+        $this->performStreamingRequest(
+            "/api/assistants/{$assistant->id}/actions/chat-test",
+            [
+                'input' => [
+                    ['role' => 'user', 'content' => [['type' => 'input_text', 'text' => 'Hello']]],
+                    ['role' => 'assistant', 'content' => [['type' => 'output_text', 'text' => 'Hi there']]],
+                    ['role' => 'user', 'content' => [['type' => 'input_text', 'text' => 'How are you?']]],
+                ],
+            ],
+        );
+    }
+
     public function test_chat_test_accepts_string_input(): void
     {
         $user = User::factory()->create();
