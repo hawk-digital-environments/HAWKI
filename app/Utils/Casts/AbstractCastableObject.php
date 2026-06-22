@@ -246,18 +246,20 @@ abstract class AbstractCastableObject
     {
         foreach ($this->getPropertyReflections() as $name => $prop) {
             if (!\array_key_exists($name, $attributes)) {
-                if ($attributes[$name] === null && !isset($attributes[$name])) {
-                    $prop->setValue($this, null);
-                }
                 continue;
             }
 
-            $prop->setValue(
-                $this,
-                self::SOURCE_STRING_ARRAY === $sourceType
-                    ? $this->valueFromString($name, $attributes[$name])
-                    : $attributes[$name],
-            );
+            $value = $attributes[$name];
+
+            if (self::SOURCE_STRING_ARRAY === $sourceType) {
+                // Null in a stored string map means "not provided"; keep the PHP default.
+                if (null === $value) {
+                    continue;
+                }
+                $prop->setValue($this, $this->valueFromString($name, $value));
+            } else {
+                $prop->setValue($this, $value);
+            }
         }
     }
 

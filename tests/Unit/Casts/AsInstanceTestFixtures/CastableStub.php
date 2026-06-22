@@ -15,7 +15,7 @@ class CastableStub implements CastableInstanceInterface
 
     public static function fromArray(array $data): static
     {
-        return new static($data['name'], $data['value']);
+        return new static($data['name'] ?? '', $data['value'] ?? 0);
     }
 
     public function toArray(): array

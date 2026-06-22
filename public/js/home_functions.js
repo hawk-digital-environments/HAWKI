@@ -161,6 +161,7 @@ document.addEventListener('click', function (event) {
             //if a input panel is clicked
             detectedInputPanel = clickedElement;
         }
+        createandsendInvi;
         clickedElement = clickedElement.parentElement;
     }
 

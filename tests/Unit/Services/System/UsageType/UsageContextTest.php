@@ -158,4 +158,47 @@ class UsageContextTest extends TestCase
 
         Event::assertDispatched(UsageTypeChangedEvent::class, 2);
     }
+
+    public function testItSetDoesNotDispatchEventWhenTypeIsUnchanged(): void
+    {
+        Event::fake();
+
+        $sut = new UsageContext();
+        $sut->set(WellKnownUsageTypes::MAIN_APP);
+
+        Event::assertNothingDispatched();
+    }
+
+    // =========================================================================
+    // getForGiven
+    // =========================================================================
+
+    public function testItGetForGivenReturnsStringAsIs(): void
+    {
+        $sut = new UsageContext();
+
+        static::assertSame('custom-type', $sut->getForGiven('custom-type'));
+    }
+
+    public function testItGetForGivenReturnsWellKnownTypeAsIs(): void
+    {
+        $sut = new UsageContext();
+
+        static::assertSame(WellKnownUsageTypes::EXTERNAL_APP, $sut->getForGiven(WellKnownUsageTypes::EXTERNAL_APP));
+    }
+
+    public function testItGetForGivenReturnsCurrentTypeWhenNullPassed(): void
+    {
+        $sut = new UsageContext();
+        $sut->set(WellKnownUsageTypes::EXTERNAL_APP);
+
+        static::assertSame(WellKnownUsageTypes::EXTERNAL_APP, $sut->getForGiven(null));
+    }
+
+    public function testItGetForGivenReturnsDefaultTypeWhenNullPassedAndTypeUnchanged(): void
+    {
+        $sut = new UsageContext();
+
+        static::assertSame(WellKnownUsageTypes::MAIN_APP, $sut->getForGiven(null));
+    }
 }

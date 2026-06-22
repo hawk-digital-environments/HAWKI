@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Attachment;
 use App\Models\Message;
 use App\Models\User;
-use App\Services\Api\ApiRequestMigrator;
 use App\Services\Chat\Message\MessageContentValidator;
 use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\FileStorageService;
@@ -158,10 +157,8 @@ class RoomController extends Controller
 
 
     // SECTION: MESSAGE
-    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator, ApiRequestMigrator $requestMigrator): JsonResponse
+    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator): JsonResponse
     {
-
-        $request = $requestMigrator->migrate($request);
         $validatedData = $request->validate([
             'content' => 'required|array',
             'metadata' => 'nullable|array',
@@ -182,9 +179,8 @@ class RoomController extends Controller
     }
 
 
-    public function updateMessage(Request $request, $slug, ApiRequestMigrator $requestMigrator): JsonResponse
+    public function updateMessage(Request $request, $slug): JsonResponse
     {
-        $request = $requestMigrator->migrate($request);
         $validatedData = $request->validate([
             'content' => 'required|array',
             'metadata' => 'nullable|array',
@@ -214,9 +210,8 @@ class RoomController extends Controller
     }
 
 
-    public function markAsRead(Request $request, $slug, ApiRequestMigrator $migrator): JsonResponse
+    public function markAsRead(Request $request, $slug): JsonResponse
     {
-        $request = $migrator->migrate($request);
         $validatedData = $request->validate([
             'message_id' => 'required|string',
         ]);

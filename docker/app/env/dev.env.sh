@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export XDEBUG_MODE=${XDEBUG_MODE:-debug}
+export XDEBUG_MODE=${XDEBUG_MODE:-'debug,coverage'}
 export XDEBUG_START_WITH_REQUEST=${XDEBUG_START_WITH_REQUEST:-yes}
 export XDEBUG_CLIENT_HOST=${XDEBUG_CLIENT_HOST:-host.docker.internal}
 export XDEBUG_CLIENT_PORT=${XDEBUG_CLIENT_PORT:-9003}

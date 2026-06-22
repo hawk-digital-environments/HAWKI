@@ -61,9 +61,9 @@ class McpServerStatusUpdaterTest extends TestCase
 
         $result = $this->sut->run();
 
-        static::assertSame(0, $result->get('count'));
-        static::assertSame(0, $result->get('online'));
-        static::assertSame(0, $result->get('offline'));
+        static::assertSame(0, $result->get(McpServerStatusUpdater::METRIC_SERVER_COUNT));
+        static::assertSame(0, $result->get(McpServerStatusUpdater::METRIC_SERVER_ONLINE));
+        static::assertSame(0, $result->get(McpServerStatusUpdater::METRIC_SERVER_OFFLINE));
     }
 
     public function testItDoesNotDispatchAnyEventsWhenRepositoryThrows(): void
@@ -87,7 +87,7 @@ class McpServerStatusUpdaterTest extends TestCase
         $server = $this->makeServer('https://online.example.com');
         $client = $this->onlinePingClient();
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')->willReturn($client);
 
         $this->mcpServerRepository
@@ -102,14 +102,14 @@ class McpServerStatusUpdaterTest extends TestCase
     {
         $server = $this->makeServer('https://online.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')->willReturn($this->onlinePingClient());
 
         $metrics = $this->sut->run();
 
-        static::assertSame(1, $metrics->get('online'));
-        static::assertSame(0, $metrics->get('offline'));
-        static::assertSame(1, $metrics->get('count'));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_ONLINE));
+        static::assertSame(0, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_OFFLINE));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_COUNT));
     }
 
     // =========================================================================
@@ -121,7 +121,7 @@ class McpServerStatusUpdaterTest extends TestCase
         $server = $this->makeServer('https://offline.example.com');
         $client = $this->offlinePingClient();
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')->willReturn($client);
 
         $this->mcpServerRepository
@@ -136,14 +136,14 @@ class McpServerStatusUpdaterTest extends TestCase
     {
         $server = $this->makeServer('https://offline.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')->willReturn($this->offlinePingClient());
 
         $metrics = $this->sut->run();
 
-        static::assertSame(0, $metrics->get('online'));
-        static::assertSame(1, $metrics->get('offline'));
-        static::assertSame(1, $metrics->get('count'));
+        static::assertSame(0, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_ONLINE));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_OFFLINE));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_COUNT));
     }
 
     // =========================================================================
@@ -154,7 +154,7 @@ class McpServerStatusUpdaterTest extends TestCase
     {
         $server = $this->makeServer('https://error.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')
             ->willThrowException(new \RuntimeException('Timeout'));
 
@@ -170,22 +170,22 @@ class McpServerStatusUpdaterTest extends TestCase
     {
         $server = $this->makeServer('https://error.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')
             ->willThrowException(new \RuntimeException('Timeout'));
 
         $metrics = $this->sut->run();
 
         // 'count' is only incremented after a successful ping attempt; exceptions bypass it
-        static::assertSame(1, $metrics->get('offline'));
-        static::assertSame(0, $metrics->get('count'));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_OFFLINE));
+        static::assertSame(0, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_COUNT));
     }
 
     public function testItRecordsErrorWhenExceptionIsThrown(): void
     {
         $server = $this->makeServer('https://error.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')
             ->willThrowException(new \RuntimeException('Connection refused'));
 
@@ -198,7 +198,7 @@ class McpServerStatusUpdaterTest extends TestCase
     {
         $server = $this->makeServer('https://error.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')
             ->willThrowException(new \RuntimeException('Connection refused'));
 
@@ -206,7 +206,7 @@ class McpServerStatusUpdaterTest extends TestCase
 
         $errors = iterator_to_array($metrics->getErrors());
         static::assertSame(
-            'Error checking status of MCP server https://error.example.com: Connection refused, marking as offline',
+            'Error checking status of MCP server https://error.example.com: Connection refused, marking as OFFLINE',
             $errors[0]
         );
     }
@@ -217,7 +217,7 @@ class McpServerStatusUpdaterTest extends TestCase
         $successServer = $this->makeServer('https://success.example.com');
 
         $this->mcpServerRepository->method('findAll')
-            ->willReturn(collect([$failingServer, $successServer]));
+            ->willReturn(new \Illuminate\Database\Eloquent\Collection([$failingServer, $successServer]));
 
         $this->mcpClientFactory
             ->method('createForServer')
@@ -230,9 +230,9 @@ class McpServerStatusUpdaterTest extends TestCase
 
         $metrics = $this->sut->run();
 
-        static::assertSame(1, $metrics->get('online'));
-        static::assertSame(1, $metrics->get('offline'));
-        static::assertSame(1, $metrics->get('count'));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_ONLINE));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_OFFLINE));
+        static::assertSame(1, $metrics->get(McpServerStatusUpdater::METRIC_SERVER_COUNT));
     }
 
     // =========================================================================
@@ -242,7 +242,7 @@ class McpServerStatusUpdaterTest extends TestCase
     public function testItDispatchesStartingEventBeforeProcessingServers(): void
     {
         Event::fake();
-        $this->mcpServerRepository->method('findAll')->willReturn(collect());
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection());
 
         $this->sut->run();
 
@@ -252,7 +252,7 @@ class McpServerStatusUpdaterTest extends TestCase
     public function testItDispatchesCompletedEventAfterAllServersProcessed(): void
     {
         Event::fake();
-        $this->mcpServerRepository->method('findAll')->willReturn(collect());
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection());
 
         $this->sut->run();
 
@@ -262,7 +262,7 @@ class McpServerStatusUpdaterTest extends TestCase
     public function testItPassesTheSameMetricsInstanceToStartingAndCompletedEvents(): void
     {
         Event::fake();
-        $this->mcpServerRepository->method('findAll')->willReturn(collect());
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection());
 
         $metrics = $this->sut->run();
 
@@ -282,7 +282,7 @@ class McpServerStatusUpdaterTest extends TestCase
         $server = $this->makeServer('https://example.com');
         $client = $this->onlinePingClient();
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')->willReturn($client);
 
         $this->sut->run();
@@ -298,7 +298,7 @@ class McpServerStatusUpdaterTest extends TestCase
         Event::fake();
         $server = $this->makeServer('https://offline.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')->willReturn($this->offlinePingClient());
 
         $this->sut->run();
@@ -315,7 +315,7 @@ class McpServerStatusUpdaterTest extends TestCase
         $server = $this->makeServer('https://failing.example.com');
         $exception = new \RuntimeException('Connection refused');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')->willThrowException($exception);
 
         $this->sut->run();
@@ -332,7 +332,7 @@ class McpServerStatusUpdaterTest extends TestCase
         Event::fake();
         $server = $this->makeServer('https://failing.example.com');
 
-        $this->mcpServerRepository->method('findAll')->willReturn(collect([$server]));
+        $this->mcpServerRepository->method('findAll')->willReturn(new \Illuminate\Database\Eloquent\Collection([$server]));
         $this->mcpClientFactory->method('createForServer')
             ->willThrowException(new \RuntimeException('Timeout'));
 

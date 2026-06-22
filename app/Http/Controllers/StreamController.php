@@ -16,8 +16,6 @@ use App\Services\Ai\UsageAnalyzerService;
 use App\Services\Ai\Values\Chunks\MaxToolExecutionsChunk;
 use App\Services\Ai\Values\Chunks\StreamDoneChunk;
 use App\Services\Ai\Values\TokenUsage;
-use App\Services\Api\ApiRequestMigrator;
-use App\Services\Api\Value\ApiRequestFieldConfig;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
 use App\Services\Storage\AvatarStorageService;
 use App\Services\Storage\Values\StoredFileIdentifier;
@@ -87,12 +85,8 @@ class StreamController extends Controller
     /**
      * Handle AI connection requests using the new architecture
      */
-    public function handleAiConnectionRequest(Request $request, ApiRequestMigrator $requestMigrator)
+    public function handleAiConnectionRequest(Request $request)
     {
-        $request = $requestMigrator->migrate(
-            $request,
-            new ApiRequestFieldConfig(messageIdField: 'messageId', threadIdField: 'threadIndex')
-        );
 
         //validate payload
         try {

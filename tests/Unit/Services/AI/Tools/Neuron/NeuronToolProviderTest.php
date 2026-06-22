@@ -13,9 +13,12 @@ use App\Services\Ai\Registries\ProviderAdapterRegistry;
 use App\Services\Ai\Tools\Neuron\Events\ToolsResolvedFilterEvent;
 use App\Services\Ai\Tools\Neuron\NeuronToolConverter;
 use App\Services\Ai\Tools\Neuron\NeuronToolProvider;
+use App\Services\Ai\Registries\AiModelSettingRegistry;
 use App\Services\Ai\Values\ModelCapabilities;
 use App\Services\Ai\Values\ModelCapabilityValueType;
+use App\Services\Ai\Values\ModelSettings;
 use App\Services\Ai\Values\ParameterSource;
+use App\Services\Ai\Values\WellKnownModelSettings;
 use Illuminate\Support\Facades\Event;
 use NeuronAI\Tools\ProviderTool;
 use NeuronAI\Tools\ToolInterface as NeuronToolInterface;
@@ -234,6 +237,7 @@ class NeuronToolProviderTest extends TestCase
         $model->method('__get')->willReturnMap([
             ['capabilities', $this->makeCapabilities([])],
             ['tools', new AiToolCollection()],
+            ['settings', $this->makeModelSettings()],
             ['model_id', 'gpt-4o'],
             ['id', 1],
         ]);
@@ -299,15 +303,14 @@ class NeuronToolProviderTest extends TestCase
     // getTools – ProviderToolInterface pass-through
     // =========================================================================
 
-    public function testItPassesThroughProviderToolInterfaceInstancesFromConverter(): void
+    public function testItIncludesConverterResultInTools(): void
     {
         Event::fake([ToolsResolvedFilterEvent::class]);
 
-        // If converter somehow returns a ProviderToolInterface, it still ends up in the list
-        $providerTool = $this->createMock(ProviderTool::class);
+        $neuronTool = $this->createMock(NeuronToolInterface::class);
         $aiTool = $this->makeAiTool('some_tool');
         $this->capabilityRegistry->method('has')->willReturn(true);
-        $this->toolConverter->method('convert')->willReturn($providerTool);
+        $this->toolConverter->method('convert')->willReturn($neuronTool);
 
         $tools = new AiToolCollection([$aiTool]);
         $model = $this->makeModel(tools: $tools);
@@ -316,7 +319,7 @@ class NeuronToolProviderTest extends TestCase
 
         $result = $this->makeSut()->getTools($source, [], ['some_tool']);
 
-        static::assertContains($providerTool, $result);
+        static::assertContains($neuronTool, $result);
     }
 
     // =========================================================================
@@ -406,6 +409,19 @@ class NeuronToolProviderTest extends TestCase
         return $source;
     }
 
+    private function makeModelSettings(bool $canUseTools = true): ModelSettings
+    {
+        $registry = new AiModelSettingRegistry();
+        $registry->declare(WellKnownModelSettings::TOOL_CALLING, false);
+        $registry->declare(WellKnownModelSettings::FILE_UPLOAD, false);
+        $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING, 0);
+        $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 0);
+        return ModelSettings::fromArray(
+            $canUseTools ? [WellKnownModelSettings::TOOL_CALLING => true] : [],
+            $registry
+        );
+    }
+
     private function makeModel(
         ModelCapabilities $capabilities = null,
         AiToolCollection  $tools = null
@@ -415,6 +431,7 @@ class NeuronToolProviderTest extends TestCase
         $model->method('__get')->willReturnMap([
             ['capabilities', $capabilities ?? $this->makeCapabilities([])],
             ['tools', $tools ?? new AiToolCollection()],
+            ['settings', $this->makeModelSettings()],
             ['id', 1],
             ['model_id', 'test-model'],
         ]);

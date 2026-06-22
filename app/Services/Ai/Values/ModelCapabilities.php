@@ -54,7 +54,7 @@ use Illuminate\Support\Traits\Macroable;
  *
  * @api
  */
-final class ModelCapabilities implements \JsonSerializable, CastableInstanceInterface
+class ModelCapabilities implements \JsonSerializable, CastableInstanceInterface
 {
     use Macroable;
 

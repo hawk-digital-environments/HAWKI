@@ -166,6 +166,10 @@ class NeuronToolConverterTest extends TestCase
             ['server', $server],
             ['mcp_config', $mcpConfig],
         ]);
+        // PHP's empty() calls __isset before __get; stub it so the config presence is reflected correctly.
+        $tool->method('__isset')->willReturnCallback(
+            fn(string $key) => $key === 'mcp_config' && $mcpConfig !== null
+        );
         return $tool;
     }
 }

@@ -59,8 +59,8 @@ class ServiceLocator
      * Resolves the service registered under the given identifier.
      *
      * Resolution order:
-     *  1. Locally registered services (see {@see set()})
-     *  2. The injected container (see {@see setContainer()})
+     *  1. Locally registered services ({@see set()})
+     *  2. The injected container ({@see setContainer()})
      *
      * @throws ServiceLocatorException when the service is not found locally and no container is available.
      */
@@ -82,7 +82,7 @@ class ServiceLocator
      * Pre-registered params bypass the container entirely — useful in tests to supply controlled values.
      *
      * @param string $executionId Execution identifier matching the one passed to {@see call()}.
-     * @param array  $params      Parameters spread into the callback as positional arguments.
+     * @param array $params Parameters spread into the callback as positional arguments.
      */
     public function setCallParams(string $executionId, array $params): self
     {
@@ -97,9 +97,9 @@ class ServiceLocator
      *  1. Pre-registered params for the given execution ID (see {@see setCallParams()}) — spread as positional args.
      *  2. The injected container (see {@see setContainer()}) — resolved via {@see Container::call()}.
      *
-     * @param string|array $executionId  Callback identifier; arrays are joined with '.' so callers can build
+     * @param string|array $executionId Callback identifier; arrays are joined with '.' so callers can build
      *                                   dot-paths by passing segments (e.g. ['scope', 'apply', $key]).
-     * @param array|null   $parameters   Named parameters forwarded to {@see Container::call()} when falling back
+     * @param array|null $parameters Named parameters forwarded to {@see Container::call()} when falling back
      *                                   to the container. Has no effect when pre-registered params are present.
      * @throws ServiceLocatorException when no pre-registered params and no container are available.
      */

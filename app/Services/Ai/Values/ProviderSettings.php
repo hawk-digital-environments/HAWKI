@@ -45,7 +45,7 @@ use Illuminate\Support\Traits\Macroable;
  *
  * @api
  */
-final class ProviderSettings implements CastableInstanceInterface
+final class ProviderSettings implements CastableInstanceInterface, \JsonSerializable
 {
     use Macroable;
 
@@ -153,7 +153,7 @@ final class ProviderSettings implements CastableInstanceInterface
      */
     public function remove(string $key): self
     {
-        if (in_array($key, $this->instanceKeys, true)) {
+        if (array_key_exists($key, $this->instanceKeys)) {
             throw InvalidProviderSettingsOperationException::forRequiredInstanceKey($key);
         }
 
@@ -179,7 +179,7 @@ final class ProviderSettings implements CastableInstanceInterface
     public function toArray(): array
     {
         $data = $this->list;
-        foreach ($this->instanceKeys as $key) {
+        foreach (array_keys($this->instanceKeys) as $key) {
             if (isset($data[$key]) && $data[$key] instanceof CastableInstanceInterface) {
                 $data[$key] = $data[$key]->toArray();
                 if (empty($data[$key])) {
@@ -188,5 +188,11 @@ final class ProviderSettings implements CastableInstanceInterface
             }
         }
         return $data;
+    }
+
+    /** Serializes to a plain array, identical to {@see toArray()}. */
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
     }
 }

@@ -162,6 +162,10 @@ class NeuronMcpTransportDummyTest extends TestCase
         $tool->method('__get')->willReturnMap([
             ['mcp_config', $config],
         ]);
+        // PHP's ?? operator calls __isset before __get; stub it so non-null configs are treated as set.
+        $tool->method('__isset')->willReturnCallback(
+            fn(string $key) => $key === 'mcp_config' && $config !== null
+        );
         return $tool;
     }
 }

@@ -23,7 +23,6 @@ class AiModelSettingsTest extends TestCase
         $registry = new AiModelSettingRegistry();
         $registry->declare(WellKnownModelSettings::TOOL_CALLING, false);
         $registry->declare(WellKnownModelSettings::FILE_UPLOAD, false);
-        $registry->declare(WellKnownModelSettings::ALLOW_EXTERNALLY, false);
         $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING, 0);
         $registry->declare(WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS, 0);
         foreach ($extra as $key => $default) {
@@ -278,21 +277,29 @@ class AiModelSettingsTest extends TestCase
         static::assertSame([], $sut->toArray());
     }
 
-    public function testItJsonSerializesMatchesToArray(): void
+    public function testItJsonSerializesAlwaysIncludesWellKnownSettings(): void
     {
-        $data = [WellKnownModelSettings::TOOL_CALLING => true];
-        $sut = $this->makeSettings($data);
-        static::assertSame($sut->toArray(), $sut->jsonSerialize());
+        $sut = $this->makeSettings([WellKnownModelSettings::TOOL_CALLING => true]);
+        $serialized = $sut->jsonSerialize();
+        static::assertTrue($serialized[WellKnownModelSettings::TOOL_CALLING]);
+        static::assertFalse($serialized[WellKnownModelSettings::FILE_UPLOAD]);
+        static::assertSame(0, $serialized[WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS]);
+        static::assertSame(0, $serialized[WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING]);
     }
 
     public function testItJsonSerializesViaJsonEncode(): void
     {
-        $data = [
+        $sut = $this->makeSettings([
             WellKnownModelSettings::TOOL_CALLING => true,
             WellKnownModelSettings::FILE_UPLOAD => false,
+        ]);
+        $expected = [
+            WellKnownModelSettings::TOOL_CALLING => true,
+            WellKnownModelSettings::FILE_UPLOAD => false,
+            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS => 0,
+            WellKnownModelSettings::MAX_TOOL_CALLING_ROUNDS_STREAMING => 0,
         ];
-        $sut = $this->makeSettings($data);
-        static::assertSame(json_encode($data), json_encode($sut));
+        static::assertSame(json_encode($expected), json_encode($sut));
     }
 
     public function testItRoundtripsFromArrayToArray(): void
