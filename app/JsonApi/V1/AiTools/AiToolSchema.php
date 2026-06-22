@@ -58,7 +58,7 @@ class AiToolSchema extends Schema
                     if ($tool->type === ToolType::FUNCTION) {
                         return OnlineStatus::ONLINE->value;
                     }
-                    return $tool->server?->status?->value ?? OnlineStatus::UNKNOWN->value;
+                    return $tool->server->status->value ?? OnlineStatus::UNKNOWN->value;
                 }),
             Boolean::make('added_by_file')
                 ->hidden(UserCondition::isNonAdmin(...))

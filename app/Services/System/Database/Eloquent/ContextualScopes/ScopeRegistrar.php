@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Scope;
 use Traversable;
 
 /**
- * @extends \IteratorAggregate<string>
+ * @implements \IteratorAggregate<string>
  */
 class ScopeRegistrar implements \IteratorAggregate
 {

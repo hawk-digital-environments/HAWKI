@@ -11,7 +11,7 @@ use Traversable;
 /**
  * @api
  */
-class ModelIoMethods implements CastableInstanceInterface, \JsonSerializable, \IteratorAggregate
+final class ModelIoMethods implements CastableInstanceInterface, \JsonSerializable, \IteratorAggregate
 {
     private function __construct(private array $list)
     {
@@ -111,7 +111,7 @@ class ModelIoMethods implements CastableInstanceInterface, \JsonSerializable, \I
 
     public static function fromArray(array $data): static
     {
-        return new static($data);
+        return new self($data);
     }
 
     /**

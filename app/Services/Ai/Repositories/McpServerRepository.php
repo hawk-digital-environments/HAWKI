@@ -10,18 +10,10 @@ use App\Services\Ai\Values\McpServerTimeouts;
 use App\Services\Ai\Values\McpServerType;
 use App\Services\Ai\Values\OnlineStatus;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 
 class McpServerRepository extends AbstractRepository
 {
-    /**
-     * @return Collection<int, McpServer>
-     */
-    public function findAll(): Collection
-    {
-        return $this->getQuery()->get();
-    }
-
     /**
      * @return Collection<int, McpServer>
      */
@@ -57,7 +49,7 @@ class McpServerRepository extends AbstractRepository
         $server->save();
     }
 
-    public function upsertByFile(
+    public function upsert(
         string                 $url,
         McpServerType          $type,
         string                 $label,
@@ -65,7 +57,8 @@ class McpServerRepository extends AbstractRepository
         string|null            $requireApproval,
         McpServerTimeouts|null $timeouts,
         string|null            $apiKey,
-        array|null             $additionalConfig
+        array|null             $additionalConfig,
+        bool                   $addedByFile = false,
     ): McpServer
     {
         return $this->getQuery()->updateOrCreate(
@@ -78,8 +71,22 @@ class McpServerRepository extends AbstractRepository
                 'timeouts' => $timeouts ?? new McpServerTimeouts(),
                 'api_key' => $apiKey ?? null,
                 'additional_config' => $additionalConfig ?? null,
-                'added_by_file' => true,
+                'added_by_file' => $addedByFile,
             ]
         );
+    }
+
+    public function upsertByFile(
+        string                 $url,
+        McpServerType          $type,
+        string                 $label,
+        string|null            $description,
+        string|null            $requireApproval,
+        McpServerTimeouts|null $timeouts,
+        string|null            $apiKey,
+        array|null             $additionalConfig
+    ): McpServer
+    {
+        return $this->upsert($url, $type, $label, $description, $requireApproval, $timeouts, $apiKey, $additionalConfig, addedByFile: true);
     }
 }

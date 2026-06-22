@@ -1,12 +1,24 @@
 includes:
     - vendor/larastan/larastan/extension.neon
 
+services:
+    -
+        class: App\Services\PhpStan\RepositoryReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension
+    -
+        class: App\Services\PhpStan\CastableObjectPropertiesExtension
+        tags:
+            - phpstan.properties.readWriteExtension
+
 parameters:
     paths:
         - app/
     excludePaths:
         - app/Services/_AI
-
+        - app/Console/Commands/DbgCommand.php
+    ignoreErrors:
+        - identifier: function.alreadyNarrowedType
     level: 5
     stubFiles:
         - phpstan.php.stub

@@ -94,7 +94,7 @@ class SvelteComponent extends Component
                 'type' => $this->type,
                 'props' => $this->props
             ],
-            $this->attributes?->all() ?? [],
+            $this->attributes->all(),
         );
 
         $attributes = [];

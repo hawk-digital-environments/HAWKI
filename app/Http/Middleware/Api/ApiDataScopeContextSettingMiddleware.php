@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware\Api;
 
-use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -46,7 +45,7 @@ readonly class ApiDataScopeContextSettingMiddleware
                 abort(400, sprintf('Resource type "%s" in "%s" query parameter does not exist. Did you mean "%s"?', $resourceType, self::NO_SCOPE_PARAM, $closestResourceType));
             }
 
-            /** @var class-string<HasContextualScopesTrait & Model> $modelClass */
+            /** @var class-string<Model> $modelClass */
             $modelClass = $schemaContainer->schemaFor($resourceType)::model();
             // Fail if the model class does not exist or is not an Eloquent model
             if (!class_exists($modelClass) || !is_subclass_of($modelClass, Model::class)) {

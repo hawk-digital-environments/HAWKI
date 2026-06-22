@@ -130,7 +130,7 @@ class AppServiceProvider extends ServiceProvider
             /**
              * Retrieves the UsageContext instance for this request.
              */
-            static function () use ($app): UsageContext {
+            function () use ($app): UsageContext {
                 return $app->get(UsageContext::class);
             });
         Request::macro(
@@ -138,7 +138,7 @@ class AppServiceProvider extends ServiceProvider
             /**
              * Retrieves the UserContext instance for this request.
              */
-            static function () use ($app): UserContext {
+            function () use ($app): UserContext {
                 return $app->get(UserContext::class);
             }
         );
@@ -147,7 +147,7 @@ class AppServiceProvider extends ServiceProvider
             /**
              * Retrieves the LocaleService instance for this request, which provides information about the user's locale and language preferences.
              */
-            static function () use ($app): LocaleService {
+            function () use ($app): LocaleService {
                 return $app->get(LocaleService::class);
             }
         );

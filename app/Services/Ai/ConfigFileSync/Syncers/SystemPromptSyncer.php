@@ -58,13 +58,11 @@ readonly class SystemPromptSyncer implements ConfigSyncerInterface
     {
         foreach ($this->localeService->getAvailableLocales() as $locale) {
             foreach (SystemPromptType::cases() as $type) {
-                $translationKey = self::TYPE_TO_TRANSLATION_LABEL_MAP[$type->value] ?? null;
-                if ($translationKey) {
-                    yield [$type, $locale] => $this->translator->get(
-                        $translationKey,
-                        locale: (string)$locale
-                    );
-                }
+                $translationKey = self::TYPE_TO_TRANSLATION_LABEL_MAP[$type->value];
+                yield [$type, $locale] => $this->translator->get(
+                    $translationKey,
+                    locale: (string)$locale
+                );
             }
         }
     }

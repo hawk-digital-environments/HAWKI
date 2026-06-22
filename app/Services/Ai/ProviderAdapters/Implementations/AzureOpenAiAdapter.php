@@ -35,7 +35,7 @@ class AzureOpenAiAdapter extends AbstractProviderAdapter
     public function checkModelStatus(AiModelOnlineStatusCollection $statusCollection, AiModelDemandCollection $demandCollection, ParameterSource $source): void
     {
         /* @see https://learn.microsoft.com/en-us/rest/api/azureopenai/models/list?view=rest-azureopenai-2024-10-21&tabs=HTTP */
-        $this->runOpenAiStatusCheck($statusCollection, $this->createStatusFetcher($source), $this->findEndpoint($provider) . '/openai/models');
+        $this->runOpenAiStatusCheck($statusCollection, $this->createStatusFetcher($source), $this->findEndpoint($source->getProvider()) . '/openai/models');
     }
 
     private function findVersion(AiProvider $provider): string

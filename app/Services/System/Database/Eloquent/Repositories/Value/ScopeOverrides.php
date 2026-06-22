@@ -8,7 +8,7 @@ namespace App\Services\System\Database\Eloquent\Repositories\Value;
 use App\Services\System\Database\Eloquent\ContextualScopes\Contexts\MakesDisableNotAllowedCallbacksTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\Contexts\ModelScopeContext;
 
-class ScopeOverrides
+final class ScopeOverrides
 {
     use MakesDisableNotAllowedCallbacksTrait;
 
@@ -17,13 +17,13 @@ class ScopeOverrides
     private bool $allScopesDisabled = false;
     private \Closure|null $allScopesDisabledNotAllowedCallback = null;
 
-    public function withContextConfigurator(\Closure $callback): static
+    public function withContextConfigurator(\Closure $callback): self
     {
         $this->contextConfigurator = $callback;
         return $this;
     }
 
-    public function withDisabled(string|array $scopeKey, \Closure|null $notAllowedCallback = null): static
+    public function withDisabled(string|array $scopeKey, \Closure|null $notAllowedCallback = null): self
     {
         $scopeKeys = is_array($scopeKey) ? $scopeKey : [$scopeKey];
         foreach ($scopeKeys as $key) {
@@ -32,19 +32,19 @@ class ScopeOverrides
         return $this;
     }
 
-    public function withForcefullyDisabled(string|array $scopeKey): static
+    public function withForcefullyDisabled(string|array $scopeKey): self
     {
         return $this->withDisabled($scopeKey, $this->makeDisableNotAllowedForceDisable());
     }
 
-    public function withAllDisabled(\Closure|null $notAllowedCallback = null): static
+    public function withAllDisabled(\Closure|null $notAllowedCallback = null): self
     {
         $this->allScopesDisabled = true;
         $this->allScopesDisabledNotAllowedCallback = $notAllowedCallback;
         return $this;
     }
 
-    public function withAllForcefullyDisabled(): static
+    public function withAllForcefullyDisabled(): self
     {
         return $this->withAllDisabled($this->makeDisableNotAllowedForceDisable());
     }
@@ -67,7 +67,7 @@ class ScopeOverrides
     public static function make(
         true|array|string  $disableScopes = true,
         \Closure|true|null $onNotAllowed = null
-    ): static
+    ): self
     {
         $overrides = new static();
 
@@ -84,23 +84,23 @@ class ScopeOverrides
         return $overrides;
     }
 
-    public static function makeWithDisabled(string|array $scopeKey, \Closure|null $notAllowedCallback = null): static
+    public static function makeWithDisabled(string|array $scopeKey, \Closure|null $notAllowedCallback = null): self
     {
-        return (new self())->withDisabled($scopeKey, $notAllowedCallback);
+        return (new static())->withDisabled($scopeKey, $notAllowedCallback);
     }
 
-    public static function makeWithForcefullyDisabled(string|array $scopeKey): static
+    public static function makeWithForcefullyDisabled(string|array $scopeKey): self
     {
-        return (new self())->withForcefullyDisabled($scopeKey);
+        return (new static())->withForcefullyDisabled($scopeKey);
     }
 
-    public static function makeWithAllDisabled(): static
+    public static function makeWithAllDisabled(): self
     {
-        return (new self())->withAllDisabled();
+        return (new static())->withAllDisabled();
     }
 
-    public static function makeWithAllForcefullyDisabled(): static
+    public static function makeWithAllForcefullyDisabled(): self
     {
-        return (new self())->withAllForcefullyDisabled();
+        return (new static())->withAllForcefullyDisabled();
     }
 }

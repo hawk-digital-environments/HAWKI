@@ -73,5 +73,4 @@ const md = markdownit({
 });
 window.md = md;
 
-console.log('APP JS loaded');
 run();

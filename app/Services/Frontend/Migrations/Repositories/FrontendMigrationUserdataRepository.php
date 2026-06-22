@@ -11,7 +11,8 @@ use App\Models\User;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\LazyCollection;
 
 #[UseModel(FrontendMigrationUserdata::class)]
 class FrontendMigrationUserdataRepository extends AbstractRepositoryWithContextualScopes
@@ -26,19 +27,13 @@ class FrontendMigrationUserdataRepository extends AbstractRepositoryWithContextu
     }
 
     /** @return Collection<int, FrontendMigrationUserdata> */
-    public function findAll(?ScopeOverrides $scopeOverrides = null): Collection
-    {
-        return $this->getQuery($scopeOverrides)->get();
-    }
-
-    /** @return Collection<int, FrontendMigrationUserdata> */
     public function findAllForUser(User $user): Collection
     {
         return $this->getQueryWithoutContextualScopes('access')->where('user_id', $user->id)->get();
     }
 
-    /** @return Collection<int, FrontendMigrationUserdata> */
-    public function findAllForMigration(FrontendMigration $migration, ?ScopeOverrides $scopeOverrides = null): Collection
+    /** @return LazyCollection<int, FrontendMigrationUserdata> */
+    public function findAllForMigration(FrontendMigration $migration, ?ScopeOverrides $scopeOverrides = null): LazyCollection
     {
         return $this->getQuery($scopeOverrides)->where('migration_id', $migration->id)->lazy(50);
     }

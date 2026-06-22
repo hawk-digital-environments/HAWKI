@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services\Ai\Registries;
 
 use App\Providers\AiServiceProvider;
-use App\Services\Ai\Agent\AgentRequestFactory;
 use App\Services\Ai\Agent\Contracts\AgentInterface;
 use App\Services\Ai\Agent\Contracts\AgentRequestFactoryInterface;
 use App\Services\Ai\Agent\Contracts\AgentRequestInterface;
@@ -21,7 +20,7 @@ class AgentRegistry
      */
     private array $agentClasses = [];
     /**
-     * @var array<string, class-string<AgentRequestFactory>> Agent key to request factory class mapping
+     * @var array<string, class-string<AgentRequestFactoryInterface>> Agent key to request factory class mapping
      */
     private array $agentRequestFactoryClasses = [];
     /**

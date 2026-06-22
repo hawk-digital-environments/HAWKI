@@ -75,8 +75,8 @@ class AiConfig extends AbstractConfig implements PublicConfigInterface
         $hawkiUser = $userRepository->findHawki();
         return self::fromArray([
             'handle' => '@' . ltrim($repo->get('hawki.aiHandle'), '@'),
-            'hawkiUserDisplayName' => $hawkiUser?->name ?? 'HAWKI',
-            'hawkiUserUsername' => $hawkiUser?->username ?? 'hawki',
+            'hawkiUserDisplayName' => $hawkiUser->name,
+            'hawkiUserUsername' => $hawkiUser->username,
             'hawkiUserAvatar' => StoredFileIdentifier::tryFromUserAvatar($hawkiUser)
         ]);
     }

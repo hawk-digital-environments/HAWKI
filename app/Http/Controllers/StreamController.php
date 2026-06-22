@@ -8,7 +8,6 @@ use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Room;
 use App\Models\User;
-use App\Services\Ai\Agent\Chat\ChatRequestFactory;
 use App\Services\Ai\Agent\Chat\Values\ChatRequest;
 use App\Services\Ai\Agent\Chat\Values\ChatResponse;
 use App\Services\Ai\Agent\Chat\Values\StreamingChatResponse;
@@ -39,7 +38,6 @@ class StreamController extends Controller
         private readonly AiService            $aiService,
         private readonly AvatarStorageService $avatarStorage,
         private readonly GroupMessageHandler  $groupMessageHandler,
-        private readonly ChatRequestFactory   $chatRequestFactory,
         private readonly LoggerInterface      $logger
     )
     {

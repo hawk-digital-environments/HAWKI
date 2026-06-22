@@ -45,7 +45,7 @@ use Illuminate\Support\Traits\Macroable;
  *
  * @api
  */
-class ProviderSettings implements CastableInstanceInterface
+final class ProviderSettings implements CastableInstanceInterface
 {
     use Macroable;
 
@@ -168,7 +168,7 @@ class ProviderSettings implements CastableInstanceInterface
      */
     public static function fromArray(array $data): static
     {
-        return new static($data);
+        return new self($data);
     }
 
     /**

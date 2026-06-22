@@ -10,18 +10,11 @@ use App\Models\FrontendMigrations\FrontendMigration;
 use App\Models\User;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
-use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 
 #[UseModel(AppliedFrontendMigration::class)]
 class AppliedFrontendMigrationRepository extends AbstractRepositoryWithContextualScopes
 {
-    /** @return Collection<int, AppliedFrontendMigration> */
-    public function findAll(?ScopeOverrides $scopeOverrides = null): Collection
-    {
-        return $this->getQuery($scopeOverrides)->get();
-    }
-
     /** @return Collection<int, AppliedFrontendMigration> */
     public function findAllForUser(User $user): Collection
     {
@@ -45,6 +38,9 @@ class AppliedFrontendMigrationRepository extends AbstractRepositoryWithContextua
         ]);
     }
 
+    /**
+     * @param Collection<int, FrontendMigration> $migrations
+     */
     public function applyAllForNewUser(Collection $migrations, User $user): void
     {
         // Just to be sure, drop all existing for the user.

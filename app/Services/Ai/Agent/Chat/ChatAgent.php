@@ -13,12 +13,9 @@ use App\Services\Ai\Agent\Contracts\AgentInterface;
 use App\Services\Ai\Agent\Contracts\AgentRequestInterface;
 use App\Services\Ai\Agent\Contracts\AgentResponseInterface;
 use App\Services\Ai\Registries\ProviderAdapterRegistry;
-use App\Services\Ai\Repositories\SystemPromptRepository;
 use App\Services\Ai\Tools\Neuron\NeuronToolProvider;
-use App\Services\Translation\LocaleService;
 use Illuminate\Container\Attributes\Singleton;
 use NeuronAI\Agent\Agent;
-use Psr\Log\LoggerInterface;
 
 #[Singleton]
 readonly class ChatAgent implements AgentInterface
@@ -26,10 +23,7 @@ readonly class ChatAgent implements AgentInterface
     public function __construct(
         private ProviderAdapterRegistry $providerAdapterRegistry,
         private NeuronToolProvider      $toolProvider,
-        private LoggingObserver         $loggingObserver,
-        private LoggerInterface         $logger,
-        private LocaleService           $localeService,
-        private SystemPromptRepository  $systemPromptRepository
+        private LoggingObserver         $loggingObserver
     )
     {
     }
@@ -82,6 +76,7 @@ readonly class ChatAgent implements AgentInterface
             ->toolMaxRuns($request->model->settings->getMaxToolCallingRounds())
             ->setAiProvider($providerAdapter->createNeuronProvider($request->getParameterSource()))
             ->setInstructions($request->instructions)
+            // @phpstan-ignore method.notFound
             ->observe($this->loggingObserver);
 
         if ($resolvedTools !== null) {

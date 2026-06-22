@@ -74,6 +74,7 @@ class NeuronToolConverter
             return $this->convertFunctionTool($tool);
         }
 
+        // @phpstan-ignore deadCode.unreachable
         throw new McpException(sprintf('Unsupported tool type %s for tool %s', $tool->type->value, $tool->name));
     }
 

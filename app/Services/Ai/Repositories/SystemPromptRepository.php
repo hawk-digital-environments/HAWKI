@@ -14,7 +14,6 @@ use App\Services\System\UsageTypes\UsageContext;
 use App\Services\Translation\LocaleService;
 use App\Services\Translation\Value\Locale;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 
 class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
 {
@@ -23,14 +22,6 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
         private readonly UsageContext  $usageContext
     )
     {
-    }
-
-    /**
-     * @return Collection<int, SystemPrompt>
-     */
-    public function findAll(?ScopeOverrides $scopeOverrides = null): Collection
-    {
-        return $this->makeBaseQuery(scopeOverrides: $scopeOverrides)->get();
     }
 
     /**
@@ -133,7 +124,7 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * @return Builder<SystemPrompt
+     * @return Builder<SystemPrompt>
      */
     private function makeBaseQuery(
         SystemPromptType|null $type = null,

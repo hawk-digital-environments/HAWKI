@@ -7,11 +7,11 @@ namespace App\Services\Ai\Values;
 
 use App\Casts\Contracts\CastableInstanceInterface;
 
-class McpServerTimeouts implements CastableInstanceInterface, \JsonSerializable
+final class McpServerTimeouts implements CastableInstanceInterface, \JsonSerializable
 {
-    private const READ_KEY = 'read';
-    private const CONNECT_KEY = 'connect';
-    private const SSE_IDLE_KEY = 'sse_idle';
+    private const string READ_KEY = 'read';
+    private const string CONNECT_KEY = 'connect';
+    private const string SSE_IDLE_KEY = 'sse_idle';
 
     public function __construct(
         public float|null $readTimeout = null,
@@ -23,7 +23,7 @@ class McpServerTimeouts implements CastableInstanceInterface, \JsonSerializable
 
     public static function fromArray(array $data): static
     {
-        return new static(
+        return new self(
             readTimeout: isset($data[self::READ_KEY]) ? (float)$data[self::READ_KEY] : null,
             connectionTimeout: isset($data[self::CONNECT_KEY]) ? (float)$data[self::CONNECT_KEY] : null,
             sseIdleTimeout: isset($data[self::SSE_IDLE_KEY]) ? (float)$data[self::SSE_IDLE_KEY] : null

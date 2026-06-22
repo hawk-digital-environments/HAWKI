@@ -37,7 +37,7 @@ use Illuminate\Support\Traits\Macroable;
  * ```
  * @api
  */
-class ModelParameters implements CastableInstanceInterface, \JsonSerializable
+final class ModelParameters implements CastableInstanceInterface, \JsonSerializable
 {
     use Macroable;
 
@@ -168,7 +168,7 @@ class ModelParameters implements CastableInstanceInterface, \JsonSerializable
      */
     public static function fromArray(array $data): static
     {
-        return new static($data);
+        return new self($data);
     }
 
     /** Returns all stored parameters as a plain array (including well-known keys). */

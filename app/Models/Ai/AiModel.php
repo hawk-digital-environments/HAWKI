@@ -5,6 +5,7 @@ namespace App\Models\Ai;
 use App\Casts\AsInstance;
 use App\Collections\AiModelCollection;
 use App\Collections\AiModelUsageRuleCollection;
+use App\Collections\AiToolCollection;
 use App\Models\Scopes\Generic\ActiveFilterOnRelationScope;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\Generic\UsageTypeFilterOnRelationScope;
@@ -35,7 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
  * @property OnlineStatus $status
  * @property ModelDemand $demand
  * @property bool $active
- * @property-read \Illuminate\Database\Eloquent\Collection<int, AiTool> $tools
+ * @property-read AiToolCollection $tools
  */
 #[CollectedBy(AiModelCollection::class)]
 #[UsePolicy(AiModelPolicy::class)]
@@ -95,6 +96,7 @@ class AiModel extends Model
      */
     public function usageRules(): HasOneOrMany
     {
+        // @phpstan-ignore return.type
         return $this->hasMany(AiModelUsageRule::class, 'ai_model_id');
     }
 

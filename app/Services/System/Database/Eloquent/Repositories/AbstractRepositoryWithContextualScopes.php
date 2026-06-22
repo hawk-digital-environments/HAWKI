@@ -10,8 +10,8 @@ use App\Services\System\Database\Eloquent\ContextualScopes\Contexts\ModelScopeCo
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
 
 /**
@@ -60,6 +60,7 @@ abstract class AbstractRepositoryWithContextualScopes extends AbstractRepository
      */
     public function findAll(?ScopeOverrides $scopeOverrides = null): Collection
     {
+        /** @var Collection<int, TModel> */
         return $this->getQuery($scopeOverrides)->get();
     }
 
@@ -100,7 +101,6 @@ abstract class AbstractRepositoryWithContextualScopes extends AbstractRepository
     #[\Override]
     protected function getQuery(?ScopeOverrides $scopeOverrides = null): Builder
     {
-        /** @var class-string<HasContextualScopesTrait & Model> $modelClass */
         $modelClass = $this->getModelClass();
         $this->assertModelHasContextualScopesTrait($modelClass);
 
@@ -108,6 +108,7 @@ abstract class AbstractRepositoryWithContextualScopes extends AbstractRepository
             return parent::getQuery();
         }
 
+        /** @phpstan-ignore staticMethod.notFound (scopeContext() comes from HasContextualScopesTrait, which PHPStan can't intersect with TModel) */
         return $modelClass::scopeContext()->runSandboxed(
             function (ModelScopeContext $context) use ($scopeOverrides, $modelClass) {
                 $scopeOverrides->apply($context);
@@ -117,6 +118,7 @@ abstract class AbstractRepositoryWithContextualScopes extends AbstractRepository
                 // because once the builder would evaluate them, the context is already reset and the scopes would be applied anyway.
 
                 $query = parent::getQuery();
+                /** @phpstan-ignore staticMethod.notFound (getContextualScopes() comes from HasContextualScopesTrait, which PHPStan can't intersect with TModel) */
                 foreach ($modelClass::getContextualScopes() as $scope) {
                     if ($scope->evaluateDisabling()) {
                         $query->withoutGlobalScope($scope->getFullScopeKey());

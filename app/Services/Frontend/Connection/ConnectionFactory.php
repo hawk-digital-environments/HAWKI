@@ -105,14 +105,14 @@ readonly class ConnectionFactory
             locale: $this->localeService->getCurrentLocale(),
             userinfo: $userinfo,
             extAppSecrets: new ExtAppSecrets(
-                passkey: (string)$appUser->user->passkey,
-                apiToken: (string)$appUser->user->api_token,
-                privateKey: (string)$appUser->user->user_private_key,
+                passkey: (string)$appUser->passkey,
+                apiToken: (string)$appUser->api_token,
+                privateKey: (string)$appUser->user_private_key,
             )
         );
     }
 
-    private function createExtAppConnectConnection(ExtApp $app, string $extAppUserId): Connection|null
+    private function createExtAppConnectConnection(ExtApp $app, string $extAppUserId): Connection
     {
         $payload = ExtAppConnectRequestPayload::fromArray([
             'appId' => $app->id,
@@ -192,6 +192,6 @@ readonly class ConnectionFactory
         if (!$this->request->user()) {
             return 0;
         }
-        return $this->migrationRepository->findAllMigrationsToApplyForUser($this->request->user())?->count();
+        return $this->migrationRepository->findAllMigrationsToApplyForUser($this->request->user())->count();
     }
 }

@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace App\Services\Users\Keychain\Repositories;
 
 
-use App\Models\PrivateUserData;
 use App\Models\User;
 use App\Models\UserKeychainValue;
-use App\Services\Encryption\EncryptionUtils;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
 use App\Services\Users\Keychain\Value\UserKeychainValueToRemove;
 use App\Services\Users\Keychain\Value\UserKeychainValueToSet;
 use App\Services\Users\Keychain\Value\UserKeychainValueType;
-use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -114,27 +111,6 @@ class UserKeychainRepository extends AbstractRepositoryWithContextualScopes
             ->where('user_id', $user->id)
             ->where('type', 'public_key')
             ->first();
-    }
-
-    /**
-     * Helper to find the legacy keychain of a user.
-     * This is only used to migrate to the new data structure.
-     * IMPORTANT: This does not work on the {@see UserKeychainValue} model, but on the old {@see PrivateUserData} model.
-     * @deprecated This method is only used for migration purposes and will be removed in the future.
-     */
-    public function findLegacyKeychainOfUser(User $user): ?SymmetricCryptoValue
-    {
-        $prvUserData = PrivateUserData::where('user_id', $user->id)->first();
-
-        if (!$prvUserData) {
-            return null;
-        }
-
-        return EncryptionUtils::symmetricCryptoValueFromStrings(
-            $prvUserData->KCIV,
-            $prvUserData->KCTAG,
-            $prvUserData->keychain
-        );
     }
 
     /**

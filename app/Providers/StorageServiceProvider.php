@@ -92,7 +92,7 @@ class StorageServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Register WebDAV driver for NextCloud support
-        Storage::extend('webdav', static function ($app, $config) {
+        Storage::extend('webdav', function ($app, $config) {
             $client = new Client([
                 'baseUri' => $config['base_uri'],
                 'userName' => $config['username'],

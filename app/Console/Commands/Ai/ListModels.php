@@ -5,6 +5,7 @@ namespace App\Console\Commands\Ai;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 
 class ListModels extends Command
 {
@@ -17,7 +18,7 @@ class ListModels extends Command
 
     public function handle(): int
     {
-        $query = AiModel::with('provider', 'status');
+        $query = AiModel::with('provider');
 
         if ($provider = $this->option('provider')) {
             $query->whereHas('provider', fn($q) => $q->where('provider_id', $provider));
@@ -40,6 +41,7 @@ class ListModels extends Command
         }
 
         // Group by provider
+        /** @var Collection<string, Collection<int, AiModel>> $grouped */
         $grouped = $models->groupBy(fn($m) => $m->provider->provider_id ?? 'unknown');
 
         foreach ($grouped as $providerId => $providerModels) {
@@ -55,7 +57,7 @@ class ListModels extends Command
                 $m->model_id,
                 $m->label,
                 $m->active ? '<fg=green>✓</>' : '<fg=red>✗</>',
-                $m->status->status->value ?? 'unknown',
+                $m->status->value ?? 'unknown',
                 implode(', ', $m->input ?? []),
             ])->toArray();
 
