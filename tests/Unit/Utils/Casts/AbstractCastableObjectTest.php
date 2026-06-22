@@ -250,6 +250,7 @@ class AbstractCastableObjectTest extends TestCase
 
     public function testItDecryptsOnHydrateViaFullPipeline(): void
     {
+        Crypt::setFacadeApplication($this->app);
         Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('my-secret');
 
         $sut = CastsEncryptedStringConfig::fromStringArray(['secret' => 'ciphertext']);
@@ -258,6 +259,7 @@ class AbstractCastableObjectTest extends TestCase
 
     public function testItEncryptsOnSerializeViaFullPipeline(): void
     {
+        Crypt::setFacadeApplication($this->app);
         Crypt::shouldReceive('encryptString')->with('my-secret')->once()->andReturn('ciphertext');
 
         $sut = CastsEncryptedStringConfig::fromArray(['secret' => 'my-secret']);

@@ -5,6 +5,16 @@ declare(strict_types=1);
 namespace App\Services\System\UserTypes\Contracts;
 
 
+/**
+ * Defines the built-in user type identifiers used across HAWKI.
+ *
+ * A "user type" is a string token that identifies who is making the current request.
+ * {@see \App\Services\System\UserTypes\UserContext} holds the active user type for
+ * the current request; listeners react to changes via {@see Events\UserTypeChangedEvent}.
+ *
+ * @see \App\Services\System\UserTypes\UserContext  Stores and updates the active user type.
+ * @see \App\Services\System\UsageTypes\WellKnownUsageTypes  The parallel concept for WHAT surface is used.
+ */
 interface WellKnownUserTypes
 {
     /**

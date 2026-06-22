@@ -9,16 +9,40 @@ use Illuminate\Console\Scheduling\ManagesFrequencies;
 use Illuminate\Support\Facades\Schedule;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Creates Laravel scheduled jobs whose frequency is stored in the database or configuration
+ * rather than being hard-coded in code.
+ *
+ * The interval string maps directly to a method name on Laravel's {@see ManagesFrequencies}
+ * trait (e.g. `"everyFiveMinutes"`, `"daily"`, `"hourly"`). Optional arguments for the
+ * method can be supplied as a JSON array, a bare numeric value, or a plain string.
+ * The special interval `"never"` disables scheduling for that job entirely.
+ *
+ * Called from {@see \App\Providers\AppServiceProvider::bootSchedulerMacros()} to
+ * register dynamic schedule entries at boot time.
+ *
+ * Usage:
+ * ```php
+ * // Schedule a command every five minutes, passing no arguments:
+ * $factory->makeJob('app:sync', null, 'everyFiveMinutes');
+ *
+ * // Schedule with an argument (e.g. cronExpression('0 * * * *')):
+ * $factory->makeJob('app:report', ['--type=csv'], 'cron', '0 * * * *');
+ *
+ * // Disable entirely:
+ * $factory->makeJob('app:heavy-job', null, 'never'); // returns null
+ * ```
+ */
 readonly class ScheduleWithDynamicIntervalFactory
 {
     /**
-     * A list of methods from the ManagesFrequencies trait that are not allowed to be used as intervals for scheduling jobs,
-     * simply because they do not make sense in the context of scheduling (e.g., "timezone" is used to set the timezone for the schedule, not as an interval).
+     * Methods from {@see ManagesFrequencies} excluded as interval identifiers because
+     * they configure scheduling meta-data (timezone) rather than a recurrence frequency.
      */
     private const DENIED_INTERVALS = ['timezone'];
 
     /**
-     * If given as interval, the job will never be executed.
+     * Passing this value as the interval skips scheduling and returns null from {@see makeJob()}.
      */
     public const NEVER_INTERVAL = 'never';
 

@@ -88,15 +88,19 @@ class AsInstanceTest extends TestCase
         $caster->get($model, 'field', 123, []);
     }
 
-    public function testItGetThrowsForInvalidJson(): void
+    public function testItGetSilentlyHandlesNonDecodableJson(): void
     {
+        // Truly unparseable JSON (null result from json_decode) is silently treated
+        // as an empty array — this gracefully handles MySQL NULL JSON columns
+        // stored as the literal string 'null' or completely invalid JSON blobs.
         $caster = AsInstance::castUsing([base64_encode(CastableStub::class)]);
         $model = $this->createMock(Model::class);
 
-        $this->expectException(InvalidCastValueException::class);
-        $this->expectExceptionMessage('Database value could not be decoded as JSON array.');
+        $result = $caster->get($model, 'field', 'not-json', []);
 
-        $caster->get($model, 'field', 'not-json', []);
+        static::assertInstanceOf(CastableStub::class, $result);
+        static::assertSame('', $result->name);
+        static::assertSame(0, $result->value);
     }
 
     public function testItGetThrowsWhenJsonIsNotAnArray(): void

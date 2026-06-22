@@ -12,10 +12,23 @@ use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
 
 /**
+ * Resolves the Eloquent model class for a repository using three fallback strategies (tried in order):
+ *
+ *   1. The {@see UseModel} attribute on the repository class.
+ *   2. A `@extends AbstractRepository<App\Models\MyModel>` DocBlock annotation.
+ *   3. The repository class name with the "Repository" suffix stripped, looked up under `App\Models\`.
+ *      For repositories inside `App\Services\{Domain}\Repositories`, the domain prefix is also tried
+ *      (e.g. `App\Services\Ai\Repositories\AiModelRepository` -> `App\Models\Ai\AiModel`).
+ *
  * @psalm-require-extends AbstractRepository
  */
 trait GuessesModelNameTrait
 {
+    /**
+     * Resolves the model class name using the configured strategies in priority order.
+     * Throws a {@see \LogicException} when no strategy succeeds, instructing the developer
+     * to add a {@see UseModel} attribute.
+     */
     protected function guessModelName(): string
     {
         $potentialModelClass =

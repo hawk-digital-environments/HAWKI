@@ -31,9 +31,32 @@ function initializeGroupChatModule(roomsData) {
             isScrolling = false;
         }, 800);
     });
-
-    const input = document.getElementById('input-container');
-
+    window.oldUiBridge.onSendMessage('room', async function (payload) {
+        throw new Error('Direct message sending is currently not supported. Please use the input field in the chat interface.');
+    });
+    window.oldUiBridge.onNewChat(() => {
+        startNewChat();
+    });
+    window.oldUiBridge.onOpenChat((slug) => {
+        loadRoom(null, slug);
+    });
+    window.oldUiBridge.onActiveConversationSystemPromptUpdate(newPrompt => {
+        if (!activeRoom) {
+            console.error('No active conversation to update system prompt for!');
+            return;
+        }
+        const formData = new FormData();
+        formData.append('system_prompt', newPrompt);
+        updateRoomInfo(activeRoom.slug, formData);
+    });
+    window.oldUiBridge.onRenameChat(async (slug, newName) => {
+        const formData = new FormData();
+        if (chatName) formData.append('name', chatName);
+        updateRoomInfo(activeRoom.slug, formData);
+    });
+    window.oldUiBridge.onDeleteChat((slug) => {
+        requestDeleteRoom(slug);
+    });
     initializeChatlogFunctions();
 }
 
@@ -572,7 +595,7 @@ async function sendInvitation(btn) {
 
 async function createAndSendInvitations(usersList, roomSlug) {
 
-    const roomKey = (window.userKeychain.roomKeys[slug] || {}).roomKey;
+    const roomKey = (window.userKeychain.roomKeys[roomSlug] || {}).roomKey;
     const invitations = [];
     for (const invitee of usersList) {
         let invitation;
@@ -756,18 +779,30 @@ function openInvitationPanel() {
 //#region Load Room
 
 function createRoomItem(roomData) {
-    const roomElement = roomItemTemplate.content.cloneNode(true);
+    /** @type {HTMLSvelteSnippetElement} */
+    const snippet = document.createElement('svelte-snippet');
+    snippet.setAttribute('type', 'ChatSidebarButton');
+
+    const chatsList = document.getElementById('rooms-list');
+
+    snippet.setProps({
+        slug: roomData.slug,
+        roomName: roomData.room_name,
+        htmlBefore: '<div class="dot-lg" id="unread-msg-flag"></div>',
+        context: 'room'
+    });
+    snippet.setAttribute('data-room-slug', roomData.slug);
+
+    chatsList.insertBefore(snippet, chatsList.firstChild);
+
     const roomsList = document.getElementById('rooms-list');
-
-    const label = roomElement.querySelector('.label');
-    label.textContent = roomData.room_name;
-
-    roomElement.querySelector('.selection-item').setAttribute('slug', roomData.slug);
-    roomsList.insertBefore(roomElement, roomsList.firstChild);
+    roomsList.insertBefore(snippet, roomsList.firstChild);
+    return snippet;
 }
 
 
 async function loadRoom(btn = null, slug = null) {
+    await getPassKey();
     if (rooms.length === 0) {
         history.replaceState(null, '', `/groupchat`);
         switchDyMainContent('group-welcome-panel');
@@ -778,8 +813,8 @@ async function loadRoom(btn = null, slug = null) {
         return;
     }
 
-    if (!slug) slug = btn.getAttribute('slug');
-    if (!btn) btn = document.querySelector(`.selection-item[slug="${slug}"]`);
+    if (!slug) slug = btn.getAttribute('data-room-slug');
+    if (!btn) btn = document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${slug}"]`);
 
 
     let roomData;
@@ -792,7 +827,7 @@ async function loadRoom(btn = null, slug = null) {
         return;
     }
 
-    const lastActive = document.getElementById('rooms-list').querySelector('.selection-item.active');
+    const lastActive = document.getElementById('rooms-list').querySelector('svelte-snippet[type="ChatSidebarButton"].active');
     if (lastActive) {
         lastActive.classList.remove('active');
     }
@@ -829,6 +864,7 @@ async function loadRoom(btn = null, slug = null) {
 
     if (roomData.room_description) {
         const descriptObj = JSON.parse(roomData.room_description);
+        console.log(descriptObj, roomData);
         const roomDescription = await decryptWithSymKey(roomKey, descriptObj.ciphertext, descriptObj.iv, descriptObj.tag, false);
         chatControlPanel.querySelector('#description-field').textContent = roomDescription;
         activeRoom.room_description = roomDescription;
@@ -837,7 +873,6 @@ async function loadRoom(btn = null, slug = null) {
         const systemPromptObj = JSON.parse(roomData.system_prompt);
         const systemPrompt = await decryptWithSymKey(roomKey, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
         chatControlPanel.querySelector('#system_prompt-field').innerText = systemPrompt;
-        document.getElementById('input-controls-props-panel').querySelector('#system_prompt_field').textContent = systemPrompt;
         activeRoom.system_prompt = systemPrompt;
     }
 
@@ -854,6 +889,8 @@ async function loadRoom(btn = null, slug = null) {
             }
         }
     }
+    window.oldUiMessageHistory.loadConversation(activeRoom);
+    window.oldUiBridge.triggerLoadSystemPrompt(activeRoom.system_prompt);
     filterRoleElements(roomData.role);
     loadMessagesOnGUI(roomData.messagesData);
     scrollToLast(true);
@@ -1273,14 +1310,8 @@ async function submitInfoField() {
 }
 
 
-async function requestDeleteRoom() {
-
-    const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_deleteRoom'));
-    if (!confirmed) {
-        return;
-    }
-
-    const url = `/req/room/removeRoom/${activeRoom.slug}`;
+async function requestDeleteRoom(slug) {
+    const url = `/req/room/removeRoom/${slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {

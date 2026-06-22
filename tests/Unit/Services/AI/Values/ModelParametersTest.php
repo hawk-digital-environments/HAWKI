@@ -366,18 +366,27 @@ class ModelParametersTest extends TestCase
         static::assertSame('present', $sut->get('extra'));
     }
 
-    public function testItJsonSerializesMatchesToArray(): void
+    public function testItJsonSerializesAlwaysIncludesWellKnownDefaults(): void
     {
-        $data = ['temperature' => 0.7, 'top_p' => 0.9, 'extra' => 'value'];
-        $sut = ModelParameters::fromArray($data);
-        static::assertSame($sut->toArray(), $sut->jsonSerialize());
+        $sut = ModelParameters::fromArray(['temperature' => 0.7, 'top_p' => 0.9, 'extra' => 'value']);
+        $serialized = $sut->jsonSerialize();
+        static::assertSame(0.7, $serialized['temperature']);
+        static::assertSame(0.9, $serialized['top_p']);
+        static::assertSame(4096, $serialized['max_tokens']);
+        static::assertSame(2048, $serialized['max_thinking_tokens']);
+        static::assertSame('value', $serialized['extra']);
     }
 
     public function testItJsonSerializesViaJsonEncode(): void
     {
-        $data = ['temperature' => 0.7, 'max_tokens' => 1024];
-        $sut = ModelParameters::fromArray($data);
-        static::assertSame(json_encode($data), json_encode($sut));
+        $sut = ModelParameters::fromArray(['temperature' => 0.7, 'max_tokens' => 1024]);
+        $expected = [
+            'temperature' => 0.7,
+            'top_p' => 1.0,
+            'max_tokens' => 1024,
+            'max_thinking_tokens' => 2048,
+        ];
+        static::assertSame(json_encode($expected), json_encode($sut));
     }
 
     // =========================================================================

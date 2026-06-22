@@ -286,17 +286,25 @@ class AiModelCapabilitiesTest extends TestCase
         static::assertSame('native', $result[WellKnownCapabilities::WEB_SEARCH]);
     }
 
-    public function testItJsonSerializesMatchesToArray(): void
+    public function testItJsonSerializesReturnsActiveCapabilityKeys(): void
     {
         $sut = $this->makeCapabilities([WellKnownCapabilities::WEB_SEARCH => ModelCapabilityValueType::YES->value]);
-        static::assertSame($sut->toArray(), $sut->jsonSerialize());
+        static::assertSame([WellKnownCapabilities::WEB_SEARCH], $sut->jsonSerialize());
+    }
+
+    public function testItJsonSerializesExcludesNoCapabilities(): void
+    {
+        $sut = $this->makeCapabilities([
+            WellKnownCapabilities::WEB_SEARCH => ModelCapabilityValueType::YES->value,
+            WellKnownCapabilities::KNOWLEDGE_BASE => ModelCapabilityValueType::NO->value,
+        ]);
+        static::assertSame([WellKnownCapabilities::WEB_SEARCH], $sut->jsonSerialize());
     }
 
     public function testItJsonSerializesViaJsonEncode(): void
     {
-        $data = [WellKnownCapabilities::WEB_SEARCH => ModelCapabilityValueType::TOOL->value];
-        $sut = $this->makeCapabilities($data);
-        static::assertSame(json_encode($data), json_encode($sut));
+        $sut = $this->makeCapabilities([WellKnownCapabilities::WEB_SEARCH => ModelCapabilityValueType::TOOL->value]);
+        static::assertSame('["' . WellKnownCapabilities::WEB_SEARCH . '"]', json_encode($sut));
     }
 
     // =========================================================================

@@ -7,6 +7,21 @@ namespace App\Services\System\Health\Value;
 
 use Traversable;
 
+/**
+ * An immutable, iterable collection of {@see HealthCheckResult} objects.
+ *
+ * Returned by {@see HealthChecker::check()} and {@see HealthChecker::deepCheck()} after
+ * running all configured component checks. Also passed to {@see \App\Events\HealthCheckEvent}
+ * so listeners can append their own results.
+ *
+ * Iterating over the collection yields the results keyed by their check name:
+ * ```php
+ * foreach ($collection as $name => $result) {
+ *     // $name  === 'database', 'cache', etc.
+ *     // $result instanceof HealthCheckResult
+ * }
+ * ```
+ */
 readonly class HealthCheckResultCollection implements \JsonSerializable, \IteratorAggregate
 {
     public array $results;
@@ -19,9 +34,8 @@ readonly class HealthCheckResultCollection implements \JsonSerializable, \Iterat
     }
 
     /**
-     * Checks if all health check results are OK.
-     *
-     * @return bool True if all checks are OK, false if any check is an error.
+     * Returns true when every check in the collection passed.
+     * Returns false as soon as any single check reports {@see HealthCheckResult::STATUS_ERROR}.
      */
     public function isOk(): bool
     {
