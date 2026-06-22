@@ -68,9 +68,9 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
-            ['key' => 'language', 'value' => 'de'],
-            ['key' => 'answer_length', 'value' => 'concise'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
+            ['setting_id' => $this->language->id, 'value' => 'de'],
+            ['setting_id' => $this->answerLength->id, 'value' => 'concise'],
         ]))->assertSuccessful();
 
         $values = $assistant->fresh()->load('settingValues')->settingValues;
@@ -92,7 +92,7 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
         ]))->assertSuccessful();
 
         $this->assertSame(1, $assistant->settingValues()->where('setting_id', $this->formality->id)->count());
@@ -102,7 +102,7 @@ class SettingsTest extends TestCase
         );
     }
 
-    public function test_unknown_setting_key_returns_422_with_pointer(): void
+    public function test_unknown_setting_id_returns_422_with_pointer(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
@@ -110,11 +110,11 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'bogus', 'value' => 'x'],
+            ['setting_id' => 99999, 'value' => 'x'],
         ]));
 
         $response->assertStatus(422);
-        $response->assertJsonPath('errors.0.source.pointer', '/data/attributes/settings/0/key');
+        $response->assertJsonPath('errors.0.source.pointer', '/data/attributes/settings/0/setting_id');
     }
 
     public function test_invalid_value_returns_422_with_pointer(): void
@@ -125,14 +125,14 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'telepathic'],
+            ['setting_id' => $this->formality->id, 'value' => 'telepathic'],
         ]));
 
         $response->assertStatus(422);
         $response->assertJsonPath('errors.0.source.pointer', '/data/attributes/settings/0/value');
     }
 
-    public function test_duplicate_setting_key_returns_422_with_pointer(): void
+    public function test_duplicate_setting_id_returns_422_with_pointer(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
@@ -140,12 +140,12 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
-            ['key' => 'formality', 'value' => 'casual'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
+            ['setting_id' => $this->formality->id, 'value' => 'casual'],
         ]));
 
         $response->assertStatus(422);
-        $response->assertJsonPath('errors.0.source.pointer', '/data/attributes/settings/1/key');
+        $response->assertJsonPath('errors.0.source.pointer', '/data/attributes/settings/1/setting_id');
     }
 
     public function test_non_creator_is_forbidden(): void
@@ -160,7 +160,7 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($other);
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
         ]))->assertForbidden();
     }
 
@@ -173,7 +173,7 @@ class SettingsTest extends TestCase
         ]);
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
         ]))->assertUnauthorized();
     }
 
@@ -205,7 +205,7 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
         ]))->assertSuccessful();
 
         $assistant->fresh();
@@ -228,7 +228,7 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
         ]))->assertSuccessful();
 
         $this->assertSame($initialVersionCount, $assistant->fresh()->versions()->count());
@@ -247,7 +247,7 @@ class SettingsTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/settings", $this->settingsPayload((string) $assistant->id, [
-            ['key' => 'formality', 'value' => 'professional'],
+            ['setting_id' => $this->formality->id, 'value' => 'professional'],
         ]))->assertSuccessful();
 
         $this->assertSame($initialVersionCount, $assistant->fresh()->versions()->count());

@@ -8,6 +8,7 @@ use LaravelJsonApi\Eloquent\Fields\Boolean;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Number;
+use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Filters\Where;
 use LaravelJsonApi\Eloquent\Schema;
@@ -30,6 +31,8 @@ class TestingSchema extends Schema
             Number::make('max_count'),
             Boolean::make('is_active'),
             DateTime::make('created_at')->readOnly(),
+            HasMany::make('items', 'items')->type('items'),
+            HasMany::make('logs', 'logs')->type('logs')->readOnly(),
         ];
     }
 

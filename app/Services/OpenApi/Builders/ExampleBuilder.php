@@ -198,9 +198,9 @@ class ExampleBuilder
                     'id' => '1',
                     'attributes' => [
                         'settings' => [
-                            ['key' => 'formality', 'value' => 'professional'],
-                            ['key' => 'language', 'value' => 'en'],
-                            ['key' => 'answer_length', 'value' => 'concise'],
+                            ['setting_id' => 1, 'value' => 'professional'],
+                            ['setting_id' => 2, 'value' => 'en'],
+                            ['setting_id' => 3, 'value' => 'concise'],
                         ],
                     ],
                 ],

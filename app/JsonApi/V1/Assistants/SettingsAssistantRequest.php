@@ -16,7 +16,7 @@ class SettingsAssistantRequest extends FormRequest
     {
         return [
             'data.attributes.settings' => ['required', 'array', 'min:1'],
-            'data.attributes.settings.*.key' => ['required', 'string'],
+            'data.attributes.settings.*.setting_id' => ['required', 'integer'],
             'data.attributes.settings.*.value' => ['required'],
         ];
     }
@@ -30,30 +30,30 @@ class SettingsAssistantRequest extends FormRequest
                 return;
             }
 
-            $keys = array_filter(array_map(fn ($entry) => $entry['key'] ?? null, $settings));
-            $catalog = AssistantSetting::whereIn('key', $keys)->get()->keyBy('key');
+            $ids = array_filter(array_map(fn ($entry) => $entry['setting_id'] ?? null, $settings));
+            $catalog = AssistantSetting::whereIn('id', $ids)->get()->keyBy('id');
 
-            $seenKeys = [];
+            $seenIds = [];
 
             foreach ($settings as $index => $entry) {
-                $key = $entry['key'] ?? null;
+                $settingId = $entry['setting_id'] ?? null;
 
-                if ($key === null) {
+                if ($settingId === null) {
                     continue;
                 }
 
-                $pointer = "data.attributes.settings.{$index}.key";
+                $pointer = "data.attributes.settings.{$index}.setting_id";
 
-                if (isset($seenKeys[$key])) {
-                    $validator->errors()->add($pointer, "Duplicate setting '{$key}'.");
+                if (isset($seenIds[$settingId])) {
+                    $validator->errors()->add($pointer, "Duplicate setting '{$settingId}'.");
                     continue;
                 }
-                $seenKeys[$key] = true;
+                $seenIds[$settingId] = true;
 
-                $setting = $catalog->get($key);
+                $setting = $catalog->get($settingId);
 
                 if ($setting === null) {
-                    $validator->errors()->add($pointer, "The setting '{$key}' does not exist.");
+                    $validator->errors()->add($pointer, "The setting '{$settingId}' does not exist.");
                     continue;
                 }
 
@@ -62,7 +62,7 @@ class SettingsAssistantRequest extends FormRequest
                 if ($allowed !== [] && ! in_array($entry['value'] ?? null, $allowed, true)) {
                     $validator->errors()->add(
                         "data.attributes.settings.{$index}.value",
-                        "Invalid value for setting '{$key}'."
+                        "Invalid value for setting '{$settingId}'."
                     );
                 }
             }

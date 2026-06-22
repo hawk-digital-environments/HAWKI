@@ -37,7 +37,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
             $server->resource('assistants', AssistantController::class)
                 ->relationships(function ($relationships) {
                     $relationships->hasOne('category')->readOnly();
-                    $relationships->hasMany('setting_values')->readOnly();
+                    $relationships->hasMany('setting_values')->readonly();
                     $relationships->hasMany('user_prompts')->readOnly();
                     $relationships->hasMany('ai_tools')->readOnly();
                     $relationships->hasMany('tags')->readOnly();

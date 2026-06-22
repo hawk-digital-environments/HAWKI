@@ -63,7 +63,7 @@ class AssistantSchema extends Schema
             Boolean::make('is_favorite')->readOnly(),
 
             BelongsTo::make('category')->type('assistant-categories'),
-            HasMany::make('setting_values', 'settingValues')->type('assistant-setting-values'),
+            HasMany::make('setting_values', 'settingValues')->type('assistant-setting-values')->readOnly(),
             HasMany::make('user_prompts', 'user_prompts'),
             BelongsToMany::make('ai_tools', 'ai_tools'),
             BelongsToMany::make('tags', 'tags'),
