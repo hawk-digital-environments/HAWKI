@@ -330,26 +330,50 @@ class StreamController extends Controller
         ];
         broadcast(new RoomMessageEvent($generationStatus));
 
+        $data['payload']['stream'] = false; // Ensure streaming is disabled for group chat requests
+        try {
+            $agentRequest = $this->aiService->getAgentRequestFactory()->createFromPayload($data['payload']);
+        } catch (\Throwable $e) {
+            $this->logger->error('Error creating agent request from payload', ['exception' => $e]);
+            try {
+                $model = $this->aiService->getModels()->findOneOrFail($data['payload']['model']);
+                RoomAiWritingEndedEvent::dispatch($room, $model);
+            } catch (\Throwable) {
+            }
+            abort(400, 'Invalid payload for agent request.');
+
+        }
+
         // Process the request
-        $response = $this->aiService->sendRequestToAgent($data['payload']);
+        $response = $this->aiService->sendRequestToAgent($agentRequest);
+        if (!$response instanceof ChatResponse) {
+            $this->logger->error('Unexpected response type from agent', ['response' => $response]);
+            try {
+                $model = $this->aiService->getModels()->findOneOrFail($data['payload']['model']);
+                RoomAiWritingEndedEvent::dispatch($room, $model);
+            } catch (\Throwable) {
+            }
+            abort(500, 'Unexpected response type from agent.');
+        }
 
         // Record usage
-        $this->usageAnalyzer->submitUsageRecord(
-            $response->usage,
-            'group',
-            $room->id
-        );
+//        $this->usageAnalyzer->submitUsageRecord(
+//            $response->usage,
+//            'group',
+//            $room->id
+//        );
 
         // @todo this was         $crypto = new SymmetricCrypto();
         //        $encryptedData = $crypto->encrypt($response->content['text'],
         //                                          base64_decode($data['key']));
         $content = $response->content;
-        if (array_key_exists('groundingMetadata', $response->content)) {
-            $content = json_encode([
-                'text' => $response->content['text'],
-                'groundingMetadata' => $response->content['groundingMetadata'],
-            ]);
-        }
+//        $content = $response->content;
+//        if (array_key_exists('groundingMetadata', $response->content)) {
+//            $content = json_encode([
+//                'text' => $response->content['text'],
+//                'groundingMetadata' => $response->content['groundingMetadata'],
+//            ]);
+//        }
 //        \Log::debug($content);
         $encryptedData = (new SymmetricCrypto())->encrypt(json_encode($content), base64_decode($data['key']));
 

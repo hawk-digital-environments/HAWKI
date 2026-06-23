@@ -17,7 +17,7 @@ import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
 import type {WellKnownSystemPromptType} from '$lib/schemas/resources/system-prompts.schema.js';
 import {getFileIconSvg} from '$lib/utils/fileIconSvg.js';
 import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
-import {Bootstrapper} from '$lib/utils/Bootstrapper.js';
+import {bootstrapper, Bootstrapper} from '$lib/utils/Bootstrapper.js';
 
 // Augment the global Window interface to include our globals, so that they can be accessed without TypeScript errors.
 // WARNING: This is only here for legacy support! Do not use global variables in new code!
@@ -82,8 +82,6 @@ export function run() {
         return systemPromptStore.getPromptByType(promptType)?.prompt ?? null;
     };
     window.getFileIconSvg = getFileIconSvg;
-
-    const bootstrapper = new Bootstrapper();
 
     // Before the bootstrap, we must load the connection and config, since everything else depends on them.
     // They are loaded simultaneously, but before the rest of the bootstrap steps, to minimize the time spent waiting for them.

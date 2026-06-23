@@ -2,52 +2,6 @@
 
 const uploadQueues = new Map();
 
-// Trigger click on the file input element
-function selectFile(sender) {
-    const inputContainer = sender.closest('.input-container');
-    const fileInput = inputContainer.querySelector('.file-upload-input');
-    if (fileInput) {
-        fileInput.click();
-    }
-}
-
-function setAttachmentsFilter(input_id) {
-    const attachments = uploadQueues.get(input_id);
-
-    let fileUploadFilterFlag = false;
-    let visionFilterFlag = false;
-    attachments.forEach(attachment => {
-        const type = checkFileFormat(attachment.fileData.mime);
-        if (type === 'image') {
-            visionFilterFlag = true;
-            addInputFilter(input_id, 'vision');
-        } else {
-            fileUploadFilterFlag = true;
-            addInputFilter(input_id, 'file_upload');
-        }
-    });
-
-    if (!visionFilterFlag) {
-        removeInputFilter(input_id, 'vision');
-    }
-    if (!fileUploadFilterFlag) {
-        removeInputFilter(input_id, 'file_upload');
-    }
-}
-
-// Prepare file for upload by creating needed metadata
-function createFileStruct(file) {
-    return {
-        tempId: generateUniqueId(),
-        file: file,
-        name: file.name,
-        size: file.size,
-        mime: file.type,
-        lastModified: file.lastModified,
-        status: 'pending' // pending, uploading, complete, error
-    };
-}
-
 
 // Add file to the UI for display
 
@@ -79,19 +33,6 @@ function createAttachmentThumbnail(fileData, thumbType) {
             break;
     }
 
-
-    if (thumbType === 'message') {
-        attachment.querySelector('.controls').remove();
-        const burgerBtn = attachment.querySelector('.burger-btn');
-        burgerBtn.addEventListener('click', () => {
-            openAttachmentDropDown(burgerBtn, attachment, fileData);
-        });
-
-    }
-    if (thumbType === 'input') {
-        attachment.querySelector('.burger-btn').remove();
-
-    }
     iconImg.setAttribute('src', imgPreview);
     return attachment;
 }
@@ -172,43 +113,6 @@ async function onDeleteClicked(fileData, attachment) {
         attachment.remove();
     }
 }
-
-// Remove file attachment from UI and storage
-function removeAtchFromInputList(providerBtn) {
-    const input = providerBtn.closest('.input');
-    const fileId = providerBtn.closest('.attachment').dataset.fileId;
-
-    removeAtchFromList(fileId, input.id);
-    setAttachmentsFilter(input.id);
-}
-
-function removeAtchFromList(fileId, queueId) {
-    // Remove from UI
-    const fileElement = document.querySelector(`.attachment[data-file-id="${fileId}"]`);
-
-    if (fileElement) {
-        fileElement.remove();
-    }
-
-    // Remove from pending uploads array
-    const queue = uploadQueues.get(queueId);
-
-    if (queue) {
-        const index = queue.findIndex(item => item.fileData.tempId === fileId);
-        if (index !== -1) {
-            queue.splice(index, 1);
-        }
-    }
-    setAttachmentsFilter(queueId);
-
-    // If no more attachments, remove container
-    const input = document.querySelector(`.input[id="${queueId}"`);
-    const list = input.querySelector('.attachments-list');
-    if (list && list.children.length === 0) {
-        list.closest('.file-attachments').classList.remove('active');
-    }
-}
-
 
 async function requestAtchDelete(fileId, category) {
     const url = `/req/${category}/attachment/delete`;

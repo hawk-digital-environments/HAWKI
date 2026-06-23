@@ -15,15 +15,20 @@ export class GuardAspect {
             return false;
         }
 
+        if (!context.hasWriteAccess) {
+            return false;
+        }
+
         if (context.sendStatus?.active) {
             return false;
         }
 
-        if (context.modelUsage.issues.length > 0) {
+        if (context.messageWithoutHandles.trim().length <= 0) {
             return false;
         }
 
-        if (context.message.trim().length <= 0) {
+        // Ignore model usage issues when the user does not see any AI-related UI elements.
+        if (context.modelUsage.issues.length > 0) {
             return false;
         }
 
@@ -33,9 +38,23 @@ export class GuardAspect {
         );
     });
 
+    public readonly showsAiUiElements = $derived.by(() => {
+        const context = this.contextResolver();
+
+        if (context.type === 'aiConv') {
+            return true;
+        }
+
+        if (context.mode.is === 'regen') {
+            return true;
+        }
+
+        return context.containsAiHandle;
+    });
+
     public readonly canChangeMode = $derived.by(() => {
         const context = this.contextResolver();
-        return !(context.sendStatus?.active) && !context.forcedActive;
+        return !(context.sendStatus?.active) && !context.forcedActive && context.hasWriteAccess;
     });
 
     public disablesFeature(feature: DisabledChatFeature, disableWhileActive: boolean = true): boolean {

@@ -74,15 +74,6 @@
         flex-shrink: 0;
     }
 
-    :global(.system-prompt-dialog-content.system-prompt-dialog-content) {
-        padding: var(--space-4);
-        width: 90vw;
-        max-width: 90vw;
-        height: 80vh;
-        max-height: 80vh;
-        grid-template-rows: auto 1fr auto;
-    }
-
     :global(textarea.system-prompt-textarea.system-prompt-textarea) {
         min-height: 160px;
         height: 100%;

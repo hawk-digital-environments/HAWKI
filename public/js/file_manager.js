@@ -154,7 +154,6 @@ async function previewFile(provider, fileData, category) {
     try {
         const url = await requestFileUrl(fileData.uuid, category);
         if (!url) {
-            console.log('No download link');
             return Promise.reject(new Error('No download link'));
         }
 

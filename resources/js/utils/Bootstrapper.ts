@@ -1,3 +1,33 @@
+/**
+ * Phased application initialization system.
+ *
+ * The `Bootstrapper` divides startup into six ordered stages so that
+ * different parts of the app can declare *when* their setup must run without
+ * needing to know about each other:
+ *
+ *   preparation → migration → early → main → late → finalization
+ *
+ * Handlers within a stage run concurrently (via `ParallelAsyncWorkflow`); the
+ * next stage does not begin until every handler of the current one has
+ * resolved. Pre-stage (`onStageReached`) and post-stage (`onStagePassed`)
+ * hooks run serially so they can act as setup/teardown guards.
+ *
+ * If a handler is registered after its target stage has already passed, it is
+ * called immediately and a console warning is emitted — late registration is
+ * never silently dropped.
+ *
+ * The exported `bootstrapper` singleton is the app-wide instance. Call
+ * `bootstrapper.run()` once at the entry point to start the sequence.
+ *
+ * @example
+ * import {bootstrapper} from '$lib/utils/Bootstrapper.js';
+ *
+ * bootstrapper.onMainStage(async () => {
+ *     await loadUserSession();
+ * });
+ *
+ * bootstrapper.run();
+ */
 import {ParallelAsyncWorkflow} from '$lib/utils/flows/ParallelAsyncWorkflow.js';
 import {AsyncPipeline} from '$lib/utils/flows/AsyncPipeline.js';
 
@@ -44,51 +74,72 @@ export class Bootstrapper {
         return this._currentStage;
     }
 
+    /** Registers a handler that runs *before* `stage` starts (serial). Use to
+     *  set up preconditions that the stage's parallel handlers depend on. */
     public onStageReached(stage: BootStage, handler: BootstrapHandler): () => void {
         this.runImmediatelyIfAlreadyPassed(stage, TIMING_BEFORE, handler);
         return this.reached.on(stage, handler);
     }
 
+    /** Registers a handler to run *during* `stage` (concurrently with other
+     *  handlers for the same stage, up to the concurrency limit). Returns a
+     *  cleanup function that deregisters the handler. */
     public onStage(stage: BootStage, handler: BootstrapHandler): () => void {
         this.runImmediatelyIfAlreadyPassed(stage, TIMING_BEFORE, handler);
         return this.stages.on(stage, handler);
     }
 
+    /** Shorthand for `onStage('preparation', handler)`. Use for bootstrapping
+     *  fundamental infrastructure (config, DI container). */
     public onPreparationStage(handler: BootstrapHandler): () => void {
         return this.onStage(BOOT_STAGE_PREPARATION, handler);
     }
 
+    /** Shorthand for `onStage('migration', handler)`. Use for schema or
+     *  storage migrations that must complete before the app starts. */
     public onMigrationStage(handler: BootstrapHandler): () => void {
         return this.onStage(BOOT_STAGE_MIGRATION, handler);
     }
 
+    /** Shorthand for `onStage('early', handler)`. Use for services that other
+     *  `main`-stage work depends on (e.g. auth, feature flags). */
     public onEarlyStage(handler: BootstrapHandler): () => void {
         return this.onStage(BOOT_STAGE_EARLY, handler);
     }
 
+    /** Shorthand for `onStage('main', handler)`. The primary initialization
+     *  stage — most feature setup goes here. */
     public onMainStage(handler: BootstrapHandler): () => void {
         return this.onStage(BOOT_STAGE_MAIN, handler);
     }
 
+    /** Shorthand for `onStage('late', handler)`. Use for work that should only
+     *  run after all main features are ready (e.g. analytics, telemetry). */
     public onLateStage(handler: BootstrapHandler): () => void {
         return this.onStage(BOOT_STAGE_LATE, handler);
     }
 
+    /** Shorthand for `onStage('finalization', handler)`. The last stage — use
+     *  for cleanup, final UI rendering, or marking the app as ready. */
     public onFinalizationStage(handler: BootstrapHandler): () => void {
         return this.onStage(BOOT_STAGE_FINALIZATION, handler);
     }
 
+    /** Registers a handler that runs *after* `stage` completes (serial). Use
+     *  to react to a stage finishing without blocking the next one's start. */
     public onStagePassed(stage: BootStage, handler: BootstrapHandler): () => void {
         this.runImmediatelyIfAlreadyPassed(stage, TIMING_AFTER, handler);
         return this.passed.on(stage, handler);
     }
 
+    /** Runs all stages in order. Idempotent — subsequent calls return the
+     *  same promise as the first call. */
     public run(): Promise<void> {
         if (this._runPromise) {
             return this._runPromise;
         }
 
-        this._runPromise = new Promise<void>(async (resolve) => {
+        this._runPromise = (async () => {
             for (const stage of bootStages) {
                 this._currentStage = stage;
                 this._currentStateTiming = TIMING_BEFORE;
@@ -99,9 +150,7 @@ export class Bootstrapper {
                 await this.passed.trigger(stage, this);
                 this._currentStateTiming = TIMING_DONE;
             }
-
-            resolve();
-        });
+        })();
 
         return this._runPromise;
     }

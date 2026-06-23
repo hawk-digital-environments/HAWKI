@@ -52,7 +52,6 @@ function exportAsCsv() {
     const messages = convertChatlogToJson();  // Get the messages list
 
     if (messages.length === 0) {
-        console.log('No data to export');
         return;
     }
 

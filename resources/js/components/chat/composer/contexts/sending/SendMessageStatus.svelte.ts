@@ -17,10 +17,8 @@ export class SendMessageStatus {
             if (this._status === 'sending') {
                 // Responding is true until the response body promise resolves, which indicates that the full response has been received.
                 // If the sender set a non-stream response, the body promise will already be resolved, so we will transition to "done" immediately.
-                console.log('RESPONDING');
                 this._status = 'responding';
                 res.body.then(() => {
-                    console.log('RECEIVED');
                     // Reach the final state once the full response has been received
                     this._status = 'received';
                 });

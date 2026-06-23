@@ -1,3 +1,9 @@
+<!--
+  @component Flexible modal dialog primitive. Wraps bits-ui Dialog with a
+  structured header / body / footer layout and an optional close button.
+  Use ConfirmDialog or InfoDialog for pre-built variants; use this directly
+  for dialogs that need custom body content or a non-standard layout.
+-->
 <script lang="ts">
 
     import type {Snippet} from 'svelte';
@@ -69,41 +75,39 @@
             {/snippet}
         </DialogPrimitive.Trigger>
     {/if}
-    <DialogPrimitive.Content class="system-prompt-content">
-        <DialogPrimitive.Portal>
-            <DialogPrimitive.Overlay {...mergeProps({class: 'dialog-overlay'}, overlayProps)}/>
-            <DialogPrimitive.Content {...mergeProps({class: 'dialog-content'}, contentProps)}>
-                {#if title || description}
-                    <div {...mergeProps({class: 'dialog-header'}, headerProps)}>
-                        {#if title}
-                            <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
-                                <SnippetOrString value={title}/>
-                            </DialogPrimitive.Title>
-                        {/if}
+    <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay {...mergeProps({class: 'dialog-overlay'}, overlayProps)}/>
+        <DialogPrimitive.Content {...mergeProps({class: 'dialog-content'}, contentProps)}>
+            {#if title || description}
+                <div {...mergeProps({class: 'dialog-header'}, headerProps)}>
+                    {#if title}
+                        <DialogPrimitive.Title {...mergeProps({class: 'dialog-title'}, titleProps)}>
+                            <SnippetOrString value={title}/>
+                        </DialogPrimitive.Title>
+                    {/if}
 
-                        {#if description}
-                            <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
-                                <SnippetOrString value={description}/>
-                            </DialogPrimitive.Description>
-                        {/if}
-                    </div>
-                {/if}
+                    {#if description}
+                        <DialogPrimitive.Description {...mergeProps({class: 'dialog-description'}, descriptionProps)}>
+                            <SnippetOrString value={description}/>
+                        </DialogPrimitive.Description>
+                    {/if}
+                </div>
+            {/if}
 
-                {@render children?.()}
+            {@render children?.()}
 
-                {#if footer}
-                    <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
-                        <SnippetOrString value={footer}/>
-                    </div>
-                {/if}
-                {#if closable}
-                    <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
-                        <X size={16}/>
-                    </DialogPrimitive.Close>
-                {/if}
-            </DialogPrimitive.Content>
-        </DialogPrimitive.Portal>
-    </DialogPrimitive.Content>
+            {#if footer}
+                <div {...mergeProps({class: 'dialog-footer'}, footerProps)}>
+                    <SnippetOrString value={footer}/>
+                </div>
+            {/if}
+            {#if closable}
+                <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
+                    <X size={16}/>
+                </DialogPrimitive.Close>
+            {/if}
+        </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
 </DialogPrimitive.Root>
 
 <style>

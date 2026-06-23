@@ -23,7 +23,7 @@ export class AiModelStore {
     public models = $state([] as AiModel[]);
     private modelMap = $derived.by(() => {
         const map = new Map<string, AiModel>();
-        aiModelStore.models.forEach(model => map.set(model.model_id, model));
+        this.models.forEach(model => map.set(model.model_id, model));
         return map;
     });
 
@@ -34,6 +34,11 @@ export class AiModelStore {
      */
     public systemModels = $state({} as Record<string, AiModel>);
 
+    /**
+     * Flexible model lookup — accepts an `AiModel` object, a numeric ID (as
+     * number or numeric string), or a `model_id` string. Returns `null` when
+     * no match is found.
+     */
     public getOneById(modelId: AiModel | string | number): AiModel | null {
         if (!modelId) {
             return null;
@@ -48,12 +53,22 @@ export class AiModelStore {
         return this.modelMap.get(String(modelId)) ?? null;
     }
 
+    /**
+     * Like `getOneById`, but never returns `null`. Falls back to the system
+     * model identified by `fallbackType` (default: `'default'`), and ultimately
+     * to the first available model when even that lookup fails.
+     *
+     * Use this when the caller must always end up with a concrete model —
+     * for example when building a chat request.
+     */
     public getModelByIdOrFallback(modelId: AiModel | string | number | null, fallbackType: WellKnownSystemModelType = 'default'): AiModel {
         return this.getOneById(modelId ?? '')
             ?? this.getSystemModelByType(fallbackType)
             ?? this.models[0];
     }
 
+    /** Returns the model assigned to a system role (e.g. `'default'`, `'chat'`),
+     *  or `null` when no assignment exists for that type. */
     public getSystemModelByType(type: WellKnownSystemModelType | string): AiModel | null {
         return this.systemModels[type] ?? null;
     }

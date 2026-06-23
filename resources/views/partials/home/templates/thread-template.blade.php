@@ -2,7 +2,7 @@
     <div class="thread" id="0">
         @php $tooltipId = str()->uuid() @endphp
         <button
-            class="thread-following-editor fast-access-btn tooltip-parent"
+            class="thread-following-editor fast-access-btn tooltip-parent editor-only"
             onclick="onEditThreadButtonEvent(this)"
             aria-labelledby="{{ $tooltipId }}">
             <x-icon name="edit"/>

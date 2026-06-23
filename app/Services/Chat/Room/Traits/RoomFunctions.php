@@ -119,10 +119,6 @@ trait RoomFunctions
     {
         $room = Room::where('slug', $slug)->firstOrFail();
 
-        if (!$room->isMember(Auth::id())) {
-            throw new AuthorizationException();
-        }
-
         try {
             $room->deleteRoom();
             return true;

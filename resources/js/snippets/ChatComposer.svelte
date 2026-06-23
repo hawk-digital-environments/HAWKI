@@ -20,6 +20,7 @@
     import ComposerActionButtons from '$lib/components/chat/composer/ComposerActionButtons.svelte';
     import ComposerFocusWrap from '$lib/components/chat/composer/utils/ComposerFocusWrap.svelte';
     import ComposerBorderBeam from '$lib/components/chat/composer/ComposerBorderBeam.svelte';
+    import {growTransition} from '$lib/utils/transitions/growTransition';
 
     interface Props {
         context: ComposerContextType;
@@ -98,68 +99,71 @@
         if (textareaEl) textareaEl.style.height = 'auto';
     }
 </script>
-<div class="chat-composer-wrapper">
-    <OldUiStyling/>
-    <FileDragAndDrop>
-        {#snippet children({dragOverlay, isDragging})}
-            <ComposerBorderBeam>
-                <ComposerFocusWrap textareaEl={textareaEl} buttonEl={buttonEl} class="chat-composer-card">
-                    {@render dragOverlay()}
-                    <div class="chat-composer-body" class:chat-composer-body--hidden={isDragging}>
-                        <ModePanel/>
-                        <!-- Upper row: model selector (left) + settings (right) -->
-                        <div class="chat-composer-top-row">
+{#if chatContext.hasWriteAccess}
+    <div class="chat-composer-wrapper">
+        <OldUiStyling/>
+        <FileDragAndDrop>
+            {#snippet children({dragOverlay, isDragging})}
+                <ComposerBorderBeam>
+                    <ComposerFocusWrap textareaEl={textareaEl} buttonEl={buttonEl} class="chat-composer-card">
+                        {@render dragOverlay()}
+                        <div class="chat-composer-body" class:chat-composer-body--hidden={isDragging}>
+                            <ModePanel/>
+                            <!-- Upper row: model selector (left) + settings (right) -->
+                            <div class="chat-composer-top-row">
+                                {#if chatContext.guard.showsAiUiElements}
+                                    <!-- Left: model controls -->
+                                    <div class="chat-composer-left" transition:growTransition>
+                                        <ModelPicker/>
+                                    </div>
 
-                            <!-- Left: model controls -->
-                            <div class="chat-composer-left">
-                                <ModelPicker/>
+                                    <!-- Right: settings -->
+                                    <div class="chat-composer-right" transition:growTransition>
+                                        <SettingsMenu/>
+                                    </div>
+                                {/if}
                             </div>
 
-                            <!-- Right: settings -->
-                            <div class="chat-composer-right">
-                                <SettingsMenu/>
-                            </div>
-                        </div>
+                            <!-- Separator -->
+                            <div class="chat-composer-sep"></div>
 
-                        <!-- Separator -->
-                        <div class="chat-composer-sep"></div>
+                            <ComposerTextarea bind:ref={textareaEl} onSend={handleSend}/>
+                            <ModelConflictPicker/>
 
-                        <ComposerTextarea bind:ref={textareaEl} onSend={handleSend}/>
-                        <ModelConflictPicker/>
-
-                        <!-- File chips -->
-                        <div class={{
+                            <!-- File chips -->
+                            <div class={{
                                 'chat-section-shell': true,
                                 'chat-section-shell--open': hasFiles
                             }}>
-                            <div class="chat-section-mask">
-                                <div class="chat-chips">
-                                    <FileChips/>
+                                <div class="chat-section-mask">
+                                    <div class="chat-chips">
+                                        <FileChips/>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Lower row: attach/tool controls (left) + send button (right) -->
-                        <div class="chat-composer-bottom-row">
-                            <div class="chat-bottom-left">
-                                <FilePicker/>
-                                <ToolMenu bind:open={toolPickerOpen}/>
-                                <div class="chat-tool-chip-lane">
-                                    <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
+                            <!-- Lower row: attach/tool controls (left) + send button (right) -->
+                            <div class="chat-composer-bottom-row">
+                                <div class="chat-bottom-left">
+                                    <FilePicker/>
+                                    <ToolMenu bind:open={toolPickerOpen}/>
+                                    <div class="chat-tool-chip-lane">
+                                        <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
+                                    </div>
+                                </div>
+                                <div class="chat-bottom-right">
+                                    <ComposerActionButtons
+                                        onSend={handleSend}
+                                        bind:buttonRef={buttonEl}/>
                                 </div>
                             </div>
-                            <div class="chat-bottom-right">
-                                <ComposerActionButtons
-                                    onSend={handleSend}
-                                    bind:buttonRef={buttonEl}/>
-                            </div>
                         </div>
-                    </div>
-                </ComposerFocusWrap>
-            </ComposerBorderBeam>
-        {/snippet}
-    </FileDragAndDrop>
-</div>
+                    </ComposerFocusWrap>
+                </ComposerBorderBeam>
+            {/snippet}
+        </FileDragAndDrop>
+    </div>
+{/if}
 
 <style>
     /* ── Outer wrapper ────────────────────────────────────────────────── */
@@ -253,27 +257,6 @@
     .chat-section-mask {
         min-height: 0;
         overflow: hidden;
-    }
-
-    /* ── Textarea ─────────────────────────────────────────────────────── */
-    :global(.chat-textarea.chat-textarea) {
-        width: 100%;
-        min-height: calc(1lh + var(--space-2, calc(0.25rem * 2)));
-        height: auto;
-        resize: none;
-        background: transparent;
-        border: none;
-        outline: none;
-        line-height: 1.625;
-        padding-block: var(--space-1, calc(0.25rem * 1));
-        box-shadow: none;
-
-        &:focus,
-        &:focus-visible {
-            outline: none;
-            border: none;
-            box-shadow: none;
-        }
     }
 
     /* ── Chips row ────────────────────────────────────────────────────── */

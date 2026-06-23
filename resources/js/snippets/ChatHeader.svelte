@@ -2,9 +2,11 @@
 
     import ExportMenu from '$lib/components/chat/header/ExportMenu.svelte';
     import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import ChatNameMenu from '$lib/components/chat/nameMenu/ChatNameMenu.svelte';
     import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
+    import type {ComponentProps} from 'svelte';
+    import RoomNameMenu from '$lib/components/chat/nameMenu/RoomNameMenu.svelte';
+    import AiConvNameMenu from '$lib/components/chat/nameMenu/AiConvNameMenu.svelte';
 
     interface Props {
         context: ComposerContextType;
@@ -12,18 +14,23 @@
 
     const {context: contextType = 'aiConv'}: Props = $props();
 
-    const chatName = $derived(oldUiMessageHistory.conversationName);
-    const chatSlug = $derived(oldUiMessageHistory.conversationSlug);
+    const name = $derived(oldUiMessageHistory.conversationName);
+    const slug = $derived(oldUiMessageHistory.conversationSlug);
 
+    const sharedProps: ComponentProps<typeof RoomNameMenu | typeof AiConvNameMenu> = $derived.by(() => ({
+        slug,
+        name,
+        context: contextType
+    }));
 </script>
 {#if oldUiMessageHistory.isInConversation}
     <div class="chat-header" transition:growTransition>
         <div class="left-section">
-            <ChatNameMenu
-                chatName={chatName}
-                chatSlug={chatSlug}
-                chatNameClickRenames={true}
-            />
+            {#if contextType === 'room'}
+                <RoomNameMenu {...sharedProps}/>
+            {:else}
+                <AiConvNameMenu {...sharedProps}/>
+            {/if}
         </div>
         <div class="right-section">
             <ExportMenu/>

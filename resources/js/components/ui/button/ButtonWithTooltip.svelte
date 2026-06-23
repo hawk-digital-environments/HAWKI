@@ -1,3 +1,9 @@
+<!--
+  @component Button with a built-in Tooltip. Combines Button and Tooltip so
+  callers don't need to wire the two primitives together manually. All Button
+  props are forwarded; tooltip placement and delay are configured through the
+  `tooltip*` props.
+-->
 <script lang="ts">
 
     import type {ComponentProps} from 'svelte';

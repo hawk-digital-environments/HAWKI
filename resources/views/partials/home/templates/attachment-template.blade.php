@@ -1,6 +1,6 @@
 <template id="attachment-thumbnail-template">
     <div class="attachment">
-		<div class="content">
+        <div class="content">
             <div class="attachment-icon">
                 {{-- <h4 class="file-type"></h4> --}}
                 <div class="status-indicator">
@@ -25,13 +25,6 @@
                 <p class="name-tag"></p>
             </div>
         </div>
-        <div class="controls">
-            <button class="btn-sm remove-btn" onclick="removeAtchFromInputList(this)">
-                <x-icon name="trash"/>
-            </button>
-        </div>
-        <button class="burger-btn btn-xs">
-            <x-icon name="more-horizontal"/>
-        </button>
-	</div>
+        <x-svelte type="AttachmentDropdown"/>
+    </div>
 </template>

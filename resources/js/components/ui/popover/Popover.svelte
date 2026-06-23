@@ -1,3 +1,9 @@
+<!--
+  @component Floating content panel anchored to a trigger element. Renders
+  inside a Portal so it escapes overflow:hidden containers. Supports
+  hover-open and mutual exclusion within a named group — only one popover per
+  group can be open at a time.
+-->
 <script lang="ts">
     import {mergeProps, Popover as PopoverPrimitive, type PopoverContentProps} from 'bits-ui';
     import type {Snippet} from 'svelte';

@@ -1,3 +1,25 @@
+/**
+ * Svelte CSS transition that expands or collapses an element by animating its
+ * height (default) or width from 0 to its natural size, while fading opacity
+ * and scaling padding/margin proportionally so the element doesn't jump.
+ *
+ * Used wherever an element should appear to "grow out of" or "shrink into"
+ * its container — for example the `RadialProgress` ring that slides in
+ * horizontally when a file upload begins.
+ *
+ * @param node - The element being transitioned (provided by Svelte).
+ * @param params.direction - `'in'` (enter, default) or `'out'` (leave).
+ *   Enter uses a gentle spring overshoot; leave uses `cubicOut`.
+ * @param params.mode - `'vertical'` (default, animates height) or
+ *   `'horizontal'` (animates width).
+ *
+ * @example
+ * // Vertical grow (default)
+ * <div transition:growTransition>…</div>
+ *
+ * // Horizontal grow, enter only
+ * <span in:growTransition={{mode: 'horizontal'}}>…</span>
+ */
 import {cubicOut} from 'svelte/easing';
 
 function gentleBackOut(t: number) {

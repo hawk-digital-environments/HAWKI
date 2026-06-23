@@ -53,6 +53,12 @@ export class ModelUsageAspect {
     private getModelUsageIssues(model: AiModel): ModelUsageIssue[] {
         const issues: ModelUsageIssue[] = [];
 
+        if (!this.guard.showsAiUiElements) {
+            // If the guard doesn't show any AI UI elements, we don't want to show any issues related to the model choice,
+            // since the user didn't choose it and can't change it.
+            return issues;
+        }
+
         if (this.guard.disablesFeature('models')) {
             // If the mode disables model selection, we don't want to show any issues related to the model choice,
             // since the user didn't choose it and can't change it.

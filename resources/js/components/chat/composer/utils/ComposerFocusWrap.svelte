@@ -26,6 +26,9 @@
             setTimeout(() => {
                 if (_textAreaEl && !_textAreaEl.disabled) {
                     _textAreaEl.focus();
+                    const len = _textAreaEl.value.length;
+                    _textAreaEl.setSelectionRange(len, len);
+                    return;
                 }
                 if (_buttonEl && !_buttonEl.disabled) {
                     _buttonEl.focus();

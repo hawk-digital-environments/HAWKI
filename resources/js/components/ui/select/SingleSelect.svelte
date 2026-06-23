@@ -17,6 +17,12 @@
         selected: boolean
     }
 </script>
+<!--
+  @component Single-value select dropdown. On mobile (narrower than `md`)
+  renders as a BottomSheet; on desktop as a floating dropdown. Supports plain
+  lists and grouped items (via `groupLabel` on each item), a custom trigger
+  snippet, and a custom item rendering snippet via `itemSnippet`.
+-->
 <script lang="ts">
     import {mergeProps, Select as SelectPrimitive, type WithoutChildren} from 'bits-ui';
     import type {ComponentProps, Snippet} from 'svelte';

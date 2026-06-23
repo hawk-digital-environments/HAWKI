@@ -142,7 +142,7 @@ async function processResponse(response, onData) {
 
 
 function createMessageLogForAI(regenerationElement = null) {
-    const systemPromptContent = activeConv.system_prompt || window.getSystemPrompt('default');
+    const systemPromptContent = window.oldUiMessageHistory.systemPrompt || window.getSystemPrompt('default');
     systemPrompt = {
         role: 'system',
         content: {

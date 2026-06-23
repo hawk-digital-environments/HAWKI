@@ -42,6 +42,7 @@
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import {setToolMenuFocusContext} from '$lib/components/chat/composer/contexts/ToolMenuFocusContext.svelte.js';
     import {__} from '$lib/utils/translator.js';
+    import {growTransition} from '$lib/utils/transitions/growTransition';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
@@ -207,31 +208,33 @@
     });
 </script>
 
-{#if filteredEntries.length > 0}
-    <DropdownMenu
-        title={detailEntry ? undefined : __('chat.composer.toolMenu.manageTools')}
-        disabled={composerContext.guard.disablesFeature('tools')}
-        bind:open
-        contentProps={{class: 'tool-menu-content'}}>
-        {#snippet trigger({props})}
-            <ButtonWithTooltip
-                variant="ghost"
-                iconLeft={Plus}
-                tooltip={__('chat.composer.toolMenu.manageTools')}
-                highlight={props['data-state']}
-                {...props}/>
-        {/snippet}
-        <DropdownMenuDetailView
-            open={!!detailEntry}
-        >
-            {#snippet details()}
-                {#if detailEntry}
-                    <ToolMenuDetail entry={detailEntry} onCloseDetail={closeToolDetail}/>
-                {/if}
+{#if composerContext.guard.showsAiUiElements && filteredEntries.length > 0}
+    <div transition:growTransition={{mode: 'horizontal'}}>
+        <DropdownMenu
+            title={detailEntry ? undefined : __('chat.composer.toolMenu.manageTools')}
+            disabled={composerContext.guard.disablesFeature('tools')}
+            bind:open
+            contentProps={{class: 'tool-menu-content'}}>
+            {#snippet trigger({props})}
+                <ButtonWithTooltip
+                    variant="ghost"
+                    iconLeft={Plus}
+                    tooltip={__('chat.composer.toolMenu.manageTools')}
+                    highlight={props['data-state']}
+                    {...props}/>
             {/snippet}
-            <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
-        </DropdownMenuDetailView>
-    </DropdownMenu>
+            <DropdownMenuDetailView
+                open={!!detailEntry}
+            >
+                {#snippet details()}
+                    {#if detailEntry}
+                        <ToolMenuDetail entry={detailEntry} onCloseDetail={closeToolDetail}/>
+                    {/if}
+                {/snippet}
+                <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+            </DropdownMenuDetailView>
+        </DropdownMenu>
+    </div>
 {/if}
 
 <style>

@@ -1,6 +1,13 @@
 import type {OldUiConversation, OldUiConversationMessage} from '$lib/oldUi/OldUiBridge.svelte.js';
+import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+
+const LOAD_CONVERSATION_EVENT = 'loadConversation';
 
 export class OldUiMessageHistory {
+    private sync = new SyncPipeline<{ [LOAD_CONVERSATION_EVENT]: OldUiConversation }>();
+
+    private _type: ComposerContextType = $state('room');
     private _conversation: OldUiConversation | null = null;
     private _systemPrompt = $state('');
     private _conversationName = $state('');
@@ -11,11 +18,19 @@ export class OldUiMessageHistory {
     public readonly conversationSlug = $derived.by(() => this._conversationSlug);
     public readonly isInConversation = $derived.by(() => this._isInConversation);
     public readonly systemPrompt = $derived.by(() => this._systemPrompt);
+    public readonly canAdministrate = $derived.by(() => this._conversation?.role === 'admin' || this._type === 'aiConv');
+    public readonly canWrite = $derived.by(() => this.canAdministrate || this._conversation?.role === 'editor');
 
-    public loadConversation(conversation: OldUiConversation): void {
+    public loadConversation(type: ComposerContextType, conversation: OldUiConversation): void {
+        this._type = type;
         this._conversation = {} as any;
         this.updateConversation(conversation);
         this._isInConversation = true;
+        this.sync.trigger(LOAD_CONVERSATION_EVENT, conversation);
+    }
+
+    public onLoadConversation(handler: (conversation: OldUiConversation) => void): () => void {
+        return this.sync.on(LOAD_CONVERSATION_EVENT, handler);
     }
 
     public updateConversation(update: Partial<OldUiConversation>): void {

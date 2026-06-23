@@ -26,7 +26,6 @@ function onSidebarButtonDown(pageID) {
             const sidebar = document.getElementById(`${pageID}-sidebar`);
             const manualExpanded = sidebar.classList.contains('expanded');
             sidebar.dataset.manualExpanded = manualExpanded;
-            console.log('SIDEBAR', pageID);
 
             const content = document.getElementById(pageID);
             if (content) {
@@ -51,7 +50,6 @@ function setActiveSidebarButton(activeModule) {
 
     const sidebarButtons = document.querySelectorAll('.sidebar-btn');
     const targetId = `${activeModule}-sb-btn`;
-    // console.log(targetId);
 
     sidebarButtons.forEach(sbb => {
         if (sbb.classList.contains('active')) {
@@ -130,45 +128,6 @@ function toggleRelativePanelClass(targetID, sender, className, activation = null
 
 //#region Burgers & Dropdown Click Events
 
-document.addEventListener('click', function (event) {
-    let clickedElement = event.target;
-    let detectedInputPanel;
-    let clickedBurgerMenu = null;
-    //interate back until we find the input-container
-    while (clickedElement) {
-
-        if (clickedElement.classList.contains('burger-btn') ||
-            clickedElement.classList.contains('burger-item')) {
-            return;
-        }
-        if (clickedElement.classList.contains('params-wrapper')) {
-            return;
-        }
-        if (clickedElement.id === 'quick-actions' || clickedElement.id === 'quick-actions') {
-            //if a input panel is clicked
-            clickedBurgerMenu = clickedElement;
-        }
-        if (clickedElement.getAttribute('data-sender-menu-id')) {
-            const menuId = clickedElement.getAttribute('data-sender-menu-id');
-            const menu = document.querySelector(`[data-menu-id="${menuId}"]`);
-            if (menu) {
-                clickedBurgerMenu = menu;
-            }
-        }
-
-
-        if (clickedElement.id === 'input-container') {
-            //if a input panel is clicked
-            detectedInputPanel = clickedElement;
-        }
-        createandsendInvi;
-        clickedElement = clickedElement.parentElement;
-    }
-
-    closeBurgerMenus(clickedBurgerMenu);
-});
-
-
 let burgerId = 0;
 
 function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = true) {
@@ -192,7 +151,6 @@ function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToE
 
     const isAlreadyOpen = menu.getAttribute('data-menu-state') === 'open';
 
-    console.log('menu', menu, 'isAlreadyOpen', isAlreadyOpen, 'toggleOnSenderClick', toggleOnSenderClick);
     if (toggleOnSenderClick && isAlreadyOpen) {
         if (closeMenuOnSelect) {
             closeBurgerMenus(null);
@@ -278,44 +236,6 @@ function closeModal(closeBtn) {
 
 }
 
-
-async function smoothDeleteWords(element, totalTime) {
-    // Get the content based on the element type
-    let content = element.tagName === 'TEXTAREA' ? element.value : element.innerText;
-    let words = content.trim().split(/\s+/);
-
-    // Calculate interval for each word deletion based on totalTime
-    let interval = totalTime / words.length;
-
-    // Helper function to pause for a specified time
-    function delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    // Delete words one by one asynchronously
-    while (words.length > 0) {
-        words.pop();  // Remove the last word
-        let newContent = words.join(' ');
-
-        // Update the content based on the element type
-        if (element.tagName === 'TEXTAREA') {
-            element.value = newContent;
-        } else {
-            element.innerText = newContent;
-        }
-
-        await delay(interval);  // Wait for the specified interval before the next deletion
-    }
-
-    // Clear the content completely at the end
-    if (element.tagName === 'TEXTAREA') {
-        element.value = '';
-    } else {
-        element.innerText = '';
-    }
-}
-
-
 function playSound(type) {
 
     let audioFile;
@@ -383,28 +303,33 @@ function reactionMouseUp(button) {
 
 
 function checkWindowSize(thresholdWidth, thresholdHeight) {
+    let debounceTimer;
+
     // Function to check if window size is smaller than the threshold
     function onResize() {
-        const currentWidth = window.innerWidth;
-        const currentHeight = window.innerHeight;
-        const sidebar = document.getElementById(`${activeModule}-sidebar`) ? document.getElementById(`${activeModule}-sidebar`) : null;
-        if (currentWidth < thresholdWidth || currentHeight < thresholdHeight) {
-            if (sidebar) {
-                if (!sidebar.dataset.manualExpanded) {
-                    document.getElementById(`${activeModule}-sidebar`).classList.remove('expanded');
-                    document.querySelector('.dy-main-content').classList.remove('expanded');
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const currentWidth = window.innerWidth;
+            const currentHeight = window.innerHeight;
+            const sidebar = document.getElementById(`${activeModule}-sidebar`) ? document.getElementById(`${activeModule}-sidebar`) : null;
+            if (currentWidth < thresholdWidth || currentHeight < thresholdHeight) {
+                if (sidebar) {
+                    if (!sidebar.dataset.manualExpanded) {
+                        document.getElementById(`${activeModule}-sidebar`).classList.remove('expanded');
+                        document.querySelector('.dy-main-content').classList.remove('expanded');
+                    }
+                }
+            } else {
+
+                if (sidebar) {
+                    if (!sidebar.dataset.manualExpanded) {
+                        document.getElementById(`${activeModule}-sidebar`).classList.add('expanded');
+                        document.querySelector('.dy-main-content').classList.add('expanded');
+
+                    }
                 }
             }
-        } else {
-
-            if (sidebar) {
-                if (!sidebar.dataset.manualExpanded) {
-                    document.getElementById(`${activeModule}-sidebar`).classList.add('expanded');
-                    document.querySelector('.dy-main-content').classList.add('expanded');
-
-                }
-            }
-        }
+        }, 100);
     }
 
     // Add event listener for the 'resize' event

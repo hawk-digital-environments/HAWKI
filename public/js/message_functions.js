@@ -2,6 +2,9 @@ function addMessageToChatlog(messageObj, isFromServer = false) {
     if (typeof messageObj.content === 'string' && isValidJson(messageObj.content)) {
         messageObj.content = JSON.parse(messageObj.content);
     }
+    if (typeof messageObj.content.text === 'string' && isValidJson(messageObj.content.text)) {
+        messageObj.content.text = JSON.parse(messageObj.content.text);
+    }
 
     const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
 
@@ -399,6 +402,10 @@ function deconstContent(inputContent) {
     let messageText = '';
     let groundingMetadata = '';
 
+    if (typeof inputContent === 'object' && inputContent.hasOwnProperty('text') && typeof inputContent.text === 'string') {
+        inputContent = inputContent.text;
+    }
+
     if (isValidJson(inputContent)) {
         const json = JSON.parse(inputContent);
         if (json.hasOwnProperty('groundingMetadata')) {
@@ -459,6 +466,7 @@ function detectMentioning(rawText) {
         let processedText = rawText;
 
         for (const mention of mentionMatches) {
+            const aiHandle = window.getConfig().ai.handle;
             if (mention.toLowerCase() === aiHandle.toLowerCase()) {
                 returnObj.aiMentioned = true;
                 returnObj.aiMention = mention; // Remove the '@' for aiMention
@@ -569,16 +577,9 @@ function copyCodeBlockToClipboard(provider) {
 
 
 function editMessage(provider) {
-
     const messageId = provider.closest('.message').id;
-    if (activeModule === 'chat') {
-        const message = window.oldUiMessageHistory.findMessageById(messageId);
-        console.log('message to edit', message);
-        window.oldUiBridge.triggerEnterMode('edit', message);
-        return;
-    }
-
-    console.error('NOT IMPLEMENTED FOR', activeModule);
+    const message = window.oldUiMessageHistory.findMessageById(messageId);
+    window.oldUiBridge.triggerEnterMode('edit', message);
 }
 
 /**
@@ -714,25 +715,12 @@ async function onRegenerateBtn(btn) {
     openRegenerateDropDown(btn);
 }
 
-let regenerateState = {
-    messageElement: null,
-    model: null,
-    tools: new Set(),
-    params: []
-};
 let menu;
-let regenerateButtonRef = null;
 
 function openRegenerateDropDown(sender) {
     const messageId = sender.closest('.message').id;
-    if (activeModule === 'chat') {
-        const message = window.oldUiMessageHistory.findMessageById(messageId);
-        console.log('CONV', activeConv, message);
-        window.oldUiBridge.triggerEnterMode('regen', message);
-        return;
-    }
-    console.log('REGEN', sender);
-
+    const message = window.oldUiMessageHistory.findMessageById(messageId);
+    window.oldUiBridge.triggerEnterMode('regen', message);
 }
 
 /**
@@ -824,8 +812,6 @@ window.waitUntilReady(async () => {
 });
 
 function createStatusElement(status, messageElement) {
-    console.log('HIER', status);
-
     let statElement = messageElement.querySelector(`.gen-stat-element`);
     //create a new element for first status
     if (!statElement) {

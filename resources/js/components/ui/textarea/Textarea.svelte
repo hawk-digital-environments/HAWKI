@@ -9,6 +9,7 @@
     interface Props extends HTMLTextareaAttributes {
         /** Current text value. Supports bind:value for two-way binding. */
         value?: string;
+        /** Bindable reference to the underlying textarea element. */
         ref?: HTMLTextAreaElement | null;
     }
 
@@ -45,6 +46,7 @@
 
         &::placeholder {
             color: var(--color-text-muted);
+            opacity: 0.75;
         }
 
         &:focus-visible {

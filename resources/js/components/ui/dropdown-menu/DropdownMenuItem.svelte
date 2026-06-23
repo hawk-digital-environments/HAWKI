@@ -4,7 +4,8 @@
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
     import type {HTMLAttributes} from 'svelte/elements';
-    import type {Snippet} from 'svelte';
+    import type {Component, Snippet} from 'svelte';
+    import {type LucideProps, Trash2} from '@lucide/svelte';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** When true, the item cannot be interacted with. */
@@ -15,6 +16,10 @@
         closeOnSelect?: boolean;
         /** Item content. */
         children?: Snippet;
+        /** An optional icon to display alongside the item. */
+        icon?: Component<LucideProps>;
+        /** Visual style variant. */
+        variant?: 'default' | 'destructive';
     }
 
     const {
@@ -22,14 +27,32 @@
         onSelect,
         closeOnSelect = true,
         children,
-        class: className,
+        icon,
+        variant = 'default',
         ...restProps
     }: Props = $props();
+
+    const IconComponent = $derived.by(() => {
+        if (variant === 'destructive' && !icon) {
+            return Trash2;
+        }
+        if (!icon) return null;
+        return icon;
+    });
+
 </script>
 
 <DropdownMenuPrimitive.Item {disabled} {onSelect} {closeOnSelect}>
     {#snippet child({props})}
-        <div {...mergeProps({class: `dropdown-item${className ? ` ${className}` : ''}`}, restProps, props)}>
+        <div {...mergeProps({
+            class: [
+                `dropdown-item`,
+                variant === 'destructive' && 'variant--destructive'
+            ]
+        }, restProps, props)}>
+            {#if IconComponent}
+                <IconComponent size="14"/>
+            {/if}
             {@render children?.()}
         </div>
     {/snippet}
@@ -41,7 +64,7 @@
         display: flex;
         cursor: default;
         align-items: center;
-        gap: var(--space-2, calc(0.25rem * 2));
+        gap: var(--space-2, calc(0.25rem * 1.5));
         border-radius: var(--corner-sm);
         padding-inline: var(--space-2, calc(0.25rem * 2));
         padding-block: var(--space-1_5);
@@ -50,6 +73,10 @@
         outline: none;
         user-select: none;
         transition: background-color var(--duration-fast, 150ms);
+
+        &.variant--destructive {
+            color: var(--color-error);
+        }
     }
 
     .dropdown-item[data-highlighted] {

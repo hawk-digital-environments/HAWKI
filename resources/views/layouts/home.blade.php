@@ -37,7 +37,6 @@
     <script src="{{ asset('js/user_profile.js') }}"></script>
     <script src="{{ asset('js/file_manager.js') }}"></script>
     <script src="{{ asset('js/attachment_handler.js') }}"></script>
-    <script src="{{ asset('js/model_list_filtering.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
     <script src="{{ asset('js/link_preview.js') }}"></script>
 

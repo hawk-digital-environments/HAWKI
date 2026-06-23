@@ -7,6 +7,14 @@ type ReplacementValue = Record<string, string | ((content: string) => string)>;
 
 let loadedLabels: TranslationLabels | null = null;
 
+/**
+ * Fetches and caches the translation labels for the current locale.
+ *
+ * Called once during the bootstrap sequence before any `__()` calls are made.
+ * If the current locale fails to load, falls back to the configured default
+ * locale. If that also fails, an empty label set is used so `__()` still
+ * returns a visible "Missing translation:" string rather than throwing.
+ */
 export async function loadTranslationLabels(): Promise<void> {
     const currentLocale = getConnection().locale;
     try {

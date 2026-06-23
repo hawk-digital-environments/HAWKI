@@ -19,6 +19,8 @@ import {MessageSender} from '$lib/components/chat/composer/contexts/sending/Mess
 import {OldUiBridgeTransport} from '$lib/components/chat/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import {aiHandleStore} from '$lib/stores/AiHandleStore.svelte.js';
+import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
 
 const allowedContextTypes = ['aiConv', 'room'] as const;
 export type ComposerContextType = typeof allowedContextTypes[number];
@@ -43,7 +45,8 @@ export class ComposerContext {
         private readonly checkpointer: ContextCheckpointer,
         private readonly sender: MessageSender,
         private readonly initialSystemPrompt: string,
-        private readonly onSetSystemPrompt: (prompt: string) => void
+        private readonly onSetSystemPrompt: (prompt: string) => void,
+        private readonly getHandlesInText: (text: string) => Generator<string>
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
 
@@ -63,7 +66,9 @@ export class ComposerContext {
         this.checkpointer.onRestoreCheckpoint((cp) => {
             this._sendStatus = cp.status;
             this.message = cp.message;
-            this.systemPrompt = cp.systemPrompt;
+            if (this._systemPrompt !== cp.systemPrompt) {
+                this.systemPrompt = cp.systemPrompt;
+            }
             this.attachments.restoreCheckpoint(cp.attachments);
             // Order of modelParameters and model matters, otherwise the model setting will
             // Reset the parameters to the model defaults.
@@ -82,8 +87,22 @@ export class ComposerContext {
      * which disables the send button and other interactions. */
     public forcedActive = $state(false);
 
+    public hasWriteAccess = $state(true);
+
     /** The user message currently being composed. Writable — bind or set directly. */
     public message = $state('');
+
+    public readonly messageWithoutHandles = $derived.by(() => {
+        let text = this.message;
+        for (const handle of this.handlesInMessage) {
+            text = text.replace(handle, '').trim();
+        }
+        return text.trim();
+    });
+
+    public readonly handlesInMessage = $derived.by(() => [...this.getHandlesInText(this.message)]);
+
+    public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);
 
     public readonly sendStatus = $derived.by(() => this._sendStatus);
 
@@ -124,12 +143,22 @@ export class ComposerContext {
         return status;
     }
 
+    public addHandleToMessage(handle: string): void {
+        if (!this.handlesInMessage.includes(handle)) {
+            this.message = `${handle} ${this.message.trim()}`;
+        }
+        this.focusInput();
+    }
+
     /**
      * Used after a message has been sent (keeps most of the settings intact, just clears the message, attachments, and sending state).
      * Use {@link reset} to reset everything back to the initial state (e.g. when loading a new conversation or exiting a thread).
      */
     public clear(): void {
-        this.message = '';
+        // When the previous message was sent to the ai, we want to keep the handles in the message,
+        // so you can keep chatting with the same ai without having to re-tag it in every message.
+        const handles = this.handlesInMessage;
+        this.message = this.handlesInMessage.join(' ') + (handles.length > 0 ? ' ' : '');
         this.attachments.clear();
     }
 
@@ -232,7 +261,8 @@ export function createComposerContext(
         checkpointer,
         sender,
         initialSystemPrompt,
-        onSetSystemPrompt
+        onSetSystemPrompt,
+        (message) => aiHandleStore.getHandlesIn(message)
     );
 
     const unbinders = [
@@ -266,6 +296,9 @@ export function createComposerContext(
             } else {
                 toastContext.info(message);
             }
+        }),
+        oldUiMessageHistory.onLoadConversation(() => {
+            context.hasWriteAccess = oldUiMessageHistory.canWrite;
         })
     ];
 

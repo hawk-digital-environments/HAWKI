@@ -1366,7 +1366,8 @@
         border-left: var(--border-stroke-hairline);
     }
 
-    .attachment:hover .burger-btn {
+    .attachment:hover .burger-btn,
+    .burger-btn[aria-expanded="true"] {
         width: 1.2rem;
     }
 

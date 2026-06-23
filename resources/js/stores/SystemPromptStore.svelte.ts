@@ -18,6 +18,13 @@ export class SystemPromptStore {
     /** All system prompts as returned by the API. */
     public prompts = $state([] as SystemPrompt[]);
 
+    /**
+     * Looks up a system prompt by its `prompt_type` string.
+     *
+     * The overload that accepts a `WellKnownSystemPromptType` returns `SystemPrompt`
+     * (non-nullable); the string overload returns `SystemPrompt | null`. Prefer the
+     * typed overload when using a known constant so callers skip the null-check.
+     */
     public getPromptByType(type: WellKnownSystemPromptType): SystemPrompt;
     public getPromptByType(type: WellKnownSystemPromptType | string): SystemPrompt | null {
         return this.prompts.find(p => p.prompt_type === type) ?? null;
