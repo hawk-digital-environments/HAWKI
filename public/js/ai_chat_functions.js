@@ -18,9 +18,6 @@ function initializeAiChatModule(chatsObject) {
         chatlogElement.classList.add('start-state');
     }
 
-    // const input = document.getElementById('input-container');
-    // initFileUploader(input);
-
     initializeChatlogFunctions();
 
     window.oldUiBridge.onSendMessage('aiConv', async function (payload) {
@@ -208,7 +205,7 @@ async function buildRequestObjectForAiConv(
                 messageObj.params = msgAttributes['metadata'].params;
 
                 if (!messageElement) {
-                    initializeMessageFormating();
+                    await initializeMessageFormating();
                     messageElement = addMessageToChatlog(messageObj, false);
                 }
                 messageElement.dataset.rawMsg = msg;

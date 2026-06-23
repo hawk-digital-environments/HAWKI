@@ -13,6 +13,15 @@ export interface ChatRegenModeState {
     originalMessage: string;
 }
 
+/**
+ * Mode for regenerating an assistant reply.
+ *
+ * Pre-fills the model and sampling parameters from the original message's
+ * metadata so the regenerated reply uses the same configuration. If the
+ * original model is no longer available, falls back to the default and shows
+ * an info toast. Locks attachments, the message input, and suggestions — only
+ * model and parameter selection are exposed. Exits after send.
+ */
 export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRegenModeState> {
     constructor(
         private modelStore: AiModelStore,

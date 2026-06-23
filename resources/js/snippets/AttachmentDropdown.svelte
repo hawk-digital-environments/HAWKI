@@ -20,8 +20,11 @@
     let deleteConfirm = $state(false);
 
     const canPreview = $derived.by(() => {
-        return fileData.type === 'image' || fileData.mime.includes('msword') ||
-            fileData.mime.includes('wordprocessingml');
+        return fileData.type === 'image'
+            || fileData.mime.includes('msword')
+            || fileData.mime.includes('wordprocessingml')
+            || fileData.mime.includes('pdf')
+            ;
     });
 
     const canDelete = $derived.by(() => {

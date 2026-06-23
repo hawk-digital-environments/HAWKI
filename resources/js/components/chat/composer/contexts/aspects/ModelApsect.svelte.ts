@@ -18,16 +18,17 @@ export class ModelAspect implements CheckpointingInterface<ModelAspectCheckpoint
 
     private _current: AiModel;
 
-    /** Whether the current model accepts file attachments. */
+    /** Shorthand for `model.settings.file_upload`. Use to show/hide the attachment button. */
     public allowsFileUpload = $derived.by(() => this.current?.settings?.file_upload as boolean | undefined ?? false);
 
-    /** Whether the current model supports tool calling. */
+    /** Shorthand for `model.settings.tool_calling`. Use to show/hide the tool menu. */
     public allowsToolCalling = $derived.by(() => this.current?.settings?.tool_calling as boolean | undefined ?? false);
 
     private get parameterContext(): ModelParameterAspect {
         return this.parameterAspectProvider();
     }
 
+    /** The currently selected AI model. */
     public get current(): AiModel {
         return this._current;
     }
@@ -59,7 +60,8 @@ export class ModelAspect implements CheckpointingInterface<ModelAspectCheckpoint
         }, 10);
     }
 
-    /** `true` when the model accepts both file uploads and image inputs. */
+    /** `true` when the model accepts file uploads AND lists `'image'` as a supported input type.
+     *  Used by `ModelUsageAspect` to detect when image attachments would be incompatible. */
     public hasVision = $derived.by(() => {
         if (!this.current) {
             return false;

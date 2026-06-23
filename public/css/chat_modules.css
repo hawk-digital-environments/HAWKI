@@ -1035,10 +1035,9 @@
         display: block;
         box-sizing: border-box;
 
-        margin-left: 4rem;
-        margin-right: 4rem;
-        margin-top: 0;
-        margin-bottom: .5rem;
+        margin: 0 auto 0.5rem;
+        width: 100%;
+        max-width: 48rem;
     }
 
     @media (max-width: 950px) {

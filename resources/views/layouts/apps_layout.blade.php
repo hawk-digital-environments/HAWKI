@@ -14,7 +14,7 @@
     @yield('styles')
 
     <x-early-frontend-bridge/>
-    @vite('resources/js/app.js')
+    @vite('resources/js/app.ts')
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     @yield('scripts')
     <script>

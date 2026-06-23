@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}">
 
-    @vite('resources/js/app.js')
+    @vite('resources/js/app.ts')
     @vite('resources/css/app.css')
 
     <x-early-frontend-bridge/>
@@ -59,7 +59,6 @@
         @yield('content')
     </div>
 </div>
-@include('partials.home.modals.guidelines-modal')
 @include('partials.home.modals.add-member-modal')
 @include('partials.home.modals.session-expiry-modal')
 @include('partials.home.modals.file-viewer-modal')

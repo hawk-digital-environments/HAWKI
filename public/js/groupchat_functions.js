@@ -78,7 +78,7 @@ function initializeGroupChatModule(roomsData) {
 }
 
 
-//#region MESSAGE CONTROLLS
+//#region MESSAGE CONTROLS
 /**
  * @param {OldUiSendMessagePayload} payload
  * @return {Promise<void>}
@@ -135,67 +135,65 @@ async function onSendMessageToRoom(payload) {
 
     let inputText = String(escapeHTML(payload.message));
 
-    const roomKeys = window.userKeychain.roomKeys[activeRoom.slug] || null;
-    const roomKey = roomKeys ? roomKeys.roomKey : null;
-    const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
+    payload.waitForResponse(async (res) => {
+        const roomKeys = window.userKeychain.roomKeys[activeRoom.slug] || null;
+        const roomKey = roomKeys ? roomKeys.roomKey : null;
+        const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
 
-    // Build attachments array for legacy format
-    const attachments = payload.attachments
-        .map(file => payload.status.getFileUuid(file))
-        .filter(uuid => uuid !== null)
-    ;
+        // Build attachments array for legacy format
+        const attachments = payload.attachments
+            .map(file => payload.status.getFileUuid(file))
+            .filter(uuid => uuid !== null)
+        ;
 
-    const messageObj = {
-        'content': {
-            'text': {
-                'ciphertext': cryptoMsg.ciphertext,
-                'iv': cryptoMsg.iv,
-                'tag': cryptoMsg.tag
+        const messageObj = {
+            'content': {
+                'text': {
+                    'ciphertext': cryptoMsg.ciphertext,
+                    'iv': cryptoMsg.iv,
+                    'tag': cryptoMsg.tag
+                },
+                'attachments': attachments
             },
-            'attachments': attachments
-        },
-        'threadId': activeThreadIndex
-    };
-
-    const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`, plainContent);
-    submittedObj.content.text = inputText;
-    submittedObj.filteredContent = detectMentioning(inputText);
-
-    addMessageToChatlog(submittedObj);
-
-    /// if HAWKI is targeted send copy to stream controller
-    const aiHandle = window.getConfig().ai.handle;
-    if (submittedObj.filteredContent.aiMention && submittedObj.filteredContent.aiMention.toLowerCase().includes(aiHandle.toLowerCase())) {
-        const aiCryptoSalt = window.getConfig().salts.ai;
-        const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-        const aiKeyRaw = await exportSymmetricKey(aiKey);
-        const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
-
-
-        const msgAttributes = {
-            'threadIndex': activeThreadIndex,
-            'broadcasting': true,
-            'slug': activeRoom.slug,
-            'key': aiKeyBase64,
-            'stream': false,
-            'model': payload.model.model_id,
-            'metadata': {
-                'tools': payload.tools.map(tool => tool.name),
-                'params': payload.parameters
-            }
+            'threadId': activeThreadIndex
         };
 
-        buildRequestObject(msgAttributes, () => {
-        });
-    }
+        const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`, plainContent);
+        submittedObj.content.text = inputText;
+        submittedObj.filteredContent = detectMentioning(inputText);
+
+        addMessageToChatlog(submittedObj);
+
+        if (payload.containsAiHandle) {
+            const aiCryptoSalt = window.getConfig().salts.ai;
+            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+            const aiKeyRaw = await exportSymmetricKey(aiKey);
+            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
+
+            const msgAttributes = {
+                'threadIndex': activeThreadIndex, 'broadcasting': true, 'slug': activeRoom.slug, 'key': aiKeyBase64, 'stream': false, 'model': payload.model.model_id, 'metadata': {
+                    'tools': payload.tools.map(tool => tool.name), 'params': payload.parameters
+                }
+            };
+
+            buildRequestObject(msgAttributes, () => {
+                res.triggerReceived();
+            }, (e) => {
+                res.triggerError(e);
+            });
+        }
+    });
+
 
 }
 
 
-const connectWebSocket = (roomSlug) => {
+const connectWebSocket = async (roomSlug) => {
     const webSocketChannel = `Rooms.${roomSlug}`;
 
-    window.Echo.private(webSocketChannel)
+    const echo = await window.hawkiDependencyLoader('echo');
+
+    echo.private(webSocketChannel)
         .listen('RoomMessageEvent', async (e) => {
             const userInfo = window.getAuthenticatedConnection().userinfo;
             try {
@@ -401,9 +399,12 @@ function stopTyping() {
         });
 }
 
-function connectWhisperSocket(roomSlug) {
+async function connectWhisperSocket(roomSlug) {
     const webSocketChannel = `Rooms.${roomSlug}`;
-    Echo.private(webSocketChannel)
+
+    const echo = await window.hawkiDependencyLoader('echo');
+
+    echo.private(webSocketChannel)
         .listenForWhisper('typing', (e) => {
             if (activeRoom.slug !== roomSlug) return;
 

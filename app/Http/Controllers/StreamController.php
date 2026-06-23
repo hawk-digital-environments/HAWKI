@@ -330,6 +330,7 @@ class StreamController extends Controller
         ];
         broadcast(new RoomMessageEvent($generationStatus));
 
+        $data['payload']['broadcast'] = true; // Ensure broadcast is enabled for group chat requests
         $data['payload']['stream'] = false; // Ensure streaming is disabled for group chat requests
         try {
             $agentRequest = $this->aiService->getAgentRequestFactory()->createFromPayload($data['payload']);
@@ -341,11 +342,18 @@ class StreamController extends Controller
             } catch (\Throwable) {
             }
             abort(400, 'Invalid payload for agent request.');
-
         }
 
         // Process the request
-        $response = $this->aiService->sendRequestToAgent($agentRequest);
+        try {
+            $response = $this->aiService->sendRequestToAgent($agentRequest);
+        } catch (\Throwable $e) {
+            $this->logger->error('Error sending request to agent', ['exception' => $e]);
+            $response = new ChatResponse(
+                content: 'NT: Sorry, but there was an error processing your request. Please try again later.',
+            );
+        }
+
         if (!$response instanceof ChatResponse) {
             $this->logger->error('Unexpected response type from agent', ['response' => $response]);
             try {

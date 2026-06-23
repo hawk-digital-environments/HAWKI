@@ -187,7 +187,10 @@ readonly class ChatRequestFactory implements AgentRequestFactoryInterface
     {
         foreach ($attachmentUuids as $uuid) {
             $file = $this->fileStorageService->retrieve(StoredFileIdentifier::fromCategoryAndUuid($category, $uuid));
-            $extracts = ($file->getExtracts()?->count() ?? 0) > 0 ? $file->getExtracts() : [$file];
+            if (!$file) {
+                logFile($category, $uuid, 'File not found for attachment.', $message, $attachmentUuids);
+            }
+            $extracts = ($file?->getExtracts()?->count() ?? 0) > 0 ? $file->getExtracts() : [$file];
             foreach ($extracts as $extract) {
                 if ($extract->getFileType() === FileType::IMAGE) {
                     $message->addContent(new ImageContent(

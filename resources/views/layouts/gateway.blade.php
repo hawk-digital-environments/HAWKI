@@ -19,7 +19,7 @@
     <script src="{{ asset('js/settings_functions.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
     <script src="{{ asset('js/passkeyInputs.js') }}"></script>
-    @vite('resources/js/app.js')
+    @vite('resources/js/app.ts')
 
     <x-settings-panel/>
 

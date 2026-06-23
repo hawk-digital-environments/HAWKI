@@ -150,6 +150,8 @@ async function renderPdf(blob) {
 
     const arrayBuffer = await blob.arrayBuffer();
 
+    const pdfjsLib = await window.hawkiDependencyLoader('pdfJsLib');
+
     const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
 
     const container = document.getElementById('file-preview-container');
@@ -206,6 +208,7 @@ async function renderDocx(blob) {
     const container = document.getElementById('file-preview-container');
     container.innerHTML = '';
 
+    const docxPreview = await window.hawkiDependencyLoader('docxPreview');
     docxPreview.renderAsync(blob, container)
         .then(x => console.log('docx: finished'));
 }

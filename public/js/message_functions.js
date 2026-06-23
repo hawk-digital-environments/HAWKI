@@ -748,7 +748,7 @@ async function regenerateMessage(payload) {
     //reset message content
     messageElement.querySelector('.message-text').innerHTML = '';
     messageElement.dataset.rawMsg = '';
-    initializeMessageFormating();
+    await initializeMessageFormating();
 
     payload.waitForResponse(async (response) => {
         let msgAttributes = {};

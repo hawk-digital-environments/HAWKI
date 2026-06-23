@@ -4,12 +4,31 @@ import {createResponseReader, type ResponseBody, type ResponseReader, SendMessag
 import type {MessageSenderTransportInterface} from '$lib/components/chat/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import {__} from '$lib/utils/translator.js';
 
+/**
+ * Orchestrates the message-send flow.
+ *
+ * On `send()`:
+ * 1. Creates a `SendMessageStatus` that the UI uses to track progress.
+ * 2. Delegates the actual HTTP/transport work to the injected `MessageSenderTransportInterface`.
+ * 3. Once the transport resolves, surfaces a `ResponseReader` through
+ *    `status.response` so the UI can subscribe to body chunks and completion.
+ *
+ * Error handling: transport errors and unhandled promise rejections are caught
+ * here and surfaced as send issues on the status rather than propagating as
+ * uncaught exceptions.
+ */
 export class MessageSender {
     constructor(
         private transport: MessageSenderTransportInterface
     ) {
     }
 
+    /**
+     * Starts a send operation. Returns a `SendMessageStatus` immediately —
+     * the actual request runs asynchronously. The caller should store the
+     * status on the context and clear it once `status.response` resolves and
+     * the response body has been fully received.
+     */
     public send(context: ComposerContext): SendMessageStatus {
         // This promise resolves as soon as the message has been sent. If it resolves it contains the response tracker listener,
         // which allows the sender to listen for the body/chunks of the response, as well as any errors that might occur while processing the response.

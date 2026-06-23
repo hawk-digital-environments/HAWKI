@@ -2,6 +2,15 @@ import type {ChatModeInterface} from '$lib/components/chat/composer/contexts/mod
 import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
 import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
 
+/**
+ * Base implementation of `ChatModeInterface` with safe no-op defaults.
+ *
+ * Extend this rather than implementing the interface directly. Override only
+ * the methods that need non-default behaviour for a given mode.
+ *
+ * Defaults: allows entry always, allows send always, disables no UI features,
+ * does not allow nested modes, exits after send.
+ */
 export abstract class AbstractMode<TData = any, TState = any> implements ChatModeInterface<TData, TState> {
     public allowsNestedModes(): boolean {
         return false;

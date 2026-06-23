@@ -77,6 +77,8 @@ function CheckModals() {
         const modal = modals[i];
         if (localStorage.getItem(modal.id) === 'true') {
             modal.remove();
+        } else if (typeof modal.init === 'function') {
+            modal.init();
         }
     }
 }

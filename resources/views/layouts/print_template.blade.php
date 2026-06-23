@@ -16,7 +16,7 @@
     <!-- <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}"> -->
 
     <x-early-frontend-bridge/>
-    @vite('resources/js/app.js')
+    @vite('resources/js/app.ts')
 
     <script src="{{ asset('js/functions.js') }}"></script>
     <script src="{{ asset('js/message_functions.js') }}"></script>

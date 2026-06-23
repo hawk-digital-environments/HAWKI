@@ -70,16 +70,20 @@ export class AttachmentAspect implements CheckpointingInterface<AttachmentAspect
         this._assignedUuids = this._assignedUuids.filter(([f]) => f !== file);
     }
 
+    /** Removes all staged files and clears all assigned UUIDs. */
     public clear(): void {
         this._list = [];
         this._assignedUuids = [];
     }
 
+    /** Records the server-assigned UUID for a file after it has been uploaded.
+     *  Called by the transport as each upload completes. */
     public assignUuid(file: File, uuid: string): void {
         const filteredUuids = this._assignedUuids.filter(([f]) => f !== file);
         this._assignedUuids = [...filteredUuids, [file, uuid]];
     }
 
+    /** Returns the server-assigned UUID for a file, or `null` if it hasn't been uploaded yet. */
     public getAssignedUuid(file: File): string | null {
         return this._assignedUuids.find(([f]) => f === file)?.[1] ?? null;
     }

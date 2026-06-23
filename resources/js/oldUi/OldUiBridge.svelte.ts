@@ -78,6 +78,7 @@ export interface OldUiSendMessagePayload {
     model: AiModel | null;
     contextType: ComposerContextType;
     message: string;
+    containsAiHandle: boolean;
     tools: AiTool[];
     attachments: File[];
     parameters: OldUiModelParams | null;
