@@ -4,6 +4,7 @@ use App\Http\Controllers\AiModelController;
 use App\Http\Controllers\AiProviderController;
 use App\Http\Controllers\AiToolController;
 use App\Http\Controllers\Assistant\AssistantController;
+use App\Http\Controllers\ClientSchemaController;
 use App\Http\Controllers\Assistant\AssistantAvatarController;
 use App\Http\Controllers\Assistant\AssistantSettingController;
 use App\Http\Controllers\Assistant\AssistantSettingValueController;
@@ -27,6 +28,8 @@ Route::middleware(['api_isActive', 'auth:sanctum'])->group(function () {
 
 });
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    Route::get('assistants/schema', ClientSchemaController::class);
 
     Route::post('assistants/{assistantId}/actions/chat-test{tail?}', [AssistantController::class, 'chatTest'])
         ->where('tail', '/.*');

@@ -128,6 +128,9 @@ class PathBuilder
         if (preg_match('#^([^/]+)/\{[^}]+\}$#', $path, $m)) {
             return ['type' => 'resource', 'resource' => $m[1]];
         }
+        if (preg_match('#^([^/]+)/schema$#', $path, $m)) {
+            return ['type' => 'meta', 'resource' => $m[1]];
+        }
         if (preg_match('#^([^/]+)$#', $path, $m)) {
             return ['type' => 'collection', 'resource' => $m[1]];
         }
@@ -162,6 +165,7 @@ class PathBuilder
             'related' => $this->buildRelatedOperation($method, $info['resource'], $className, $tag, $info['relation'], $meta),
             'relationship' => $this->buildRelationshipOperation($method, $info['resource'], $tag, $info['relation'], $meta),
             'action' => $this->buildActionOperation($method, $info['resource'], $tag, $info['action'], $route),
+            'meta' => $this->buildMetaOperation($method, $info['resource'], $className, $tag),
             default => null,
         };
     }
@@ -622,6 +626,43 @@ class PathBuilder
         }
 
         return $operation;
+    }
+
+    /**
+     * Build a meta endpoint operation (GET /{resource}/schema).
+     *
+     * These endpoints return client-side schemas (form validation info, field types,
+     * constraints, permissions) and are not standard JSON:API resource operations.
+     */
+    private function buildMetaOperation(
+        string $method,
+        string $resource,
+        string $className,
+        string $tag,
+    ): ?array {
+        if ($method !== 'get') {
+            return null;
+        }
+
+        return [
+            'summary' => "Get client schema for {$resource}",
+            'operationId' => "get{$className}ClientSchema",
+            'tags' => [$tag],
+            'responses' => [
+                '200' => [
+                    'description' => 'Client schema with field types, constraints, and permissions',
+                    'content' => [
+                        'application/json' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'description' => "Client-friendly schema for {$resource}. Includes attributes with validation constraints, relationships with cardinatity, writable_on paths, and available actions with their input schemas.",
+                            ],
+                        ],
+                    ],
+                ],
+                '401' => ['$ref' => '#/components/responses/Unauthorized'],
+            ],
+        ];
     }
 
     /**

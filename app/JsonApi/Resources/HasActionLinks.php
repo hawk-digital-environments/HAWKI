@@ -24,6 +24,15 @@ trait HasActionLinks
         if ($base && $user) {
             $gate = Gate::forUser($user);
 
+            foreach ($this->resolveCrudAbilityNames() as $ability) {
+                $response = $gate->inspect($ability, $this->resource);
+                $links->push(new Link(
+                    $ability,
+                    $base,
+                    ['message' => $response->allowed() ? 'ALLOWED' : 'DENIED'],
+                ));
+            }
+
             foreach ($this->resolveActionNames() as $action) {
                 $response = $gate->inspect($action, $this->resource);
                 $links->push(new Link(
@@ -59,5 +68,11 @@ trait HasActionLinks
                 }
             }
         }
+    }
+
+    protected function resolveCrudAbilityNames(): iterable
+    {
+        yield 'update';
+        yield 'delete';
     }
 }

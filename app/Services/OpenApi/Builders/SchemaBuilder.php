@@ -395,13 +395,13 @@ class SchemaBuilder
      * and required field names from the rules array.
      *
      * @param  Schema  $schema  The JSON:API schema instance.
-     * @return array{constraints: array<string, array>, required: array<string>} Parsed constraints and required field names.
+     * @return array{constraints: array<string, array>, required: array<string>, validated: array<string>} Parsed constraints, required field names, and all validated field names.
      */
-    private function parseValidationConstraints(Schema $schema): array
+    public function parseValidationConstraints(Schema $schema): array
     {
         $requestClass = $this->resolveRequestClass($schema);
         if ($requestClass === null) {
-            return ['constraints' => [], 'required' => []];
+            return ['constraints' => [], 'required' => [], 'validated' => []];
         }
 
         try {
@@ -409,25 +409,26 @@ class SchemaBuilder
             $request = new $requestClass;
             $rules = $request->rules();
         } catch (\Throwable) {
-            return ['constraints' => [], 'required' => []];
+            return ['constraints' => [], 'required' => [], 'validated' => []];
         }
 
         $constraints = [];
         $required = [];
+        $validated = [];
         $schemaFields = [];
         foreach ($schema->fields() as $field) {
             if ($field instanceof ID) {
                 continue;
             }
-            if (! $this->isRelation($field)) {
-                $schemaFields[$field->name()] = true;
-            }
+            $schemaFields[$field->name()] = true;
         }
 
         foreach ($rules as $field => $fieldRules) {
             if (! isset($schemaFields[$field])) {
                 continue;
             }
+
+            $validated[] = $field;
 
             $fieldRules = (array) $fieldRules;
             if (in_array('required', $fieldRules)) {
@@ -439,7 +440,7 @@ class SchemaBuilder
             }
         }
 
-        return ['constraints' => $constraints, 'required' => $required];
+        return ['constraints' => $constraints, 'required' => $required, 'validated' => $validated];
     }
 
     /**
@@ -755,7 +756,7 @@ class SchemaBuilder
      * @param  mixed  $field  A JSON:API schema field instance.
      * @return bool True if the field is a relationship type.
      */
-    private function isRelation($field): bool
+    public function isRelation($field): bool
     {
         return $field instanceof BelongsTo
             || $field instanceof HasOne
@@ -769,7 +770,7 @@ class SchemaBuilder
      * @param  mixed  $field  A JSON:API schema field (Str, Number, Boolean, DateTime, ArrayList, ArrayHash, ID).
      * @return array OpenAPI property schema.
      */
-    private function mapFieldType($field): array
+    public function mapFieldType($field): array
     {
         return match (true) {
             $field instanceof ID => ['type' => 'string'],
