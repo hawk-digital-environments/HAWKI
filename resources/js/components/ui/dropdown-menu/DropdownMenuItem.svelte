@@ -18,7 +18,7 @@
         children?: Snippet;
         /** An optional icon to display alongside the item. */
         icon?: Component<LucideProps>;
-        /** Visual style variant. */
+        /** Visual style variant. If set to "destructive" without providing an icon, the icon is automatically set to a trash can. */
         variant?: 'default' | 'destructive';
     }
 

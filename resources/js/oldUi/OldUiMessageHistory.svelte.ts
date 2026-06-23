@@ -100,6 +100,19 @@ export class OldUiMessageHistory {
         return message;
     }
 
+    public findMessageByAttachmentUuid(fileUuid: string): OldUiConversationMessage | null {
+        if (!this._conversation) {
+            console.warn('No active conversation to find message in');
+            return null;
+        }
+        const message = this._conversation.messages.find(m => m.content?.attachments?.some(a => a.fileData.uuid === fileUuid));
+        if (!message) {
+            console.warn(`Message with attachment uuid ${fileUuid} not found in conversation`);
+            return null;
+        }
+        return message;
+    }
+
     public removeFileByUuid(fileUuid: string): void {
         if (!this._conversation) {
             console.warn('No active conversation to remove file from');
