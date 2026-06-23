@@ -1,3 +1,58 @@
+/**
+ * # Composer Context — Architecture Overview
+ *
+ * `ComposerContext` is the single object all composer components talk to.
+ * It aggregates per-domain "aspects", a pluggable mode system, and the
+ * message-send pipeline. Components access the context via
+ * {@link useComposerContext}; a new instance is wired up by
+ * {@link createComposerContext} and published into the Svelte context tree.
+ *
+ * ## Aspects
+ *
+ * State is split into focused aspect classes, each owning one concern:
+ *
+ * | Property                  | Class                  | Owns                                                              |
+ * |---------------------------|------------------------|-------------------------------------------------------------------|
+ * | `context.model`           | `ModelAspect`          | selected AI model                                                 |
+ * | `context.modelParameters` | `ModelParameterAspect` | temperature / top_p (resets on model switch unless user-modified) |
+ * | `context.tools`           | `ToolAspect`           | user-enabled tools for the request                                |
+ * | `context.attachments`     | `AttachmentAspect`     | staged file attachments                                           |
+ * | `context.modelUsage`      | `ModelUsageAspect`     | derived: is the current model compatible with active tools/files? |
+ * | `context.guard`           | `GuardAspect`          | derived: canSend, canChangeMode, disablesFeature()                |
+ * | `context.mode`            | `ModeAspect`           | active mode + transition lifecycle                                |
+ *
+ * `ModelUsageAspect` and `GuardAspect` hold no mutable state — they are
+ * pure derived views and are never checkpointed.
+ *
+ * ## Modes
+ *
+ * Modes are temporary overlays on the composer. Entering a mode snapshots
+ * the current context via `ContextCheckpointer`, the mode instance mutates
+ * context for its purpose, and exiting the mode restores the snapshot.
+ *
+ * | Mode key  | Class              | Purpose                                                 |
+ * |-----------|--------------------|---------------------------------------------------------|
+ * | `default` | `ChatDefaultMode`  | Normal compose; stays active after send                 |
+ * | `edit`    | `ChatEditMode`     | Edit a past user message; locks model/tools/settings UI |
+ * | `thread`  | `ChatInThreadMode` | Compose inside a thread; allows nested edit/regen modes |
+ * | `regen`   | `ChatRegenMode`    | Regenerate an assistant reply; pre-fills model + params |
+ *
+ * ## Checkpointing
+ *
+ * Every stateful aspect implements `CheckpointingInterface`. `ContextCheckpointer`
+ * coordinates snapshotting and restoring all of them at once. `ModeAspect` calls
+ * the checkpointer on `enter()` / `exit()` so every mode transition is
+ * reversible without each mode knowing what to save or restore.
+ *
+ * ## Sending
+ *
+ * `MessageSender` orchestrates the send flow. It creates a `SendMessageStatus`
+ * (the reactive state machine the UI observes), delegates delivery to a
+ * `MessageSenderTransportInterface`, and surfaces a `ResponseReader` through
+ * the status once the transport signals a response is arriving.
+ * The only concrete transport today is `OldUiBridgeTransport`, which forwards
+ * the request to the legacy UI layer.
+ */
 import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
 import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
 import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
@@ -19,6 +74,8 @@ import {MessageSender} from '$lib/components/chat/composer/contexts/sending/Mess
 import {OldUiBridgeTransport} from '$lib/components/chat/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import {aiHandleStore} from '$lib/stores/AiHandleStore.svelte.js';
+import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
 
 const allowedContextTypes = ['aiConv', 'room'] as const;
 export type ComposerContextType = typeof allowedContextTypes[number];
@@ -29,9 +86,18 @@ interface FlowList {
     [FOCUS_INPUT_PIPELINE]: void;
 }
 
+/**
+ * Central state container for one composer instance. See the module-level
+ * architecture overview for how this relates to aspects, modes, and the
+ * send pipeline.
+ *
+ * Obtain the instance for the current component tree via
+ * {@link useComposerContext}. Create a new one via {@link createComposerContext}.
+ */
 export class ComposerContext {
 
     public constructor(
+        /** Whether this composer is embedded in a dedicated AI conversation (`'aiConv'`) or a room chat (`'room'`). Affects which AI UI elements are shown. */
         public readonly type: ComposerContextType,
         public readonly mode: ModeAspect,
         public readonly model: ModelAspect,
@@ -43,7 +109,8 @@ export class ComposerContext {
         private readonly checkpointer: ContextCheckpointer,
         private readonly sender: MessageSender,
         private readonly initialSystemPrompt: string,
-        private readonly onSetSystemPrompt: (prompt: string) => void
+        private readonly onSetSystemPrompt: (prompt: string) => void,
+        private readonly getHandlesInText: (text: string) => Generator<string>
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
 
@@ -63,7 +130,9 @@ export class ComposerContext {
         this.checkpointer.onRestoreCheckpoint((cp) => {
             this._sendStatus = cp.status;
             this.message = cp.message;
-            this.systemPrompt = cp.systemPrompt;
+            if (this._systemPrompt !== cp.systemPrompt) {
+                this.systemPrompt = cp.systemPrompt;
+            }
             this.attachments.restoreCheckpoint(cp.attachments);
             // Order of modelParameters and model matters, otherwise the model setting will
             // Reset the parameters to the model defaults.
@@ -78,13 +147,35 @@ export class ComposerContext {
     private _systemPrompt: string;
     private _sendStatus = $state(null as SendMessageStatus | null);
 
-    /** Can be set to true, to programmatically force the composer into the active/sending state,
-     * which disables the send button and other interactions. */
+    /** Forces the composer into the active/sending state, disabling the send button and other
+     *  interactions. Set to `true` when an external process is occupying the composer. */
     public forcedActive = $state(false);
+
+    /** Whether the current conversation allows sending messages. `false` for read-only
+     *  conversations (e.g. shared/archived); updated via the `OldUiMessageHistory` bridge. */
+    public hasWriteAccess = $state(true);
 
     /** The user message currently being composed. Writable — bind or set directly. */
     public message = $state('');
 
+    /** The message text with all `@handle` tokens stripped and whitespace normalised.
+     *  Used by `GuardAspect.canSend` to check whether there is actual content to send. */
+    public readonly messageWithoutHandles = $derived.by(() => {
+        let text = this.message;
+        for (const handle of this.handlesInMessage) {
+            text = text.replace(handle, '').trim();
+        }
+        return text.trim();
+    });
+
+    /** All agent `@handle` tokens found in the current message (e.g. `['@hawki']`).
+     *  In room mode, the presence of a handle determines whether AI UI elements are shown. */
+    public readonly handlesInMessage = $derived.by(() => [...this.getHandlesInText(this.message)]);
+
+    /** `true` when at least one `@hawki` is present in the message. */
+    public readonly containsAiHandle = $derived.by(() => this.handlesInMessage.length > 0);
+
+    /** The active send operation, or `null` when the composer is idle. */
     public readonly sendStatus = $derived.by(() => this._sendStatus);
 
     /** The system prompt for this chat session. Writable — bind or set directly. */
@@ -97,14 +188,21 @@ export class ComposerContext {
         this.onSetSystemPrompt(value);
     }
 
+    /** Imperatively requests that the textarea receives focus. Called by modes after
+     *  pre-filling the message so the cursor lands in the input without a user click. */
     public focusInput(): void {
         this.sync.trigger(FOCUS_INPUT_PIPELINE);
     }
 
+    /** Registers a handler that fires whenever {@link focusInput} is called.
+     *  Returns an unsubscribe function. Typically called by the textarea component. */
     public onFocusInput(handler: () => void): () => void {
         return this.sync.on(FOCUS_INPUT_PIPELINE, handler);
     }
 
+    /** Starts a send operation. Returns `null` without doing anything when `guard.canSend`
+     *  is false. The returned `SendMessageStatus` is also stored on `sendStatus` and cleared
+     *  once the response body has fully arrived. */
     public send(): SendMessageStatus | null {
         if (!this.guard.canSend) {
             return null;
@@ -124,12 +222,23 @@ export class ComposerContext {
         return status;
     }
 
+    /** Prepends `handle` to the message if it isn't already present, then focuses the input. */
+    public addHandleToMessage(handle: string): void {
+        if (!this.handlesInMessage.includes(handle)) {
+            this.message = `${handle} ${this.message.trim()}`;
+        }
+        this.focusInput();
+    }
+
     /**
      * Used after a message has been sent (keeps most of the settings intact, just clears the message, attachments, and sending state).
      * Use {@link reset} to reset everything back to the initial state (e.g. when loading a new conversation or exiting a thread).
      */
     public clear(): void {
-        this.message = '';
+        // When the previous message was sent to the ai, we want to keep the handles in the message,
+        // so you can keep chatting with the same ai without having to re-tag it in every message.
+        const handles = this.handlesInMessage;
+        this.message = this.handlesInMessage.join(' ') + (handles.length > 0 ? ' ' : '');
         this.attachments.clear();
     }
 
@@ -154,10 +263,17 @@ export class ComposerContext {
 
 const contextKey = Symbol('chatComposer');
 
+/** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
     return getContext(contextKey);
 }
 
+/**
+ * Constructs a fully-wired `ComposerContext`, registers it in the Svelte
+ * context tree, and subscribes to the relevant `OldUiBridge` events.
+ * Call once per composer root component; clean-up is handled automatically
+ * via `onDestroy`.
+ */
 export function createComposerContext(
     type: ComposerContextType,
     toastContext: ToastContext
@@ -232,7 +348,8 @@ export function createComposerContext(
         checkpointer,
         sender,
         initialSystemPrompt,
-        onSetSystemPrompt
+        onSetSystemPrompt,
+        (message) => aiHandleStore.getHandlesIn(message)
     );
 
     const unbinders = [
@@ -266,6 +383,9 @@ export function createComposerContext(
             } else {
                 toastContext.info(message);
             }
+        }),
+        oldUiMessageHistory.onLoadConversation(() => {
+            context.hasWriteAccess = oldUiMessageHistory.canWrite;
         })
     ];
 

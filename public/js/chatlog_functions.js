@@ -119,14 +119,15 @@ async function requestMsgUpdate(messageObj, messageElement, url, plainContent) {
 
         const data = await response.json();
         if (data.success) {
+            const lookupData = data.legacyResource || data.messageData;
             window.oldUiMessageHistory.updateMessageInConversation({
-                ...data.legacyResource,
+                ...lookupData,
                 content: {
-                    ...data.legacyResource.content,
+                    ...lookupData.content,
                     ...plainContent
                 }
             });
-            updateMessageElement(messageElement, data.messageData, false, data.legacyResource.content.attachments || []);
+            updateMessageElement(messageElement, data.messageData, false, lookupData.content.attachments || []);
         } else {
             // Handle unexpected response
             console.error('Unexpected response:', data);
@@ -146,7 +147,6 @@ function onThreadButtonEvent(btn) {
     if (thread.classList.contains('visible')) {
         thread.classList.remove('visible');
         if (thread && thread.id) {
-            console.log('Triggering exit thread for thread ID:', thread.id);
             window.oldUiBridge.triggerExitThread();
         }
     } else {
@@ -226,13 +226,12 @@ function checkThreadUnreadMessages(thread) {
 }
 
 function flagRoomUnreadMessages(slug, active) {
-    const selector = document.querySelector(`.selection-item[slug="${slug}"`);
+    /** @var {HTMLSvelteSnippetElement} selector */
+    const selector = document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${slug}"]`);
     if (active) {
-        selector.querySelector('#unread-msg-flag').style.display = 'block';
-        document.getElementById('mark-as-read-btn').removeAttribute('disabled');
+        selector.setProps({hasUnreadMessages: true});
     } else {
-        selector.querySelector('#unread-msg-flag').style.display = 'none';
-        document.getElementById('mark-as-read-btn').setAttribute('disabled', true);
+        selector.setProps({hasUnreadMessages: false});
     }
 }
 
@@ -254,7 +253,12 @@ async function markAsSeen(element) {
     }, 3000);
 }
 
-function markAllAsRead() {
+async function markAllAsRead(slug) {
+    // Legacy support -> If we are currently not in the conversation with the slug
+    // we MUST open it, otherwise we can't show the information.
+    if (activeRoom.slug !== slug) {
+        await loadRoom(null, slug);
+    }
     const unread_msgs = document.querySelectorAll('.message[data-read_stat="false"]');
 
     unread_msgs.forEach(element => {

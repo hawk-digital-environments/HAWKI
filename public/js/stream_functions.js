@@ -17,7 +17,8 @@ function buildRequestObject(msgAttributes, onData, onError) {
 
         payload: {
             model: msgAttributes.model ?? activeModel.modelId,
-            stream: true,
+            broadcast: msgAttributes['broadcasting'],
+            stream: msgAttributes['stream'] || false,
             messages: msgs,
             tools: msgAttributes['metadata']?.tools ?? null,
             params: msgAttributes['metadata']?.params ?? null
@@ -33,7 +34,9 @@ function buildRequestObject(msgAttributes, onData, onError) {
                     onData('AbortError');
                 }
                 // pass stream callback (response) to processStream
-                processStream(response.body, onData);
+                return processStream(response.body, onData);
+            } else if (onData) {
+                setTimeout(() => onData(null, true), 3000); // Simulate a delay for broadcasting
             }
         })
         .catch(error => {
@@ -142,7 +145,7 @@ async function processResponse(response, onData) {
 
 
 function createMessageLogForAI(regenerationElement = null) {
-    const systemPromptContent = activeConv.system_prompt || window.getSystemPrompt('default');
+    const systemPromptContent = window.oldUiMessageHistory.systemPrompt || window.getSystemPrompt('default');
     systemPrompt = {
         role: 'system',
         content: {

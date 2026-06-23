@@ -10,7 +10,16 @@
             "deleteConfirmTitle": "Chat :name löschen",
             "newNameAriaLabel": "Neuer Chatname",
             "actionsTooltip": "Chat Aktionen",
-            "rename": "Umbenennen"
+            "rename": "Umbenennen",
+            "manageRoom": "Raum verwalten",
+            "markAsRead": "Als gelesen markieren"
+        },
+        "attachmentDropdown": {
+            "deleteTitle": "Datei löschen",
+            "deleteDescription": "Bist du sicher, dass du die Datei \":name\" löschen möchtest?",
+            "preview": "Anzeigen",
+            "download": "Herunterladen",
+            "delete": "Löschen"
         },
         "attachments": {
             "fileTooLarge": "Die Datei \":name\" konnte nicht angehängt werden, da sie mit :size die maximale Dateigröße von :maxSize überschreitet.",
@@ -27,7 +36,12 @@
         },
         "composer": {
             "textareaPlaceholder": "Hier kannst du deine Anfrage stellen…",
+            "textareaPlaceholderRoom": "Schreibe eine Gruppennachricht oder nutze die KI mit @hawki...",
             "attachFileTooltip": "Datei anhängen",
+            "assistantButtonTooltip": {
+                "addHandle": "Mit HAWKI sprechen",
+                "removeHandle": "Nicht mehr mit HAWKI sprechen"
+            },
             "systemPromptDialog": {
                 "title": "Systemprompt bearbeiten",
                 "description": "Der Systemprompt definiert das Verhalten des Modells für diese Sitzung.",

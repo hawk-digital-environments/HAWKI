@@ -14,6 +14,9 @@ export interface OldUiConversationMessage {
         name: string;
         avatar_url: string;
     },
+    member_id?: number;
+    member_name?: string
+    read_status?: boolean;
     completion: number;
     conv_id?: number;
     content: {
@@ -46,11 +49,21 @@ export interface OldUiConversation {
     name: string;
     slug: string;
     system_prompt: string;
+    role?: 'admin' | 'editor' | 'viewer';
 }
 
 export interface OldUiModelParams {
     temp: number;
     top_p: number;
+}
+
+export interface OldUiFileData {
+    category: 'private' | 'group';
+    mime: string;
+    name: string;
+    type: 'image' | 'document';
+    url: string;
+    uuid: string;
 }
 
 export type OldUiExportType = 'print' | 'pdf' | 'word' | 'json' | 'csv';
@@ -65,6 +78,7 @@ export interface OldUiSendMessagePayload {
     model: AiModel | null;
     contextType: ComposerContextType;
     message: string;
+    containsAiHandle: boolean;
     tools: AiTool[];
     attachments: File[];
     parameters: OldUiModelParams | null;
@@ -84,8 +98,14 @@ const OPEN_CHAT_PIPELINE = 'openChat';
 const NEW_CHAT_PIPELINE = 'newChat';
 const RENAME_CHAT_PIPELINE = 'renameChat';
 const DELETE_CHAT_PIPELINE = 'deleteChat';
+const LEAVE_ROOM_PIPELINE = 'leaveRoom';
 const SET_ABORT_CONTROLLER_PIPELINE = 'abortController';
 const SEND_TOAST_PIPELINE = 'sendToast';
+const OPEN_ROOM_CP_PIPELINE = 'openRoomControlPanel';
+const MARK_ROOM_MESSAGES_AS_READ_PIPELINE = 'markRoomMessagesAsRead';
+const PREVIEW_ATTACHMENT_PIPELINE = 'previewAttachment';
+const DOWNLOAD_ATTACHMENT_PIPELINE = 'downloadAttachment';
+const DELETE_ATTACHMENT_PIPELINE = 'deleteAttachment';
 
 interface SyncFlowList {
     [UPDATE_SYSTEM_PROMPT_PIPELINE]: string;
@@ -104,6 +124,9 @@ interface SyncFlowList {
     [DELETE_CHAT_PIPELINE]: string;
     [SET_ABORT_CONTROLLER_PIPELINE]: AbortController;
     [SEND_TOAST_PIPELINE]: { message: string, type: 'success' | 'error' | 'info' };
+    [OPEN_ROOM_CP_PIPELINE]: string;
+    [MARK_ROOM_MESSAGES_AS_READ_PIPELINE]: string;
+    [LEAVE_ROOM_PIPELINE]: string;
 }
 
 const SEND_MESSAGE_PIPELINE = 'sendMessage';
@@ -112,6 +135,9 @@ const IMPROVE_MESSAGE_PIPELINE = 'improveMessage';
 interface ASYNC_PIPELINE_LIST {
     [SEND_MESSAGE_PIPELINE]: OldUiSendMessagePayload;
     [IMPROVE_MESSAGE_PIPELINE]: { message: string, systemPrompt: string, improvedMessage?: string };
+    [PREVIEW_ATTACHMENT_PIPELINE]: OldUiFileData;
+    [DOWNLOAD_ATTACHMENT_PIPELINE]: OldUiFileData;
+    [DELETE_ATTACHMENT_PIPELINE]: OldUiFileData;
 }
 
 /**
@@ -310,6 +336,17 @@ export class OldUiBridge {
         return this.sync.on(DELETE_CHAT_PIPELINE, handler);
     }
 
+    public triggerLeaveRoom(slug: string): void {
+        if (this.isSendingMessage) {
+            return;
+        }
+        this.sync.trigger(LEAVE_ROOM_PIPELINE, slug);
+    }
+
+    public onLeaveRoom(handler: (slug: string) => void): () => void {
+        return this.sync.on(LEAVE_ROOM_PIPELINE, handler);
+    }
+
     public async triggerImproveMessage(message: string, systemPrompt: string): Promise<string> {
         if (this.isSendingMessage) {
             return Promise.resolve(message);
@@ -331,6 +368,46 @@ export class OldUiBridge {
 
     public onSendToast(handler: (message: string, type: 'success' | 'error' | 'info') => void): () => void {
         return this.sync.on(SEND_TOAST_PIPELINE, ({message, type}) => handler(message, type));
+    }
+
+    public triggerOpenRoomControlPanel(slug: string): void {
+        this.sync.trigger(OPEN_ROOM_CP_PIPELINE, slug);
+    }
+
+    public onOpenRoomControlPanel(handler: (slug: string) => void): () => void {
+        return this.sync.on(OPEN_ROOM_CP_PIPELINE, handler);
+    }
+
+    public triggerMarkRoomMessagesAsRead(slug: string): void {
+        this.sync.trigger(MARK_ROOM_MESSAGES_AS_READ_PIPELINE, slug);
+    }
+
+    public onMarkRoomMessagesAsRead(handler: (slug: string) => void): () => void {
+        return this.sync.on(MARK_ROOM_MESSAGES_AS_READ_PIPELINE, handler);
+    }
+
+    public triggerPreviewAttachment(fileData: OldUiFileData): void {
+        this.async.trigger(PREVIEW_ATTACHMENT_PIPELINE, fileData);
+    }
+
+    public onPreviewAttachment(handler: (fileData: OldUiFileData) => void | Promise<void>): () => void {
+        return this.async.on(PREVIEW_ATTACHMENT_PIPELINE, handler);
+    }
+
+    public triggerDownloadAttachment(fileData: OldUiFileData): void {
+        this.async.trigger(DOWNLOAD_ATTACHMENT_PIPELINE, fileData);
+    }
+
+    public onDownloadAttachment(handler: (fileData: OldUiFileData) => void | Promise<void>): () => void {
+        return this.async.on(DOWNLOAD_ATTACHMENT_PIPELINE, handler);
+    }
+
+    public triggerDeleteAttachment(fileData: OldUiFileData): void {
+        this.async.trigger(DELETE_ATTACHMENT_PIPELINE, fileData);
+    }
+
+    public onDeleteAttachment(handler: (fileData: OldUiFileData) => void | Promise<void>): () => void {
+        return this.async.on(DELETE_ATTACHMENT_PIPELINE, handler);
     }
 }
 

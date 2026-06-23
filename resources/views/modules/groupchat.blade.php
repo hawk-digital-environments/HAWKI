@@ -59,9 +59,15 @@
                             </div>
 
                         </div>
-
                     </div>
-                    {{--                    @include('partials.home.input-field', ['lite' => false])--}}
+                    <x-svelte type="ChatHeader" :props="['context' => 'room']"/>
+                    <div class="input-container admin-only editor-only">
+                        <div class="input-stats-container">
+                            <div class="isTypingStatus"></div>
+                            <div id="input-feedback-msg"></div>
+                        </div>
+                        <x-svelte type="ChatComposer" :props="['context' => 'room']"/>
+                    </div>
                 </div>
                 <p class="warning">{{ __("MistakeWarning") }}</p>
 
@@ -77,6 +83,7 @@
 
         window.waitUntilReady(async function () {
 
+            await initializeMessageFormating();
             initializeGroupChatModule(@json($userData['rooms']));
 
             const slug = @json($slug);

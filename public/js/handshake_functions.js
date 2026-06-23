@@ -142,10 +142,6 @@ async function checkPasskey() {
         }
 
         const data = await response.json();
-        if (data.success) {
-            // console.log(data.message)
-        }
-
     } catch (error) {
         console.error('Error Creating Passkey Backup:', error);
         throw error;
@@ -374,7 +370,6 @@ async function extractPasskey() {
     // derive Key from entered backupkey
     const passkeyBackupSalt = window.getConfig().salts.backup;
     const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
-    // console.log(derivedKey);
     try {
         //encrypt Passkey as plaintext
         const passkey = await decryptWithSymKey(derivedKey,

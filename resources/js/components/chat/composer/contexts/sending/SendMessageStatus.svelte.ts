@@ -1,12 +1,25 @@
 import type {ResponseReader} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
 
+/**
+ * Reactive state machine for a single in-flight send operation.
+ *
+ * Lifecycle: `sending` → `responding` → `received` (or `failed` at any point).
+ *
+ * - `sending` — the request is being transmitted.
+ * - `responding` — the request succeeded; we are waiting for the full
+ *   response body (which may be a stream of chunks).
+ * - `received` — the complete response body has arrived.
+ * - `failed` — a send or file error occurred.
+ *
+ * The `response` promise resolves to a `ResponseReader` as soon as the
+ * transport acknowledges the send. Await `response`, then `response.body`
+ * to know when the full content is available.
+ */
 export class SendMessageStatus {
     constructor(
         assignedFileUuids: Array<[File, string]>,
-        /**
-         * The response promise, which resolves as soon as the message has been sent.
-         * Note, the response is not necessarily already received at this point; check for the "response.body" promise to resolve for that.
-         */
+        /** Resolves to a `ResponseReader` once the message has been accepted by
+         * the transport. The response body may still be streaming at that point. */
         public readonly response: Promise<ResponseReader>
     ) {
         this._fileUuids = $state(assignedFileUuids);
@@ -17,10 +30,8 @@ export class SendMessageStatus {
             if (this._status === 'sending') {
                 // Responding is true until the response body promise resolves, which indicates that the full response has been received.
                 // If the sender set a non-stream response, the body promise will already be resolved, so we will transition to "done" immediately.
-                console.log('RESPONDING');
                 this._status = 'responding';
                 res.body.then(() => {
-                    console.log('RECEIVED');
                     // Reach the final state once the full response has been received
                     this._status = 'received';
                 });
@@ -38,20 +49,26 @@ export class SendMessageStatus {
     private fileProgressMap = $derived(new Map<File, number>(this.fileProgress));
     private fileUuidMap = $derived.by(() => new Map<File, string>(this._fileUuids));
 
+    /** Per-file upload errors reported by the transport (e.g. file too large on the server). */
     public readonly fileIssues = $derived.by(() => [...this._fileIssues]);
     public readonly fileUuids = $derived.by(() => [...this._fileUuids]);
+    /** Non-file send errors (e.g. network failure, transport rejection). */
     public readonly sendIssues = $derived.by(() => [...this._sendIssues]);
     public readonly hasFileIssues = $derived.by(() => this.fileIssues.length > 0);
     public readonly hasSendIssues = $derived.by(() => this._sendIssues.length > 0);
     public readonly hasIssues = $derived.by(() => this.hasFileIssues || this.hasSendIssues);
+    /** Whether the in-flight request can be cancelled (requires the transport to register an `AbortController`). */
     public readonly canBeAborted = $derived.by(() => this._awaitedResponse?.canAbort ?? false);
 
+    /** Raw status string. Prefer the boolean shorthands below for most UI logic. */
     public readonly status = $derived.by(() => this._status);
     public readonly sending = $derived.by(() => this._status === 'sending');
     public readonly failed = $derived.by(() => this._status === 'failed');
     public readonly responding = $derived.by(() => this._status === 'responding');
     public readonly received = $derived.by(() => this._status === 'received');
+    /** `true` once the send has reached a final state (`received` or `failed`). */
     public readonly done = $derived.by(() => this._status === 'received' || this._status === 'failed');
+    /** `true` while a request is in flight (`sending` or `responding`). Use to disable the send button. */
     public readonly active = $derived.by(() => this._status === 'sending' || this._status === 'responding');
 
     public hasFileIssue(file: File): boolean {
@@ -62,6 +79,7 @@ export class SendMessageStatus {
         return this.fileIssueMap.get(file) ?? null;
     }
 
+    /** Records an upload error for a specific file and sets the overall status to `'failed'`. */
     public addFileIssue(file: File, issue: string): void {
         this._status = 'failed';
         this.fileIssues.push([file, issue]);
@@ -71,15 +89,18 @@ export class SendMessageStatus {
         this._fileIssues = this.fileIssues.filter(([f]) => f !== file);
     }
 
+    /** Records a general send error and sets the overall status to `'failed'`. */
     public addSendIssue(issue: string): void {
         this._status = 'failed';
         this._sendIssues.push(issue);
     }
 
+    /** Returns the upload progress (0–1) for a file, or `null` if not yet reported. */
     public getFileProgress(file: File): number | null {
         return this.fileProgressMap.get(file) ?? null;
     }
 
+    /** Updates the upload progress (0–1) for a file. Called by the transport as uploads proceed. */
     public setFileProgress(file: File, progress: number): void {
         const existingIndex = this.fileProgress.findIndex(([f]) => f === file);
         if (existingIndex !== -1) {
@@ -97,6 +118,8 @@ export class SendMessageStatus {
         return this.fileUuidMap.has(file);
     }
 
+    /** Records the server-assigned UUID for an uploaded file.
+     *  Called by the transport once a file upload resolves. */
     public setFileUuid(file: File, uuid: string): void {
         const existingIndex = this._fileUuids.findIndex(([f]) => f === file);
         if (existingIndex !== -1) {

@@ -350,9 +350,6 @@ async function cleanupUserData(callback) {
             localStorage.removeItem(`${userInfo.username}PK`);
         }
 
-
-        console.log('Cleanup completed successfully.');
-
         // If a callback is provided, invoke it
         if (callback && typeof callback === 'function') {
             callback();

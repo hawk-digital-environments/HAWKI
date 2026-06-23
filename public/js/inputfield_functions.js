@@ -42,23 +42,8 @@ function initializeInputField() {
 
 
 function resizeInputField(inputField) {
-    // console.log('resize')
     inputField.style.height = 'auto';
     inputField.style.height = inputField.scrollHeight + 'px';
     inputField.scrollTop = inputField.scrollHeight;
     inputField.scrollTo(inputField.scrollTop, (inputField.scrollTop + inputField.scrollHeight));
-}
-
-
-// Show error message when file validation fails
-
-function showFeedbackMsg(inputfield, type, message) {
-    const feedbackEl = inputfield.closest('.input-container').querySelector('#input-feedback-msg');
-    feedbackEl.dataset.type = type;
-    feedbackEl.innerText = message;
-
-    setTimeout(() => {
-        feedbackEl.innerText = '';
-        feedbackEl.dataset.type = null;
-    }, 5000);
 }

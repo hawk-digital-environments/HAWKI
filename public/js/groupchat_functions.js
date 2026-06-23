@@ -1,6 +1,5 @@
 let inputField;
 let roomMsgTemp;
-let roomItemTemplate;
 let rooms;
 let typingStatusDiv;
 let activeRoom = null;
@@ -9,7 +8,6 @@ let roomCreationAvatarBlob = null;
 function initializeGroupChatModule(roomsData) {
     rooms = roomsData;
     roomMsgTemp = document.getElementById('message-template');
-    roomItemTemplate = document.getElementById('selection-item-template');
     inputField = document.querySelector('.input-field');
     typingStatusDiv = document.querySelector('.isTypingStatus');
 
@@ -32,7 +30,8 @@ function initializeGroupChatModule(roomsData) {
         }, 800);
     });
     window.oldUiBridge.onSendMessage('room', async function (payload) {
-        throw new Error('Direct message sending is currently not supported. Please use the input field in the chat interface.');
+        await onSendMessageToRoom(payload);
+        scrollToLast(true);
     });
     window.oldUiBridge.onNewChat(() => {
         startNewChat();
@@ -45,155 +44,201 @@ function initializeGroupChatModule(roomsData) {
             console.error('No active conversation to update system prompt for!');
             return;
         }
-        const formData = new FormData();
-        formData.append('system_prompt', newPrompt);
-        updateRoomInfo(activeRoom.slug, formData);
+        (async () => {
+            const roomKey = window.userKeychain.roomKeys[activeRoom.slug].roomKey;
+            const cryptSystemPrompt = await encryptWithSymKey(roomKey, newPrompt, false);
+            const systemPromptStr = JSON.stringify({
+                'ciphertext': cryptSystemPrompt.ciphertext,
+                'iv': cryptSystemPrompt.iv,
+                'tag': cryptSystemPrompt.tag
+            });
+            const formData = new FormData();
+            formData.append('system_prompt', systemPromptStr);
+            updateRoomInfo(activeRoom.slug, formData);
+        })();
     });
     window.oldUiBridge.onRenameChat(async (slug, newName) => {
         const formData = new FormData();
         if (chatName) formData.append('name', chatName);
         updateRoomInfo(activeRoom.slug, formData);
     });
+    window.oldUiBridge.onOpenRoomControlPanel((slug) => {
+        openRoomCP(slug);
+    });
+    window.oldUiBridge.onLeaveRoom(slug => {
+        leaveRoom(false);
+    });
     window.oldUiBridge.onDeleteChat((slug) => {
-        requestDeleteRoom(slug);
+        requestDeleteRoom(false);
+    });
+    window.oldUiBridge.onMarkRoomMessagesAsRead((slug) => {
+        markAllAsRead(slug);
     });
     initializeChatlogFunctions();
 }
 
 
-//#region MESSAGE CONTROLLS
+//#region MESSAGE CONTROLS
+/**
+ * @param {OldUiSendMessagePayload} payload
+ * @return {Promise<void>}
+ */
+async function onSendMessageToRoom(payload) {
+    activeThreadIndex = 0;
 
-async function onSendMessageToRoom(inputField) {
+    async function handleUploads() {
+        if (payload.attachments.length > 0) {
+            const attachmentsWithoutUuid = payload.attachments.filter(file => {
+                return payload.status.getFileUuid(file) === null;
+            });
 
-    if (inputField.value.trim() === '') {
+
+            if (attachmentsWithoutUuid.length > 0) {
+                attachmentsWithoutUuid.map(file => payload.status.clearFileIssue(file));
+                await uploadAttachmentQueue(payload.status, attachmentsWithoutUuid, 'room', activeRoom.slug);
+            }
+        }
+    }
+
+    if (payload.mode.is === 'edit') {
+        await handleUploads();
+
+        if (payload.status.failed) {
+            console.warn('Message has issues, not proceeding to edit.');
+            return;
+        }
+
+        await confirmEditMessage(payload);
         return;
     }
 
-    const plainContent = {
-        text: inputField.value.trim()
-    };
+    if (payload.mode.is === 'regen') {
+        await regenerateMessage(payload);
+        return;
+    }
 
-    inputText = escapeHTML(inputField.value.trim());
+    if (payload.mode.is === 'thread') {
+        activeThreadIndex = payload.mode.threadId;
+    }
 
     /// UPLOAD ATTACHMENTS
-    const input = inputField.closest('.input');
-    const attachments = await uploadAttachmentQueue(input.id, 'room', activeRoom.slug);
+    await handleUploads();
 
+    // If there are already issues, do not proceed to send the message.
+    if (payload.status.failed) {
+        return;
+    }
 
-    const roomKey = window.userKeychain.roomKeys[activeRoom.slug] || null;
-    const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
-
-    const tools = input
-        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
-            tog => tog.dataset.reference
-        ) : [];
-
-    const messageObj = {
-        'content': {
-            'text': {
-                'ciphertext': cryptoMsg.ciphertext,
-                'iv': cryptoMsg.iv,
-                'tag': cryptoMsg.tag
-            },
-            'attachments': attachments
-        },
-        'threadId': activeThreadIndex
+    let plainContent = {
+        text: payload.message
     };
 
-    const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`, plainContent);
-    submittedObj.content.text = inputText;
-    submittedObj.filteredContent = detectMentioning(inputText);
+    let inputText = String(escapeHTML(payload.message));
 
-    // empty input field
-    inputField.value = '';
-    resizeInputField(inputField);
-    const fileAtchs = input.querySelector('.file-attachments');
-    fileAtchs.querySelector('.attachments-list').innerHTML = '';
-    fileAtchs.classList.remove('active');
+    payload.waitForResponse(async (res) => {
+        const roomKeys = window.userKeychain.roomKeys[activeRoom.slug] || null;
+        const roomKey = roomKeys ? roomKeys.roomKey : null;
+        const cryptoMsg = await encryptWithSymKey(roomKey, inputText, false);
 
-    addMessageToChatlog(submittedObj);
+        // Build attachments array for legacy format
+        const attachments = payload.attachments
+            .map(file => payload.status.getFileUuid(file))
+            .filter(uuid => uuid !== null)
+        ;
 
-
-    /// if HAWKI is targeted send copy to stream controller
-    if (submittedObj.filteredContent.aiMention && submittedObj.filteredContent.aiMention.toLowerCase().includes(aiHandle.toLowerCase())) {
-        const aiCryptoSalt = window.getConfig().salts.ai;
-        const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
-        const aiKeyRaw = await exportSymmetricKey(aiKey);
-        const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
-
-
-        const msgAttributes = {
-            'threadIndex': activeThreadIndex,
-            'broadcasting': true,
-            'slug': activeRoom.slug,
-            'key': aiKeyBase64,
-            'stream': false,
-            'metadata': {
-                'tools': tools,
-                'params': activeModel.params
-            }
+        const messageObj = {
+            'content': {
+                'text': {
+                    'ciphertext': cryptoMsg.ciphertext,
+                    'iv': cryptoMsg.iv,
+                    'tag': cryptoMsg.tag
+                },
+                'attachments': attachments
+            },
+            'threadId': activeThreadIndex
         };
 
-        buildRequestObject(msgAttributes, () => {
-        });
-    }
+        const submittedObj = await submitMessageToServer(messageObj, `/req/room/sendMessage/${activeRoom.slug}`, plainContent);
+        submittedObj.content.text = inputText;
+        submittedObj.filteredContent = detectMentioning(inputText);
+
+        addMessageToChatlog(submittedObj);
+
+        if (payload.containsAiHandle) {
+            const aiCryptoSalt = window.getConfig().salts.ai;
+            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+            const aiKeyRaw = await exportSymmetricKey(aiKey);
+            const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
+
+            const msgAttributes = {
+                'threadIndex': activeThreadIndex, 'broadcasting': true, 'slug': activeRoom.slug, 'key': aiKeyBase64, 'stream': false, 'model': payload.model.model_id, 'metadata': {
+                    'tools': payload.tools.map(tool => tool.name), 'params': payload.parameters
+                }
+            };
+
+            buildRequestObject(msgAttributes, () => {
+                res.triggerReceived();
+            }, (e) => {
+                res.triggerError(e);
+            });
+        }
+    });
+
 
 }
 
 
-const connectWebSocket = (roomSlug) => {
-    waitUntilReady(() => {
-        const webSocketChannel = `Rooms.${roomSlug}`;
+const connectWebSocket = async (roomSlug) => {
+    const webSocketChannel = `Rooms.${roomSlug}`;
 
-        window.Echo.private(webSocketChannel)
-            .listen('RoomMessageEvent', async (e) => {
-                try {
-                    const receivedPacket = e.data;
-                    // console.log('Received Packet', receivedPacket);
-                    if (receivedPacket.type === 'message') {
-                        const messageData = await requestMessageContent(receivedPacket.data.message_id,
-                            receivedPacket.data.slug);
+    const echo = await window.hawkiDependencyLoader('echo');
 
-                        if (activeRoom && activeRoom.slug === roomSlug) {
-                            if (messageData.message_role !== 'assistant') {
-                                await handleUserMessages(messageData, roomSlug);
-                            } else {
-                                await handleAIMessage(messageData, roomSlug);
-                            }
-                            if (messageData.author.username !== userInfo.username) {
-                                playSound('in');
-                            }
+    echo.private(webSocketChannel)
+        .listen('RoomMessageEvent', async (e) => {
+            const userInfo = window.getAuthenticatedConnection().userinfo;
+            try {
+                const receivedPacket = e.data;
+                if (receivedPacket.type === 'message') {
+                    const messageData = await requestMessageContent(receivedPacket.data.message_id,
+                        receivedPacket.data.slug);
+
+                    if (activeRoom && activeRoom.slug === roomSlug) {
+                        if (messageData.message_role !== 'assistant') {
+                            await handleUserMessages(messageData, roomSlug);
                         } else {
-                            if (messageData.author.username !== userInfo.username) {
-                                playSound('out');
-                            }
-                            flagRoomUnreadMessages(roomSlug, true);
+                            await handleAIMessage(messageData, roomSlug);
                         }
-                    }
-
-                    if (receivedPacket.type === 'messageUpdate') {
-                        const messageData = await requestMessageContent(receivedPacket.data.message_id,
-                            receivedPacket.data.slug);
-                        console.log(messageData);
-                        await handleUpdateMessage(messageData, roomSlug);
-                    }
-
-                    if (receivedPacket.type === 'status') {
-                        if (receivedPacket.data.isGenerating) {
-                            // Display the typing indicator for the user
-                            addUserToTypingList(receivedPacket.data.model);
-                        } else {
-                            // Hide the typing indicator for the user
-                            removeUserFromTypingList(receivedPacket.data.model);
+                        if (messageData.author.username !== userInfo.username) {
+                            playSound('in');
                         }
+                    } else {
+                        if (messageData.author.username !== userInfo.username) {
+                            playSound('out');
+                        }
+                        flagRoomUnreadMessages(roomSlug, true);
                     }
-
-                } catch (error) {
-                    console.error('Failed to decompress message:', error);
                 }
-            });
-    });
 
+                if (receivedPacket.type === 'messageUpdate') {
+                    const messageData = await requestMessageContent(receivedPacket.data.message_id,
+                        receivedPacket.data.slug);
+                    await handleUpdateMessage(messageData, roomSlug);
+                }
+
+                if (receivedPacket.type === 'status') {
+                    if (receivedPacket.data.isGenerating) {
+                        // Display the typing indicator for the user
+                        addUserToTypingList(receivedPacket.data.model);
+                    } else {
+                        // Hide the typing indicator for the user
+                        removeUserFromTypingList(receivedPacket.data.model);
+                    }
+                }
+
+            } catch (error) {
+                console.error('Failed to decompress message:', error);
+            }
+        });
 };
 
 async function requestMessageContent(messageId, slug) {
@@ -336,45 +381,42 @@ function onGroupchatType() {
 function startTyping() {
     const webSocketChannel = `Rooms.${activeRoom.slug}`;
 
-    waitUntilReady(() => {
-        Echo.private(webSocketChannel)
-            .whisper('typing', {
-                user: userInfo.username,
-                typing: true
-            });
-    });
+    Echo.private(webSocketChannel)
+        .whisper('typing', {
+            user: userInfo.username,
+            typing: true
+        });
 }
 
 function stopTyping() {
     isTyping = false;
     const webSocketChannel = `Rooms.${activeRoom.slug}`;
 
-    waitUntilReady(() => {
-        Echo.private(webSocketChannel)
-            .whisper('typing', {
-                user: userInfo.username,
-                typing: false
-            });
-    });
+    Echo.private(webSocketChannel)
+        .whisper('typing', {
+            user: userInfo.username,
+            typing: false
+        });
 }
 
-function connectWhisperSocket(roomSlug) {
-    waitUntilReady(() => {
-        const webSocketChannel = `Rooms.${roomSlug}`;
-        Echo.private(webSocketChannel)
-            .listenForWhisper('typing', (e) => {
-                if (activeRoom.slug !== roomSlug) return;
+async function connectWhisperSocket(roomSlug) {
+    const webSocketChannel = `Rooms.${roomSlug}`;
 
-                if (e.typing) {
-                    // Display the typing indicator for the user
-                    addUserToTypingList(e.user);
-                } else {
-                    // Hide the typing indicator for the user
-                    removeUserFromTypingList(e.user);
-                }
-                updateTypingStatus();
-            });
-    });
+    const echo = await window.hawkiDependencyLoader('echo');
+
+    echo.private(webSocketChannel)
+        .listenForWhisper('typing', (e) => {
+            if (activeRoom.slug !== roomSlug) return;
+
+            if (e.typing) {
+                // Display the typing indicator for the user
+                addUserToTypingList(e.user);
+            } else {
+                // Hide the typing indicator for the user
+                removeUserFromTypingList(e.user);
+            }
+            updateTypingStatus();
+        });
 }
 
 
@@ -683,6 +725,8 @@ async function handleUserInvitations() {
             return null;
         }
 
+        await window.userKeychain.waitingToLoad;
+
         const data = await response.json();
         if (data.formattedInvitations) {
 
@@ -694,6 +738,7 @@ async function handleUserInvitations() {
                     // Convert the encryptedRoomKey from Base64 to ArrayBuffer
                     const encryptedRoomKeyBuffer = base64ToArrayBuffer(inv.invitation);
                     // Decrypt the roomKey using the user's private key
+                    console.log('DECRYPT', encryptedRoomKeyBuffer, privateKey);
                     const roomKey = await decryptWithPrivateKey(encryptedRoomKeyBuffer, privateKey);
                     if (roomKey) {
                         await finishInvitationHandling(inv.invitation_id, roomKey);
@@ -755,7 +800,7 @@ async function finishInvitationHandling(invitation_id, roomKey) {
 
     const data = await response.json();
     if (data.success) {
-        await window.userKeychain.importRoomKey(roomKey, data.room.slug);
+        await window.userKeychain.importRoomKey(data.room.slug, roomKey);
         createRoomItem(data.room);
         connectWebSocket(data.room.slug);
         connectWhisperSocket(data.room.slug);
@@ -787,8 +832,7 @@ function createRoomItem(roomData) {
 
     snippet.setProps({
         slug: roomData.slug,
-        roomName: roomData.room_name,
-        htmlBefore: '<div class="dot-lg" id="unread-msg-flag"></div>',
+        name: roomData.room_name,
         context: 'room'
     });
     snippet.setAttribute('data-room-slug', roomData.slug);
@@ -803,6 +847,7 @@ function createRoomItem(roomData) {
 
 async function loadRoom(btn = null, slug = null) {
     await getPassKey();
+    await window.userKeychain.waitingToLoad;
     if (rooms.length === 0) {
         history.replaceState(null, '', `/groupchat`);
         switchDyMainContent('group-welcome-panel');
@@ -821,7 +866,6 @@ async function loadRoom(btn = null, slug = null) {
     try {
         roomData = await RequestRoomContent(slug);
     } catch {
-        console.error('room not found', slug);
         history.replaceState(null, '', `/groupchat`);
         switchDyMainContent('group-welcome-panel');
         return;
@@ -864,16 +908,19 @@ async function loadRoom(btn = null, slug = null) {
 
     if (roomData.room_description) {
         const descriptObj = JSON.parse(roomData.room_description);
-        console.log(descriptObj, roomData);
         const roomDescription = await decryptWithSymKey(roomKey, descriptObj.ciphertext, descriptObj.iv, descriptObj.tag, false);
         chatControlPanel.querySelector('#description-field').textContent = roomDescription;
         activeRoom.room_description = roomDescription;
     }
     if (roomData.system_prompt) {
         const systemPromptObj = JSON.parse(roomData.system_prompt);
-        const systemPrompt = await decryptWithSymKey(roomKey, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
-        chatControlPanel.querySelector('#system_prompt-field').innerText = systemPrompt;
-        activeRoom.system_prompt = systemPrompt;
+        if (systemPromptObj === null) {
+            console.error('System prompt object is null. This may indicate a problem with the data format or encryption.');
+        } else {
+            const systemPrompt = await decryptWithSymKey(roomKey, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
+            chatControlPanel.querySelector('#system_prompt-field').innerText = systemPrompt;
+            activeRoom.system_prompt = systemPrompt;
+        }
     }
 
     for (const msgData of roomData.messagesData) {
@@ -889,10 +936,11 @@ async function loadRoom(btn = null, slug = null) {
             }
         }
     }
-    window.oldUiMessageHistory.loadConversation(activeRoom);
+    activeRoom.messages = roomData.messagesData;
+    window.oldUiMessageHistory.loadConversation('room', activeRoom);
     window.oldUiBridge.triggerLoadSystemPrompt(activeRoom.system_prompt);
-    filterRoleElements(roomData.role);
     loadMessagesOnGUI(roomData.messagesData);
+    filterRoleElements(roomData.role);
     scrollToLast(true);
 }
 
@@ -1002,6 +1050,9 @@ let tempSearchResult;
 async function searchUser(searchBar) {
     const query = searchBar.value.trim();
     const resultPanel = searchBar.closest('.search-panel').querySelector('#searchResults');
+    const userInfo = window.getAuthenticatedConnection().userinfo;
+    const hawkiUsername = window.getConfig().ai.hawkiUserUsername;
+
 
     if (query.length > 2) { // Start searching after 3 characters
         try {
@@ -1153,7 +1204,12 @@ function generateRandomColor() {
 //#endregion
 
 //#region Room Control Panel
-function openRoomCP() {
+async function openRoomCP(slug) {
+    // Legacy support -> If we are currently not in the conversation with the slug
+    // we MUST open it, otherwise we can't show the information.
+    if (activeRoom.slug !== slug) {
+        await loadRoom(null, slug);
+    }
 
     // if edit modes are still active deactivate them
     const cp = document.getElementById('room-control-panel');
@@ -1276,14 +1332,13 @@ async function submitInfoField() {
 
     const roomCP = document.getElementById('room-control-panel');
 
-
     const chatName = roomCP.querySelector('#chat-name').textContent;
-    document.getElementById('rooms-list')
-        .querySelector(`.selection-item[slug="${activeRoom.slug}"`)
-        .querySelector('.label').innerText = chatName;
+    window.oldUiMessageHistory.updateConversation({name: chatName});
 
     const description = roomCP.querySelector('#description-field').textContent;
     const systemPrompt = roomCP.querySelector('#system_prompt-field').textContent;
+    window.oldUiBridge.triggerLoadSystemPrompt(systemPrompt);
+    window.oldUiMessageHistory.updateConversation({system_prompt: systemPrompt});
 
     const roomKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).roomKey;
 
@@ -1310,8 +1365,15 @@ async function submitInfoField() {
 }
 
 
-async function requestDeleteRoom(slug) {
-    const url = `/req/room/removeRoom/${slug}`;
+async function requestDeleteRoom(mustConfirm) {
+    if (mustConfirm !== false) {
+        const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_deleteRoom'));
+        if (!confirmed) {
+            return;
+        }
+    }
+
+    const url = `/req/room/removeRoom/${activeRoom.slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
@@ -1331,18 +1393,19 @@ async function requestDeleteRoom(slug) {
             console.error('Room removal was not successful!');
         }
     } catch (error) {
-        console.error('Failed to remove room!');
+        console.error('Failed to remove room!', error);
     }
 }
 
 
-async function leaveRoom() {
-
-    const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_leaveRoom'));
-    if (!confirmed) {
-        return;
+async function leaveRoom(mustConfirm) {
+    if (mustConfirm !== false) {
+        const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_leaveRoom'));
+        if (!confirmed) {
+            return;
+        }
     }
-    const listItem = document.querySelector(`.selection-item[slug="${activeRoom.slug}"]`);
+    const listItem = document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${activeRoom.slug}"]`);
     const list = listItem.parentElement;
 
     const url = `/req/room/leaveRoom/${activeRoom.slug}`;
@@ -1379,7 +1442,7 @@ async function leaveRoom() {
 
 
 function removeListItem(slug) {
-    const listItem = document.querySelector(`.selection-item[slug="${slug}"]`);
+    const listItem = document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${slug}"]`);
     const list = listItem.parentElement;
     listItem.remove();
 
@@ -1393,12 +1456,12 @@ function removeListItem(slug) {
 }
 
 async function removeMemberFromRoom(username) {
+    const hawkiUsername = window.getConfig().ai.hawkiUserUsername;
 
     if (username === hawkiUsername) {
         console.error('You can not remove HAWKI from the Room!');
         return false;
     }
-
 
     const confirmed = await openModal(ModalType.CONFIRM, __('Cnf_removeMember'));
     if (!confirmed) {
@@ -1456,7 +1519,6 @@ function selectRoomAvatar(btn, upload = false) {
 }
 
 async function uploadRoomAvatar(image) {
-    console.log('uploadRoomAvatar');
     const url = `/req/room/uploadAvatar/${activeRoom.slug}`;
 
     const temp = activeRoom ? 1 : 0;
@@ -1476,7 +1538,6 @@ async function uploadRoomAvatar(image) {
         const data = await response.json();
 
         if (data.success) {
-            // console.log('Image Uploaded Successfully');
             return data.url;
 
         } else {
@@ -1520,7 +1581,6 @@ async function updateRoomInfo(slug, formData) {
 
         if (data.success) {
             return data;
-            console.log('Room Information updated successfully');
         }
     } catch (error) {
         console.error('Error fetching data:', error);

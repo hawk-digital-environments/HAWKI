@@ -37,6 +37,7 @@ function toggleSettingsPanel(activation) {
 async function fetchGuidelines() {
     // Assume fetchLatestPolicy() returns an object {view, announcement}
     const {view, announcement} = await fetchLatestPolicy();
+    const md = await window.hawkiDependencyLoader('md');
 
     // Render the HTML (MD rendered to HTML string)
     let renderedHtml = view;

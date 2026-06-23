@@ -1,3 +1,10 @@
+<!--
+  @component Two-panel animated container for dropdown menus with an optional
+  detail view. When `open` is false the default `children` panel is visible;
+  setting `open` to true slides in the `details` panel. Height is
+  spring-animated so the transition between panels (which typically differ in
+  height) eases instead of snapping.
+-->
 <script lang="ts">
 
     import {type Snippet} from 'svelte';
@@ -7,8 +14,11 @@
     import {mergeProps} from 'bits-ui';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
+        /** Whether the detail panel is visible. False shows `children`; true shows `details`. */
         open: boolean;
+        /** Default list/summary panel. */
         children: Snippet;
+        /** Detail panel revealed when `open` is true. */
         details: Snippet;
     }
 

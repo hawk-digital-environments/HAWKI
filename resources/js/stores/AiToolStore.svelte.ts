@@ -27,6 +27,7 @@ export class AiToolStore {
     /** All registered AI tools. Populated after {@link loadAiToolsAndCapabilities} resolves. */
     public tools = $state<AiTool[]>([]);
 
+    /** Returns the tool with the given `name`, or `null` if it isn't registered. */
     public getOneByName(name: string): AiTool | null {
         const tool = this.tools.find(t => t.name === name);
         if (!tool) {
@@ -35,6 +36,8 @@ export class AiToolStore {
         return tool;
     }
 
+    /** Returns `true` when `tool` is listed in `model.tool_ids`. Accepts a tool
+     *  object or a tool name string. */
     public isAvailableForModel(tool: AiTool | string, model: AiModel): boolean {
         if (typeof tool === 'string') {
             tool = this.tools.find(t => t.name === tool) as AiTool;
@@ -47,10 +50,12 @@ export class AiToolStore {
         return model.tool_ids.includes(parseInt(tool.id));
     };
 
+    /** Returns `true` only when every tool in `tools` is available for `model`. */
     public areAllToolsAvailableForModel(tools: (AiTool | string)[], model: AiModel): boolean {
         return tools.every(tool => this.isAvailableForModel(tool, model));
     };
 
+    /** Returns the subset of registered tools that `model` supports. */
     public availableToolsForModel(model: AiModel): AiTool[] {
         return this.tools.filter(tool => this.isAvailableForModel(tool, model));
     };
@@ -58,6 +63,13 @@ export class AiToolStore {
     /** All registered capability definitions. Populated after {@link loadAiToolsAndCapabilities} resolves. */
     public capabilities = $state<AiToolCapability[]>([]);
 
+    /**
+     * Returns `true` when `capability` is enabled for `model`.
+     *
+     * Checks `model.capabilities[id]` first; falls back to the capability's
+     * `default_value` when the model has no explicit override. Any value other
+     * than `'no'` is treated as enabled.
+     */
     public isAvailableCapabilityOfModel(capability: AiToolCapability | string, model: AiModel): boolean {
         if (typeof capability === 'string') {
             capability = this.capabilities.find(c => c.id === capability) as AiToolCapability;
@@ -74,10 +86,12 @@ export class AiToolStore {
         return capabilityValue !== 'no';
     };
 
+    /** Returns `true` only when every capability in `capabilities` is enabled for `model`. */
     public areAllCapabilitiesAvailableForModel(capabilities: (AiToolCapability | string)[], model: AiModel): boolean {
         return capabilities.every(capability => this.isAvailableCapabilityOfModel(capability, model));
     };
 
+    /** Returns the subset of registered capabilities that are enabled for `model`. */
     public availableCapabilitiesForModel(model: AiModel): AiToolCapability[] {
         return this.capabilities.filter(capability => this.isAvailableCapabilityOfModel(capability, model));
     };
@@ -97,6 +111,8 @@ export class AiToolStore {
         return map;
     });
 
+    /** Returns the capability linked to `tool` via its `capability_key`, or `null`
+     *  when the tool has no capability or the key doesn't match a registered capability. */
     public getCapabilityForTool(tool: AiTool | string): AiToolCapability | null {
         if (typeof tool === 'string') {
             return this.capabilityByToolName[tool] ?? null;

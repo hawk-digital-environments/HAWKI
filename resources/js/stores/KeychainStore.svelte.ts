@@ -3,6 +3,24 @@ import {createKeychainHandle, type KeychainHandle, type RoomKeys} from '$lib/dat
 import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
 
 
+/**
+ * Reactive store for the user's end-to-end encryption keychain.
+ *
+ * Holds the user's asymmetric keypair (`publicKey` / `privateKey`), the AI
+ * conversation key (`aiConvKey`), and a map of per-room symmetric keys
+ * (`roomKeys`). All values start as `null` / empty and are populated
+ * asynchronously once a passkey becomes available on the legacy bridge.
+ *
+ * Loading is deferred: the store subscribes to the legacy bridge's passkey
+ * via a reactive `$effect` inside the constructor and only calls
+ * `handle.load()` once both the passkey and an authenticated connection are
+ * present. The `waitingToLoad` promise resolves when that initial load
+ * completes, allowing callers to await readiness before performing
+ * cryptographic operations.
+ *
+ * Use `keychainStore` (the exported singleton) rather than constructing
+ * this class directly.
+ */
 export class KeychainStore {
     constructor(
         private handle: KeychainHandle,
@@ -46,12 +64,19 @@ export class KeychainStore {
         });
     }
 
+    /** Resolves when the initial keychain load has completed (or was skipped
+     *  because the connection is unauthenticated). Await this before reading keys. */
     public readonly waitingToLoad: Promise<void>;
+    /** The user's public key. `null` until the keychain has loaded. */
     public publicKey: CryptoKey | null = $state(null);
+    /** The user's private key. `null` until the keychain has loaded. */
     public privateKey: CryptoKey | null = $state(null);
+    /** The shared AI conversation key. `null` until the keychain has loaded. */
     public aiConvKey: CryptoKey | null = $state(null);
+    /** Per-room symmetric keys keyed by room slug. Empty until the keychain has loaded. */
     public roomKeys = $state({} as Record<string, RoomKeys>);
 
+    /** Returns `true` when `passkey` successfully decrypts the stored keychain. */
     public async validateKeychainPassword(passkey: string) {
         return await this.handle.validateKeychainPassword(passkey);
     }
@@ -64,10 +89,13 @@ export class KeychainStore {
         await this.handle.initializeNewKeychain();
     }
 
+    /** Generates a fresh symmetric key pair for `slug` and persists it in the keychain. */
     public async createNewRoomKey(slug: string) {
         return await this.handle.createRoomKeys(slug);
     }
 
+    /** Imports an externally-received `key` for `slug` into the keychain (e.g.
+     *  when a user is invited to an existing room and receives its key). */
     public async importRoomKey(slug: string, key: CryptoKey) {
         return await this.handle.importRoomKey(slug, key);
     }

@@ -1,13 +1,11 @@
 <script lang="ts">
 
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
-    import {ChevronDown, type LucideProps, Pencil, Trash2} from '@lucide/svelte';
+    import {ChevronDown, type LucideProps, Pencil} from '@lucide/svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import type {Component, ComponentProps, Snippet} from 'svelte';
-    import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
+    import type {Component, ComponentProps} from 'svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
@@ -16,40 +14,32 @@
     const toastContext = useToastContext();
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
-        chatName: string;
-        chatSlug: string;
-        onChatNameChange?: (slug: string, newName: string) => void;
+        name: string;
+        slug: string;
+        onNameChange?: (slug: string, newName: string) => void;
         triggerIcon?: Component<LucideProps>;
         allowRename?: boolean;
-        allowDelete?: boolean;
-        chatNameClickRenames?: boolean;
-        /** If true, "delete" is treated as "leaving a room" (including modified text and confirmation) */
-        deleteIsLeave?: boolean;
-        onDelete?: (slug: string) => void;
-        moreItems?: Snippet;
+        nameClickRenames?: boolean;
         /**
          * Additional props forwarded to the ButtonWithTooltip that triggers the menu.
          * Be careful with this, overriding certain props (like `tooltip`) can break the component's functionality or accessibility.
          */
         buttonProps?: Partial<ComponentProps<typeof ButtonWithTooltip>>;
         isRenaming?: boolean;
-        isDeleting?: boolean;
+        block?: boolean;
     }
 
     let {
-        chatName = $bindable(''),
-        chatSlug,
-        onChatNameChange = (slug, newName) => oldUiBridge.triggerRenameChat(slug, newName),
+        name = $bindable(''),
+        slug,
+        onNameChange = (slug, newName) => oldUiBridge.triggerRenameChat(slug, newName),
         triggerIcon = ChevronDown,
         allowRename = true,
-        allowDelete = true,
-        chatNameClickRenames = false,
-        deleteIsLeave = false,
-        onDelete = (slug) => oldUiBridge.triggerDeleteChat(slug),
-        moreItems,
+        nameClickRenames = false,
         buttonProps,
-        isDeleting = $bindable(false),
         isRenaming = $bindable(false),
+        block = false,
+        children,
         ...restProps
     }: Props = $props();
 
@@ -57,14 +47,14 @@
     let renameHasIssue = $state(false);
 
     function dispatchRename(newName: string) {
-        if (!chatSlug || !isRenaming) {
+        if (!slug || !isRenaming) {
             return;
         }
-        if (newName === chatName) {
+        if (newName === name) {
             isRenaming = false;
             return;
         }
-        onChatNameChange(chatSlug, newName);
+        onNameChange(slug, newName);
         isRenaming = false;
     }
 
@@ -91,47 +81,19 @@
     $effect(() => {
         if (allowRename && isRenaming && renameInput) {
             setTimeout(() => {
-                if(!renameInput){
+                if (!renameInput) {
                     return;
                 }
-                renameInput.value = chatName; // Reset input value to current chat name when renaming starts, in case it was changed while not focused
+                renameInput.value = name; // Reset input value to current chat name when renaming starts, in case it was changed while not focused
                 renameInput.focus();
                 renameInput.select();
             });
         }
     });
-
-    const deleteActionText = $derived.by(() => {
-        if (deleteIsLeave) {
-            return __('chat.nameMenu.leaveAction');
-        }
-        return __('chat.nameMenu.deleteAction');
-    });
-
-    const deleteConfirmDescription = $derived.by(() => {
-        if (deleteIsLeave) {
-            return __('chat.nameMenu.leaveConfirmDescription');
-        }
-        return __('chat.nameMenu.deleteConfirmDescription');
-    });
-
-    const deleteConfirmTitle = $derived.by(() => {
-        if (deleteIsLeave) {
-            return __('chat.nameMenu.leaveConfirmTitle', {name: chatName});
-        }
-        return __('chat.nameMenu.deleteConfirmTitle', {name: chatName});
-    });
 </script>
 
-<ConfirmDialog
-    bind:open={isDeleting}
-    title={deleteConfirmTitle}
-    description={deleteConfirmDescription}
-    onConfirm={() => onDelete(chatSlug) }
-/>
-
 <div {...mergeProps(
-    {class: 'chat-name-menu'},
+    {class: ['chat-name-menu', block && 'block']},
     restProps
 )}>
     {#if allowRename && isRenaming}
@@ -144,19 +106,19 @@
             onkeydown={onRenameKeyDown}
             autofocus
             aria-label={__('chat.nameMenu.newNameAriaLabel')}
-            value={chatName}
+            value={name}
             class={[
                 "chat-name-input",
                 renameHasIssue ? 'has-issue' : ''
             ]}
         />
     {:else}
-        {#if chatNameClickRenames}
+        {#if nameClickRenames}
             <button class="chat-name click-to-rename" onclick={() => isRenaming = true}>
-                {chatName}
+                {name}
             </button>
         {:else}
-            <span class="chat-name">{chatName}</span>
+            <span class="chat-name">{name}</span>
         {/if}
         <DropdownMenu>
             {#snippet trigger({props})}
@@ -172,35 +134,27 @@
                     buttonProps as any,
                 )}/>
             {/snippet}
-            {#if allowRename && !!chatSlug}
-                <DropdownMenuItem onclick={() => isRenaming = true}>
-                    <span><Pencil size="12"/> {__('chat.nameMenu.rename')}</span>
+            {#if allowRename && !!slug}
+                <DropdownMenuItem onclick={() => isRenaming = true} icon={Pencil}>
+                    {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
             {/if}
-            {@render moreItems?.()}
-            <DropdownMenuSeparator/>
-            {#if allowDelete && !!chatSlug}
-                <DropdownMenuItem onclick={() => isDeleting = true}>
-                    <span class="danger">
-                        <Trash2 size="12"/> {deleteActionText}
-                    </span>
-                </DropdownMenuItem>
-            {/if}
+            {@render children?.()}
         </DropdownMenu>
     {/if}
 </div>
 
 <style>
-    .danger {
-        color: var(--color-error)
-    }
-
     .chat-name-menu {
         width: 100%;
         display: flex;
         align-items: center;
         gap: var(--space-1);
         flex-shrink: 1;
+
+        &.block {
+            justify-content: space-between;
+        }
     }
 
     .chat-name-input {

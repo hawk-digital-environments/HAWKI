@@ -109,31 +109,35 @@
 
 </script>
 
-{#if composerContext.type === 'aiConv'}
-    <ButtonWithTooltip
-        tooltip={__('chat.composer.actions.improveTooltip')}
-        size="xs"
-        variant="ghost"
-        iconRight={Sparkles}
-        onclick={handleImprovement}
-        disabled={!composerContext.guard.canSend || composerContext.guard.disablesFeature('suggestions')}
-    />
+{#if composerContext.guard.showsAiUiElements}
+    <div transition:growTransition={{mode: 'horizontal'}}>
+        <ButtonWithTooltip
+            tooltip={__('chat.composer.actions.improveTooltip')}
+            size="xs"
+            variant="ghost"
+            iconRight={Sparkles}
+            onclick={handleImprovement}
+            disabled={!composerContext.guard.canSend || composerContext.guard.disablesFeature('suggestions')}
+        />
+    </div>
 {/if}
 
 {#if showCancel}
-    <ButtonWithTooltip
-        iconRight={Square}
-        tooltip={cancelTooltip}
-        size="xs"
-        variant="stroke"
-        onclick={cancelAction}
-    >
-        <Breakpoint>
-            {#snippet bpMdAndBigger()}
-                {__('chat.composer.actions.cancelLabel')}
-            {/snippet}
-        </Breakpoint>
-    </ButtonWithTooltip>
+    <div transition:growTransition={{mode: 'horizontal'}}>
+        <ButtonWithTooltip
+            iconRight={Square}
+            tooltip={cancelTooltip}
+            size="xs"
+            variant="stroke"
+            onclick={cancelAction}
+        >
+            <Breakpoint>
+                {#snippet bpMdAndBigger()}
+                    {__('chat.composer.actions.cancelLabel')}
+                {/snippet}
+            </Breakpoint>
+        </ButtonWithTooltip>
+    </div>
 {/if}
 
 {#if !(composerContext.sendStatus?.active && composerContext.sendStatus?.canBeAborted)}

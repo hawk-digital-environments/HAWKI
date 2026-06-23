@@ -52,7 +52,6 @@ function exportAsCsv() {
     const messages = convertChatlogToJson();  // Get the messages list
 
     if (messages.length === 0) {
-        console.log('No data to export');
         return;
     }
 
@@ -115,6 +114,7 @@ async function exportAsPDF() {
     const summery = await requestChatlogSummery(summeryMsg);
 
 
+    const jsPDF = await window.hawkiDependencyLoader('jsPdf');
     const doc = new jsPDF();
 
     const maxPageHeight = 270; // Maximum height before adding a new page
@@ -284,7 +284,7 @@ async function exportAsPDF() {
 }
 
 
-function transformMarkdownToDocxContent(text) {
+function transformMarkdownToDocxContent(text, docx) {
     const markdownPatterns = [
         {regex: /\*\*(.*?)\*\*/g, tag: 'bold'},      // Bold: **text**
         {regex: /\*(.*?)\*/g, tag: 'italics'},       // Italic: *text*
@@ -347,13 +347,16 @@ function transformMarkdownToDocxContent(text) {
 
 // In your main export function, adapt to handle multiple paragraphs per message:
 async function exportAsWord() {
+    window.oldUiBridge.triggerSendToast('Einen Moment, das Word-Dokument wird vorbereitet', 'info');
+
     const messages = convertChatlogToJson();
+
     if (messages.length === 0) {
         window.oldUiBridge.triggerSendToast(window.__('legacy.export.noDataError'), 'error');
         return;
     }
 
-    window.oldUiBridge.triggerSendToast('Einen Moment, das Word-Dokument wird vorbereitet', 'info');
+    const docx = await window.hawkiDependencyLoader('docx');
 
     const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
     const summery = await requestChatlogSummery(summeryMsg);
@@ -393,7 +396,7 @@ async function exportAsWord() {
         })
     );
 
-    chatLogChildren.push(...transformMarkdownToDocxContent(summery));
+    chatLogChildren.push(...transformMarkdownToDocxContent(summery, docx));
 
 
     const systemPromptTxt = window.oldUiMessageHistory.systemPrompt;
@@ -480,10 +483,9 @@ async function exportAsWord() {
                 );
             }
         }
-        chatLogChildren.push(...transformMarkdownToDocxContent(message.content));
+        chatLogChildren.push(...transformMarkdownToDocxContent(message.content, docx));
 
     }
-
     const doc = new docx.Document({
         sections: [
             {
@@ -612,6 +614,7 @@ async function preparePrintPage() {
 
     // First, add all main messages
     activeThreadIndex = 0;
+    await initializeMessageFormating();
     messages.forEach(messageObj => {
         generateMessageElements(messageObj, true);
     });
@@ -727,7 +730,6 @@ function createAttachmentPrintIcon(fileData) {
     }
 
     attachment.querySelector('.controls').remove();
-    attachment.querySelector('.burger-btn').remove();
     attachment.querySelector('.status-indicator').remove();
     iconImg.setAttribute('src', imgPreview);
     return attachment;

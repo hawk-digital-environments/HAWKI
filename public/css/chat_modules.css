@@ -417,10 +417,6 @@
         display: block;
     }
 
-    .chatlog.start-state #model-selector-burger {
-        max-height: 40vh;
-        overflow-y: auto;
-    }
 
     #start-title {
         display: none;
@@ -1039,10 +1035,9 @@
         display: block;
         box-sizing: border-box;
 
-        margin-left: 4rem;
-        margin-right: 4rem;
-        margin-top: 0;
-        margin-bottom: .5rem;
+        margin: 0 auto 0.5rem;
+        width: 100%;
+        max-width: 48rem;
     }
 
     @media (max-width: 950px) {
@@ -1366,7 +1361,8 @@
         border-left: var(--border-stroke-hairline);
     }
 
-    .attachment:hover .burger-btn {
+    .attachment:hover .burger-btn,
+    .burger-btn[aria-expanded="true"] {
         width: 1.2rem;
     }
 

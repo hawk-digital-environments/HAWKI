@@ -26,7 +26,6 @@ function onSidebarButtonDown(pageID) {
             const sidebar = document.getElementById(`${pageID}-sidebar`);
             const manualExpanded = sidebar.classList.contains('expanded');
             sidebar.dataset.manualExpanded = manualExpanded;
-            console.log('SIDEBAR', pageID);
 
             const content = document.getElementById(pageID);
             if (content) {
@@ -51,7 +50,6 @@ function setActiveSidebarButton(activeModule) {
 
     const sidebarButtons = document.querySelectorAll('.sidebar-btn');
     const targetId = `${activeModule}-sb-btn`;
-    // console.log(targetId);
 
     sidebarButtons.forEach(sbb => {
         if (sbb.classList.contains('active')) {
@@ -79,6 +77,8 @@ function CheckModals() {
         const modal = modals[i];
         if (localStorage.getItem(modal.id) === 'true') {
             modal.remove();
+        } else if (typeof modal.init === 'function') {
+            modal.init();
         }
     }
 }
@@ -130,191 +130,12 @@ function toggleRelativePanelClass(targetID, sender, className, activation = null
 
 //#region Burgers & Dropdown Click Events
 
-document.addEventListener('click', function (event) {
-    let clickedElement = event.target;
-    let detectedInputPanel;
-    let clickedBurgerMenu = null;
-    //interate back until we find the input-container
-    while (clickedElement) {
-
-        if (clickedElement.classList.contains('burger-btn') ||
-            clickedElement.classList.contains('burger-item')) {
-            return;
-        }
-        if (clickedElement.classList.contains('params-wrapper')) {
-            return;
-        }
-        if (clickedElement.id === 'quick-actions' || clickedElement.id === 'quick-actions') {
-            //if a input panel is clicked
-            clickedBurgerMenu = clickedElement;
-        }
-        if (clickedElement.getAttribute('data-sender-menu-id')) {
-            const menuId = clickedElement.getAttribute('data-sender-menu-id');
-            const menu = document.querySelector(`[data-menu-id="${menuId}"]`);
-            if (menu) {
-                clickedBurgerMenu = menu;
-            }
-        }
-
-
-        if (clickedElement.id === 'input-container') {
-            //if a input panel is clicked
-            detectedInputPanel = clickedElement;
-        }
-        createandsendInvi;
-        clickedElement = clickedElement.parentElement;
-    }
-
-    closeBurgerMenus(clickedBurgerMenu);
-});
-
-
-let burgerId = 0;
-
-function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = true) {
-    let menu;
-    if (isRelativeToElement) {
-        menu = sender.parentElement.querySelector(`#${id}`);
-    } else {
-        menu = document.getElementById(`${id}`);
-    }
-    //close all other menus
-    closeBurgerMenus(menu);
-
-    //reset style to fit content
-    menu.style.width = 'fit-content';
-
-    if (alignToElement) {
-        const btnRect = sender.getBoundingClientRect();
-        menu.style.top = `${btnRect.bottom}px`;
-        menu.style.left = `${btnRect.left}px`;
-    }
-
-    const isAlreadyOpen = menu.getAttribute('data-menu-state') === 'open';
-
-    console.log('menu', menu, 'isAlreadyOpen', isAlreadyOpen, 'toggleOnSenderClick', toggleOnSenderClick);
-    if (toggleOnSenderClick && isAlreadyOpen) {
-        if (closeMenuOnSelect) {
-            closeBurgerMenus(null);
-        } else {
-            closeBurgerMenus(menu);
-        }
-    } else {
-        const menuId = burgerId++;
-        menu.setAttribute('data-menu-id', `${menuId}`);
-        menu.setAttribute('data-menu-state', 'open');
-
-        if (sender) {
-            sender.setAttribute('data-sender-menu-id', `${menuId}`);
-            sender.setAttribute('data-sender-menu-state', 'open');
-            sender.classList.add('active', 'dropdown-open');
-            const senderIcon = sender.querySelector('.icon');
-            if (senderIcon) {
-                senderIcon.classList.add('active');
-            }
-        }
-        menu.style.display = `block`;
-        setTimeout(() => {
-            //add some buffer to the width
-            //without buffer bold text on hover changes menu width
-            const menuWidth = menu.getBoundingClientRect().width;
-            menu.style.width = `${menuWidth + 10}px`;
-
-            menu.style.opacity = `1`;
-        }, 50);
-    }
-}
-
-
-function closeBurgerMenus(clickedBurgerMenu) {
-    // Disable all active senders
-    const menuIdToKeepOpen = clickedBurgerMenu ? clickedBurgerMenu.getAttribute('data-menu-id') : null;
-    let senderSelector = '[data-sender-menu-id]';
-    if (clickedBurgerMenu) {
-        senderSelector = `[data-sender-menu-id]:not([data-sender-menu-id="${menuIdToKeepOpen}"])`;
-    }
-    document.querySelectorAll(senderSelector).forEach(sender => {
-        sender.classList.remove('active', 'dropdown-open');
-
-        sender.setAttribute('data-sender-menu-state', 'closed');
-
-        const senderIcon = sender.querySelector('.icon');
-        if (senderIcon) {
-            senderIcon.classList.remove('active');
-        }
-    });
-
-    const menus = document.querySelectorAll('.burger-dropdown');
-
-    menus.forEach(menu => {
-        if (clickedBurgerMenu && menu.id === clickedBurgerMenu.id) {
-            return;
-        } else if (menu.style.opacity !== '0') {
-            const icon = menu.parentElement.querySelector('.icon');
-            if (icon && icon.classList.contains('active')) {
-                icon.classList.remove('active');
-            }
-
-            menu.style.opacity = '0';
-            document.querySelectorAll('.burger-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            setTimeout(() => {
-                menu.style.display = 'none';
-            }, 300);
-        }
-        menu.setAttribute('data-menu-state', 'closed');
-    });
-}
-
-
-//#endregion
-
 
 function closeModal(closeBtn) {
     const modal = closeBtn.closest('.modal');
     modal.style.display = 'none';
 
 }
-
-
-async function smoothDeleteWords(element, totalTime) {
-    // Get the content based on the element type
-    let content = element.tagName === 'TEXTAREA' ? element.value : element.innerText;
-    let words = content.trim().split(/\s+/);
-
-    // Calculate interval for each word deletion based on totalTime
-    let interval = totalTime / words.length;
-
-    // Helper function to pause for a specified time
-    function delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    // Delete words one by one asynchronously
-    while (words.length > 0) {
-        words.pop();  // Remove the last word
-        let newContent = words.join(' ');
-
-        // Update the content based on the element type
-        if (element.tagName === 'TEXTAREA') {
-            element.value = newContent;
-        } else {
-            element.innerText = newContent;
-        }
-
-        await delay(interval);  // Wait for the specified interval before the next deletion
-    }
-
-    // Clear the content completely at the end
-    if (element.tagName === 'TEXTAREA') {
-        element.value = '';
-    } else {
-        element.innerText = '';
-    }
-}
-
 
 function playSound(type) {
 
@@ -383,28 +204,33 @@ function reactionMouseUp(button) {
 
 
 function checkWindowSize(thresholdWidth, thresholdHeight) {
+    let debounceTimer;
+
     // Function to check if window size is smaller than the threshold
     function onResize() {
-        const currentWidth = window.innerWidth;
-        const currentHeight = window.innerHeight;
-        const sidebar = document.getElementById(`${activeModule}-sidebar`) ? document.getElementById(`${activeModule}-sidebar`) : null;
-        if (currentWidth < thresholdWidth || currentHeight < thresholdHeight) {
-            if (sidebar) {
-                if (!sidebar.dataset.manualExpanded) {
-                    document.getElementById(`${activeModule}-sidebar`).classList.remove('expanded');
-                    document.querySelector('.dy-main-content').classList.remove('expanded');
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const currentWidth = window.innerWidth;
+            const currentHeight = window.innerHeight;
+            const sidebar = document.getElementById(`${activeModule}-sidebar`) ? document.getElementById(`${activeModule}-sidebar`) : null;
+            if (currentWidth < thresholdWidth || currentHeight < thresholdHeight) {
+                if (sidebar) {
+                    if (!sidebar.dataset.manualExpanded) {
+                        document.getElementById(`${activeModule}-sidebar`).classList.remove('expanded');
+                        document.querySelector('.dy-main-content').classList.remove('expanded');
+                    }
+                }
+            } else {
+
+                if (sidebar) {
+                    if (!sidebar.dataset.manualExpanded) {
+                        document.getElementById(`${activeModule}-sidebar`).classList.add('expanded');
+                        document.querySelector('.dy-main-content').classList.add('expanded');
+
+                    }
                 }
             }
-        } else {
-
-            if (sidebar) {
-                if (!sidebar.dataset.manualExpanded) {
-                    document.getElementById(`${activeModule}-sidebar`).classList.add('expanded');
-                    document.querySelector('.dy-main-content').classList.add('expanded');
-
-                }
-            }
-        }
+        }, 100);
     }
 
     // Add event listener for the 'resize' event
@@ -417,8 +243,6 @@ function checkWindowSize(thresholdWidth, thresholdHeight) {
     }, 100);
 
 }
-
-//#region Notification
 
 function setSessionCheckerTimer(time) {
     setTimeout(() => {
@@ -435,6 +259,3 @@ function setSessionCheckerTimer(time) {
             });
     }, time * 1000);
 }
-
-
-//#endregion

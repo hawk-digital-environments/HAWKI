@@ -1,3 +1,9 @@
+<!--
+  @component Tooltip that appears on hover or keyboard focus. On touch devices
+  a 300 ms long-press opens the tooltip (and the context menu is suppressed so
+  the two don't clash). The trigger is provided via the `children` snippet;
+  tooltip content via the `tooltip` prop (string or snippet).
+-->
 <script lang="ts">
     import {mergeProps, Tooltip as TooltipPrimitive, type TooltipContentProps} from 'bits-ui';
     import type {Snippet} from 'svelte';

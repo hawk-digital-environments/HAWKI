@@ -1,6 +1,7 @@
 import type {MessageSenderTransportInterface, MessageSenderTransportOptions} from '$lib/components/chat/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {OldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
 
+/** Forwards a send request to the legacy UI via `OldUiBridge`. The only concrete transport. */
 export class OldUiBridgeTransport implements MessageSenderTransportInterface {
     constructor(
         private readonly oldUiBridge: OldUiBridge
@@ -16,6 +17,7 @@ export class OldUiBridgeTransport implements MessageSenderTransportInterface {
             model: context.model.current,
             contextType: context.type,
             message: context.message,
+            containsAiHandle: context.containsAiHandle,
             attachments: context.attachments.list,
             tools: context.tools.active,
             parameters: {

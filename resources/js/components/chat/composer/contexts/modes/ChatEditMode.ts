@@ -10,6 +10,15 @@ export interface ChatEditModeState {
     originalAttachments: string[];
 }
 
+/**
+ * Mode for editing an existing user message.
+ *
+ * Pre-fills the composer with the original message text and its attachments
+ * (reconstructed as `RemoteFile` references to already-uploaded files). Locks
+ * model, settings, and tools UI to prevent changes that would make the edited
+ * message inconsistent with the original. Blocks send until the user actually
+ * changes the text or attachments.
+ */
 export class ChatEditMode extends AbstractMode<OldUiConversationMessage, ChatEditModeState> {
     public canSend(context: ComposerContext, state: ChatEditModeState): boolean {
         return (context.message.trim() !== state.originalMessage.trim())

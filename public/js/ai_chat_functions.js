@@ -5,8 +5,6 @@ let activeConv;
 let chatlogElement;
 
 function initializeAiChatModule(chatsObject) {
-    console.log('INITIALIZE AI CHAT MODULE');
-
     convMessageTemplate = document.getElementById('message-template');
     chatItemTemplate = document.getElementById('selection-item-template');
     chatlogElement = document.querySelector('.chatlog');
@@ -19,9 +17,6 @@ function initializeAiChatModule(chatsObject) {
     if (document.querySelector('.trunk').childElementCount == 0) {
         chatlogElement.classList.add('start-state');
     }
-
-    // const input = document.getElementById('input-container');
-    // initFileUploader(input);
 
     initializeChatlogFunctions();
 
@@ -188,8 +183,6 @@ async function buildRequestObjectForAiConv(
     let messageObj;
     let metadata;
 
-    console.log('RESPONSE', response);
-
     return new Promise((resolve, reject) => {
         // Start buildRequestObject processing
         buildRequestObject(msgAttributes, async (data, done) => {
@@ -212,7 +205,7 @@ async function buildRequestObjectForAiConv(
                 messageObj.params = msgAttributes['metadata'].params;
 
                 if (!messageElement) {
-                    initializeMessageFormating();
+                    await initializeMessageFormating();
                     messageElement = addMessageToChatlog(messageObj, false);
                 }
                 messageElement.dataset.rawMsg = msg;
@@ -364,7 +357,7 @@ async function initNewConv(firstMessage, payload) {
     convItem.setAttribute('data-room-slug', convData.slug);
     convItem.setProps({
         slug: convData.slug,
-        roomName: convName
+        name: convName
     });
     //update URL
     history.replaceState(null, '', `/chat/${convData.slug}`);
@@ -376,7 +369,7 @@ async function initNewConv(firstMessage, payload) {
 
     //update active conv cache.
     activeConv = convData;
-    window.oldUiMessageHistory.loadConversation(convData);
+    window.oldUiMessageHistory.loadConversation('aiConv', convData);
 }
 
 function startNewChat() {
@@ -403,7 +396,7 @@ function createChatItem(conv = null) {
     if (conv) {
         snippet.setProps({
             slug: conv.slug,
-            roomName: conv.conv_name,
+            name: conv.conv_name,
             context: 'aiConv'
         });
         snippet.setAttribute('data-room-slug', conv.slug);
@@ -556,7 +549,7 @@ async function loadConv(btn = null, slug = null) {
     } else {
         chatlogElement.classList.add('start-state');
     }
-    window.oldUiMessageHistory.loadConversation(activeConv);
+    window.oldUiMessageHistory.loadConversation('aiConv', activeConv);
     window.oldUiBridge.triggerLoadSystemPrompt(activeConv.system_prompt);
     loadMessagesOnGUI(convData.messages);
     scrollToLast(true);

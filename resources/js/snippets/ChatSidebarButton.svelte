@@ -1,29 +1,34 @@
+<!-- This is probably a temporary component, since it mixes concerns between chat and room messages
+However, as we want to merge them both anyway, it's not worth the effort to split out the chat-specific parts into a separate component for now. -->
 <script lang="ts">
-
     import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-    import ChatNameMenu from '$lib/components/chat/nameMenu/ChatNameMenu.svelte';
-    import {Ellipsis} from '@lucide/svelte';
     import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
     import type {HTMLSvelteSnippetElement} from '$lib/svelteSnippetLoader.js';
-    import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
+    import RoomNameMenu from '$lib/components/chat/nameMenu/RoomNameMenu.svelte';
+    import AiConvNameMenu from '$lib/components/chat/nameMenu/AiConvNameMenu.svelte';
+    import type {ComponentProps} from 'svelte';
+    import {Ellipsis} from '@lucide/svelte';
 
     interface Props {
         /** The slug of the conversation this button represents. Clicking the button will open the conversation with this slug. */
         slug?: string;
         /** The name of the conversation to display. If not provided, the conversation name from oldUiMessageHistory will be used (if its slug matches the provided slug). */
-        roomName?: string;
+        name?: string;
         /** The context in which the button is rendered, which can be used to determine whether certain features (like renaming) should be enabled. */
         context: ComposerContextType;
         /** The snippet root element, which can be used to set props on the component from outside (e.g. setting the room name from oldUiMessageHistory). */
         root: HTMLSvelteSnippetElement;
+        /** Whether the conversation has unread messages. Shows a visual indicator if true. */
+        hasUnreadMessages?: boolean;
     }
 
     const {
         slug,
-        roomName,
+        name,
         context,
-        root
+        root,
+        hasUnreadMessages = false
     }: Props = $props();
 
     // Binding renaming allows us to prevent the click event from propagating and opening
@@ -32,11 +37,21 @@
 
     $effect(() => {
         if (slug && oldUiMessageHistory.conversationSlug === slug) {
-            if (roomName !== oldUiMessageHistory.conversationName) {
-                root.setProps({roomName: oldUiMessageHistory.conversationName});
+            if (name !== oldUiMessageHistory.conversationName) {
+                root.setProps({name: oldUiMessageHistory.conversationName});
             }
         }
     });
+
+    const sharedProps: ComponentProps<typeof RoomNameMenu | typeof AiConvNameMenu> = $derived.by(() => ({
+        slug,
+        name,
+        context,
+        hasUnreadMessages,
+        block: true,
+        triggerIcon: Ellipsis,
+        buttonProps: {class: 'chat-name-menu-button'}
+    }));
 </script>
 
 <button
@@ -44,24 +59,19 @@
     onclick={() => !isRenaming && slug && oldUiBridge.triggerOpenChat(slug)}>
 
     {#if context === 'room'}
+        <div class="dot-lg" id="unread-msg-flag" style={'display: ' + (hasUnreadMessages ? 'block' : 'none')}></div>
     {/if}
-    <ChatNameMenu
-        bind:isRenaming={isRenaming}
-        chatName={roomName ?? ''}
-        chatSlug={slug ?? ''}
-        chatNameClickRenames={false}
-        class="chat-name-menu-block"
-        triggerIcon={Ellipsis}
-        buttonProps={{class: 'chat-name-menu-button'}}
-    >
-        {#snippet moreItems()}
-            {#if context === 'room'}
-                <DropdownMenuItem>
-                    Hello
-                </DropdownMenuItem>
-            {/if}
-        {/snippet}
-    </ChatNameMenu>
+    {#if context === 'room'}
+        <RoomNameMenu
+            bind:isRenaming={isRenaming}
+            {...sharedProps}
+        />
+    {:else}
+        <AiConvNameMenu
+            bind:isRenaming={isRenaming}
+            {...sharedProps}
+        />
+    {/if}
 </button>
 
 <style>
@@ -109,10 +119,5 @@
 
     :global(.active) .sidebar-button {
         background-color: var(--highlight-color);
-    }
-
-    :global(.chat-name-menu-block) {
-        width: 100%;
-        justify-content: space-between;
     }
 </style>

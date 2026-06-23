@@ -1,58 +1,28 @@
-//#region UPLOAD FILE
-
-const uploadQueues = new Map();
-
-// Trigger click on the file input element
-function selectFile(sender) {
-    const inputContainer = sender.closest('.input-container');
-    const fileInput = inputContainer.querySelector('.file-upload-input');
-    if (fileInput) {
-        fileInput.click();
-    }
-}
-
-function setAttachmentsFilter(input_id) {
-    const attachments = uploadQueues.get(input_id);
-
-    let fileUploadFilterFlag = false;
-    let visionFilterFlag = false;
-    attachments.forEach(attachment => {
-        const type = checkFileFormat(attachment.fileData.mime);
-        if (type === 'image') {
-            visionFilterFlag = true;
-            addInputFilter(input_id, 'vision');
-        } else {
-            fileUploadFilterFlag = true;
-            addInputFilter(input_id, 'file_upload');
-        }
-    });
-
-    if (!visionFilterFlag) {
-        removeInputFilter(input_id, 'vision');
-    }
-    if (!fileUploadFilterFlag) {
-        removeInputFilter(input_id, 'file_upload');
-    }
-}
-
-// Prepare file for upload by creating needed metadata
-function createFileStruct(file) {
-    return {
-        tempId: generateUniqueId(),
-        file: file,
-        name: file.name,
-        size: file.size,
-        mime: file.type,
-        lastModified: file.lastModified,
-        status: 'pending' // pending, uploading, complete, error
-    };
-}
-
-
 // Add file to the UI for display
 
-function createAttachmentThumbnail(fileData, thumbType) {
+let boundListeners = false;
 
+// Yes, this will keep the
+const attachments = new Map();
+
+window.waitUntilReady(() => {
+    window.oldUiBridge.onDownloadAttachment(fileData => downloadFile(fileData));
+    window.oldUiBridge.onPreviewAttachment(fileData => previewFile(fileData));
+    window.oldUiBridge.onDeleteAttachment(async fileData => {
+        const category = fileData.category === 'private' ? 'conv' : 'room';
+        await requestAtchDelete(fileData.uuid, category);
+        const attachment = attachments.get(fileData.uuid);
+        if (attachment) {
+            attachment.remove();
+            attachments.delete(fileData.uuid);
+        }
+    });
+    window.oldUiMessageHistory.onLoadConversation(() => {
+        attachments.clear();
+    });
+});
+
+function createAttachmentThumbnail(fileData, thumbType) {
     const attachTemp = document.getElementById('attachment-thumbnail-template');
     const attachClone = attachTemp.content.cloneNode(true);
     const attachment = attachClone.querySelector('.attachment');
@@ -79,136 +49,21 @@ function createAttachmentThumbnail(fileData, thumbType) {
             break;
     }
 
-
-    if (thumbType === 'message') {
-        attachment.querySelector('.controls').remove();
-        const burgerBtn = attachment.querySelector('.burger-btn');
-        burgerBtn.addEventListener('click', () => {
-            openAttachmentDropDown(burgerBtn, attachment, fileData);
-        });
-
+    /** @var {HTMLSvelteSnippetElement|undefined} snippet */
+    const snippet = attachment.querySelector('svelte-snippet[type="AttachmentDropdown"]');
+    if (!snippet) {
+        console.error('Attachment dropdown snippet not found');
+    } else {
+        snippet.setAttribute('props', JSON.stringify({
+            fileData
+        }));
     }
-    if (thumbType === 'input') {
-        attachment.querySelector('.burger-btn').remove();
 
-    }
+    attachments.set(fileData.uuid, attachment);
+
     iconImg.setAttribute('src', imgPreview);
     return attachment;
 }
-
-async function openAttachmentDropDown(burgerBtn, attachment, fileData) {
-    const burgerMenu = document.querySelector('#attachment-menu');
-
-    const openBtn = burgerMenu.querySelector('#open-btn');
-    const downloadBtn = burgerMenu.querySelector('#download-btn');
-    const removeBtn = burgerMenu.querySelector('#remove-btn');
-
-    // Documents cannot be previewed, so hide the open button for them
-    if (checkFileFormat(fileData.mime) === 'document') {
-        openBtn.style.display = 'none';
-        openBtn.disabled = true;
-    } else {
-        openBtn.style.display = '';
-        openBtn.disabled = false;
-    }
-
-    // Define handlers
-    async function openHandler() {
-        updateFileStatus(fileData.uuid, 'uploading');
-        if (activeModule === 'chat') {
-            await previewFile(attachment, fileData, 'conv');
-        }
-        if (activeModule === 'groupchat') {
-            await previewFile(attachment, fileData, 'room');
-        }
-        updateFileStatus(fileData.uuid, 'finished');
-
-    }
-
-    async function downloadHandler() {
-        if (activeModule === 'chat') {
-            await downloadFile(fileData.uuid, 'conv', fileData.name);
-        }
-        if (activeModule === 'groupchat') {
-            await downloadFile(fileData.uuid, 'room', fileData.name);
-        }
-    }
-
-    function removeHandler() {
-        onDeleteClicked(fileData, attachment);
-    }
-
-    // First remove old ones
-    openBtn.removeEventListener('click', openBtn._handler);
-    downloadBtn.removeEventListener('click', downloadBtn._handler);
-    removeBtn.removeEventListener('click', removeBtn._handler);
-
-    // Then assign and store the new ones
-    openBtn.addEventListener('click', openHandler);
-    openBtn._handler = openHandler;
-
-    downloadBtn.addEventListener('click', downloadHandler);
-    downloadBtn._handler = downloadHandler;
-
-    removeBtn.addEventListener('click', removeHandler);
-    removeBtn._handler = removeHandler;
-
-    openBurgerMenu('attachment-menu', burgerBtn, true, false, true);
-}
-
-async function onDeleteClicked(fileData, attachment) {
-    const confirmed = await openModal(ModalType.WARNING, __('Cnf_deleteFile'));
-    if (!confirmed) {
-        return;
-    }
-    let success;
-    if (activeModule === 'chat') {
-        success = requestAtchDelete(fileData.uuid, 'conv');
-    }
-    if (activeModule === 'groupchat') {
-        success = requestAtchDelete(fileData.uuid, 'room');
-    }
-    if (success) {
-        attachment.remove();
-    }
-}
-
-// Remove file attachment from UI and storage
-function removeAtchFromInputList(providerBtn) {
-    const input = providerBtn.closest('.input');
-    const fileId = providerBtn.closest('.attachment').dataset.fileId;
-
-    removeAtchFromList(fileId, input.id);
-    setAttachmentsFilter(input.id);
-}
-
-function removeAtchFromList(fileId, queueId) {
-    // Remove from UI
-    const fileElement = document.querySelector(`.attachment[data-file-id="${fileId}"]`);
-
-    if (fileElement) {
-        fileElement.remove();
-    }
-
-    // Remove from pending uploads array
-    const queue = uploadQueues.get(queueId);
-
-    if (queue) {
-        const index = queue.findIndex(item => item.fileData.tempId === fileId);
-        if (index !== -1) {
-            queue.splice(index, 1);
-        }
-    }
-    setAttachmentsFilter(queueId);
-
-    // If no more attachments, remove container
-    const input = document.querySelector(`.input[id="${queueId}"`);
-    const list = input.querySelector('.attachments-list');
-    if (list && list.children.length === 0) {
-        list.closest('.file-attachments').classList.remove('active');
-    }
-}
-
 
 async function requestAtchDelete(fileId, category) {
     const url = `/req/${category}/attachment/delete`;

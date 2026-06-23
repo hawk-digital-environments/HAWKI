@@ -1,6 +1,5 @@
-
 let currentImageCallback = null;
-let placeholder
+let placeholder;
 let cropper;
 
 
@@ -32,17 +31,17 @@ function openImageSelection(currentImageUrl, callback) {
 function initImageModal() {
     const imageContainer = document.getElementById('image-container');
 
-    imageContainer.addEventListener('dragover', function(e) {
+    imageContainer.addEventListener('dragover', function (e) {
         e.preventDefault();
         e.stopPropagation();
     });
 
-    imageContainer.addEventListener('dragenter', function(e) {
+    imageContainer.addEventListener('dragenter', function (e) {
         e.preventDefault();
         e.stopPropagation();
     });
 
-    imageContainer.addEventListener('drop', function(e) {
+    imageContainer.addEventListener('drop', function (e) {
         e.preventDefault();
         e.stopPropagation();
 
@@ -61,7 +60,7 @@ function initImageModal() {
 
     const imageFileInput = document.getElementById('image-file-input');
     if (imageFileInput) {
-        imageFileInput.addEventListener('change', function(e) {
+        imageFileInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
                 if (placeholder) {
@@ -78,9 +77,9 @@ function initImageModal() {
 // Handle file upload (either drag & drop or file input)
 function handleFile(file) {
     const reader = new FileReader();
-    reader.onload = function(event) {
+    reader.onload = function (event) {
         const img = new Image();
-        img.onload = function() {
+        img.onload = function () {
             setupCropper(event.target.result);
         };
         img.src = event.target.result;
@@ -89,7 +88,8 @@ function handleFile(file) {
 }
 
 
-function setupCropper(currentImageUrl) {
+async function setupCropper(currentImageUrl) {
+    await window.hawkiDependencyLoader('cropperJs');
     // Destroy the previous cropper instance, if any
     if (cropper) {
         cropper.destroy();
@@ -101,18 +101,18 @@ function setupCropper(currentImageUrl) {
         '<cropper-canvas background style="width: 100%;">'
         + '<cropper-image src="' + currentImageUrl + '" id="cropper-selector-image"></cropper-image>'
         + '<cropper-shade hidden id="cropper-shade"></cropper-shade>'
-            + '<cropper-handle action="select" plain></cropper-handle>'
+        + '<cropper-handle action="select" plain></cropper-handle>'
         + '<cropper-selection initial-coverage="0.95" aspect-ratio="1" movable resizable zoomable outlined keyboard id="cropper-selection">'
         + '<cropper-handle action="move" theme-color="transparent"></cropper-handle>'
-                + '<cropper-handle action="n-resize"></cropper-handle>'
-                + '<cropper-handle action="e-resize"></cropper-handle>'
-                + '<cropper-handle action="s-resize"></cropper-handle>'
-                + '<cropper-handle action="w-resize"></cropper-handle>'
-                + '<cropper-handle action="ne-resize"></cropper-handle>'
-                + '<cropper-handle action="nw-resize"></cropper-handle>'
-                + '<cropper-handle action="se-resize"></cropper-handle>'
-                + '<cropper-handle action="sw-resize"></cropper-handle>'
-            + '</cropper-selection>'
+        + '<cropper-handle action="n-resize"></cropper-handle>'
+        + '<cropper-handle action="e-resize"></cropper-handle>'
+        + '<cropper-handle action="s-resize"></cropper-handle>'
+        + '<cropper-handle action="w-resize"></cropper-handle>'
+        + '<cropper-handle action="ne-resize"></cropper-handle>'
+        + '<cropper-handle action="nw-resize"></cropper-handle>'
+        + '<cropper-handle action="se-resize"></cropper-handle>'
+        + '<cropper-handle action="sw-resize"></cropper-handle>'
+        + '</cropper-selection>'
         + '</cropper-canvas>'
     );
 
@@ -136,8 +136,6 @@ function setupCropper(currentImageUrl) {
         });
     });
 }
-
-
 
 
 // Save the cropped image and update the original element

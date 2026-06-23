@@ -69,12 +69,6 @@ trait RoomMembers
     {
         // Remove the member from the room
         $room->removeMember($member->user_id);
-
-        //Check if All the members have left the room.
-        if ($room->members()->count() === 1) {
-            $this->delete($room->slug);
-        }
-
         return true;
     }
 
@@ -83,6 +77,7 @@ trait RoomMembers
     {
         // Search in the database for users matching the query and is not removed
         $users = User::where('isRemoved', false)
+            ->withoutGlobalScopes()
             ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name', 'like', "%{$query}%")
                     ->orWhere('username', 'like', "%{$query}%")

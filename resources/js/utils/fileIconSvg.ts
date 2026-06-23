@@ -49,9 +49,19 @@ function getContrastColor(hex: string): string {
 }
 
 /**
- * Returns an SVG string representing the icon for a given file extension.
- * @param {string} extension the extension of the file (e.g., "pdf", "docx", "jpg")
- * @returns {string} a data URL containing the SVG icon for the file type
+ * Returns a data URL (`data:image/svg+xml,...`) for a file-type icon badge.
+ *
+ * The icon is a document-shaped SVG with the uppercased extension label
+ * centred on a coloured banner. The banner colour is deterministically derived
+ * from the extension string via a DJB2-style hash → HSL → hex conversion, so
+ * the same extension always produces the same colour across sessions and
+ * devices. The label text colour (black or white) is chosen for WCAG contrast
+ * against the banner. Font size shrinks automatically for extensions longer
+ * than 4 characters.
+ *
+ * Used to render attachment thumbnails when a file has no image preview.
+ *
+ * @param extension - File extension without a leading dot (e.g. `'pdf'`, `'docx'`).
  */
 export function getFileIconSvg(extension: string): string {
     const label = extension.toUpperCase();

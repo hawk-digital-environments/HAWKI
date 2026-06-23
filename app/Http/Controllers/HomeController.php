@@ -33,7 +33,19 @@ class HomeController extends Controller
 
         $userData = [
             'convs' => $user->conversations()->with('messages')->get(),
-            'rooms' => $user->rooms()->with('messages')->get(),
+            'rooms' => $user->rooms()->with('messages')->get()->map(function ($room) use ($user) {
+                $member = $room->members()->where('user_id', $user->id)->first();
+
+                $raw = $room->toArray();
+                $raw['hasUnreadMessages'] = false;
+                foreach ($room->messages as $message) {
+                    if (!$message->isReadBy($member)) {
+                        $raw['hasUnreadMessages'] = true;
+                        break;
+                    }
+                }
+                return $raw;
+            })->toArray()
         ];
 
         $activeModule = $requestModule;

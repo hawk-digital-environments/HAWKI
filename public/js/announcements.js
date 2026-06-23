@@ -49,7 +49,7 @@ async function renderAnnouncement(announcement, show = true) {
         if (data.success) {
             if (show) {
                 // Create and show announcement modal
-                showAnnouncementModal(announcement, data.view);
+                await showAnnouncementModal(announcement, data.view);
                 // Mark as seen immediately when displayed
                 markAnnouncementAsSeen(announcement.id);
             } else {
@@ -69,7 +69,7 @@ async function renderAnnouncement(announcement, show = true) {
     ;
 }
 
-function showAnnouncementModal(announcement, view) {
+async function showAnnouncementModal(announcement, view) {
     // Prepare regex to find [CONFIRM](...) and [DECLINE](...) tags
     const confirmTagRegex = /\[CONFIRM]\(([^)]+)\)/i;
     const declineTagRegex = /\[DECLINE]\(([^)]+)\)/i;
@@ -83,6 +83,7 @@ function showAnnouncementModal(announcement, view) {
     // Render Markdown content
     const modal = document.querySelector('#announcements-modal');
     const contentWrapper = modal.querySelector('.content-box');
+    const md = await window.hawkiDependencyLoader('md');
     contentWrapper.innerHTML = md.render(processedView);
 
     // Set link targets and security attributes

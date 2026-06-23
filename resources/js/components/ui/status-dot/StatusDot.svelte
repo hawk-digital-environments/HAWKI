@@ -1,16 +1,29 @@
+<!--
+  @component Colored status indicator dot with an optional inline label and
+  hover tooltip. Three statuses map to semantic color tokens: `online` →
+  success green, `offline` → error red, `unknown` → warning yellow.
+-->
 <script lang="ts">
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import type {Snippet} from 'svelte';
     import {__} from '$lib/utils/translator.js';
 
     interface Props {
+        /** Visual size of the dot. `sm` = 8 px, `md` = 10 px. Defaults to `'sm'`. */
         size?: 'sm' | 'md';
+        /** Current status; controls the dot color and default tooltip text. */
         status: 'online' | 'offline' | 'unknown';
+        /** Optional inline label shown next to the dot when `status` is `'online'`. */
         labelOnline?: string;
+        /** Optional inline label shown next to the dot when `status` is `'offline'`. */
         labelOffline?: string;
+        /** Optional inline label shown next to the dot when `status` is `'unknown'`. */
         labelUnknown?: string;
+        /** Tooltip content for the `'online'` status. Defaults to the translated string. */
         tooltipOnline?: Snippet | string;
+        /** Tooltip content for the `'offline'` status. Defaults to the translated string. */
         tooltipOffline?: Snippet | string;
+        /** Tooltip content for the `'unknown'` status. Defaults to the translated string. */
         tooltipUnknown?: Snippet | string;
     }
 

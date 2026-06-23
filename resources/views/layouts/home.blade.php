@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}">
 
-    @vite('resources/js/app.js')
+    @vite('resources/js/app.ts')
     @vite('resources/css/app.css')
 
     <x-early-frontend-bridge/>
@@ -37,7 +37,6 @@
     <script src="{{ asset('js/user_profile.js') }}"></script>
     <script src="{{ asset('js/file_manager.js') }}"></script>
     <script src="{{ asset('js/attachment_handler.js') }}"></script>
-    <script src="{{ asset('js/model_list_filtering.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
     <script src="{{ asset('js/link_preview.js') }}"></script>
 
@@ -60,7 +59,6 @@
         @yield('content')
     </div>
 </div>
-@include('partials.home.modals.guidelines-modal')
 @include('partials.home.modals.add-member-modal')
 @include('partials.home.modals.session-expiry-modal')
 @include('partials.home.modals.file-viewer-modal')

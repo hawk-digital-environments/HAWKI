@@ -24,7 +24,7 @@
     );
 </script>
 
-{#if !composerContext.modelUsage.isValid}
+{#if !composerContext.modelUsage.isValid && composerContext.guard.showsAiUiElements}
     <div class="chat-conflict-wrapper" transition:growTransition>
         <div class="conflict-container">
             <!-- Header -->

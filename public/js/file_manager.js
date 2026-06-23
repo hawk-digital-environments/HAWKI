@@ -1,5 +1,3 @@
-//#region UPLOAD DOWNLOAD
-
 /**
  * Upload a file with progress tracking and cancel support.
  *
@@ -76,41 +74,11 @@ function uploadFileToServer(status, file, url) {
     };
 }
 
-
-async function requestFileUrl(uuid, category) {
+/** @param {OldUiFileData} fileData */
+async function downloadFile(fileData) {
     try {
-        const response = await fetch(`/req/${category}/attachment/getLink/${uuid}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.url) {
-            // Automatically start download
-
-            return data.url;
-
-        } else {
-            console.error('Failed to get download link');
-        }
-    } catch (err) {
-        console.error('Download error:', err);
-        console.error('An error occurred while requesting the file.');
-    }
-}
-
-async function downloadFile(uuid, category, filename) {
-    try {
-        // Get signed file URL from your backend
-        const url = await requestFileUrl(uuid, category);
-
         // Fetch the file as blob
-        const response = await fetch(url);
+        const response = await fetch(fileData.url);
 
         if (!response.ok) {
             throw new Error(`Download failed: ${response.statusText}`);
@@ -124,7 +92,7 @@ async function downloadFile(uuid, category, filename) {
         // Create a hidden link
         const link = document.createElement('a');
         link.href = objectUrl;
-        link.download = filename || 'download';
+        link.download = fileData.name || 'download';
 
         // Trigger the download
         document.body.appendChild(link);
@@ -136,29 +104,16 @@ async function downloadFile(uuid, category, filename) {
         return true;
 
     } catch (err) {
-        console.error('Download error:', err);
+        console.error('Download error:', err, fileData);
         alert('Failed to download file.');
         return false;
     }
 }
 
-
-//#endregion
-
-
-//#region PREVIEW
-
-async function previewFile(provider, fileData, category) {
-    const indicator = provider.querySelector('.status-indicator');
-
+/** @param {OldUiFileData} fileData */
+async function previewFile(fileData) {
     try {
-        const url = await requestFileUrl(fileData.uuid, category);
-        if (!url) {
-            console.log('No download link');
-            return Promise.reject(new Error('No download link'));
-        }
-
-        const response = await fetch(url);
+        const response = await fetch(fileData.url);
         const blob = await response.blob();
 
         const type = checkFileFormat(fileData.mime);
@@ -178,7 +133,6 @@ async function previewFile(provider, fileData, category) {
         }
 
         const modal = document.querySelector('#file-viewer-modal');
-
         modal.style.display = 'flex';
         const scrollContainer = modal.querySelector('#file-scroll-container');
         scrollContainer.scrollTop = 0;
@@ -192,15 +146,11 @@ async function previewFile(provider, fileData, category) {
     }
 }
 
-function scrollToTop() {
-    const modal = document.querySelector('#file-viewer-modal');
-    const scrollContainer = modal.querySelector('#file-scroll-container');
-    scrollContainer.scrollTop = 0;
-}
-
 async function renderPdf(blob) {
 
     const arrayBuffer = await blob.arrayBuffer();
+
+    const pdfjsLib = await window.hawkiDependencyLoader('pdfJsLib');
 
     const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
 
@@ -258,6 +208,7 @@ async function renderDocx(blob) {
     const container = document.getElementById('file-preview-container');
     container.innerHTML = '';
 
+    const docxPreview = await window.hawkiDependencyLoader('docxPreview');
     docxPreview.renderAsync(blob, container)
         .then(x => console.log('docx: finished'));
 }
@@ -291,11 +242,6 @@ async function renderImage(blob) {
 }
 
 
-//#endregion
-
-
-//#region Utils
-
 function checkFileFormat(mime) {
     if (mime.startsWith('image/')) {
         return 'image';
@@ -314,5 +260,3 @@ function checkFileFormat(mime) {
 function generateUniqueId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
-
-//#endregion

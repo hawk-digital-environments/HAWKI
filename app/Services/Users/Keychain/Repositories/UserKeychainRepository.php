@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Users\Keychain\Repositories;
 
 
+use App\Models\Room;
 use App\Models\User;
 use App\Models\UserKeychainValue;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
@@ -111,6 +112,26 @@ class UserKeychainRepository extends AbstractRepositoryWithContextualScopes
             ->where('user_id', $user->id)
             ->where('type', 'public_key')
             ->first();
+    }
+
+    /**
+     * Removes all room keys for a user for a given room.
+     * This should be called when a user is removed from a room to ensure they no longer have access to the room's key.
+     * @param User $user
+     * @param Room $room
+     * @return void
+     */
+    public function removeRoomKey(User $user, Room $room): void
+    {
+        $this->getQueryWithoutContextualScopes('access')
+            ->where('user_id', $user->id)
+            ->whereIn('type', [
+                UserKeychainValueType::ROOM->value,
+                UserKeychainValueType::ROOM_AI->value,
+                UserKeychainValueType::ROOM_AI_LEGACY->value
+            ])
+            ->where('key', $room->slug)
+            ->each(fn(UserKeychainValue $val) => $val->delete());
     }
 
     /**
