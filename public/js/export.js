@@ -726,7 +726,6 @@ function createAttachmentPrintIcon(fileData) {
     }
 
     attachment.querySelector('.controls').remove();
-    attachment.querySelector('.burger-btn').remove();
     attachment.querySelector('.status-indicator').remove();
     iconImg.setAttribute('src', imgPreview);
     return attachment;

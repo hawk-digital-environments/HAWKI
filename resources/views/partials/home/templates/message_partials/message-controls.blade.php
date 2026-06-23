@@ -33,7 +33,7 @@
                 @php $tooltipId = str()->uuid() @endphp
                 <button id="delete-btn" class="btn-xs reaction-button fast-access-btn  tooltip-parent" onclick="deleteMessage(this);" onmousedown="reactionMouseDown(this)" onmouseup="reactionMouseUp(this);" aria-labelledby="{{ $tooltipId }}">
                     <x-icon name="trash" aria-hidden="true"/>
-                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">NT: Die Nachricht löschen</div>
+                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("DeleteMessageTooltip") }}</div>
                 </button>
             @endif
         </div>

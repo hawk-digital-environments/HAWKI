@@ -57,6 +57,15 @@ export interface OldUiModelParams {
     top_p: number;
 }
 
+export interface OldUiFileData {
+    category: 'private' | 'group';
+    mime: string;
+    name: string;
+    type: 'image' | 'document';
+    url: string;
+    uuid: string;
+}
+
 export type OldUiExportType = 'print' | 'pdf' | 'word' | 'json' | 'csv';
 
 export interface OldUiSendMessagePayload {
@@ -93,6 +102,9 @@ const SET_ABORT_CONTROLLER_PIPELINE = 'abortController';
 const SEND_TOAST_PIPELINE = 'sendToast';
 const OPEN_ROOM_CP_PIPELINE = 'openRoomControlPanel';
 const MARK_ROOM_MESSAGES_AS_READ_PIPELINE = 'markRoomMessagesAsRead';
+const PREVIEW_ATTACHMENT_PIPELINE = 'previewAttachment';
+const DOWNLOAD_ATTACHMENT_PIPELINE = 'downloadAttachment';
+const DELETE_ATTACHMENT_PIPELINE = 'deleteAttachment';
 
 interface SyncFlowList {
     [UPDATE_SYSTEM_PROMPT_PIPELINE]: string;
@@ -122,6 +134,9 @@ const IMPROVE_MESSAGE_PIPELINE = 'improveMessage';
 interface ASYNC_PIPELINE_LIST {
     [SEND_MESSAGE_PIPELINE]: OldUiSendMessagePayload;
     [IMPROVE_MESSAGE_PIPELINE]: { message: string, systemPrompt: string, improvedMessage?: string };
+    [PREVIEW_ATTACHMENT_PIPELINE]: OldUiFileData;
+    [DOWNLOAD_ATTACHMENT_PIPELINE]: OldUiFileData;
+    [DELETE_ATTACHMENT_PIPELINE]: OldUiFileData;
 }
 
 /**
@@ -370,6 +385,29 @@ export class OldUiBridge {
         return this.sync.on(MARK_ROOM_MESSAGES_AS_READ_PIPELINE, handler);
     }
 
+    public triggerPreviewAttachment(fileData: OldUiFileData): void {
+        this.async.trigger(PREVIEW_ATTACHMENT_PIPELINE, fileData);
+    }
+
+    public onPreviewAttachment(handler: (fileData: OldUiFileData) => void | Promise<void>): () => void {
+        return this.async.on(PREVIEW_ATTACHMENT_PIPELINE, handler);
+    }
+
+    public triggerDownloadAttachment(fileData: OldUiFileData): void {
+        this.async.trigger(DOWNLOAD_ATTACHMENT_PIPELINE, fileData);
+    }
+
+    public onDownloadAttachment(handler: (fileData: OldUiFileData) => void | Promise<void>): () => void {
+        return this.async.on(DOWNLOAD_ATTACHMENT_PIPELINE, handler);
+    }
+
+    public triggerDeleteAttachment(fileData: OldUiFileData): void {
+        this.async.trigger(DELETE_ATTACHMENT_PIPELINE, fileData);
+    }
+
+    public onDeleteAttachment(handler: (fileData: OldUiFileData) => void | Promise<void>): () => void {
+        return this.async.on(DELETE_ATTACHMENT_PIPELINE, handler);
+    }
 }
 
 export const oldUiBridge = new OldUiBridge();

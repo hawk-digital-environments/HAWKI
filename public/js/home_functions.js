@@ -128,107 +128,6 @@ function toggleRelativePanelClass(targetID, sender, className, activation = null
 
 //#region Burgers & Dropdown Click Events
 
-let burgerId = 0;
-
-function openBurgerMenu(id, sender = null, alignToElement = false, isRelativeToElement = false, toggleOnSenderClick = false, closeMenuOnSelect = true) {
-    let menu;
-    if (isRelativeToElement) {
-        menu = sender.parentElement.querySelector(`#${id}`);
-    } else {
-        menu = document.getElementById(`${id}`);
-    }
-    //close all other menus
-    closeBurgerMenus(menu);
-
-    //reset style to fit content
-    menu.style.width = 'fit-content';
-
-    if (alignToElement) {
-        const btnRect = sender.getBoundingClientRect();
-        menu.style.top = `${btnRect.bottom}px`;
-        menu.style.left = `${btnRect.left}px`;
-    }
-
-    const isAlreadyOpen = menu.getAttribute('data-menu-state') === 'open';
-
-    if (toggleOnSenderClick && isAlreadyOpen) {
-        if (closeMenuOnSelect) {
-            closeBurgerMenus(null);
-        } else {
-            closeBurgerMenus(menu);
-        }
-    } else {
-        const menuId = burgerId++;
-        menu.setAttribute('data-menu-id', `${menuId}`);
-        menu.setAttribute('data-menu-state', 'open');
-
-        if (sender) {
-            sender.setAttribute('data-sender-menu-id', `${menuId}`);
-            sender.setAttribute('data-sender-menu-state', 'open');
-            sender.classList.add('active', 'dropdown-open');
-            const senderIcon = sender.querySelector('.icon');
-            if (senderIcon) {
-                senderIcon.classList.add('active');
-            }
-        }
-        menu.style.display = `block`;
-        setTimeout(() => {
-            //add some buffer to the width
-            //without buffer bold text on hover changes menu width
-            const menuWidth = menu.getBoundingClientRect().width;
-            menu.style.width = `${menuWidth + 10}px`;
-
-            menu.style.opacity = `1`;
-        }, 50);
-    }
-}
-
-
-function closeBurgerMenus(clickedBurgerMenu) {
-    // Disable all active senders
-    const menuIdToKeepOpen = clickedBurgerMenu ? clickedBurgerMenu.getAttribute('data-menu-id') : null;
-    let senderSelector = '[data-sender-menu-id]';
-    if (clickedBurgerMenu) {
-        senderSelector = `[data-sender-menu-id]:not([data-sender-menu-id="${menuIdToKeepOpen}"])`;
-    }
-    document.querySelectorAll(senderSelector).forEach(sender => {
-        sender.classList.remove('active', 'dropdown-open');
-
-        sender.setAttribute('data-sender-menu-state', 'closed');
-
-        const senderIcon = sender.querySelector('.icon');
-        if (senderIcon) {
-            senderIcon.classList.remove('active');
-        }
-    });
-
-    const menus = document.querySelectorAll('.burger-dropdown');
-
-    menus.forEach(menu => {
-        if (clickedBurgerMenu && menu.id === clickedBurgerMenu.id) {
-            return;
-        } else if (menu.style.opacity !== '0') {
-            const icon = menu.parentElement.querySelector('.icon');
-            if (icon && icon.classList.contains('active')) {
-                icon.classList.remove('active');
-            }
-
-            menu.style.opacity = '0';
-            document.querySelectorAll('.burger-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            setTimeout(() => {
-                menu.style.display = 'none';
-            }, 300);
-        }
-        menu.setAttribute('data-menu-state', 'closed');
-    });
-}
-
-
-//#endregion
-
 
 function closeModal(closeBtn) {
     const modal = closeBtn.closest('.modal');
@@ -343,8 +242,6 @@ function checkWindowSize(thresholdWidth, thresholdHeight) {
 
 }
 
-//#region Notification
-
 function setSessionCheckerTimer(time) {
     setTimeout(() => {
         fetch('/check-session')
@@ -360,6 +257,3 @@ function setSessionCheckerTimer(time) {
             });
     }, time * 1000);
 }
-
-
-//#endregion

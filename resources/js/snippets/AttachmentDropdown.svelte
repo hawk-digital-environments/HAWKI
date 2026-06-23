@@ -1,34 +1,53 @@
 <script lang="ts">
-    import {Ellipsis} from '@lucide/svelte';
+    import {Download, Ellipsis, Eye} from '@lucide/svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import {__} from '$lib/utils/translator.js';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
+    import {oldUiBridge, type OldUiFileData} from '$lib/oldUi/OldUiBridge.svelte.js';
+    import {__} from '$lib/utils/translator.js';
+    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+
+    interface Props {
+        fileData: OldUiFileData;
+    }
+
+    const {
+        fileData
+    }: Props = $props();
+
+    let deleteConfirm = $state(false);
 </script>
+<ConfirmDialog
+    bind:open={deleteConfirm}
+    title={__('chat.attachmentDropdown.deleteTitle')}
+    description={__('chat.attachmentDropdown.deleteDescription', {name: fileData.name})}
+    onConfirm={() => oldUiBridge.triggerDeleteAttachment(fileData)}
+/>
+
 <DropdownMenu>
     {#snippet trigger({props})}
         <button class="burger-btn btn-xs" {...props}>
             <Ellipsis size="12"/>
         </button>
     {/snippet}
-    <DropdownMenuItem>
-        {__("FilePreview")}
+    <DropdownMenuItem
+        icon={Eye}
+        onclick={() => oldUiBridge.triggerPreviewAttachment(fileData)}>
+        {__('chat.attachmentDropdown.preview')}
     </DropdownMenuItem>
-    <DropdownMenuItem>
-        {__("FileDownload")}
+    <DropdownMenuItem
+        icon={Download}
+        onclick={() => oldUiBridge.triggerDownloadAttachment(fileData)}>
+        {__('chat.attachmentDropdown.download')}
     </DropdownMenuItem>
     <DropdownMenuSeparator/>
-    <DropdownMenuItem variant="destructive">
-        {__("FileRemove")}
+    <DropdownMenuItem
+        onclick={() => deleteConfirm = true}
+        variant="destructive">
+        {__('chat.attachmentDropdown.delete')}
     </DropdownMenuItem>
 </DropdownMenu>
-<!-- <div id="attachment-menu" class="burger-dropdown" style="display: none">
-    <div class="burger-expandable">
-        <button class="burger-item" id="open-btn">{{ __("FilePreview") }}</button>
-        <button class="burger-item" id="download-btn">{{ __("FileDownload") }}</button>
-        <button class="burger-item red-text" id="remove-btn">{{ __("FileRemove")}}</button>
-    </div>
-</div> -->
+
 
 <style>
 

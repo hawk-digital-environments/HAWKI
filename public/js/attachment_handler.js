@@ -1,12 +1,28 @@
-//#region UPLOAD FILE
-
-const uploadQueues = new Map();
-
-
 // Add file to the UI for display
 
-function createAttachmentThumbnail(fileData, thumbType) {
+let boundListeners = false;
 
+// Yes, this will keep the
+const attachments = new Map();
+
+window.waitUntilReady(() => {
+    window.oldUiBridge.onDownloadAttachment(fileData => downloadFile(fileData));
+    window.oldUiBridge.onPreviewAttachment(fileData => previewFile(fileData));
+    window.oldUiBridge.onDeleteAttachment(async fileData => {
+        const category = fileData.category === 'private' ? 'conv' : 'room';
+        await requestAtchDelete(fileData.uuid, category);
+        const attachment = attachments.get(fileData.uuid);
+        if (attachment) {
+            attachment.remove();
+            attachments.delete(fileData.uuid);
+        }
+    });
+    window.oldUiMessageHistory.onLoadConversation(() => {
+        attachments.clear();
+    });
+});
+
+function createAttachmentThumbnail(fileData, thumbType) {
     const attachTemp = document.getElementById('attachment-thumbnail-template');
     const attachClone = attachTemp.content.cloneNode(true);
     const attachment = attachClone.querySelector('.attachment');
@@ -33,85 +49,20 @@ function createAttachmentThumbnail(fileData, thumbType) {
             break;
     }
 
+    /** @var {HTMLSvelteSnippetElement|undefined} snippet */
+    const snippet = attachment.querySelector('svelte-snippet[type="AttachmentDropdown"]');
+    if (!snippet) {
+        console.error('Attachment dropdown snippet not found');
+    } else {
+        snippet.setAttribute('props', JSON.stringify({
+            fileData
+        }));
+    }
+
+    attachments.set(fileData.uuid, attachment);
+
     iconImg.setAttribute('src', imgPreview);
     return attachment;
-}
-
-async function openAttachmentDropDown(burgerBtn, attachment, fileData) {
-    const burgerMenu = document.querySelector('#attachment-menu');
-
-    const openBtn = burgerMenu.querySelector('#open-btn');
-    const downloadBtn = burgerMenu.querySelector('#download-btn');
-    const removeBtn = burgerMenu.querySelector('#remove-btn');
-
-    // Documents cannot be previewed, so hide the open button for them
-    if (checkFileFormat(fileData.mime) === 'document') {
-        openBtn.style.display = 'none';
-        openBtn.disabled = true;
-    } else {
-        openBtn.style.display = '';
-        openBtn.disabled = false;
-    }
-
-    // Define handlers
-    async function openHandler() {
-        updateFileStatus(fileData.uuid, 'uploading');
-        if (activeModule === 'chat') {
-            await previewFile(attachment, fileData, 'conv');
-        }
-        if (activeModule === 'groupchat') {
-            await previewFile(attachment, fileData, 'room');
-        }
-        updateFileStatus(fileData.uuid, 'finished');
-
-    }
-
-    async function downloadHandler() {
-        if (activeModule === 'chat') {
-            await downloadFile(fileData.uuid, 'conv', fileData.name);
-        }
-        if (activeModule === 'groupchat') {
-            await downloadFile(fileData.uuid, 'room', fileData.name);
-        }
-    }
-
-    function removeHandler() {
-        onDeleteClicked(fileData, attachment);
-    }
-
-    // First remove old ones
-    openBtn.removeEventListener('click', openBtn._handler);
-    downloadBtn.removeEventListener('click', downloadBtn._handler);
-    removeBtn.removeEventListener('click', removeBtn._handler);
-
-    // Then assign and store the new ones
-    openBtn.addEventListener('click', openHandler);
-    openBtn._handler = openHandler;
-
-    downloadBtn.addEventListener('click', downloadHandler);
-    downloadBtn._handler = downloadHandler;
-
-    removeBtn.addEventListener('click', removeHandler);
-    removeBtn._handler = removeHandler;
-
-    openBurgerMenu('attachment-menu', burgerBtn, true, false, true);
-}
-
-async function onDeleteClicked(fileData, attachment) {
-    const confirmed = await openModal(ModalType.WARNING, __('Cnf_deleteFile'));
-    if (!confirmed) {
-        return;
-    }
-    let success;
-    if (activeModule === 'chat') {
-        success = requestAtchDelete(fileData.uuid, 'conv');
-    }
-    if (activeModule === 'groupchat') {
-        success = requestAtchDelete(fileData.uuid, 'room');
-    }
-    if (success) {
-        attachment.remove();
-    }
 }
 
 async function requestAtchDelete(fileId, category) {

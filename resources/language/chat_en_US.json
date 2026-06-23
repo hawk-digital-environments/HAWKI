@@ -10,7 +10,16 @@
             "deleteConfirmTitle": "Delete chat :name",
             "newNameAriaLabel": "New chat name",
             "actionsTooltip": "Chat actions",
-            "rename": "Rename"
+            "rename": "Rename",
+            "manageRoom": "Manage room",
+            "markAsRead": "Mark as read"
+        },
+        "attachmentDropdown": {
+            "deleteTitle": "Delete file",
+            "deleteDescription": "Are you sure you want to delete the file \":name\"?",
+            "preview": "Show",
+            "download": "Download",
+            "delete": "Delete"
         },
         "attachments": {
             "fileTooLarge": "The file \":name\" could not be attached because its size of :size exceeds the maximum file size of :maxSize.",
@@ -27,7 +36,12 @@
         },
         "composer": {
             "textareaPlaceholder": "Enter your message here…",
+            "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
             "attachFileTooltip": "Attach file",
+            "assistantButtonTooltip": {
+                "addHandle": "Talk to HAWKI",
+                "removeHandle": "Stop talking to HAWKI"
+            },
             "systemPromptDialog": {
                 "title": "Edit system prompt",
                 "description": "The system prompt defines the model's behaviour for this session.",

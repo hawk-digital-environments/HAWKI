@@ -51,14 +51,14 @@
             <DropdownMenuItem
                 icon={SlidersHorizontal}
                 onclick={() => oldUiBridge.triggerOpenRoomControlPanel(slug ?? '')}>
-                NT: Raum verwalten
+                {__('chat.nameMenu.manageRoom')}
             </DropdownMenuItem>
         {/if}
         <DropdownMenuItem
             icon={Eye}
             onclick={() => oldUiBridge.triggerMarkRoomMessagesAsRead(slug ?? '')}
             disabled={!hasUnreadMessages}>
-            NT: Als gelesen markieren
+            {__('chat.nameMenu.markAsRead')}
         </DropdownMenuItem>
         <DropdownMenuSeparator/>
 
