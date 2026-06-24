@@ -1,7 +1,7 @@
 let abortCtrl = new AbortController();
 
 
-function buildRequestObject(msgAttributes, onData, onError) {
+async function buildRequestObject(msgAttributes, onData, onError) {
     const msgs = createMessageLogForAI(msgAttributes['regenerationElement']);
     const isUpdate = msgAttributes['regenerationElement'] ? true : false;
     const msgID = msgAttributes['regenerationElement'] ? msgAttributes['regenerationElement'].id : null;
@@ -25,6 +25,7 @@ function buildRequestObject(msgAttributes, onData, onError) {
         }
     };
 
+    await loadMessageFormattingDependencies();
     // POST request to initiate the AI stream or broadcast
     postData(requestObject)
         .then(response => {
@@ -34,7 +35,7 @@ function buildRequestObject(msgAttributes, onData, onError) {
                     onData('AbortError');
                 }
                 // pass stream callback (response) to processStream
-                return processStream(response.body, onData);
+                processStream(response.body, onData);
             } else if (onData) {
                 setTimeout(() => onData(null, true), 3000); // Simulate a delay for broadcasting
             }

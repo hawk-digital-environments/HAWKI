@@ -748,9 +748,10 @@ async function regenerateMessage(payload) {
     //reset message content
     messageElement.querySelector('.message-text').innerHTML = '';
     messageElement.dataset.rawMsg = '';
-    await initializeMessageFormating();
 
     payload.waitForResponse(async (response) => {
+        await loadMessageFormattingDependencies();
+
         let msgAttributes = {};
         switch (activeModule) {
             case('chat'):

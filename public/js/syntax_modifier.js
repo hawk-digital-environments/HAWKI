@@ -11,11 +11,16 @@ let syntaxMd;
 let syntaxHljs;
 let syntaxRenderMathInElement;
 
-async function initializeMessageFormating() {
+async function loadMessageFormattingDependencies() {
+    if (!syntaxMd || !syntaxHljs || !syntaxRenderMathInElement) {
+        syntaxMd = await window.hawkiDependencyLoader('md');
+        syntaxHljs = await window.hawkiDependencyLoader('hljs');
+        syntaxRenderMathInElement = (await window.hawkiDependencyLoader('renderMathInElement')).renderMathInElement;
+    }
+}
+
+function initializeMessageFormating() {
     summedText = '';
-    syntaxMd = await window.hawkiDependencyLoader('md');
-    syntaxHljs = await window.hawkiDependencyLoader('hljs');
-    syntaxRenderMathInElement = (await window.hawkiDependencyLoader('renderMathInElement')).renderMathInElement;
 }
 
 function formatChunk(chunk, groundingMetadata) {

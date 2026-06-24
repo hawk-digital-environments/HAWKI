@@ -79,7 +79,7 @@
 
         window.waitUntilReady(async function () {
 
-            await initializeMessageFormating();
+            await loadMessageFormattingDependencies();
             initializeAiChatModule(@json($userData['convs']));
 
             const slug = @json($slug);

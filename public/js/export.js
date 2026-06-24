@@ -614,7 +614,7 @@ async function preparePrintPage() {
 
     // First, add all main messages
     activeThreadIndex = 0;
-    await initializeMessageFormating();
+    await loadMessageFormattingDependencies();
     messages.forEach(messageObj => {
         generateMessageElements(messageObj, true);
     });

@@ -206,7 +206,7 @@ async function buildRequestObjectForAiConv(
                 messageObj.params = msgAttributes['metadata'].params;
 
                 if (!messageElement) {
-                    await initializeMessageFormating();
+                    initializeMessageFormating();
                     messageElement = addMessageToChatlog(messageObj, false);
                 }
                 messageElement.dataset.rawMsg = msg;
