@@ -147,6 +147,7 @@ export class OldUiBridge {
     private sync = new SyncPipeline<SyncFlowList>();
     private async = new AsyncPipeline<ASYNC_PIPELINE_LIST>();
     private isSendingMessage = false;
+    private isContextReady = false;
 
     /** The user's decrypted passkey for the current session. `null` until the user unlocks. */
     public passkey = $state<string | null>(null);
@@ -250,10 +251,14 @@ export class OldUiBridge {
     }
 
     public onContextReady(handler: () => void): () => void {
+        if (this.isContextReady) {
+            handler();
+        }
         return this.sync.on(CONTEXT_READY_PIPELINE, handler);
     }
 
     public triggerContextReady(): void {
+        this.isContextReady = true;
         this.sync.trigger(CONTEXT_READY_PIPELINE);
     }
 

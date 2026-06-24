@@ -394,6 +394,5 @@ export function createComposerContext(
     oldUiBridge.triggerContextReady();
     setContext(contextKey, context);
 
-
     return context;
 }
