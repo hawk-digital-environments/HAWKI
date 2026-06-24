@@ -28,6 +28,7 @@ function initializeAiChatModule(chatsObject) {
     });
     window.oldUiBridge.onOpenChat((slug) => {
         loadConv(null, slug);
+        onSidebarButtonDown('chat');
     });
     window.oldUiBridge.onActiveConversationSystemPromptUpdate(newPrompt => {
         if (!activeConv) {

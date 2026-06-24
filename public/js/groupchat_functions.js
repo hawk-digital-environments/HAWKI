@@ -38,6 +38,7 @@ function initializeGroupChatModule(roomsData) {
     });
     window.oldUiBridge.onOpenChat((slug) => {
         loadRoom(null, slug);
+        onSidebarButtonDown('groupchat');
     });
     window.oldUiBridge.onActiveConversationSystemPromptUpdate(newPrompt => {
         if (!activeRoom) {

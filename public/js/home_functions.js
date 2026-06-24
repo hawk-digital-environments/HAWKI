@@ -27,7 +27,8 @@ function onSidebarButtonDown(pageID) {
             const manualExpanded = sidebar.classList.contains('expanded');
             sidebar.dataset.manualExpanded = manualExpanded;
 
-            const content = document.getElementById(pageID);
+            const selectId = pageID === 'groupchat' ? 'chat' : pageID;
+            const content = document.getElementById(selectId);
             if (content) {
                 if (manualExpanded) {
                     const windowWidth = window.innerWidth;

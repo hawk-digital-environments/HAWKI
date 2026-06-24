@@ -200,17 +200,32 @@
 
     .group-welcome-wrapper {
         padding: 3rem;
+
+        @media (max-width: 950px) {
+            padding: 0 1rem 0 0;
+        }
     }
 
     #welcome-content {
         max-width: 45rem;
         padding-right: 0;
         text-align: justify;
+
+        ol {
+            @media (max-width: 950px) {
+                padding-left: 2rem;
+            }
+        }
+
+        li {
+            margin: 1rem 0;
+
+            @media (max-width: 950px) {
+                padding: 0.5rem 0;
+            }
+        }
     }
 
-    #welcome-content li {
-        margin: 1rem 0;
-    }
 
     .inputs-list {
         display: flex;
@@ -1044,6 +1059,7 @@
         .input-container {
             margin-left: 1rem;
             margin-right: 1rem;
+            width: calc(100% - 2rem);
         }
     }
 

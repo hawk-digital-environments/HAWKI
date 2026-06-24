@@ -392,8 +392,8 @@ export function createComposerContext(
     onDestroy(() => unbinders.forEach(unbind => unbind()));
 
     oldUiBridge.triggerContextReady();
-
     setContext(contextKey, context);
+
 
     return context;
 }
