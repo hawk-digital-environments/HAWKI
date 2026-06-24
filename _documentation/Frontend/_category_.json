@@ -1,0 +1,8 @@
+{
+  "label": "Frontend",
+  "position": 7,
+  "link": {
+    "type": "generated-index",
+    "description": "Architecture, patterns, and API reference for the HAWKI frontend layer."
+  }
+}
