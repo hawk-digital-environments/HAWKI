@@ -34,5 +34,6 @@ interface ProviderAdapterInterface
 
     public function checkModelStatus(AiModelOnlineStatusCollection $statusCollection, AiModelDemandCollection $demandCollection, ParameterSource $source): void;
 
+
     public function getProviderToolForCapability(string $capability, ParameterSource $source): ProviderTool|null;
 }

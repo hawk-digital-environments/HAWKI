@@ -582,7 +582,13 @@ async function preparePrintPage() {
         let msgKey = key.roomKey;
         for (const msg of messages) {
             msgKey = msg.message_role === 'assistant' ? key.aiKey : key.roomKey;
-            const decryptedContent = await decryptWithSymKey(msgKey, msg.content.text, msg.content.text.iv, msg.content.text.tag);
+            let decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+            if (decryptedContent.startsWith('{') || decryptedContent.startsWith('"')) {
+                decryptedContent = JSON.parse(decryptedContent);
+                if (decryptedContent.text) {
+                    decryptedContent = decryptedContent.text;
+                }
+            }
             msg.content.text = decryptedContent;
         }
     }
@@ -729,8 +735,6 @@ function createAttachmentPrintIcon(fileData) {
             break;
     }
 
-    attachment.querySelector('.controls').remove();
-    attachment.querySelector('.status-indicator').remove();
     iconImg.setAttribute('src', imgPreview);
     return attachment;
 }

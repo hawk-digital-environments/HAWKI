@@ -160,7 +160,7 @@
     <SelectPrimitive.Trigger {...triggerProps}>
         {#snippet child({props})}
             {#if trigger}
-                <SnippetOrStringTrigger value={trigger as string|Snippet} snippetArgs={{props, Value: SelectPrimitive.Value}}/>
+                <SnippetOrStringTrigger value={trigger} snippetArgs={{props, Value: SelectPrimitive.Value}}/>
             {:else}
                 <button
                     type="button"

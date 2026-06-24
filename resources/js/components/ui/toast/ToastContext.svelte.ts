@@ -8,7 +8,7 @@
  * const toastContext = useToastContext();
  * toastContext.error('Datei konnte nicht angehängt werden.');
  */
-import {getContext, setContext} from 'svelte';
+import {useAppContext} from '$lib/components/app/AppContext.svelte.js';
 
 export type ToastVariant = 'error' | 'success' | 'info';
 
@@ -34,6 +34,10 @@ export class ToastContext {
 
     /** Shows a toast and schedules its auto-dismissal. */
     public push(message: string, variant: ToastVariant = 'info', duration = DEFAULT_DURATION): number {
+        // @todo remove me once we have a real single page app, and can use svelte contexts. (See AppContext.svelte.ts)
+        if (!useAppContext().legacySharedContentLoaded) {
+            throw new Error('Cannot push toast: LegacySharedContent snippet is not loaded on the page.');
+        }
         const id = this.nextId++;
         this.toasts = [...this.toasts, {id, message, variant}];
         if (this.pausedAt !== null) {
@@ -95,14 +99,17 @@ export class ToastContext {
     }
 }
 
-const toastContextKey = Symbol('toast');
+// const toastContextKey = Symbol('toast');
 
 /**
  * Returns the current {@link ToastContext} from context. Must be used within a component running {@link createToastContext}.
  * @throws Error If no toast context is found.
  */
 export function useToastContext(): ToastContext {
-    const context = getContext<ToastContext>(toastContextKey);
+    // @todo this is a temporary workaround until we have a real single page app, and can use svelte contexts. (See AppContext.svelte.ts)
+    const appContext = useAppContext();
+    const context = appContext.toastContext;
+    // const context = getContext<ToastContext>(toastContextKey);
     if (!context) {
         throw new Error('useToastContext has no access to ToastContext.');
     }
@@ -113,7 +120,13 @@ export function useToastContext(): ToastContext {
  * e.g. the main app component or layout.
  */
 export function createToastContext() {
+    // @todo this is a temporary workaround until we have a real single page app, and can use svelte contexts. (See AppContext.svelte.ts)
+    const appContext = useAppContext();
+    if (appContext.toastContext) {
+        throw new Error('ToastContext already exists in AppContext.');
+    }
     const context = new ToastContext();
-    setContext(toastContextKey, context);
+    appContext.toastContext = context;
+    // setContext(toastContextKey, context);
     return context;
 }

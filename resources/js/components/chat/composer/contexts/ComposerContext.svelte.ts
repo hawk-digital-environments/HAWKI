@@ -265,7 +265,11 @@ const contextKey = Symbol('chatComposer');
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
-    return getContext(contextKey);
+    const context: ComposerContext | null | undefined = getContext(contextKey);
+    if (!context) {
+        throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
+    }
+    return context;
 }
 
 /**

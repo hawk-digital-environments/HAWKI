@@ -26,6 +26,16 @@
     <script src="{{ asset('js/export.js') }}"></script>
     <script src="{{ asset('js/file_manager.js') }}"></script>
     <script src="{{ asset('js/attachment_handler.js') }}"></script>
+
+    <style>
+        .attachment .status-indicator {
+            display: none !important;
+        }
+
+        svelte-snippet[type="AttachmentDropdown"] {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
 <div class="wrapper">
@@ -65,6 +75,7 @@
 </template>
 
 @include('partials.home.templates.attachment-template')
+@include('partials.home.templates.inline-link-template')
 </body>
 </html>
 

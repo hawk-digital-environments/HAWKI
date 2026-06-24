@@ -18,6 +18,8 @@ import {getFileIconSvg} from '$lib/utils/fileIconSvg.js';
 import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
 import {bootstrapper, Bootstrapper} from '$lib/utils/Bootstrapper.js';
 import {dependencyLoader} from '$lib/dependencies.js';
+import {createToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+import {createAppContext} from '$lib/components/app/AppContext.svelte.js';
 
 // Augment the global Window interface to include our globals, so that they can be accessed without TypeScript errors.
 // WARNING: This is only here for legacy support! Do not use global variables in new code!
@@ -100,6 +102,20 @@ bootstrapper.onMainStage(loadTranslationLabels);
 bootstrapper.onMainStage(loadAiModels);
 bootstrapper.onMainStage(loadAiToolsAndCapabilities);
 bootstrapper.onMainStage(loadSystemPrompts);
+
+// @deprecated This is only here to support the "AppContext" through multiple Svelte apps on the same page.
+// It will be removed once we have a single-page app and can use Svelte contexts instead.
+bootstrapper.onLateStage(() => {
+    // @todo move this into the app component once we have a single-page app
+    createAppContext();
+    createToastContext();
+
+    // @todo remove this once we have a single-page app, and can use Svelte contexts instead of global variables.
+    // Inject the "LegacySharedContent" snippet into the page (as first child of the body)
+    const legacySharedContentSnippet = document.createElement('svelte-snippet');
+    legacySharedContentSnippet.setAttribute('type', 'LegacySharedContent');
+    document.body.insertBefore(legacySharedContentSnippet, document.body.firstChild);
+});
 
 // As a last step, we wait until the DOM is fully loaded
 bootstrapper.onFinalizationStage(() => new Promise(resolve => {
