@@ -36,7 +36,7 @@ class OpenWebUiRequestConverter
         $payload = [
             'model' => $modelId,
             'messages' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
+            'stream' => ($rawPayload['stream'] ?? false) && $model->hasCapability('stream'),
         ];
 
         // Add optional parameters if present in the raw payload

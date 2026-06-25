@@ -44,7 +44,7 @@ readonly class GwdgRequestConverter
         $payload = [
             'model' => $modelId,
             'messages' => $mergedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
+            'stream' => ($rawPayload['stream'] ?? false) && $model->hasCapability('stream'),
         ];
         // Add optional parameters if present in the raw payload
         if (isset($rawPayload['params']['temperature'])) {

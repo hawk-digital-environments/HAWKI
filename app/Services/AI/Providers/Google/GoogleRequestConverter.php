@@ -54,7 +54,7 @@ readonly class GoogleRequestConverter
             'model' => $modelId,
             'system_instruction' => $systemInstruction,
             'contents' => $formattedMessages,
-            'stream' => $rawPayload['stream'] && $model->hasCapability('stream'),
+            'stream' => ($rawPayload['stream'] ?? false) && $model->hasCapability('stream'),
         ];
 
         // Add optional parameters if present in the raw payload
