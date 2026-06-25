@@ -44,6 +44,7 @@ class ClientSchemaGenerator
             'is_favorite' => ['favorite'],
             'release_stage' => ['release'],
             'feedback' => ['feedback'],
+            'user_prompts' => ['user-prompts'],
         ],
     ];
 
@@ -100,17 +101,35 @@ class ClientSchemaGenerator
         $actionRoutes = $this->discoverActionRoutes($type);
         $isAuthorizable = method_exists($schema, 'authorizable') ? $schema->authorizable() : true;
 
-        return [
+        $resource = [
             'type' => $type,
             'displayName' => $this->deriveDisplayName($type),
-            'endpoints' => $this->buildEndpoints($type, $schemaClass, $isAuthorizable, $user),
-            'attributes' => $this->buildAttributes($attributeFields, $validatedFields, $actionRoutes, $fieldConstraints, $requiredFields, $type),
-            'relationships' => $this->buildRelationships($relationshipFields, $validatedFields, $actionRoutes, $type),
-            'actions' => $this->buildActions($type, $actionRoutes, $user),
-            'filters' => $this->buildFilters($schema),
-            'sortable' => $this->buildSortable($schema),
-            'includable' => $this->buildIncludable($schema),
         ];
+
+        if ($this->hasApiEndpoint($type)) {
+            $resource['endpoints'] = $this->buildEndpoints($type, $schemaClass, $isAuthorizable, $user);
+        }
+
+        $resource['attributes'] = $this->buildAttributes($attributeFields, $validatedFields, $actionRoutes, $fieldConstraints, $requiredFields, $type);
+        $resource['relationships'] = $this->buildRelationships($relationshipFields, $validatedFields, $actionRoutes, $type);
+        $resource['actions'] = $this->buildActions($type, $actionRoutes, $user);
+        $resource['filters'] = $this->buildFilters($schema);
+        $resource['sortable'] = $this->buildSortable($schema);
+        $resource['includable'] = $this->buildIncludable($schema);
+
+        return $resource;
+    }
+
+    private function hasApiEndpoint(string $type): bool
+    {
+        foreach (Route::getRoutes() as $route) {
+            $uri = $route->uri();
+            if ($uri === "api/{$type}" || str_starts_with($uri, "api/{$type}/")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function buildAttributes(
@@ -178,9 +197,9 @@ class ClientSchemaGenerator
             ];
 
             try {
-                $rel['target'] = $field->inverse();
+                $rel['type'] = $field->inverse();
             } catch (\Throwable) {
-                $rel['target'] = null;
+                $rel['type'] = null;
             }
 
             if ($isReadOnly) {
@@ -347,12 +366,12 @@ class ClientSchemaGenerator
         $writableOn = [];
 
         if (! $isReadOnly && in_array($fieldName, $validatedFields, true)) {
-            $writableOn[] = 'resource';
+            $writableOn[] = "/resources/{$resourceType}/endpoints/update";
         }
 
         $actionNames = $this->findActionsForField($resourceType, $fieldName, $actionRoutes);
         foreach ($actionNames as $actionName) {
-            $writableOn[] = "action:{$actionName}";
+            $writableOn[] = "/resources/{$resourceType}/actions/{$actionName}";
         }
 
         if (empty($writableOn)) {

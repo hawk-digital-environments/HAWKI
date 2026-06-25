@@ -206,6 +206,24 @@ class ExampleBuilder
                 ],
             ],
         ],
+        'assistants.user-prompts' => [
+            'request' => [
+                'data' => [
+                    'type' => 'assistants',
+                    'id' => '1',
+                    'attributes' => [
+                        'add' => ['What is the capital of France?'],
+                        'remove' => ['Translate this to Spanish'],
+                    ],
+                ],
+            ],
+            'response' => [
+                'data' => [
+                    'id' => '1',
+                    'type' => 'assistants',
+                ],
+            ],
+        ],
     ];
 
     /**

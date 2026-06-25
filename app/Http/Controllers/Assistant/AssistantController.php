@@ -15,6 +15,7 @@ use App\JsonApi\V1\Assistants\FavoriteAssistantRequest;
 use App\JsonApi\V1\Assistants\FeedbackAssistantRequest;
 use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
 use App\JsonApi\V1\Assistants\SettingsAssistantRequest;
+use App\JsonApi\V1\Assistants\UserPromptsAssistantRequest;
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Assistants\Assistant;
 use App\Services\AI\Stream\OpenAIResponsesAdapter;
@@ -156,6 +157,25 @@ class AssistantController extends Controller
         if (! in_array($assistant->release_stage, $guardedStages, true)) {
             Event::dispatch(new AssistantUpdated($assistant, null, ['setting_values']));
         }
+
+        return DataResponse::make($assistant)
+            ->withQueryParameters($query);
+    }
+
+    public function userPrompts(
+        UserPromptsAssistantRequest $request,
+        AssistantSchema $schema,
+        AssistantQuery $query,
+        Assistant $assistant,
+    ): Responsable {
+        $this->authorize('userPrompts', $assistant);
+
+        $add = $request->input('data.attributes.add', []);
+        $remove = $request->input('data.attributes.remove', []);
+
+        $this->assistantService->updateUserPrompts($assistant, $add, $remove);
+
+        $assistant->load('user_prompts');
 
         return DataResponse::make($assistant)
             ->withQueryParameters($query);

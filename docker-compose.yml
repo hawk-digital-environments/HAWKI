@@ -55,6 +55,7 @@ services:
             # If you set this to "https" you should also provide valid SSL certificates in the "./docker/certs" directory,
             # otherwise the container will create self-signed certificates on boot, which will cause browser warnings but allow you to test HTTPS locally.
             - DOCKER_PROJECT_PROTOCOL=${DOCKER_PROJECT_PROTOCOL:-http}
+            - NGINX_PROXY_READ_TIMEOUT=600s
         # The image contains a built-in web server (nginx) that listens on ports 80 and 443.
         # The ports section maps these container ports to the host machine's ports, allowing you to access the application via localhost:80 or localhost:443.
         ports:

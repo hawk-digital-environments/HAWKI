@@ -57,6 +57,11 @@ class AssistantPolicy
         return $this->canViewAssistant($user, $assistant);
     }
 
+    public function userPrompts(User $user, Assistant $assistant): bool
+    {
+        return $this->update($user, $assistant);
+    }
+
     public function favorite(User $user, Assistant $assistant): bool
     {
         return $this->canViewAssistant($user, $assistant);

@@ -6,6 +6,7 @@ namespace App\Services\Assistant;
 
 use App\Events\AssistantCreated;
 use App\Events\AssistantTriggerReleaseStatus;
+use App\Events\AssistantUpdated;
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Assistant\Repositories\AssistantRepository;
@@ -106,5 +107,22 @@ readonly class AssistantService
                 );
             }
         });
+    }
+
+    public function updateUserPrompts(Assistant $assistant, array $add, array $remove): void
+    {
+        $this->db->transaction(function () use ($assistant, $add, $remove) {
+            if (! empty($remove)) {
+                $this->repository->removeUserPrompts($assistant, $remove);
+            }
+
+            if (! empty($add)) {
+                $this->repository->createUserPrompts($assistant, $add);
+            }
+        });
+
+        if ($add !== [] || $remove !== []) {
+            Event::dispatch(new AssistantUpdated($assistant, null, ['user_prompts']));
+        }
     }
 }

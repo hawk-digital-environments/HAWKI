@@ -655,7 +655,7 @@ class PathBuilder
                         'application/json' => [
                             'schema' => [
                                 'type' => 'object',
-                                'description' => "Client-friendly schema for {$resource}. Includes attributes with validation constraints, relationships with cardinatity, writable_on paths, and available actions with their input schemas.",
+                                'description' => "Client-friendly schema for {$resource}. Includes attributes with validation constraints, relationships with cardinality and type references, JSON Pointer paths for writable fields, and available actions with their input schemas.",
                             ],
                         ],
                     ],

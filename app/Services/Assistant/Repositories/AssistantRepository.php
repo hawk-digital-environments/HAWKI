@@ -113,4 +113,24 @@ readonly class AssistantRepository
             $user->favoriteAssistants()->detach($assistant->id);
         }
     }
+
+    /**
+     * @return list<string>
+     */
+    public function getUserPromptTexts(Assistant $assistant): array
+    {
+        return $assistant->user_prompts()->pluck('text')->all();
+    }
+
+    public function removeUserPrompts(Assistant $assistant, array $texts): void
+    {
+        $assistant->user_prompts()->whereIn('text', $texts)->delete();
+    }
+
+    public function createUserPrompts(Assistant $assistant, array $texts): void
+    {
+        $assistant->user_prompts()->createMany(
+            array_map(fn (string $text) => ['text' => $text], $texts),
+        );
+    }
 }

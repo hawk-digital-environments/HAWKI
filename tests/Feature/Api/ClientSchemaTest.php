@@ -282,19 +282,19 @@ class ClientSchemaTest extends TestCase
         $attrs = $response->json('resources.assistants.attributes');
 
         // Writable via main resource endpoint
-        $this->assertSame(['resource'], $attrs['name']['writable_on']);
-        $this->assertSame(['resource'], $attrs['handle']['writable_on']);
-        $this->assertSame(['resource'], $attrs['system_prompt']['writable_on']);
-        $this->assertSame(['resource'], $attrs['greeting']['writable_on']);
-        $this->assertSame(['resource'], $attrs['description']['writable_on']);
-        $this->assertSame(['resource'], $attrs['detail_description']['writable_on']);
-        $this->assertSame(['resource'], $attrs['allow_remix']['writable_on']);
-        $this->assertSame(['resource'], $attrs['allow_model_select']['writable_on']);
-        $this->assertSame(['resource'], $attrs['model']['writable_on']);
-        $this->assertSame(['resource'], $attrs['max_tokens']['writable_on']);
-        $this->assertSame(['resource'], $attrs['temp']['writable_on']);
-        $this->assertSame(['resource'], $attrs['top_p']['writable_on']);
-        $this->assertSame(['resource'], $attrs['avatar_id']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['name']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['handle']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['system_prompt']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['greeting']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['description']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['detail_description']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['allow_remix']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['allow_model_select']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['model']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['max_tokens']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['temp']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['top_p']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $attrs['avatar_id']['writable_on']);
     }
 
     public function test_writable_on_dual_path_attributes(): void
@@ -306,7 +306,7 @@ class ClientSchemaTest extends TestCase
 
         // release_stage can be set via BOTH resource PATCH and dedicated action
         $this->assertSame(
-            ['action:release', 'resource'],
+            ['/resources/assistants/actions/release', '/resources/assistants/endpoints/update'],
             $attrs['release_stage']['writable_on'],
         );
     }
@@ -320,7 +320,7 @@ class ClientSchemaTest extends TestCase
 
         // is_favorite is computed (readOnly), only mutable via action
         $this->assertSame(
-            ['action:favorite'],
+            ['/resources/assistants/actions/favorite'],
             $attrs['is_favorite']['writable_on'],
         );
     }
@@ -373,18 +373,18 @@ class ClientSchemaTest extends TestCase
         $this->assertSame('toMany', $rels['setting_values']['cardinality']);
     }
 
-    public function test_relationship_targets(): void
+    public function test_relationship_types(): void
     {
         Sanctum::actingAs($this->user);
 
         $response = $this->jsonApi('get', '/api/assistants/schema');
         $rels = $response->json('resources.assistants.relationships');
 
-        $this->assertSame('assistant-categories', $rels['category']['target']);
-        $this->assertSame('assistant-setting-values', $rels['setting_values']['target']);
-        $this->assertSame('users', $rels['creator']['target']);
-        $this->assertSame('tags', $rels['tags']['target']);
-        $this->assertSame('assistant-reviews', $rels['review']['target']);
+        $this->assertSame('assistant-categories', $rels['category']['type']);
+        $this->assertSame('assistant-setting-values', $rels['setting_values']['type']);
+        $this->assertSame('users', $rels['creator']['type']);
+        $this->assertSame('tags', $rels['tags']['type']);
+        $this->assertSame('assistant-reviews', $rels['review']['type']);
     }
 
     public function test_relationship_writable_on(): void
@@ -395,18 +395,18 @@ class ClientSchemaTest extends TestCase
         $rels = $response->json('resources.assistants.relationships');
 
         // Writable via main resource endpoint
-        $this->assertSame(['resource'], $rels['category']['writable_on']);
-        $this->assertSame(['resource'], $rels['tags']['writable_on']);
-        $this->assertSame(['resource'], $rels['ai_tools']['writable_on']);
-        $this->assertSame(['resource'], $rels['user_prompts']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $rels['category']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $rels['tags']['writable_on']);
+        $this->assertSame(['/resources/assistants/endpoints/update'], $rels['ai_tools']['writable_on']);
+        $this->assertSame(['/resources/assistants/actions/user-prompts', '/resources/assistants/endpoints/update'], $rels['user_prompts']['writable_on']);
 
         // Writable via custom action
         $this->assertSame(
-            ['action:settings'],
+            ['/resources/assistants/actions/settings'],
             $rels['setting_values']['writable_on'],
         );
         $this->assertSame(
-            ['action:feedback'],
+            ['/resources/assistants/actions/feedback'],
             $rels['feedback']['writable_on'],
         );
 
@@ -441,13 +441,13 @@ class ClientSchemaTest extends TestCase
         $response = $this->jsonApi('get', '/api/assistants/schema');
         $actions = $response->json('resources.assistants.actions');
 
-        $expectedActions = ['chat-test', 'remix', 'release', 'feedback', 'favorite', 'settings'];
+        $expectedActions = ['chat-test', 'remix', 'release', 'feedback', 'favorite', 'settings', 'user-prompts'];
 
         foreach ($expectedActions as $name) {
             $this->assertArrayHasKey($name, $actions, "Missing action: {$name}");
         }
 
-        $this->assertCount(6, $actions);
+        $this->assertCount(7, $actions);
     }
 
     public function test_action_structure(): void
@@ -622,15 +622,45 @@ class ClientSchemaTest extends TestCase
         $response = $this->jsonApi('get', '/api/assistants/schema');
         $resources = $response->json('resources');
 
+        $standalone = ['assistants', 'assistant-avatars', 'assistant-categories', 'tags',
+            'assistant-settings', 'assistant-setting-values', 'assistant-reviews',
+            'ai-tools', 'mcp-servers', 'ai-models', 'ai-providers'];
+
         foreach ($resources as $type => $resource) {
             $this->assertArrayHasKey('type', $resource, "Type '{$type}' missing type field");
-            $this->assertArrayHasKey('endpoints', $resource);
             $this->assertArrayHasKey('attributes', $resource);
             $this->assertArrayHasKey('filters', $resource);
             $this->assertArrayHasKey('sortable', $resource);
             $this->assertArrayHasKey('includable', $resource);
 
             $this->assertSame($type, $resource['type']);
+
+            if (in_array($type, $standalone, true)) {
+                $this->assertArrayHasKey('endpoints', $resource, "Type '{$type}' missing endpoints");
+            } else {
+                $this->assertArrayNotHasKey('endpoints', $resource, "Type '{$type}' should not have standalone endpoints");
+            }
+        }
+    }
+
+    public function test_relationship_only_resources_have_no_standalone_endpoints(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        $response = $this->jsonApi('get', '/api/assistants/schema');
+        $resources = $response->json('resources');
+
+        $relationOnly = ['users', 'user-prompts', 'ai-model-statuses', 'versions', 'organizations'];
+
+        foreach ($relationOnly as $type) {
+            $this->assertArrayHasKey($type, $resources, "Missing resource: {$type}");
+            $this->assertArrayNotHasKey('endpoints', $resources[$type],
+                "'{$type}' should not have standalone endpoints");
+            $this->assertSame($type, $resources[$type]['type']);
+            $this->assertArrayHasKey('attributes', $resources[$type]);
+            $this->assertArrayHasKey('filters', $resources[$type]);
+            $this->assertArrayHasKey('sortable', $resources[$type]);
+            $this->assertArrayHasKey('includable', $resources[$type]);
         }
     }
 

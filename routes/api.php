@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $actions->withId()->post('feedback');
                     $actions->withId()->post('favorite');
                     $actions->withId()->post('settings');
+                    $actions->withId()->post('user-prompts');
                 });
 
             $server->resource('assistant-avatars', AssistantAvatarController::class)

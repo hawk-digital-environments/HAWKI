@@ -64,8 +64,8 @@ class AssistantSchema extends Schema
 
             BelongsTo::make('category')->type('assistant-categories'),
             HasMany::make('setting_values', 'settingValues')->type('assistant-setting-values')->readOnly(),
-            HasMany::make('user_prompts', 'user_prompts'),
-            BelongsToMany::make('ai_tools', 'ai_tools'),
+            HasMany::make('user_prompts', 'user_prompts')->readOnly(),
+            BelongsToMany::make('ai_tools', 'ai_tools')->readOnly(),
             BelongsToMany::make('tags', 'tags'),
             BelongsTo::make('creator', 'creator')->type('users')->readOnly(),
             BelongsTo::make('remix_creator', 'remix_creator')->type('users')->readOnly(),
@@ -84,6 +84,7 @@ class AssistantSchema extends Schema
             AssistantNameFilter::make(),
             AssistantFavoriteFilter::make(),
             Where::make('release_stage'),
+            Where::make('handle')->singular()
         ];
     }
 
