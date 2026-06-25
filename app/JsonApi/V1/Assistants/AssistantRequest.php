@@ -32,7 +32,7 @@ class AssistantRequest extends ResourceRequest
             'category' => ['nullable', JsonApiRule::toOne()],
             'setting_values' => ['nullable', JsonApiRule::toMany()],
             'model' => ['nullable', 'string'],
-            'max_tokens' => ['nullable', 'integer', 'min:1'],
+            'max_tokens' => ['nullable', 'integer', 'min:0'],
             'temp' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'top_p' => ['nullable', 'numeric', 'min:0', 'max:1'],
             'avatar_id' => ['nullable', 'string', 'exists:assistant_avatars,uuid'],
