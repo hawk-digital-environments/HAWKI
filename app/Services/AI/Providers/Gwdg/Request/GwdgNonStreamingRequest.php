@@ -48,7 +48,7 @@ class GwdgNonStreamingRequest extends AbstractRequest
         );
 
         // Parse tool calls if present
-        if (isset($message['tool_calls']) && is_array($message['tool_calls'])) {
+        if (!empty($message['tool_calls']) && is_array($message['tool_calls'])) {
             return ToolCallAiResponse::fromResponseAndToolCalls(
                 $response,
                 $this->parseToolCalls($message['tool_calls'])
