@@ -1,5 +1,11 @@
 # Frontend Overview
 
+:::info[In a migration phase]
+We are currently in the middle of migrating the frontend from a legacy vanilla-JS layer to a modern Svelte 5 + TypeScript stack.
+
+The whole system is currently changing pretty rapidly, so do not expect any of the documented features to be stable. If you are contributing, please check the latest code and ask questions in Discord if anything is unclear.
+:::
+
 ## Philosophy
 
 HAWKI's frontend is in a hybrid transition. Blade templates remain the leading rendering layer: the server renders the page shell, and Svelte components are progressively mounted into it to replace individual UI sections. No new code goes into `public/js/` — all new frontend work lives under `resources/js/` and is processed by Vite.
@@ -8,14 +14,14 @@ The Svelte layer is designed to eventually become a full SPA. Until that point, 
 
 ## Technology Stack
 
-| Technology | Role |
-|---|---|
-| **Svelte 5** (Runes API: `$state`, `$derived`, `$props`) | Component framework and reactivity model |
-| **TypeScript** | Type safety across all new frontend code |
-| **Vite** | Build tool and dev server |
-| **CSS custom properties + cascade layers** | Design tokens and style isolation |
-| **class-variance-authority (CVA)** | Variant-based component class composition |
-| **Web Crypto API** | Client-side symmetric, asymmetric, and hybrid encryption |
+| Technology                                               | Role                                                     |
+|----------------------------------------------------------|----------------------------------------------------------|
+| **Svelte 5** (Runes API: `$state`, `$derived`, `$props`) | Component framework and reactivity model                 |
+| **TypeScript**                                           | Type safety across all new frontend code                 |
+| **Vite**                                                 | Build tool and dev server                                |
+| **CSS custom properties + cascade layers**               | Design tokens and style isolation                        |
+| **class-variance-authority (CVA)**                       | Variant-based component class composition                |
+| **Web Crypto API**                                       | Client-side symmetric, asymmetric, and hybrid encryption |
 
 ## Directory Map
 
@@ -67,14 +73,14 @@ resources/css/
 
 ## Where to Go Next
 
-| You want to… | Read |
-|---|---|
-| Build a Svelte component | Basics → Svelte Components |
-| Write CSS | Basics → Styling |
-| Fetch data from the server | Basics → Data Layer |
-| Understand a specific component feature | Components → (that feature) |
-| Add a boot stage or understand startup | Advanced → App Startup |
-| Use the pipeline utilities | Advanced → Event System |
-| Bridge new Svelte code to legacy JS | Advanced → Old UI Bridge |
-| Work with encryption | Advanced → Encryption |
-| Create a frontend migration | Advanced → Frontend Migrations |
+| You want to…                            | Read                           |
+|-----------------------------------------|--------------------------------|
+| Build a Svelte component                | Basics → Svelte Components     |
+| Write CSS                               | Basics → Styling               |
+| Fetch data from the server              | Basics → Data Layer            |
+| Understand a specific component feature | Components → (that feature)    |
+| Add a boot stage or understand startup  | Advanced → App Startup         |
+| Use the pipeline utilities              | Advanced → Event System        |
+| Bridge new Svelte code to legacy JS     | Advanced → Old UI Bridge       |
+| Work with encryption                    | Advanced → Encryption          |
+| Create a frontend migration             | Advanced → Frontend Migrations |

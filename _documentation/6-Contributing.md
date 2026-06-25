@@ -1353,6 +1353,7 @@ Use `cx` (re-exported from `class-variance-authority`) directly when you only ne
 
 ```ts
 import {cx} from 'class-variance-authority';
+
 const cls = cx('base', isActive && 'active', className);
 ```
 
@@ -1802,9 +1803,11 @@ You are welcome to use AI tools when contributing to HAWKI. AI assistants can he
 
 To help you succeed, we provide curated skills:
 
-- **[HAWKI backend Skill](pathname://attachments/skills/hawki-backend/SKILL.md)** — The skill for working at our Laravel backend layer, including our architecture, coding standards, and best practices
-- **[HAWKI frontend Skill](pathname://attachments/skills/hawki-frontend/SKILL.md)** — The skill for working at our Svelte frontend layer, including our hybrid architecture, coding standards, and best practices
-- **[PHPUnit Testing Skill](pathname://attachments/skills/phpunit/SKILL.md)** — Comprehensive guidance for writing effective unit and feature tests, including assertions, data providers, mocking, and test structure
+[//]: # (- **[HAWKI backend Skill]&#40;pathname://attachments/skills/hawki-backend/SKILL.md&#41;** — The skill for working at our Laravel backend layer, including our architecture, coding standards, and best practices)
+
+[//]: # (- **[HAWKI frontend Skill]&#40;pathname://attachments/skills/hawki-frontend/SKILL.md&#41;** — The skill for working at our Svelte frontend layer, including our hybrid architecture, coding standards, and best practices)
+
+[//]: # (- **[PHPUnit Testing Skill]&#40;pathname://attachments/skills/phpunit/SKILL.md&#41;** — Comprehensive guidance for writing effective unit and feature tests, including assertions, data providers, mocking, and test structure)
 
 Share these skills with your AI tool to provide context on HAWKI's expectations.
 

@@ -1,5 +1,9 @@
 # Data Layer
 
+:::info[Architecture in Transition]
+The current data layer provides synchronous read access to configuration and connection data loaded once during bootstrap. This design will evolve as we introduce a reactive local-first JavaScript backbone in a future version. The API helpers and fetch patterns documented here are stable in the short term, but expect the underlying data synchronisation model to change significantly as that work progresses.
+:::
+
 The data layer sits under `resources/js/data/` and covers everything between a Svelte component and the HAWKI REST API: runtime configuration, connection metadata, typed fetch helpers, resource schema validation, and the encryption keychain. All of these are available after the `preparation` boot stage completes.
 
 ## Config vs Connection

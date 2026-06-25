@@ -1,8 +1,0 @@
-{
-  "label": "Components",
-  "position": 2,
-  "link": {
-    "type": "generated-index",
-    "description": "Architecture documentation for specific component features. Each page covers one feature area under resources/js/components/."
-  }
-}

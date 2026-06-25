@@ -1,4 +1,4 @@
-# Event System (Flow Utilities)
+# Event System
 
 HAWKI does not use a general-purpose event bus. Instead it provides three purpose-built dispatcher classes — `SyncPipeline`, `AsyncPipeline`, and `ParallelAsyncWorkflow` — each enforcing a different execution contract at the TypeScript level. The type system prevents misuse: you cannot accidentally register an async handler on a `SyncPipeline`, and you cannot mix up sequential and concurrent execution without explicitly choosing the right type.
 
@@ -13,10 +13,10 @@ Source files: `resources/js/utils/flows/`
 
 ## Choosing the Right Type
 
-| Situation | Use |
-|---|---|
-| Handlers must complete synchronously — no Promises allowed | `SyncPipeline` |
-| Handlers are async and must run one after another | `AsyncPipeline` |
+| Situation                                                       | Use                     |
+|-----------------------------------------------------------------|-------------------------|
+| Handlers must complete synchronously — no Promises allowed      | `SyncPipeline`          |
+| Handlers are async and must run one after another               | `AsyncPipeline`         |
 | Handlers are async and can run concurrently (up to N at a time) | `ParallelAsyncWorkflow` |
 
 ---
@@ -42,7 +42,7 @@ Same as `trigger` but returns `void`. Use this at call sites where a `void`-type
 ### Typed example
 
 ```typescript
-import { SyncPipeline } from '$lib/utils/flows/SyncPipeline.js';
+import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
 interface Events {
     userLoggedIn: { userId: string };
@@ -51,11 +51,11 @@ interface Events {
 
 const pipeline = new SyncPipeline<Events>();
 
-const off = pipeline.on('userLoggedIn', ({ userId }) => {
+const off = pipeline.on('userLoggedIn', ({userId}) => {
     console.log('logged in:', userId);
 });
 
-pipeline.trigger('userLoggedIn', { userId: '42' });
+pipeline.trigger('userLoggedIn', {userId: '42'});
 pipeline.triggerVoid('userLoggedOut');
 
 off(); // unregister
@@ -84,7 +84,7 @@ Same as `trigger` but resolves to `void`. Use when a `Promise<void>` return type
 ### Typed example
 
 ```typescript
-import { AsyncPipeline } from '$lib/utils/flows/AsyncPipeline.js';
+import {AsyncPipeline} from '$lib/utils/flows/AsyncPipeline.js';
 
 interface Events {
     beforeSave: { data: FormData };
@@ -93,11 +93,11 @@ interface Events {
 
 const pipeline = new AsyncPipeline<Events>();
 
-const off = pipeline.on('beforeSave', async ({ data }) => {
+const off = pipeline.on('beforeSave', async ({data}) => {
     await validate(data);
 });
 
-await pipeline.trigger('beforeSave', { data: formData });
+await pipeline.trigger('beforeSave', {data: formData});
 await pipeline.triggerVoid('afterSave');
 
 off(); // unregister
@@ -118,7 +118,7 @@ This makes `ParallelAsyncWorkflow` well suited for independent work within a sin
 ### Typed example
 
 ```typescript
-import { ParallelAsyncWorkflow } from '$lib/utils/flows/ParallelAsyncWorkflow.js';
+import {ParallelAsyncWorkflow} from '$lib/utils/flows/ParallelAsyncWorkflow.js';
 
 interface Stages {
     boot: { app: App };
@@ -127,12 +127,11 @@ interface Stages {
 // Run up to 3 boot tasks concurrently.
 const workflow = new ParallelAsyncWorkflow<Stages>(3);
 
-workflow.on('boot', async ({ app }) => loadConfig(app));
-workflow.on('boot', async ({ app }) => loadSession(app));
-workflow.on('boot', async ({ app }) => prefetchRoutes(app));
+workflow.on('boot', async ({app}) => loadConfig(app));
+workflow.on('boot', async ({app}) => loadSession(app));
+workflow.on('boot', async ({app}) => prefetchRoutes(app));
 // Starts as soon as any of the above finishes, not after all three.
-workflow.on('boot', async ({ app }) => warmCache(app));
+workflow.on('boot', async ({app}) => warmCache(app));
 
-await workflow.trigger('boot', { app });
+await workflow.trigger('boot', {app});
 ```
-
