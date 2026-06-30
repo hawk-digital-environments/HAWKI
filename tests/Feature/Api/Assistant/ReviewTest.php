@@ -46,7 +46,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -77,7 +77,7 @@ class ReviewTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -106,7 +106,7 @@ class ReviewTest extends TestCase
         Sanctum::actingAs($user);
         Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -122,79 +122,33 @@ class ReviewTest extends TestCase
         ]);
     }
 
-    public function test_admin_can_list_reviews_with_assistant(): void
+    public function test_release_to_draft_does_not_create_review(): void
     {
-        $admin = $this->createAdmin();
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
             'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
         ]);
-        Review::create([
-            'assistant_id' => $assistant->id,
-            'status' => ReviewStatus::PENDING->value,
-        ]);
 
-        Sanctum::actingAs($admin);
+        Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', '/api/assistant-reviews?include=assistant')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-
-        $response->assertJson([
+        // No Event::fake: the AssistantReleaseStatus listener runs for real
+        // so this genuinely verifies it skips review creation when the target
+        // stage is draft (matching the existing behaviour for private).
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
-                [
-                    'type' => 'assistant-reviews',
-                    'attributes' => [
-                        'status' => ReviewStatus::PENDING->value,
-                    ],
-                    'relationships' => [
-                        'assistant' => [
-                            'data' => [
-                                'id' => (string) $assistant->id,
-                                'type' => 'assistants',
-                            ],
-                        ],
-                    ],
+                'type' => 'assistants',
+                'id' => (string) $assistant->id,
+                'attributes' => [
+                    'release_stage' => ReleaseStage::DRAFT->value,
                 ],
             ],
-        ]);
+        ])
+            ->assertOk();
 
-        $included = collect($response->json('included'));
-        $assistantResource = $included->first(fn ($item) => $item['type'] === 'assistants');
-        $this->assertEquals($assistant->name, $assistantResource['attributes']['name']);
-    }
-
-    public function test_admin_can_list_reviews_without_assistant(): void
-    {
-        $admin = $this->createAdmin();
-        $user = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $user->id,
-            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
-        ]);
-        Review::create([
+        $this->assertDatabaseMissing('reviews', [
             'assistant_id' => $assistant->id,
-            'status' => ReviewStatus::PENDING->value,
         ]);
-
-        Sanctum::actingAs($admin);
-
-        $response = $this->jsonApi('get', '/api/assistant-reviews')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-
-        $response->assertJsonMissingPath('included');
-    }
-
-    public function test_non_admin_cannot_list_reviews(): void
-    {
-        $member = $this->createMember();
-
-        Sanctum::actingAs($member);
-
-        $this->jsonApi('get', '/api/assistant-reviews')
-            ->assertForbidden();
     }
 
     public function test_admin_can_approve_review(): void
@@ -336,9 +290,6 @@ class ReviewTest extends TestCase
 
     public function test_guest_cannot_access_reviews(): void
     {
-        $this->jsonApi('get', '/api/assistant-reviews')
-            ->assertUnauthorized();
-
         $this->jsonApi('patch', '/api/assistant-reviews/1', [
             'data' => [
                 'type' => 'assistant-reviews',

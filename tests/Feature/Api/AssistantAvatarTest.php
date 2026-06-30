@@ -2,134 +2,183 @@
 
 namespace Tests\Feature\Api;
 
+use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantAvatar;
-use App\Services\Storage\AvatarStorageService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
-use Laravel\Sanctum\Sanctum;
 use App\Models\User;
+use App\Services\Assistant\Values\ReleaseStage;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class AssistantAvatarTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected function setUp(): void
+    private const DOTS_PATTERN = 'background-color: #E5E5F7; opacity: 0.8; background: radial-gradient(#444CF7 15%, transparent 16%) 0 0, radial-gradient(#444CF7 15%, transparent 16%) 5px 5px, radial-gradient(#444CF733 15%, transparent 20%) 0 1px, radial-gradient(#444CF733 15%, transparent 20%) 5px 6px; background-size: 10px 10px;';
+
+    public function test_owner_can_create_avatar_for_their_assistant(): void
     {
-        parent::setUp();
-        Storage::fake('public');
-    }
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        Sanctum::actingAs($owner);
 
-    private function createStoredAvatar(string $name = 'indigo'): AssistantAvatar
-    {
-        $uuid = Str::uuid()->toString();
-        app(AvatarStorageService::class)->store(
-            'png-contents',
-            "{$uuid}.png",
-            $uuid,
-            AssistantAvatar::STORAGE_CATEGORY,
-        );
-
-        return AssistantAvatar::create(['uuid' => $uuid, 'name' => $name]);
-    }
-
-    public function test_guest_cannot_list_assistant_avatars(): void
-    {
-        $this->jsonApi('get', '/api/assistant-avatars')
-            ->assertUnauthorized()
-            ->assertJson(['errors' => [['detail' => 'Unauthenticated.']]]);
-    }
-
-    public function test_can_list_assistant_avatars(): void
-    {
-        $user = User::factory()->create();
-        $avatar = $this->createStoredAvatar('indigo');
-        Sanctum::actingAs($user);
-
-        $response = $this->jsonApi('get', '/api/assistant-avatars')
-            ->assertOk()
-            ->assertJsonCount(1, 'data');
-
-        $response->assertJson([
+        $this->jsonApi('post', '/api/assistant-avatars', [
             'data' => [
-                [
-                    'id' => (string) $avatar->id,
-                    'type' => 'assistant-avatars',
-                    'attributes' => [
-                        'name' => 'indigo',
-                    ],
+                'type' => 'assistant-avatars',
+                'attributes' => ['name' => '🧠', 'icon_css' => self::DOTS_PATTERN],
+                'relationships' => [
+                    'assistant' => ['data' => ['type' => 'assistants', 'id' => (string) $assistant->id]],
                 ],
             ],
+        ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('assistant_avatars', [
+            'assistant_id' => $assistant->id,
+            'name' => '🧠',
         ]);
     }
 
-    public function test_url_attribute_is_resolved(): void
+    public function test_non_owner_cannot_create_avatar(): void
     {
-        $user = User::factory()->create();
-        $avatar = $this->createStoredAvatar('sky');
-        Sanctum::actingAs($user);
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        ]);
+        Sanctum::actingAs(User::factory()->create());
 
-        $response = $this->jsonApi('get', '/api/assistant-avatars')
-            ->assertOk();
-
-        $this->assertNotNull($response->json('data.0.attributes.url'));
-        $this->assertStringContainsString($avatar->uuid, $response->json('data.0.attributes.url'));
-    }
-
-    public function test_url_attribute_is_null_when_no_file_exists(): void
-    {
-        $user = User::factory()->create();
-        $avatar = AssistantAvatar::create(['uuid' => Str::uuid()->toString(), 'name' => 'orphan']);
-        Sanctum::actingAs($user);
-
-        $this->jsonApi('get', '/api/assistant-avatars')
-            ->assertOk()
-            ->assertJsonPath('data.0.attributes.url', null);
-    }
-
-    public function test_can_show_assistant_avatar(): void
-    {
-        $user = User::factory()->create();
-        $avatar = $this->createStoredAvatar('emerald');
-        Sanctum::actingAs($user);
-
-        $this->jsonApi('get', "/api/assistant-avatars/{$avatar->id}")
-            ->assertOk()
-            ->assertJson([
-                'data' => [
-                    'id' => (string) $avatar->id,
-                    'type' => 'assistant-avatars',
-                    'attributes' => [
-                        'name' => 'emerald',
-                    ],
+        $this->jsonApi('post', '/api/assistant-avatars', [
+            'data' => [
+                'type' => 'assistant-avatars',
+                'attributes' => ['name' => '🧠', 'icon_css' => self::DOTS_PATTERN],
+                'relationships' => [
+                    'assistant' => ['data' => ['type' => 'assistants', 'id' => (string) $assistant->id]],
                 ],
-            ]);
+            ],
+        ])->assertForbidden();
     }
 
-    public function test_empty_list_returns_empty_data(): void
+    public function test_create_requires_assistant_relationship(): void
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->jsonApi('get', '/api/assistant-avatars')
-            ->assertOk()
-            ->assertJsonCount(0, 'data');
+        $this->jsonApi('post', '/api/assistant-avatars', [
+            'data' => [
+                'type' => 'assistant-avatars',
+                'attributes' => ['name' => '🧠', 'icon_css' => self::DOTS_PATTERN],
+            ],
+        ])->assertStatus(422);
     }
 
-    public function test_list_supports_pagination(): void
+    public function test_assistant_can_have_only_one_avatar(): void
     {
-        $user = User::factory()->create();
-        AssistantAvatar::factory()->count(20)->create();
-        Sanctum::actingAs($user);
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        AssistantAvatar::factory()->create(['assistant_id' => $assistant->id]);
+        Sanctum::actingAs($owner);
 
-        $response = $this->jsonApi('get', '/api/assistant-avatars?' . http_build_query(['page' => ['size' => 5]]))
-            ->assertOk()
-            ->assertJsonCount(5, 'data');
+        $this->jsonApi('post', '/api/assistant-avatars', [
+            'data' => [
+                'type' => 'assistant-avatars',
+                'attributes' => ['name' => '🧠', 'icon_css' => self::DOTS_PATTERN],
+                'relationships' => [
+                    'assistant' => ['data' => ['type' => 'assistants', 'id' => (string) $assistant->id]],
+                ],
+            ],
+        ])->assertStatus(422);
+    }
 
-        $response->assertJsonStructure([
-            'meta' => ['page' => ['currentPage', 'from', 'to', 'perPage', 'lastPage', 'total']],
-            'links' => ['first', 'last', 'next'],
+    public function test_index_is_scoped_to_visible_assistants(): void
+    {
+        $ownerA = User::factory()->create();
+        $publicAssistant = Assistant::factory()->create([
+            'creator_id' => $ownerA->id,
+            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
         ]);
+        $publicAvatar = AssistantAvatar::factory()->create(['assistant_id' => $publicAssistant->id]);
+
+        $ownerB = User::factory()->create();
+        $privateAssistant = Assistant::factory()->create([
+            'creator_id' => $ownerB->id,
+            'release_stage' => ReleaseStage::PRIVATE->value,
+        ]);
+        $privateAvatar = AssistantAvatar::factory()->create(['assistant_id' => $privateAssistant->id]);
+
+        Sanctum::actingAs(User::factory()->create());
+
+        $ids = collect($this->jsonApi('get', '/api/assistant-avatars')->assertOk()->json('data'))
+            ->pluck('id');
+
+        $this->assertContains((string) $publicAvatar->id, $ids);
+        $this->assertNotContains((string) $privateAvatar->id, $ids);
+    }
+
+    public function test_show_is_gated_by_assistant_visibility(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => ReleaseStage::PRIVATE->value,
+        ]);
+        $avatar = AssistantAvatar::factory()->create(['assistant_id' => $assistant->id]);
+
+        Sanctum::actingAs($owner);
+        $this->jsonApi('get', "/api/assistant-avatars/{$avatar->id}")->assertOk();
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->jsonApi('get', "/api/assistant-avatars/{$avatar->id}")->assertForbidden();
+    }
+
+    public function test_update_and_delete_are_owner_only(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        ]);
+        $avatar = AssistantAvatar::factory()->create(['assistant_id' => $assistant->id]);
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->jsonApi('patch', "/api/assistant-avatars/{$avatar->id}", [
+            'data' => [
+                'type' => 'assistant-avatars',
+                'id' => (string) $avatar->id,
+                'attributes' => ['name' => '💡'],
+            ],
+        ])->assertForbidden();
+
+        $this->jsonApi('delete', "/api/assistant-avatars/{$avatar->id}")->assertForbidden();
+
+        Sanctum::actingAs($owner);
+        $this->jsonApi('patch', "/api/assistant-avatars/{$avatar->id}", [
+            'data' => [
+                'type' => 'assistant-avatars',
+                'id' => (string) $avatar->id,
+                'attributes' => ['name' => '💡'],
+            ],
+        ])->assertOk();
+
+        $this->jsonApi('delete', "/api/assistant-avatars/{$avatar->id}")->assertNoContent();
+    }
+
+    public function test_avatar_assistant_link_does_not_leak_private_assistant(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => ReleaseStage::PRIVATE->value,
+        ]);
+        $avatar = AssistantAvatar::factory()->create(['assistant_id' => $assistant->id]);
+
+        Sanctum::actingAs($owner);
+        $this->jsonApi('get', "/api/assistant-avatars/{$avatar->id}/assistant")
+            ->assertOk()
+            ->assertJsonPath('data.id', (string) $assistant->id);
+
+        Sanctum::actingAs(User::factory()->create());
+        $this->jsonApi('get', "/api/assistant-avatars/{$avatar->id}/assistant")
+            ->assertForbidden();
     }
 }

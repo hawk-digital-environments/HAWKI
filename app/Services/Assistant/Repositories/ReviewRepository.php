@@ -40,7 +40,7 @@ readonly class ReviewRepository
         }
 
         $review->status = ReviewStatus::PENDING->value;
-        $review->reason = null;
+        $review->reason = "Assistant updated since last review";
         $review->save();
     }
 }

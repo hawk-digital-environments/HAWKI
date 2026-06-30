@@ -7,7 +7,6 @@ namespace App\JsonApi\V1\Tags;
 use App\Models\Assistants\Tag;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
-use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Schema;
 
@@ -17,6 +16,11 @@ class TagSchema extends Schema
 
     protected bool $selfLink = false;
 
+    public static function type(): string
+    {
+        return 'assistant-tags';
+    }
+
     public function fields(): array
     {
         return [
@@ -24,8 +28,6 @@ class TagSchema extends Schema
             Str::make('text'),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
-
-            HasMany::make('assistants')->type('assistants')->readOnly(),
         ];
     }
 

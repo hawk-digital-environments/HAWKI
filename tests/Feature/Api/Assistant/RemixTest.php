@@ -6,6 +6,7 @@ use App\Models\Assistants\Assistant;
 use App\Models\Assistants\Tag;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\Feature\Api\Assistant\Fixtures\Assistant as AssistantFixture;
@@ -22,7 +23,6 @@ class RemixTest extends TestCase
         $originalCreator = User::factory()->create();
 
         $tool = $this->createAiTool();
-        $tag = Tag::create(['text' => 'remix-tag']);
 
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
@@ -34,7 +34,7 @@ class RemixTest extends TestCase
             ['text' => 'Prompt two'],
         ]);
         $assistant->ai_tools()->attach($tool->id);
-        $assistant->tags()->attach($tag->id);
+        $assistant->tags()->attach(Tag::create(['text' => 'remix-tag']));
         $assistant->attachments()->create([
             'uuid' => 'test-uuid',
             'name' => 'test.png',
@@ -86,7 +86,7 @@ class RemixTest extends TestCase
         $this->assertNull($clone->handle);
 
         $this->assertEquals(2, $clone->user_prompts()->count());
-        $this->assertTrue($clone->tags()->where('tag_id', $tag->id)->exists());
+        $this->assertTrue($clone->tags()->where('text', 'remix-tag')->exists());
         $this->assertEquals(1, $clone->attachments()->count());
         $this->assertEquals('test-uuid', $clone->attachments()->first()->uuid);
 
@@ -307,5 +307,70 @@ class RemixTest extends TestCase
 
         $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
             ->assertUnauthorized();
+    }
+
+    public function test_remix_records_version_on_source_when_organizational(): void
+    {
+        $owner = User::factory()->create();
+        $remixUser = User::factory()->create();
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'allow_remix' => true,
+            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        ]);
+        $initialVersionCount = $assistant->versions()->count();
+
+        Sanctum::actingAs($remixUser);
+
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
+            ->assertCreated();
+
+        $assistant->fresh();
+        $this->assertSame($initialVersionCount, $assistant->versions()->count());
+
+        $version = $assistant->versions()->latest('version')->first();
+        $this->assertSame('{"changes":["remixed"]}', $version->text);
+        $this->assertEquals(['remixed'], $version->changed_keys);
+    }
+
+    public function test_remix_skips_version_on_source_when_private(): void
+    {
+        $owner = User::factory()->create();
+        $remixUser = User::factory()->create();
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'allow_remix' => true,
+            'release_stage' => ReleaseStage::PRIVATE->value,
+        ]);
+        $initialVersionCount = $assistant->versions()->count();
+
+        Sanctum::actingAs($remixUser);
+
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
+            ->assertCreated();
+
+        $this->assertSame($initialVersionCount, $assistant->fresh()->versions()->count());
+    }
+
+    public function test_remix_skips_version_on_source_when_draft(): void
+    {
+        $owner = User::factory()->create();
+        $remixUser = User::factory()->create();
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'allow_remix' => true,
+            'release_stage' => ReleaseStage::DRAFT->value,
+        ]);
+        $initialVersionCount = $assistant->versions()->count();
+
+        Sanctum::actingAs($remixUser);
+
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/remix")
+            ->assertCreated();
+
+        $this->assertSame($initialVersionCount, $assistant->fresh()->versions()->count());
     }
 }

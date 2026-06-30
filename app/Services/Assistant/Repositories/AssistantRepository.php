@@ -6,6 +6,7 @@ namespace App\Services\Assistant\Repositories;
 
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantSettingValue;
+use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Database\Eloquent\Builder;
@@ -28,14 +29,110 @@ readonly class AssistantRepository
     public function filterVisibleForUser(Builder $query, User $user): Builder
     {
         return $query->where(function ($q) use ($user) {
-            $q->where('release_stage', '!=', 'private')
-                ->orWhere('creator_id', $user->id);
+            $q->whereIn('release_stage', ReleaseStage::publiclyVisibleValues())
+                ->orWhere('creator_id', $user->id)
+                ->orWhereHas('sharedUsers', fn ($sq) => $sq->where('user_id', $user->id));
         });
     }
 
     public function isVisibleTo(Assistant $assistant, User $user): bool
     {
-        return $assistant->release_stage !== 'private' || $assistant->creator_id === $user->id;
+        if (in_array($assistant->release_stage, ReleaseStage::publiclyVisibleValues(), true)) {
+            return true;
+        }
+
+        if ($assistant->creator_id === $user->id) {
+            return true;
+        }
+
+        return $assistant->sharedUsers()
+            ->where('user_id', $user->id)
+            ->exists();
+    }
+
+    /**
+     * Is the user an administrator of the given organization?
+     */
+    public function isAdminOf(User $user, ?Organization $organization): bool
+    {
+        if ($organization === null) {
+            return false;
+        }
+
+        return $user->organizations()
+            ->wherePivot('role', 'admin')
+            ->where('organizations.id', $organization->id)
+            ->exists();
+    }
+
+    /**
+     * "Privileged" tier (M): the assistant's creator or an admin of the
+     * assistant's organization. Used for sensitive relationships
+     * (tags, feedback, review, setting values) and ai_tools edits.
+     */
+    public function isPrivileged(User $user, Assistant $assistant): bool
+    {
+        if ($assistant->creator_id === $user->id) {
+            return true;
+        }
+
+        return $this->isAdminOf($user, $assistant->organization);
+    }
+
+    /**
+     * "Collaborator" tier (C): creator, org admin, or an explicitly shared user.
+     * Public viewers (visible only via release stage) are excluded. Used for
+     * viewing ai_tools.
+     */
+    public function canCollaborate(User $user, Assistant $assistant): bool
+    {
+        if ($this->isPrivileged($user, $assistant)) {
+            return true;
+        }
+
+        return $assistant->sharedUsers()
+            ->where('user_id', $user->id)
+            ->exists();
+    }
+
+    /**
+     * Query scope equivalent of the privileged tier, for scoping collections of
+     * assistants (or child resources via whereHas('assistant', ...)) to those the
+     * user may manage: assistants they created or that belong to an organization
+     * they administer.
+     */
+    public function filterPrivilegedForUser(Builder $query, User $user): Builder
+    {
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('creator_id', $user->id)
+                ->orWhereHas('organization', function (Builder $orgQuery) use ($user) {
+                    $orgQuery->whereHas('users', function (Builder $userQuery) use ($user) {
+                        $userQuery->where('users.id', $user->id)
+                            ->where('organization_user.role', 'admin');
+                    });
+                });
+        });
+    }
+
+    /**
+     * Query scope equivalent of the collaborator tier: creator, org admin, or
+     * an explicitly shared user. Used to scope the assistant collection when a
+     * client requests the ai_tools include path.
+     */
+    public function filterCollaborateForUser(Builder $query, User $user): Builder
+    {
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('creator_id', $user->id)
+                ->orWhereHas('organization', function (Builder $orgQuery) use ($user) {
+                    $orgQuery->whereHas('users', function (Builder $userQuery) use ($user) {
+                        $userQuery->where('users.id', $user->id)
+                            ->where('organization_user.role', 'admin');
+                    });
+                })
+                ->orWhereHas('sharedUsers', function (Builder $sharedQuery) use ($user) {
+                    $sharedQuery->where('user_id', $user->id);
+                });
+        });
     }
 
     public function clone(Assistant $source, int $creatorId, ?int $organizationId = null): Assistant
@@ -76,11 +173,6 @@ readonly class AssistantRepository
         return $assistant->ai_tools()->sync($toolIds);
     }
 
-    public function syncTags(Assistant $assistant, array $tagIds): array
-    {
-        return $assistant->tags()->sync($tagIds);
-    }
-
     public function setReleaseStage(Assistant $assistant, ReleaseStage $stage): bool
     {
         if ($assistant->release_stage === $stage->value) {
@@ -112,25 +204,5 @@ readonly class AssistantRepository
         } else {
             $user->favoriteAssistants()->detach($assistant->id);
         }
-    }
-
-    /**
-     * @return list<string>
-     */
-    public function getUserPromptTexts(Assistant $assistant): array
-    {
-        return $assistant->user_prompts()->pluck('text')->all();
-    }
-
-    public function removeUserPrompts(Assistant $assistant, array $texts): void
-    {
-        $assistant->user_prompts()->whereIn('text', $texts)->delete();
-    }
-
-    public function createUserPrompts(Assistant $assistant, array $texts): void
-    {
-        $assistant->user_prompts()->createMany(
-            array_map(fn (string $text) => ['text' => $text], $texts),
-        );
     }
 }

@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\AssistantSettingValues;
 
 use App\Models\Assistants\AssistantSettingValue;
+use App\Services\Assistant\Repositories\AssistantRepository;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use LaravelJsonApi\Contracts\Server\Server;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
@@ -14,6 +18,13 @@ use LaravelJsonApi\Eloquent\Schema;
 class AssistantSettingValueSchema extends Schema
 {
     public static string $model = AssistantSettingValue::class;
+
+    public function __construct(
+        Server $server,
+        private readonly AssistantRepository $repository,
+    ) {
+        parent::__construct($server);
+    }
 
     public static function type(): string
     {
@@ -43,5 +54,16 @@ class AssistantSettingValueSchema extends Schema
     public function authorizable(): bool
     {
         return false;
+    }
+
+    public function indexQuery(?Request $request, Builder $query): Builder
+    {
+        $user = $request?->user();
+
+        if ($user === null) {
+            return $query;
+        }
+
+        return $query->whereHas('assistant', fn (Builder $assistantQuery) => $this->repository->filterPrivilegedForUser($assistantQuery, $user));
     }
 }

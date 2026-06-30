@@ -3,10 +3,13 @@
 namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantSetting;
+use App\Models\Assistants\AssistantSettingValue;
 use App\Models\Assistants\Category;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\Assistant\Values\ReleaseStage;
+use Database\Seeders\SettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -63,14 +66,6 @@ class IndexTest extends TestCase
                                     'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                                     'meta' => ['message' => 'ALLOWED'],
                                 ],
-                                'release' => [
-                                    'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
-                                    'meta' => ['message' => 'ALLOWED'],
-                                ],
-                                'feedback' => [
-                                    'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/feedback",
-                                    'meta' => ['message' => 'ALLOWED'],
-                                ],
                             ],
                         ],
                     ],
@@ -85,12 +80,12 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', '/api/assistants?include=creator,user_prompts')
+        $response = $this->jsonApi('get', '/api/assistants?include=creator,assistant_user_prompts')
             ->assertOk();
 
         $response->assertJsonPath('data.0.relationships.creator.data.id', (string) $user->id);
         $response->assertJsonPath('data.0.relationships.creator.data.type', 'users');
-        $response->assertJsonPath('data.0.relationships.user_prompts.data', []);
+        $response->assertJsonPath('data.0.relationships.assistant_user_prompts.data', []);
 
         $included = collect($response->json('included'));
         $creatorResource = $included->first(fn ($item) => $item['type'] === 'users');
@@ -109,7 +104,7 @@ class IndexTest extends TestCase
 
         $included = collect($response->json('included'));
         $versionResource = $included->first(fn ($item) => $item['type'] === 'versions');
-        $this->assertEquals('Initial version', $versionResource['attributes']['text']);
+        $this->assertEquals('{"changes":[]}', $versionResource['attributes']['text']);
         $this->assertEquals('1.0', $versionResource['attributes']['version']);
     }
 
@@ -221,15 +216,15 @@ class IndexTest extends TestCase
 
     public function test_can_list_assistants_with_setting_values_and_category(): void
     {
-        $this->seed(\Database\Seeders\SettingSeeder::class);
-        $setting = \App\Models\Assistants\AssistantSetting::where('key', 'language')->firstOrFail();
+        $this->seed(SettingSeeder::class);
+        $setting = AssistantSetting::where('key', 'language')->firstOrFail();
         $category = Category::factory()->create(['text' => 'education']);
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
             'category_id' => $category->id,
         ]);
-        \App\Models\Assistants\AssistantSettingValue::create([
+        AssistantSettingValue::create([
             'assistant_id' => $assistant->id,
             'setting_id' => $setting->id,
             'value' => 'de',
@@ -237,7 +232,7 @@ class IndexTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', '/api/assistants?include=setting_values,category')
+        $response = $this->jsonApi('get', '/api/assistants?include=assistant_setting_values,category')
             ->assertOk();
 
         $response->assertJson([
@@ -245,7 +240,7 @@ class IndexTest extends TestCase
                 [
                     'id' => (string) $assistant->id,
                     'relationships' => [
-                        'setting_values' => [
+                        'assistant_setting_values' => [
                             'data' => [
                                 [
                                     'id' => (string) $assistant->settingValues->first()->id,
@@ -288,6 +283,41 @@ class IndexTest extends TestCase
             ->assertJsonCount(0, 'data');
     }
 
+    public function test_user_cannot_see_other_users_draft_assistant_in_list(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => ReleaseStage::DRAFT->value,
+        ]);
+
+        Sanctum::actingAs($other);
+
+        $this->jsonApi('get', '/api/assistants')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_user_can_see_other_users_organizational_assistant_in_list(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => ReleaseStage::ORGANIZATIONAL->value,
+        ]);
+
+        Sanctum::actingAs($other);
+
+        $this->jsonApi('get', '/api/assistants')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', (string) $assistant->id);
+    }
+
     public function test_user_can_see_own_private_assistant_in_list(): void
     {
         $user = User::factory()->create();
@@ -317,8 +347,8 @@ class IndexTest extends TestCase
         Sanctum::actingAs($user);
 
         $query = http_build_query([
-            'include' => 'tags,category',
-            'fields' => ['tags' => 'text'],
+            'include' => 'assistant_tags,category',
+            'fields' => ['assistant-tags' => 'text'],
             'filter' => ['category' => ['text' => 'general']],
             'page' => ['size' => 5],
         ]);
@@ -331,8 +361,8 @@ class IndexTest extends TestCase
 
         $links = $response->json('links');
 
-        $this->assertStringContainsString('include=tags%2Ccategory', $links['first']);
-        $this->assertStringContainsString('fields%5Btags%5D=text', $links['first']);
+        $this->assertStringContainsString('include=assistant_tags%2Ccategory', $links['first']);
+        $this->assertStringContainsString('fields%5Bassistant-tags%5D=text', $links['first']);
         $this->assertStringContainsString('filter%5Bcategory%5D%5Btext%5D=general', $links['first']);
         $this->assertStringContainsString('page%5Bsize%5D=5', $links['first']);
         $this->assertStringContainsString('page%5Bnumber%5D=1', $links['first']);
@@ -409,14 +439,6 @@ class IndexTest extends TestCase
                         'remix' => [
                             'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                             'meta' => ['message' => 'DENIED'],
-                        ],
-                        'release' => [
-                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
-                            'meta' => ['message' => 'DENIED'],
-                        ],
-                        'feedback' => [
-                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/feedback",
-                            'meta' => ['message' => 'ALLOWED'],
                         ],
                     ],
                 ],
@@ -522,14 +544,23 @@ class IndexTest extends TestCase
         $user = User::factory()->create();
         $draftAssistant = Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release draft', 'release_stage' => ReleaseStage::DRAFT]);
         Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release organizational', 'release_stage' => ReleaseStage::ORGANIZATIONAL]);
-        Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release private', 'release_stage' => ReleaseStage::PRIVATE]);
+        $privateAssistant = Assistant::factory()->create(['creator_id' => $user->id, 'name' => 'Release private', 'release_stage' => ReleaseStage::PRIVATE]);
 
         Sanctum::actingAs($user);
 
+        // Single value (string) is accepted via the comma delimiter.
         $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['release_stage' => ReleaseStage::DRAFT]]))
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.id', (string) $draftAssistant->id);
+
+        // Multiple comma-separated values are accepted.
+        $response = $this->jsonApi('get', '/api/assistants?'.http_build_query(['filter' => ['release_stage' => ReleaseStage::DRAFT->value.','.ReleaseStage::PRIVATE->value]]))
+            ->assertOk()
+            ->assertJsonCount(2, 'data');
+
+        $ids = collect($response->json('data'))->pluck('id')->sort()->values();
+        $this->assertSame([(string) $draftAssistant->id, (string) $privateAssistant->id], $ids->all());
     }
 
     public function test_is_favorite_filter_only_scopes_to_authenticated_user(): void
@@ -538,7 +569,7 @@ class IndexTest extends TestCase
         $userB = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $userA->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
         $userA->favoriteAssistants()->attach($assistant->id);
 

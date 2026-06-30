@@ -4,15 +4,20 @@ namespace App\Models\Assistants;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssistantAvatar extends Model
 {
     use HasFactory;
 
-    public const STORAGE_CATEGORY = 'assistant_avatars';
-
     protected $fillable = [
-        'uuid',
         'name',
+        'icon_css',
+        'assistant_id',
     ];
+
+    public function assistant(): BelongsTo
+    {
+        return $this->belongsTo(Assistant::class);
+    }
 }

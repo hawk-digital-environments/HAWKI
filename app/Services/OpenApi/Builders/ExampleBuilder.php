@@ -130,8 +130,9 @@ class ExampleBuilder
         'assistant-categories' => ['text' => 'programming'],
         'assistant-settings' => ['key' => 'formality', 'label' => 'Formality', 'ui_type' => 'select'],
         'assistant-setting-values' => ['value' => 'neutral'],
-        'tags' => ['text' => 'php'],
-        'user-prompts' => ['text' => 'First prompt'],
+        'assistant-tags' => ['text' => 'php'],
+        'assistant-user-prompts' => ['text' => 'First prompt'],
+        'assistant-feedback' => ['text' => 'Great assistant!'],
         'users' => ['name' => 'John Doe'],
         'organizations' => ['name' => 'Test Org'],
         'versions' => [
@@ -160,68 +161,9 @@ class ExampleBuilder
             ],
             'response' => "event: response.created\ndata: {\"type\":\"response.created\",\"response\":{\"id\":\"resp_abc123\",\"object\":\"response\",\"status\":\"in_progress\",\"model\":\"gpt-4\",\"output\":[],\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"total_tokens\":0},\"created_at\":1718000000},\"sequence_number\":0}\n\nevent: response.in_progress\ndata: {\"type\":\"response.in_progress\",\"response\":{\"id\":\"resp_abc123\",\"object\":\"response\",\"status\":\"in_progress\",\"model\":\"gpt-4\",\"output\":[],\"usage\":{\"input_tokens\":0,\"output_tokens\":0,\"total_tokens\":0},\"created_at\":1718000000},\"sequence_number\":1}\n\nevent: response.completed\ndata: {\"type\":\"response.completed\",\"response\":{\"id\":\"resp_abc123\",\"object\":\"response\",\"status\":\"completed\",\"model\":\"gpt-4\",\"output\":[{\"id\":\"msg_xyz\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"Hello!\",\"annotations\":[]}],\"status\":\"completed\"}],\"usage\":{\"input_tokens\":10,\"output_tokens\":5,\"total_tokens\":15},\"created_at\":1718000000},\"sequence_number\":8}\n\n",
         ],
-        'assistants.favorite' => [
-            'request' => [
-                'data' => [
-                    'type' => 'assistants',
-                    'id' => '1',
-                    'attributes' => ['is_favorite' => true],
-                ],
-            ],
-        ],
-        'assistants.feedback' => [
-            'request' => [
-                'data' => [
-                    'type' => 'assistants',
-                    'attributes' => ['text' => 'Great assistant!'],
-                ],
-            ],
-        ],
-        'assistants.release' => [
-            'request' => [
-                'data' => [
-                    'type' => 'assistants',
-                    'id' => '1',
-                    'attributes' => ['release_stage' => 'organizational'],
-                ],
-            ],
-        ],
         'assistants.remix' => [
             'response' => [
                 'data' => ['id' => '2', 'type' => 'assistants'],
-            ],
-        ],
-        'assistants.settings' => [
-            'request' => [
-                'data' => [
-                    'type' => 'assistants',
-                    'id' => '1',
-                    'attributes' => [
-                        'settings' => [
-                            ['setting_id' => 1, 'value' => 'professional'],
-                            ['setting_id' => 2, 'value' => 'en'],
-                            ['setting_id' => 3, 'value' => 'concise'],
-                        ],
-                    ],
-                ],
-            ],
-        ],
-        'assistants.user-prompts' => [
-            'request' => [
-                'data' => [
-                    'type' => 'assistants',
-                    'id' => '1',
-                    'attributes' => [
-                        'add' => ['What is the capital of France?'],
-                        'remove' => ['Translate this to Spanish'],
-                    ],
-                ],
-            ],
-            'response' => [
-                'data' => [
-                    'id' => '1',
-                    'type' => 'assistants',
-                ],
             ],
         ],
     ];

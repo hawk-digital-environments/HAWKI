@@ -14,6 +14,10 @@ class ReviewPolicy
 
     public function view(User $user, Review $review): bool
     {
+        if ($review->assistant->creator_id === $user->id) {
+            return true;
+        }
+
         return $this->isOrgAdminOf($user, $review->assistant->organization_id);
     }
 

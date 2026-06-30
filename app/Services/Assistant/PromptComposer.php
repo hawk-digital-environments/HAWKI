@@ -7,6 +7,7 @@ namespace App\Services\Assistant;
 use App\Models\Assistants\Assistant;
 use App\Models\Assistants\AssistantSetting;
 use App\Models\Assistants\AssistantSettingValue;
+use Illuminate\Support\Collection;
 
 class PromptComposer
 {
@@ -29,7 +30,7 @@ class PromptComposer
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, AssistantSettingValue>  $values
+     * @param  Collection<int, AssistantSettingValue>  $values
      * @return array<int, array{setting: AssistantSetting, value: mixed}>
      */
     private function resolveEffectiveValues($values): array
@@ -43,7 +44,7 @@ class PromptComposer
             }
 
             $value = $valueRecord->value ?? $setting->default_value;
-            if ($value === null) {
+            if ($value === null || $value === '') {
                 continue;
             }
 

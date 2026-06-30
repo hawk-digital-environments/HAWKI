@@ -2,13 +2,10 @@
 
 namespace Tests\Feature\Api\Assistant;
 
-use App\Events\AssistantTriggerReleaseStatus;
-use App\Listeners\AssistantReleaseStatus;
 use App\Models\Assistants\Assistant;
 use App\Models\User;
 use App\Services\Assistant\Values\ReleaseStage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -18,9 +15,6 @@ class ReleaseTest extends TestCase
 
     public function test_can_release_assistant(): void
     {
-        Event::fake(AssistantTriggerReleaseStatus::class);
-        Event::assertListening(AssistantTriggerReleaseStatus::class, AssistantReleaseStatus::class);
-
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
@@ -28,9 +22,8 @@ class ReleaseTest extends TestCase
         ]);
 
         Sanctum::actingAs($user);
-        Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $response = $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -45,10 +38,11 @@ class ReleaseTest extends TestCase
         $assistant->refresh();
         $this->assertEquals(ReleaseStage::ORGANIZATIONAL->value, $assistant->release_stage);
 
-        Event::assertDispatched(AssistantTriggerReleaseStatus::class, function ($event) {
-            return $event->oldStage === ReleaseStage::PRIVATE
-                && $event->newStage === ReleaseStage::ORGANIZATIONAL;
-        });
+        // Release to organizational/federated creates a pending review.
+        $this->assertDatabaseHas('reviews', [
+            'assistant_id' => $assistant->id,
+            'status' => 'pending',
+        ]);
     }
 
     public function test_cannot_release_others_assistant(): void
@@ -62,7 +56,7 @@ class ReleaseTest extends TestCase
 
         Sanctum::actingAs($other);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -83,7 +77,7 @@ class ReleaseTest extends TestCase
             'release_stage' => ReleaseStage::PRIVATE->value,
         ]);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -104,9 +98,8 @@ class ReleaseTest extends TestCase
         ]);
 
         Sanctum::actingAs($user);
-        Event::fake(AssistantTriggerReleaseStatus::class);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,
@@ -117,7 +110,11 @@ class ReleaseTest extends TestCase
         ])
             ->assertOk();
 
-        Event::assertNotDispatched(AssistantTriggerReleaseStatus::class);
+        // No review created since the stage didn't change.
+        $this->assertDatabaseMissing('reviews', [
+            'assistant_id' => $assistant->id,
+            'status' => 'pending',
+        ]);
     }
 
     public function test_release_with_invalid_stage_returns_validation_error(): void
@@ -130,7 +127,7 @@ class ReleaseTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/release", [
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", [
             'data' => [
                 'type' => 'assistants',
                 'id' => (string) $assistant->id,

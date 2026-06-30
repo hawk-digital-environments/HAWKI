@@ -4,6 +4,8 @@ namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
 use App\Models\User;
+use App\Services\AI\AiService;
+use App\Services\AI\Value\AiModel;
 use App\Services\Assistant\Chat\AssistantChatRunnerInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -91,12 +93,25 @@ class ChatTestTest extends TestCase
         $this->app->instance(AssistantChatRunnerInterface::class, $runner);
     }
 
+    /**
+     * Stub model lookups so the test doesn't depend on the real AI model infrastructure.
+     */
+    private function mockModelLookup(array $modelMap): void
+    {
+        $service = $this->createMock(AiService::class);
+        $service->method('getModel')
+            ->willReturnCallback(fn (string $id): ?AiModel =>
+                $modelMap[$id] ?? null
+            );
+        $this->app->instance(AiService::class, $service);
+    }
+
     public function test_guest_cannot_chat_test(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
 
         $this->postJson("/api/assistants/{$assistant->id}/actions/chat-test", $this->createChatTestPayload())
@@ -413,6 +428,7 @@ class ChatTestTest extends TestCase
 
     public function test_chat_test_uses_requested_model_when_allow_model_select(): void
     {
+        $this->mockModelLookup(['gpt-4.1' => new AiModel(['id' => 'gpt-4.1', 'active' => true])]);
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
@@ -445,6 +461,7 @@ class ChatTestTest extends TestCase
 
     public function test_chat_test_allows_default_model_without_allow_model_select(): void
     {
+        $this->mockModelLookup(['gpt-5' => new AiModel(['id' => 'gpt-5', 'active' => true])]);
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
@@ -489,11 +506,12 @@ class ChatTestTest extends TestCase
             "/api/assistants/{$assistant->id}/actions/chat-test",
             $this->createChatTestPayload(['model' => 'gpt-4.1'])
         )->assertStatus(422)
-         ->assertJsonPath('errors.model.0', fn ($msg) => str_contains($msg, 'not allowed'));
+            ->assertJsonPath('errors.model.0', fn ($msg) => str_contains($msg, 'not allowed'));
     }
 
     public function test_chat_test_rejects_nonexistent_model(): void
     {
+        $this->mockModelLookup([]);
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
@@ -506,7 +524,7 @@ class ChatTestTest extends TestCase
             "/api/assistants/{$assistant->id}/actions/chat-test",
             $this->createChatTestPayload(['model' => 'nonexistent-model-12345'])
         )->assertStatus(422)
-         ->assertJsonPath('errors.model.0', fn ($msg) => str_contains($msg, 'not available'));
+            ->assertJsonPath('errors.model.0', fn ($msg) => str_contains($msg, 'not available'));
     }
 
     public function test_chat_test_includes_usage_in_response_completed(): void
@@ -660,7 +678,7 @@ class ChatTestTest extends TestCase
 
         $this->performStreamingRequest(
             "/api/assistants/{$assistant->id}/actions/chat-test",
-             ['input' => 'Hello world'],
+            ['input' => 'Hello world'],
         );
     }
 

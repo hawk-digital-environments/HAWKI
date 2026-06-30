@@ -35,7 +35,6 @@ class Assistant extends Model
         'max_tokens' => 0,
         'temp' => 0.0,
         'top_p' => 0.0,
-        'avatar_id' => null,
     ];
 
     protected static function booted(): void
@@ -71,7 +70,6 @@ class Assistant extends Model
         'max_tokens',
         'temp',
         'top_p',
-        'avatar_id',
         'creator_id',
         'remixed_creator_id',
         'remixed_assistant_id',
@@ -89,6 +87,11 @@ class Assistant extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function assistantAvatar(): HasOne
+    {
+        return $this->hasOne(AssistantAvatar::class);
     }
 
     public function organization(): BelongsTo
@@ -113,7 +116,7 @@ class Assistant extends Model
 
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(Tag::class);
+        return $this->belongsToMany(Tag::class, 'assistant_tag');
     }
 
     public function creator(): BelongsTo
@@ -159,6 +162,12 @@ class Assistant extends Model
     public function favoritedByUsers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'assistant_favorite_users')
+            ->withTimestamps();
+    }
+
+    public function sharedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'assistant_shared_users')
             ->withTimestamps();
     }
 

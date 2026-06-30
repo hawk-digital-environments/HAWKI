@@ -15,7 +15,7 @@ class AssistantReleaseStatus
 
     public function handle(AssistantTriggerReleaseStatus $event): void
     {
-        if ($event->newStage === ReleaseStage::PRIVATE) {
+        if ($event->newStage === ReleaseStage::PRIVATE || $event->newStage === ReleaseStage::DRAFT) {
             return;
         }
 

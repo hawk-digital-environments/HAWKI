@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\Assistants;
 
 use App\Models\Assistants\Assistant;
-use App\Services\Assistant\AssistantAvatarUrlResolver;
+use App\Policies\AssistantPolicy;
 use App\Services\Assistant\Repositories\AssistantRepository;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -21,6 +21,7 @@ use LaravelJsonApi\Eloquent\Fields\Relations\HasOne;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Filters\Where;
 use LaravelJsonApi\Eloquent\Filters\WhereHas;
+use LaravelJsonApi\Eloquent\Filters\WhereIn;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 
@@ -28,9 +29,10 @@ class AssistantSchema extends Schema
 {
     public static string $model = Assistant::class;
 
+    protected int $maxDepth = 2;
+
     public function __construct(
         Server $server,
-        private AssistantAvatarUrlResolver $urlResolver,
         private AssistantRepository $repository,
     ) {
         parent::__construct($server);
@@ -53,27 +55,24 @@ class AssistantSchema extends Schema
             Number::make('max_tokens'),
             Number::make('temp'),
             Number::make('top_p'),
-            Str::make('avatar_id'),
-            Str::make('avatar_url')->readOnly()->extractUsing(
-                fn (Assistant $model) => $this->urlResolver->forUuid($model->avatar_id),
-            ),
             DateTime::make('created_at')->sortable()->readOnly(),
             DateTime::make('updated_at')->sortable()->readOnly(),
-            Str::make('version_text')->hidden(),
             Boolean::make('is_favorite')->readOnly(),
 
             BelongsTo::make('category')->type('assistant-categories'),
-            HasMany::make('setting_values', 'settingValues')->type('assistant-setting-values')->readOnly(),
-            HasMany::make('user_prompts', 'user_prompts')->readOnly(),
-            BelongsToMany::make('ai_tools', 'ai_tools')->readOnly(),
-            BelongsToMany::make('tags', 'tags'),
+            HasOne::make('assistant_avatar', 'assistantAvatar')->type('assistant-avatars')->readOnly(),
+            HasMany::make('assistant_setting_values', 'settingValues')->type('assistant-setting-values')->readOnly(),
+            HasMany::make('assistant_user_prompts', 'user_prompts')->type('assistant-user-prompts')->readOnly(),
+            BelongsToMany::make('ai_tools', 'ai_tools'),
+            BelongsToMany::make('assistant_tags', 'tags')->type('assistant-tags'),
             BelongsTo::make('creator', 'creator')->type('users')->readOnly(),
             BelongsTo::make('remix_creator', 'remix_creator')->type('users')->readOnly(),
             BelongsTo::make('remixed_assistant', 'remixed_assistant')->type('assistants')->readOnly(),
-            HasMany::make('versions', 'versions')->readOnly(),
-            BelongsTo::make('organization')->readOnly(),
-            HasOne::make('review', 'review')->type('assistant-reviews')->readOnly(),
-            HasMany::make('feedback', 'feedback')->readOnly(),
+            HasMany::make('versions', 'versions')->type('versions')->readOnly(),
+            BelongsTo::make('organization')->type('organizations')->readOnly(),
+            HasOne::make('assistant_review', 'review')->type('assistant-reviews')->readOnly(),
+            HasMany::make('assistant_feedback', 'feedback')->type('assistant-feedback')->readOnly(),
+            BelongsToMany::make('shared_users', 'sharedUsers')->type('users'),
         ];
     }
 
@@ -83,8 +82,8 @@ class AssistantSchema extends Schema
             WhereHas::make($this, 'category'),
             AssistantNameFilter::make(),
             AssistantFavoriteFilter::make(),
-            Where::make('release_stage'),
-            Where::make('handle')->singular()
+            WhereIn::make('release_stage')->delimiter(','),
+            Where::make('handle')->singular(),
         ];
     }
 
@@ -101,8 +100,26 @@ class AssistantSchema extends Schema
             return $query;
         }
 
-        return $this->repository
+        $query = $this->repository
             ->filterVisibleForUser($query, $user)
             ->withCount(['favoritedByUsers as is_favorite' => fn ($q) => $q->where('user_id', $user->id)]);
+
+        // When a client requests a sensitive relationship via include, narrow
+        // the collection to assistants the user is actually allowed to read
+        // that relationship for, so the data is not leaked for assistants the
+        // user can only view at the public tier.
+        $requested = collect(explode(',', (string) $request?->query('include', '')))
+            ->filter()
+            ->map(fn (string $path) => explode('.', $path)[0]);
+
+        if ($requested->intersect(AssistantPolicy::PRIVILEGED_RELATIONSHIPS)->isNotEmpty()) {
+            return $this->repository->filterPrivilegedForUser($query, $user);
+        }
+
+        if ($requested->intersect(AssistantPolicy::COLLABORATE_RELATIONSHIPS)->isNotEmpty()) {
+            return $this->repository->filterCollaborateForUser($query, $user);
+        }
+
+        return $query;
     }
 }

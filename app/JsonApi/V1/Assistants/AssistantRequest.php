@@ -14,7 +14,7 @@ class AssistantRequest extends ResourceRequest
     public function rules(): array
     {
         $rules = [
-            'name' => ['nullable', 'string', 'max:255'],
+            'name' => ['string', 'max:255'],
             'handle' => [
                 'nullable',
                 'string',
@@ -22,23 +22,21 @@ class AssistantRequest extends ResourceRequest
                 'unique:assistants,handle',
                 'unique:ai_models,label',
             ],
-            'system_prompt' => ['nullable', 'string'],
-            'greeting' => ['nullable', 'string'],
-            'description' => ['nullable', 'string'],
-            'detail_description' => ['nullable', 'string'],
-            'allow_remix' => ['nullable', 'boolean'],
-            'allow_model_select' => ['nullable', 'boolean'],
-            'release_stage' => ['nullable', Rule::enum(ReleaseStage::class)],
+            'system_prompt' => ['string'],
+            'greeting' => ['string'],
+            'description' => ['string'],
+            'detail_description' => [ 'string'],
+            'allow_remix' => [ 'boolean'],
+            'allow_model_select' => [ 'boolean'],
+            'release_stage' => [ Rule::enum(ReleaseStage::class)],
             'category' => ['nullable', JsonApiRule::toOne()],
-            'setting_values' => ['nullable', JsonApiRule::toMany()],
-            'model' => ['nullable', 'string'],
-            'max_tokens' => ['nullable', 'integer', 'min:0'],
-            'temp' => ['nullable', 'numeric', 'min:0', 'max:1'],
-            'top_p' => ['nullable', 'numeric', 'min:0', 'max:1'],
-            'avatar_id' => ['nullable', 'string', 'exists:assistant_avatars,uuid'],
-            'user_prompts' => [JsonApiRule::toMany()],
+            'model' => ['string'],
+            'max_tokens' => ['integer', 'min:0'],
+            'temp' => ['numeric', 'min:0', 'max:1'],
+            'top_p' => ['numeric', 'min:0', 'max:1'],
             'ai_tools' => [JsonApiRule::toMany()],
-            'tags' => [JsonApiRule::toMany()],
+            'assistant_tags' => [JsonApiRule::toMany()],
+            'shared_users' => [JsonApiRule::toMany()],
         ];
 
         if ($this->isUpdating()) {
@@ -60,17 +58,14 @@ class AssistantRequest extends ResourceRequest
             $rules['allow_remix'] = ['sometimes', 'boolean'];
             $rules['allow_model_select'] = ['sometimes', 'boolean'];
             $rules['category'] = ['sometimes', JsonApiRule::toOne()];
-            $rules['setting_values'] = ['sometimes', JsonApiRule::toMany()];
             $rules['release_stage'] = ['sometimes', Rule::enum(ReleaseStage::class)];
             $rules['model'] = ['sometimes', 'string'];
-            $rules['max_tokens'] = ['sometimes', 'integer', 'min:1'];
+            $rules['max_tokens'] = ['sometimes', 'integer', 'min:0'];
             $rules['temp'] = ['sometimes', 'numeric', 'min:0', 'max:1'];
             $rules['top_p'] = ['sometimes', 'numeric', 'min:0', 'max:1'];
-            $rules['avatar_id'] = ['sometimes', 'nullable', 'string', 'exists:assistant_avatars,uuid'];
-            $rules['user_prompts'] = ['sometimes', JsonApiRule::toMany()];
             $rules['ai_tools'] = ['sometimes', JsonApiRule::toMany()];
-            $rules['tags'] = ['sometimes', JsonApiRule::toMany()];
-            $rules['version_text'] = ['sometimes', 'nullable', 'string'];
+            $rules['assistant_tags'] = ['sometimes', JsonApiRule::toMany()];
+            $rules['shared_users'] = ['sometimes', JsonApiRule::toMany()];
         }
 
         return $rules;

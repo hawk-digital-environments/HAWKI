@@ -35,16 +35,17 @@ class ClientSchemaGenerator
     ];
 
     /**
-     * Maps resource type -> field name -> action names that handle mutation for
-     * fields whose relationship name differs from the action name.
+     * Custom write paths that cannot be auto-discovered from schema metadata
+     * or route patterns (e.g. self-referential action attributes like favorite).
      */
-    private const ACTION_FIELD_MAP = [
+    private const CUSTOM_WRITE_PATHS = [
         'assistants' => [
-            'setting_values' => ['settings'],
-            'is_favorite' => ['favorite'],
-            'release_stage' => ['release'],
-            'feedback' => ['feedback'],
-            'user_prompts' => ['user-prompts'],
+            'attributes' => [
+                'is_favorite' => [
+                    ['method' => 'POST',   'path' => '/api/assistants/{id}/actions/favorite'],
+                    ['method' => 'DELETE', 'path' => '/api/assistants/{id}/actions/favorite'],
+                ],
+            ],
         ],
     ];
 
@@ -163,7 +164,7 @@ class ClientSchemaGenerator
 
             $attr['constraints'] = $this->formatConstraints($mergedConstraints, $openApiType);
 
-            $writableOn = $this->resolveWritableOn($name, $resourceType, $isReadOnly, $validatedFields, $actionRoutes);
+            $writableOn = $this->resolveWritableOn($name, $resourceType, $isReadOnly, $validatedFields, context: 'attributes');
 
             if ($writableOn !== null) {
                 $attr['writable_on'] = $writableOn;
@@ -206,7 +207,9 @@ class ClientSchemaGenerator
                 $rel['readOnly'] = true;
             }
 
-            $writableOn = $this->resolveWritableOn($name, $resourceType, $isReadOnly, $validatedFields, $actionRoutes);
+            $isToMany = $field instanceof HasMany || $field instanceof BelongsToMany;
+
+            $writableOn = $this->resolveWritableOn($name, $resourceType, $isReadOnly, $validatedFields, context: 'relationships', isToMany: $isToMany);
 
             if ($writableOn !== null) {
                 $rel['writable_on'] = $writableOn;
@@ -347,80 +350,122 @@ class ClientSchemaGenerator
         };
     }
 
-    private function extractAttributeName(string $key): ?string
-    {
-        if (preg_match('/^data\.attributes\.(\w+)$/', $key, $m)) {
-            return $m[1];
-        }
-
-        return null;
-    }
+    /**
+     * Memoized nested-write routes per resource type, built by scanning
+     * registered routes for patterns like POST /assistants/{id}/feedback.
+     *
+     * @var array<string, array<string, list<array{method:string, path:string}>>>
+     */
+    private array $nestedWriteCache = [];
 
     private function resolveWritableOn(
         string $fieldName,
         string $resourceType,
         bool $isReadOnly,
         array $validatedFields,
-        array $actionRoutes,
+        string $context = 'attribute',
+        bool $isToMany = false,
     ): ?array {
         $writableOn = [];
 
+        // 1. Inline PATCH (standard resource update)
         if (! $isReadOnly && in_array($fieldName, $validatedFields, true)) {
-            $writableOn[] = "/resources/{$resourceType}/endpoints/update";
+            $writableOn[] = ['method' => 'PATCH', 'path' => "/api/{$resourceType}/{id}"];
         }
 
-        $actionNames = $this->findActionsForField($resourceType, $fieldName, $actionRoutes);
-        foreach ($actionNames as $actionName) {
-            $writableOn[] = "/resources/{$resourceType}/actions/{$actionName}";
+        // 2. Relationship endpoint writes (only for to-many; to-one gets PATCH only)
+        if ($context === 'relationships' && ! $isReadOnly) {
+            $uriName = str_replace('_', '-', $fieldName);
+            if ($isToMany) {
+                $writableOn[] = ['method' => 'POST', 'path' => "/api/{$resourceType}/{id}/relationships/{$uriName}"];
+                $writableOn[] = ['method' => 'DELETE', 'path' => "/api/{$resourceType}/{id}/relationships/{$uriName}"];
+            }
+            $writableOn[] = ['method' => 'PATCH', 'path' => "/api/{$resourceType}/{id}/relationships/{$uriName}"];
+        }
+
+        // 3. Nested sub-resource writes (POST/PATCH/DELETE on /{resource}/{id}/{relation})
+        $nested = $this->discoverNestedWrites($resourceType);
+
+        foreach ($nested[$fieldName] ?? [] as $entry) {
+            $writableOn[] = $entry;
+        }
+
+        // 4. Hardcoded custom paths (for self-referential endpoints like favorite)
+        $customPaths = self::CUSTOM_WRITE_PATHS[$resourceType][$context][$fieldName] ?? [];
+
+        foreach ($customPaths as $entry) {
+            $writableOn[] = $entry;
         }
 
         if (empty($writableOn)) {
             return $isReadOnly ? null : [];
         }
 
-        sort($writableOn);
-
         return $writableOn;
     }
 
-    private function findActionsForField(string $resourceType, string $fieldName, array $actionRoutes): array
+    /**
+     * Scan routes for nested sub-resource write operations and map them
+     * to schema field names (relation dashes -> underscores).
+     *
+     * Patterns detected:
+     *   POST  /api/{resource}/{id}/{relation}              -> nested create
+     *   PATCH /api/{resource}/{id}/{relation}              -> nested update
+     *   DELETE /api/{resource}/{id}/{relation}/{childId}   -> nested delete
+     *
+     * Returns a map of fieldName -> [{method, path}] for a given resource type.
+     *
+     * @return array<string, list<array{method:string, path:string}>>
+     */
+    private function discoverNestedWrites(string $resourceType): array
     {
-        $actions = [];
-
-        if (isset(self::ACTION_FIELD_MAP[$resourceType][$fieldName])) {
-            $actions = self::ACTION_FIELD_MAP[$resourceType][$fieldName];
+        if (isset($this->nestedWriteCache[$resourceType])) {
+            return $this->nestedWriteCache[$resourceType];
         }
 
-        foreach ($actionRoutes as $actionName => $route) {
-            if ($route['requestClass'] === null || in_array($actionName, $actions, true)) {
+        $result = [];
+
+        foreach (Route::getRoutes()->getRoutes() as $route) {
+            $uri = $route->uri();
+
+            if (! str_starts_with($uri, "api/{$resourceType}/")) {
                 continue;
             }
 
-            try {
-                $request = new $route['requestClass'];
-                $rules = $request->rules();
-            } catch (\Throwable) {
-                continue;
+            $path = preg_replace('#^api/#', '', $uri);
+            // Normalize all route params to {id} for client-facing URLs.
+            $normalizedPath = preg_replace('#\{[^}]+\}#', '{id}', $path);
+
+            // POST|PATCH /{resource}/{id}/{relation}
+            if (preg_match('#^'.preg_quote($resourceType, '#').'/\{[^}]+\}/([^/\{]+)$#', $path, $m)) {
+                foreach ($route->methods() as $method) {
+                    if ($method === 'POST' || $method === 'PATCH') {
+                        $fieldName = str_replace('-', '_', $m[1]);
+                        $result[$fieldName][] = [
+                            'method' => $method,
+                            'path' => '/api/'.$normalizedPath,
+                        ];
+                    }
+                }
             }
 
-            foreach ($rules as $key => $fieldRules) {
-                $extracted = $this->extractAttributeName($key);
-                if ($extracted !== null) {
-                    if ($this->normalizeName($extracted) === $this->normalizeName($fieldName)
-                        && ! in_array($actionName, $actions, true)
-                    ) {
-                        $actions[] = $actionName;
+            // DELETE /{resource}/{id}/{relation}/{childId}
+            if (preg_match('#^'.preg_quote($resourceType, '#').'/\{[^}]+\}/([^/]+)/\{[^}]+\}$#', $path, $m)) {
+                foreach ($route->methods() as $method) {
+                    if ($method === 'DELETE') {
+                        $fieldName = str_replace('-', '_', $m[1]);
+                        $result[$fieldName][] = [
+                            'method' => $method,
+                            'path' => '/api/'.$normalizedPath,
+                        ];
                     }
                 }
             }
         }
 
-        return $actions;
-    }
+        $this->nestedWriteCache[$resourceType] = $result;
 
-    private function normalizeName(string $name): string
-    {
-        return str_replace(['_', '-'], '', strtolower($name));
+        return $result;
     }
 
     private function buildEndpoints(string $type, string $schemaClass, bool $isAuthorizable, ?Authenticatable $user): array

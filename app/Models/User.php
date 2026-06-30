@@ -5,17 +5,14 @@ namespace App\Models;
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementUser;
 use App\Models\Assistants\Assistant;
-use App\Models\Organization;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
-
 
     protected $fillable = [
         'name',
@@ -25,9 +22,8 @@ class User extends Authenticatable
         'publicKey',
         'avatar_id',
         'bio',
-        'isRemoved'
+        'isRemoved',
     ];
-
 
     public function members()
     {
@@ -44,7 +40,7 @@ class User extends Authenticatable
     public function rooms()
     {
         return $this->belongsToMany(Room::class, 'members', 'user_id', 'room_id')
-                    ->wherePivot('isRemoved', false);
+            ->wherePivot('isRemoved', false);
     }
 
     // Define the relationship with AiConv
@@ -59,24 +55,30 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function sharedAssistants()
+    {
+        return $this->belongsToMany(Assistant::class, 'assistant_shared_users')
+            ->withTimestamps();
+    }
+
     public function invitations()
     {
         return $this->hasMany(Invitation::class, 'username', 'username');
     }
 
-    public function revokProfile(){
-        $this->update(['isRemoved'=> 1]);
+    public function revokProfile()
+    {
+        $this->update(['isRemoved' => 1]);
     }
-
 
     // SECTION: ANNOUNCEMENTS
 
     public function announcements()
     {
         return $this->belongsToMany(Announcement::class, 'announcement_user')
-                    ->using(AnnouncementUser::class)
-                    ->withPivot(['seen_at', 'accepted_at'])
-                    ->withTimestamps();
+            ->using(AnnouncementUser::class)
+            ->withPivot(['seen_at', 'accepted_at'])
+            ->withTimestamps();
     }
 
     public function unreadAnnouncements()
@@ -92,7 +94,7 @@ class User extends Authenticatable
             })
             ->where(function ($q) {
                 $q->where('is_global', true)
-                ->orWhereJsonContains('target_users', $this->id);
+                    ->orWhereJsonContains('target_users', $this->id);
             })
             ->whereDoesntHave('users', function ($q) {
                 $q->where('user_id', $this->id)->whereNotNull('accepted_at');
@@ -113,5 +115,4 @@ class User extends Authenticatable
             $announcementId => ['accepted_at' => now()],
         ]);
     }
-
 }

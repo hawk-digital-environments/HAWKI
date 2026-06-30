@@ -4,44 +4,52 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Assistant;
 
+use App\Events\AssistantTriggerReleaseStatus;
 use App\Http\Controllers\Controller;
-use App\JsonApi\V1\Reviews\ReviewQuery;
-use App\JsonApi\V1\Reviews\ReviewRequest;
-use App\JsonApi\V1\Reviews\ReviewSchema;
 use App\Models\Assistants\Review;
-use App\Services\Assistant\AssistantReviewService;
-use Illuminate\Contracts\Support\Responsable;
-use Illuminate\Http\Response;
-use LaravelJsonApi\Core\Responses\DataResponse;
+use App\Services\Assistant\Values\ReleaseStage;
+use App\Services\Assistant\Values\ReviewStatus;
+use Illuminate\Support\Facades\Event;
 use LaravelJsonApi\Laravel\Http\Controllers\Actions;
 
 class ReviewController extends Controller
 {
     use Actions\FetchMany;
-    use Actions\FetchOne;
-    use Actions\FetchRelated;
-    use Actions\FetchRelationship;
+    use Actions\Update;
 
-    public function __construct(
-        private readonly AssistantReviewService $reviewService,
-    ) {
+    private ?ReviewStatus $preUpdateStatus = null;
+
+    public function __construct()
+    {
         $this->authorizeResource(Review::class, 'assistant_review');
     }
 
-    public function update(ReviewRequest $request, ReviewSchema $schema, ReviewQuery $query, Review $review): Responsable
+    /**
+     * Capture the pre-update status to detect transitions in updated().
+     */
+    public function updating(Review $review, $request, $query): void
     {
-        $this->authorize('update', $review);
-
-        $review = $this->reviewService->update($review, $request->validated());
-
-        return DataResponse::make($review)
-            ->withQueryParameters($query);
+        $this->preUpdateStatus = ReviewStatus::tryFrom($review->status);
     }
 
-    public function destroy(Review $review): Response
+    /**
+     * When a review is denied, push the assistant back to private.
+     */
+    public function updated(Review $review, $request, $query): void
     {
-        $this->authorize('delete', $review);
+        if ($review->status !== ReviewStatus::DENIED->value) {
+            return;
+        }
 
-        return response()->noContent();
+        $assistant = $review->assistant;
+        $oldStage = ReleaseStage::from($assistant->release_stage);
+
+        $assistant->update(['release_stage' => ReleaseStage::PRIVATE->value]);
+
+        Event::dispatch(new AssistantTriggerReleaseStatus(
+            $assistant,
+            $oldStage,
+            ReleaseStage::PRIVATE,
+        ));
     }
 }

@@ -39,7 +39,7 @@ class AssistantFactory extends Factory
     {
         return $this->afterCreating(function (Assistant $assistant) {
             $assistant->versions()->create([
-                'text' => 'Initial version',
+                'text' => json_encode(['changes' => []]),
                 'version' => 1.0,
             ]);
         });

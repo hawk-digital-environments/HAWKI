@@ -5,19 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Assistant;
 
 use App\Events\AssistantCreated;
+use App\Events\AssistantTriggerReleaseStatus;
 use App\Events\AssistantUpdated;
 use App\Http\Controllers\Controller;
 use App\JsonApi\V1\Assistants\AssistantQuery;
 use App\JsonApi\V1\Assistants\AssistantRequest;
 use App\JsonApi\V1\Assistants\AssistantSchema;
 use App\JsonApi\V1\Assistants\ChatTestAssistantRequest;
-use App\JsonApi\V1\Assistants\FavoriteAssistantRequest;
-use App\JsonApi\V1\Assistants\FeedbackAssistantRequest;
-use App\JsonApi\V1\Assistants\ReleaseAssistantRequest;
-use App\JsonApi\V1\Assistants\SettingsAssistantRequest;
-use App\JsonApi\V1\Assistants\UserPromptsAssistantRequest;
 use App\Models\Ai\Tools\AiTool;
 use App\Models\Assistants\Assistant;
+use App\Policies\AssistantPolicy;
 use App\Services\AI\Stream\OpenAIResponsesAdapter;
 use App\Services\Assistant\AssistantService;
 use App\Services\Assistant\Chat\AssistantChatRunnerInterface;
@@ -33,13 +30,18 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AssistantController extends Controller
 {
+    use Actions\AttachRelationship;
     use Actions\Destroy;
+    use Actions\DetachRelationship;
     use Actions\FetchMany;
     use Actions\FetchOne;
     use Actions\FetchRelated;
     use Actions\FetchRelationship;
     use Actions\Store;
     use Actions\Update;
+    use Actions\UpdateRelationship;
+
+    private ?string $preUpdateReleaseStage = null;
 
     public function __construct(
         private readonly AssistantService $assistantService,
@@ -52,6 +54,37 @@ class AssistantController extends Controller
         Event::dispatch(new AssistantCreated($assistant));
     }
 
+    /**
+     * Gate sensitive relationship include paths on the show endpoint. The
+     * framework only authorises dedicated related/relationship URLs, not the
+     * ?include query parameter, so a viewer who can `view` the assistant would
+     * otherwise receive privileged children (setting values, tags, feedback,
+     * review, ai_tools) inline. Authorise each requested sensitive include
+     * against the assistant here.
+     */
+    public function read(Assistant $assistant, $request): void
+    {
+        $sensitive = array_merge(
+            AssistantPolicy::PRIVILEGED_RELATIONSHIPS,
+            AssistantPolicy::COLLABORATE_RELATIONSHIPS,
+        );
+
+        $paths = collect(explode(',', (string) $request->query('include', '')))
+            ->filter()
+            ->map(fn (string $path) => explode('.', $path)[0]);
+
+        foreach ($paths as $field) {
+            if (in_array($field, $sensitive, true)) {
+                $this->authorize('view'.Str::studly($field), $assistant);
+            }
+        }
+    }
+
+    public function updating(Assistant $assistant, AssistantRequest $request, AssistantQuery $query): void
+    {
+        $this->preUpdateReleaseStage = $assistant->release_stage;
+    }
+
     public function updated(Assistant $assistant, AssistantRequest $request, AssistantQuery $query): void
     {
         $changedKeys = array_values(array_filter(
@@ -60,20 +93,28 @@ class AssistantController extends Controller
         ));
 
         $validated = $request->validated();
-        if (isset($validated['tags'])) {
-            $changedKeys[] = 'tags';
+        if (isset($validated['assistant_tags'])) {
+            $changedKeys[] = 'assistant_tags';
         }
         if (isset($validated['ai_tools'])) {
             $changedKeys[] = 'ai_tools';
         }
-        if (isset($validated['user_prompts'])) {
-            $changedKeys[] = 'user_prompts';
+
+        if (isset($validated['release_stage'])) {
+            $newStage = ReleaseStage::from($validated['release_stage']);
+            $oldStage = $this->preUpdateReleaseStage !== null
+                ? ReleaseStage::from($this->preUpdateReleaseStage)
+                : null;
+
+            if ($oldStage !== null && $newStage !== $oldStage) {
+                Event::dispatch(new AssistantTriggerReleaseStatus($assistant, $oldStage, $newStage));
+            }
         }
 
         if ($changedKeys !== []) {
             Event::dispatch(new AssistantUpdated(
                 $assistant,
-                $validated['version_text'] ?? null,
+                null,
                 $changedKeys,
             ));
         }
@@ -85,100 +126,31 @@ class AssistantController extends Controller
 
         $remixed = $this->assistantService->remix($assistant, request()->user());
 
+        if ($this->shouldNotifyUpdate($assistant)) {
+            Event::dispatch(new AssistantUpdated($assistant, null, ['remixed']));
+        }
+
         return DataResponse::make($remixed)
             ->withQueryParameters($query)
             ->didCreate();
     }
 
-    public function feedback(
-        FeedbackAssistantRequest $request,
-        AssistantSchema $schema,
-        AssistantQuery $query,
-        Assistant $assistant,
-    ): Responsable {
-        $this->authorize('view', $assistant);
-
-        $this->assistantService->feedback(
-            $assistant,
-            $request->user(),
-            $request->input('data.attributes.text'),
-        );
-
-        return DataResponse::make($assistant)
-            ->withQueryParameters($query);
-    }
-
-    public function release(ReleaseAssistantRequest $request, AssistantSchema $schema, AssistantQuery $query, Assistant $assistant): Responsable
+    public function addFavorite(Assistant $assistant): Responsable
     {
-        $this->authorize('release', $assistant);
+        $this->authorize('addFavorite', $assistant);
 
-        $releaseStage = ReleaseStage::from($request->input('data.attributes.release_stage'));
+        $this->assistantService->setFavorite($assistant, request()->user(), isFavorite: true);
 
-        $assistant = $this->assistantService->release($assistant, $releaseStage);
-
-        return DataResponse::make($assistant)
-            ->withQueryParameters($query);
+        return DataResponse::make($assistant->fresh());
     }
 
-    public function favorite(
-        FavoriteAssistantRequest $request,
-        AssistantSchema $schema,
-        AssistantQuery $query,
-        Assistant $assistant,
-    ): Responsable {
-        $this->authorize('favorite', $assistant);
+    public function removeFavorite(Assistant $assistant): Responsable
+    {
+        $this->authorize('removeFavorite', $assistant);
 
-        $this->assistantService->setFavorite(
-            $assistant,
-            $request->user(),
-            $request->boolean('data.attributes.is_favorite'),
-        );
+        $this->assistantService->setFavorite($assistant, request()->user(), isFavorite: false);
 
-        return DataResponse::make($assistant->fresh())
-            ->withQueryParameters($query);
-    }
-
-    public function settings(
-        SettingsAssistantRequest $request,
-        AssistantSchema $schema,
-        AssistantQuery $query,
-        Assistant $assistant,
-    ): Responsable {
-        $this->authorize('update', $assistant);
-
-        $this->assistantService->updateSettings(
-            $assistant,
-            $request->input('data.attributes.settings'),
-        );
-
-        $assistant = $assistant->fresh()->load('settingValues');
-
-        $guardedStages = [ReleaseStage::DRAFT->value, ReleaseStage::PRIVATE->value];
-        if (! in_array($assistant->release_stage, $guardedStages, true)) {
-            Event::dispatch(new AssistantUpdated($assistant, null, ['setting_values']));
-        }
-
-        return DataResponse::make($assistant)
-            ->withQueryParameters($query);
-    }
-
-    public function userPrompts(
-        UserPromptsAssistantRequest $request,
-        AssistantSchema $schema,
-        AssistantQuery $query,
-        Assistant $assistant,
-    ): Responsable {
-        $this->authorize('userPrompts', $assistant);
-
-        $add = $request->input('data.attributes.add', []);
-        $remove = $request->input('data.attributes.remove', []);
-
-        $this->assistantService->updateUserPrompts($assistant, $add, $remove);
-
-        $assistant->load('user_prompts');
-
-        return DataResponse::make($assistant)
-            ->withQueryParameters($query);
+        return DataResponse::make($assistant->fresh());
     }
 
     public function chatTest(
@@ -193,7 +165,7 @@ class AssistantController extends Controller
 
         $model = $request->filled('model') ? $request->input('model') : $assistant->model;
 
-        $responseId = 'resp_' . Str::uuid()->toString();
+        $responseId = 'resp_'.Str::uuid()->toString();
         $adapter = new OpenAIResponsesAdapter($responseId, $model);
         $runner = app(AssistantChatRunnerInterface::class);
         $systemPrompt = app(PromptComposer::class)->compose($assistant);
@@ -239,7 +211,8 @@ class AssistantController extends Controller
                     sink: $sink,
                 );
                 // consume generator to trigger sink callbacks
-                foreach ($generator as $_chunk) {}
+                foreach ($generator as $_chunk) {
+                }
             } catch (\Throwable $e) {
                 foreach ($adapter->error($e) as $line) {
                     echo $line;
@@ -308,5 +281,12 @@ class AssistantController extends Controller
         }
 
         return $payload;
+    }
+
+    private function shouldNotifyUpdate(Assistant $assistant): bool
+    {
+        $skipStages = [ReleaseStage::DRAFT->value, ReleaseStage::PRIVATE->value];
+
+        return ! in_array($assistant->release_stage, $skipStages, true);
     }
 }

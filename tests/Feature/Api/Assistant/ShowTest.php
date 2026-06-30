@@ -3,9 +3,12 @@
 namespace Tests\Feature\Api\Assistant;
 
 use App\Models\Assistants\Assistant;
+use App\Models\Assistants\AssistantSetting;
+use App\Models\Assistants\AssistantSettingValue;
 use App\Models\Assistants\Category;
 use App\Models\Organization;
 use App\Models\User;
+use Database\Seeders\SettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -50,10 +53,6 @@ class ShowTest extends TestCase
                             'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                             'meta' => ['message' => 'ALLOWED'],
                         ],
-                        'release' => [
-                            'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
-                            'meta' => ['message' => 'ALLOWED'],
-                        ],
                     ],
                 ],
             ]);
@@ -66,7 +65,7 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=creator,user_prompts,ai_tools,tags")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=creator,assistant_user_prompts,ai_tools,assistant_tags")
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -79,13 +78,13 @@ class ShowTest extends TestCase
                                 'type' => 'users',
                             ],
                         ],
-                        'user_prompts' => [
+                        'assistant_user_prompts' => [
                             'data' => [],
                         ],
                         'ai_tools' => [
                             'data' => [],
                         ],
-                        'tags' => [
+                        'assistant_tags' => [
                             'data' => [],
                         ],
                     ],
@@ -144,19 +143,19 @@ class ShowTest extends TestCase
 
         $included = collect($response->json('included'));
         $versionResource = $included->first(fn ($item) => $item['type'] === 'versions');
-        $this->assertEquals('Initial version', $versionResource['attributes']['text']);
+        $this->assertEquals('{"changes":[]}', $versionResource['attributes']['text']);
         $this->assertEquals('1.0', $versionResource['attributes']['version']);
     }
 
     public function test_can_show_assistant_with_setting_values(): void
     {
-        $this->seed(\Database\Seeders\SettingSeeder::class);
+        $this->seed(SettingSeeder::class);
         $user = User::factory()->create();
-        $setting = \App\Models\Assistants\AssistantSetting::where('key', 'language')->firstOrFail();
+        $setting = AssistantSetting::where('key', 'language')->firstOrFail();
         $assistant = Assistant::factory()->create([
             'creator_id' => $user->id,
         ]);
-        \App\Models\Assistants\AssistantSettingValue::create([
+        AssistantSettingValue::create([
             'assistant_id' => $assistant->id,
             'setting_id' => $setting->id,
             'value' => 'en',
@@ -164,12 +163,41 @@ class ShowTest extends TestCase
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=setting_values")
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=assistant_setting_values")
             ->assertOk();
 
         $included = collect($response->json('included'));
         $valueResource = $included->first(fn ($item) => $item['type'] === 'assistant-setting-values');
         $this->assertEquals('en', $valueResource['attributes']['value']);
+    }
+
+    public function test_can_show_assistant_with_nested_setting_include(): void
+    {
+        $this->seed(SettingSeeder::class);
+        $user = User::factory()->create();
+        $setting = AssistantSetting::where('key', 'language')->firstOrFail();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $user->id,
+        ]);
+        AssistantSettingValue::create([
+            'assistant_id' => $assistant->id,
+            'setting_id' => $setting->id,
+            'value' => 'en',
+        ]);
+
+        Sanctum::actingAs($user);
+
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}?include=assistant_setting_values.setting")
+            ->assertOk();
+
+        $included = collect($response->json('included'));
+        $valueResource = $included->first(fn ($item) => $item['type'] === 'assistant-setting-values');
+        $this->assertNotNull($valueResource, 'Setting value resource should be included');
+        $this->assertSame((string) $setting->id, $valueResource['relationships']['setting']['data']['id']);
+
+        $settingResource = $included->first(fn ($item) => $item['type'] === 'assistant-settings');
+        $this->assertNotNull($settingResource, 'Related setting resource should be included via nested include');
+        $this->assertSame('language', $settingResource['attributes']['key']);
     }
 
     public function test_can_show_assistant_with_category(): void
@@ -314,7 +342,23 @@ class ShowTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_show_assistant_shows_denied_release_link_for_non_owner(): void
+    public function test_user_cannot_show_other_users_draft_assistant(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'draft',
+        ]);
+
+        Sanctum::actingAs($other);
+
+        $this->jsonApi('get', "/api/assistants/{$assistant->id}")
+            ->assertForbidden();
+    }
+
+    public function test_show_assistant_shows_no_release_link_now_that_release_is_via_update(): void
     {
         $owner = User::factory()->create();
         $other = User::factory()->create();
@@ -337,13 +381,11 @@ class ShowTest extends TestCase
                         'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                         'meta' => ['message' => 'ALLOWED'],
                     ],
-                    'release' => [
-                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
-                        'meta' => ['message' => 'DENIED'],
-                    ],
                 ],
             ],
         ]);
+
+        $this->assertArrayNotHasKey('release', $response->json('data.links'));
     }
 
     public function test_show_assistant_shows_denied_remix_link_when_not_allowed(): void
@@ -369,9 +411,40 @@ class ShowTest extends TestCase
                         'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/remix",
                         'meta' => ['message' => 'DENIED'],
                     ],
-                    'release' => [
-                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/release",
-                        'meta' => ['message' => 'DENIED'],
+                ],
+            ],
+        ]);
+    }
+
+    public function test_show_assistant_shows_allowed_favorite_links_for_creator(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'draft',
+        ]);
+
+        Sanctum::actingAs($owner);
+
+        $response = $this->jsonApi('get', "/api/assistants/{$assistant->id}")
+            ->assertOk();
+
+        // Favorite actions authorize via view (delegated from addFavorite/removeFavorite
+        // policy methods), so the creator must see both as ALLOWED - matching the
+        // authorization the controller actually enforces. Both share the same route
+        // URI (/actions/favorite), distinguished by HTTP method, so the href must be
+        // the real registered route, not derived from the controller method name.
+        $response->assertJson([
+            'data' => [
+                'id' => (string) $assistant->id,
+                'links' => [
+                    'addFavorite' => [
+                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/favorite",
+                        'meta' => ['message' => 'ALLOWED'],
+                    ],
+                    'removeFavorite' => [
+                        'href' => config('app.url')."/api/assistants/{$assistant->id}/actions/favorite",
+                        'meta' => ['message' => 'ALLOWED'],
                     ],
                 ],
             ],
@@ -395,7 +468,7 @@ class ShowTest extends TestCase
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
         $owner->favoriteAssistants()->attach($assistant->id);
 
@@ -411,7 +484,7 @@ class ShowTest extends TestCase
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
 
         Sanctum::actingAs($owner);

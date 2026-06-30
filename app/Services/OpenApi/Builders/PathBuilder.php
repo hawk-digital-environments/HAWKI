@@ -116,6 +116,9 @@ class PathBuilder
     {
         $path = preg_replace('#^api/#', '', $uri);
 
+        if (preg_match('#^([^/]+)/\{[^}]+\}/([^/]+)/\{[^}]+\}$#', $path, $m)) {
+            return ['type' => 'nestedItem', 'resource' => $m[1], 'relation' => $m[2]];
+        }
         if (preg_match('#^([^/]+)/\{[^}]+\}/actions/([^/]+)$#', $path, $m)) {
             return ['type' => 'action', 'resource' => $m[1], 'action' => $m[2]];
         }
@@ -162,8 +165,9 @@ class PathBuilder
         return match ($info['type']) {
             'collection' => $this->buildCollectionOperation($method, $info['resource'], $className, $tag, $meta, $withExamples),
             'resource' => $this->buildResourceOperation($method, $info['resource'], $className, $tag, $meta),
-            'related' => $this->buildRelatedOperation($method, $info['resource'], $className, $tag, $info['relation'], $meta),
+            'related' => $this->buildRelatedOperation($method, $info['resource'], $className, $tag, $info['relation'], $meta, $schemaMap),
             'relationship' => $this->buildRelationshipOperation($method, $info['resource'], $tag, $info['relation'], $meta),
+            'nestedItem' => $this->buildNestedItemOperation($method, $info['resource'], $className, $tag, $info['relation'], $meta),
             'action' => $this->buildActionOperation($method, $info['resource'], $tag, $info['action'], $route),
             'meta' => $this->buildMetaOperation($method, $info['resource'], $className, $tag),
             default => null,
@@ -385,22 +389,162 @@ class PathBuilder
         string $tag,
         string $relation,
         ?array $meta,
+        array $schemaMap = [],
     ): ?array {
+        $inverseClassName = null;
+        $inverseType = $resource;
+        if ($meta) {
+            $schema = $meta['schema'];
+            $normalizedName = str_replace('-', '_', $relation);
+            foreach ($schema->fields() as $field) {
+                if ($field->name() === $normalizedName) {
+                    try {
+                        $inverseType = $field->inverse();
+                        $inverseClassName = $this->schemaBuilder->typeToClassName($inverseType);
+                    } catch (\Throwable) {
+                    }
+                    break;
+                }
+            }
+        }
+
+        $relationLabel = str_replace('-', ' ', $relation);
+
+        if ($method === 'post') {
+            $relationMeta = $schemaMap[$inverseType] ?? null;
+            $hasRelation = $inverseType !== $resource;
+
+            if ($hasRelation && $relationMeta) {
+                $requestExample = $this->exampleBuilder->buildRequestExample($relationMeta['schema'], $inverseType);
+            } else {
+                $requestExample = null;
+            }
+
+            $summary = $hasRelation
+                ? "Create {$relationLabel} for {$resource}"
+                : ucfirst(str_replace('-', ' ', $relation))." {$resource}";
+
+            $operation = [
+                'summary' => $summary,
+                'operationId' => "create{$className}".ucfirst($this->camelize($relation)),
+                'tags' => [$tag],
+                'parameters' => [$this->buildIdParameter($resource)],
+                'responses' => [
+                    '200' => [
+                        'description' => 'Successful',
+                        'content' => [
+                            'application/vnd.api+json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'data' => ['$ref' => '#/components/schemas/AssistantsResource'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    '401' => ['$ref' => '#/components/responses/Unauthorized'],
+                    '403' => ['$ref' => '#/components/responses/Forbidden'],
+                    '404' => ['$ref' => '#/components/responses/NotFound'],
+                ],
+            ];
+
+            if ($hasRelation) {
+                $mediaType = ['schema' => ['$ref' => "#/components/schemas/{$inverseClassName}CreateRequest"]];
+                if ($requestExample !== null) {
+                    $mediaType['example'] = $requestExample;
+                }
+                $operation['requestBody'] = [
+                    'required' => true,
+                    'content' => ['application/vnd.api+json' => $mediaType],
+                ];
+                $operation['responses']['201'] = [
+                    'description' => 'Created',
+                    'content' => [
+                        'application/vnd.api+json' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'data' => ['$ref' => "#/components/schemas/{$inverseClassName}Resource"],
+                                ],
+                            ],
+                        ],
+                    ],
+                ];
+            }
+
+            return $operation;
+        }
+
+        if ($method === 'patch') {
+            // Update a nested sub-resource (e.g. PATCH /assistants/{id}/review).
+            $relationMeta = $schemaMap[$inverseType] ?? null;
+            $requestExample = $relationMeta
+                ? $this->exampleBuilder->buildRequestExample($relationMeta['schema'], $inverseType)
+                : null;
+
+            $mediaType = ['schema' => ['$ref' => "#/components/schemas/{$inverseClassName}UpdateRequest"]];
+            if ($requestExample !== null) {
+                $mediaType['example'] = $requestExample;
+            }
+
+            return [
+                'summary' => "Update {$relationLabel} for {$resource}",
+                'operationId' => "update{$className}".ucfirst($this->camelize($relation)),
+                'tags' => [$tag],
+                'parameters' => [$this->buildIdParameter($resource)],
+                'requestBody' => [
+                    'required' => true,
+                    'content' => ['application/vnd.api+json' => $mediaType],
+                ],
+                'responses' => [
+                    '200' => [
+                        'description' => 'Updated',
+                        'content' => [
+                            'application/vnd.api+json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'data' => ['$ref' => "#/components/schemas/{$inverseClassName}Resource"],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    '401' => ['$ref' => '#/components/responses/Unauthorized'],
+                    '403' => ['$ref' => '#/components/responses/Forbidden'],
+                    '404' => ['$ref' => '#/components/responses/NotFound'],
+                    '422' => ['$ref' => '#/components/responses/UnprocessableEntity'],
+                ],
+            ];
+        }
+
+        if ($method === 'delete') {
+            return [
+                'summary' => "Delete {$relationLabel} for {$resource}",
+                'operationId' => "delete{$className}".ucfirst($this->camelize($relation)),
+                'tags' => [$tag],
+                'parameters' => [$this->buildIdParameter($resource)],
+                'responses' => [
+                    '204' => ['description' => 'Removed'],
+                    '401' => ['$ref' => '#/components/responses/Unauthorized'],
+                    '403' => ['$ref' => '#/components/responses/Forbidden'],
+                    '404' => ['$ref' => '#/components/responses/NotFound'],
+                ],
+            ];
+        }
+
         if ($method !== 'get') {
             return null;
         }
 
         $isToMany = false;
-        $inverseClassName = null;
         if ($meta) {
             $schema = $meta['schema'];
+            $normalizedName = str_replace('-', '_', $relation);
             foreach ($schema->fields() as $field) {
-                if ($field->name() === $relation) {
+                if ($field->name() === $normalizedName) {
                     $isToMany = ($field instanceof HasMany || $field instanceof BelongsToMany);
-                    try {
-                        $inverseClassName = $this->schemaBuilder->typeToClassName($field->inverse());
-                    } catch (\Throwable) {
-                    }
                     break;
                 }
             }
@@ -413,8 +557,6 @@ class PathBuilder
         $responseSchema = $isToMany
             ? ['type' => 'array', 'items' => $resourceRef]
             : $resourceRef;
-
-        $relationLabel = str_replace('-', ' ', $relation);
 
         return [
             'summary' => "Get {$relationLabel} for {$resource}",
@@ -445,6 +587,53 @@ class PathBuilder
     }
 
     /**
+     * Build a nested sub-resource item operation (e.g. DELETE /{resource}/{id}/{relation}/{relationId}).
+     *
+     * @param  string  $method  HTTP method (only DELETE supported).
+     * @param  string  $resource  JSON:API resource type.
+     * @param  string  $className  PascalCase class name.
+     * @param  string  $tag  Operation tag.
+     * @param  string  $relation  The relationship field name.
+     * @param  array|null  $meta  Schema metadata, or null.
+     */
+    private function buildNestedItemOperation(
+        string $method,
+        string $resource,
+        string $className,
+        string $tag,
+        string $relation,
+        ?array $meta,
+    ): ?array {
+        if ($method !== 'delete') {
+            return null;
+        }
+
+        $relationLabel = str_replace('-', ' ', $relation);
+
+        return [
+            'summary' => "Delete {$relationLabel} for {$resource}",
+            'operationId' => "delete{$className}".ucfirst($this->camelize($relation)),
+            'tags' => [$tag],
+            'parameters' => [
+                $this->buildIdParameter($resource),
+                [
+                    'name' => 'id',
+                    'in' => 'path',
+                    'required' => true,
+                    'schema' => ['type' => 'string'],
+                    'description' => ucfirst($relationLabel).' ID',
+                ],
+            ],
+            'responses' => [
+                '204' => ['description' => 'Deleted'],
+                '401' => ['$ref' => '#/components/responses/Unauthorized'],
+                '403' => ['$ref' => '#/components/responses/Forbidden'],
+                '404' => ['$ref' => '#/components/responses/NotFound'],
+            ],
+        ];
+    }
+
+    /**
      * Build a relationship links operation (GET /{resource}/{id}/relationships/{relation}).
      *
      * Returns ResourceIdentifier data with RelationshipLinks. Uses generic ResourceIdentifier
@@ -463,16 +652,18 @@ class PathBuilder
         string $relation,
         ?array $meta,
     ): ?array {
-        if ($method !== 'get') {
-            return null;
-        }
-
         $isToMany = false;
+        $inverseType = $resource;
         if ($meta) {
             $schema = $meta['schema'];
+            $normalizedName = str_replace('-', '_', $relation);
             foreach ($schema->fields() as $field) {
-                if ($field->name() === $relation) {
+                if ($field->name() === $normalizedName) {
                     $isToMany = ($field instanceof HasMany || $field instanceof BelongsToMany);
+                    try {
+                        $inverseType = $field->inverse();
+                    } catch (\Throwable) {
+                    }
                     break;
                 }
             }
@@ -483,17 +674,78 @@ class PathBuilder
             : ['$ref' => '#/components/schemas/ResourceIdentifier'];
 
         $relationLabel = str_replace('-', ' ', $relation);
+        $className = $this->schemaBuilder->typeToClassName($resource);
+        $pathParam = $this->buildIdParameter($resource);
+
+        if ($method === 'get') {
+            return [
+                'summary' => "Get {$relationLabel} relationship links for {$resource}",
+                'operationId' => "get{$className}Relationship".ucfirst($this->camelize($relation)),
+                'tags' => [$tag],
+                'parameters' => [$pathParam],
+                'responses' => [
+                    '200' => [
+                        'description' => 'Relationship links',
+                        'content' => [
+                            'application/vnd.api+json' => [
+                                'schema' => [
+                                    'type' => 'object',
+                                    'properties' => [
+                                        'data' => $dataSchema,
+                                        'links' => ['$ref' => '#/components/schemas/RelationshipLinks'],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                    '401' => ['$ref' => '#/components/responses/Unauthorized'],
+                    '404' => ['$ref' => '#/components/responses/NotFound'],
+                ],
+            ];
+        }
+
+        // Write operations (attach/replace/detach) only exist for writable relationships.
+        $identifier = ['type' => $inverseType, 'id' => '1'];
+        $requestExample = ['data' => $isToMany ? [$identifier] : $identifier];
+
+        $descriptions = [
+            'post' => "Attach items to the {$relationLabel} relationship for {$resource}",
+            'patch' => "Replace the {$relationLabel} relationship for {$resource}",
+            'delete' => "Detach items from the {$relationLabel} relationship for {$resource}",
+        ];
+
+        if (! isset($descriptions[$method])) {
+            return null;
+        }
+
+        $operationId = match ($method) {
+            'post' => "attach{$className}Relationship".ucfirst($this->camelize($relation)),
+            'patch' => "replace{$className}Relationship".ucfirst($this->camelize($relation)),
+            'delete' => "detach{$className}Relationship".ucfirst($this->camelize($relation)),
+        };
 
         return [
-            'summary' => "Get {$relationLabel} relationship links for {$resource}",
-            'operationId' => "get{$this->schemaBuilder->typeToClassName($resource)}Relationship".ucfirst($this->camelize($relation)),
+            'summary' => $descriptions[$method],
+            'operationId' => $operationId,
             'tags' => [$tag],
-            'parameters' => [
-                $this->buildIdParameter($resource),
+            'parameters' => [$pathParam],
+            'requestBody' => [
+                'required' => true,
+                'content' => [
+                    'application/vnd.api+json' => [
+                        'schema' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'data' => $dataSchema,
+                            ],
+                        ],
+                        'example' => $requestExample,
+                    ],
+                ],
             ],
             'responses' => [
                 '200' => [
-                    'description' => 'Relationship links',
+                    'description' => 'Updated relationship links',
                     'content' => [
                         'application/vnd.api+json' => [
                             'schema' => [
@@ -503,10 +755,12 @@ class PathBuilder
                                     'links' => ['$ref' => '#/components/schemas/RelationshipLinks'],
                                 ],
                             ],
+                            'example' => $requestExample,
                         ],
                     ],
                 ],
                 '401' => ['$ref' => '#/components/responses/Unauthorized'],
+                '403' => ['$ref' => '#/components/responses/Forbidden'],
                 '404' => ['$ref' => '#/components/responses/NotFound'],
             ],
         ];

@@ -12,6 +12,7 @@ use LaravelJsonApi\Eloquent\Fields\ID;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsTo;
 use LaravelJsonApi\Eloquent\Fields\Relations\BelongsToMany;
 use LaravelJsonApi\Eloquent\Fields\Str;
+use LaravelJsonApi\Eloquent\Filters\Where;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
 
@@ -53,7 +54,9 @@ class AiToolSchema extends Schema
 
     public function filters(): array
     {
-        return [];
+        return [
+            Where::make('text')
+        ];
     }
 
     public function pagination(): ?PagePagination

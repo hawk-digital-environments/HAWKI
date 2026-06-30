@@ -3,16 +3,19 @@
 use App\Http\Controllers\AiModelController;
 use App\Http\Controllers\AiProviderController;
 use App\Http\Controllers\AiToolController;
-use App\Http\Controllers\Assistant\AssistantController;
-use App\Http\Controllers\ClientSchemaController;
 use App\Http\Controllers\Assistant\AssistantAvatarController;
+use App\Http\Controllers\Assistant\AssistantController;
 use App\Http\Controllers\Assistant\AssistantSettingController;
 use App\Http\Controllers\Assistant\AssistantSettingValueController;
 use App\Http\Controllers\Assistant\CategoryController;
-use App\Http\Controllers\McpServerController;
+use App\Http\Controllers\Assistant\FeedbackController;
 use App\Http\Controllers\Assistant\ReviewController;
-use App\Http\Controllers\StreamController;
 use App\Http\Controllers\Assistant\TagController;
+use App\Http\Controllers\Assistant\UserPromptController;
+use App\Http\Controllers\ClientSchemaController;
+use App\Http\Controllers\McpServerController;
+use App\Http\Controllers\StreamController;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use LaravelJsonApi\Laravel\Facades\JsonApiRoute;
@@ -22,12 +25,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::middleware(['api_isActive', 'auth:sanctum'])->group(function () {
+Route::middleware(['api_isActive', 'auth:sanctum'])
+    ->group(function () {
 
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
 
 });
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum'])
+    ->withoutMiddleware(ConvertEmptyStringsToNull::class)
+    ->group(function () {
 
     Route::get('assistants/schema', ClientSchemaController::class);
 
@@ -36,32 +42,49 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     JsonApiRoute::server('v1')
         ->prefix('')
-        ->resources(function ($server) {
+        ->withoutMiddleware(ConvertEmptyStringsToNull::class)
+        ->resources(function ($server, $router) {
+            $server->resource('assistant-user-prompts', UserPromptController::class)
+                ->only('store', 'destroy')
+                ->relationships(function ($relationships) {
+                    $relationships->hasOne('assistant')->readOnly();
+                });
+
+            $server->resource('assistant-feedback', FeedbackController::class)
+                ->only('store')
+                ->relationships(function ($relationships) {
+                    $relationships->hasOne('assistant')->readOnly();
+                    $relationships->hasOne('user')->readOnly();
+                });
+
             $server->resource('assistants', AssistantController::class)
                 ->relationships(function ($relationships) {
                     $relationships->hasOne('category')->readOnly();
-                    $relationships->hasMany('setting_values')->readonly();
-                    $relationships->hasMany('user_prompts')->readOnly();
-                    $relationships->hasMany('ai_tools')->readOnly();
-                    $relationships->hasMany('tags')->readOnly();
+                    $relationships->hasOne('assistant_avatar')->readOnly();
+                    $relationships->hasMany('assistant_setting_values')->readonly();
+                    $relationships->hasMany('assistant_user_prompts')->readOnly();
+                    $relationships->hasMany('ai_tools');
                     $relationships->hasOne('creator')->readOnly();
                     $relationships->hasOne('remix_creator')->readOnly();
                     $relationships->hasOne('remixed_assistant')->readOnly();
                     $relationships->hasMany('versions')->readOnly();
                     $relationships->hasOne('organization')->readOnly();
-                    $relationships->hasOne('review')->readOnly();
+                    $relationships->hasOne('assistant_review')->readOnly();
+                    $relationships->hasMany('assistant_tags');
+                    $relationships->hasMany('assistant_feedback')->readOnly();
+                    $relationships->hasMany('shared_users');
                 })
                 ->actions('actions', function (ActionRegistrar $actions) {
                     $actions->withId()->post('remix');
-                    $actions->withId()->post('release');
-                    $actions->withId()->post('feedback');
-                    $actions->withId()->post('favorite');
-                    $actions->withId()->post('settings');
-                    $actions->withId()->post('user-prompts');
+                    $actions->withId()->post('favorite', 'addFavorite');
+                    $actions->withId()->delete('favorite', 'removeFavorite');
                 });
 
             $server->resource('assistant-avatars', AssistantAvatarController::class)
-                ->only('index', 'show');
+                ->only('index', 'show', 'store', 'update', 'destroy')
+                ->relationships(function ($relationships) {
+                    $relationships->hasOne('assistant')->readOnly();
+                });
 
             $server->resource('assistant-categories', CategoryController::class)
                 ->only('index', 'show')
@@ -69,10 +92,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
                     $relationships->hasMany('assistants')->readOnly();
                 });
 
-            $server->resource('tags', TagController::class)
-                ->only('index', 'show', 'store', 'destroy')
+            $server->resource('assistant-tags', TagController::class)
+                ->only('index', 'show', 'store');
+
+            $server->resource('assistant-reviews', ReviewController::class)
+                ->only('index', 'update')
                 ->relationships(function ($relationships) {
-                    $relationships->hasMany('assistants')->readOnly();
+                    $relationships->hasOne('assistant')->readOnly();
                 });
 
             $server->resource('assistant-settings', AssistantSettingController::class)
@@ -82,16 +108,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
                 });
 
             $server->resource('assistant-setting-values', AssistantSettingValueController::class)
-                ->only('index', 'show')
+                ->only('index', 'show', 'store', 'update', 'destroy')
                 ->relationships(function ($relationships) {
                     $relationships->hasOne('assistant')->readOnly();
                     $relationships->hasOne('setting')->readOnly();
-                });
-
-            $server->resource('assistant-reviews', ReviewController::class)
-                ->only('index', 'show', 'update')
-                ->relationships(function ($relationships) {
-                    $relationships->hasOne('assistant')->readOnly();
                 });
 
             $server->resource('ai-tools', AiToolController::class)

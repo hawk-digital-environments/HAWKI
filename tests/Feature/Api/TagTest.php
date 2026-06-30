@@ -11,10 +11,10 @@ use Tests\TestCase;
 class TagTest extends TestCase
 {
     use RefreshDatabase;
-    
+
     public function test_guest_cannot_list_tags(): void
     {
-        $this->jsonApi('get', '/api/tags')
+        $this->jsonApi('get', '/api/assistant-tags')
             ->assertUnauthorized();
     }
 
@@ -26,7 +26,7 @@ class TagTest extends TestCase
         Tag::create(['text' => 'php']);
         Tag::create(['text' => 'laravel']);
 
-        $this->jsonApi('get', '/api/tags')
+        $this->jsonApi('get', '/api/assistant-tags')
             ->assertOk()
             ->assertJsonCount(2, 'data');
     }
@@ -38,12 +38,12 @@ class TagTest extends TestCase
 
         $tag = Tag::create(['text' => 'php']);
 
-        $this->jsonApi('get', "/api/tags/{$tag->id}")
+        $this->jsonApi('get', "/api/assistant-tags/{$tag->id}")
             ->assertOk()
             ->assertJson([
                 'data' => [
                     'id' => (string) $tag->id,
-                    'type' => 'tags',
+                    'type' => 'assistant-tags',
                     'attributes' => [
                         'text' => 'php',
                     ],
@@ -51,14 +51,14 @@ class TagTest extends TestCase
             ]);
     }
 
-    public function test_can_create_tag(): void
+    public function test_any_authenticated_user_can_create_tag(): void
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', '/api/tags', [
+        $this->jsonApi('post', '/api/assistant-tags', [
             'data' => [
-                'type' => 'tags',
+                'type' => 'assistant-tags',
                 'attributes' => [
                     'text' => 'new-tag',
                 ],
@@ -67,7 +67,7 @@ class TagTest extends TestCase
             ->assertCreated()
             ->assertJson([
                 'data' => [
-                    'type' => 'tags',
+                    'type' => 'assistant-tags',
                     'attributes' => [
                         'text' => 'new-tag',
                     ],
@@ -77,32 +77,14 @@ class TagTest extends TestCase
         $this->assertDatabaseHas('tags', ['text' => 'new-tag']);
     }
 
-    public function test_cannot_create_duplicate_tag(): void
-    {
-        $user = User::factory()->create();
-        Sanctum::actingAs($user);
-
-        Tag::create(['text' => 'existing-tag']);
-
-        $this->jsonApi('post', '/api/tags', [
-            'data' => [
-                'type' => 'tags',
-                'attributes' => [
-                    'text' => 'existing-tag',
-                ],
-            ],
-        ])
-            ->assertUnprocessable();
-    }
-
     public function test_cannot_create_tag_without_text(): void
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->jsonApi('post', '/api/tags', [
+        $this->jsonApi('post', '/api/assistant-tags', [
             'data' => [
-                'type' => 'tags',
+                'type' => 'assistant-tags',
                 'attributes' => [
                     'text' => '',
                 ],
@@ -111,16 +93,21 @@ class TagTest extends TestCase
             ->assertUnprocessable();
     }
 
-    public function test_can_delete_tag(): void
+    public function test_cannot_create_duplicate_tag_text(): void
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $tag = Tag::create(['text' => 'to-delete']);
+        Tag::create(['text' => 'php']);
 
-        $this->jsonApi('delete', "/api/tags/{$tag->id}")
-            ->assertNoContent();
-
-        $this->assertDatabaseMissing('tags', ['id' => $tag->id]);
+        $this->jsonApi('post', '/api/assistant-tags', [
+            'data' => [
+                'type' => 'assistant-tags',
+                'attributes' => [
+                    'text' => 'php',
+                ],
+            ],
+        ])
+            ->assertUnprocessable();
     }
 }

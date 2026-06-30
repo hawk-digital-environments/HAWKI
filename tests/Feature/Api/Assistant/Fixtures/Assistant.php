@@ -17,7 +17,6 @@ trait Assistant
             'detail_description' => 'Detailed description here.',
             'allow_remix' => true,
             'allow_model_select' => false,
-            'release_stage' => 'private',
             'model' => 'gpt-4',
             'max_tokens' => 2048,
             'temp' => 0.7,
@@ -31,14 +30,14 @@ trait Assistant
         if (isset($rels['category'])) {
             $defaults['category'] = ['data' => ['type' => 'assistant-categories', 'id' => (string) $rels['category']]];
         }
-        if (isset($rels['tags'])) {
-            $defaults['tags'] = ['data' => array_map(fn ($id) => ['type' => 'tags', 'id' => (string) $id], $rels['tags'])];
+        if (isset($rels['assistant_tags'])) {
+            $defaults['assistant_tags'] = ['data' => array_map(fn ($id) => ['type' => 'assistant-tags', 'id' => (string) $id], $rels['assistant_tags'])];
         }
         if (isset($rels['ai_tools'])) {
             $defaults['ai_tools'] = ['data' => array_map(fn ($id) => ['type' => 'ai-tools', 'id' => (string) $id], $rels['ai_tools'])];
         }
-        if (isset($rels['user_prompts'])) {
-            $defaults['user_prompts'] = ['data' => array_map(fn ($id) => ['type' => 'user-prompts', 'id' => (string) $id], $rels['user_prompts'])];
+        if (isset($rels['assistant_user_prompts'])) {
+            $defaults['assistant_user_prompts'] = ['data' => array_map(fn ($id) => ['type' => 'assistant-user-prompts', 'id' => (string) $id], $rels['assistant_user_prompts'])];
         }
 
         return $defaults;

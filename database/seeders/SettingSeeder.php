@@ -2,15 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Config\Repository as ConfigRepository;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Seeder;
 
 class SettingSeeder extends Seeder
 {
-    public function run(ConfigRepository $config, ConnectionInterface $connection): void
+    public function run(ConnectionInterface $connection): void
     {
-        $locale = $config->get('app.locale');
         $now = now();
 
         $connection->table('assistant_settings')->updateOrInsert(
@@ -19,10 +17,11 @@ class SettingSeeder extends Seeder
                 'label' => 'Language',
                 'description' => 'The language the assistant must use for every response.',
                 'ui_type' => 'select',
-                'ui_options' => json_encode(collect(['en', 'de'])->map(fn($code) => [
-                    'value' => $code,
-                    'label' => \Locale::getDisplayLanguage($code, $locale),
-                ])->values()->toArray()),
+                'ui_options' => json_encode([
+                    ['value' => '', 'label' => 'Not set'],
+                    ['value' => 'en', 'label' => 'English'],
+                    ['value' => 'de', 'label' => 'German'],
+                ]),
                 'prompt_template' => implode("\n", [
                     '[LANGUAGE CONTROL MODULE]',
                     '',
@@ -47,9 +46,9 @@ class SettingSeeder extends Seeder
                     '',
                     '### Output Rule',
                     'Return the final answer only.',
-                    'Do not explain language choices. Just assume he will understand.',
+                    'Do not explain language choices. Just assume the user will understand the language.',
                 ]),
-                'default_value' => null,
+                'default_value' => json_encode(''),
                 'created_at' => $now,
                 'updated_at' => $now,
             ]
@@ -62,10 +61,11 @@ class SettingSeeder extends Seeder
                 'description' => 'The formality level of the assistant responses.',
                 'ui_type' => 'select',
                 'ui_options' => json_encode([
-                    ['value' => 'casual'],
-                    ['value' => 'balanced'],
-                    ['value' => 'professional'],
-                    ['value' => 'academic'],
+                    ['value' => '', 'label' => 'Not set'],
+                    ['value' => 'casual', 'label' => 'Casual'],
+                    ['value' => 'balanced', 'label' => 'Balanced'],
+                    ['value' => 'professional', 'label' => 'Professional'],
+                    ['value' => 'academic', 'label' => 'Academic'],
                 ]),
                 'prompt_template' => implode("\n", [
                     '[FORMALITY CONTROL MODULE]',
@@ -134,9 +134,10 @@ class SettingSeeder extends Seeder
                 'description' => 'The verbosity level of the assistant responses.',
                 'ui_type' => 'select',
                 'ui_options' => json_encode([
-                    ['value' => 'concise'],
-                    ['value' => 'balanced'],
-                    ['value' => 'detailed'],
+                    ['value' => '', 'label' => 'Not set'],
+                    ['value' => 'concise', 'label' => 'Concise'],
+                    ['value' => 'balanced', 'label' => 'Balanced'],
+                    ['value' => 'detailed', 'label' => 'Detailed'],
                 ]),
                 'prompt_template' => implode("\n", [
                     '[OUTPUT LENGTH CONTROL MODULE]',

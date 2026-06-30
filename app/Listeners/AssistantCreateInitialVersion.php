@@ -13,7 +13,7 @@ class AssistantCreateInitialVersion
         }
 
         $event->assistant->versions()->create([
-            'text' => 'Initial version',
+            'text' => json_encode(['changes' => []]),
             'version' => 1.0,
         ]);
     }

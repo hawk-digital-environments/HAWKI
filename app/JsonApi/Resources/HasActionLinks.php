@@ -12,7 +12,7 @@ trait HasActionLinks
 {
     protected function actionLinks($request): Links
     {
-        $links = new Links();
+        $links = new Links;
 
         if ($self = $this->selfLink()) {
             $links->push($self);
@@ -33,11 +33,11 @@ trait HasActionLinks
                 ));
             }
 
-            foreach ($this->resolveActionNames() as $action) {
-                $response = $gate->inspect($action, $this->resource);
+            foreach ($this->resolveActions() as $action) {
+                $response = $gate->inspect($action['method'], $this->resource);
                 $links->push(new Link(
-                    $action,
-                    $base . '/actions/' . $action,
+                    $action['method'],
+                    $base.'/actions/'.$action['segment'],
                     ['message' => $response->allowed() ? 'ALLOWED' : 'DENIED'],
                 ));
             }
@@ -46,7 +46,7 @@ trait HasActionLinks
         return $links;
     }
 
-    protected function resolveActionNames(): iterable
+    protected function resolveActions(): iterable
     {
         $resourceType = $this->schema::type();
 
@@ -63,9 +63,14 @@ trait HasActionLinks
             ) {
                 $method = $route->getActionMethod();
 
-                if (is_string($method) && $method !== 'Closure') {
-                    yield $method;
+                if (! is_string($method) || $method === 'Closure') {
+                    continue;
                 }
+
+                $after = substr($uri, strrpos($uri, '/actions/') + strlen('/actions/'));
+                $segment = strstr($after, '{', true) ?: $after;
+
+                yield ['method' => $method, 'segment' => $segment];
             }
         }
     }

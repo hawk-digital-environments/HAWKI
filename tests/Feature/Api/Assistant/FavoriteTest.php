@@ -17,22 +17,16 @@ class FavoriteTest extends TestCase
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
 
         $viewer = User::factory()->create();
         Sanctum::actingAs($viewer);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => true,
-                ],
-            ],
-        ])
+        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertSuccessful();
+
+        $response->assertJsonPath('data.attributes.is_favorite', true);
 
         $this->assertDatabaseHas('assistant_favorite_users', [
             'assistant_id' => $assistant->id,
@@ -45,7 +39,7 @@ class FavoriteTest extends TestCase
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
 
         $viewer = User::factory()->create();
@@ -53,16 +47,10 @@ class FavoriteTest extends TestCase
 
         Sanctum::actingAs($viewer);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => false,
-                ],
-            ],
-        ])
+        $response = $this->jsonApi('delete', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertSuccessful();
+
+        $response->assertJsonPath('data.attributes.is_favorite', false);
 
         $this->assertDatabaseMissing('assistant_favorite_users', [
             'assistant_id' => $assistant->id,
@@ -70,40 +58,41 @@ class FavoriteTest extends TestCase
         ]);
     }
 
-    public function test_mark_favorite_is_unique_for_specific_user(): void
+    public function test_favorite_is_idempotent(): void
     {
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
 
         $viewer = User::factory()->create();
         Sanctum::actingAs($viewer);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => true,
-                ],
-            ],
-        ])
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertSuccessful();
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => true,
-                ],
-            ],
-        ])
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertSuccessful();
 
         $this->assertEquals(1, $viewer->favoriteAssistants()->count());
+    }
+
+    public function test_unfavorite_is_idempotent(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create([
+            'creator_id' => $owner->id,
+            'release_stage' => 'organizational',
+        ]);
+
+        $viewer = User::factory()->create();
+        Sanctum::actingAs($viewer);
+
+        $this->jsonApi('delete', "/api/assistants/{$assistant->id}/actions/favorite")
+            ->assertSuccessful();
+
+        $this->assertEquals(0, $viewer->favoriteAssistants()->count());
     }
 
     public function test_creator_can_favorite_own_assistant(): void
@@ -116,15 +105,7 @@ class FavoriteTest extends TestCase
 
         Sanctum::actingAs($owner);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => true,
-                ],
-            ],
-        ])
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertSuccessful();
 
         $this->assertDatabaseHas('assistant_favorite_users', [
@@ -144,18 +125,8 @@ class FavoriteTest extends TestCase
         $otherUser = User::factory()->create();
         Sanctum::actingAs($otherUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => true,
-                ],
-            ],
-        ])
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertForbidden();
-
-        $this->assertEquals(0, $otherUser->favoriteAssistants()->count());
     }
 
     public function test_cannot_unfavorite_private_assistant_of_other_user(): void
@@ -169,15 +140,7 @@ class FavoriteTest extends TestCase
         $otherUser = User::factory()->create();
         Sanctum::actingAs($otherUser);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => false,
-                ],
-            ],
-        ])
+        $this->jsonApi('delete', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertForbidden();
     }
 
@@ -186,110 +149,10 @@ class FavoriteTest extends TestCase
         $owner = User::factory()->create();
         $assistant = Assistant::factory()->create([
             'creator_id' => $owner->id,
-            'release_stage' => 'public',
+            'release_stage' => 'organizational',
         ]);
 
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => true,
-                ],
-            ],
-        ])
+        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite")
             ->assertUnauthorized();
-    }
-
-    public function test_favorite_requires_is_favorite_attribute(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'public',
-        ]);
-
-        Sanctum::actingAs($owner);
-
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [],
-            ],
-        ])
-            ->assertStatus(422);
-    }
-
-    public function test_favorite_validates_is_favorite_is_boolean(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'public',
-        ]);
-
-        Sanctum::actingAs($owner);
-
-        $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => 'not-a-boolean',
-                ],
-            ],
-        ])
-            ->assertStatus(422);
-    }
-
-    public function test_favorite_response_includes_is_favorite_true(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'public',
-        ]);
-
-        Sanctum::actingAs($owner);
-
-        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => true,
-                ],
-            ],
-        ]);
-
-        $response->assertSuccessful();
-        $response->assertJsonPath('data.attributes.is_favorite', true);
-    }
-
-    public function test_unfavorite_response_includes_is_favorite_false(): void
-    {
-        $owner = User::factory()->create();
-        $assistant = Assistant::factory()->create([
-            'creator_id' => $owner->id,
-            'release_stage' => 'public',
-        ]);
-
-        $owner->favoriteAssistants()->attach($assistant->id);
-
-        Sanctum::actingAs($owner);
-
-        $response = $this->jsonApi('post', "/api/assistants/{$assistant->id}/actions/favorite", [
-            'data' => [
-                'type' => 'assistants',
-                'id' => (string) $assistant->id,
-                'attributes' => [
-                    'is_favorite' => false,
-                ],
-            ],
-        ]);
-
-        $response->assertSuccessful();
-        $response->assertJsonPath('data.attributes.is_favorite', false);
     }
 }

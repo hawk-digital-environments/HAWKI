@@ -21,6 +21,13 @@ class UpdateTest extends TestCase
 {
     use AssistantFixture, RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['app.timezone' => 'UTC']);
+        date_default_timezone_set('UTC');
+    }
+
     private function updatePayload(Assistant $assistant, array $attributes, array $relationships = []): array
     {
         $data = [
@@ -101,7 +108,7 @@ class UpdateTest extends TestCase
             ->assertJson(['errors' => [['detail' => 'This action is unauthorized.']]]);
     }
 
-    public function test_update_assistant_increments_version(): void
+    public function test_update_assistant_records_change_in_version(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
@@ -113,88 +120,137 @@ class UpdateTest extends TestCase
         ]))
             ->assertOk();
 
-        $version = $assistant->fresh()->versions()->where('version', 2.0)->first();
-        $this->assertEquals(['name'], $version->changed_keys);
+        // Within the debounce window the change merges into the latest version.
+        $versions = $assistant->fresh()->versions;
+        $this->assertCount(1, $versions);
+        $this->assertEquals(['name'], $versions->first()->changed_keys);
+        $this->assertSame('{"changes":["name"]}', $versions->first()->text);
     }
 
-    public function test_update_assistant_with_version_text(): void
+    public function test_multiple_updates_within_window_merge_into_one_version(): void
     {
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
 
         Sanctum::actingAs($user);
 
-        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
-            'name' => 'Updated Name',
-            'version_text' => 'Changed the name',
-        ]))
-            ->assertOk();
-
-        $version = $assistant->fresh()->versions()->where('version', 2.0)->first();
-        $this->assertEquals('Changed the name', $version->text);
-        $this->assertEquals(['name'], $version->changed_keys);
-    }
-
-    public function test_multiple_updates_increment_version(): void
-    {
-        $user = User::factory()->create();
-        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
-
-        Sanctum::actingAs($user);
-
+        // Two updates affecting different keys within the window merge their keys
+        // into a single version entry.
         $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
             'name' => 'v2',
         ]))
             ->assertOk();
 
         $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
-            'name' => 'v3',
+            'description' => 'changed description',
         ]))
             ->assertOk();
 
         $versions = $assistant->fresh()->versions()->orderBy('version')->get();
 
-        $this->assertCount(3, $versions);
+        $this->assertCount(1, $versions);
+        $this->assertEquals(['description', 'name'], $versions[0]->changed_keys);
+        $this->assertSame('{"changes":["description","name"]}', $versions[0]->text);
+    }
 
-        $this->assertEquals(1.0, (float) $versions[0]->version);
-        $this->assertNull($versions[0]->changed_keys);
+    public function test_change_outside_debounce_window_creates_new_version(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
 
-        $this->assertEquals(2.0, (float) $versions[1]->version);
-        $this->assertEquals(['name'], $versions[1]->changed_keys);
+        Sanctum::actingAs($user);
 
-        $this->assertEquals(3.0, (float) $versions[2]->version);
-        $this->assertEquals(['name'], $versions[2]->changed_keys);
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'first',
+        ]))
+            ->assertOk();
+
+        $this->assertCount(1, $assistant->fresh()->versions);
+
+        // Advance past the debounce window (default 10s).
+        $this->travel(11)->seconds();
+
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'description' => 'second',
+        ]))
+            ->assertOk();
+
+        $versions = $assistant->fresh()->versions()->orderBy('version')->get();
+        $this->assertCount(2, $versions);
+        $this->assertEquals(['name'], $versions[0]->changed_keys);
+        $this->assertEquals(['description'], $versions[1]->changed_keys);
+    }
+
+    public function test_sliding_window_extends_on_each_change(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+
+        Sanctum::actingAs($user);
+
+        // Each merged change refreshes updated_at, sliding the window forward.
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'a',
+        ]))->assertOk();
+
+        $this->travel(9)->seconds();
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'description' => 'b',
+        ]))->assertOk();
+
+        $this->travel(9)->seconds();
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'greeting' => 'c',
+        ]))->assertOk();
+
+        // All three changes collapsed into the single (baseline) version via the sliding window.
+        $versions = $assistant->fresh()->versions;
+        $this->assertCount(1, $versions);
+        $this->assertEquals(['description', 'greeting', 'name'], $versions->first()->changed_keys);
+    }
+
+    public function test_rapid_same_key_updates_are_debounced_into_one_version(): void
+    {
+        $user = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
+
+        Sanctum::actingAs($user);
+
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'first',
+        ]))
+            ->assertOk();
+
+        $initialVersionCount = $assistant->fresh()->versions()->count();
+
+        // A second update affecting the same key within the debounce window is collapsed.
+        $this->jsonApi('patch', "/api/assistants/{$assistant->id}", $this->updatePayload($assistant, [
+            'name' => 'second',
+        ]))
+            ->assertOk();
+
+        $this->assertSame($initialVersionCount, $assistant->fresh()->versions()->count());
     }
 
     public function test_can_update_assistant_with_tags(): void
     {
-        $tag1 = Tag::create(['text' => 'tag-one']);
-        $tag2 = Tag::create(['text' => 'tag-two']);
-
         $user = User::factory()->create();
         $assistant = Assistant::factory()->create(['creator_id' => $user->id]);
-        $assistant->tags()->attach([$tag1->id, $tag2->id]);
+        $tagOne = Tag::create(['text' => 'tag-one']);
+        $tagTwo = Tag::create(['text' => 'tag-two']);
+        $assistant->tags()->attach([$tagOne->id, $tagTwo->id]);
 
         Sanctum::actingAs($user);
 
-        $response = $this->jsonApi('patch', "/api/assistants/{$assistant->id}?include=tags", $this->updatePayload($assistant, [
+        $response = $this->jsonApi('patch', "/api/assistants/{$assistant->id}?include=assistant_tags", $this->updatePayload($assistant, [
             'name' => $assistant->name,
-        ], [
-            'tags' => [$tag2->id],
         ]))
             ->assertOk();
 
-        $this->assertDatabaseMissing('assistant_tag', [
-            'assistant_id' => $assistant->id,
-            'tag_id' => $tag1->id,
-        ]);
-
         $assistant->refresh();
-        $this->assertEquals(1, $assistant->tags()->count());
+        $this->assertEquals(2, $assistant->tags()->count());
+        $this->assertTrue($assistant->tags->pluck('text')->contains('tag-one'));
         $this->assertTrue($assistant->tags->pluck('text')->contains('tag-two'));
-
-        $version = $assistant->fresh()->versions()->where('version', 2.0)->first();
-        $this->assertEquals(['tags'], $version->changed_keys);
     }
 
     public function test_update_resets_review_to_pending(): void
@@ -220,7 +276,7 @@ class UpdateTest extends TestCase
         $this->assertDatabaseHas('reviews', [
             'assistant_id' => $assistant->id,
             'status' => ReviewStatus::PENDING->value,
-            'reason' => null,
+            'reason' => 'Assistant updated since last review',
         ]);
     }
 

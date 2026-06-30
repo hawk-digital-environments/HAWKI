@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('assistant_avatars', function (Blueprint $table) {
             $table->id();
-            $table->uuid('uuid')->unique();
             $table->string('name');
             $table->timestamps();
         });
