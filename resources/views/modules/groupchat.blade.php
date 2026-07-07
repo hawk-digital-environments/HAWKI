@@ -83,7 +83,6 @@
 
         window.waitUntilReady(async function () {
 
-            await loadMessageFormattingDependencies();
             initializeGroupChatModule(@json($userData['rooms']));
 
             const slug = @json($slug);

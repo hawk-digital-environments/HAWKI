@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Ai\Tools;
 
 
-use App\Services\Ai\Contracts\ToolInterface;
-use App\Services\Ai\Repositories\AiToolRepository;
+use App\Services\Ai\Tools\Contracts\ToolInterface;
+use App\Services\Ai\Tools\Repositories\AiToolRepository;
 use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Tag;
 use Psr\Log\LoggerInterface;

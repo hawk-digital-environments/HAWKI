@@ -26,8 +26,10 @@ class BelongsToUserScope implements Scope
      */
     public function apply(Builder $builder, Model $model): void
     {
-        $this->runIfUserPresent(function (User $user) use ($builder) {
-            $builder->where($this->userIdColumn, $user->id);
-        }, callbackNoUserInCli: true);
+        $this->runIfUserPresent(
+            function (User $user) use ($builder) {
+                $builder->where($this->userIdColumn, $user->id);
+            },
+            callbackNoUserInCli: true);
     }
 }

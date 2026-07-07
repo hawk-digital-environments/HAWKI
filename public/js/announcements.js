@@ -83,8 +83,7 @@ async function showAnnouncementModal(announcement, view) {
     // Render Markdown content
     const modal = document.querySelector('#announcements-modal');
     const contentWrapper = modal.querySelector('.content-box');
-    const md = await window.hawkiDependencyLoader('md');
-    contentWrapper.innerHTML = md.render(processedView);
+    contentWrapper.innerHTML = getMarkdownRendererHtml(processedView);
 
     // Set link targets and security attributes
     contentWrapper.querySelectorAll('a').forEach(a => {

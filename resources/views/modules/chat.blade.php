@@ -79,7 +79,6 @@
 
         window.waitUntilReady(async function () {
 
-            await loadMessageFormattingDependencies();
             initializeAiChatModule(@json($userData['convs']));
 
             const slug = @json($slug);

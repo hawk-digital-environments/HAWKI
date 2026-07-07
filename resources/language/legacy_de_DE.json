@@ -13,6 +13,15 @@
         "fileManager": {
             "invalidServerResponse": "Der Server hat eine ungültige Antwort zurückgegeben",
             "networkError": "Es gab ein Problem mit der Netzwerkverbindung. Bitte überprüfe deine Internetverbindung und versuche es erneut."
+        },
+        "messageStream": {
+            "nativeToolRunning": "Das Model führt gerade ein natives Tool aus. Einen Moment..."
+        },
+        "groupchat": {
+            "typingStatusOne": ":user tippt gerade...",
+            "typingStatusTwo": ":user1 & :user2 tippen gerade...",
+            "typingStatusMany": ":user & andere tippen gerade...",
+            "serverError": "Es ist ein Fehler aufgetreten, während die Gruppenchat-Nachrichten verarbeitet wurden. Bitte versuche es erneut."
         }
     }
 }

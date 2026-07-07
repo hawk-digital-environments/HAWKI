@@ -3,18 +3,19 @@
   Shows a check indicator for active tools and labels unsupported tools without blocking selection.
 -->
 <script module lang="ts">
-    import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
+    import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
+    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
 
     export interface ToolMenuEntry {
-        name: string;
-        isCapability: boolean;
-        description: string | null;
-        iconPath?: string;
-        tool: AiTool;
-        onChange: (active: boolean) => void;
+        tool: AiToolOrCapability;
+        onToggle: (active: boolean) => void;
+        onCapabilitySet?: (data: {
+            selection: AiToolOrCapabilityWithState['toolSelection'];
+            settings: AiToolOrCapabilityWithState['toolSettings'];
+        }) => void;
         disabled: boolean;
         active: boolean;
-        supported: boolean;
+        available: boolean;
     }
 
     interface McpEntryGroup {
@@ -35,7 +36,6 @@
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
-    import {toolDisplayDescription, toolDisplayName} from '$lib/utils/aiToolUtils.js';
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
     import ToolMenuList from '$lib/components/chat/composer/ToolMenuList.svelte';
     import ToolMenuDetail from '$lib/components/chat/composer/ToolMenuDetail.svelte';
@@ -43,6 +43,7 @@
     import {setToolMenuFocusContext} from '$lib/components/chat/composer/contexts/ToolMenuFocusContext.svelte.js';
     import {__} from '$lib/utils/translator.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
@@ -60,31 +61,39 @@
     let detailToolName = $state<string | null>(null);
 
     const allEntries = $derived.by(() => {
-        return aiToolStore.tools.map(tool => {
-            const entry: ToolMenuEntry = {
-                isCapability: aiToolStore.getCapabilityForTool(tool) !== null,
-                name: toolDisplayName(tool),
-                description: toolDisplayDescription(tool),
-                tool,
-                onChange: (active) => {
-                    if (active) {
-                        composerContext.tools.add(tool);
-                    } else {
-                        composerContext.tools.remove(tool);
-                    }
-                },
-                disabled: tool.status === 'offline',
-                // To avoid rebuilding the whole array, we only update the active/supported state in the filteredEntries derived store.
-                active: false,
-                supported: false
-            };
-            return entry;
-        });
+        const models = aiModelStore.models;
+
+        return aiToolStore.tools
+            // Filter out all tools that are not available for ANY model, since they are not usable in any context.
+            .filter(tool => models.some(model => tool.isAvailableFor(model, true)))
+            .map(tool => {
+                const entry: ToolMenuEntry = {
+                    tool,
+                    onToggle(active) {
+                        if (active) {
+                            composerContext.tools.enable(tool);
+                        } else {
+                            composerContext.tools.disable(tool);
+                        }
+                    },
+                    onCapabilitySet({selection, settings}) {
+                        if (!tool.is_capability || !tool.isAvailableFor(composerContext.model.current)) {
+                            return;
+                        }
+                        composerContext.tools.set(tool, selection, settings);
+                    },
+                    disabled: tool.status === 'offline',
+                    // To avoid rebuilding the whole array, we only update the active/supported state in the filteredEntries derived store.
+                    active: false,
+                    available: false
+                };
+                return entry;
+            });
     });
     const filteredEntries = $derived.by(() => {
         return allEntries.map(entry => {
-            entry.active = composerContext.tools.active.some(activeTool => activeTool.name === entry.tool.name);
-            entry.supported = composerContext.tools.canUse(entry.tool);
+            entry.active = composerContext.tools.isActive(entry.tool);
+            entry.available = entry.tool.isAvailableFor(composerContext.model.current);
             return entry;
         });
     });
@@ -108,7 +117,7 @@
         const mcpTools: Record<string, ToolMenuEntry[]> = {};
 
         for (const entry of filteredEntries) {
-            if (entry.isCapability) {
+            if (entry.tool.is_capability) {
                 capabilities.push(entry);
             } else if (!entry.tool.server) {
                 functionTools.push(entry);
@@ -122,7 +131,7 @@
         }
 
         const sortEntriesAlphabetically = (tools: ToolMenuEntry[]) => {
-            return tools.sort((a, b) => a.name.localeCompare(b.name));
+            return tools.sort((a, b) => a.tool.displayName.localeCompare(b.tool.displayName));
         };
 
         const mcpToolsSorted: Array<McpEntryGroup> =
@@ -158,7 +167,7 @@
         ...groupedEntries.mcpTools.flatMap(group => group.entries)
     ]);
     const firstAvailableEntry = $derived(
-        orderedEntries.find(entry => entry.supported && !entry.disabled)
+        orderedEntries.find(entry => entry.available && !entry.disabled)
         ?? orderedEntries.find(entry => !entry.disabled)
         ?? orderedEntries[0]
         ?? null
@@ -248,6 +257,21 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
+
+        /*
+         The padding collides with the inner view container (overflow: hidden),
+         so the divider would be cut off. Instead, we let the inner view handle its own padding.
+         */
+        padding: 0;
+
+        :global(.view) {
+            padding: var(--space-1)
+        }
+
+        :global(.dropdown-title.dropdown-title) {
+            padding-inline: var(--space-3);
+            padding-bottom: 0;
+        }
     }
 
     :global(.tool-menu-item svg) {

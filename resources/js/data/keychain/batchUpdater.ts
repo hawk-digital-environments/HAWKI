@@ -167,7 +167,6 @@ export async function collectDeferredBatchUpdates(keychainPassword: CryptoKey, r
         deferredUpdaters = [];
         await runner();
         if (!deferredUpdaters || deferredUpdaters.length === 0) {
-            console.log('NO deferred batch updates were collected during this run, skipping batch update execution.');
             return null;
         }
 

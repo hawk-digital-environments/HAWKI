@@ -25,9 +25,8 @@ async function buildRequestObject(msgAttributes, onData, onError) {
         }
     };
 
-    await loadMessageFormattingDependencies();
     // POST request to initiate the AI stream or broadcast
-    postData(requestObject)
+    return postData(requestObject)
         .then(response => {
             // Check if broadcasting is true
             if (!msgAttributes['broadcasting']) {
@@ -35,14 +34,12 @@ async function buildRequestObject(msgAttributes, onData, onError) {
                     onData('AbortError');
                 }
                 // pass stream callback (response) to processStream
-                processStream(response.body, onData);
+                return processStream(response.body, onData);
             } else if (onData) {
                 setTimeout(() => onData(null, true), 3000); // Simulate a delay for broadcasting
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            if (onData) onData(null, true);
             if (onError) {
                 onError(error);
             } else {
@@ -51,6 +48,7 @@ async function buildRequestObject(msgAttributes, onData, onError) {
                     window.__('legacy.stream.connectionErrorTitle')
                 );
             }
+            if (onData) onData(null, true);
         });
 }
 
@@ -83,11 +81,15 @@ async function postData(data) {
         return response;
 
     } catch (error) {
-        console.log('Error while posting data', data, 'resulted in', error);
         throw new Error('An error occurred while fetching data.');
     }
 }
 
+/**
+ * @param {ReadableStream} stream
+ * @param onData
+ * @return {Promise<void>}
+ */
 async function processStream(stream, onData) {
     if (!stream) {
         return;
@@ -105,7 +107,6 @@ async function processStream(stream, onData) {
                 onData(null, true);
                 return;
             }
-
 
             // Append the latest chunk to the buffer
             buffer += textDecoder.decode(value, {stream: true});
@@ -192,13 +193,27 @@ function createMessageLogForAI(regenerationElement = null) {
         }
     });
 
-    return selection;
+    // The message log is built by traversing the DOM and creating the message objects.
+    // If the AI response failed, there is a chance that some message objects are invalid. We filter them out here.
+    // Yes, this is fixing a symptom but since this whole section is gone in a month or two, I don't want to spend time fixing the root cause.
+    return selection.filter(msg => {
+        if (!msg.role || !msg.content || !msg.content.text) {
+            console.warn('Invalid message object found and filtered out:', msg);
+            return false;
+        }
+        return true;
+    });
 }
 
 
 function createMsgObject(msg) {
     const role = msg.dataset.role === 'assistant' ? 'assistant' : 'user';
-    const msgTxt = msg.querySelector('.message-text').textContent;
+    let msgTxt = 'Something is wrong: The message body could not be extracted.';
+    const id = msg.id;
+    const messageData = window.oldUiMessageHistory.findMessageById(id);
+    if (messageData) {
+        msgTxt = messageData.content.text;
+    }
     const filteredText = detectMentioning(msgTxt).filteredText;
 
     const attachmentEls = msg.querySelectorAll('.attachment');
@@ -313,14 +328,12 @@ async function requestChatlogSummery(msgs = null) {
             processResponse(response, onData);
         });
     } catch (error) {
-        // console.log(error);
         throw error; // re-throw the error if you want the caller to handle it
     }
 }
 
 
 function convertMsgObjToLog(messages) {
-    // console.log(messages);
     let list = [];
     for (let i = 0; i < messages.length; i++) {
         msg = messages[i];

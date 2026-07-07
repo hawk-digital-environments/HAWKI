@@ -2,12 +2,13 @@
 
 use App\Http\Controllers\Api\V1\AiCapabilityController;
 use App\Http\Controllers\Api\V1\AiModelController;
+use App\Http\Controllers\Api\V1\AiModelDescriptionController;
+use App\Http\Controllers\Api\V1\AiModelFlagController;
 use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
-use App\Http\Controllers\Api\V1\GenericChatController;
 use App\Http\Controllers\Api\V1\McpServerController;
 use App\Http\Controllers\Api\V1\MigrationController;
 use App\Http\Controllers\Api\V1\RoomMemberController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\V1\SystemPromptController;
 use App\Http\Controllers\Api\V1\TranslationLabelController;
 use App\Http\Controllers\Api\V1\UserKeychainValueController;
 use App\Http\Controllers\Api\V1\UsersController;
+use App\Http\Controllers\LinkPreviewController;
 use App\Http\Controllers\StorageProxyController;
 use App\Http\Controllers\StreamController;
 use App\Http\Middleware\Api\ApiDataScopeContextSettingMiddleware;
@@ -25,6 +27,7 @@ use App\Http\Middleware\ExtApp\AppTokenForbiddenMiddleware;
 use App\Http\Middleware\ExtApp\ExtAppUserOrTokenForbiddenMiddleware;
 use App\Http\Middleware\ExternalAccessRequiredMiddleware;
 use App\JsonApi\V1\Server;
+use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use LaravelJsonApi\Laravel\Facades\JsonApiRoute;
@@ -43,9 +46,6 @@ Route::middleware([
     AppTokenForbiddenMiddleware::class
 ])->group(function () {
     Route::post('ai-req', [StreamController::class, 'handleExternalRequest']);
-
-    Route::group(['prefix' => Server::BASE_URL_PREFIX], static function () {
-    });
 });
 
 Route::middleware([
@@ -55,9 +55,14 @@ Route::middleware([
 ])->group(function () {
     Route::group(['prefix' => Server::BASE_URL_PREFIX], static function () {
 
+        Route::get('/proxy/link-preview/favicon', [LinkPreviewController::class, 'getFavicon'])
+            ->name('api.link-preview.favicon');
+        Route::get('/proxy/link-preview/image', [LinkPreviewController::class, 'getImage'])
+            ->name('api.link-preview.image');
+        Route::get('/proxy/link-preview/metadata', [LinkPreviewController::class, 'getPreview']);
+
         Route::get('/proxy/storage/{identifier}', [StorageProxyController::class, 'streamRouted'])
             ->where(['identifier' => '.*']);
-
     });
 });
 
@@ -68,6 +73,7 @@ JsonApiRoute::server('v1')
         AppTokenForbiddenMiddleware::class,
         ApiDataScopeContextSettingMiddleware::class,
     )
+    ->withoutMiddleware(ConvertEmptyStringsToNull::class)
     ->resources(function (ResourceRegistrar $server) {
         $server->resource('connections', ConnectionController::class)
             ->withoutMiddleware(AppTokenForbiddenMiddleware::class)
@@ -124,6 +130,12 @@ JsonApiRoute::server('v1')
                 $relationships->hasOne('provider')->readOnly();
                 $relationships->hasMany('tools')->readOnly();
             });
+
+        $server->resource('ai-model-flags', AiModelFlagController::class)
+            ->readOnly();
+
+        $server->resource('ai-model-descriptions', AiModelDescriptionController::class)
+            ->readOnly();
 
         $server->resource('system-models', SystemModelController::class)
             ->readOnly()

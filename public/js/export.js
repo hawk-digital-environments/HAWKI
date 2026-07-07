@@ -620,7 +620,6 @@ async function preparePrintPage() {
 
     // First, add all main messages
     activeThreadIndex = 0;
-    await loadMessageFormattingDependencies();
     messages.forEach(messageObj => {
         generateMessageElements(messageObj, true);
     });
@@ -682,14 +681,7 @@ function generateMessageElements(messageObj) {
         });
     }
 
-
-    if (!messageObj.message_role === 'assistant') {
-        msgTxtElement.innerHTML = detectMentioning(messageObj.content.text).modifiedText;
-    } else {
-        let markdownProcessed = formatMessage(messageObj.content.text);
-        msgTxtElement.innerHTML = markdownProcessed;
-        formatMathFormulas(msgTxtElement);
-    }
+    insertOrUpdateSvelteBody(messageElement, messageObj, false);
 
     // insert into target thread
     if (threadIndex === 0) {
@@ -704,7 +696,6 @@ function generateMessageElements(messageObj) {
     } else {
         activeThread.appendChild(messageElement);
     }
-    formatHljs(messageElement);
     return messageElement;
 }
 

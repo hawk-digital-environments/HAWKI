@@ -11,10 +11,24 @@
     }
 
     const {children}: Props = $props();
+
+    const isActive = $derived.by(() => {
+        if (composerContext.forcedActive) {
+            return true;
+        }
+
+        // When sending a private message without chatting to the ai
+        // We don't want to show the beam, as it would only lead to weird flashing.
+        if (composerContext.type === 'room' && !composerContext.containsAiHandle) {
+            return false;
+        }
+
+        return composerContext.sendStatus?.active ?? false;
+    });
 </script>
 <BorderBeam
     size="md"
-    active={(composerContext.sendStatus?.active ?? false) || composerContext.forcedActive}
+    active={isActive}
     duration={3}
 >
     {@render children()}

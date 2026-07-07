@@ -20,6 +20,10 @@
         side?: 'top' | 'right' | 'bottom' | 'left';
         /** Offset in pixels from the trigger. */
         sideOffset?: number;
+        /** Can be used to force the tooltip to be open or closed. If not provided, the tooltip will open on hover/focus and close on blur/mouse leave. */
+        open?: boolean;
+        /** If true, the tooltip will not open on hover/focus. */
+        disabled?: boolean;
         /**
          * The content that triggers the tooltip, typically an icon or button. Can be a string or a Svelte snippet.
          * If a snippet is provided, it will receive a `props` object as an argument, which MUST be used to spread onto the root element of the snippet.
@@ -28,12 +32,14 @@
         children?: Snippet<[{ props: Record<string, any> }]> | Snippet | string;
     }>;
 
-    const {
+    let {
         delayDuration = 1000,
         tooltip,
         children,
         side = 'top',
         sideOffset = 4,
+        open = $bindable(false),
+        disabled,
         ...restProps
     }: Props = $props();
 
@@ -41,26 +47,37 @@
         timer: null as ReturnType<typeof setTimeout> | null
     });
 
-    let open = $state(false);
+    let isTouching = false;
 
     function handleTouchStart(e: TouchEvent) {
+        isTouching = true;
         longPress.timer = setTimeout(() => {
             open = true;
         }, 300);
     }
 
     function handleTouchEnd() {
+        isTouching = false;
         if (longPress.timer) {
             clearTimeout(longPress.timer);
             longPress.timer = null;
         }
     }
+
+    function handleContextMenu(e: Event) {
+        // We only want to supress the context menu if the user is long-pressing to open the tooltip.
+        if (isTouching) {
+            e.preventDefault();
+        }
+    }
+
 </script>
 
 <TooltipPrimitive.Provider>
     <TooltipPrimitive.Root
-        delayDuration={delayDuration}
-        open={open}
+        {delayDuration}
+        {open}
+        {disabled}
         onOpenChange={o => open = o}
         ignoreNonKeyboardFocus>
         <TooltipPrimitive.Trigger>
@@ -72,7 +89,7 @@
                             ontouchstart: handleTouchStart,
                             ontouchend: handleTouchEnd,
                             ontouchcancel: handleTouchEnd,
-                            oncontextmenu: (e: Event) => e.preventDefault() // Prevent context menu on long press
+                            oncontextmenu: handleContextMenu
                         }
                     )
                 }}/>

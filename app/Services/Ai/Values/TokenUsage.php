@@ -6,6 +6,7 @@ namespace App\Services\Ai\Values;
 
 
 use App\Models\Ai\AiModel;
+use Laravel\Ai\Responses\Data\Usage;
 
 readonly class TokenUsage implements \JsonSerializable
 {
@@ -34,4 +35,12 @@ readonly class TokenUsage implements \JsonSerializable
         return $this->toArray();
     }
 
+    public static function fromLaravelUsage(Usage $usage, AiModel $model): self
+    {
+        return new self(
+            model: $model,
+            promptTokens: $usage->promptTokens,
+            completionTokens: $usage->completionTokens + $usage->reasoningTokens,
+        );
+    }
 }

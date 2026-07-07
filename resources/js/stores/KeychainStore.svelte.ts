@@ -34,7 +34,6 @@ export class KeychainStore {
             // If the keychain is completely empty, we fail silently (we assume the migration needs to run)
             // Otherwise, we let the error bubble up, as it likely means something went wrong with loading the existing keychain values.
             if (handle.listKeys().length === 0) {
-                console.log('Keychain handle changed, but there are no keys in the keychain, skipping reload (this is expected if the migration hasn\'t run yet)...');
                 return;
             }
             this.publicKey = handle.publicKey();

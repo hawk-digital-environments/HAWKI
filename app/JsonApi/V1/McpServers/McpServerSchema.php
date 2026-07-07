@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\McpServers;
 
 use App\Models\Ai\McpServer;
-use App\Services\Ai\Values\McpServerTimeouts;
+use App\Services\Ai\Tools\Values\McpServerTimeouts;
 use App\Services\System\JsonApi\ValueSerializer;
 use App\Services\Users\UserCondition;
 use LaravelJsonApi\Eloquent\Fields\ArrayHash;

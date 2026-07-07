@@ -13,6 +13,14 @@
         "fileManager": {
             "invalidServerResponse": "The server returned an invalid response",
             "networkError": "A network error occurred during upload. Please check your internet connection and try again."
+        },
+        "messageStream": {
+            "nativeToolRunning": "The model is currently running a native tool. One moment..."
+        },
+        "groupchat": {
+            "typingStatusOne": ":user is typing...",
+            "typingStatusTwo": ":user1 & :user2 are typing...",
+            "typingStatusMany": ":user & others are typing..."
         }
     }
 }

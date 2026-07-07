@@ -18,8 +18,16 @@ function initializeGUI() {
 
 function onSidebarButtonDown(pageID) {
     if (pageID === activeModule) {
-        if (document.getElementById(`${pageID}-sidebar`) != null) {
-            togglePanelClass(`${pageID}-sidebar`, 'expanded');
+        const sidebarEl = document.getElementById(`${pageID}-sidebar`);
+        if (sidebarEl != null) {
+            // Check if the --sidebar-expanded-by-style css property is set to 1 on the sidebar el
+            let expandedByStyle = false;
+            if (getComputedStyle(sidebarEl).getPropertyValue('--sidebar-expanded-by-style').trim() === '1') {
+                sidebarEl.classList.add('expanded');
+                expandedByStyle = true;
+            } else {
+                sidebarEl.classList.toggle('expanded');
+            }
 
             document.querySelector('.dy-main-content').classList.toggle('expanded');
 
@@ -30,11 +38,12 @@ function onSidebarButtonDown(pageID) {
             const selectId = pageID === 'groupchat' ? 'chat' : pageID;
             const content = document.getElementById(selectId);
             if (content) {
-                if (manualExpanded) {
+                if (manualExpanded && !expandedByStyle) {
                     const windowWidth = window.innerWidth;
                     content.style.minWidth = `${windowWidth - 100}px`;
                 } else {
                     content.style.minWidth = '';
+                    content.classList.remove('expanded');
                 }
             }
         }
@@ -213,13 +222,13 @@ function checkWindowSize(thresholdWidth, thresholdHeight) {
         debounceTimer = setTimeout(() => {
             const currentWidth = window.innerWidth;
             const currentHeight = window.innerHeight;
-            const sidebar = document.getElementById(`${activeModule}-sidebar`) ? document.getElementById(`${activeModule}-sidebar`) : null;
+            const sidebar = document.getElementById(`${activeModule}-sidebar`);
             if (currentWidth < thresholdWidth || currentHeight < thresholdHeight) {
                 if (sidebar) {
                     if (!sidebar.dataset.manualExpanded) {
-                        document.getElementById(`${activeModule}-sidebar`).classList.remove('expanded');
-                        document.querySelector('.dy-main-content').classList.remove('expanded');
+                        sidebar.classList.remove('expanded');
                     }
+                    document.querySelector('.dy-main-content').classList.remove('expanded');
                 }
             } else {
 

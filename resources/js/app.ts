@@ -1,16 +1,14 @@
-import {getAuthenticatedConnection, getConnection, getConnectionWithUserInfo, getRegisteringUserConnection, loadConnection} from '$lib/data/connection/connection.js';
+import {getAuthenticatedConnection, getConnection, getConnectionWithUserInfo, loadConnection} from '$lib/data/connection/connection.js';
 import {autoRegisterConfigSchemas, getConfig, loadConfig} from '$lib/data/config/config.js';
 import {autoRegisterResourceSchemas} from '$lib/data/resources/resourceRegistry.js';
-import {__, hasTranslation, loadTranslationLabels} from '$lib/utils/translator.js';
+import {__, loadTranslationLabels} from '$lib/utils/translator.js';
 import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-import {buildStorageFileUrl} from '$lib/utils/storageFileProxy.js';
 import {applyMigrations, autoRegisterMigrations} from '$lib/data/migrations/migrator.js';
 import {aiModelStore, loadAiModels} from '$lib/stores/AiModelStore.svelte.js';
 import {registerSvelteSnippetLoader} from '$lib/svelteSnippetLoader.js';
 import {loadSystemPrompts, systemPromptStore} from '$lib/stores/SystemPromptStore.svelte.js';
 import {keychainStore, KeychainStore} from '$lib/stores/KeychainStore.svelte.js';
 import {loadAiToolsAndCapabilities} from '$lib/stores/AiToolStore.svelte.js';
-import {encryptHybrid} from '$lib/encryption/hybrid.js';
 import type {WellKnownSystemModelType} from '$lib/schemas/resources/system-models.schema.js';
 import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
 import type {WellKnownSystemPromptType} from '$lib/schemas/resources/system-prompts.schema.js';
@@ -20,6 +18,7 @@ import {bootstrapper, Bootstrapper} from '$lib/utils/Bootstrapper.js';
 import {dependencyLoader} from '$lib/dependencies.js';
 import {createToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import {createAppContext} from '$lib/components/app/AppContext.svelte.js';
+import {buildStorageFileUrl} from '$lib/utils/storageFileProxy.js';
 
 // Augment the global Window interface to include our globals, so that they can be accessed without TypeScript errors.
 // WARNING: This is only here for legacy support! Do not use global variables in new code!
@@ -33,16 +32,14 @@ declare global {
         hawkiDependencyLoader: typeof dependencyLoader;
         waitUntilBootstrap: (cb: (bootstrapper: Bootstrapper) => Promise<void> | void) => void;
         waitUntilReady: (cb: () => Promise<void> | void) => void;
+        oldUiBridge: typeof oldUiBridge;
+        oldUiMessageHistory: typeof oldUiMessageHistory;
         getConnection: typeof getConnection;
         getAuthenticatedConnection: typeof getAuthenticatedConnection;
-        getRegisteringUserConnection: typeof getRegisteringUserConnection;
         getConnectionWithUserInfo: typeof getConnectionWithUserInfo;
         getConfig: typeof getConfig;
         applyMigrations: typeof applyMigrations;
         __: typeof __;
-        hasTranslation: typeof hasTranslation;
-        oldUiBridge: typeof oldUiBridge;
-        oldUiMessageHistory: typeof oldUiMessageHistory;
         buildStorageFileUrl: typeof buildStorageFileUrl;
         userKeychain: KeychainStore;
         getAiModels: () => AiModel[];
@@ -50,9 +47,6 @@ declare global {
         getSystemModel: (modelType: WellKnownSystemModelType | string) => AiModel | null;
         getSystemPrompt: (promptName: WellKnownSystemPromptType) => string | null;
         getFileIconSvg: typeof getFileIconSvg;
-        hawkiCrypto: {
-            encryptHybrid: typeof encryptHybrid;
-        };
     }
 }
 
@@ -68,20 +62,15 @@ autoRegisterMigrations();
 // Propagate some important functions and objects to the global scope, so the legacy code can access them.
 window.getConnection = getConnection;
 window.getAuthenticatedConnection = getAuthenticatedConnection;
-window.getRegisteringUserConnection = getRegisteringUserConnection;
 window.getConnectionWithUserInfo = getConnectionWithUserInfo;
 window.getConfig = getConfig;
 window.__ = __;
-window.hasTranslation = hasTranslation;
-window.buildStorageFileUrl = buildStorageFileUrl;
 window.applyMigrations = applyMigrations;
 window.userKeychain = keychainStore;
 window.oldUiBridge = oldUiBridge;
 window.oldUiMessageHistory = oldUiMessageHistory;
+window.buildStorageFileUrl = buildStorageFileUrl;
 window.hawkiDependencyLoader = dependencyLoader;
-window.hawkiCrypto = {
-    encryptHybrid
-};
 window.getAiModels = () => aiModelStore.models;
 window.getAiModel = (id: string | number) => aiModelStore.getOneById(id);
 window.getSystemModel = (modelType: WellKnownSystemModelType | string) => {

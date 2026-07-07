@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\AiProviders;
 
 use App\Models\Ai\AiProvider;
-use App\Services\Ai\Values\ProviderSettings;
+use App\Services\Ai\Providers\Values\ProviderSettings;
 use App\Services\System\JsonApi\ValueSerializer;
 use App\Services\Users\UserCondition;
 use LaravelJsonApi\Eloquent\Fields\ArrayHash;

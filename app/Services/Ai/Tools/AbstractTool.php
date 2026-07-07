@@ -4,45 +4,72 @@ declare(strict_types=1);
 namespace App\Services\Ai\Tools;
 
 use App\Models\Ai\AiModel;
-use App\Services\Ai\Contracts\ToolInterface;
-use NeuronAI\Tools\Tool;
+use App\Services\Ai\Tools\Contracts\SettingsAwareToolInterface;
+use App\Services\Ai\Tools\Contracts\ToolInterface;
+use App\Services\System\Container\ServiceLocator;
+use App\Utils\JsonSchema\JsonSchemaValidator;
+use Illuminate\JsonSchema\JsonSchemaTypeFactory;
+use Laravel\Ai\Tools\Request;
+use Psr\Log\LoggerInterface;
+use Stringable;
 
-/**
- * Under the hood we are using the Neuron framework, this class is just an adapter.
- * @see https://docs.neuron-ai.dev/agent/tools#custom-tools on how to write tools
- * The only difference is, that you can use the "__construct" method for dependency injection,
- * like you would do in any other Laravel class, and you can define the "name" and "description"
- * of the tool in separate methods, which are then passed to the parent constructor.
- */
-abstract class AbstractTool extends Tool implements ToolInterface
+
+abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
 {
-    /**
-     * This MUST be false, because we want to check if the constructor of the tool was called
-     * or if someone forgot to call it when using dependency injection. If the constructor was not called,
-     * the name and description of the tool would be null, which would cause errors when the model tries to use the tool.
-     * @noinspection PhpUnusedFieldDefaultValueInspection
-     * @noinspection PropertyInitializationFlawsInspection
-     */
-    private bool $constructorCalled = false;
+    private ServiceLocator|null $serviceLocator = null;
+    private int $maxRuns = 0;
+    private int $runs = 0;
+    private array $settings = [];
+    private Request|null $request = null;
+    private array|null $arguments = null;
 
-    public function __construct()
+    final public function setServiceLocator(ServiceLocator $serviceLocator): void
     {
-        parent::__construct($this->name(), $this->description());
-        $this->constructorCalled = true;
+        $this->serviceLocator = $serviceLocator;
     }
 
-    /**
-     * Must return the unique name of this tool, e.g. "get_current_weather".
-     * Where possible I would suggest using a "private namespace" for your tools, e.g. "my_app_get_current_weather",
-     * to avoid name clashes with other tools.
-     */
-    abstract protected function name(): string;
+    protected function getServiceLocator(): ServiceLocator
+    {
+        return $this->serviceLocator ??= app(ServiceLocator::class);
+    }
 
-    /**
-     * Must return the description of this tool, e.g. "Get the current weather in a given location".
-     * This is provided to the model when it needs to decide which tool to use, so it should be as descriptive as possible about what the tool does and how to use it.
-     */
-    abstract protected function description(): string;
+    protected function setMaxRuns(int $maxRuns): void
+    {
+        $this->maxRuns = $maxRuns;
+    }
+
+    protected function getMaxRuns(): int
+    {
+        return $this->maxRuns;
+    }
+
+    public function setSettings(array $settings): void
+    {
+        $this->settings = $settings;
+    }
+
+    protected function getSettings(): array
+    {
+        return $this->settings;
+    }
+
+    protected function getRequest(): Request
+    {
+        if ($this->request === null) {
+            // @todo exception
+            throw new \RuntimeException('Request is not set. This method can only be called during the execution of the tool.');
+        }
+        return $this->request;
+    }
+
+    protected function getArguments(): array
+    {
+        if ($this->arguments === null) {
+            // @todo exception
+            throw new \RuntimeException('Arguments are not set. This method can only be called during the execution of the tool.');
+        }
+        return $this->arguments;
+    }
 
     /**
      * This method tells HAWKI, which "capability" this tool provides.
@@ -58,39 +85,78 @@ abstract class AbstractTool extends Tool implements ToolInterface
     /**
      * @inheritDoc
      */
-    public function getName(): string
+    final public function handle(Request $request): Stringable|string
     {
-        $this->assertConstructorWasCalled();
-        return parent::getName();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getDescription(): ?string
-    {
-        $this->assertConstructorWasCalled();
-        return parent::getDescription();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    final public function execute(): void
-    {
-        $this->assertConstructorWasCalled();
-        parent::execute();
-    }
-
-    /**
-     * This method checks if the constructor of the tool was called before any of the parent methods are executed.
-     * This is important because the name and description of the tool are set in the constructor, and if it wasn't called, these values would be null.
-     * If the constructor was not called, an exception is thrown with a message indicating that the constructor must be called before executing the tool.
-     */
-    private function assertConstructorWasCalled(): void
-    {
-        if (!$this->constructorCalled) {
-            throw new \LogicException('The constructor of the tool must be called before executing it. Please make sure to call parent::__construct() in the constructor of your tool.');
+        if (!is_callable([$this, '__invoke'])) {
+            return $this->errorResponse('The tool implementation is broken! Do never call this tool again as it is currently not working!');
         }
+
+        if ($this->maxRuns > 0 && $this->runs >= $this->maxRuns) {
+            return $this->errorResponse("Reached its maximum number of runs ({$this->maxRuns})! Do not call this tool again!");
+        }
+
+        $args = $request->all();
+        $validatedArgs = $this->validateArgumentsAgainstSchema($args);
+        if (is_string($validatedArgs)) {
+            return $validatedArgs;
+        }
+
+        try {
+            $this->request = $request;
+            $this->arguments = $validatedArgs;
+
+            $result = $this->getServiceLocator()->call('tool.invokeChild', [$this, '__invoke'], $validatedArgs);
+
+            if ($result instanceof Stringable || is_string($result)) {
+                return $result;
+            }
+
+            if (is_callable([$result, 'text'])) {
+                return $result->text();
+            }
+
+            return json_encode($result, JSON_THROW_ON_ERROR);
+
+        } catch (\Throwable $e) {
+            return $this->errorResponse($e->getMessage());
+        } finally {
+            $this->request = null;
+            $this->arguments = null;
+            $this->runs++;
+        }
+    }
+
+    protected function errorResponse(string|\Throwable|null $message = null): string
+    {
+        $context = [
+            'arguments' => $this->arguments,
+            'settings' => $this->settings
+        ];
+
+        if ($message instanceof \Throwable) {
+            $context['exception'] = $message;
+            $message = $message->getMessage();
+        }
+
+        $error = "[ERROR] The tool {$this->name()} encountered an error: " . ($message ?? 'Unknown error');
+
+        $this->getServiceLocator()->get(LoggerInterface::class)->error($error, $context);
+
+        return $error;
+    }
+
+    private function validateArgumentsAgainstSchema(array $args): string|array
+    {
+        $schema = $this->schema(new JsonSchemaTypeFactory);
+        if (empty($schema)) {
+            return $args;
+        }
+
+        $result = (new JsonSchemaValidator())->validate($schema, $args);
+        if (is_string($result)) {
+            return $this->errorResponse('You provided invalid arguments for this tool: `' . $result . '`');
+        }
+
+        return $result;
     }
 }

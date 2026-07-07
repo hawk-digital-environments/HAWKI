@@ -5,7 +5,6 @@ namespace App\Models\Ai;
 use App\Collections\SystemModelCollection;
 use App\Models\Scopes\Generic\UsageTypeOverlayScope;
 use App\Policies\SystemModelPolicy;
-use App\Services\Ai\Values\SystemModelType;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
@@ -23,10 +22,6 @@ class SystemModel extends Model
         'model_type',
         'usage_type',
         'model_id',
-    ];
-
-    protected $casts = [
-        'model_type' => SystemModelType::class,
     ];
 
     protected static function registerScopes(ScopeRegistrar $registrar): void

@@ -51,7 +51,7 @@ class StorageServiceProvider extends ServiceProvider
                         filesystem: $filesystem,
                         urlGenerator: $app->get(UrlGenerator::class),
                         contentExtractor: $app->get(ContentExtractor::class),
-                        attachmentDb: $app->get(AttachmentRepository::class)
+                        attachmentRepository: $app->get(AttachmentRepository::class)
                     )
                 );
             }
@@ -72,7 +72,7 @@ class StorageServiceProvider extends ServiceProvider
                         filesystem: $filesystem,
                         urlGenerator: $app->get(UrlGenerator::class),
                         contentExtractor: $app->get(ContentExtractor::class),
-                        attachmentDb: $app->get(AttachmentRepository::class)
+                        attachmentRepository: $app->get(AttachmentRepository::class)
                     ),
                     fileConverter: $this->app->get(FileConverterInterface::class)
                 );

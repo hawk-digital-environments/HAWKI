@@ -161,3 +161,21 @@
         </ButtonWithTooltip>
     </div>
 {/if}
+
+<style>
+    /* Inactive (disabled) send button: the fill variant defaults to the
+       slightly blue-tinted --color-bg-secondary. Combine with .btn--fill so
+       this out-specifies Button's own disabled rule. */
+    :global(.btn--fill.chat-send-btn:disabled) {
+        --btn-bg: var(--color-surface-light);
+    }
+
+    /* Active (enabled) send button: use the blue accent color. */
+    :global(.btn--fill.chat-send-btn:not(:disabled)) {
+        --btn-bg: var(--color-accent-500);
+    }
+
+    :global(.btn--fill.chat-send-btn:not(:disabled):hover) {
+        --btn-bg: var(--color-accent-600);
+    }
+</style>

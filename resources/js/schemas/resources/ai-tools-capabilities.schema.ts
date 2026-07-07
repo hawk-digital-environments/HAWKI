@@ -1,10 +1,17 @@
 import z from 'zod';
 
-export const AiToolCapabilityValues = ['yes', 'no', 'native', 'tool'] as const;
+export const wellKnownAiToolCapabilities = [
+    'web_search',
+    'knowledge_base',
+    'web_fetch',
+    'code_execution',
+    'tool_calling'
+] as const;
+
+export type WellKnownAiToolCapability = typeof wellKnownAiToolCapabilities[number];
 
 const AiToolCapabilitiesSchema = z.object({
-    id: z.string(),
-    default_value: z.enum(AiToolCapabilityValues),
+    id: z.union([z.string(), z.enum(wellKnownAiToolCapabilities)]),
     title_label: z.string(),
     description_label: z.string().nullable(),
     icon_path: z.string()

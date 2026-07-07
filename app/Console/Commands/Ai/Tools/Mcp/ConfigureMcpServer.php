@@ -3,7 +3,7 @@
 namespace App\Console\Commands\Ai\Tools\Mcp;
 
 use App\Models\Ai\McpServer;
-use App\Services\Ai\Values\McpServerTimeouts;
+use App\Services\Ai\Tools\Values\McpServerTimeouts;
 use Illuminate\Console\Command;
 
 class ConfigureMcpServer extends Command

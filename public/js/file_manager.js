@@ -181,23 +181,6 @@ async function renderPdf(blob) {
 
         await pdfPage.render({canvasContext: context, viewport}).promise;
 
-        // ── Text layer ────────────────────────────────────────────────
-        // const textLayerBuilder = new TextLayerBuilder({
-        //     pdfPage,
-        //     textLayerMode: 2 // Use enhanced layout for better accuracy
-        // });
-        // console.log(textLayerBuilder)
-        // await textLayerBuilder.render({ viewport });
-
-        // const textLayerDiv = textLayerBuilder.div;
-        // textLayerDiv.style.position = 'absolute';
-        // textLayerDiv.style.top  = '0';
-        // textLayerDiv.style.left = '0';
-        // textLayerDiv.style.width  = '100%';
-        // textLayerDiv.style.height = '100%';
-
-        // pageDiv.appendChild(textLayerDiv);
-
         // ── Append to container ───────────────────────────────────────
         container.appendChild(pageDiv);
     }
@@ -209,8 +192,7 @@ async function renderDocx(blob) {
     container.innerHTML = '';
 
     const docxPreview = await window.hawkiDependencyLoader('docxPreview');
-    docxPreview.renderAsync(blob, container)
-        .then(x => console.log('docx: finished'));
+    docxPreview.renderAsync(blob, container);
 }
 
 async function renderImage(blob) {

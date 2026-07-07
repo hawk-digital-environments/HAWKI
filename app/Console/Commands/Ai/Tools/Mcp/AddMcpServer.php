@@ -6,13 +6,13 @@ use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\AiTool;
 use App\Models\Ai\McpServer;
-use App\Services\Ai\Repositories\AiModelToolRepository;
-use App\Services\Ai\Repositories\AiToolRepository;
-use App\Services\Ai\Repositories\McpServerRepository;
 use App\Services\Ai\Tools\Mcp\McpClientFactory;
+use App\Services\Ai\Tools\Repositories\AiModelToolRepository;
+use App\Services\Ai\Tools\Repositories\AiToolRepository;
+use App\Services\Ai\Tools\Repositories\McpServerRepository;
+use App\Services\Ai\Tools\Values\McpServerTimeouts;
+use App\Services\Ai\Tools\Values\McpServerType;
 use App\Services\Ai\Tools\Values\McpToolDefinition;
-use App\Services\Ai\Values\McpServerTimeouts;
-use App\Services\Ai\Values\McpServerType;
 use Illuminate\Console\Command;
 
 class AddMcpServer extends Command
@@ -30,9 +30,9 @@ class AddMcpServer extends Command
     protected $description = 'Add an MCP server, discover its tools, and assign them to AI models';
 
     public function handle(
-        McpClientFactory     $clientFactory,
-        McpServerRepository  $serverRepo,
-        AiToolRepository     $toolRepo,
+        McpClientFactory      $clientFactory,
+        McpServerRepository   $serverRepo,
+        AiToolRepository      $toolRepo,
         AiModelToolRepository $assignments
     ): int
     {

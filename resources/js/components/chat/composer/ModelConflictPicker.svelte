@@ -7,16 +7,16 @@
     import {TriangleAlert} from '@lucide/svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import ModelDemandBars from '$lib/components/chat/composer/ModelDemandBars.svelte';
-    import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
-    import {toolDisplayName} from '$lib/utils/aiToolUtils.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import StatusDotForModel from '$lib/components/chat/composer/StatusDotForModel.svelte';
+    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+    import {__} from '$lib/utils/translator.js';
 
     const composerContext = useComposerContext();
     const currentModel = $derived(composerContext.model.current);
     const usableModels = $derived(composerContext.modelUsage.allUsable);
 
-    const missingTools: AiTool[] = $derived.by(() => {
+    const missingTools: AiToolOrCapabilityWithState[] = $derived.by(() => {
             return composerContext.modelUsage.issues
                 .filter(issue => issue.type === 'missing_tools')
                 .flatMap(issue => issue.missingTools ?? []);
@@ -34,17 +34,19 @@
                 </div>
                 <div class="conflict-content">
                     <p class="conflict-title">
-                        {currentModel.label} unterstützt
                         {#if missingTools.length === 1}
-                            {toolDisplayName(missingTools[0])}
+                            {__('chat.composer.modelConflict.conflictTitleSingle', {model: currentModel.label, tool: missingTools[0].displayName})}
                         {:else}
-                            die folgenden Anforderungen
+                            {__('chat.composer.modelConflict.conflictTitleMultiple', {model: currentModel.label})}
                         {/if}
-                        nicht
                     </p>
                     {#if usableModels.length > 0}
                         <p class="conflict-caps-count">
-                            {usableModels.length} Modell{usableModels.length === 1 ? '' : 'e'} können alles
+                            {#if usableModels.length === 1}
+                                {__('chat.composer.modelConflict.singleModelCapable')}
+                            {:else}
+                                {__('chat.composer.modelConflict.multipleModelsCapable', {count: String(usableModels.length)})}
+                            {/if}
                         </p>
                     {/if}
                 </div>
@@ -74,7 +76,7 @@
                 </div>
             {:else}
                 <p class="conflict-no-models">
-                    Kein verfügbares Modell unterstützt diese Kombination. Entferne ein Tool oder einen Anhang.
+                    {__('chat.composer.modelConflict.noModelsAvailable')}
                 </p>
             {/if}
         </div>

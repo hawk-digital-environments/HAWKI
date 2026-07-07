@@ -10,6 +10,10 @@
         transition: var(--transition-medium);
         border-right: var(--border-stroke-thin);
         background-color: var(--background-main);
+
+        @media (min-width: 950px) {
+            --sidebar-expanded-by-style: 1;
+        }
     }
 
     .dy-sidebar-wrapper {
@@ -2368,6 +2372,7 @@
         width: 1rem;
         height: 1rem;
         font-size: var(--font-xxs);
+        margin-inline: 3px;
     }
 
     sup {

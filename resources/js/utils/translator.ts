@@ -124,6 +124,50 @@ export function getTranslations(label: string, replacements?: ReplacementValue, 
 }
 
 /**
+ * Works similar to {@link getTranslations}, but instead of returning a nested object of translation labels,
+ * it flattens the result into a single-level object with dot-notated keys.
+ * Additionally, it ALWAYS expects your path to point to a nested object, and will throw an error if it points to a string or a non-object value.
+ *
+ * @param path
+ */
+export function getTranslationsFlat(path: string): Record<string, string> {
+    if (!loadedLabels) {
+        console.warn('Translation labels not loaded yet, returning empty object as fallback:', path);
+        return {};
+    }
+
+    const resolvedLabel: Record<string, any> | string | null = findRecursively(loadedLabels.labels, path);
+
+    if (resolvedLabel === null) {
+        console.warn(`Translation for path "${path}" not found.`);
+        return {};
+    }
+
+    if (typeof resolvedLabel !== 'object' || Array.isArray(resolvedLabel)) {
+        throw new Error(`Expected a nested object at path "${path}", but found a non-object value.`);
+    }
+
+    const flatResult: Record<string, string> = {};
+
+    function flatten(obj: Record<string, any>, prefix: string = '') {
+        for (const [key, value] of Object.entries(obj)) {
+            const newKey = prefix ? `${prefix}.${key}` : key;
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                flatten(value, newKey);
+            } else if (typeof value === 'string') {
+                flatResult[newKey] = value;
+            } else {
+                console.warn(`Skipping non-string value at path "${newKey}".`);
+            }
+        }
+    }
+
+    flatten(resolvedLabel);
+
+    return flatResult;
+}
+
+/**
  * Returns `true` when a translation entry exists for the given key.
  *
  * @param label - Translation key (supports dot notation).

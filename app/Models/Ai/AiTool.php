@@ -5,9 +5,9 @@ namespace App\Models\Ai;
 use App\Collections\AiToolCollection;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Policies\AiToolPolicy;
-use App\Services\Ai\Registries\AiModelCapabilityRegistry;
-use App\Services\Ai\Tools\Values\AiToolCapabilityDefinition;
-use App\Services\Ai\Values\ToolType;
+use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
+use App\Services\Ai\Models\Capabilities\Values\AiModelCapabilityDefinition;
+use App\Services\Ai\Tools\Values\ToolType;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
@@ -75,7 +75,7 @@ class AiTool extends Model
             ->withTimestamps();
     }
 
-    public function capability(): AiToolCapabilityDefinition
+    public function capability(): AiModelCapabilityDefinition
     {
         $capabilityKey = $this->getEffectiveCapability();
         $registry = app(AiModelCapabilityRegistry::class);

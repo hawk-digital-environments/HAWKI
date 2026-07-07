@@ -19,12 +19,12 @@
 
     // Tints the info trigger to match the status surfaced in the detail view.
     const status = $derived(
-        entry.disabled ? 'error' : !entry.supported ? 'warning' : 'available'
+        entry.disabled ? 'error' : !entry.available ? 'warning' : 'available'
     );
 
     const infoTooltip = $derived.by(() => {
         if (entry.disabled) return __('chat.composer.toolMenu.infoOffline');
-        if (!entry.supported) return __('chat.composer.toolMenu.infoUnsupported');
+        if (!entry.available) return __('chat.composer.toolMenu.infoUnsupported');
         return __('chat.composer.toolMenu.infoDefault');
     });
 
@@ -75,7 +75,7 @@
     bind:ref={rowEl}
     checked={entry.active}
     closeOnSelect={false}
-    onCheckedChange={entry.onChange}
+    onCheckedChange={entry.onToggle}
     disabled={entry.disabled}
     onkeydown={onRowKeydown}
     data-tool-name={entry.tool.name}
@@ -84,7 +84,7 @@
     {#snippet children(checked)}
         <span class="tool-item-main">
             <ToolIcon tool={entry.tool}/>
-            <span class="tool-item-label">{entry.name}</span>
+            <span class="tool-item-label">{entry.tool.displayName}</span>
             <span class="tool-item-check">
                 {#if checked}
                     <Check size={12}/>
@@ -106,7 +106,7 @@
                 onclick={openDetail}>
                 <StatusDotForTool
                     tool={entry.tool}
-                    supported={entry.supported}
+                    supported={entry.available}
                     tooltipSuffix={__('chat.composer.toolMenu.clickForInfo')}
                 />
                 <ChevronRight size={10}/>
@@ -164,14 +164,15 @@
     }
 
     .tool-item-info {
-        display: inline-flex;
+        display: flex;
         flex-shrink: 0;
         align-items: center;
         justify-content: center;
-        padding: 0;
+        padding: 6px 0;
         margin: 0;
         border: none;
-        background: none;
+        background-color: rgba(255, 0, 0, 0.001%);
+        pointer-events: all;
         line-height: 0;
         color: var(--color-text-muted);
         cursor: pointer;

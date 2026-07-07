@@ -6,9 +6,9 @@ namespace App\Services\Ai\Tools\Mcp;
 
 
 use App\Services\Ai\Tools\Values\McpToolDefinition;
-use App\Services\Ai\Tools\Values\ToolResult;
 use Illuminate\Container\RewindableGenerator;
 use Mcp\Client\ClientSession;
+use Mcp\Types\CallToolResult;
 use Psr\Log\LoggerInterface;
 
 class HawkiMcpClient
@@ -61,14 +61,24 @@ class HawkiMcpClient
         }
     }
 
-    public function callTool(string $name, ?array $arguments = null): ToolResult
+    public function callTool(string $name, ?array $arguments = null): CallToolResult
     {
-        $result = $this->session->callTool(
-            name: $name,
-            arguments: $arguments
-        );
+        try {
+            $this->initializeIfNotAlready();
+            return $this->session->callTool(
+                name: $name,
+                arguments: $arguments
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(sprintf(
+                'Call to MCP tool %s on server %s failed: %s',
+                $name,
+                $this->url,
+                $e->getMessage()
+            ), ['exception' => $e, 'arguments' => $arguments]);
 
-        return ToolResult::createDecoratedOf($result);
+            throw $e;
+        }
     }
 
     /**

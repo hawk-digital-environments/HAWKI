@@ -10,16 +10,22 @@ use App\Models\Scopes\Generic\ActiveFilterOnRelationScope;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\Generic\UsageTypeFilterOnRelationScope;
 use App\Policies\AiModelPolicy;
-use App\Services\Ai\Values\ModelCapabilities;
-use App\Services\Ai\Values\ModelDemand;
-use App\Services\Ai\Values\ModelIoMethods;
-use App\Services\Ai\Values\ModelParameters;
-use App\Services\Ai\Values\ModelSettings;
+use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
+use App\Services\Ai\Models\Flags\Values\AiModelFlags;
+use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
+use App\Services\Ai\Models\Limits\AiModelLimitRegistry;
+use App\Services\Ai\Models\Limits\AiModelLimitsInterface;
+use App\Services\Ai\Models\Limits\Values\NullAiModelLimits;
+use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
+use App\Services\Ai\Models\Pricing\AiModelPricingInterface;
+use App\Services\Ai\Models\Pricing\AiModelPricingRegistry;
+use App\Services\Ai\Models\Pricing\Values\NullPricing;
+use App\Services\Ai\Models\Settings\Values\AiModelSettings;
+use App\Services\Ai\StatusCheck\Values\ModelDemand;
 use App\Services\Ai\Values\OnlineStatus;
-use App\Services\Ai\Values\ToolType;
-use App\Services\Storage\Values\FileType;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Attributes\CollectedBy;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
@@ -28,13 +34,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 
 /**
- * @property-read ModelCapabilities $capabilities
- * @property-read ModelIoMethods $input
- * @property-read ModelIoMethods $output
- * @property-read ModelParameters $parameters
- * @property-read ModelSettings $settings
+ * @property AiModelIoMethods $input
+ * @property AiModelIoMethods $output
+ * @property AiModelParameters $parameters
  * @property OnlineStatus $status
  * @property ModelDemand $demand
+ * @property AiModelSettings $settings
+ * @property AiModelLimitsInterface $limits
+ * @property AiModelPricingInterface $pricing
+ * @property AiModelFlags $flags
+ * @property NativeAiModelCapabilities $native_capabilities
  * @property bool $active
  * @property-read AiToolCollection $tools
  */
@@ -54,21 +63,37 @@ class AiModel extends Model
         'provider_id',
         'status',
         'demand',
-        'capabilities',
         'settings',
+        'model_type',
+        'documentation_url',
+        'deprecation_date',
+        'native_capabilities',
+        'limits',
+        'pricing',
+        'flags',
     ];
 
     public function getCasts(): array
     {
         return [
             'active' => 'boolean',
-            'input' => AsInstance::of(ModelIoMethods::class),
-            'output' => AsInstance::of(ModelIoMethods::class),
-            'parameters' => AsInstance::of(ModelParameters::class),
+            'deprecation_date' => 'datetime',
+            'input' => AsInstance::of(AiModelIoMethods::class),
+            'output' => AsInstance::of(AiModelIoMethods::class),
+            'parameters' => AsInstance::of(AiModelParameters::class),
             'status' => OnlineStatus::class,
             'demand' => ModelDemand::class,
-            'capabilities' => AsInstance::of(ModelCapabilities::class),
-            'settings' => AsInstance::of(ModelSettings::class)
+            'settings' => AsInstance::of(AiModelSettings::class),
+            'limits' => AsInstance::of(static function ($model) {
+                return Container::getInstance()->make(AiModelLimitRegistry::class)
+                    ->getLimitClassForModel($model) ?? NullAiModelLimits::class;
+            }),
+            'pricing' => AsInstance::of(static function ($model) {
+                return Container::getInstance()->make(AiModelPricingRegistry::class)
+                    ->getPricingClassForModel($model) ?? NullPricing::class;
+            }),
+            'flags' => AsInstance::of(AiModelFlags::class),
+            'native_capabilities' => AsInstance::of(NativeAiModelCapabilities::class)
         ];
     }
 
@@ -87,6 +112,16 @@ class AiModel extends Model
     public function provider(): BelongsTo
     {
         return $this->belongsTo(AiProvider::class, 'provider_id');
+    }
+
+    /**
+     * The descriptions that are associated with this model.
+     *
+     * @return HasOneOrMany<AiModelDescription, $this>
+     */
+    public function description(): HasOneOrMany
+    {
+        return $this->hasMany(AiModelDescription::class, 'ai_model_id');
     }
 
     /**
@@ -109,19 +144,7 @@ class AiModel extends Model
     {
         return $this->belongsToMany(AiTool::class, 'ai_model_tools', 'ai_model_id', 'ai_tool_id')
             ->withPivot(['type', 'source_id'])
-            ->withTimestamps()
-            ->where(function ($query) {
-                $query
-                    ->where('active', true)
-                    ->where('ai_tools.type', '!=', ToolType::MCP->value)
-                    ->orWhereExists(function ($subQuery) {
-                        $subQuery->selectRaw('1')
-                            ->from('mcp_servers')
-                            ->whereColumn('mcp_servers.id', 'ai_tools.mcp_server_id')
-                            ->where('mcp_servers.status', OnlineStatus::ONLINE->value);
-                    });
-
-            });
+            ->withTimestamps();
     }
 
     /**
@@ -144,38 +167,5 @@ class AiModel extends Model
         }
 
         return $this->model_id === $idToTest || str_ends_with($this->model_id, $idToTest) || str_ends_with($idToTest, $this->model_id);
-    }
-
-    /**
-     * Checks if this model possesses all required tools to process a document.
-     * @return bool
-     */
-    public function canProcessDocument(): bool
-    {
-        return $this->settings->canHandleFiles();
-    }
-
-    /**
-     * Checks if this model possesses all required tools to process an image.
-     * @return bool
-     */
-    public function canProcessImage(): bool
-    {
-        return $this->input->hasImage() && $this->settings->canHandleFiles();
-    }
-
-    /**
-     * Checks if the model can process a specific type of file based on its capabilities and input methods.
-     * @param FileType $type The type of file to check.
-     * @return bool True if the model can process the given file type, false otherwise.
-     */
-    public function canProcessFileType(FileType $type): bool
-    {
-        // @todo we should expand this list to allow detection for all kinds of attachments (audio, video, etc.) based on the model's capabilities and input methods.
-        return match ($type) {
-            FileType::IMAGE => $this->canProcessImage(),
-            FileType::PLAIN_TEXT => $this->canProcessDocument(),
-            default => false,
-        };
     }
 }

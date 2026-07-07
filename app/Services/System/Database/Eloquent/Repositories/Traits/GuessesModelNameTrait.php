@@ -15,7 +15,7 @@ use ReflectionClass;
  * Resolves the Eloquent model class for a repository using three fallback strategies (tried in order):
  *
  *   1. The {@see UseModel} attribute on the repository class.
- *   2. A `@extends AbstractRepository<App\Models\MyModel>` DocBlock annotation.
+ *   2. A `(@)extends AbstractRepository<App\Models\MyModel>` DocBlock annotation without braces.
  *   3. The repository class name with the "Repository" suffix stripped, looked up under `App\Models\`.
  *      For repositories inside `App\Services\{Domain}\Repositories`, the domain prefix is also tried
  *      (e.g. `App\Services\Ai\Repositories\AiModelRepository` -> `App\Models\Ai\AiModel`).
@@ -37,6 +37,7 @@ trait GuessesModelNameTrait
             ?? $this->resolveModelClassFromRepositoryClassName(static::class);
 
         if ($potentialModelClass === null) {
+            // @todo better exception
             throw new \LogicException(sprintf(
                 'Could not guess model class for repository "%s". Please specify the model class using the "%s" attribute.',
                 static::class,
@@ -58,6 +59,7 @@ trait GuessesModelNameTrait
             // Special check, there is another "UseModel" attribute in Laravel, so we want to show the user that it is the wrong one
             $wrongAttributes = (new ReflectionClass($class))->getAttributes(WrongAttribute::class);
             if (!empty($wrongAttributes)) {
+                // @todo better exception
                 throw new \LogicException(sprintf(
                     'The class "%s" has the "%s" attribute, but it is the wrong one. Did you import the correct "%s" attribute?',
                     $class,
@@ -99,21 +101,30 @@ trait GuessesModelNameTrait
             return null;
         }
 
-        $potentialModelClass = $this->inferFullyQualifiedModelName(
-            str_replace('Repository', '', class_basename($repositoryClass))
-        );
+        $modelBaseName = str_replace('Repository', '', class_basename($repositoryClass));
 
-        if ($this->isValidModelClass($potentialModelClass)) {
-            return $potentialModelClass;
+        // Extract domain parts from the service namespace.
+        // If the repository sits under an explicit \Repositories\ segment, use everything before it.
+        // Otherwise fall back to all namespace parts between App\Services\ and the class itself
+        // (handles repositories like App\Services\Ai\SystemModels\SystemModelRepository).
+        $domainParts = [];
+        $matches = [];
+        if (preg_match('/App\\\\Services\\\\(.*?)\\\\Repositories/', $repositoryClass, $matches)) {
+            if ($matches[1] !== '') {
+                $domainParts = explode('\\', $matches[1]);
+            }
+        } elseif (preg_match('/App\\\\Services\\\\(.+)\\\\[^\\\\]+$/', $repositoryClass, $matches)) {
+            $domainParts = explode('\\', $matches[1]);
         }
 
-        // If repository in App\Services\$domain\Repositories, we also want to check App\Models\$domain\$model
-        $pattern = '/App\\\\Services\\\\(.*?)\\\\Repositories/';
-        $matches = [];
-        if (preg_match($pattern, $repositoryClass, $matches)) {
-            $potentialModelClass = $this->inferFullyQualifiedModelName(
-                $matches[1] . '\\' . str_replace('Repository', '', class_basename($repositoryClass))
-            );
+        // Try from most specific (up to 2 domain layers) down to no domain prefix so that the more specific model wins
+        $maxLayers = min(count($domainParts), 2);
+        for ($layers = $maxLayers; $layers >= 0; $layers--) {
+            $prefix = implode('\\', array_slice($domainParts, 0, $layers));
+            $potentialModelClass = $prefix !== ''
+                ? $this->inferFullyQualifiedModelName($prefix . '\\' . $modelBaseName)
+                : $this->inferFullyQualifiedModelName($modelBaseName);
+
             if ($this->isValidModelClass($potentialModelClass)) {
                 return $potentialModelClass;
             }

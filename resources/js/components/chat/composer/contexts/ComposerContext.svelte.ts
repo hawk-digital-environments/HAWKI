@@ -308,7 +308,7 @@ export function createComposerContext(
                 case 'thread':
                     return new ChatInThreadMode();
                 case 'regen':
-                    return new ChatRegenMode(aiModelStore, aiToolStore, toastContext);
+                    return new ChatRegenMode(aiModelStore, toastContext);
                 default:
                     throw new Error(`Unsupported mode ${mode}`);
             }
@@ -321,7 +321,6 @@ export function createComposerContext(
     const guard = new GuardAspect((): ComposerContext => context);
     const modelUsage = new ModelUsageAspect(
         aiModelStore,
-        aiToolStore,
         modelContext,
         tool,
         attachment,

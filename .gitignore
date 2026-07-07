@@ -8,6 +8,9 @@
 node_modules
 vendor
 
+# Generated icons
+resources/js/components/ui/icons/iconset/*
+
 # Credentials
 auth.json
 
@@ -45,3 +48,6 @@ npm-debug.log
 yarn-error.log
 .DS_Store
 _architecture
+
+# Dev Stuff
+DbgCommand.php

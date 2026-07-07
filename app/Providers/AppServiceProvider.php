@@ -13,6 +13,7 @@ use App\Http\Middleware\TokenCreationCheck;
 use App\Services\System\Http\Exceptions\SsrfBlockedException;
 use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
+use App\Services\System\Time\Clock;
 use App\Services\System\UsageTypes\UsageContext;
 use App\Services\System\UserTypes\UserContext;
 use App\Services\Translation\LocaleService;
@@ -32,6 +33,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
+use Psr\Clock\ClockInterface;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -43,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerMiddlewareAliases();
         $this->registerDisablingGlobalScopesForEloquentUserProvider();
+        $this->registerClockForInterface();
     }
 
     /**
@@ -201,5 +204,10 @@ class AppServiceProvider extends ServiceProvider
                 });
             });
         });
+    }
+
+    private function registerClockForInterface(): void
+    {
+        $this->app->singleton(ClockInterface::class, static fn() => new Clock());
     }
 }

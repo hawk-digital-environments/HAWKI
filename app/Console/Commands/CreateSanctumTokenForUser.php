@@ -56,7 +56,7 @@ class CreateSanctumTokenForUser extends Command
 
         // Find the user
         $user = null;
-        switch($choice) {
+        switch ($choice) {
             case 'Username':
                 $user = User::where('username', $value)->first();
                 break;
@@ -73,33 +73,30 @@ class CreateSanctumTokenForUser extends Command
             return;
         }
 
-        if ($user->isRemoved === false) {
+        if ($user->isRemoved !== false) {
             $this->error('User account is suspended!');
             return;
         }
 
         // Simulate authentication for the user
         auth()->setUser($user);
-
+        
         if ($isRevoking) {
             // List existing tokens
             $this->listUserTokens();
 
             $tokenId = $this->ask('Enter the token ID to revoke');
-            try{
+            try {
                 // Call the revoke method
                 $this->apiTokenService->revokeToken($tokenId);
                 $this->info('Token successfully revoked.');
-            }
-            catch(Exception $e){
+            } catch (Exception $e) {
                 $this->error('Failed to revoke token.' . $e);
             }
 
         } else {
             // Create a token
             $tokenName = $this->ask('Enter a name for the token (max 16 characters)');
-
-
 
             // Check the response status
             try {

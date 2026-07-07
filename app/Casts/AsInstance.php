@@ -48,6 +48,8 @@ use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
  */
 class AsInstance implements Castable
 {
+    private static array $dynamicClassNameResolvers = [];
+
     /**
      * @inheritDoc
      *
@@ -59,17 +61,24 @@ class AsInstance implements Castable
             throw InvalidCastConfigurationException::forMissingClassArgument();
         }
 
-        $className = base64_decode($arguments[0]);
-        if (!class_exists($className)) {
-            throw InvalidCastConfigurationException::forUnknownClass($className);
-        }
+        $classNameResolver = function ($model, string $key, $value, array $attributes) use ($arguments) {
+            $className = base64_decode($arguments[0]);
+            if (isset(static::$dynamicClassNameResolvers[$className])) {
+                $resolver = static::$dynamicClassNameResolvers[$className];
+                return $resolver($model, $key, $value, $attributes);
+            }
+            if (!class_exists($className)) {
+                throw InvalidCastConfigurationException::forUnknownClass($className);
+            }
+            if (!in_array(CastableInstanceInterface::class, class_implements($className), true)) {
+                throw InvalidCastConfigurationException::forMissingInterface($className);
+            }
 
-        if (!in_array(CastableInstanceInterface::class, class_implements($className), true)) {
-            throw InvalidCastConfigurationException::forMissingInterface($className);
-        }
+            return $className;
+        };
 
-        return new class($className) implements CastsAttributes {
-            public function __construct(private readonly string $className)
+        return new readonly class($classNameResolver) implements CastsAttributes {
+            public function __construct(private \Closure $classNameResolver)
             {
             }
 
@@ -80,6 +89,11 @@ class AsInstance implements Castable
              */
             public function get($model, string $key, $value, array $attributes): CastableInstanceInterface
             {
+                if ($value === null) {
+                    // Treat null values as empty arrays (default for json columns in MySQL)
+                    $value = '[]';
+                }
+
                 if (!is_string($value)) {
                     throw InvalidCastValueException::forNonStringDatabaseValue();
                 }
@@ -87,14 +101,20 @@ class AsInstance implements Castable
                 $data = json_decode($value, true);
                 if (!is_array($data)) {
                     // Silent fix for "null" values (default for json columns in MySQL) by treating them as empty arrays
-                    if (empty($data) || $data === 'null') {
+                    if (empty($data) || $data === 'null' || $data === null) {
                         $data = [];
                     } else {
                         throw InvalidCastValueException::forInvalidJson();
                     }
                 }
 
-                return ($this->className)::fromArray($data);
+                $className = ($this->classNameResolver)($model, $key, $value, $attributes);
+
+                if (!is_subclass_of($className, CastableInstanceInterface::class)) {
+                    throw InvalidCastConfigurationException::forMissingInterface($className);
+                }
+
+                return ($className)::fromArray($data);
             }
 
             /**
@@ -104,6 +124,9 @@ class AsInstance implements Castable
              */
             public function set($model, string $key, $value, array $attributes): false|string
             {
+                if ($value === null) {
+                    return '[]';
+                }
                 if (!$value instanceof CastableInstanceInterface) {
                     throw InvalidCastValueException::forNonCastableInstance($value);
                 }
@@ -121,9 +144,22 @@ class AsInstance implements Castable
      * ```php
      * 'input' => AsInstance::of(ModelIoList::class),
      * ```
+     *
+     * Alternatively, you can pass a closure that returns the class name dynamically:
+     * ```php
+     * 'input' => AsInstance::of(function ($model, $key, $value, $attributes) {
+     *     return $model->isSpecial() ? SpecialModelIoList::class : ModelIoList::class;
+     * }),
      */
-    public static function of(string $class): string
+    public static function of(string|\Closure $classOrResolver): string
     {
+        if ($classOrResolver instanceof \Closure) {
+            $resolverId = 'dynamic_class_resolver_' . spl_object_id($classOrResolver);
+            static::$dynamicClassNameResolvers[$resolverId] = $classOrResolver;
+            $class = $resolverId;
+        } else {
+            $class = $classOrResolver;
+        }
         return static::class . ':' . base64_encode($class);
     }
 }

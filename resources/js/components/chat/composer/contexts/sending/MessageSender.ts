@@ -45,6 +45,10 @@ export class MessageSender {
         const response = new SendMessageResponse();
         const responseListener = createResponseReader(response);
 
+        response.onError((error) => {
+            status.addSendIssue(error);
+        });
+
         let isWaitingForResponse = false;
 
         const setResponse = (body: ResponseBody) => response.triggerReceived(body);
@@ -65,7 +69,9 @@ export class MessageSender {
                     await handler(response);
                 } catch (error) {
                     console.error('An error occurred while handling the response:', error);
-                    response.triggerError(__('chat.composer.sending.responseError'));
+                    if (!response.done) {
+                        response.triggerError(__('chat.composer.sending.responseError'));
+                    }
                 }
             })();
         };

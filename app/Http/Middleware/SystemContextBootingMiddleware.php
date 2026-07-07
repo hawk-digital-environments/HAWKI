@@ -10,11 +10,13 @@ use App\Services\System\UserTypes\Values\RegisteringUser;
 use Closure;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\TransientToken;
 
 readonly class SystemContextBootingMiddleware
 {
-    public const EXT_APP_TOKEN_SCOPE = 'context:external_app';
+    public const string EXT_APP_TOKEN_SCOPE = 'context:external_app';
+    public const string SYSTEM_CONTEXT_BOOTED_METADATA_KEY = '__hawkiSystemContextBooted';
 
     public function __construct(
         private UsageContext $usageContext,
@@ -38,8 +40,13 @@ readonly class SystemContextBootingMiddleware
             if ($sanctumUser->employeetype === 'app') {
                 $usageType = WellKnownUsageTypes::EXTERNAL_APP;
                 $userType = WellKnownUserTypes::EXTERNAL_APP;
-            } else if ($sanctumUser->tokenCan(self::EXT_APP_TOKEN_SCOPE)) {
-                $usageType = WellKnownUsageTypes::EXTERNAL_APP;
+            } else if (($sanctumUser->currentAccessToken() instanceof PersonalAccessToken)) {
+                $tokenAbilities = $sanctumUser->currentAccessToken()->abilities;
+                // Because most of our tokens are created with "abilities" = ["*"], we need to check if the token has the specific ability for external app usage type.
+                // Otherwise, we assume the user is still in the "main" usage context -> only using the api endpoints
+                if (in_array(self::EXT_APP_TOKEN_SCOPE, $tokenAbilities, true)) {
+                    $usageType = WellKnownUsageTypes::EXTERNAL_APP;
+                }
                 $userType = WellKnownUserTypes::USER;
             } else {
                 $userType = WellKnownUserTypes::USER;
@@ -66,6 +73,13 @@ readonly class SystemContextBootingMiddleware
 
         $this->usageContext->set($usageType);
         $this->userContext->set($userType);
+
+        // We set this metadata on the route to indicate that the system context has been booted.
+        // This means that the user-aware scoping can now be applied, because the user is now available and authenticated.
+        /* @see \App\Models\Scopes\Traits\ServiceLocatingScopeTrait for where this metadata is used to determine if the system context has been booted. */
+        $metadata = $request->route()?->getMetadata() ?? [];
+        $metadata[self::SYSTEM_CONTEXT_BOOTED_METADATA_KEY] = true;
+        $request->route()?->setMetadata($metadata);
 
         return $next($request);
     }

@@ -126,7 +126,8 @@ class GenerateRepositoryHelperCodeCommand extends Command
 
         $reflection = new \ReflectionClass($repositoryClass);
         $templateParam = $this->extractTemplateParamName($baseRepositoryClass);
-        $methodStubs = $this->collectMethodStubs($reflection, $modelClass, $templateParam);
+        $qbClass = $this->resolveQbClass($modelClass);
+        $methodStubs = $this->collectMethodStubs($reflection, $modelClass, $templateParam, $qbClass);
 
         $classBody = $methodStubs ? implode("\n\n", $methodStubs) . "\n" : '';
         $content = sprintf(
@@ -162,10 +163,34 @@ class GenerateRepositoryHelperCodeCommand extends Command
         return 'TModel';
     }
 
+    private function resolveQbClass(string $modelClass): ?string
+    {
+        if (!$this->hasLaravelIdeaStubs()) {
+            return null;
+        }
+
+        $lastBackslash = strrpos($modelClass, '\\');
+        $namespace = $lastBackslash !== false ? substr($modelClass, 0, $lastBackslash) : '';
+        $shortName = $lastBackslash !== false ? substr($modelClass, $lastBackslash + 1) : $modelClass;
+
+        $fileName = '_ide_helper_model_builders_LaravelIdea_Helper_' . str_replace('\\', '_', $namespace) . '.php';
+        $filePath = Path::join($this->getLaravelIdeaStubsPath(), $fileName);
+
+        if (!is_file($filePath)) {
+            return null;
+        }
+
+        if (!str_contains((string) file_get_contents($filePath), 'class _IH_' . $shortName . '_QB extends _BaseBuilder')) {
+            return null;
+        }
+
+        return '\\LaravelIdea\\Helper\\' . $namespace . '\\_IH_' . $shortName . '_QB';
+    }
+
     /**
      * @return list<string>
      */
-    private function collectMethodStubs(\ReflectionClass $concreteReflection, string $modelClass, string $templateParam): array
+    private function collectMethodStubs(\ReflectionClass $concreteReflection, string $modelClass, string $templateParam, ?string $qbClass): array
     {
         // Methods declared directly in the concrete class already have concrete types — skip them
         $concreteMethods = [];
@@ -200,7 +225,7 @@ class GenerateRepositoryHelperCodeCommand extends Command
                     continue;
                 }
 
-                $stubs[] = $this->buildMethodStub($method, $docComment, $templateParam, $modelClass);
+                $stubs[] = $this->buildMethodStub($method, $docComment, $templateParam, $modelClass, $qbClass);
             }
 
             $parentClass = $parentClass->getParentClass() ?: null;
@@ -213,10 +238,11 @@ class GenerateRepositoryHelperCodeCommand extends Command
         \ReflectionMethod $method,
         string            $docComment,
         string            $templateParam,
-        string            $modelClass
+        string            $modelClass,
+        ?string           $qbClass
     ): string
     {
-        $annotatedReturn = $this->resolveAnnotatedReturnType($method, $docComment, $templateParam, $modelClass);
+        $annotatedReturn = $this->resolveAnnotatedReturnType($method, $docComment, $templateParam, $modelClass, $qbClass);
         $visibility = $method->isPublic() ? 'public' : 'protected';
         $static = $method->isStatic() ? ' static' : '';
         $params = implode(', ', array_map($this->serializeParam(...), $method->getParameters()));
@@ -242,7 +268,8 @@ class GenerateRepositoryHelperCodeCommand extends Command
         \ReflectionMethod $method,
         string            $docComment,
         string            $templateParam,
-        string            $modelClass
+        string            $modelClass,
+        ?string           $qbClass
     ): ?string
     {
         if (!preg_match('/@return\s+([^\r\n]+?)(?:\s+\*\/|\s*$)/m', $docComment, $matches)) {
@@ -269,6 +296,10 @@ class GenerateRepositoryHelperCodeCommand extends Command
                 $fqn,
                 $resolved
             );
+        }
+
+        if ($qbClass !== null && str_contains($resolved, 'Builder<')) {
+            return $qbClass;
         }
 
         return $resolved;

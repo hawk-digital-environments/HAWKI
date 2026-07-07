@@ -4,7 +4,7 @@ namespace App\Services\Profile;
 
 use App\Models\User;
 use App\Services\Profile\Exception\NoCurrentUserException;
-use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Contracts\Auth\Factory;
 use Illuminate\Support\Collection;
 use Laravel\Sanctum\NewAccessToken;
 use Psr\Log\LoggerInterface;
@@ -12,8 +12,7 @@ use Psr\Log\LoggerInterface;
 readonly class ApiTokenService
 {
     public function __construct(
-        #[CurrentUser]
-        private User|null       $currentUser,
+        private Factory         $authFactory,
         private LoggerInterface $logger
     )
     {
@@ -21,10 +20,11 @@ readonly class ApiTokenService
 
     public function createApiToken(string $name): NewAccessToken
     {
-        if (!$this->currentUser) {
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
             throw NoCurrentUserException::forMethod(__METHOD__);
         }
-        return $this->currentUser->createToken($name);
+        return $currentUser->createToken($name);
     }
 
     /**
@@ -32,12 +32,13 @@ readonly class ApiTokenService
      */
     public function fetchTokenList(): Collection
     {
-        if (!$this->currentUser) {
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
             throw NoCurrentUserException::forMethod(__METHOD__);
         }
 
         // Construct an array of token data
-        return $this->currentUser->tokens()->get()->map(function ($token) {
+        return $currentUser->tokens()->get()->map(function ($token) {
             return [
                 'id' => $token->id,
                 'name' => $token->name,
@@ -47,15 +48,27 @@ readonly class ApiTokenService
 
     public function revokeToken(int $tokenId): void
     {
-        if (!$this->currentUser) {
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
             throw NoCurrentUserException::forMethod(__METHOD__);
         }
         try {
-            $token = $this->currentUser->tokens()->where('id', $tokenId);
+            $token = $currentUser->tokens()->where('id', $tokenId);
             $token->delete();
         } catch (\Throwable $e) {
             $this->logger->error('Error revoking API token', ['token_id' => $tokenId, 'exception' => $e]);
             throw $e;
         }
+    }
+
+    /**
+     * We resolve the current user from the auth factory to ensure we are using the currently resolved
+     * user, even if the user was set after the service was constructed.
+     * This is important for cases where the user might be set in a middleware or other part of the request lifecycle.
+     * @return User|null
+     */
+    private function getCurrentUser(): User|null
+    {
+        return $this->authFactory->guard()->user();
     }
 }

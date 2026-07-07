@@ -84,6 +84,7 @@
 
     :global(.info-button-popover) {
         font-size: var(--font-size-xxs);
-        max-width: 200px;
+        max-width: 300px;
+        max-height: 400px;
     }
 </style>

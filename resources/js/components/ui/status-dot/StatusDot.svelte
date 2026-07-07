@@ -39,10 +39,10 @@
     }: Props = $props();
 
     const label = $derived.by(() => {
-        if (status === 'online') return labelOnline ;
+        if (status === 'online') return labelOnline;
         if (status === 'offline') return labelOffline;
-        if (status === 'unknown') return labelUnknown ;
-    })
+        if (status === 'unknown') return labelUnknown;
+    });
     const showLabel = $derived(!!label);
     const tooltip = $derived.by(() => {
         if (status === 'online') return tooltipOnline;
@@ -50,7 +50,6 @@
         if (status === 'unknown') return tooltipUnknown;
     });
 </script>
-
 
 <Tooltip tooltip={tooltip} delayDuration={300}>
     {#snippet children({props})}

@@ -22,14 +22,32 @@
 
     <Link href="" onclick={() => openModal()}>Open modal</Link>
 
+  For external links (different origin) a favicon snippet is passed to the
+  `children` snippet, loaded through the backend proxy. Layout consumers decide
+  where (and whether) to render it:
+
+    <Link href="https://example.com" target="_blank">
+        {#snippet children({favicon})}
+            <span class="header">{@render favicon()} example.com</span>
+        {/snippet}
+    </Link>
+
+  For plain text links with the favicon prepended automatically, use
+  `TextLink.svelte` instead.
+
   All standard `<a>` attributes are forwarded via rest-props.
 -->
 <script lang="ts">
     import type {HTMLAnchorAttributes, MouseEventHandler} from 'svelte/elements';
     import * as svelte from 'svelte';
     import {mergeProps} from 'bits-ui';
+    import {buildLinkPreviewFaviconUrl} from '$lib/data/api/linkPreview.js';
 
-    interface Props extends HTMLAnchorAttributes {
+    interface NonConflictingProps extends HTMLAnchorAttributes {
+        children?: any; // widen so Props can redefine safely
+    }
+
+    interface Props extends NonConflictingProps {
         /**
          * The URL to navigate to. When empty or when `disabled` is true the
          * rendered `href` becomes `javascript:void(0)` so the element remains
@@ -59,8 +77,13 @@
          * blocked regardless of what the consumer passes. */
         onclick?: MouseEventHandler<HTMLAnchorElement>;
 
-        /** Link content. */
-        children?: svelte.Snippet;
+        /**
+         * Link content. Receives a `favicon` snippet that renders the target
+         * site's favicon (or nothing for same-origin/non-http links, or when
+         * the icon failed to load). Render it wherever it fits your layout —
+         * or ignore it for icon-less links.
+         */
+        children?: svelte.Snippet<[{ favicon: svelte.Snippet }]>;
 
         /**
          * When true: blocks navigation, sets `href` to `javascript:void(0)`,
@@ -79,6 +102,23 @@
         disabled,
         ...restProps
     }: Props = $props();
+
+    let faviconFailed = $state(false);
+
+    const faviconUrl = $derived.by(() => {
+        if (!hrefRaw || faviconFailed) {
+            return null;
+        }
+        try {
+            const parsed = new URL(hrefRaw, window.location.origin);
+            if (!/^https?:$/.test(parsed.protocol) || parsed.origin === window.location.origin) {
+                return null;
+            }
+            return buildLinkPreviewFaviconUrl(hrefRaw);
+        } catch {
+            return null;
+        }
+    });
 
     const href = $derived.by(() => {
         if (!hrefRaw || disabled) {
@@ -121,6 +161,19 @@
     });
 </script>
 
+{#snippet favicon()}
+    {#if faviconUrl}
+        <img
+            class="favicon"
+            src={faviconUrl}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            onerror={() => faviconFailed = true}
+        />
+    {/if}
+{/snippet}
+
 <a {...mergeProps(
     {
         href,
@@ -131,12 +184,21 @@
     dynamicProps,
     restProps
 )}>
-    {@render children?.()}
+    {@render children?.({favicon})}
 </a>
 
 <style>
     .disabled {
         pointer-events: none;
         opacity: 0.5;
+    }
+
+    .favicon {
+        display: inline-block;
+        width: var(--favicon-size, 1em);
+        height: var(--favicon-size, 1em);
+        margin-inline-end: var(--favicon-gap, var(--space-1));
+        vertical-align: -0.125em;
+        border-radius: var(--corner-sm);
     }
 </style>

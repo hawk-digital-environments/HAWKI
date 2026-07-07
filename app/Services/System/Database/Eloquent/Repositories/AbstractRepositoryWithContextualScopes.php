@@ -155,6 +155,7 @@ abstract class AbstractRepositoryWithContextualScopes extends AbstractRepository
     #[\Override]
     protected function getQuery(?ScopeOverrides $scopeOverrides = null): Builder
     {
+        /** @see Model */
         $modelClass = $this->getModelClass();
         $this->assertModelHasContextualScopesTrait($modelClass);
 

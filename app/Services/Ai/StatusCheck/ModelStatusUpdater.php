@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Ai\StatusCheck;
 
 
-use App\Services\Ai\Registries\ProviderAdapterRegistry;
-use App\Services\Ai\Repositories\AiModelRepository;
-use App\Services\Ai\Repositories\AiProviderRepository;
+use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\Providers\AiProviderProxyResolver;
+use App\Services\Ai\Providers\Repositories\AiProviderRepository;
 use App\Services\Ai\StatusCheck\Events\ModelProviderStatusCheckFailedEvent;
 use App\Services\Ai\StatusCheck\Events\ModelProviderStatusCheckStartingEvent;
 use App\Services\Ai\StatusCheck\Events\ModelProviderStatusFetchedEvent;
@@ -16,7 +16,6 @@ use App\Services\Ai\StatusCheck\Events\ModelProviderStatusUpdatedEvent;
 use App\Services\Ai\StatusCheck\Events\ModelStatusCheckCompletedEvent;
 use App\Services\Ai\StatusCheck\Events\ModelStatusCheckStartingEvent;
 use App\Services\Ai\Values\OnlineStatus;
-use App\Services\Ai\Values\ParameterSource;
 use App\Utils\JobMetrics;
 use Psr\Log\LoggerInterface;
 
@@ -29,7 +28,7 @@ readonly class ModelStatusUpdater
     public function __construct(
         private AiProviderRepository    $providerRepository,
         private AiModelRepository       $modelRepository,
-        private ProviderAdapterRegistry $adapterRegistry,
+        private AiProviderProxyResolver $providerProxyResolver,
         private LoggerInterface         $logger
     )
     {
@@ -56,7 +55,7 @@ readonly class ModelStatusUpdater
 
                 ModelProviderStatusCheckStartingEvent::dispatch($provider);
 
-                $adapter = $this->adapterRegistry->getForProvider($provider);
+                $providerProxy = $this->providerProxyResolver->resolve($provider);
 
                 $models = $provider->models;
                 $statusCollection = new AiModelOnlineStatusCollection($models, $this->logger);
@@ -64,10 +63,10 @@ readonly class ModelStatusUpdater
 
                 ModelProviderStatusFetchStartingEvent::dispatch($statusCollection, $demandCollection, $provider);
 
-                $adapter->checkModelStatus(
+                $providerProxy->adapter->checkModelStatus(
                     statusCollection: $statusCollection,
                     demandCollection: $demandCollection,
-                    source: ParameterSource::fromProvider($provider)
+                    provider: $providerProxy
                 );
 
                 ModelProviderStatusFetchedEvent::dispatch($statusCollection, $demandCollection, $provider);

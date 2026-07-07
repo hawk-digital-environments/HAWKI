@@ -1,24 +1,22 @@
-import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
 import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
 import type {AiModelStore} from '$lib/stores/AiModelStore.svelte.js';
 import type {ToolAspect} from '$lib/components/chat/composer/contexts/aspects/ToolAspect.svelte.js';
 import type {AttachmentAspect} from '$lib/components/chat/composer/contexts/aspects/AttachmentAspect.svelte.js';
 import type {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
-import type {AiToolStore} from '$lib/stores/AiToolStore.svelte.js';
 import type {GuardAspect} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
+import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
 
 /**
  * Describes why a particular model cannot be used given the current chat state.
  */
 export interface ModelUsageIssue {
     type: 'no_tool_calling' | 'no_file_upload' | 'no_vision' | 'missing_tools';
-    missingTools?: AiTool[];
+    missingTools?: AiToolOrCapabilityWithState[];
 }
 
 export class ModelUsageAspect {
     constructor(
         private modelStore: AiModelStore,
-        private toolStore: AiToolStore,
         private model: ModelAspect,
         private tools: ToolAspect,
         private attachments: AttachmentAspect,
@@ -70,7 +68,7 @@ export class ModelUsageAspect {
                 issues.push({type: 'no_tool_calling'});
             } else {
                 const missingTools = this.tools.active
-                    .filter(tool => !this.toolStore.isAvailableForModel(tool, model));
+                    .filter(tool => !tool.isAvailableFor(model));
                 if (missingTools.length > 0) {
                     issues.push({type: 'missing_tools', missingTools});
                 }

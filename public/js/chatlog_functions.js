@@ -1,6 +1,6 @@
 let activeThreadIndex = 0;
 let activeModel;
-let isScrolling = false; // Flag to track if the user is scrolling
+let autoFollow = true; // true = scroll follows new content. ONLY changed by explicit user input (wheel/touch) or forceScroll — never by scroll events, which fire for programmatic scrolls too.
 let observer;
 
 function initializeChatlogFunctions() {
@@ -9,15 +9,44 @@ function initializeChatlogFunctions() {
     const scrollContainer = document.querySelector('.chatlog .scroll-container');
 
     if (scrollContainer) {
-        scrollContainer.addEventListener('scroll', function () {
-            isScrolling = true;
-            clearTimeout(scrollTimeout); // Clear any existing timeout
-            scrollTimeout = setTimeout(function () {
-                isScrolling = false;
-            }, 800); // After 800ms, user is considered not scrolling
-        });
+        const isAtBottom = () =>
+            scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 50;
+
+        // Wheel up = disengage. Wheel down while at the bottom = re-engage.
+        scrollContainer.addEventListener('wheel', (e) => {
+            if (e.deltaY < 0) {
+                autoFollow = false;
+            } else if (e.deltaY > 0 && isAtBottom()) {
+                autoFollow = true;
+            }
+        }, {passive: true});
+
+        scrollContainer.addEventListener('touchmove', () => {
+            autoFollow = false;
+        }, {passive: true});
+
+        scrollContainer.addEventListener('touchend', () => {
+            if (isAtBottom()) autoFollow = true;
+        }, {passive: true});
     }
 
+    // markstream batch-renders nodes across multiple idle/rAF callbacks, so scrollHeight
+    // keeps growing after the initial scrollToLast(true) fires. Observe the message
+    // container directly: whenever it grows and autoFollow is active, snap to the bottom.
+    const trunk = document.querySelector('.trunk');
+    if (trunk) {
+        new ResizeObserver(() => {
+            if (!autoFollow || !scrollContainer) return;
+
+            // 'data-no-auto-scroll' is used for the OldUiStyling svelte component to overrule this behaviour.
+            if (document.body.getAttribute('data-no-auto-scroll') === 'true') {
+                autoFollow = false;
+                return;
+            }
+            
+            scrollContainer.scrollTo({top: scrollContainer.scrollHeight, left: 0, behavior: 'auto'});
+        }).observe(trunk);
+    }
 
     // Initialize Intersection Observer
     observer = new IntersectionObserver((entries, observer) => {
@@ -195,7 +224,7 @@ function loadMessagesOnGUI(messages) {
     let threads = [];
     messages.forEach(messageObj => {
         const addedMsg = addMessageToChatlog(messageObj, true);
-        updateMessageElement(addedMsg, messageObj, true);
+        updateMessageElement(addedMsg, messageObj);
 
         // Observe unread messages
         if (addedMsg.dataset.read_stat === 'false') {
@@ -301,83 +330,49 @@ async function sendReadStatToServer(message_id) {
 //#endregion
 
 
-//#region Scrolling Controls
 //scrolls to the end of the panel.
 //if new message is send, it forces the panel to scroll down.
 //if the current message is continuing to expand force expand is false.
 //(if the user is trying to read the upper parts it wont jump back down.)
 // Function to handle the auto-scroll behavior
-let scrollTimeout; // To clear timeout when scrolling
 function scrollToLast(forceScroll, targetElement = null) {
     const msgsPanel = document.querySelector('.chatlog .scroll-container');
     if (!msgsPanel) return;
 
-    let scrollTargetPosition = msgsPanel.scrollHeight; // Default to end of chatlog
+    // Deliberate events (message sent, conversation loaded) re-engage following.
+    if (forceScroll) autoFollow = true;
 
-    if (targetElement) {
-        // Check if the message is in a branch thread
-        const thread = targetElement.closest('.thread');
-        const isBranchMessage = thread && thread.classList.contains('branch');
+    // Defer until after the current render frame so batch-rendered content
+    // (markstream progressive node rendering) has had a chance to settle heights.
+    requestAnimationFrame(() => {
+        // Re-check inside the rAF: the user may have wheeled up between the
+        // call and this frame — an outdated pre-check would yank them back down.
+        if (!forceScroll && !autoFollow) return;
 
+        // Smooth only for deliberate events (new message sent, conversation loaded).
+        // Instant for streaming chunks — smooth on every chunk creates a tractor-beam
+        // animation that fights the user's scroll input.
+        const behavior = forceScroll ? 'smooth' : 'auto';
 
-        if (isBranchMessage) {
-            // Ensure thread is visible
-            if (!thread.classList.contains('visible')) {
+        if (targetElement) {
+            const thread = targetElement.closest('.thread');
+            const isBranchMessage = thread && thread.classList.contains('branch');
+
+            if (isBranchMessage && !thread.classList.contains('visible')) {
                 thread.classList.add('visible');
             }
 
+            // getBoundingClientRect is always viewport-relative, so it works
+            // correctly regardless of deferred/batch rendering state inside the element.
+            const containerRect = msgsPanel.getBoundingClientRect();
+            const elementRect = targetElement.getBoundingClientRect();
+            const gap = elementRect.bottom - containerRect.bottom + 50;
 
-            const messageHeight = targetElement.offsetHeight;
-            // Calculate position based on thread position and the message's position in thread
-            const messageTopOffset = targetElement.offsetTop + messageHeight - (window.innerHeight - 200);
-
-            const threadTopOffset = thread.offsetTop;
-
-
-            // Position should include parent message position plus the position within the thread
-            scrollTargetPosition = threadTopOffset + messageTopOffset;
-
-
-            // Add some padding to ensure message is fully visible
-            // scrollTargetPosition -= 100;
-        } else {
-
-
-            // Add some padding to ensure message is fully visible
-            const messageHeight = targetElement.offsetHeight;
-
-            // For main thread messages, just use their position
-            scrollTargetPosition = targetElement.offsetTop + messageHeight;
-            if (messageHeight > msgsPanel.clientHeight / 2) {
-                // For tall messages, show the top
-                scrollTargetPosition -= 10;
-            } else {
-                // For normal messages, center them better
-                scrollTargetPosition -= Math.min(100, msgsPanel.clientHeight / 4);
+            if (gap > 0) {
+                msgsPanel.scrollBy({top: gap, behavior});
             }
+        } else {
+            msgsPanel.scrollTo({top: msgsPanel.scrollHeight, left: 0, behavior});
         }
-    }
-
-    const currentScroll = msgsPanel.scrollTop + msgsPanel.clientHeight;
-    const scrollDistance = scrollTargetPosition - currentScroll;
-    const scrollThreshold = 500; // Define a threshold distance
-
-    if (!isScrolling && (forceScroll || scrollDistance < scrollThreshold)) {
-        msgsPanel.scrollTo({
-            top: scrollTargetPosition,
-            left: 0,
-            behavior: 'smooth'
-        });
-    }
-}
-
-function scrollPanelToLast(panel) {
-    const panelHeight = panel.scrollHeight;
-    const currentScroll = panel.scrollTop + panel.clientHeight;
-    panel.scrollTo({
-        top: panel.scrollHeight,
-        left: 0
     });
 }
-
-//#endregion

@@ -65,8 +65,19 @@
 </Tooltip>
 
 <style>
-    :global(.chat-model-trigger) {
+    /* Combine with .select-trigger so these win over SingleSelect's own
+       resting/hover backgrounds regardless of style injection order. */
+    :global(.select-trigger.chat-model-trigger) {
         gap: var(--space-0_5);
+        /* Lighter-than-surface neutral fill so the darker --color-hover below
+           reads as a visible hover (the SingleSelect default is the slightly
+           blue-tinted --color-bg-secondary). */
+        background: var(--color-surface-light);
+    }
+
+    :global(.select-trigger.chat-model-trigger:hover),
+    :global(.select-trigger.chat-model-trigger[data-state='open']) {
+        background: var(--color-hover);
     }
 
     :global(.select-content.chat-model-content.select-content--dropdown) {
@@ -102,7 +113,7 @@
 
     .model-load {
         display: flex;
-        gap: var(--space-2);
+        gap: var(--space-2_5);
         align-items: center;
         margin-left: auto;
         padding-left: var(--space-3, calc(0.25rem * 3));

@@ -340,10 +340,7 @@ async function setPassKey(enteredKey) {
 
 async function cleanupUserData(callback) {
     try {
-        const connection = window.getConnection();
-        if (!connection || (connection.type !== 'internal_authenticated' && connection.type !== 'internal_registering_user')) {
-            throw new Error('No authenticated connection found. Cleanup aborted.');
-        }
+        const connection = window.getConnectionWithUserInfo();
         const userInfo = connection.userinfo;
         // Cleanup localStorage
         if (localStorage.getItem(`${userInfo.username}PK`)) {

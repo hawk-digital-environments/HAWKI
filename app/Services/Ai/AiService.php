@@ -7,16 +7,13 @@ namespace App\Services\Ai;
 
 use App\Models\Ai\McpServer;
 use App\Providers\AiServiceProvider;
-use App\Services\Ai\Agent\AgentRequestFactory;
-use App\Services\Ai\Agent\Contracts\AgentRequestFactoryInterface;
-use App\Services\Ai\Agent\Contracts\AgentRequestInterface;
-use App\Services\Ai\Agent\Contracts\AgentResponseInterface;
-use App\Services\Ai\Registries\AgentRegistry;
-use App\Services\Ai\Repositories\AiModelRepository;
-use App\Services\Ai\Repositories\McpServerRepository;
-use App\Services\Ai\Repositories\SystemModelRepository;
-use App\Services\Ai\Repositories\SystemPromptRepository;
+use App\Services\Ai\Agents\AgentRegistry;
+use App\Services\Ai\Agents\Contracts\AgentInterface;
+use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\SystemModels\SystemModelRepository;
+use App\Services\Ai\SystemPrompts\SystemPromptRepository;
 use App\Services\Ai\Tools\Mcp\HawkiMcpClient;
+use App\Services\Ai\Tools\Repositories\McpServerRepository;
 use App\Utils\Lists\LazySingletonList;
 use Illuminate\Container\Attributes\Give;
 use Illuminate\Container\Attributes\Singleton;
@@ -30,7 +27,6 @@ readonly class AiService
          */
         #[Give(AiServiceProvider::MCP_CLIENT_LIST)]
         private LazySingletonList      $mcpClientList,
-        private AgentRequestFactory    $agentRequestFactory,
         private AgentRegistry          $agentRegistry,
         private AiModelRepository      $aiModelRepository,
         private SystemModelRepository  $systemModelRepository,
@@ -65,13 +61,13 @@ readonly class AiService
         return $this->mcpClientList->get($server);
     }
 
-    public function getAgentRequestFactory(): AgentRequestFactoryInterface
+    public function getAgent(mixed $request): AgentInterface
     {
-        return $this->agentRequestFactory;
+        return $this->agentRegistry->getAgent($request);
     }
 
-    public function sendRequestToAgent(AgentRequestInterface $request): AgentResponseInterface
+    public function tryToGetAgent(mixed $request): AgentInterface|null
     {
-        return $this->agentRegistry->getAgentForRequest($request)->sendRequest($request);
+        return $this->agentRegistry->tryToGetAgent($request);
     }
 }

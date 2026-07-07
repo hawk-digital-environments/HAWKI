@@ -55,7 +55,7 @@ readonly class StorageServiceContext
          * so we check the attachment database for any relevant metadata related to the file, such as the original filename.
          * @var AttachmentRepository
          */
-        public AttachmentRepository $attachmentDb,
+        public AttachmentRepository $attachmentRepository,
         /**
          * The clock instance used for time-related operations, such as generating timestamps for stored files. This allows the storage service to have a consistent and testable way of handling time.
          * @var ClockInterface

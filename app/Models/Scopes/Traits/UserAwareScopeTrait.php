@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Models\Scopes\Traits;
 
 
+use App\Http\Middleware\SystemContextBootingMiddleware;
 use App\Models\User;
+use App\Services\System\Container\SystemEnvironment;
 use Illuminate\Contracts\Auth\Guard;
-use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 
 trait UserAwareScopeTrait
 {
@@ -17,11 +19,12 @@ trait UserAwareScopeTrait
     private \Closure $uast_currentUserResolver;
     private \Closure $uast_onNoUser;
 
-    public function initializeUserAwareScopeTrait(Application $application): void
+    public function initializeUserAwareScopeTrait(SystemEnvironment $environment): void
     {
-        $this->uast_isRunningInConsole = $application->runningInConsole();
+        $this->uast_isRunningInConsole = $environment->runningInConsole();
         $this->uast_currentUserResolver = static fn(Guard $auth) => $auth->user();
         $this->uast_onNoUser = static function () {
+            tracee();
             abort(403, sprintf("No authenticated user found for applying scope: '%s'.", class_basename(static::class)));
         };
     }
@@ -56,6 +59,23 @@ trait UserAwareScopeTrait
                 return null;
             }
             return $callback();
+        }
+
+        // This is a bypass for the early "routing" stage.
+        // While we are traversing the middlewares for web-requests,
+        // The "Authenticator" must have access to all users without scoping, because the user is not yet authenticated and therefore not yet available.
+        // Our SystemContextBootingMiddleware will set a metadata flag on the route, which means from that point forward we can safely apply the user-aware scoping,
+        // because the user is now available and authenticated.
+        // Before that all user based scoping is disabled, because we cannot determine the user yet.
+        if (!$this->uast_isRunningInConsole) {
+            $request = $this->serviceLocator->get(Request::class);
+            $route = $request ? $request->route() : null;
+            if ($route) {
+                $metadata = $route->getMetadata();
+                if (!($metadata[SystemContextBootingMiddleware::SYSTEM_CONTEXT_BOOTED_METADATA_KEY] ?? false)) {
+                    return null;
+                }
+            }
         }
 
         return $this->serviceLocator->call('userAwareScope.onNoUser', $this->uast_onNoUser);

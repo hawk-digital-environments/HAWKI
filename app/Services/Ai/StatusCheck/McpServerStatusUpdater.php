@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Ai\StatusCheck;
 
 
-use App\Services\Ai\Repositories\McpServerRepository;
 use App\Services\Ai\StatusCheck\Events\McpServerStatusCheckedEvent;
 use App\Services\Ai\StatusCheck\Events\McpServerStatusCheckFailedEvent;
 use App\Services\Ai\StatusCheck\Events\McpStatusCheckCompletedEvent;
 use App\Services\Ai\StatusCheck\Events\McpStatusCheckStartingEvent;
 use App\Services\Ai\Tools\Mcp\McpClientFactory;
+use App\Services\Ai\Tools\Repositories\McpServerRepository;
 use App\Services\Ai\Values\OnlineStatus;
 use App\Utils\JobMetrics;
 use Psr\Log\LoggerInterface;

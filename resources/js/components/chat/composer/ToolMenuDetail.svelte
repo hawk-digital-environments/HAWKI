@@ -4,11 +4,9 @@
     import type {ToolMenuEntry} from './ToolMenu.svelte';
     import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import StatusDotForTool from '$lib/components/chat/composer/StatusDotForTool.svelte';
     import {__} from '$lib/utils/translator.js';
-
-    const composerContext = useComposerContext();
+    import ToolMenuConfig from '$lib/components/chat/composer/ToolMenuConfig.svelte';
 
     interface Props {
         entry: ToolMenuEntry;
@@ -34,7 +32,7 @@
 
     function focusables(): HTMLElement[] {
         if (!detailEl) return [];
-        return Array.from(detailEl.querySelectorAll<HTMLElement>('button:not([disabled])'));
+        return Array.from(detailEl.querySelectorAll<HTMLElement>('button:not([disabled]), [tabindex="0"]'));
     }
 
     function moveFocus(direction: 1 | -1) {
@@ -76,7 +74,7 @@
 
     function toggleActive() {
         if (entry.disabled) return;
-        entry.onChange(!entry.active);
+        entry.onToggle(!entry.active);
     }
 </script>
 <!--
@@ -103,7 +101,7 @@
     <div class="tool-detail-header">
         <span class="tool-detail-title">
             <ToolIcon tool={entry.tool}/>
-            <span class="tool-detail-name">{entry.name}</span>
+            <span class="tool-detail-name">{entry.tool.displayName}</span>
         </span>
         <button
             type="button"
@@ -120,12 +118,14 @@
     </div>
 
     <div class="tool-detail-status">
-        <StatusDotForTool tool={entry.tool} supported={entry.supported} showLabel/>
+        <StatusDotForTool tool={entry.tool} supported={entry.available} showLabel/>
     </div>
 
-    {#if entry.description}
-        <p class="tool-detail-description">{entry.description}</p>
+    {#if entry.tool.description}
+        <p class="tool-detail-description">{entry.tool.description}</p>
     {/if}
+
+    <ToolMenuConfig entry={entry}/>
 </div>
 
 <style>

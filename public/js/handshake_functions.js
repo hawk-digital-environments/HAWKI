@@ -226,7 +226,6 @@ function downloadTextFile() {
 
 async function initializeRegistration() {
     cleanupUserData(() => {
-        // console.log('cleaned Up previous user data.');
     });
 }
 

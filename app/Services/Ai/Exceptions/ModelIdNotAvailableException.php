@@ -7,13 +7,8 @@ namespace App\Services\Ai\Exceptions;
 
 class ModelIdNotAvailableException extends \RuntimeException implements AiExceptionInterface
 {
-    public function __construct(
-        string $modelId
-    )
+    public static function forModelId(string|int $modelId): self
     {
-        parent::__construct(sprintf(
-            'The model ID "%s" is not available.',
-            $modelId
-        ));
+        return new self(sprintf('The model with ID "%s" is not available.', $modelId));
     }
 }
