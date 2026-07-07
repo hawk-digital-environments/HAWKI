@@ -9,9 +9,6 @@ use App\Models\Ai\AiProvider;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
-use App\Services\Ai\StatusCheck\AiModelDemandCollection;
-use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\DeepSeek\Concerns\CreatesDeepSeekClient;
@@ -31,17 +28,13 @@ class DeepseekAdapter extends AbstractProviderAdapter
         );
     }
 
-    public function createHttpClient(AiProviderProxy $provider): PendingRequest
-    {
-        return $this->client($provider->driver);
-    }
-
     /**
      * @inheritDoc
      */
     public function getModels(AiProviderProxy $provider): Collection
     {
-        return $this->createModelListClient($provider)
+        /* @see https://api-docs.deepseek.com/api/list-models */
+        return $this->createModelListClient($this->client($provider->driver))
             ->get('/models')
             ->getMapped('data.*', function ($item) use ($provider) {
                 return $this->createNewModelInfo(
@@ -49,18 +42,5 @@ class DeepseekAdapter extends AbstractProviderAdapter
                     provider: $provider,
                 );
             });
-    }
-
-
-    public function checkModelStatus(
-        AiModelOnlineStatusCollection $statusCollection,
-        AiModelDemandCollection       $demandCollection,
-        AiProviderProxy               $provider
-    ): void
-    {
-        /* @see https://api-docs.deepseek.com/api/list-models */
-        foreach ($this->createModelListClient($provider)->get('/models')->getList('data.*.id') as $modelId) {
-            $statusCollection->setOnline($modelId);
-        }
     }
 }

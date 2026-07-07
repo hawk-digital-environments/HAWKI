@@ -12,10 +12,7 @@ use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Adapters\Traits\OpenAiModelListTrait;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
-use App\Services\Ai\StatusCheck\AiModelDemandCollection;
-use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use Illuminate\Events\Dispatcher;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\OpenAi\Concerns\CreatesOpenAiClient;
@@ -45,26 +42,12 @@ class OpenAiAdapter extends AbstractProviderAdapter
         );
     }
 
-    public function createHttpClient(AiProviderProxy $provider): PendingRequest
-    {
-        return $this->client($provider->driver);
-    }
-
     /**
      * @inheritDoc
      */
     public function getModels(AiProviderProxy $provider): Collection
     {
-        return $this->fetchOpenAiModelList($provider, $this->createModelListClient($provider));
-    }
-
-    public function checkModelStatus(
-        AiModelOnlineStatusCollection $statusCollection,
-        AiModelDemandCollection       $demandCollection,
-        AiProviderProxy               $provider
-    ): void
-    {
-        $this->runOpenAiStatusCheck($statusCollection, $this->createModelListClient($provider));
+        return $this->fetchOpenAiModelList($provider, $this->createModelListClient($this->client($provider->driver)));
     }
 
     public function getNativeToolFactoryForCapability(string $capability): \Closure|null

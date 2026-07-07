@@ -9,9 +9,6 @@ use App\Models\Ai\AiProvider;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
-use App\Services\Ai\StatusCheck\AiModelDemandCollection;
-use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\Ollama\Concerns\CreatesOllamaClient;
@@ -31,18 +28,13 @@ class OllamaAdapter extends AbstractProviderAdapter
         );
     }
 
-    public function createHttpClient(AiProviderProxy $provider): PendingRequest
-    {
-        return $this->client($provider->driver);
-    }
-
     /**
      * @inheritDoc
      */
     public function getModels(AiProviderProxy $provider): Collection
     {
         /* @see https://docs.ollama.com/api/ps */
-        return $this->createModelListClient($provider)
+        return $this->createModelListClient($this->client($provider->driver))
             ->get('/ps')
             ->getMapped('models.*.model', function ($item) use ($provider) {
                 return $this->createNewModelInfo(
@@ -50,13 +42,5 @@ class OllamaAdapter extends AbstractProviderAdapter
                     provider: $provider,
                 );
             });
-    }
-
-    public function checkModelStatus(AiModelOnlineStatusCollection $statusCollection, AiModelDemandCollection $demandCollection, AiProviderProxy $provider): void
-    {
-        /* @see https://docs.ollama.com/api/ps */
-        foreach ($this->createModelListClient($provider)->get('/ps')->getList('models.*.model') as $modelId) {
-            $statusCollection->setOnline($modelId);
-        }
     }
 }

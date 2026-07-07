@@ -7,7 +7,6 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Adapters\AbstractTextGeneratingAgent;
-use App\Services\Ai\Agents\Adapters\LaravelChatAgent;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\LaravelAi\Drivers\GeminiExtended\ExtendedGeminiGateway;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
@@ -16,11 +15,8 @@ use App\Services\Ai\Models\Parameters\Values\WellKnownModelParams;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
-use App\Services\Ai\StatusCheck\AiModelDemandCollection;
-use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use App\Services\Translation\LocaleService;
 use Illuminate\Events\Dispatcher;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Enums\Lab;
@@ -84,18 +80,13 @@ class GeminiAdapter extends AbstractProviderAdapter
         return [];
     }
 
-    public function createHttpClient(AiProviderProxy $provider): PendingRequest
-    {
-        return $this->client($provider->driver);
-    }
-
     /**
      * @inheritDoc
      */
     public function getModels(AiProviderProxy $provider): Collection
     {
         /* @see https://ai.google.dev/api/models#method:-models.list */
-        return $this->createModelListClient($provider)
+        return $this->createModelListClient($this->client($provider->driver))
             ->get('/models')
             ->getMapped('models.*', function (array $model) use ($provider) {
                 $id = data_get($model, 'name');
@@ -138,18 +129,6 @@ class GeminiAdapter extends AbstractProviderAdapter
 
                 return $info;
             });
-    }
-
-    public function checkModelStatus(
-        AiModelOnlineStatusCollection $statusCollection,
-        AiModelDemandCollection       $demandCollection,
-        AiProviderProxy               $provider
-    ): void
-    {
-        /* @see https://ai.google.dev/api/models#method:-models.list */
-        foreach ($this->createModelListClient($provider)->get('/models')->getList('models.*.name') as $modelId) {
-            $statusCollection->setOnline($modelId);
-        }
     }
 
     public function getNativeToolFactoryForCapability(string $capability): \Closure|null

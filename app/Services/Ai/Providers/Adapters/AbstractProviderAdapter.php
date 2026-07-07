@@ -15,6 +15,7 @@ use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Services\Ai\StatusCheck\AiModelDemandCollection;
 use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use App\Services\Storage\Interfaces\FileInterface;
+use Illuminate\Http\Client\PendingRequest;
 use Laravel\Ai\Contracts\Agent;
 
 abstract class AbstractProviderAdapter implements ProviderAdapterInterface
@@ -27,7 +28,9 @@ abstract class AbstractProviderAdapter implements ProviderAdapterInterface
         AiProviderProxy               $provider
     ): void
     {
-        $statusCollection->setAllUnknown();
+        foreach ($this->getModels($provider) as $model) {
+            $statusCollection->setOnline($model->model_id);
+        }
     }
 
     public function getNameLabel(): string|null
@@ -65,8 +68,8 @@ abstract class AbstractProviderAdapter implements ProviderAdapterInterface
         return $apiUrl;
     }
 
-    protected function createModelListClient(AiProviderProxy $provider): ModelListClient
+    protected function createModelListClient(PendingRequest $request): ModelListClient
     {
-        return new ModelListClient(fn() => $this->createHttpClient($provider));
+        return new ModelListClient(fn() => $request);
     }
 }

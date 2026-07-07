@@ -58,11 +58,11 @@ class GwdgAdapter extends OpenAiLikeAdapter implements ProviderAdapterCreatesDri
     {
         return $this->fetchOpenAiModelList(
             $provider,
-            $this->createModelListClient($provider),
+            $this->createModelListClient($this->client($provider->driver)),
             alternativeMapper: function (array $item) use ($provider) {
                 $input = data_get($item, 'input', []);
                 $output = data_get($item, 'output', []);
-                $inputOutputContainsText = in_array('text', $input) && in_array('text', $output);
+                $inputOutputContainsText = in_array('text', $input, true) && in_array('text', $output, true);
                 $modelInfo = $this->createNewModelInfo(
                     modelId: data_get($item, 'id'),
                     provider: $provider,
@@ -83,25 +83,26 @@ class GwdgAdapter extends OpenAiLikeAdapter implements ProviderAdapterCreatesDri
         AiProviderProxy               $provider
     ): void
     {
-        $this->runOpenAiStatusCheck(
-            $statusCollection,
-            $this->createModelListClient($provider),
-            alternativeMapper: function (string $modelId, array $data) use ($statusCollection, $demandCollection) {
-                $status = match ($data['status']) {
+        $this->fetchOpenAiModelList(
+            $provider,
+            $this->createModelListClient($this->client($provider->driver)),
+            alternativeMapper: function (array $item) use ($statusCollection, $demandCollection) {
+                $modelId = data_get($item, 'id');
+
+                $status = match ($item['status']) {
                     'ready' => OnlineStatus::ONLINE,
                     'offline' => OnlineStatus::OFFLINE,
                     default => OnlineStatus::UNKNOWN,
                 };
                 $statusCollection->set($modelId, $status);
 
-                $demandInt = data_get($data, 'demand', 0);
+                $demandInt = data_get($item, 'demand', 0);
                 $demand = match (true) {
                     $demandInt >= 4 => ModelDemand::HIGH,
                     $demandInt >= 2 => ModelDemand::MEDIUM,
                     default => ModelDemand::LOW,
                 };
                 $demandCollection->set($modelId, $demand);
-            }
-        );
+            });
     }
 }

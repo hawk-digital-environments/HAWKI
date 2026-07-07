@@ -34,6 +34,7 @@ use App\Services\Ai\Models\Settings\AiModelSettingRegistry;
 use App\Services\Ai\Models\Settings\Values\WellKnownModelSettings;
 use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use App\Services\Ai\Providers\Adapters\Implementations\AnthropicAdapter;
+use App\Services\Ai\Providers\Adapters\Implementations\AwsBedrockAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\AzureOpenAiAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\DeepseekAdapter;
 use App\Services\Ai\Providers\Adapters\Implementations\GeminiAdapter;
@@ -193,7 +194,7 @@ class AiServiceProvider extends ServiceProvider
                 ->declare(WellKnownAdapterKeys::MISTRAL, MistralAdapter::class)
                 ->declare(WellKnownAdapterKeys::HUGGINGFACE, OpenAiLikeAdapter::class)
                 ->declare(WellKnownAdapterKeys::DEEPSEEK, DeepseekAdapter::class)
-//                ->declare(WellKnownAdapterKeys::AWS_BEDROCK, AwsBedrockAdapter::class)
+                ->declare(WellKnownAdapterKeys::AWS_BEDROCK, AwsBedrockAdapter::class)
                 ->declare(WellKnownAdapterKeys::GWDG, GwdgAdapter::class)
                 ->declare(WellKnownAdapterKeys::OPEN_ROUTER, OpenRouterAdapter::class)
         );

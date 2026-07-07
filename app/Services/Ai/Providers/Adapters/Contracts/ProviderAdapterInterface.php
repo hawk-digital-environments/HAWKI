@@ -13,7 +13,6 @@ use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Services\Ai\StatusCheck\AiModelDemandCollection;
 use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use App\Services\Storage\Interfaces\FileInterface;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Providers\Provider as Driver;
@@ -28,8 +27,6 @@ interface ProviderAdapterInterface
     public function createDriver(AiProvider $provider, DriverFactory $factory): Driver;
 
     public function getAdditionalDriverOptions(Agent $agent, AgentRequestContext $context): array;
-
-    public function createHttpClient(AiProviderProxy $provider): PendingRequest;
 
     public function supportsFileAsAttachment(FileInterface $file): bool;
 
