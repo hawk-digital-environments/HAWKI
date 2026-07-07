@@ -73,3 +73,73 @@ FILE_CONVERTER_BINARY_GHOSTSCRIPT=/path/to/gs
 ## 2. Remove no longer required env variables:
 
 In this version we introduced a better solution to propagate the "reverb" (websocket) configuration to the frontend. Therefore the values must no longer be available at build time. For you, there is no need to intervene, but you probably like your `.env` file to be clean and tidy, so you can remove the `VITE_REVERB_*` variables from there.
+
+## 3. Upgrade PHP to 8.3
+
+The minimum PHP version is now **8.3** (raised from 8.2). Before deploying, ensure your host or Docker base image provides it.
+
+> **Note:** If you are running HAWKI in Docker, the official image (`neunerlei/php-nginx:8.3`) is already updated and no further action is needed.
+
+The following PHP extensions are now explicitly required — enable them if they are not already active on your server:
+
+```
+curl, dom, fileinfo, libxml, openssl, zip, gd
+```
+
+## 4. Configure encryption salts before migrating
+
+This version introduces five application-level encryption salts. These **must be set in your `.env` before running `php artisan migrate`** — if they are missing, `SaltProvider` will auto-generate them at runtime, but the values will differ on every boot, permanently breaking any data encrypted with the previous values.
+
+Generate each salt with `openssl rand -base64 32` and add them to your `.env`:
+
+```
+APP_ENCRYPTION_SALT_USERDATA=
+APP_ENCRYPTION_SALT_INVITATION=
+APP_ENCRYPTION_SALT_AI_CRYPTO=
+APP_ENCRYPTION_SALT_PASSKEY=
+APP_ENCRYPTION_SALT_BACKUP=
+```
+
+> **Note:** If you are running HAWKI in Docker, these salts must also be present in `_docker_production/.env` before the first container start after upgrading.
+
+## 5. Run all database migrations
+
+This version introduces many new tables. After setting the salts above, run:
+
+```bash
+php artisan migrate
+```
+
+## 6. Sync AI tools, MCP servers, and model config into the database
+
+AI tools and MCP servers have been migrated from static configuration files to database-backed models. After migrating, populate them from your existing configuration:
+
+```bash
+php artisan ai:tools:sync
+php artisan ai:config:sync
+```
+
+## 7. Update custom code referencing removed classes
+
+The following classes have been removed. Update any custom code that references them:
+
+| Removed | Replacement |
+|---|---|
+| `FileConverterFactory` | Inject `FileConverterInterface` directly; call `isAvailable()` to check if a converter is configured |
+| `AttachmentService` / `AttachmentFactory` | `AttachmentRepository` |
+| `MessageHandlerFactory` | Resolve `PrivateMessageHandler` / `GroupMessageHandler` from the Laravel service container |
+| `ExternalCommunicationCheck` middleware | `ExternalAccessMiddleware` or `AppAccessMiddleware` — configure feature toggles in `config/external_access.php` |
+
+## 8. Update custom code reading `AiModel` attributes
+
+The following `AiModel` attributes now return **typed value objects** instead of raw arrays or strings. Any code reading them with direct array access must be updated to use the value object API:
+
+`input`, `output`, `parameters`, `status`, `demand`, `capabilities`, `settings`
+
+## 9. Update custom storage service calls
+
+All method signatures on `FileStorageService` and `AvatarStorageService` have changed as part of the storage layer overhaul. Any custom code calling these services directly must be updated to use the new API.
+
+## 10. Update custom AI provider implementations
+
+If you have custom AI provider implementations, they must now implement `ProviderAdapterInterface` and be registered with `ProviderAdapterRegistry`. The previous inheritance-based approach is no longer supported.

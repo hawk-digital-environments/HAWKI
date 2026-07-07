@@ -27,6 +27,8 @@
 - The model picker now shows a real-time **demand indicator** (three-bar load meter: low / medium / high) and an **online/offline status dot** per model, giving users a clear picture of model availability and current load before sending a request.
 - Models can now carry **well-known flags** visible in the model picker: descriptive tags such as open weights, eco-friendly, self-hosted, multi-modal, and strength indicators (creative writing, code generation, math, reasoning), as well as feature flags (prompt caching, response schema, streaming, sampling parameters, and reasoning level). This helps users choose the right model for their task at a glance.
 - Introduced the **Announcements system** — administrators can post announcements that appear in the application UI. Announcements support flexible targeting (all users or a specific list), scheduled display windows (start and expiry dates), and a forced-display mode for critical notices. Whether a user has seen or accepted each announcement is tracked individually.
+- Added an **"Improve Message" feature**: a Sparkles button in the composer sends the current draft to the AI for suggestions before sending, letting users refine their message without starting a new conversation.
+- Chats can now be **exported** in four formats: PDF, Word (DOCX), CSV, and JSON. The export menu is accessible from the chat header.
 
 ### Quality of Life
 
@@ -44,6 +46,8 @@
 - AI model metadata (capabilities, pricing tiers, context limits, documentation links) is now **automatically enriched from the LiteLLM API catalog** on a 24-hour cache cycle, with a bundled static data store as a reliable fallback when the API is unavailable. Model information stays accurate without manual maintenance.
 - Added **health check infrastructure**: quick checks (database connectivity) and deep checks (database, cache, Redis, storage) are now available for load balancer probes and monitoring integrations.
 - New artisan commands for administrators and operators: `php artisan ai:check-status` updates online/offline status for all models and MCP servers in one pass; `php artisan ai:models:list` lists all configured models; `php artisan filestorage:converter:types:list` prints the MIME types and extensions your active file converter accepts — useful for diagnosing upload rejections.
+- The sampling parameter panel now includes **three quick presets** — Creative, Balanced, and Precise — that set temperature and top_p in one click, with per-model defaults preserved when switching models.
+- The composer textarea **auto-sizes** as you type, expanding up to 250 px before scrolling, so short messages don't feel lost in a large input box.
 
 ### Bugfix
 
@@ -121,10 +125,25 @@
 - Added three new config files for administrators and contributors: `config/external_access.php` controls which external API features are enabled (`ALLOW_EXTERNAL_COMMUNICATION`, `ALLOW_USER_TOKEN_CREATION`, `ALLOW_EXTERNAL_APPS`, `ALLOW_EXTERNAL_APPS_GROUPS_AI`); `config/tools.php` registers function-calling tools and MCP servers; `config/encryption.php` centralizes the five application-level encryption salts (USERDATA, INVITATION, AI_CRYPTO, PASSKEY, BACKUP) with auto-generation fallback via `SaltProvider`.
 - Docker production deployments now require five **pre-configured encryption salts** in `_docker_production/.env` (`APP_ENCRYPTION_SALT_*`). These replace the previous approach of deriving salts at runtime and must be set before the first migration run. See the upgrade guide for details.
 - Added `make:frontend-migration` artisan command for contributors: generates a paired PHP backend migration and TypeScript client migration with a selectable run-type (`after_login`, `after_passkey`, or a custom value), pre-wired to the frontend migration system.
+- **PHP upgraded to 8.3** (minimum requirement raised from 8.2) and **Laravel upgraded to 13** (from 12). The `composer.json` now also explicitly declares all required PHP extensions: `curl`, `dom`, `fileinfo`, `libxml`, `openssl`, `zip`, and `gd`.
+- **Major new PHP packages**: `laravel-json-api/laravel` (^5.2, powers the JSON:API layer), `laravel/ai` (Laravel's first-party AI abstraction), `logiscape/mcp-sdk-php` (^1.7, MCP protocol client), `opis/json-schema` (^2.6, tool input schema validation), `phpseclib` (^3.0, cryptographic operations).
+- **Frontend stack upgraded across the board**: Svelte 5 (^5.56), TypeScript 6 (^6.0), Vite 8 (^8.1), bits-ui (^2.18), shadcn-svelte (^1.2). Rendering: Monaco Editor (^0.55, code blocks), Mermaid (^11.16, diagrams), KaTeX (^0.17, math), markstream-svelte (streaming markdown). Export: jsPDF, pdfjs-dist, docx, docx-preview, cropperjs.
+- The Docker base image moves to **`neunerlei/php-nginx:8.3`** and the `Dockerfile` now installs `ghostscript`, `imagemagick`, and `librsvg2-bin` as system packages, so all file pre-processing features work in Docker without any additional steps.
+- **WebSocket broadcast channels** restructured: a private `User.{id}` channel per user and a semi-public `AllUsers` channel replace the previous approach. Client-side channel subscriptions are negotiated via the connection payload.
+- Added `AgentRegistry` with `WellKnownAgents` constants — a central registry for named agent types. `ChatAgent` is the first registered agent; new agent types can be added by registering them with `AgentRegistry::register()`.
+- Added `AlternatingMessageHistory` — enforces the user/assistant alternating message pattern required by most LLM APIs, merging consecutive same-role messages automatically so malformed histories never reach the provider.
+- Tool input and output schemas are now validated with `JsonSchemaValidator` (backed by `opis/json-schema`) before tool calls are dispatched, catching schema violations before they reach the provider.
+- `FunctionToolSyncer` discovers PHP function tools via the `#[Tag(ToolInterface::class)]` attribute and syncs them to the database automatically, removing the need for manual tool registration.
+- `SyncActionDetector` adds hash-based change detection to `ConfigFileSyncer`: each syncer records a hash of its source data after running, and is skipped on subsequent calls unless the data has changed.
+- Added `BeforeCallingMcpToolFilterEvent` — a filterable event dispatched before any MCP tool call. Listeners can short-circuit the call and inject a synthetic result, which is essential for integration tests that need to mock external MCP servers.
+- `ApiDataScopeContextSettingMiddleware` lets API clients opt out of specific contextual scopes per request via the `?no_scope[resource]=*` query parameter, providing escape hatches for admin queries that need unfiltered data.
+- The `AiService` facade has been expanded with: `getAgent(name)`, `tryToGetAgent(name)`, `getMcpClient(server)`, `getSystemPrompts()`, `getSystemModels()` — making it the single entry point for all AI-related service resolution.
+- Background queue workers now run with `--timeout=0` (no per-job timeout), preventing long-running AI streaming jobs from being killed mid-response.
 
 ### Deprecation
 
 [//]: # (- List of features or functionalities that have been deprecated in this version.)
 
 - `LanguageController::getTranslation()` and `getAvailableLanguages()` are deprecated and will be removed in a future version. Use `LocaleService` and the frontend connection payload instead.
+- The `/req/profile/validatePasskey` and `/api/link-preview` routes are deprecated. Replacements are available via the JSON:API v1 endpoints.
 - OpenAI requests that still run against the "/chats/completions" endpoint now trigger a warning log, to help understand why the requests are failing.

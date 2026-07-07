@@ -5,17 +5,48 @@ declare(strict_types=1);
 namespace App\Services\Ai\Providers\Adapters\Implementations;
 
 
+use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Exceptions\InvalidProviderConfigurationException;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
+use App\Services\Ai\Providers\Adapters\DriverFactory;
+use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Services\Ai\StatusCheck\AiModelDemandCollection;
 use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use Aws\BedrockRuntime\BedrockRuntimeClient;
-use NeuronAI\Providers\AIProviderInterface;
-use NeuronAI\Providers\AWS\BedrockRuntime;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Support\Collection;
+use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Gateway\Bedrock\Concerns\CreatesBedrockClient;
+use Laravel\Ai\Providers\Provider as Driver;
 
 class AwsBedrockAdapter extends AbstractProviderAdapter
 {
+    use CreatesBedrockClient;
+
+    public function createDriver(AiProvider $provider, DriverFactory $factory): Driver
+    {
+        return $factory->make(
+            driverName: Lab::Bedrock,
+
+        );
+    }
+
+    public function createHttpClient(AiProviderProxy $provider): PendingRequest
+    {
+        $this->createBedrockClient()->list()
+        // Since AWS uses its own SDK for Bedrock,
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getModels(AiProviderProxy $provider): Collection
+    {
+        // Again, I did not find an API endpoint to list AWS Bedrock models, if you find one, please open a PR to implement it.
+        return collect();
+    }
+
     public function createNeuronProvider(AgentRequestContext $source): AIProviderInterface
     {
         $key = $source->provider->api_key;
