@@ -16,7 +16,6 @@ use App\Services\Storage\AvatarStorageService;
 use App\Services\Users\Repositories\UserRepository;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,8 +39,7 @@ class StreamController extends Controller
         private readonly GroupMessageHandler  $groupMessageHandler,
         private readonly LoggerInterface      $logger,
         private readonly UserRepository       $userRepository,
-        private readonly CitationUrlCleaner   $citationCleaner,
-        private readonly Translator           $translator
+        private readonly CitationUrlCleaner   $citationCleaner
     )
     {
     }

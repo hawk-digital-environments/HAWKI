@@ -65,6 +65,19 @@ import { aiModelStore } from '$lib/stores/AiModelStore.svelte.js';
 | `models` | `AiModel[]` | All available models in API order. Reactive. |
 | `systemModels` | `Record<string, AiModel>` | System-role assignments keyed by type string. |
 
+### `AiModel` shape
+
+Notable fields on the `AiModel` type (from `$lib/schemas/resources/ai-models.schema.js`):
+
+| Field | Type | Notes |
+|---|---|---|
+| `active` | `boolean` | Whether the model is enabled in the admin panel. |
+| `model_type` | `'chat' \| 'image_generation' \| 'video_generation' \| null` | Discriminates the union — use to narrow to `ChatAiModel`. |
+| `native_capabilities` | `string[]` \| `null` | Capability IDs the model supports natively (e.g. `'web_search'`). Replaces the old `capabilities` record. |
+| `flags` | `string[]` \| `null` | Badge-style flags (e.g. `'eco-friendly'`, `'feature-streaming'`). Full list in `ai-model-flags.ts`. |
+| `limits` | `{ max_input_tokens, max_output_tokens }` \| `null` | Token limits. Present only on `model_type === 'chat'` models. |
+| `pricing` | `{ is_free } \| { ranges, priority_ranges }` \| `null` | Pricing info. Present only on `model_type === 'chat'` models. |
+
 ### Key methods
 
 **`getOneById(modelId)`** — Accepts an `AiModel` object, a numeric ID, or a `model_id` string. Returns `null` when no match is found.
@@ -85,7 +98,7 @@ const defaultModel = aiModelStore.getSystemModelByType('default');
 
 ## `AiToolStore`
 
-Holds all registered AI tools and their associated capability definitions. Use the helper methods rather than filtering `tools` or reading `model.tool_ids` directly — the helpers encapsulate the capability resolution logic.
+Holds all registered AI tools and capabilities as a single merged list. Import the singleton:
 
 ```ts
 import { aiToolStore } from '$lib/stores/AiToolStore.svelte.js';
@@ -95,30 +108,42 @@ import { aiToolStore } from '$lib/stores/AiToolStore.svelte.js';
 
 | Property | Type | Description |
 |---|---|---|
-| `tools` | `AiTool[]` | All registered tools. Reactive. |
-| `capabilities` | `AiToolCapability[]` | All capability definitions. Reactive. |
+| `tools` | `AiToolOrCapability[]` | All registered tools and capabilities, merged into one reactive list. |
 
-### Key methods
+### `AiToolOrCapability`
 
-**`availableToolsForModel(model)`** — Returns the subset of tools the given model supports. Use this to populate a tool picker.
-
-**`isAvailableForModel(tool, model)`** — Returns `true` when a specific tool (object or name string) is enabled for the model.
-
-**`isAvailableCapabilityOfModel(capability, model)`** — Returns `true` when a capability is enabled for the model, respecting per-model overrides and the capability's `default_value`.
-
-**`availableCapabilitiesForModel(model)`** — Returns the enabled capabilities for the model.
-
-**`getCapabilityForTool(tool)`** — Returns the `AiToolCapability` linked to a tool via its `capability_key`, or `null`.
+Each entry in `tools` is either an `AiToolWrapper` (a plain tool) or an `AiToolCapabilityWrapper` (a capability that groups related tools). Discriminate with `is_capability`:
 
 ```ts
-// Show only tools the active model supports
-const tools = $derived(aiToolStore.availableToolsForModel(currentModel));
+import type { AiToolOrCapability } from '$lib/stores/aiToolStoreData.js';
 
-// Gate on a capability before sending
-if (aiToolStore.isAvailableCapabilityOfModel('code-interpreter', currentModel)) {
-    // ...
+for (const item of aiToolStore.tools) {
+    if (item.is_capability) {
+        // AiToolCapabilityWrapper
+        const toolsForModel = item.getToolsFor(currentModel);
+        const isNative = item.hasNativeCapabilityFor(currentModel);
+    } else {
+        // AiToolWrapper (plain tool)
+        const available = item.isAvailableFor(currentModel);
+    }
 }
 ```
+
+Both types share these members:
+
+| Member | Type | Notes |
+|---|---|---|
+| `is_capability` | `boolean` | `false` for plain tools, `true` for capability wrappers. |
+| `displayName` | `string` (getter) | Localized display name. |
+| `isAvailableFor(model, withOffline?)` | method | `true` when the model supports this item. For capabilities: `true` when the model has a native capability for it or has at least one matching non-offline tool. Pass `withOffline: true` to count offline tools. |
+
+`AiToolCapabilityWrapper` additionally exposes:
+
+| Member | Notes |
+|---|---|
+| `hasNativeCapabilityFor(model)` | `true` when `model.native_capabilities` includes this capability's id. |
+| `getTools()` | All tools grouped under this capability. |
+| `getToolsFor(model)` | Tools for this capability that the model supports. |
 
 ---
 

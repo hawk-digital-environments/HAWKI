@@ -23,6 +23,8 @@ Low-level primitive components with no business logic and no dependency on app s
 | `BorderBeam`                            | `ui/border-beam/`     | Animated border highlight effect                                                        |
 | `StatusDot`                             | `ui/status-dot/`      | Colored status indicator dot                                                            |
 | `Separator`                             | `ui/separator/`       | Visual divider line                                                                     |
+| `RadioCard`, `RadioCardGroup`           | `ui/radio-card/`      | Card-style radio group — each card is selectable with a spring-animated indicator       |
+| `Citation`, `CitationList`, `CitationReference`, `CitationRoot` | `ui/citations/` | Web-search citation tiles and inline reference chips rendered below AI messages |
 
 ---
 
@@ -42,6 +44,81 @@ The toast system consists of two parts: the `Toaster` component (rendered once b
 ```
 
 `ToastContext` is set up by the `LegacySharedContent` snippet which is auto-injected on every page. Do not instantiate `Toaster` yourself.
+
+---
+
+## RadioCard
+
+`RadioCardGroup` + `RadioCard` implement a card-style radio group. Bind `value` on the group; each card's `value` prop identifies it.
+
+```svelte
+<script lang="ts">
+    import RadioCardGroup from '$lib/components/ui/radio-card/RadioCardGroup.svelte';
+    import RadioCard from '$lib/components/ui/radio-card/RadioCard.svelte';
+
+    let selected = $state('a');
+</script>
+
+<RadioCardGroup bind:value={selected} name="my-group">
+    <RadioCard value="a">Option A</RadioCard>
+    <RadioCard value="b">Option B</RadioCard>
+    <RadioCard value="c" disabled>Option C (disabled)</RadioCard>
+</RadioCardGroup>
+```
+
+**`RadioCardGroup` props:**
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `value` | `string` | `''` | The selected card's value. Bindable. |
+| `disabled` | `boolean` | `false` | Disables (and dims) every card in the group. |
+| `name` | `string` | — | Shared `name` for the underlying radio inputs. |
+| `onChange` | `(value: string) => void` | — | Called with the newly selected value. |
+
+**`RadioCard` props:**
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `value` | `string` | — | The value this card represents. |
+| `disabled` | `boolean` | `false` | Disables this card individually. |
+| `children` | `Snippet` | — | Card content. |
+
+Selection is animated with a spring-driven dot indicator. Cards are keyboard-reachable with Space/Enter and carry full ARIA `role="radio"` / `role="radiogroup"` semantics.
+
+---
+
+## Citations
+
+The citation system renders web-search sources below an AI message as a grid of tiles, and wires inline numbered chips in the message body to scroll and flash-highlight the matching tile.
+
+Four components work together:
+
+| Component | Role |
+|---|---|
+| `CitationRoot` | Wraps the entire message + citation area; sets up the shared `CitationContext`. |
+| `CitationList` | Renders the "Sources" heading and the tile grid. Place it after the message body. |
+| `Citation` | A single source tile — displays favicon, domain, and source number; scrolls and flashes when its chip is clicked. |
+| `CitationReference` | An inline chip (used inside rendered markdown) that scrolls to the matching `Citation` tile when clicked. |
+
+`injectCitationsIntoMarkdown` (in `$lib/components/chat/message/injectCitationsIntoMarkdown.ts`) pre-processes a markdown string and rewrites citation ranges into anchor links that `ExtendedLinkNode` turns into `CitationReference` chips.
+
+Typical assembly:
+
+```svelte
+<CitationRoot>
+    <!-- Rendered message body (uses ExtendedLinkNode via Markdown component) -->
+    <Markdown message={body} />
+
+    <!-- Source tiles -->
+    <CitationList>
+        {#each citations as citation, i}
+            <Citation {citation} number={i + 1} />
+        {/each}
+    </CitationList>
+</CitationRoot>
+```
+
+`Citation` expects an `EnrichedUrlCitation` (`{ url, title, ranges, identifier }` from `$lib/components/ui/citations/types.js`). The `identifier` field is the stable key that links a tile to its inline chips.
 
 ---
 

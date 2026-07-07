@@ -91,3 +91,37 @@ When the same pattern appears in multiple components, use `components/util/snipp
 ```
 
 Use CSS media queries (via the `--bp-*` custom media tokens) for purely visual adjustments. Use `Breakpoint` only when the branch affects component structure or behaviour that cannot be expressed in CSS alone.
+
+---
+
+## `Markdown` — Message Body Renderer
+
+`components/util/markdown/Markdown.svelte` renders an AI message body. It wraps the `markstream-svelte` library and configures it with HAWKI-specific extensions:
+
+- **KaTeX** and **Mermaid** are rendered in web workers to avoid blocking the main thread.
+- **`ExtendedLinkNode`** replaces the built-in link renderer. It routes each link to the right primitive based on its target:
+  - `#citation-…` anchors → `CitationReference` chip (scrolls to the matching citation tile)
+  - Other `#…` hashes → smooth-scroll to the target element
+  - External `http(s)` links → `TextLink` with favicon + `UrlPreviewTooltip` on hover
+  - Same-origin and `mailto:` links → plain `TextLink`
+  - Any other protocol (`javascript:`, etc.) → rendered as text only, no anchor
+
+```svelte
+<script lang="ts">
+    import Markdown from '$lib/components/util/markdown/Markdown.svelte';
+</script>
+
+<Markdown message={body} />
+
+<!-- While the response is still streaming: -->
+<Markdown message={partialBody} isStreaming={true} />
+```
+
+**Props:**
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `message` | `string` | — | The raw markdown string to render. |
+| `isStreaming` | `boolean` | `false` | When `true`, enables the typewriter effect and keeps the renderer in incremental mode. |
+
+Do not use `markstream-svelte`'s `MarkdownRender` directly — always use this wrapper so the worker setup and link extension are consistently applied.

@@ -86,6 +86,22 @@ Prefer `__()` for string labels. Use `getTranslations()` only when you specifica
 
 ---
 
+## `getTranslationsFlat(path)`
+
+Like `getTranslations()`, but flattens a nested label sub-tree into a single-level `Record<string, string>` with dot-notated keys. Requires `path` to resolve to an object — throws if it points to a string or any non-object value.
+
+```ts
+import { getTranslationsFlat } from '$lib/utils/translator.js';
+
+// Given labels: { markdown: { markstream: { copy: 'Copy', copied: 'Copied!' } } }
+getTranslationsFlat('markdown.markstream');
+// → { 'copy': 'Copy', 'copied': 'Copied!' }
+```
+
+Returns `{}` with a console warning when labels are not yet loaded or the path is not found. Use this when a third-party library expects a flat key/value map of strings rather than a nested object — the `Markdown` component uses it to pass localised strings to `markstream-svelte`.
+
+---
+
 ## Label Files
 
 Translation labels are served by the `translation-labels` API resource and loaded automatically during the `main` boot stage. The active locale comes from the connection object; if it fails to load, the system falls back to the configured default locale, and then to an empty label set. No manual setup is required — `__()` is available in any component or utility after bootstrap.
