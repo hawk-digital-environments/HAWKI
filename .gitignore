@@ -18,6 +18,9 @@ auth.json
 .idea/*
 .fleet
 .vscode
+/.fleet
+/.idea
+/.vscode
 
 # PHPUnit
 .phpunit.coverage
@@ -51,3 +54,7 @@ _architecture
 
 # Dev Stuff
 DbgCommand.php
+_docker_production_test
+.devcontainer
+.agents
+skills-lock.json

@@ -44,6 +44,8 @@ jobs:
           target: app_prod
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            CACHE_BUSTER=${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
