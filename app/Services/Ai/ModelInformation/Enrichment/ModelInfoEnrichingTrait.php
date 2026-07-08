@@ -7,6 +7,7 @@ namespace App\Services\Ai\ModelInformation\Enrichment;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiModelDescription;
+use App\Services\Ai\Exceptions\InvalidModelEnrichmentTypeException;
 use App\Services\Ai\Models\Capabilities\Values\NativeAiModelCapabilities;
 use App\Services\Ai\Models\Flags\Values\AiModelFlags;
 use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
@@ -205,8 +206,7 @@ trait ModelInfoEnrichingTrait
         if ($limits === null || $limits instanceof NullAiModelLimits) {
             $model->limits = $limits = ChatAiModelLimits::fromArray([]);
         } else if (!$limits instanceof ChatAiModelLimits) {
-            // @todo better exception
-            throw new \InvalidArgumentException('Model limits must be an instance of ChatAiModelLimits.');
+            throw InvalidModelEnrichmentTypeException::forInvalidLimitsType((string) $model->model_id, get_debug_type($limits));
         }
 
         if ($maxInputTokens instanceof ChatAiModelLimits) {
@@ -243,8 +243,7 @@ trait ModelInfoEnrichingTrait
         if ($currentPricing === null || $currentPricing instanceof NullPricing) {
             $currentPricing = $model->pricing = ChatAiModelPricing::fromArray([]);
         } elseif (!$currentPricing instanceof ChatAiModelPricing) {
-            // @todo better exception
-            throw new \InvalidArgumentException('Model pricing must be an instance of ChatAiModelPricing.');
+            throw InvalidModelEnrichmentTypeException::forInvalidPricingType((string) $model->model_id, get_debug_type($currentPricing));
         }
 
         if (!$currentPricing->hasRanges() && $pricing->hasRanges()) {

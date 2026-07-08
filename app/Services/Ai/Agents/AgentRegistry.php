@@ -7,6 +7,8 @@ namespace App\Services\Ai\Agents;
 use App\Providers\AiServiceProvider;
 use App\Services\Ai\Agents\Contracts\AgentFactoryInterface;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
+use App\Services\Ai\Agents\Exceptions\AgentNotResolvedException;
+use App\Services\Ai\Agents\Exceptions\InvalidAgentFactoryClassException;
 use App\Utils\Lists\LazySingletonList;
 use App\Utils\Lists\TopSortStringList;
 use Illuminate\Container\Attributes\Give;
@@ -38,12 +40,7 @@ readonly class AgentRegistry
     ): self
     {
         if (!is_a($agentFactoryClass, AgentFactoryInterface::class, true)) {
-            // @todo better exception
-            throw new \InvalidArgumentException(sprintf(
-                'Agent factory class %s must implement %s',
-                $agentFactoryClass,
-                AgentFactoryInterface::class
-            ));
+            throw InvalidAgentFactoryClassException::forClass($agentFactoryClass);
         }
 
         $this->factoryClasses->add($agentFactoryClass, $before, $after);
@@ -66,11 +63,7 @@ readonly class AgentRegistry
     {
         $agent = $this->tryToGetAgent($request);
         if (!$agent) {
-            // @todo better exception
-            throw new \RuntimeException(sprintf(
-                'No agent factory could create an agent for request of type %s',
-                get_debug_type($request)
-            ));
+            throw AgentNotResolvedException::forRequestType(get_debug_type($request));
         }
         return $agent;
     }

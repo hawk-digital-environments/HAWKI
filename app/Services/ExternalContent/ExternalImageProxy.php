@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\ExternalContent;
 
 
+use App\Services\ExternalContent\Events\ExternalImageResolvedFilterEvent;
+use App\Services\ExternalContent\Events\ResolvingExternalImageFilterEvent;
 use App\Services\ExternalContent\Values\ResolvedExternalImage;
 use App\Services\System\Time\Clock;
 use App\Utils\Imaging\RandomGradientImage;
@@ -29,7 +31,10 @@ readonly class ExternalImageProxy
             ttl: $this->clock->now()->addHours(24),
             callback: function () use ($url): ResolvedExternalImage {
                 try {
-                    // @todo filter event $url (has a $resolved property, can be set by handler, if set, return that instead of resolving again)
+                    $preEvent = ResolvingExternalImageFilterEvent::dispatch($url);
+                    if ($preEvent->getResolved() !== null) {
+                        return $preEvent->getResolved();
+                    }
 
                     $response = $this->client->fetchOrThrow($url, 2);
 
@@ -48,9 +53,7 @@ readonly class ExternalImageProxy
                     $image = $this->makeFallbackImage();
                 }
 
-                // @todo event $url, $image (can be modified by handler)
-
-                return $image;
+                return ExternalImageResolvedFilterEvent::dispatch($url, $image)->getImage();
             }
         );
     }

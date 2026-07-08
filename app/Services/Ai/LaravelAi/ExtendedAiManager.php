@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai\LaravelAi;
 
 
+use App\Services\Ai\Exceptions\InvalidAiManagerException;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
 use App\Utils\DecoratorTrait;
 use Laravel\Ai\AiManager;
@@ -54,7 +55,6 @@ class ExtendedAiManager extends AiManager
      */
     public function getDefaultInstance(): string
     {
-        // @todo better exception
-        throw new \RuntimeException('This system is not designed to do that!');
+        throw InvalidAiManagerException::forUnsupportedDefaultInstance();
     }
 }

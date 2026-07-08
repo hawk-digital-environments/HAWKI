@@ -7,6 +7,7 @@ namespace App\Services\System\Database\Eloquent\Repositories\Traits;
 
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
+use App\Services\System\Database\Eloquent\Repositories\Exceptions\CannotGuessRepositoryModelException;
 use Illuminate\Database\Eloquent\Factories\Attributes\UseModel as WrongAttribute;
 use Illuminate\Database\Eloquent\Model;
 use ReflectionClass;
@@ -37,12 +38,7 @@ trait GuessesModelNameTrait
             ?? $this->resolveModelClassFromRepositoryClassName(static::class);
 
         if ($potentialModelClass === null) {
-            // @todo better exception
-            throw new \LogicException(sprintf(
-                'Could not guess model class for repository "%s". Please specify the model class using the "%s" attribute.',
-                static::class,
-                UseModel::class
-            ));
+            throw CannotGuessRepositoryModelException::forRepository(static::class, UseModel::class);
         }
 
         return $potentialModelClass;
@@ -59,13 +55,7 @@ trait GuessesModelNameTrait
             // Special check, there is another "UseModel" attribute in Laravel, so we want to show the user that it is the wrong one
             $wrongAttributes = (new ReflectionClass($class))->getAttributes(WrongAttribute::class);
             if (!empty($wrongAttributes)) {
-                // @todo better exception
-                throw new \LogicException(sprintf(
-                    'The class "%s" has the "%s" attribute, but it is the wrong one. Did you import the correct "%s" attribute?',
-                    $class,
-                    WrongAttribute::class,
-                    UseModel::class
-                ));
+                throw CannotGuessRepositoryModelException::forWrongUseModelAttribute($class, WrongAttribute::class, UseModel::class);
             }
         }
 

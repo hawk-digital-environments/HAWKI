@@ -11,6 +11,7 @@ use App\Services\Ai\Tools\Mcp\Events\McpServerToolSyncStartingEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpToolSyncCompletedEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpToolSyncFailedEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpToolSyncStartingEvent;
+use App\Services\Ai\Tools\Mcp\Events\McpToolSyncedEvent;
 use App\Services\Ai\Tools\Repositories\AiToolRepository;
 use App\Services\Ai\Tools\Repositories\McpServerRepository;
 use App\Services\Ai\Values\OnlineStatus;
@@ -65,7 +66,7 @@ readonly class McpToolSyncer
 
                         $synced = $this->toolRepository->upsertMcp($definition, $server);
 
-                        // @todo event $server $definition $synced $metrics
+                        McpToolSyncedEvent::dispatch($server, $definition, $synced, $metrics);
 
                         $syncedToolIds[] = $synced->id;
                         $metrics->increment('MCP Tools synced');

@@ -6,6 +6,10 @@ namespace App\Services\Ai\Agents\Adapters;
 
 
 use App\Services\Ai\Agents\Contracts\AgentInterface as HawkiAgentInterface;
+use App\Services\Ai\Agents\Events\AgentResponseReceivedEvent;
+use App\Services\Ai\Agents\Events\AgentSendingEvent;
+use App\Services\Ai\Agents\Events\AgentStreamCompletedEvent;
+use App\Services\Ai\Agents\Events\AgentStreamInitiatedEvent;
 use App\Services\Ai\Agents\Exceptions\AgentStateException;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
 use App\Services\Ai\Values\TokenUsage;
@@ -39,7 +43,7 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
 
     public function send(): AgentResponse
     {
-        // @todo event $this $context $provider
+        AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
         $response = $this->prompt(
             prompt: $this->getPromptString(),
@@ -50,14 +54,14 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
 
         $this->usage = $response->usage;
 
-        // @todo event $this $context $provider $response $usage
+        AgentResponseReceivedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);
 
         return $response;
     }
 
     public function sendStreaming(): StreamableAgentResponse
     {
-        // @todo event $this $context $provider
+        AgentSendingEvent::dispatch($this, $this->getContext(), $this->getContext()->provider);
 
         $response = $this->stream(
             prompt: $this->getPromptString(),
@@ -69,10 +73,10 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
         $response->then(function (AgentResponse $response) {
             $this->usage = $response->usage;
 
-            // @todo event $this $context $provider $response $usage
+            AgentStreamCompletedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response, $response->usage);
         });
 
-        // @todo event $this $context $provider $response
+        AgentStreamInitiatedEvent::dispatch($this, $this->getContext(), $this->getContext()->provider, $response);
 
         return $response;
     }

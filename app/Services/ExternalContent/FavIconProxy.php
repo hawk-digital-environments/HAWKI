@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\ExternalContent;
 
 
+use App\Services\ExternalContent\Events\FaviconResolvedFilterEvent;
+use App\Services\ExternalContent\Events\ResolvingFaviconFilterEvent;
 use App\Services\ExternalContent\Values\ResolvedExternalImage;
 use App\Services\System\Time\Clock;
 use Illuminate\Contracts\Cache\Repository;
@@ -27,7 +29,10 @@ readonly class FavIconProxy
             key: "favicon_" . md5($url),
             ttl: $this->clock->now()->addDays(7),
             callback: function () use ($url) {
-                // @todo filter event $url (has a $resolved property, can be set by handler, if set, return that instead of resolving again)
+                $preEvent = ResolvingFaviconFilterEvent::dispatch($url);
+                if ($preEvent->getResolved() !== null) {
+                    return $preEvent->getResolved();
+                }
 
                 try {
                     $icon = $this->fetchFaviconThroughGoogle($url)
@@ -38,9 +43,7 @@ readonly class FavIconProxy
                     $icon = $this->makeFallbackFavicon();
                 }
 
-                // @todo filter event $url $icon
-
-                return $icon;
+                return FaviconResolvedFilterEvent::dispatch($url, $icon)->getIcon();
             }
         );
     }

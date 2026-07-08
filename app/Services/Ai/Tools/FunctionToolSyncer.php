@@ -6,6 +6,10 @@ namespace App\Services\Ai\Tools;
 
 
 use App\Services\Ai\Tools\Contracts\ToolInterface;
+use App\Services\Ai\Tools\Events\FunctionToolSyncCompletedEvent;
+use App\Services\Ai\Tools\Events\FunctionToolSyncedEvent;
+use App\Services\Ai\Tools\Events\FunctionToolSyncFailedEvent;
+use App\Services\Ai\Tools\Events\FunctionToolSyncStartingEvent;
 use App\Services\Ai\Tools\Repositories\AiToolRepository;
 use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Tag;
@@ -31,13 +35,13 @@ readonly class FunctionToolSyncer
 
         $metrics->announceStart();
 
-        // @todo event $metrics
+        FunctionToolSyncStartingEvent::dispatch($metrics);
 
         foreach ($this->functionTools as $tool) {
             try {
                 $synced = $this->toolRepository->upsertFunction($tool, true);
 
-                // @todo event $tool $metrics $synced
+                FunctionToolSyncedEvent::dispatch($tool, $metrics, $synced);
 
                 $metrics->increment('Function Tools synced');
             } catch (\Throwable $e) {
@@ -47,11 +51,11 @@ readonly class FunctionToolSyncer
                     $e->getMessage()
                 ), ['exception' => $e]);
 
-                // @todo event $metrics $tool $e
+                FunctionToolSyncFailedEvent::dispatch($metrics, $tool, $e);
             }
         }
 
-        // @todo event $metrics
+        FunctionToolSyncCompletedEvent::dispatch($metrics);
 
         $metrics->announceCompletion();
 

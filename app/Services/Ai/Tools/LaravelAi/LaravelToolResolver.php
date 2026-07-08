@@ -8,6 +8,9 @@ namespace App\Services\Ai\Tools\LaravelAi;
 use App\Models\Ai\AiTool;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Tools\Exceptions\ToolNotFoundException;
+use App\Services\Ai\Tools\LaravelAi\Events\NativeToolResolvedFilterEvent;
+use App\Services\Ai\Tools\LaravelAi\Events\ToolByNameResolvedFilterEvent;
+use App\Services\Ai\Tools\LaravelAi\Events\ToolForCapabilityResolvedFilterEvent;
 use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Container\Attributes\Singleton;
 use Laravel\Ai\Contracts\Tool;
@@ -35,9 +38,7 @@ readonly class LaravelToolResolver
 
         $tool = $providerToolFactory($context, $toolSettings);
 
-        // @todo filter event $tool $capabilityKey $context $toolSettings
-
-        return $tool;
+        return NativeToolResolvedFilterEvent::dispatch($tool, $capabilityKey, $context, $toolSettings)->getTool();
     }
 
     public function resolveToolForCapability(
@@ -58,9 +59,7 @@ readonly class LaravelToolResolver
 
         $tool = $this->toolConverter->convert($hawkiTool, $toolSettings);
 
-        // @todo filter event $tool $capabilityKey $context $hawkiTool $toolSettings
-
-        return $tool;
+        return ToolForCapabilityResolvedFilterEvent::dispatch($tool, $capabilityKey, $context, $hawkiTool, $toolSettings)->getTool();
     }
 
     public function resolveToolByName(
@@ -79,8 +78,6 @@ readonly class LaravelToolResolver
 
         $tool = $this->toolConverter->convert($hawkiTool, $toolSettings);
 
-        // @todo filter event $tool $toolName $context $toolSettings
-
-        return $tool;
+        return ToolByNameResolvedFilterEvent::dispatch($tool, $toolName, $context, $toolSettings)->getTool();
     }
 }

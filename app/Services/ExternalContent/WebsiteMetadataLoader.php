@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\ExternalContent;
 
 
+use App\Services\ExternalContent\Events\ResolvingWebsiteMetadataFilterEvent;
+use App\Services\ExternalContent\Events\WebsiteMetadataResolvedFilterEvent;
 use App\Services\ExternalContent\Values\WebsiteMetadata;
 use App\Services\System\Http\UrlResolver;
 use App\Services\System\Time\Clock;
@@ -32,7 +34,10 @@ readonly class WebsiteMetadataLoader
             ttl: $this->clock->now()->addHours(24),
             callback: function () use ($url): WebsiteMetadata {
                 try {
-                    // @todo filter event $url (has a $resolved property, can be set by handler, if set, return that instead of resolving again)
+                    $preEvent = ResolvingWebsiteMetadataFilterEvent::dispatch($url);
+                    if ($preEvent->getResolved() !== null) {
+                        return $preEvent->getResolved();
+                    }
 
                     $response = $this->client->fetchOrThrow($url, 5);
 
@@ -42,9 +47,7 @@ readonly class WebsiteMetadataLoader
                     $data = $this->createFallbackMetadata($url);
                 }
 
-                // @todo event $url, $data (can be modified by handler)
-
-                return $data;
+                return WebsiteMetadataResolvedFilterEvent::dispatch($url, $data)->getData();
             }
         );
     }

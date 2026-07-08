@@ -7,6 +7,8 @@ namespace App\Services\Ai\ModelInformation\Enrichment\Implementations;
 
 use App\Models\Ai\AiModel;
 use App\Services\Ai\ModelInformation\Enrichment\Contracts\ModelInfoEnricherInterface;
+use App\Services\Ai\ModelInformation\Enrichment\Events\LiteLlmEnrichmentCompletedEvent;
+use App\Services\Ai\ModelInformation\Enrichment\Events\LiteLlmEnrichmentSkippedEvent;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\Applier\ChatModelInfoApplier;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\LiteLlmApiDataStore;
 use App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm\LiteLlmModelData;
@@ -49,7 +51,7 @@ readonly class LiteLlmApiEnricher implements ModelInfoEnricherInterface
         }
 
         if (!$liteLlmData) {
-            // @todo event $modelInfo $provider $jobMetrics $this,
+            LiteLlmEnrichmentSkippedEvent::dispatch($modelInfo, $provider, $jobMetrics, $this);
             return $modelInfo;
         }
 
@@ -61,7 +63,7 @@ readonly class LiteLlmApiEnricher implements ModelInfoEnricherInterface
             $modelInfo = (new ChatModelInfoApplier())->apply($modelInfo, $liteLlmData);
         }
 
-        // @todo event $modelInfo $liteLlmData $provider $jobMetrics
+        LiteLlmEnrichmentCompletedEvent::dispatch($modelInfo, $liteLlmData, $provider, $jobMetrics);
 
         return $modelInfo;
     }

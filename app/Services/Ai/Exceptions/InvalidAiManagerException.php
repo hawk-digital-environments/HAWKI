@@ -16,4 +16,13 @@ class InvalidAiManagerException extends \RuntimeException implements AiException
             ExtendedAiManager::class
         ));
     }
+
+    public static function forUnsupportedDefaultInstance(): self
+    {
+        return new self(sprintf(
+            '%s does not support resolving a default instance. '
+            . 'Providers are resolved explicitly by name — there is no single default AI provider.',
+            ExtendedAiManager::class,
+        ));
+    }
 }

@@ -7,6 +7,12 @@ namespace App\Services\Ai\ModelInformation;
 
 use App\Models\Ai\AiModel;
 use App\Services\Ai\ModelInformation\Enrichment\AiModelInfoEnrichmentPipeline;
+use App\Services\Ai\ModelInformation\Events\ModelInfoEnrichedEvent;
+use App\Services\Ai\ModelInformation\Events\ModelInfoFetchedEvent;
+use App\Services\Ai\ModelInformation\Events\ModelInfoFetchStartingEvent;
+use App\Services\Ai\ModelInformation\Events\SingleModelInfoEnrichedEvent;
+use App\Services\Ai\ModelInformation\Events\SingleModelInfoFetchedEvent;
+use App\Services\Ai\ModelInformation\Events\SingleModelInfoFetchStartingEvent;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use App\Utils\JobMetrics;
 use Illuminate\Support\Collection;
@@ -57,15 +63,15 @@ readonly class ModelInfoFetcher
 
         $metrics->announceStart();
 
-        // @todo event $provider $metrics
+        ModelInfoFetchStartingEvent::dispatch($provider, $metrics);
 
         $models = $this->fetchProviderModelList($provider, $metrics);
 
-        // @todo event $provider $models $metrics
+        ModelInfoFetchedEvent::dispatch($provider, $models, $metrics);
 
         $enrichedModels = $this->enrichCollection($models ?? collect(), $provider, $metrics);
 
-        // @todo event $provider $enrichedModels $metrics
+        ModelInfoEnrichedEvent::dispatch($provider, $enrichedModels, $metrics);
 
         $metrics->announceCompletion();
 
@@ -84,11 +90,11 @@ readonly class ModelInfoFetcher
 
         $metrics->announceStart();
 
-        // @todo event $provider $modelId $metrics
+        SingleModelInfoFetchStartingEvent::dispatch($provider, $modelId, $metrics);
 
         $models = $this->fetchProviderModelList($provider, $metrics);
 
-        // @todo event $provider $models $modelId $metrics
+        SingleModelInfoFetchedEvent::dispatch($provider, $models, $modelId, $metrics);
 
         $modelInfo = $models?->firstWhere(function (AiModel $model) use ($modelId) {
             return $model->model_id === $modelId
@@ -110,7 +116,7 @@ readonly class ModelInfoFetcher
         /** @var AiModel $enrichedModelInfo */
         $enrichedModelInfo = $enrichedModelInfoCollection->first();
 
-        // @todo event $provider $enrichedModelInfo $modelId $metrics
+        SingleModelInfoEnrichedEvent::dispatch($provider, $enrichedModelInfo, $modelId, $metrics);
 
         $metrics->announceCompletion();
 

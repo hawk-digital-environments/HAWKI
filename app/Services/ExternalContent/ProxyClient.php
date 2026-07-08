@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ExternalContent;
 
 
+use App\Services\ExternalContent\Exceptions\FailedToFetchUrlException;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
@@ -28,8 +29,7 @@ readonly class ProxyClient
             ->getSsrfSafe($url);
 
         if (!$response->successful()) {
-            // @todo better exception
-            throw new \Exception("Failed to fetch URL: $url");
+            throw FailedToFetchUrlException::forUrl($url);
         }
 
         return $response;
