@@ -35,23 +35,58 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
     use ServiceLocatorTrait;
 
     private const array DATA = [
-        'qwen3-coder-30b-a3b-instruct' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8',
-            'description' => 'Qwen 3 Coder 30B A3B Instruct is a specialized coding model that achieves strong performance on agentic coding, browser-use, and other foundational coding tasks among open models.',
+        'apertus-70b-instruct-2509' => [
+            'max_tokens' => 65000,
+            'documentation_url' => 'https://huggingface.co/RedHatAI/Apertus-70B-Instruct-2509-FP8-dynamic',
+            'description' => 'Apertus is a fully open language model designed to push the boundaries of transparent and compliant AI. It supports over 1,800 languages and a context window size of up to 65,536 tokens, using only fully compliant and open training data. The model achieves comparable performance to closed-source models while respecting opt-out consent of data owners. It was pretrained on 15T tokens with a staged curriculum of web, code, and math data.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
                 WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING
+                WellKnownModelFlags::FEATURE_STREAMING,
+            ],
+            'parameters' => [
+                WellKnownModelParams::TEMPERATURE => 0.8,
+                WellKnownModelParams::TOP_P => 0.9,
+            ],
+        ],
+        'deepseek-r1-distill-llama-70b' => [
+            'max_tokens' => 32000,
+            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
+            'description' => 'Developed by the Chinese company DeepSeek (深度求索), DeepSeek R1 Distill Llama 70B is a dense model distilled from DeepSeek-R1 but based on LLama 3.3 70B, in order to fit the capabilities and performance of R1 into a 70B parameter-size model.',
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::FEATURE_REASONING,
+                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
+                WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'parameters' => [
                 WellKnownModelParams::TEMPERATURE => 0.7,
                 WellKnownModelParams::TOP_P => 0.8,
             ],
+        ],
+        'devstral-2-123b-instruct-2512' => [
+            'max_tokens' => 256000,
+            'documentation_url' => 'https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512',
+            'description' => 'Developed by mistralai, Devstral 2 is an agentic LLM designed for software engineering and coding tasks. It is capable of exploring codebases, working with multiple files, and powering software engineering agents.',
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
+                WellKnownModelFlags::FEATURE_STREAMING,
+            ],
             'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING
-            ]
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
+        ],
+        'gemma-4-31b-it' => [
+            'max_tokens' => 256000,
+            'documentation_url' => 'https://huggingface.co/google/gemma-4-31B-it',
+            'description' => 'Gemma 4 models offer frontier-level performance, well-suited for reasoning, agentic workflows, coding, and multimodal understanding.',
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::MULTI_MODAL,
+                WellKnownModelFlags::FEATURE_REASONING,
+                WellKnownModelFlags::FEATURE_STREAMING,
+            ],
         ],
         'glm-4.7' => [
             'max_tokens' => 200000,
@@ -71,62 +106,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING
             ],
         ],
-        'qwen3.6-35b-a3b' => [
-            'max_tokens' => 262000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8',
-            'description' => 'Qwen 3.6 35B A3B is an MoE model with 35 billion total parameters and 3 billion activated parameters for efficient inference. Built on direct feedback from the community, Qwen 3.6 prioritizes stability, real-world utility, including for coding and agentic tasks.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 1.0,
-                WellKnownModelParams::TOP_P => 0.95,
-            ],
-        ],
-        'apertus-70b-instruct-2509' => [
-            'max_tokens' => 65000,
-            'documentation_url' => 'https://huggingface.co/RedHatAI/Apertus-70B-Instruct-2509-FP8-dynamic',
-            'description' => 'Apertus is a fully open language model designed to push the boundaries of transparent and compliant AI. It supports over 1,800 languages and a context window size of up to 65,536 tokens, using only fully compliant and open training data. The model achieves comparable performance to closed-source models while respecting opt-out consent of data owners. It was pretrained on 15T tokens with a staged curriculum of web, code, and math data.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.8,
-                WellKnownModelParams::TOP_P => 0.9,
-            ],
-        ],
-        'qwen3-omni-30b-a3b-instruct' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct',
-            'description' => 'Qwen3 Omni is a natively multilingual omni-modal foundation model that processes text, images, audio, and video. It achieves state-of-the-art performance on many audio/video benchmarks with ASR, audio understanding, and voice conversation performance comparable to Gemini 2.5 Pro. The model features a novel MoE-based Thinker–Talker architecture with AuT pretraining, supports 119 text languages, 19 speech input languages, and enables low-latency interaction with flexible control via system prompts.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
-        'devstral-2-123b-instruct-2512' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/mistralai/Devstral-2-123B-Instruct-2512',
-            'description' => 'Developed by mistralai, Devstral 2 is an agentic LLM designed for software engineering and coding tasks. It is capable of exploring codebases, working with multiple files, and powering software engineering agents.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
         'internvl3.5-30b-a3b' => [
             'max_tokens' => 40000,
             'documentation_url' => 'https://huggingface.co/OpenGVLab/InternVL3_5-30B-A3B-HF',
@@ -137,45 +116,26 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
         ],
-        'qwen3.5-122b-a10b' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.5-122B-A10B-GPTQ-Int4',
-            'description' => 'Qwen 3.5 122B A10B is a powerful language model developed by Alibaba Cloud. With 122 billion parameters it delivers strong performance across reasoning, coding, and general tasks. The model supports vision capabilities for multimodal applications.',
+        'medgemma-27b-it' => [
+            'max_tokens' => 128000,
+            'documentation_url' => 'https://huggingface.co/google/medgemma-27b-it',
+            'description' => 'MedGemma 27B Instruct is a variant of Gemma 3 suitable for medical text and image comprehension. It has been trained on a variety of medical image data, including chest X-rays, dermatology images, ophthalmology images, and histopathology slides, as well as medical text, such as medical question-answer pairs, and FHIR-based electronic health record data. MedGemma variants have been evaluated on a range of clinically relevant benchmarks to illustrate their baseline performance.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
                 WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.6,
-                WellKnownModelParams::TOP_P => 0.95,
             ],
         ],
-        'qwen3.5-397b-a17b' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.5-397B-A17B-GPTQ-Int4',
-            'description' => 'Qwen 3.5 397B A17B is a MoE model with 397 billion total parameters and 17 billion activated parameters. It represents one of the most powerful open-weight models available, delivering exceptional performance across reasoning, coding, mathematics, and general tasks. The model supports vision capabilities, and provides state-of-the-art performance among open models.',
+        'meta-llama-3.1-8b-instruct' => [
+            'max_tokens' => 128000,
+            'documentation_url' => 'https://huggingface.co/nvidia/Llama-3.1-8B-Instruct-FP8',
+            'description' => 'The standard model we recommend. It is the most lightweight with the fastest performance and good results across all benchmarks. It is sufficient for general conversations and assistance.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
-            'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.6,
-                WellKnownModelParams::TOP_P => 0.95,
-            ],
-        ],
-        'gemma-4-31b-it' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/google/gemma-4-31B-it',
-            'description' => 'Gemma 4 models offer frontier-level performance, well-suited for reasoning, agentic workflows, coding, and multimodal understanding.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_REASONING,
-                WellKnownModelFlags::FEATURE_STREAMING,
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
         'mistral-large-3-675b-instruct-2512' => [
@@ -186,18 +146,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::MULTI_MODAL,
                 WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
-        'meta-llama-3.1-8b-instruct' => [
-            'max_tokens' => 128000,
-            'documentation_url' => 'https://huggingface.co/nvidia/Llama-3.1-8B-Instruct-FP8',
-            'description' => 'The standard model we recommend. It is the most lightweight with the fastest performance and good results across all benchmarks. It is sufficient for general conversations and assistance.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'native_capabilities' => [
@@ -234,29 +182,113 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        'medgemma-27b-it' => [
-            'max_tokens' => 128000,
-            'documentation_url' => 'https://huggingface.co/google/medgemma-27b-it',
-            'description' => 'MedGemma 27B Instruct is a variant of Gemma 3 suitable for medical text and image comprehension. It has been trained on a variety of medical image data, including chest X-rays, dermatology images, ophthalmology images, and histopathology slides, as well as medical text, such as medical question-answer pairs, and FHIR-based electronic health record data. MedGemma variants have been evaluated on a range of clinically relevant benchmarks to illustrate their baseline performance.',
+        'qwen3-coder-30b-a3b-instruct' => [
+            'max_tokens' => 256000,
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8',
+            'description' => 'Qwen 3 Coder 30B A3B Instruct is a specialized coding model that achieves strong performance on agentic coding, browser-use, and other foundational coding tasks among open models.',
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
+                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
+                WellKnownModelFlags::FEATURE_STREAMING
+            ],
+            'parameters' => [
+                WellKnownModelParams::TEMPERATURE => 0.7,
+                WellKnownModelParams::TOP_P => 0.8,
+            ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING
+            ]
+        ],
+        'qwen3-coder-next' => [
+            'max_tokens' => 256000,
+            // TODO(reference missing): no verified Hugging Face/GWDG model card found (released Feb 2026). Fill documentation_url once published.
+            // TODO(reference missing): description unavailable pending the official model card.
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
+                WellKnownModelFlags::FEATURE_STREAMING,
+            ],
+            // Reference lists sampling as "default"; no explicit temperature/top_p recommendation, so parameters are intentionally omitted.
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
+        ],
+        'qwen3-omni-30b-a3b-instruct' => [
+            'max_tokens' => 256000,
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Omni-30B-A3B-Instruct',
+            'description' => 'Qwen3 Omni is a natively multilingual omni-modal foundation model that processes text, images, audio, and video. It achieves state-of-the-art performance on many audio/video benchmarks with ASR, audio understanding, and voice conversation performance comparable to Gemini 2.5 Pro. The model features a novel MoE-based Thinker–Talker architecture with AuT pretraining, supports 119 text languages, 19 speech input languages, and enables low-latency interaction with flexible control via system prompts.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::MULTI_MODAL,
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
         ],
-        'deepseek-r1-distill-llama-70b' => [
-            'max_tokens' => 32000,
-            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
-            'description' => 'Developed by the Chinese company DeepSeek (深度求索), DeepSeek R1 Distill Llama 70B is a dense model distilled from DeepSeek-R1 but based on LLama 3.3 70B, in order to fit the capabilities and performance of R1 into a 70B parameter-size model.',
+        'qwen3.5-122b-a10b' => [
+            'max_tokens' => 256000,
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.5-122B-A10B-GPTQ-Int4',
+            'description' => 'Qwen 3.5 122B A10B is a powerful language model developed by Alibaba Cloud. With 122 billion parameters it delivers strong performance across reasoning, coding, and general tasks. The model supports vision capabilities for multimodal applications.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::FEATURE_REASONING,
+                WellKnownModelFlags::MULTI_MODAL,
                 WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.7,
-                WellKnownModelParams::TOP_P => 0.8,
+                WellKnownModelParams::TEMPERATURE => 0.6,
+                WellKnownModelParams::TOP_P => 0.95,
+            ],
+        ],
+        'qwen3.5-397b-a17b' => [
+            'max_tokens' => 256000,
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.5-397B-A17B-GPTQ-Int4',
+            'description' => 'Qwen 3.5 397B A17B is a MoE model with 397 billion total parameters and 17 billion activated parameters. It represents one of the most powerful open-weight models available, delivering exceptional performance across reasoning, coding, mathematics, and general tasks. The model supports vision capabilities, and provides state-of-the-art performance among open models.',
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::MULTI_MODAL,
+                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
+                WellKnownModelFlags::FEATURE_STREAMING,
+            ],
+            'parameters' => [
+                WellKnownModelParams::TEMPERATURE => 0.6,
+                WellKnownModelParams::TOP_P => 0.95,
+            ],
+        ],
+        'qwen3.6-27b' => [
+            'max_tokens' => 262000,
+            // TODO(reference missing): no verified Hugging Face/GWDG model card found (released Apr 2026; likely https://huggingface.co/Qwen/Qwen3.6-27B-FP8, unverified). Fill documentation_url once confirmed.
+            // TODO(reference missing): description unavailable pending the official model card.
+            // NOTE: GWDG's model table lists this model as "Vision". If confirmed multi-modal, add WellKnownModelFlags::MULTI_MODAL here and 'image' to its input in config/model_lists/gwdg_models.php (currently 'text' only, though the config still carries a 'vision' tool flag).
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
+                WellKnownModelFlags::FEATURE_STREAMING,
+            ],
+            'parameters' => [
+                WellKnownModelParams::TEMPERATURE => 1.0,
+                WellKnownModelParams::TOP_P => 0.95,
+            ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
+        ],
+        'qwen3.6-35b-a3b' => [
+            'max_tokens' => 262000,
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.6-35B-A3B-FP8',
+            'description' => 'Qwen 3.6 35B A3B is an MoE model with 35 billion total parameters and 3 billion activated parameters for efficient inference. Built on direct feedback from the community, Qwen 3.6 prioritizes stability, real-world utility, including for coding and agentic tasks.',
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
+                WellKnownModelFlags::MULTI_MODAL,
+                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
+                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
+                WellKnownModelFlags::FEATURE_STREAMING,
+            ],
+            'parameters' => [
+                WellKnownModelParams::TEMPERATURE => 1.0,
+                WellKnownModelParams::TOP_P => 0.95,
             ],
         ],
         'teuken-7b-instruct-research' => [
@@ -266,6 +298,15 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::FEATURE_STREAMING,
+            ],
+        ],
+        'e5-mistral-7b-instruct' => [
+            'max_tokens' => 4096,
+            'documentation_url' => 'https://huggingface.co/intfloat/e5-mistral-7b-instruct',
+            'description' => 'E5 Mistral 7B Instruct is a text-embedding model developed by intfloat, initialized from Mistral 7B and fine-tuned to produce high-quality embeddings for retrieval, semantic similarity, and clustering across roughly 100 languages. It is an embedding model exposed via API only, not a conversational chat model.',
+            // NOTE: This is an embedding ("API Only") model. WellKnownModelFlags has no embeddings-specific flag, so only OPEN_WEIGHTS is applied. Confirm whether an embedding model belongs in the chat-model enricher at all.
+            'flags' => [
+                WellKnownModelFlags::OPEN_WEIGHTS,
             ],
         ],
     ];
