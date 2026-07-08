@@ -32,6 +32,7 @@ class IconCssTest extends TestCase
             'border radius' => ['border-radius: 8px;'],
             'rgba' => ['background-color: rgba(0, 0, 0, 0.4);'],
             'repeating conic' => ['background: repeating-conic-gradient(#444cf7 0% 25%, #e5e5f7 0% 50%) 50% / 10px 10px;'],
+            'empty string' => [''],
         ];
     }
 
@@ -64,7 +65,6 @@ class IconCssTest extends TestCase
             'ampersand obfuscation' => ['background: &#x75;rl(x);'],
             'empty value' => ['background:;'],
             'no colon' => ['red'],
-            'empty string' => [''],
             'too long' => [str_repeat('a', 1001)],
             'trailing junk after gradient' => ['background: red; position: absolute;'],
         ];

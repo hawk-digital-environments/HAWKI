@@ -104,6 +104,10 @@ final class IconCss implements ValidationRule
             return;
         }
 
+        if ($value === '') {
+            return;
+        }
+
         if (strlen($value) > self::MAX_LENGTH) {
             $fail('The :attribute must not exceed '.self::MAX_LENGTH.' characters.');
 

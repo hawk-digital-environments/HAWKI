@@ -39,6 +39,30 @@ class AssistantAvatarTest extends TestCase
         ]);
     }
 
+    public function test_owner_can_create_avatar_with_empty_strings(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        Sanctum::actingAs($owner);
+
+        $this->jsonApi('post', '/api/assistant-avatars', [
+            'data' => [
+                'type' => 'assistant-avatars',
+                'attributes' => ['name' => '', 'icon_css' => ''],
+                'relationships' => [
+                    'assistant' => ['data' => ['type' => 'assistants', 'id' => (string) $assistant->id]],
+                ],
+            ],
+        ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('assistant_avatars', [
+            'assistant_id' => $assistant->id,
+            'name' => '',
+            'icon_css' => '',
+        ]);
+    }
+
     public function test_non_owner_cannot_create_avatar(): void
     {
         $owner = User::factory()->create();
@@ -161,6 +185,28 @@ class AssistantAvatarTest extends TestCase
         ])->assertOk();
 
         $this->jsonApi('delete', "/api/assistant-avatars/{$avatar->id}")->assertNoContent();
+    }
+
+    public function test_owner_can_update_avatar_with_empty_strings(): void
+    {
+        $owner = User::factory()->create();
+        $assistant = Assistant::factory()->create(['creator_id' => $owner->id]);
+        $avatar = AssistantAvatar::factory()->create(['assistant_id' => $assistant->id]);
+        Sanctum::actingAs($owner);
+
+        $this->jsonApi('patch', "/api/assistant-avatars/{$avatar->id}", [
+            'data' => [
+                'type' => 'assistant-avatars',
+                'id' => (string) $avatar->id,
+                'attributes' => ['name' => '', 'icon_css' => ''],
+            ],
+        ])->assertOk();
+
+        $this->assertDatabaseHas('assistant_avatars', [
+            'id' => $avatar->id,
+            'name' => '',
+            'icon_css' => '',
+        ]);
     }
 
     public function test_avatar_assistant_link_does_not_leak_private_assistant(): void

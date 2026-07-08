@@ -19,8 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo('/login');
         $middleware->convertEmptyStringsToNull([
-            fn (Request $request) => $request->is('api/assistants*'),
-            fn (Request $request) => $request->is('api/assistant-setting-values*'),
+            fn (Request $request) => $request->is('api/*'),
         ]);
     })
 

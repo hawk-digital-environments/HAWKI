@@ -21,8 +21,8 @@ class AssistantAvatarRequest extends ResourceRequest
         }
 
         return [
-            'name' => ['required', 'string', 'max:5'],
-            'icon_css' => ['required', 'string', 'max:1000', new IconCss],
+            'name' => ['present', 'string', 'max:5'],
+            'icon_css' => ['present', 'string', 'max:1000', new IconCss],
             'assistant' => [
                 'required',
                 JsonApiRule::toOne(),
