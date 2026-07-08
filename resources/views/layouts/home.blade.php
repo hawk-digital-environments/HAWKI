@@ -120,7 +120,6 @@
 
 
         initializeGUI();
-        checkWindowSize(1150, 200);
 
         initAnnouncements(announcementList);
 

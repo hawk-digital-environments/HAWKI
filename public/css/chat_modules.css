@@ -11,8 +11,8 @@
         border-right: var(--border-stroke-thin);
         background-color: var(--background-main);
 
-        @media (min-width: 950px) {
-            --sidebar-expanded-by-style: 1;
+        @media (max-width: 950px) {
+            --sidebar-mobile-style: 1;
         }
     }
 

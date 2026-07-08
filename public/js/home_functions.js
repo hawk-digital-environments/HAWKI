@@ -13,38 +13,126 @@ function initializeGUI() {
     });
     const root = document.querySelector(':root');
     root.style.setProperty('--transition-medium', '0');
+
+    const sidebarEls = findSidebarAndContent(findActiveSidebarType());
+    if (sidebarEls) {
+        let debounceTimer;
+
+        function debouncedOnResize() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                if (!window.oldUiMessageHistory.isInConversation) {
+                    openSidebar(sidebarEls.type);
+                    return;
+                }
+                if (sidebarIsMobileStyle(sidebarEls.sidebarEl)) {
+                    closeSidebar(sidebarEls.type);
+                }
+            }, 100);
+        }
+
+        window.addEventListener('resize', debouncedOnResize);
+        debouncedOnResize();
+
+        function handleCloseOnClick() {
+            if (sidebarIsMobileStyle(sidebarEls.sidebarEl)) {
+                closeSidebar(sidebarEls.type);
+            }
+        }
+
+        sidebarEls.content.addEventListener('click', handleCloseOnClick);
+        if (sidebarEls.welcomeContent) {
+            sidebarEls.welcomeContent.addEventListener('click', handleCloseOnClick);
+        }
+    }
+
 }
 
+/**
+ * @param {'groupchat'|'chat'}sidebarType
+ * @return {{sidebarEl: HTMLElement, content: HTMLElement, welcomeContent: HTMLElement|undefined, type: string}|null}
+ */
+function findSidebarAndContent(sidebarType) {
+    if (sidebarType !== 'groupchat' && sidebarType !== 'chat') {
+        return null;
+    }
+    const sidebarEl = document.getElementById(`${sidebarType}-sidebar`);
+    const selectId = sidebarType === 'groupchat' ? 'chat' : sidebarType;
+    const content = document.getElementById(selectId);
+    const welcomeContent = document.getElementById('group-welcome-panel');
+    return {sidebarEl, content, welcomeContent, type: sidebarType};
+}
 
-function onSidebarButtonDown(pageID) {
+function findActiveSidebarType() {
+    const sidebarEl = document.getElementById('groupchat-sidebar') || document.getElementById('chat-sidebar');
+    if (!sidebarEl) {
+        return null;
+    }
+    return sidebarEl.id === 'groupchat-sidebar' ? 'groupchat' : 'chat';
+}
+
+function sidebarIsMobileStyle(sidebar = null) {
+    if (!sidebar) {
+        const els = findSidebarAndContent(findActiveSidebarType());
+        if (els) {
+            sidebar = els.sidebarEl;
+        } else {
+            return null;
+        }
+    }
+
+    return getComputedStyle(sidebar).getPropertyValue('--sidebar-mobile-style').trim() === '1';
+}
+
+function openSidebar(sidebarType = null) {
+    const els = findSidebarAndContent(sidebarType ?? findActiveSidebarType());
+    if (els) {
+        const {sidebarEl, content, welcomeContent} = els;
+        sidebarEl.classList.add('expanded');
+        content.classList.add('expanded');
+        if (sidebarIsMobileStyle(sidebarEl)) {
+            const windowWidth = window.innerWidth;
+            content.style.minWidth = `${windowWidth}px`;
+            if (welcomeContent) {
+                welcomeContent.style.minWidth = `${windowWidth}px`;
+            }
+        } else {
+            content.style.minWidth = '';
+            if (welcomeContent) {
+                welcomeContent.style.minWidth = '';
+            }
+        }
+    }
+}
+
+function closeSidebar(sidebarType = null) {
+    const els = findSidebarAndContent(sidebarType ?? findActiveSidebarType());
+    if (els) {
+        const {sidebarEl, content} = els;
+        sidebarEl.classList.remove('expanded');
+        content.classList.remove('expanded');
+        content.style.minWidth = '';
+        if (els.welcomeContent) {
+            els.welcomeContent.style.minWidth = '';
+        }
+    }
+}
+
+function onSidebarButtonDown(pageID, switchConversations = false) {
     if (pageID === activeModule) {
-        const sidebarEl = document.getElementById(`${pageID}-sidebar`);
-        if (sidebarEl != null) {
-            // Check if the --sidebar-expanded-by-style css property is set to 1 on the sidebar el
-            let expandedByStyle = false;
-            if (getComputedStyle(sidebarEl).getPropertyValue('--sidebar-expanded-by-style').trim() === '1') {
-                sidebarEl.classList.add('expanded');
-                expandedByStyle = true;
-            } else {
-                sidebarEl.classList.toggle('expanded');
+        const els = findSidebarAndContent(pageID);
+        if (els != null) {
+            let isExpanded = els.sidebarEl.classList.contains('expanded');
+            let shouldBeExpand = !isExpanded;
+
+            if (switchConversations) {
+                shouldBeExpand = !sidebarIsMobileStyle(els.sidebarEl);
             }
 
-            document.querySelector('.dy-main-content').classList.toggle('expanded');
-
-            const sidebar = document.getElementById(`${pageID}-sidebar`);
-            const manualExpanded = sidebar.classList.contains('expanded');
-            sidebar.dataset.manualExpanded = manualExpanded;
-
-            const selectId = pageID === 'groupchat' ? 'chat' : pageID;
-            const content = document.getElementById(selectId);
-            if (content) {
-                if (manualExpanded && !expandedByStyle) {
-                    const windowWidth = window.innerWidth;
-                    content.style.minWidth = `${windowWidth - 100}px`;
-                } else {
-                    content.style.minWidth = '';
-                    content.classList.remove('expanded');
-                }
+            if (shouldBeExpand) {
+                openSidebar(pageID);
+            } else {
+                closeSidebar(pageID);
             }
         }
     } else {
@@ -211,48 +299,6 @@ function reactionMouseUp(button) {
 }
 
 //#endregion
-
-
-function checkWindowSize(thresholdWidth, thresholdHeight) {
-    let debounceTimer;
-
-    // Function to check if window size is smaller than the threshold
-    function onResize() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            const currentWidth = window.innerWidth;
-            const currentHeight = window.innerHeight;
-            const sidebar = document.getElementById(`${activeModule}-sidebar`);
-            if (currentWidth < thresholdWidth || currentHeight < thresholdHeight) {
-                if (sidebar) {
-                    if (!sidebar.dataset.manualExpanded) {
-                        sidebar.classList.remove('expanded');
-                    }
-                    document.querySelector('.dy-main-content').classList.remove('expanded');
-                }
-            } else {
-
-                if (sidebar) {
-                    if (!sidebar.dataset.manualExpanded) {
-                        document.getElementById(`${activeModule}-sidebar`).classList.add('expanded');
-                        document.querySelector('.dy-main-content').classList.add('expanded');
-
-                    }
-                }
-            }
-        }, 100);
-    }
-
-    // Add event listener for the 'resize' event
-    window.addEventListener('resize', onResize);
-
-    onResize();
-    setTimeout(() => {
-        const root = document.querySelector(':root');
-        root.style.setProperty('--transition-medium', '500ms');
-    }, 100);
-
-}
 
 function setSessionCheckerTimer(time) {
     setTimeout(() => {
