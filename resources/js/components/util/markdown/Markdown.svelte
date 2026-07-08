@@ -47,20 +47,30 @@
 />
 
 <style>
-    :global(.darkMode .markstream-svelte) {
-        :global(table) {
-            :global(th) {
+    :global(.markstream-svelte) {
+        :global([data-node-type="table"]) {
+            overflow-x: auto;
+
+            :global(table td) {
+                min-width: 200px;
+            }
+        }
+    }
+
+    :global(.darkMode) {
+        :global(.markstream-svelte) {
+            :global(table th) {
                 background-color: var(--color-surface-light);
             }
 
-            :global(td) {
+            :global(table td) {
                 background-color: var(--color-surface);
                 border-color: var(--color-border);
             }
-        }
 
-        :global(code) {
-            background-color: var(--color-surface-light);
+            :global(code) {
+                background-color: var(--color-surface-light);
+            }
         }
     }
 </style>
