@@ -99,7 +99,6 @@
                 }
             },
             "toolMenu": {
-                "manageTools": "Manage tools",
                 "backButton": "Tools",
                 "deactivateTool": "Deactivate tool",
                 "activateTool": "Activate tool",
@@ -107,11 +106,18 @@
                 "capabilitiesLabel": "Capabilities",
                 "hawkiToolsLabel": "HAWKI Tools",
                 "hawkiToolsDescription": "Tools provided by HAWKI itself",
-                "mcpToolsLabel": "MCP Tools",
                 "infoOffline": "(offline) | Click for more information",
                 "infoUnsupported": "(not supported by current model) | Click for more information",
                 "infoDefault": "Show more information about the tool",
-                "clickForInfo": "Click for more information"
+                "clickForInfo": "Click for more information",
+                "tools": {
+                    "webFetch": "Fetch web content",
+                    "webFetchDescription": "This tool enables the AI to retrieve information from the internet. Unlike web search, the AI can also access external websites to extract and analyse content.",
+                    "webSearch": "Web search",
+                    "webSearchDescription": "This tool enables the AI to search the internet for current information. It can submit search queries and provide relevant results that feed into the AI's responses.",
+                    "knowledgeBase": "HAWKI Knowledge",
+                    "knowledgeBaseDescription": "This tool enables the AI to access an extensive knowledge base developed specifically for HAWKI. The data is provided by your university and contains information about courses, events, policies, and much more."
+                }
             },
             "modelPicker": {
                 "switchModel": "Switch current model",
@@ -143,6 +149,7 @@
                 "nativeInfo": "This tool is provided directly by the model provider."
             },
             "actions": {
+                "noMessageTooltip": "Please enter a message before sending",
                 "invalidModelTooltip": "Please select a different model or remove incompatible tools/files",
                 "emptyMessageTooltip": "Please enter a message",
                 "sendTooltip": "Send message",

@@ -107,7 +107,7 @@
                 "hawkiToolsLabel": "HAWKI Tools",
                 "hawkiToolsDescription": "Tools, die von HAWKI selbst zur Verfügung gestellt werden",
                 "infoOffline": "(offline) | Klick für weitere Informationen",
-                "infoUnsupported": "(nicht von aktuellem Model unterstützt) | Klick für weitere Informationen",
+                "infoUnsupported": "(nicht von aktuellem Modell unterstützt) | Klick für weitere Informationen",
                 "infoDefault": "Weitere Informationen zum Tool anzeigen",
                 "clickForInfo": "Klick für weitere Informationen",
                 "tools": {
@@ -146,7 +146,7 @@
                 "autoLabel": "automatisch",
                 "autoInfo": "Das Modell wählt automatisch die beste Variante für die Aufgabe aus. (Natives Tool bevorzugt, ansonsten die erste verfügbare Alternative)",
                 "nativeLabel": "Natives Tool",
-                "nativeInfo": "Dieses Tool wird vom Modell-Anbieter direkt zur Verfügung gestellt."
+                "nativeInfo": "Dieses Tool wird vom Model-Anbieter direkt zur Verfügung gestellt."
             },
             "actions": {
                 "noMessageTooltip": "Bitte gib eine Nachricht ein, bevor du sie sendest",
@@ -174,14 +174,14 @@
                 "ariaLabel": "Auslastung: :label"
             },
             "regen": {
-                "onlyAssistantMessages": "Only assistant messages can be regenerated",
-                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
-                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
-                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
+                "onlyAssistantMessages": "Nur Nachrichten des Assistenten können regeneriert werden",
+                "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
+                "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
+                "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
             },
             "sending": {
-                "responseError": "An error occurred while processing the response.",
-                "sendError": "An error occurred while sending the message."
+                "responseError": "Fehler beim Verarbeiten der Antwort.",
+                "sendError": "Fehler beim Senden der Nachricht."
             }
         }
     }
