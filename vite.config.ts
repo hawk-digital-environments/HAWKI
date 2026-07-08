@@ -1,10 +1,9 @@
-import {defineConfig, type PluginOption} from 'vite';
+import {defineConfig} from 'vite';
 import {svelte} from '@sveltejs/vite-plugin-svelte';
 import path from 'node:path';
 import {vitePluginBreakpoints} from './.vite/vitePluginBreakpoints.js';
 import laravel from 'laravel-vite-plugin';
 import {vitePluginHugeicons} from './.vite/vitePluginHugeicons.js';
-import monacoEditorPlugin from 'vite-plugin-monaco-editor-esm';
 import {vitePluginCssLayers} from './.vite/vitePluginCssLayers.js';
 
 export default defineConfig({
@@ -37,18 +36,6 @@ export default defineConfig({
         vitePluginHugeicons(
             path.resolve('./resources/js/components/ui/icons/iconset')
         ),
-        monacoEditorPlugin({
-            languageWorkers: [
-                'editorWorkerService',
-                'typescript',
-                'css',
-                'html',
-                'json'
-            ],
-            customDistPath(_root, buildOutDir) {
-                return path.resolve(buildOutDir, 'monacoeditorwork');
-            }
-        }) as unknown as PluginOption,
         vitePluginCssLayers([
             {path: 'node_modules/katex/dist/katex.min.css', layer: 'components'},
             {path: 'node_modules/monaco-editor/min/vs/editor/editor.main.css', layer: 'components'},
