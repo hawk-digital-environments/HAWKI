@@ -6,7 +6,6 @@ namespace App\Services\AI\Providers\Ollama\Request;
 
 
 use App\Services\AI\Providers\AbstractRequest;
-use App\Services\AI\Value\AiModel;
 use App\Services\AI\Value\AiResponse;
 
 class OllamaStreamingRequest extends AbstractRequest

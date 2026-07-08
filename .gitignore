@@ -4,6 +4,8 @@ node_modules
 /public/hot
 /public/storage
 /storage/*.key
+/public/docs
+/storage/app/public/docs
 /vendor
 .env
 !/_docker_production/.env
@@ -28,3 +30,4 @@ _docker_production_test
 .devcontainer
 .agents
 skills-lock.json
+.opencode

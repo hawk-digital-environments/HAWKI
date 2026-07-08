@@ -89,7 +89,7 @@ return [
 
     'locale' => env('APP_LOCALE', 'en_US'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en_US'),
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
@@ -126,6 +126,8 @@ return [
     | Supported drivers: "file", "cache"
     |
     */
+
+    'api_page_size' => (int) env('APP_API_PAGE_SIZE', 15),
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
