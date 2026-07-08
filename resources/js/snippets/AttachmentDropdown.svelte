@@ -1,5 +1,4 @@
 <script lang="ts">
-    import {Download, Ellipsis, Eye} from '@lucide/svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
@@ -8,6 +7,9 @@
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
     import {getAuthenticatedConnection} from '$lib/data/connection/connection.js';
+    import FileViewIcon from '$lib/components/ui/icons/iconset/FileViewIcon.svelte';
+    import Download01Icon from '$lib/components/ui/icons/iconset/Download01Icon.svelte';
+    import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
 
     interface Props {
         fileData: OldUiFileData;
@@ -52,18 +54,18 @@
 <DropdownMenu>
     {#snippet trigger({props})}
         <button class="burger-btn btn-xs" {...props}>
-            <Ellipsis size="12"/>
+            <EllipsisIcon size="12"/>
         </button>
     {/snippet}
     {#if canPreview}
         <DropdownMenuItem
-            icon={Eye}
+            icon={FileViewIcon}
             onclick={() => oldUiBridge.triggerPreviewAttachment(fileData)}>
             {__('chat.attachmentDropdown.preview')}
         </DropdownMenuItem>
     {/if}
     <DropdownMenuItem
-        icon={Download}
+        icon={Download01Icon}
         onclick={() => oldUiBridge.triggerDownloadAttachment(fileData)}>
         {__('chat.attachmentDropdown.download')}
     </DropdownMenuItem>

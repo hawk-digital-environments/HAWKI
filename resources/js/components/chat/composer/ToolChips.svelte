@@ -5,11 +5,11 @@
   Renders nothing when no tools are active.
 -->
 <script lang="ts">
-    import {X} from '@lucide/svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
     import {__} from '$lib/utils/translator.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
+    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
 
     interface Props {
         /** Called when the overflow "+N" badge is clicked. */
@@ -102,7 +102,7 @@
     >
         <ToolIcon tool={tool} size={12}/>
         <span class="tool-chip-label">{tool.displayName}</span>
-        <X size={12}/>
+        <Cancel01Icon size={12}/>
     </button>
 {/snippet}
 

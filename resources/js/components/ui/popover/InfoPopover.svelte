@@ -5,10 +5,11 @@
 -->
 <script lang="ts">
 
-    import type {Component, ComponentProps} from 'svelte';
+    import type {ComponentProps} from 'svelte';
     import Popover from '$lib/components/ui/popover/Popover.svelte';
     import {mergeProps} from 'bits-ui';
-    import {Info, type LucideProps} from '@lucide/svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
 
     type PopoverProps = ComponentProps<typeof Popover>;
 
@@ -16,7 +17,7 @@
         /** The content to display inside the popover. Can be a string or a Svelte snippet. */
         info: PopoverProps['popover'];
         /** Icon component to render on the trigger button. Defaults to the Lucide `Info` icon. */
-        icon?: Component<LucideProps>;
+        icon?: IconComponent;
         /** Preferred side for the popover relative to the trigger. Defaults to `'top'`. */
         popoverSide?: PopoverProps['side'];
         /** Alignment of the popover relative to the trigger. Defaults to `'center'`. */
@@ -33,7 +34,7 @@
 
     let {
         info,
-        icon: Icon = Info,
+        icon: Icon = InformationCircleIcon,
         popoverSide = 'top',
         popoverAlign = 'center',
         popoverContentProps,

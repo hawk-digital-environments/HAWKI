@@ -8,7 +8,7 @@ However, as we want to merge them both anyway, it's not worth the effort to spli
     import RoomNameMenu from '$lib/components/chat/nameMenu/RoomNameMenu.svelte';
     import AiConvNameMenu from '$lib/components/chat/nameMenu/AiConvNameMenu.svelte';
     import type {ComponentProps} from 'svelte';
-    import {Ellipsis} from '@lucide/svelte';
+    import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
 
     interface Props {
         /** The slug of the conversation this button represents. Clicking the button will open the conversation with this slug. */
@@ -49,7 +49,7 @@ However, as we want to merge them both anyway, it's not worth the effort to spli
         context,
         hasUnreadMessages,
         block: true,
-        triggerIcon: Ellipsis,
+        triggerIcon: EllipsisIcon,
         buttonProps: {class: 'chat-name-menu-button'}
     }));
 </script>

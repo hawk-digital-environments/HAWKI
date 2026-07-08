@@ -1,12 +1,12 @@
 <script lang="ts">
 
-    import {Bot} from '@lucide/svelte';
     import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {aiHandleStore} from '$lib/stores/AiHandleStore.svelte.js';
     import {__} from '$lib/utils/translator.js';
     import type {ComponentProps} from 'svelte';
+    import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
 
     const composerContext = useComposerContext();
 
@@ -64,7 +64,7 @@
 {#if composerContext.type === 'room'}
     <BorderBeam {...beamProps}>
         <ButtonWithTooltip
-            iconLeft={Bot}
+            iconLeft={BotIcon}
             variant="ghost"
             tooltip={assistantButtonTooltip}
             highlight={isActive}

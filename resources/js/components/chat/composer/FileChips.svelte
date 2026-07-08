@@ -4,7 +4,6 @@
   Renders nothing when the files array is empty.
 -->
 <script lang="ts">
-    import {TriangleAlert, X} from '@lucide/svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import FilePreview from '$lib/components/chat/composer/utils/FilePreview.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
@@ -12,6 +11,8 @@
     import {cubicIn} from 'svelte/easing';
     import RadialProgress from '$lib/components/ui/radial-progress/RadialProgress.svelte';
     import {__} from '$lib/utils/translator.js';
+    import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
+    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
 
     const composerContext = useComposerContext();
 
@@ -62,13 +63,13 @@
                         >
                             <FilePreview file={file}/>
                             {#if conflict}
-                                <TriangleAlert size={12} class="file-chip-warning"/>
+                                <Alert02Icon size={12} class="file-chip-warning"/>
                             {/if}
                             {#if progress !== null}
                                 <RadialProgress value={progress}/>
                             {/if}
                             <span class="file-chip-name">{file.name}</span>
-                            <X size={12} class="file-chip-remove"/>
+                            <Cancel01Icon size={12} class="file-chip-remove"/>
                         </button>
                     {/snippet}
                 </Tooltip>

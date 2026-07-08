@@ -3,9 +3,10 @@
     import type {ToolMenuEntry} from '$lib/components/chat/composer/ToolMenu.svelte';
     import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
     import {useToolMenuFocusContext} from '$lib/components/chat/composer/contexts/ToolMenuFocusContext.svelte.js';
-    import {Check, ChevronRight} from '@lucide/svelte';
     import StatusDotForTool from '$lib/components/chat/composer/StatusDotForTool.svelte';
     import {__} from '$lib/utils/translator.js';
+    import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
+    import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
 
     interface Props {
         entry: ToolMenuEntry;
@@ -87,7 +88,7 @@
             <span class="tool-item-label">{entry.tool.displayName}</span>
             <span class="tool-item-check">
                 {#if checked}
-                    <Check size={12}/>
+                    <Tick02Icon size={12}/>
                 {/if}
             </span>
 
@@ -109,7 +110,7 @@
                     supported={entry.available}
                     tooltipSuffix={__('chat.composer.toolMenu.clickForInfo')}
                 />
-                <ChevronRight size={10}/>
+                <ArrowRight01Icon size={10}/>
             </button>
 
         </span>

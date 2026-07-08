@@ -32,7 +32,6 @@
     }
 </script>
 <script lang="ts">
-    import {Plus} from '@lucide/svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
@@ -44,6 +43,7 @@
     import {__} from '$lib/utils/translator.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
+    import PlusSignIcon from '$lib/components/ui/icons/iconset/PlusSignIcon.svelte';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
@@ -226,7 +226,7 @@
             {#snippet trigger({props})}
                 <ButtonWithTooltip
                     variant="ghost"
-                    iconLeft={Plus}
+                    iconLeft={PlusSignIcon}
                     tooltip={__('chat.composer.toolMenu.manageTools')}
                     highlight={props['data-state']}
                     {...props}/>

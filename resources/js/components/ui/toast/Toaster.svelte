@@ -5,16 +5,18 @@
   peeking behind with a slight scale/offset — and auto-dismiss.
 -->
 <script lang="ts">
-    import {CircleAlert, CircleCheck, Info} from '@lucide/svelte';
     import {backOut, cubicIn} from 'svelte/easing';
     import {type ToastVariant, useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import AlertCircleIcon from '$lib/components/ui/icons/iconset/AlertCircleIcon.svelte';
+    import CheckmarkCircle01Icon from '$lib/components/ui/icons/iconset/CheckmarkCircle01Icon.svelte';
+    import InformationCircleIcon from '$lib/components/ui/icons/iconset/InformationCircleIcon.svelte';
 
     const toastContext = useToastContext();
 
     const icons = {
-        error: CircleAlert,
-        success: CircleCheck,
-        info: Info
+        error: AlertCircleIcon,
+        success: CheckmarkCircle01Icon,
+        info: InformationCircleIcon
     } satisfies Record<ToastVariant, unknown>;
 
     /** How many toasts are visible in the collapsed pile before older ones fade out. */

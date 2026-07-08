@@ -40,7 +40,7 @@
     import type {HTMLButtonAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import type {Component} from 'svelte';
-    import type {LucideProps} from '@lucide/svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     interface Props extends HTMLButtonAttributes {
         /** The reference to the underlying button element. Can be used for imperative actions like focusing the button. */
@@ -49,10 +49,10 @@
         variant?: ButtonVariant;
         /** Size variant of the button. */
         size?: ButtonSize;
-        /** The icon to display on the left side of the button. Should be a Svelte component from @lucide/svelte. */
-        iconLeft?: Component<LucideProps>;
-        /** The icon to display on the right side of the button. Should be a Svelte component from @lucide/svelte. */
-        iconRight?: Component<LucideProps>;
+        /** The icon to display on the left side of the button. */
+        iconLeft?: IconComponent;
+        /** The icon to display on the right side of the button. */
+        iconRight?: IconComponent;
         /** If true, the button will take the full width of its container. */
         block?: boolean;
         /** If true or a string value of "active", "true", "1", or "open", the button will be styled as active. */

@@ -4,8 +4,9 @@
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
     import type {HTMLAttributes} from 'svelte/elements';
-    import type {Component, Snippet} from 'svelte';
-    import {type LucideProps, Trash2} from '@lucide/svelte';
+    import type {Snippet} from 'svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import Delete02Icon from '$lib/components/ui/icons/iconset/Delete02Icon.svelte';
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** When true, the item cannot be interacted with. */
@@ -17,7 +18,7 @@
         /** Item content. */
         children?: Snippet;
         /** An optional icon to display alongside the item. */
-        icon?: Component<LucideProps>;
+        icon?: IconComponent;
         /** Visual style variant. If set to "destructive" without providing an icon, the icon is automatically set to a trash can. */
         variant?: 'default' | 'destructive';
     }
@@ -32,9 +33,9 @@
         ...restProps
     }: Props = $props();
 
-    const IconComponent = $derived.by(() => {
+    const Icon = $derived.by(() => {
         if (variant === 'destructive' && !icon) {
-            return Trash2;
+            return Delete02Icon;
         }
         if (!icon) return null;
         return icon;
@@ -50,8 +51,8 @@
                 variant === 'destructive' && 'variant--destructive'
             ]
         }, restProps, props)}>
-            {#if IconComponent}
-                <IconComponent size="14"/>
+            {#if Icon}
+                <Icon size="14"/>
             {/if}
             {@render children?.()}
         </div>

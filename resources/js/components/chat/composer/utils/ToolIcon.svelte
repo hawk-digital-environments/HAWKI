@@ -1,7 +1,7 @@
 <script lang="ts">
 
-    import {Wrench} from '@lucide/svelte';
     import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
+    import ToolboxIcon from '$lib/components/ui/icons/iconset/ToolboxIcon.svelte';
 
     interface Props {
         tool: AiToolOrCapability;
@@ -21,7 +21,7 @@
             <img src={tool?.icon_path} alt="" width={size} height={size}/>
         {/if}
     {:else}
-        <Wrench size={size}/>
+        <ToolboxIcon size={size}/>
     {/if}
 </span>
 

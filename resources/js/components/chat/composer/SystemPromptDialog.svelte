@@ -4,11 +4,11 @@
   the save button; closing or cancelling discards any unsaved edits.
 -->
 <script lang="ts">
-    import {FileText} from '@lucide/svelte';
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
     import {__} from '$lib/utils/translator.js';
+    import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open for two-way binding. */
@@ -47,7 +47,7 @@
     contentProps={{class: 'system-prompt-dialog-content'}}
 >
     {#snippet title()}
-        <FileText size={16} class="system-prompt-icon"/>
+        <FileEditIcon size={16} class="system-prompt-icon"/>
         {__('chat.composer.systemPromptDialog.title')}
     {/snippet}
     {#snippet description()}

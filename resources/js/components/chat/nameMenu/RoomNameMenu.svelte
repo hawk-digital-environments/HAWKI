@@ -6,8 +6,10 @@
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import {__} from '$lib/utils/translator.js';
     import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-    import {Eye, LogOut, SlidersHorizontal} from '@lucide/svelte';
     import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
+    import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
+    import ViewIcon from '$lib/components/ui/icons/iconset/ViewIcon.svelte';
+    import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
 
     type Props = {
         /** Whether the conversation has unread messages. Shows a visual indicator if true. */
@@ -49,13 +51,13 @@
     {#if !!slug}
         {#if oldUiMessageHistory.canAdministrate}
             <DropdownMenuItem
-                icon={SlidersHorizontal}
+                icon={Settings05Icon}
                 onclick={() => oldUiBridge.triggerOpenRoomControlPanel(slug ?? '')}>
                 {__('chat.nameMenu.manageRoom')}
             </DropdownMenuItem>
         {/if}
         <DropdownMenuItem
-            icon={Eye}
+            icon={ViewIcon}
             onclick={() => oldUiBridge.triggerMarkRoomMessagesAsRead(slug ?? '')}
             disabled={!hasUnreadMessages}>
             {__('chat.nameMenu.markAsRead')}
@@ -64,7 +66,7 @@
 
         <DropdownMenuItem
             variant="destructive"
-            icon={LogOut}
+            icon={Logout02Icon}
             onclick={() => leaveConfirmOpen = true}>
             {__('chat.nameMenu.leaveAction')}
         </DropdownMenuItem>
