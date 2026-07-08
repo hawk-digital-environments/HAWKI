@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai\Agents\Implementations\Chat;
 
 
+use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
 use App\Services\Ai\Agents\Implementations\Chat\Values\ToolTransferData;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
 use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
@@ -28,8 +29,7 @@ readonly class ChatToolResolver
     {
         foreach ($toolTransferStrings as $toolTransferString) {
             if (!is_string($toolTransferString)) {
-                // @todo exception
-                throw new \InvalidArgumentException('Tool transfer strings must be an array of strings.');
+                throw InvalidToolTransferStringException::forNotAString();
             }
 
             $toolData = ToolTransferData::fromString($toolTransferString);
@@ -44,8 +44,7 @@ readonly class ChatToolResolver
                 continue;
             }
 
-            // @todo exception
-            throw new \InvalidArgumentException('Tool transfer data must be either a capability or a tool name.');
+            throw InvalidToolTransferStringException::forInvalidType($toolTransferString);
         }
     }
 
@@ -56,13 +55,11 @@ readonly class ChatToolResolver
     {
         $capability = $this->capabilityRegistry->getDefinition($toolData->toolOrCapability);
         if (!$capability) {
-            // @todo exception
-            throw new \InvalidArgumentException('Capability not found: ' . $toolData->toolOrCapability);
+            throw InvalidToolTransferStringException::forCapabilityNotFound($toolData->toolOrCapability);
         }
 
         if (!$toolData->innerTool) {
-            // @todo exception
-            throw new \InvalidArgumentException('Capability must have an inner tool specified: ' . $toolData->toolOrCapability);
+            throw InvalidToolTransferStringException::forCapabilityMissingInnerTool($toolData->toolOrCapability);
         }
 
         $innerTool = $toolData->innerTool;

@@ -6,6 +6,7 @@ namespace App\Services\Ai\Providers\Adapters;
 
 
 use App\Models\Ai\AiProvider;
+use App\Services\Ai\Exceptions\InvalidAiManagerException;
 use App\Services\Ai\LaravelAi\ExtendedAiManager;
 use App\Services\System\Container\ServiceLocator;
 use Laravel\Ai\AiManager;
@@ -32,8 +33,7 @@ readonly class DriverFactory
 
         $manager = $this->manager;
         if (!$manager instanceof ExtendedAiManager) {
-            // @todo exception
-            throw new \RuntimeException('AiManager is not an instance of ExtendedAiManager');
+            throw InvalidAiManagerException::forNotExtendedManager();
         }
 
         $fullConfig = array_merge(

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai\Agents\Adapters;
 
 
+use App\Services\Ai\Agents\Exceptions\InvalidAgentConfigurationException;
 use App\Services\Ai\Agents\Middleware\LoggingMiddleware;
 use App\Services\Ai\Agents\Utils\MessageMetaBlocks;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
@@ -31,22 +32,18 @@ abstract class AbstractTextGeneratingAgent extends AbstractLaravelAgent implemen
     {
         if (empty($this->promptString)) {
             if (empty($this->messages)) {
-                // @todo exception
-                throw new \InvalidArgumentException('Either promptString or messages must be provided.');
+                throw InvalidAgentConfigurationException::forMissingPromptOrMessages();
             }
 
             $lastMessage = array_pop($this->messages);
             if (!$lastMessage instanceof Message) {
-                // @todo exception
-                throw new \InvalidArgumentException('The last message must be an instance of Laravel\Ai\Messages\Message.');
+                throw InvalidAgentConfigurationException::forLastMessageNotAMessageInstance();
             }
             if ($lastMessage->role !== MessageRole::User) {
-                // @todo exception
-                throw new \InvalidArgumentException('The last message must have the role of user if the promptString is not provided.');
+                throw InvalidAgentConfigurationException::forLastMessageNotUserRole();
             }
             if (empty($lastMessage->content)) {
-                // @todo exception
-                throw new \InvalidArgumentException('The last message must have content if the promptString is not provided.');
+                throw InvalidAgentConfigurationException::forLastMessageEmptyContent();
             }
             $this->promptString = $lastMessage->content;
             if (empty($this->attachments) && $lastMessage instanceof UserMessage) {

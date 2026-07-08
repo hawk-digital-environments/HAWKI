@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Frontend\Migrations;
 
+use App\Services\Frontend\Migrations\Exceptions\InvalidUserDataFinderResultException;
 use App\Services\Frontend\Migrations\Repositories\FrontendMigrationRepository;
 use App\Services\Frontend\Migrations\Repositories\FrontendMigrationUserdataRepository;
 use App\Services\Users\Repositories\UserRepository;
@@ -44,11 +45,7 @@ readonly class FrontendMigrationBuilder
                     }
 
                     if (!is_array($data)) {
-                        // @todo exception
-                        throw new \RuntimeException(sprintf(
-                            'User data finder closure for migration "%s" must return an array or null/false.',
-                            $migrationName
-                        ));
+                        throw InvalidUserDataFinderResultException::forNonArrayReturnType($migrationName);
                     }
 
                     $this->userdataRepository->insert($user, $migration, $data);

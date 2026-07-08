@@ -10,6 +10,7 @@ use App\Models\Ai\McpServer;
 use App\Providers\AiServiceProvider;
 use App\Services\Ai\Tools\Contracts\SettingsAwareToolInterface;
 use App\Services\Ai\Tools\Contracts\ToolInterface;
+use App\Services\Ai\Tools\Exceptions\InvalidToolConfigurationException;
 use App\Services\Ai\Tools\LaravelAi\Events\BeforeCallingMcpToolFilterEvent;
 use App\Services\Ai\Tools\LaravelAi\Events\McpToolCalledFilterEvent;
 use App\Services\Ai\Tools\Mcp\HawkiMcpClient;
@@ -62,8 +63,7 @@ readonly class LaravelToolConverter
         }
 
         // @phpstan-ignore deadCode.unreachable
-        // @todo exception
-        throw new \InvalidArgumentException(sprintf('Unsupported tool type %s for tool %s', $tool->type->value, $tool->name));
+        throw InvalidToolConfigurationException::forUnsupportedToolType($tool->type->value, $tool->name);
     }
 
     /**
@@ -74,20 +74,11 @@ readonly class LaravelToolConverter
     {
         $toolClass = $tool->class_name;
         if (!class_exists($toolClass)) {
-            // @todo exception
-            throw new \RuntimeException(sprintf(
-                'Tool class %s does not exist for tool %s',
-                $toolClass,
-                $tool->name));
+            throw InvalidToolConfigurationException::forClassNotFound($toolClass, $tool->name);
         }
 
         if (!is_subclass_of($toolClass, ToolInterface::class)) {
-            // @todo exception
-            throw new \RuntimeException(sprintf(
-                'Tool class %s must implement %s for tool %s',
-                $toolClass,
-                ToolInterface::class,
-                $tool->name));
+            throw InvalidToolConfigurationException::forClassNotImplementingInterface($toolClass, $tool->name);
         }
 
         return $this->serviceLocator->get($toolClass);
@@ -107,13 +98,11 @@ readonly class LaravelToolConverter
     {
         $mcpServer = $tool->server;
         if (!$mcpServer) {
-            // @todo exception
-            throw new \RuntimeException('MCP tool is not linked to an MCP server');
+            throw InvalidToolConfigurationException::forMcpToolNotLinkedToServer($tool->name);
         }
 
         if (empty($tool->mcp_config)) {
-            // @todo exception
-            throw new \RuntimeException('MCP tool does not have a config! Did you execute the tool sync?');
+            throw InvalidToolConfigurationException::forMcpToolMissingConfig($tool->name);
         }
 
         $mcpClient = $this->mcpClientList->get($mcpServer);

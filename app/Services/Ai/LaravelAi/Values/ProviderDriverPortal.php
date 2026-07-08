@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Ai\LaravelAi\Values;
 
 
+use App\Services\Ai\Exceptions\InvalidTransferIdException;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
 use Laravel\Ai\Providers\Provider as Driver;
 
@@ -45,8 +46,7 @@ class ProviderDriverPortal implements \Stringable
     public static function fromTransferId(string $transferId): self
     {
         if (!array_key_exists($transferId, self::$transferList)) {
-            // @todo exception
-            throw new \InvalidArgumentException('Invalid transfer ID: ' . $transferId);
+            throw InvalidTransferIdException::forUnknownTransferId($transferId);
         }
         $self = self::$transferList[$transferId];
         // This is a one-time transfer, so we remove it from the list after it's been used.

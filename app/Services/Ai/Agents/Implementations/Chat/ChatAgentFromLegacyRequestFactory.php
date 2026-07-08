@@ -7,6 +7,7 @@ namespace App\Services\Ai\Agents\Implementations\Chat;
 
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Agents\Contracts\AgentInterface;
+use App\Services\Ai\Agents\Exceptions\InvalidLegacyRequestPayloadException;
 use App\Services\Ai\Agents\Implementations\AbstractAgentFactory;
 use App\Services\Ai\Agents\Utils\AlternatingMessageHistory;
 use App\Services\Ai\Agents\Utils\UserMessageAttachments;
@@ -104,8 +105,7 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
             }
         }
 
-        // @todo exception
-        throw new \RuntimeException('No system instructions found in messages payload.');
+        throw InvalidLegacyRequestPayloadException::forMissingSystemInstructions();
     }
 
     private function getMessagesFromPayload(array $payload, AgentRequestContext $context): array
@@ -119,19 +119,12 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
             }
 
             if (!isset($payloadMessage['role'], $payloadMessage['content']['text'])) {
-                // @todo exception
-                throw new \InvalidArgumentException('Each message must have a "role" and "content.text" field.');
+                throw InvalidLegacyRequestPayloadException::forMessageMissingFields();
             }
 
             $payloadRole = MessageRole::tryFrom($payloadMessage['role']);
             if (!in_array($payloadRole, [MessageRole::User, MessageRole::Assistant], true)) {
-                // @todo exception
-                throw new \InvalidArgumentException(sprintf(
-                    'Invalid message role "%s". Allowed roles are "%s" and "%s".',
-                    $payloadRole->value ?? $payloadMessage['role'],
-                    MessageRole::User->value,
-                    MessageRole::Assistant->value
-                ));
+                throw InvalidLegacyRequestPayloadException::forInvalidMessageRole($payloadRole->value ?? $payloadMessage['role']);
             }
 
             if ($payloadRole === MessageRole::User) {

@@ -6,6 +6,7 @@ namespace App\Services\Ai\Tools;
 use App\Models\Ai\AiModel;
 use App\Services\Ai\Tools\Contracts\SettingsAwareToolInterface;
 use App\Services\Ai\Tools\Contracts\ToolInterface;
+use App\Services\Ai\Tools\Exceptions\ToolCallStateException;
 use App\Services\System\Container\ServiceLocator;
 use App\Utils\JsonSchema\JsonSchemaValidator;
 use Illuminate\JsonSchema\JsonSchemaTypeFactory;
@@ -56,8 +57,7 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
     protected function getRequest(): Request
     {
         if ($this->request === null) {
-            // @todo exception
-            throw new \RuntimeException('Request is not set. This method can only be called during the execution of the tool.');
+            throw ToolCallStateException::forRequestNotSet();
         }
         return $this->request;
     }
@@ -65,8 +65,7 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
     protected function getArguments(): array
     {
         if ($this->arguments === null) {
-            // @todo exception
-            throw new \RuntimeException('Arguments are not set. This method can only be called during the execution of the tool.');
+            throw ToolCallStateException::forArgumentsNotSet();
         }
         return $this->arguments;
     }

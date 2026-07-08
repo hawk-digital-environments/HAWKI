@@ -6,6 +6,7 @@ namespace App\Services\Ai\Agents\Adapters;
 
 
 use App\Services\Ai\Agents\Contracts\AgentInterface as HawkiAgentInterface;
+use App\Services\Ai\Agents\Exceptions\AgentStateException;
 use App\Services\Ai\LaravelAi\Values\ProviderDriverPortal;
 use App\Services\Ai\Values\TokenUsage;
 use Laravel\Ai\Contracts\Agent as LaravelAgentInterface;
@@ -30,8 +31,7 @@ abstract class AbstractLaravelAgent implements LaravelAgentInterface, HawkiAgent
     public function getUsage(): TokenUsage
     {
         if (!$this->usage) {
-            // @todo exception
-            throw new \RuntimeException('Usage is not available. Please call send() or sendStreaming() first.');
+            throw AgentStateException::forUsageNotAvailable();
         }
 
         return TokenUsage::fromLaravelUsage($this->usage, $this->getContext()->model);

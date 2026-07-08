@@ -7,6 +7,7 @@ namespace App\Services\Ai\Tools\LaravelAi;
 
 use App\Models\Ai\AiTool;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
+use App\Services\Ai\Tools\Exceptions\ToolNotFoundException;
 use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Container\Attributes\Singleton;
 use Laravel\Ai\Contracts\Tool;
@@ -29,8 +30,7 @@ readonly class LaravelToolResolver
     {
         $providerToolFactory = $context->provider->adapter->getNativeToolFactoryForCapability($capabilityKey);
         if (!$providerToolFactory) {
-            // @todo exception
-            throw new \InvalidArgumentException('Provider does not support native tool for capability: ' . $capabilityKey);
+            throw ToolNotFoundException::forProviderNotSupportingCapability($capabilityKey);
         }
 
         $tool = $providerToolFactory($context, $toolSettings);
@@ -53,8 +53,7 @@ readonly class LaravelToolResolver
         });
 
         if (!$hawkiTool) {
-            // @todo exception
-            throw new \InvalidArgumentException('No tool found for capability: ' . $capabilityKey);
+            throw ToolNotFoundException::forCapability($capabilityKey);
         }
 
         $tool = $this->toolConverter->convert($hawkiTool, $toolSettings);
@@ -75,8 +74,7 @@ readonly class LaravelToolResolver
         });
 
         if (!$hawkiTool) {
-            // @todo exception
-            throw new \InvalidArgumentException('No tool found for name: ' . $toolName);
+            throw ToolNotFoundException::forName($toolName);
         }
 
         $tool = $this->toolConverter->convert($hawkiTool, $toolSettings);

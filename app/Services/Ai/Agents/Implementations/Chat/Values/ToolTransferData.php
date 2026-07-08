@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\Agents\Implementations\Chat\Values;
 
+use App\Services\Ai\Agents\Exceptions\InvalidToolTransferStringException;
+
 readonly class ToolTransferData
 {
     private const string TYPE_CAPABILITY = 'capability';
@@ -42,13 +44,11 @@ readonly class ToolTransferData
             try {
                 $settings = json_decode($settingsString, true, 512, JSON_THROW_ON_ERROR);
                 if (!is_array($settings)) {
-                    // @todo exception
-                    throw new \InvalidArgumentException("Settings string is not a valid JSON object: {$settingsString}");
+                    throw InvalidToolTransferStringException::forSettingsNotJsonObject($settingsString);
                 }
                 return $settings;
             } catch (\JsonException $e) {
-                // @todo exception
-                throw new \InvalidArgumentException("Invalid JSON settings in tool transfer string: {$settingsString}", 0, $e);
+                throw InvalidToolTransferStringException::forInvalidJsonSettings($settingsString, $e);
             }
         };
 
@@ -58,8 +58,7 @@ readonly class ToolTransferData
             $settingsString = implode(':', array_slice($parts, 3));
 
             if (empty($capabilityName) || empty($toolName)) {
-                // @todo exception
-                throw new \InvalidArgumentException("Invalid tool transfer string: {$toolTransferString}");
+                throw InvalidToolTransferStringException::forMissingCapabilityOrToolName($toolTransferString);
             }
 
             return new self(
@@ -75,8 +74,7 @@ readonly class ToolTransferData
         $settingsString = implode(':', array_slice($parts, 1));
 
         if (empty($toolName)) {
-            // @todo exception
-            throw new \InvalidArgumentException("Invalid tool transfer string: {$toolTransferString}");
+            throw InvalidToolTransferStringException::forEmptyToolName($toolTransferString);
         }
 
         return new self(
