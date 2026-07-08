@@ -99,7 +99,6 @@
                 }
             },
             "toolMenu": {
-                "manageTools": "Tools verwalten",
                 "backButton": "Tools",
                 "deactivateTool": "Tool deaktivieren",
                 "activateTool": "Tool aktivieren",

@@ -220,7 +220,6 @@
 {#if composerContext.guard.showsAiUiElements && filteredEntries.length > 0}
     <div transition:growTransition={{mode: 'horizontal'}}>
         <DropdownMenu
-            title={detailEntry ? undefined : __('chat.composer.toolMenu.manageTools')}
             disabled={composerContext.guard.disablesFeature('tools')}
             bind:open
             contentProps={{class: 'tool-menu-content'}}>
