@@ -49,6 +49,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelParams::TOP_P => 0.9,
             ],
         ],
+        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
         'deepseek-r1-distill-llama-70b' => [
             'max_tokens' => 32000,
             'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
@@ -87,6 +88,9 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelFlags::FEATURE_REASONING,
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
         ],
         'glm-4.7' => [
             'max_tokens' => 200000,
@@ -106,6 +110,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING
             ],
         ],
+        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
         'internvl3.5-30b-a3b' => [
             'max_tokens' => 40000,
             'documentation_url' => 'https://huggingface.co/OpenGVLab/InternVL3_5-30B-A3B-HF',
@@ -182,6 +187,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
+        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
         'qwen3-coder-30b-a3b-instruct' => [
             'max_tokens' => 256000,
             'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8',
@@ -202,8 +208,8 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
         ],
         'qwen3-coder-next' => [
             'max_tokens' => 256000,
-            // TODO(reference missing): no verified Hugging Face/GWDG model card found (released Feb 2026). Fill documentation_url once published.
-            // TODO(reference missing): description unavailable pending the official model card.
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Coder-Next-FP8',
+            'description' => 'Qwen3-Coder-Next-FP8 is an open-weight coding foundation model optimized for software engineering, code generation, and autonomous coding agents. It uses a Mixture-of-Experts (MoE) architecture with 80B total parameters and 3B active parameters, supports a native 256K-token context window, advanced tool use, and long-context reasoning over large codebases. The FP8 quantized version reduces memory usage and improves inference efficiency while maintaining strong coding performance.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::STRENGTH_CODE_GENERATION,
@@ -241,6 +247,9 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelParams::TEMPERATURE => 0.6,
                 WellKnownModelParams::TOP_P => 0.95,
             ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
         ],
         'qwen3.5-397b-a17b' => [
             'max_tokens' => 256000,
@@ -256,12 +265,14 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelParams::TEMPERATURE => 0.6,
                 WellKnownModelParams::TOP_P => 0.95,
             ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
         ],
         'qwen3.6-27b' => [
             'max_tokens' => 262000,
-            // TODO(reference missing): no verified Hugging Face/GWDG model card found (released Apr 2026; likely https://huggingface.co/Qwen/Qwen3.6-27B-FP8, unverified). Fill documentation_url once confirmed.
-            // TODO(reference missing): description unavailable pending the official model card.
-            // NOTE: GWDG's model table lists this model as "Vision". If confirmed multi-modal, add WellKnownModelFlags::MULTI_MODAL here and 'image' to its input in config/model_lists/gwdg_models.php (currently 'text' only, though the config still carries a 'vision' tool flag).
+            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3.6-27B-FP8',
+            'description' => 'Qwen3.6-27B-FP8 is an open-weight text foundation model with strong performance in coding, reasoning, and agentic workflows. It features a 27B-parameter dense architecture, a native 262K-token context window (extendable beyond 1M tokens), and advanced tool calling. The FP8 quantized version reduces memory usage and improves inference efficiency while maintaining performance close to the original model.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
@@ -290,7 +301,11 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelParams::TEMPERATURE => 1.0,
                 WellKnownModelParams::TOP_P => 0.95,
             ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
+            ],
         ],
+        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
         'teuken-7b-instruct-research' => [
             'max_tokens' => 128000,
             'documentation_url' => 'https://huggingface.co/openGPT-X/Teuken-7B-instruct-research-v0.4',
@@ -298,15 +313,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-        ],
-        'e5-mistral-7b-instruct' => [
-            'max_tokens' => 4096,
-            'documentation_url' => 'https://huggingface.co/intfloat/e5-mistral-7b-instruct',
-            'description' => 'E5 Mistral 7B Instruct is a text-embedding model developed by intfloat, initialized from Mistral 7B and fine-tuned to produce high-quality embeddings for retrieval, semantic similarity, and clustering across roughly 100 languages. It is an embedding model exposed via API only, not a conversational chat model.',
-            // NOTE: This is an embedding ("API Only") model. WellKnownModelFlags has no embeddings-specific flag, so only OPEN_WEIGHTS is applied. Confirm whether an embedding model belongs in the chat-model enricher at all.
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
             ],
         ],
     ];
