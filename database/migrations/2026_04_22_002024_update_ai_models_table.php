@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Ai\Values\ModelDemand;
+use App\Services\Ai\StatusCheck\Values\ModelDemand;
 use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

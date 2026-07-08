@@ -6,8 +6,8 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
-use App\Services\Ai\Repositories\SystemPromptRepository;
-use App\Services\Ai\Values\SystemPromptType;
+use App\Services\Ai\SystemPrompts\SystemPromptRepository;
+use App\Services\Ai\SystemPrompts\Values\WellKnownSystemPromptTypes;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use App\Services\Translation\LocaleService;
 use App\Utils\JobMetrics;
@@ -19,10 +19,10 @@ use Illuminate\Contracts\Translation\Translator;
 readonly class SystemPromptSyncer implements ConfigSyncerInterface
 {
     private const array TYPE_TO_TRANSLATION_LABEL_MAP = [
-        SystemPromptType::DEFAULT->value => 'Default_Prompt',
-        SystemPromptType::SUMMARY->value => 'Summary_Prompt',
-        SystemPromptType::PROMPT_IMPROVEMENT->value => 'Improvement_Prompt',
-        SystemPromptType::TITLE_GENERATION->value => 'Name_Prompt',
+        WellKnownSystemPromptTypes::DEFAULT => 'Default_Prompt',
+        WellKnownSystemPromptTypes::SUMMARY => 'Summary_Prompt',
+        WellKnownSystemPromptTypes::PROMPT_IMPROVEMENT => 'Improvement_Prompt',
+        WellKnownSystemPromptTypes::TITLE_GENERATION => 'Name_Prompt',
     ];
 
     public function __construct(
@@ -57,8 +57,7 @@ readonly class SystemPromptSyncer implements ConfigSyncerInterface
     private function getAvailablePrompts(): iterable
     {
         foreach ($this->localeService->getAvailableLocales() as $locale) {
-            foreach (SystemPromptType::cases() as $type) {
-                $translationKey = self::TYPE_TO_TRANSLATION_LABEL_MAP[$type->value];
+            foreach (self::TYPE_TO_TRANSLATION_LABEL_MAP as $type => $translationKey) {
                 yield [$type, $locale] => $this->translator->get(
                     $translationKey,
                     locale: (string)$locale

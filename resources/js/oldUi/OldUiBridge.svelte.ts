@@ -1,12 +1,12 @@
 import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
 import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
-import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
 import type {ComposerMode, ComposerModeRegistry, ComposerModeWithIs} from '$lib/components/chat/composer/contexts/aspects/ModeAspect.svelte.js';
 import type {ChatModeInterface} from '$lib/components/chat/composer/contexts/modes/contracts/ChatModeInterface.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import type {ResponseBody, SendMessageResponse} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
 import {AsyncPipeline} from '$lib/utils/flows/AsyncPipeline.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
+import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
 
 export interface OldUiConversationMessage {
     author: {
@@ -79,7 +79,7 @@ export interface OldUiSendMessagePayload {
     contextType: ComposerContextType;
     message: string;
     containsAiHandle: boolean;
-    tools: AiTool[];
+    tools: AiToolOrCapabilityWithState[];
     attachments: File[];
     parameters: OldUiModelParams | null;
 }
@@ -147,6 +147,7 @@ export class OldUiBridge {
     private sync = new SyncPipeline<SyncFlowList>();
     private async = new AsyncPipeline<ASYNC_PIPELINE_LIST>();
     private isSendingMessage = false;
+    private isContextReady = false;
 
     /** The user's decrypted passkey for the current session. `null` until the user unlocks. */
     public passkey = $state<string | null>(null);
@@ -222,6 +223,7 @@ export class OldUiBridge {
                     const clean = this.sync.on(SET_ABORT_CONTROLLER_PIPELINE, (ctrl) => {
                         response.setAbortController(ctrl);
                     });
+
                     response.onDone(() => clean());
 
                     return handler(response);
@@ -250,10 +252,14 @@ export class OldUiBridge {
     }
 
     public onContextReady(handler: () => void): () => void {
+        if (this.isContextReady) {
+            handler();
+        }
         return this.sync.on(CONTEXT_READY_PIPELINE, handler);
     }
 
     public triggerContextReady(): void {
+        this.isContextReady = true;
         this.sync.trigger(CONTEXT_READY_PIPELINE);
     }
 

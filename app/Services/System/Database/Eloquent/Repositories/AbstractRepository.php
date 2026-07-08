@@ -20,7 +20,7 @@ use Illuminate\Support\LazyCollection;
  * The associated Eloquent model is resolved automatically via {@see GuessesModelNameTrait}
  * using three fallback strategies (tried in order):
  *   1. The {@see UseModel} attribute on the repository class.
- *   2. A `@extends AbstractRepository<MyModel>` DocBlock annotation.
+ *   2. A `(@)extends AbstractRepository<MyModel>` DocBlock annotation without braces.
  *   3. The repository class name with the "Repository" suffix stripped, looked up under `App\Models\`.
  *
  * Usage:
@@ -38,7 +38,7 @@ use Illuminate\Support\LazyCollection;
  * #[UseModel(User::class)]
  * class AccountRepository extends AbstractRepository
  * {
- *     // ...
+ *     ...
  * }
  * ```
  *
@@ -101,8 +101,8 @@ abstract class AbstractRepository
     /**
      * Returns a cached, bare instance of the model class used for query building.
      *
-     * @throws InvalidRepositoryModelClassException when the resolved model class does not extend Eloquent Model.
      * @return TModel
+     * @throws InvalidRepositoryModelClassException when the resolved model class does not extend Eloquent Model.
      */
     protected function getEloquentInstance(): Model
     {

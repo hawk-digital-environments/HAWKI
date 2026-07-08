@@ -6,10 +6,10 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
-use App\Services\Ai\Repositories\McpServerRepository;
 use App\Services\Ai\Tools\Mcp\McpClientFactory;
-use App\Services\Ai\Values\McpServerTimeouts;
-use App\Services\Ai\Values\McpServerType;
+use App\Services\Ai\Tools\Repositories\McpServerRepository;
+use App\Services\Ai\Tools\Values\McpServerTimeouts;
+use App\Services\Ai\Tools\Values\McpServerType;
 use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Str;

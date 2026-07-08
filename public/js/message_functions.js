@@ -1,12 +1,122 @@
-function addMessageToChatlog(messageObj, isFromServer = false) {
-    if (typeof messageObj.content === 'string' && isValidJson(messageObj.content)) {
-        messageObj.content = JSON.parse(messageObj.content);
+function extractCitationsFromMessageObj(messageObj) {
+    const {groundingMetadata, citations} = deconstContent(messageObj.content.text);
+
+    if (Array.isArray(citations) && citations.length > 0) {
+        return citations;
+    }
+
+    if (groundingMetadata) {
+        let parsedMetadata;
+        if (typeof groundingMetadata === 'string' && isValidJson(groundingMetadata)) {
+            parsedMetadata = JSON.parse(groundingMetadata);
+        } else if (typeof groundingMetadata === 'object') {
+            parsedMetadata = groundingMetadata;
+        } else {
+            console.error('Invalid groundingMetadata format:', groundingMetadata);
+            return undefined;
+        }
+
+        return ((parsedMetadata) => {
+            // parsedMetadata may be a full Gemini response (with candidates[]) or
+            // just the groundingMetadata object stored directly
+            const candidate = Array.isArray(parsedMetadata.candidates) && parsedMetadata.candidates[0]
+                ? parsedMetadata.candidates[0]
+                : {groundingMetadata: parsedMetadata};
+
+            const citationsMap = new Map();
+
+            // Legacy citation metadata format
+            for (const source of candidate.citationMetadata?.citationSources ?? []) {
+                if (source.uri) {
+                    citationsMap.set(source.uri, {
+                        url: source.uri,
+                        title: source.title ?? null,
+                        ranges: []
+                    });
+                }
+            }
+
+            // Grounding metadata format (Google Search grounding)
+            const groundingSupports = candidate.groundingMetadata?.groundingSupports ?? [];
+            const groundingChunks = candidate.groundingMetadata?.groundingChunks ?? [];
+
+            for (const support of groundingSupports) {
+                for (const index of support.groundingChunkIndices ?? []) {
+                    const web = groundingChunks[index]?.web;
+                    if (!web?.uri) continue;
+
+                    if (!citationsMap.has(web.uri)) {
+                        citationsMap.set(web.uri, {
+                            url: web.uri,
+                            title: web.title ?? null,
+                            ranges: [],
+                            byteOffset: true
+                        });
+                    }
+
+                    citationsMap.get(web.uri).ranges.push([
+                        support.segment?.startIndex ?? null,
+                        support.segment?.endIndex ?? null
+                    ]);
+                }
+            }
+
+            const result = [...citationsMap.values()];
+            return result.length > 0 ? result : undefined;
+        })(parsedMetadata);
+    }
+
+    return undefined;
+}
+
+function insertOrUpdateSvelteBody(
+    container,
+    messageObj,
+    isStreaming
+) {
+    /** @type {HTMLSvelteSnippetElement|undefined} */
+    let newBody = container.querySelector('svelte-snippet[type="MessageBody"]');
+    let isNew = false;
+    if (!newBody) {
+        newBody = document.createElement('svelte-snippet');
+        newBody.setAttribute('type', 'MessageBody');
+        newBody.setAttribute('data-id', 'message-body');
+        isNew = true;
+    }
+
+    const {messageText} = deconstContent(messageObj.content.text);
+
+    newBody.setProps({
+        message: messageText,
+        citations: extractCitationsFromMessageObj(messageObj),
+        // Initialize the component as "streaming" when it is not from the server, so that it can handle streaming updates.
+        isStreaming: isStreaming
+    });
+
+    if (isNew) {
+        const contentElement = container.querySelector('.message-content');
+        if (contentElement) {
+            contentElement.appendChild(newBody);
+        } else {
+            console.error('Content element not found in messageElement:', messageElement);
+        }
+    }
+}
+
+function addMessageToChatlog(messageObj, isFromServer = false, isStreaming = null) {
+    isStreaming = isStreaming ?? !isFromServer;
+    if (typeof messageObj.content === 'string') {
+        if (isValidJson(messageObj.content)) {
+            messageObj.content = JSON.parse(messageObj.content);
+        } else {
+            messageObj.content = {text: messageObj.content, attachments: []};
+        }
     }
     if (typeof messageObj.content.text === 'string' && isValidJson(messageObj.content.text)) {
         messageObj.content.text = JSON.parse(messageObj.content.text);
     }
 
-    const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
+    const {messageText} = deconstContent(messageObj.content.text);
 
     /// CLONE
     // clone message element
@@ -147,33 +257,7 @@ function addMessageToChatlog(messageObj, isFromServer = false) {
     }
 
     /// CONTENT
-    // Setup Message Content
-    const msgTxtElement = messageElement.querySelector('.message-text');
-
-    if (!messageElement.classList.contains('AI')) {
-        let processedContent = detectMentioning(messageText).modifiedText;
-        processedContent = convertHyperlinksToLinks(processedContent);
-        processedContent = wrapLinksInBlocks(processedContent);
-        msgTxtElement.innerHTML = processedContent;
-    } else {
-        let markdownProcessed = formatMessage(messageText, groundingMetadata);
-        msgTxtElement.innerHTML = markdownProcessed;
-        formatMathFormulas(msgTxtElement);
-        formatHljs(messageElement);
-
-        if (groundingMetadata &&
-            groundingMetadata != '' &&
-            groundingMetadata.searchEntryPoint &&
-            groundingMetadata.searchEntryPoint.renderedContent) {
-
-            addGoogleRenderedContent(messageElement, groundingMetadata);
-        } else {
-            if (messageElement.querySelector('.google-search')) {
-                messageElement.querySelector('.google-search').remove();
-            }
-        }
-    }
-
+    insertOrUpdateSvelteBody(messageElement, messageObj, isStreaming);
 
     /// check for completion status. ONLY FOR CONV MESSAGES FROM AI.
     if (messageObj.hasOwnProperty('completion')) {
@@ -225,7 +309,6 @@ function addMessageToChatlog(messageObj, isFromServer = false) {
         activeThread.insertBefore(messageElement, branchInput);
     }
 
-    formatHljs(messageElement);
     return messageElement;
 }
 
@@ -257,7 +340,6 @@ function updateMessageElement(messageElement, messageObj, updateContent = false,
     }
 
     messageElement.dataset.role = messageObj.message_role;
-    const msgTxtElement = messageElement.querySelector('.message-text');
 
     if (messageElement.classList.contains('AI')) {
         const username = messageElement.dataset.author;
@@ -284,33 +366,10 @@ function updateMessageElement(messageElement, messageObj, updateContent = false,
     }
 
     if (updateContent) {
-        const {messageText, groundingMetadata} = deconstContent(messageObj.content.text);
+        const {messageText} = deconstContent(messageObj.content.text);
 
         messageElement.dataset.rawMsg = messageText;
-        if (messageObj.message_role === 'user') {
-            const filteredContent = detectMentioning(messageText);
-            let processedContent = filteredContent.modifiedText;
-            processedContent = convertHyperlinksToLinks(processedContent);
-            processedContent = wrapLinksInBlocks(processedContent);
-            msgTxtElement.innerHTML = processedContent;
-        } else {
-
-            let markdownProcessed = formatMessage(messageText, groundingMetadata);
-            msgTxtElement.innerHTML = markdownProcessed;
-            formatMathFormulas(msgTxtElement);
-            formatHljs(messageElement);
-            if (groundingMetadata &&
-                groundingMetadata != '' &&
-                groundingMetadata.searchEntryPoint &&
-                groundingMetadata.searchEntryPoint.renderedContent) {
-
-                addGoogleRenderedContent(messageElement, groundingMetadata);
-            } else {
-                if (messageElement.querySelector('.google-search')) {
-                    messageElement.querySelector('.google-search').remove();
-                }
-            }
-        }
+        insertOrUpdateSvelteBody(messageElement, messageObj, false);
 
         // if the read status exists in the data
         if (messageElement.classList.contains('me') && messageElement.querySelector('#unread-message-icon')) {
@@ -398,33 +457,59 @@ function setDateSpan(activeThread, msgDate, formatDay = true) {
 
 
 function deconstContent(inputContent) {
+    function createResult(messageText, groundingMetadata = '', citations = []) {
+        return {
+            messageText,
+            groundingMetadata,
+            citations
+        };
+    }
 
-    let messageText = '';
-    let groundingMetadata = '';
+    if (typeof inputContent === 'string') {
+        if (isValidJson(inputContent)) {
+            inputContent = JSON.parse(inputContent);
+        } else {
+            return createResult(inputContent);
+        }
+    }
 
-    if (typeof inputContent === 'object' && inputContent.hasOwnProperty('text') && typeof inputContent.text === 'string') {
+    // Various degrees of chaos will ensue...
+
+    // Option zero, it is not an object we can work with -> default
+    if (typeof inputContent !== 'object' || inputContent === null) {
+        return createResult('');
+    }
+
+    // First option: { "text": "some text", "groundingMetadata": "some metadata", "citations": [...] }
+    // Second option: {"content": {"text": "some text", "groundingMetadata": "some metadata", "citations": [...] }}
+    // Third option: {"content": {"text": {"text": "some text", "groundingMetadata": "some metadata", "citations": [...] }}}
+    // Forth option: {"text": "{\"text\": \"some text\", \"groundingMetadata\": \"some metadata\", \"citations\": [...] }"}
+
+    // Solution path:
+    // If "content" is object extract and proceed using text as new input
+    // If "text" is string and validJson, parse and proceed; using parsed text as new input
+    // If "text" is object proceed using text as new input
+    // Extract result
+
+    if (inputContent.hasOwnProperty('content') && typeof inputContent.content === 'object') {
+        inputContent = inputContent.content;
+    }
+
+    if (inputContent.hasOwnProperty('text') && typeof inputContent.text === 'string' && isValidJson(inputContent.text)) {
+        inputContent = JSON.parse(inputContent.text);
+    } else if (inputContent.hasOwnProperty('text') && typeof inputContent.text === 'object') {
         inputContent = inputContent.text;
     }
 
-    if (isValidJson(inputContent)) {
-        const json = JSON.parse(inputContent);
-        if (json.hasOwnProperty('groundingMetadata')) {
-            groundingMetadata = json.groundingMetadata;
-        }
-        if (json.hasOwnProperty('text')) {
-            messageText = json.text;
-        } else {
-            messageText = inputContent;
-        }
-    } else {
-        messageText = inputContent;
+    if (inputContent.hasOwnProperty('text') && typeof inputContent.text === 'string') {
+        return createResult(
+            inputContent.text,
+            inputContent.groundingMetadata || '',
+            inputContent.citations || []
+        );
     }
 
-    return {
-        messageText: messageText,
-        groundingMetadata: groundingMetadata
-    };
-
+    return createResult('');
 }
 
 
@@ -476,7 +561,7 @@ function detectMentioning(rawText) {
             }
         }
         returnObj.filteredText = processedText;
-        returnObj.modifiedText = rawText.replace(mentionRegex, (match) => `<b>${match.toLowerCase()}</b>`);
+        returnObj.modifiedText = rawText.replace(mentionRegex, (match) => `**${match.toLowerCase()}**`);
     }
     return returnObj;
 }
@@ -602,7 +687,7 @@ async function confirmEditMessage(payload) {
     const cont = payload.message;
 
     messageElement.dataset.rawMsg = cont;
-    messageElement.querySelector('.message-text').innerHTML = detectMentioning(cont).modifiedText;
+    insertOrUpdateSvelteBody(messageElement, {content: {text: cont}}, false);
 
     let key;
     let url;
@@ -712,16 +797,15 @@ function messageReadAloud(provider) {
 //#region MSG_CTL: REGENERATE
 
 async function onRegenerateBtn(btn) {
-    openRegenerateDropDown(btn);
+    const messageId = btn.closest('.message').id;
+    const message = window.oldUiMessageHistory.findMessageById(messageId);
+    if (!message) {
+        throw new Error(`Message with ID ${messageId} not found in message history.`);
+    }
+    window.oldUiBridge.triggerEnterMode('regen', message);
 }
 
 let menu;
-
-function openRegenerateDropDown(sender) {
-    const messageId = sender.closest('.message').id;
-    const message = window.oldUiMessageHistory.findMessageById(messageId);
-    window.oldUiBridge.triggerEnterMode('regen', message);
-}
 
 /**
  *
@@ -739,18 +823,17 @@ async function regenerateMessage(payload) {
     }
 
     const metadata = {
-        'tools': payload.tools.map(tool => tool.name),
+        'tools': payload.tools.map(tool => tool.toTransferString()),
         'params': payload.parameters
     };
 
     const threadIndex = messageElement.closest('.thread').id;
 
     //reset message content
-    messageElement.querySelector('.message-text').innerHTML = '';
     messageElement.dataset.rawMsg = '';
-    await initializeMessageFormating();
 
     payload.waitForResponse(async (response) => {
+
         let msgAttributes = {};
         switch (activeModule) {
             case('chat'):
@@ -768,13 +851,10 @@ async function regenerateMessage(payload) {
                     response,
                     msgAttributes,
                     messageElement,
-                    true,
-                    async (isDone) => void 0);
+                    true);
                 break;
             case('groupchat'):
-                const roomKey = window.userKeychain.roomKeys[activeRoom.slug] || null;
-                const aiCryptoSalt = window.getConfig().salts.ai;
-                const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+                const aiKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).aiKey;
                 const aiKeyRaw = await exportSymmetricKey(aiKey);
                 const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
 
@@ -789,6 +869,7 @@ async function regenerateMessage(payload) {
                     'metadata': metadata
                 };
                 buildRequestObject(msgAttributes, async (updatedText, done) => {
+                    response.triggerReceived();
                 });
                 break;
         }
@@ -804,11 +885,6 @@ window.waitUntilReady(async () => {
     const response = await fetch(src);
     const blob = await response.blob();
     GEN_STAT_VIDEO_URL = URL.createObjectURL(blob);
-
-    const gridDotData = await fetch('/animations/Reasoning.mp4');
-    const girdBlob = await gridDotData.blob();
-    GRID_VIDEO_URL = URL.createObjectURL(girdBlob);
-
 });
 
 function createStatusElement(status, messageElement) {
@@ -820,51 +896,77 @@ function createStatusElement(status, messageElement) {
         statElement = statClone.querySelector('.gen-stat-element');
         messageElement.querySelector('.message-text').appendChild(statElement);
     }
+    const lastStatus = statElement.dataset.status;
+    statElement.dataset.status = status.key;
 
+    let reasoningElement = messageElement.querySelector('[data-id="reasoning-block"]');
+    if (reasoningElement) {
+        reasoningElement.style.display = 'none';
+    }
 
     let statusText = '';
-    if (status.key === 'tool_call' || status.key === 'max_execution') {
-        statElement.querySelector('#grid-animation-block').classList.remove('active');
-        statElement.querySelector('video').src = GEN_STAT_VIDEO_URL;
-        statElement.querySelector('video').style.display = 'flex';
+    if (status.key === 'tool_call' || status.key === 'max_execution' || status.key === 'provider_tool_call') {
+        // Don't restart the video if already playing
+        if (lastStatus !== status.key) {
+            statElement.dataset.status = status.key;
+            statElement.querySelector('#grid-animation-block').classList.remove('active');
+            statElement.querySelector('video').src = GEN_STAT_VIDEO_URL;
+            statElement.querySelector('video').style.display = 'flex';
+        }
 
-        // const list = JSON.parse(status);
-        const locales = window.getConfig().locale.available;
-        const preferredLocale = window.getConfig().locale.current;
-        const activeLocale =
-            locales.find(loc => loc.lang === preferredLocale)
-            || locales.find(loc => loc.lang === window.getConfig().locale.default)
-            || locales[0];
-        const formatter = new Intl.ListFormat(
-            activeLocale.shortName,
-            {
-                style: 'long',
-                type: 'conjunction'
+        if (status.key === 'provider_tool_call') {
+            statusText = window.__('legacy.messageStream.nativeToolRunning');
+        } else {
+            const value = status.value;
+            const uniqueTools = [...new Set(value)];
+
+            const toolNames = uniqueTools.map(tool => {
+                // fallback: web_search -> Web Search
+                return tool
+                    .split('_')
+                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
             });
-        const value = status.value;
-        const uniqueTools = [...new Set(value)];
-
-        const toolNames = uniqueTools.map(tool => {
-            const key = `The_${tool}`;
-
-            if (hasTranslation(key)) {
-                return __(key);
-            }
-
-            // fallback: web_search -> Web Search
-            return tool
-                .split('_')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-        });
-        const list = formatter.format(toolNames);
-        statusText = `${__('Exec_prefix')} ${list}`;
+            const locales = window.getConfig().locale.available;
+            const preferredLocale = window.getConnection().locale;
+            const activeLocale =
+                locales.find(loc => loc.lang === preferredLocale)
+                || locales.find(loc => loc.lang === window.getConfig().locale.default)
+                || locales[0];
+            const formatter = new Intl.ListFormat(
+                activeLocale.shortName,
+                {
+                    style: 'long',
+                    type: 'conjunction'
+                });
+            const list = formatter.format(toolNames);
+            statusText = `${__('Exec_prefix')} ${list}`;
+        }
     }
-    if (status.key === 'reasoning') {
+
+    if (status.key === 'reasoning' || status.key === 'reasoning_delta' || status.key === 'running') {
         statElement.querySelector('video').style.display = 'none';
         statElement.querySelector('#grid-animation-block').classList.add('active');
-        statusText = __('Reasoning_Msg');
+
+        if (status.key === 'reasoning' || status.key === 'reasoning_delta') {
+            statusText = __('Reasoning_Msg');
+
+            if (status.key === 'reasoning_delta' && typeof status.value === 'string' && status.value.length > 50) {
+                if (!reasoningElement) {
+                    reasoningElement = document.createElement('div');
+                    reasoningElement.dataset.id = 'reasoning-block';
+                    reasoningElement.classList.add('think');
+                    reasoningElement.innerHTML = `<div class="content-container" data-id="reasoning-block-text" style="flex-direction: column"></div>`;
+                    messageElement.querySelector('.message-text').appendChild(reasoningElement);
+                } else {
+                    reasoningElement.style.display = '';
+                }
+                reasoningElement.querySelector('[data-id="reasoning-block-text"]').innerHTML = getMarkdownRendererHtml(status.value);
+            }
+        } else {
+            statusText = __('Started_Msg');
+        }
     }
+
     statElement.querySelector('.stat-txt').innerText = statusText;
-    // tripleDotAnime(statElement, statusText)
 }

@@ -110,7 +110,8 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
             Route::post('/req/streamAI', [StreamController::class, 'handleAiConnectionRequest']);
 
             // LINK PREVIEW
-            Route::post('/api/link-preview', [LinkPreviewController::class, 'getPreview']);
+            Route::post('/api/link-preview', [LinkPreviewController::class, 'getPreview'])
+                ->middleware('deprecated:/api/hawki/v1/link-preview/metadata');
 
             // GROUPCHAT ROUTES
             Route::get('/groupchat/{slug?}', [HomeController::class, 'index']);

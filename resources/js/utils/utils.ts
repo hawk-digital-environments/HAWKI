@@ -17,15 +17,6 @@
  * ```
  */
 
-import {type ClassValue} from 'clsx';
-
-/**
- * @deprecated Only here for shadcn compatibility. Please use the "mergeProps" function from "melt-ui" instead to merge class names and other props.
- */
-export function cn(...inputs: ClassValue[]) {
-    throw new Error('The cn function is not available in Svelte. Please use the clsx function directly.');
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type WithoutChild<T> = T extends { child?: any } ? Omit<T, 'child'> : T;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

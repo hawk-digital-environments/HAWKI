@@ -2,7 +2,7 @@
 
 namespace App\Models\Ai;
 
-use App\Services\Ai\Values\ToolType;
+use App\Services\Ai\Tools\Values\ToolType;
 use Illuminate\Database\Eloquent\Model;
 
 class AiModelTool extends Model

@@ -1,8 +1,7 @@
-import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
 import {getResourceCollectionFromApi} from '$lib/data/api/api.js';
-import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
-import type {AiToolCapability} from '$lib/schemas/resources/ai-tools-capabilities.schema.js';
 import {getConnection} from '$lib/data/connection/connection.js';
+import {type AiToolOrCapability, combineToolsAndCapabilities} from '$lib/stores/aiToolStoreData.js';
+
 
 /**
  * Reactive store for AI tools and their associated capability definitions.
@@ -25,100 +24,7 @@ import {getConnection} from '$lib/data/connection/connection.js';
  */
 export class AiToolStore {
     /** All registered AI tools. Populated after {@link loadAiToolsAndCapabilities} resolves. */
-    public tools = $state<AiTool[]>([]);
-
-    /** Returns the tool with the given `name`, or `null` if it isn't registered. */
-    public getOneByName(name: string): AiTool | null {
-        const tool = this.tools.find(t => t.name === name);
-        if (!tool) {
-            return null;
-        }
-        return tool;
-    }
-
-    /** Returns `true` when `tool` is listed in `model.tool_ids`. Accepts a tool
-     *  object or a tool name string. */
-    public isAvailableForModel(tool: AiTool | string, model: AiModel): boolean {
-        if (typeof tool === 'string') {
-            tool = this.tools.find(t => t.name === tool) as AiTool;
-            if (!tool) {
-                console.warn(`Tool with name ${tool} not found in store.`);
-                return false;
-            }
-        }
-
-        return model.tool_ids.includes(parseInt(tool.id));
-    };
-
-    /** Returns `true` only when every tool in `tools` is available for `model`. */
-    public areAllToolsAvailableForModel(tools: (AiTool | string)[], model: AiModel): boolean {
-        return tools.every(tool => this.isAvailableForModel(tool, model));
-    };
-
-    /** Returns the subset of registered tools that `model` supports. */
-    public availableToolsForModel(model: AiModel): AiTool[] {
-        return this.tools.filter(tool => this.isAvailableForModel(tool, model));
-    };
-
-    /** All registered capability definitions. Populated after {@link loadAiToolsAndCapabilities} resolves. */
-    public capabilities = $state<AiToolCapability[]>([]);
-
-    /**
-     * Returns `true` when `capability` is enabled for `model`.
-     *
-     * Checks `model.capabilities[id]` first; falls back to the capability's
-     * `default_value` when the model has no explicit override. Any value other
-     * than `'no'` is treated as enabled.
-     */
-    public isAvailableCapabilityOfModel(capability: AiToolCapability | string, model: AiModel): boolean {
-        if (typeof capability === 'string') {
-            capability = this.capabilities.find(c => c.id === capability) as AiToolCapability;
-            if (!capability) {
-                console.warn(`Capability with id ${capability} not found in store.`);
-                return false;
-            }
-        }
-
-        const modelCapability = model.capabilities ? model.capabilities[capability.id] : null;
-        const defaultCapability = capability.default_value;
-        const capabilityValue = modelCapability ?? defaultCapability;
-
-        return capabilityValue !== 'no';
-    };
-
-    /** Returns `true` only when every capability in `capabilities` is enabled for `model`. */
-    public areAllCapabilitiesAvailableForModel(capabilities: (AiToolCapability | string)[], model: AiModel): boolean {
-        return capabilities.every(capability => this.isAvailableCapabilityOfModel(capability, model));
-    };
-
-    /** Returns the subset of registered capabilities that are enabled for `model`. */
-    public availableCapabilitiesForModel(model: AiModel): AiToolCapability[] {
-        return this.capabilities.filter(capability => this.isAvailableCapabilityOfModel(capability, model));
-    };
-
-    private capabilityByToolName = $derived.by(() => {
-        const map: Record<string, AiToolCapability> = {};
-        for (const tool of this.tools) {
-            if (!tool.capability_key) {
-                continue;
-            }
-            const capability = this.capabilities.find(c => c.id === tool.capability_key);
-            if (!capability) {
-                continue;
-            }
-            map[tool.name] = capability;
-        }
-        return map;
-    });
-
-    /** Returns the capability linked to `tool` via its `capability_key`, or `null`
-     *  when the tool has no capability or the key doesn't match a registered capability. */
-    public getCapabilityForTool(tool: AiTool | string): AiToolCapability | null {
-        if (typeof tool === 'string') {
-            return this.capabilityByToolName[tool] ?? null;
-        }
-        return this.capabilityByToolName[tool.name] ?? null;
-    }
+    public tools = $state<AiToolOrCapability[]>([]);
 }
 
 export const aiToolStore = new AiToolStore();
@@ -131,11 +37,11 @@ export async function loadAiToolsAndCapabilities() {
     if (getConnection().type !== 'internal_authenticated') {
         return;
     }
+
     const [tools, capabilities] = await Promise.all([
         getResourceCollectionFromApi('ai-tools', {query: {include: 'server', filter: {assigned: 1}}}),
         getResourceCollectionFromApi('ai-tool-capabilities')
     ]);
 
-    aiToolStore.tools = tools;
-    aiToolStore.capabilities = capabilities;
+    aiToolStore.tools = combineToolsAndCapabilities(tools, capabilities);
 }

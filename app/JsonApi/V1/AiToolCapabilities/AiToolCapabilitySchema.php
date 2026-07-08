@@ -2,7 +2,7 @@
 
 namespace App\JsonApi\V1\AiToolCapabilities;
 
-use App\Services\Ai\Tools\Values\AiToolCapabilityDefinition;
+use App\Services\Ai\Models\Capabilities\Values\AiModelCapabilityDefinition;
 use App\Services\System\Container\ServiceLocatorTrait;
 use LaravelJsonApi\Contracts\Store\Repository;
 use LaravelJsonApi\Core\Schema\Schema;
@@ -18,7 +18,7 @@ class AiToolCapabilitySchema extends Schema
      *
      * @var string
      */
-    public static string $model = AiToolCapabilityDefinition::class;
+    public static string $model = AiModelCapabilityDefinition::class;
 
     /**
      * Get the resource fields.
@@ -29,7 +29,6 @@ class AiToolCapabilitySchema extends Schema
     {
         return [
             ID::make(),
-            Attribute::make('default_value'),
             Attribute::make('title_label'),
             Attribute::make('description_label'),
             Attribute::make('icon_path'),

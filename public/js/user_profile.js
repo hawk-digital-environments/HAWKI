@@ -65,7 +65,6 @@ async function uploadProfileAvatar(image) {
         const data = await response.json();
 
         if (data.success) {
-            console.log('Image Uploaded Successfully');
             return data.url;
 
         } else {
@@ -127,10 +126,7 @@ async function updateUserInformation() {
         });
         const data = await response.json();
 
-        if (data.success) {
-            console.log('User information Updated Successfully');
-
-        } else {
+        if (!data.success) {
             console.error('User information Update not successful');
         }
     } catch (error) {

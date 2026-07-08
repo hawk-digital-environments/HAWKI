@@ -172,7 +172,6 @@ return [
             'stream' => true,
             'tool_calling' => true,
             'file_upload' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_TOOLS_VISION', true),
         ],
         'default_params' => [
             // GWDG recommends near-deterministic temp (<0.1) for typical tasks; top_p=0.95 is the standard vLLM value
@@ -237,7 +236,6 @@ return [
             'stream' => true,
             'tool_calling' => false,
             'file_upload' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_GEMMA_3_27B_IT_TOOLS_VISION', true),
         ],
         'default_params' => [
             // Google generation_config.json for Gemma 3 27B sets temp=1.0 and top_p=0.96
@@ -369,7 +367,6 @@ return [
             'stream' => true,
             'tool_calling' => false, // Medical fine-tune; specialized task model, tool calling not supported
             'file_upload' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_VISION', true),
         ],
         'default_params' => [
             // vLLM example config for MedGemma 27B Instruct uses temp=0.7 and top_p=0.95

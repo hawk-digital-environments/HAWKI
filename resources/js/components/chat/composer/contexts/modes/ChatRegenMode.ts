@@ -1,7 +1,6 @@
 import type {OldUiConversationMessage} from '$lib/oldUi/OldUiBridge.svelte.js';
 import {type ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
 import type {AiModelStore} from '$lib/stores/AiModelStore.svelte.js';
-import type {AiToolStore} from '$lib/stores/AiToolStore.svelte.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
 import type {ChatDefaultModeState} from '$lib/components/chat/composer/contexts/modes/ChatDefaultMode.js';
@@ -25,7 +24,6 @@ export interface ChatRegenModeState {
 export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRegenModeState> {
     constructor(
         private modelStore: AiModelStore,
-        private toolStore: AiToolStore,
         private toast: ToastContext
     ) {
         super();
@@ -79,16 +77,13 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
 
         if (Array.isArray(data.metadata?.tools)) {
             data.metadata.tools.forEach((toolId: string) => {
-                const tool = this.toolStore.getOneByName(toolId);
-                if (!tool) {
-                    this.toast.info(__('chat.composer.regen.toolNotAvailable', {tool: toolId}));
-                    return;
-                }
-                if (!this.toolStore.isAvailableForModel(tool!, context.model.current)) {
-                    this.toast.info(__('chat.composer.regen.toolNotAvailableForModel', {tool: toolId}));
-                    return;
-                }
-                context.tools.add(tool);
+                context.tools.setFromTransferString(toolId, (reason, toolName) => {
+                    if (reason === 'tool_not_found') {
+                        this.toast.info(__('chat.composer.regen.toolNotAvailable', {tool: toolName}));
+                    } else if (reason === 'tool_not_available') {
+                        this.toast.info(__('chat.composer.regen.toolNotAvailableForModel', {tool: toolName}));
+                    }
+                });
             });
         }
 

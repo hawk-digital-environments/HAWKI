@@ -3,6 +3,8 @@
 namespace App\Services\Storage;
 
 
+use App\Models\User;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Symfony\Component\Mime\MimeTypes;
 
 class AvatarStorageService extends AbstractFileStorage
@@ -28,6 +30,16 @@ class AvatarStorageService extends AbstractFileStorage
                 $mime->getMimeTypes('bmp'),
                 $mime->getMimeTypes('tiff'),
             )
+        );
+    }
+
+    /**
+     * The same as {@see retrieve} but specifically for retrieving a user's avatar.
+     */
+    public function retrieveAvatar(User $user): ?Values\StoredFile
+    {
+        return $this->retrieve(
+            StoredFileIdentifier::tryFromUserAvatar($user)
         );
     }
 }

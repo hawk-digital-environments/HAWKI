@@ -3,16 +3,17 @@
   Shows a tooltip on hover with the human-readable status label.
 -->
 <script lang="ts">
-    import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
     import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {__} from '$lib/utils/translator.js';
+    import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
+    import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
 
     const composerContext = useComposerContext();
 
     interface Props {
         /** The tool whose status to show. */
-        tool: AiTool;
+        tool: AiTool | AiToolOrCapability;
         /** If false, the tool status will show up as "not-supported" by the current model (overriding the actual tool status). */
         supported?: boolean;
         /** Visual size of the dot. */
@@ -43,15 +44,16 @@
         if (supported === false) {
             return __('chat.composer.statusDot.tool.notSupportedTooltip', {model: composerContext.model?.current.label ?? ''});
         }
-        return 'Unbekannte Verfügbarkeit — erhöhte Fehlerquote';
+        return __('chat.composer.statusDot.unknownTooltip');
     });
 
     const wrappedTooltipSuffix = $derived.by(() => tooltipSuffix ? ` | ${tooltipSuffix}` : '');
 </script>
+
 <StatusDot
     status={status}
     size={size}
-    labelOnline={showLabel ? __('chat.composer.statusDot.tool.notSupportedLabel', {model: composerContext.model?.current.label ?? ''}) : undefined}
+    labelOnline={showLabel ? __('chat.composer.statusDot.onlineLabel') : undefined}
     tooltipOnline={__('chat.composer.statusDot.onlineTooltip') + wrappedTooltipSuffix}
     labelUnknown={showLabel ? unknownLabel : undefined}
     tooltipUnknown={unknownTooltip + wrappedTooltipSuffix}

@@ -8,8 +8,8 @@
     import {X} from '@lucide/svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
-    import {toolDisplayName} from '$lib/utils/aiToolUtils.js';
     import {__} from '$lib/utils/translator.js';
+    import {growTransition} from '$lib/utils/transitions/growTransition';
 
     interface Props {
         /** Called when the overflow "+N" badge is clicked. */
@@ -90,25 +90,25 @@
 </script>
 
 {#snippet chip(tool: typeof tools[number], measuring = false)}
-    {@const incompatible = !composerContext.tools.canUse(tool)}
+    {@const incompatible = !tool.isAvailableFor(composerContext.model.current)}
     <button
         class="tool-chip"
         class:incompatible
-        title={toolDisplayName(tool)}
+        title={tool.displayName}
         tabindex={measuring ? -1 : 0}
         aria-hidden={measuring}
-        onclick={() => composerContext.tools.remove(tool)}
-        aria-label="Tool {toolDisplayName(tool)} entfernen"
+        onclick={() => composerContext.tools.disable(tool)}
+        aria-label={__('chat.composer.toolChips.removeToolAriaLabel', {tool: tool.displayName})}
     >
         <ToolIcon tool={tool} size={12}/>
-        <span class="tool-chip-label">{toolDisplayName(tool)}</span>
+        <span class="tool-chip-label">{tool.displayName}</span>
         <X size={12}/>
     </button>
 {/snippet}
 
-{#if tools.length > 0}
+{#if tools.length > 0 && composerContext.guard.showsAiUiElements}
     <!-- Visible row -->
-    <div class="tool-chips" bind:this={rowEl}>
+    <div class="tool-chips" bind:this={rowEl} transition:growTransition={{mode: 'horizontal'}}>
         {#each visibleTools as tool (tool)}
             {@render chip(tool)}
         {/each}

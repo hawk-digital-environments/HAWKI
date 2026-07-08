@@ -3,7 +3,7 @@ import {promisify} from 'util';
 import {exec, execSync} from 'node:child_process';
 import {confirm, input, select} from '@inquirer/prompts';
 import process from 'node:process';
-import {executeCommand, type ExecuteCommandOptions, type ExecuteCommandResult, type InteractiveCommandResult, type InteractiveExecuteCommandOptions, type NonInteractiveCommandResult, type NonInteractiveExecuteCommandOptions} from '@/executeCommand.js';
+import {executeCommand, type ExecuteCommandOptions, type ExecuteCommandResult, type InteractiveCommandResult, type InteractiveExecuteCommandOptions, type NonInteractiveCommandResult, type NonInteractiveExecuteCommandOptions} from '@/executeCommand.ts';
 import chalk from 'chalk';
 
 const execAsync = promisify(exec);

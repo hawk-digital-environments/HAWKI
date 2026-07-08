@@ -37,12 +37,9 @@
     </Breakpoint>
 -->
 <script lang="ts">
-    import type { Snippet } from 'svelte';
-    import {
-        breakpointsQueries,
-        type Breakpoint,
-        type BreakpointSnippetProps,
-    } from './breakpoints.js';
+    import type {Snippet} from 'svelte';
+    import {type Breakpoint, type BreakpointSnippetProps, breakpointsQueries} from './breakpoints.js';
+    import {useBreakpoint} from '$lib/components/util/breakpoints/useBreakpoint.svelte.js';
 
     interface Props extends BreakpointSnippetProps {
         /**
@@ -65,52 +62,29 @@
     const props: Props = $props();
 
     $effect(() => {
-        const { order } = props;
+        const {order} = props;
         if (!order) return;
         const provided = (Object.keys(breakpointsQueries) as Breakpoint[]).filter(
-            k => (props as Record<string, unknown>)[k] !== undefined,
+            k => (props as Record<string, unknown>)[k] !== undefined
         );
         const missing = provided.filter(k => !order.includes(k));
         if (missing.length > 0) {
             console.error(
-                `[Breakpoint] These snippets are not listed in \`order\` and will be ignored: ${missing.join(', ')}`,
+                `[Breakpoint] These snippets are not listed in \`order\` and will be ignored: ${missing.join(', ')}`
             );
         }
     });
 
-    const supported = typeof window !== 'undefined' && typeof window.matchMedia === 'function';
-
-    let matchStates = $state<Record<string, boolean>>(
-        supported
-            ? Object.fromEntries(
-                  Object.entries(breakpointsQueries).map(([k, q]) => [k, window.matchMedia(q).matches]),
-              )
-            : {},
-    );
-
-    $effect(() => {
-        if (!supported) return;
-        const cleanups = (Object.entries(breakpointsQueries) as [string, string][]).map(
-            ([key, query]) => {
-                const mql = window.matchMedia(query);
-                const onChange = (e: MediaQueryListEvent) => {
-                    matchStates[key] = e.matches;
-                };
-                mql.addEventListener('change', onChange);
-                return () => mql.removeEventListener('change', onChange);
-            },
-        );
-        return () => cleanups.forEach(fn => fn());
-    });
+    const breakpoint = useBreakpoint();
 
     const toRender = $derived.by((): Snippet[] => {
-        const { order, showAllMatching = false } = props;
+        const {order, showAllMatching = false} = props;
         const sequence = order ?? (Object.keys(breakpointsQueries) as Breakpoint[]);
 
         const matching = sequence.filter(
             k =>
                 (props as Record<string, unknown>)[k] !== undefined &&
-                matchStates[k],
+                breakpoint.is(k)
         );
 
         if (matching.length > 0) {

@@ -38,6 +38,7 @@ function initializeGroupChatModule(roomsData) {
     });
     window.oldUiBridge.onOpenChat((slug) => {
         loadRoom(null, slug);
+        onSidebarButtonDown('groupchat');
     });
     window.oldUiBridge.onActiveConversationSystemPromptUpdate(newPrompt => {
         if (!activeRoom) {
@@ -162,25 +163,39 @@ async function onSendMessageToRoom(payload) {
         submittedObj.content.text = inputText;
         submittedObj.filteredContent = detectMentioning(inputText);
 
-        addMessageToChatlog(submittedObj);
+        addMessageToChatlog(submittedObj, false, false);
 
         if (payload.containsAiHandle) {
-            const aiCryptoSalt = window.getConfig().salts.ai;
-            const aiKey = await deriveKey(roomKey, activeRoom.slug, aiCryptoSalt);
+            const aiKey = (window.userKeychain.roomKeys[activeRoom.slug] || {}).aiKey;
             const aiKeyRaw = await exportSymmetricKey(aiKey);
             const aiKeyBase64 = arrayBufferToBase64(aiKeyRaw);
 
             const msgAttributes = {
-                'threadIndex': activeThreadIndex, 'broadcasting': true, 'slug': activeRoom.slug, 'key': aiKeyBase64, 'stream': false, 'model': payload.model.model_id, 'metadata': {
-                    'tools': payload.tools.map(tool => tool.name), 'params': payload.parameters
+                'threadIndex': activeThreadIndex,
+                'broadcasting': true,
+                'slug': activeRoom.slug,
+                'key': aiKeyBase64,
+                'stream': false,
+                'model': payload.model.model_id,
+                'metadata': {
+                    'tools': payload.tools.map(tool => tool.toTransferString()),
+                    'params': payload.parameters
                 }
             };
 
-            buildRequestObject(msgAttributes, () => {
-                res.triggerReceived();
-            }, (e) => {
-                res.triggerError(e);
-            });
+            return buildRequestObject(
+                msgAttributes,
+                () => {
+                    if (!res.done) {
+                        res.triggerReceived();
+                    }
+                },
+                (e) => {
+                    res.triggerError(e);
+                    return Promise.reject(e);
+                });
+        } else {
+            res.triggerReceived();
         }
     });
 
@@ -226,9 +241,13 @@ const connectWebSocket = async (roomSlug) => {
                 }
 
                 if (receivedPacket.type === 'status') {
+                    if (receivedPacket.data.error) {
+                        window.oldUiBridge.triggerSendToast(window.__('legacy.groupchat.serverError'), 'error');
+                    }
+
                     if (receivedPacket.data.isGenerating) {
                         // Display the typing indicator for the user
-                        addUserToTypingList(receivedPacket.data.model);
+                        addUserToTypingList(receivedPacket.data.model, true);
                     } else {
                         // Hide the typing indicator for the user
                         removeUserFromTypingList(receivedPacket.data.model);
@@ -272,10 +291,13 @@ async function handleUserMessages(messageData, slug) {
         messageData.content.text.tag);
 
     let element = document.getElementById(messageData.message_id);
+
     if (!element) {
+        window.oldUiMessageHistory.addMessageToConversation(messageData);
         element = addMessageToChatlog(messageData, true);
         activateMessageControls(element);
     } else {
+        window.oldUiMessageHistory.updateMessageInConversation(messageData);
         updateMessageElement(element, messageData);
     }
 
@@ -302,9 +324,11 @@ async function handleAIMessage(messageData, slug) {
     // CREATE AND UPDATE MESSAGE
     let element = document.getElementById(messageData.message_id);
     if (!element) {
+        window.oldUiMessageHistory.addMessageToConversation(messageData);
         element = addMessageToChatlog(messageData, true);
         activateMessageControls(element);
     } else {
+        window.oldUiMessageHistory.updateMessageInConversation(messageData);
         updateMessageElement(element, messageData, true);
     }
 
@@ -363,6 +387,7 @@ const typingInterval = 1000; // 1 second
 let isTyping = false;
 let typingUsers = {}; // Object to track users who are typing
 const typingTimeout = 5000; // 5 seconds timeout
+const typingTimeoutAiModel = 5 * 60 * 1000; // 5 minutes timeout for AI model
 
 
 function onGroupchatType() {
@@ -420,7 +445,7 @@ async function connectWhisperSocket(roomSlug) {
 }
 
 
-function addUserToTypingList(user) {
+function addUserToTypingList(user, isModel) {
     if (typingUsers[user]) {
         clearTimeout(typingUsers[user]);
     }
@@ -429,7 +454,7 @@ function addUserToTypingList(user) {
     typingUsers[user] = setTimeout(() => {
         removeUserFromTypingList(user);
         updateTypingStatus();
-    }, typingTimeout);
+    }, isModel ? typingTimeoutAiModel : typingTimeout);
     updateTypingStatus();
 }
 
@@ -446,15 +471,15 @@ function updateTypingStatus() {
 
     if (users.length === 0) {
         typingStatusDiv.textContent = '';
-        typingStatusDiv.style.display = 'none'; // Hide if no one is typing
+        typingStatusDiv.style.display = 'none';
     } else if (users.length === 1) {
-        typingStatusDiv.textContent = `${users[0]} is typing...`;
+        typingStatusDiv.textContent = window.__('legacy.groupchat.typingStatusOne', {user: users[0]});
         typingStatusDiv.style.display = 'block';
     } else if (users.length === 2) {
-        typingStatusDiv.textContent = `${users[0]} & ${users[1]} are typing...`;
+        typingStatusDiv.textContent = window.__('legacy.groupchat.typingStatusTwo', {user1: users[0], user2: users[1]});
         typingStatusDiv.style.display = 'block';
     } else {
-        typingStatusDiv.textContent = `${users[0]} & others are typing...`;
+        typingStatusDiv.textContent = window.__('legacy.groupchat.typingStatusMany', {user: users[0]});
         typingStatusDiv.style.display = 'block';
     }
 }
@@ -738,7 +763,6 @@ async function handleUserInvitations() {
                     // Convert the encryptedRoomKey from Base64 to ArrayBuffer
                     const encryptedRoomKeyBuffer = base64ToArrayBuffer(inv.invitation);
                     // Decrypt the roomKey using the user's private key
-                    console.log('DECRYPT', encryptedRoomKeyBuffer, privateKey);
                     const roomKey = await decryptWithPrivateKey(encryptedRoomKeyBuffer, privateKey);
                     if (roomKey) {
                         await finishInvitationHandling(inv.invitation_id, roomKey);
@@ -928,11 +952,14 @@ async function loadRoom(btn = null, slug = null) {
         try {
             msgData.content.text = await decryptWithSymKey(key, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
         } catch (error) {
-            if (msgData.message_role === 'assistant') {
-                // If decryption fails for AI messages, try legacy key
-                msgData.content.text = await decryptWithSymKey(legacyAiKey, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
-            } else {
-                throw error;
+            try {
+                if (msgData.message_role === 'assistant') {
+                    // If decryption fails for AI messages, try legacy key
+                    msgData.content.text = await decryptWithSymKey(legacyAiKey, msgData.content.text.ciphertext, msgData.content.text.iv, msgData.content.text.tag, false);
+                }
+            } catch (e) {
+                console.error('Failed to decrypt message:', e);
+                msgData.content.text = 'NT: Diese Nachricht konnte nicht entschlüsselt werden.';
             }
         }
     }

@@ -25,6 +25,12 @@
             "fileTooLarge": "The file \":name\" could not be attached because its size of :size exceeds the maximum file size of :maxSize.",
             "unsupportedFileType": "The file \":name\" could not be attached because the file type \":type\" is not supported."
         },
+        "message": {
+            "sources": "Sources",
+            "citationReference": {
+                "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
+            }
+        },
         "export": {
             "title": "Export",
             "tooltip": "Choose an option to export this conversation",
@@ -119,7 +125,22 @@
                 "dropLabel": "Drop files here"
             },
             "toolChips": {
-                "showMore": "Show :count more tools"
+                "showMore": "Show :count more tools",
+                "removeToolAriaLabel": "Remove tool :tool"
+            },
+            "modelConflict": {
+                "conflictTitleSingle": ":model does not support :tool",
+                "conflictTitleMultiple": ":model does not support the following requirements",
+                "singleModelCapable": "This model can do everything you need.",
+                "multipleModelsCapable": "These :count models can do everything you need.",
+                "noModelsAvailable": "No available model supports this combination. Remove a tool or an attachment."
+            },
+            "toolMenuConfig": {
+                "variantLabel": "Variant",
+                "autoLabel": "automatic",
+                "autoInfo": "The model automatically selects the best variant for the task. (Native tool preferred, otherwise the first available alternative)",
+                "nativeLabel": "Native Tool",
+                "nativeInfo": "This tool is provided directly by the model provider."
             },
             "actions": {
                 "invalidModelTooltip": "Please select a different model or remove incompatible tools/files",

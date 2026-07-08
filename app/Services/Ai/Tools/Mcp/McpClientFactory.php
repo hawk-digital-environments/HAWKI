@@ -6,8 +6,8 @@ namespace App\Services\Ai\Tools\Mcp;
 
 
 use App\Models\Ai\McpServer;
-use App\Services\Ai\Values\McpServerTimeouts;
-use App\Services\Ai\Values\McpServerType;
+use App\Services\Ai\Tools\Values\McpServerTimeouts;
+use App\Services\Ai\Tools\Values\McpServerType;
 use App\Utils\Arrays\RecursiveMerger;
 use Mcp\Client\Client;
 use Psr\Log\LoggerInterface;

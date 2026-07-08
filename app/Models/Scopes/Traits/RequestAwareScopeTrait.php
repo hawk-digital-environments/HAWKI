@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\Scopes\Traits;
 
 
-use Illuminate\Foundation\Application;
+use App\Services\System\Container\SystemEnvironment;
 use Illuminate\Http\Request;
 
 // @phpstan-ignore trait.unused
@@ -16,9 +16,9 @@ trait RequestAwareScopeTrait
     private bool $rast_isRunningInConsole;
     private \Closure $rast_onNoRequest;
 
-    public function initializeRequestAwareScopeTrait(Application $application): void
+    public function initializeRequestAwareScopeTrait(SystemEnvironment $environment): void
     {
-        $this->rast_isRunningInConsole = $application->runningInConsole();
+        $this->rast_isRunningInConsole = $environment->runningInConsole();
         $this->rast_onNoRequest = static function () {
             abort(412, sprintf("No request instance found for applying scope: '%s'.", class_basename(static::class)));
         };

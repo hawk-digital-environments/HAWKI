@@ -24,6 +24,10 @@
         width: 80%;
         display: flex;
         justify-content: center;
+
+        &.sidebar-btn-profile {
+            padding: 0;
+        }
     }
 
     .sidebar-btn.active .fill-svg {
@@ -54,6 +58,10 @@
         padding-top: 2rem;
         padding-bottom: 2rem;
         z-index: 1;
+
+        @media (max-width: 768px) {
+            width: 3rem;
+        }
     }
 
     .sidebar-content .upper-panel,
@@ -95,6 +103,11 @@
         display: grid;
         grid-template-columns: auto 1fr;
         column-gap: 2rem;
+
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+            row-gap: 2rem;
+        }
     }
 
     .chat-name-panel {

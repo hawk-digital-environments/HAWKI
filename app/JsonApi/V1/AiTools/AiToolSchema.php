@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\JsonApi\V1\AiTools;
 
 use App\Models\Ai\AiTool;
+use App\Services\Ai\Tools\Values\ToolType;
 use App\Services\Ai\Values\OnlineStatus;
-use App\Services\Ai\Values\ToolType;
 use App\Services\System\Container\ServiceLocatorTrait;
 use App\Services\Users\UserCondition;
 use LaravelJsonApi\Eloquent\Fields\ArrayHash;

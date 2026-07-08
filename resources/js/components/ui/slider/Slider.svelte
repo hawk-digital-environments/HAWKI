@@ -90,7 +90,8 @@
         width: 100%;
         overflow: hidden;
         border-radius: var(--corner-full);
-        background-color: var(--color-bg-secondary);
+        /* Neutral fill instead of the slightly blue-tinted --color-bg-secondary. */
+        background-color: var(--color-surface-light);
         border: none;
     }
 

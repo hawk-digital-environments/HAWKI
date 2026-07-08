@@ -1,0 +1,157 @@
+{
+    "$schema": "https://laravel-ide.com/schema/laravel-ide-v2.json",
+    "completions": [
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/app"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "path"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "basePath"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/bootstrap"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "bootstrapPath"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/config"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "configPath"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/database"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "databasePath"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/public"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "publicPath"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/storage"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "storagePath"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        },
+        {
+            "complete": "directoryFiles",
+            "options": {
+                "directory": "/resources"
+            },
+            "condition": [
+                {
+                    "methodNames": [
+                        "resourcePath"
+                    ],
+                    "classParentFqn": [
+                        "\\App\\Services\\System\\Container\\SystemPaths"
+                    ],
+                    "parameters": [
+                        1
+                    ]
+                }
+            ]
+        }
+    ]
+}

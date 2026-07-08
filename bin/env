@@ -7,7 +7,7 @@ set -e  # Exit on error
 # =================== CONFIGURATION ===================
 # Node.js version to use
 # See what is currently available at https://nodejs.org/en/download
-NODE_VERSION="22.14.0"
+NODE_VERSION="24.14.1"
 # Central storage for everything this script needs to store
 ENV_HOME="${HOME}/.bin-env"
 # Central storage location for Node.js binaries

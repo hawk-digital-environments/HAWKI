@@ -6,11 +6,12 @@ namespace App\Services\Storage\Values;
 
 
 use App\Services\Storage\Interfaces\FileInterface;
+use Illuminate\Contracts\Support\Arrayable;
 
 /**
  * @implements \IteratorAggregate<FileInterface>
  */
-readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSerializable
+readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSerializable, Arrayable
 {
     private array $files;
 
@@ -87,6 +88,14 @@ readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSe
         );
 
         return new self(...$filteredFiles);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function toArray(): array
+    {
+        return $this->files;
     }
 
     /**

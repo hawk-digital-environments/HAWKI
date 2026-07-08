@@ -19,7 +19,7 @@ readonly class LocaleSettingMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        $localeValue = $request->header('X-App-Locale') ?? $request->query('lang');
+        $localeValue = $request->header('X-App-Locale') ?? $request->query('lang') ?? $request->query('locale');
         if (!empty($localeValue)) {
             $requestLocale = $this->localeService->getMostLikelyLocale($localeValue);
             $this->localeService->setCurrentLocale($requestLocale);

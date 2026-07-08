@@ -8,6 +8,9 @@
 node_modules
 vendor
 
+# Generated icons
+resources/js/components/ui/icons/iconset/*
+
 # Credentials
 auth.json
 
@@ -15,6 +18,9 @@ auth.json
 .idea/*
 .fleet
 .vscode
+/.fleet
+/.idea
+/.vscode
 
 # PHPUnit
 .phpunit.coverage
@@ -45,3 +51,10 @@ npm-debug.log
 yarn-error.log
 .DS_Store
 _architecture
+
+# Dev Stuff
+DbgCommand.php
+_docker_production_test
+.devcontainer
+.agents
+skills-lock.json

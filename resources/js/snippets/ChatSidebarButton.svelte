@@ -1,4 +1,4 @@
-<!-- This is probably a temporary component, since it mixes concerns between chat and room messages
+<!-- @component This is probably a temporary component, since it mixes concerns between chat and room messages
 However, as we want to merge them both anyway, it's not worth the effort to split out the chat-specific parts into a separate component for now. -->
 <script lang="ts">
     import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';

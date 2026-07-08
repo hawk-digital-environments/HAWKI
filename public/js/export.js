@@ -582,7 +582,13 @@ async function preparePrintPage() {
         let msgKey = key.roomKey;
         for (const msg of messages) {
             msgKey = msg.message_role === 'assistant' ? key.aiKey : key.roomKey;
-            const decryptedContent = await decryptWithSymKey(msgKey, msg.content.text, msg.content.text.iv, msg.content.text.tag);
+            let decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+            if (decryptedContent.startsWith('{') || decryptedContent.startsWith('"')) {
+                decryptedContent = JSON.parse(decryptedContent);
+                if (decryptedContent.text) {
+                    decryptedContent = decryptedContent.text;
+                }
+            }
             msg.content.text = decryptedContent;
         }
     }
@@ -614,7 +620,6 @@ async function preparePrintPage() {
 
     // First, add all main messages
     activeThreadIndex = 0;
-    await initializeMessageFormating();
     messages.forEach(messageObj => {
         generateMessageElements(messageObj, true);
     });
@@ -676,14 +681,7 @@ function generateMessageElements(messageObj) {
         });
     }
 
-
-    if (!messageObj.message_role === 'assistant') {
-        msgTxtElement.innerHTML = detectMentioning(messageObj.content.text).modifiedText;
-    } else {
-        let markdownProcessed = formatMessage(messageObj.content.text);
-        msgTxtElement.innerHTML = markdownProcessed;
-        formatMathFormulas(msgTxtElement);
-    }
+    insertOrUpdateSvelteBody(messageElement, messageObj, false);
 
     // insert into target thread
     if (threadIndex === 0) {
@@ -698,7 +696,6 @@ function generateMessageElements(messageObj) {
     } else {
         activeThread.appendChild(messageElement);
     }
-    formatHljs(messageElement);
     return messageElement;
 }
 
@@ -729,8 +726,6 @@ function createAttachmentPrintIcon(fileData) {
             break;
     }
 
-    attachment.querySelector('.controls').remove();
-    attachment.querySelector('.status-indicator').remove();
     iconImg.setAttribute('src', imgPreview);
     return attachment;
 }

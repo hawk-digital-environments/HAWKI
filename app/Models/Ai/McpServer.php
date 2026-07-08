@@ -4,8 +4,8 @@ namespace App\Models\Ai;
 
 use App\Casts\AsInstance;
 use App\Policies\McpServerPolicy;
-use App\Services\Ai\Values\McpServerTimeouts;
-use App\Services\Ai\Values\McpServerType;
+use App\Services\Ai\Tools\Values\McpServerTimeouts;
+use App\Services\Ai\Tools\Values\McpServerType;
 use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;

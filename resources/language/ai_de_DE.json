@@ -1,0 +1,27 @@
+{
+    "ai": {
+        "model": {
+            "detail": {
+                "flag": {
+                    "openWeights": "Offene Gewichte",
+                    "openWeightsTooltip": "Dieses Modell ist Open-Source und seine Gewichte sind öffentlich zugänglich",
+                    "ecoFriendly": "Umweltfreundlich",
+                    "ecoFriendlyTooltip": "Dieses Modell wurde mit einem Fokus auf Energieeffizienz und Nachhaltigkeit entwickelt, um den ökologischen Fußabdruck zu minimieren",
+                    "selfHosted": "Selbst gehostet",
+                    "selfHostedTooltip": "Dieses Modell wird auf eigenen Servern gehostet, volle Punktzahl bei Datenschutz und Kontrolle über die Daten",
+                    "strengthCreativeWriting": "Kreatives Schreiben",
+                    "strengthCreativeWritingTooltip": "Dieses Modell ist besonders gut im kreativen Schreiben, z.B. für Geschichten, Gedichte oder kreative Inhalte",
+                    "strengthCodeGeneration": "Code",
+                    "strengthCodeGenerationTooltip": "Dieses Modell ist besonders gut in der Codegenerierung, z.B. für Programmieraufgaben oder Softwareentwicklung",
+                    "strengthMath": "Mathematik",
+                    "strengthMathTooltip": "Dieses Modell ist besonders gut in mathematischen Aufgaben, z.B. für Berechnungen, Gleichungen oder mathematische Analysen",
+                    "strengthReasoning": "Logisches Denken",
+                    "strengthReasoningTooltip": "Dieses Modell ist besonders gut im logischen Denken, z.B. für Problemlösungen, Schlussfolgerungen oder analytische Aufgaben"
+                }
+            }
+        },
+        "error": {
+            "backendError": "Entschuldigung, während diese Nachricht geschrieben wurde, ist ein Fehler aufgetreten. Versuchen Sie bitte sie regenerieren zu lassen."
+        }
+    }
+}

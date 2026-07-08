@@ -35,7 +35,6 @@ export async function migrate({name, data}: MigrationContext) {
                 continue;
             }
 
-            console.log(`Migrating key: ${key}`);
             try {
                 let loadedValue;
                 let type: UserKeychainValueType;

@@ -5,7 +5,7 @@ namespace App\Console\Commands\Ai\Tools;
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
 use App\Models\Ai\AiTool;
-use App\Services\Ai\Repositories\AiModelToolRepository;
+use App\Services\Ai\Tools\Repositories\AiModelToolRepository;
 use Illuminate\Console\Command;
 
 class AssignToolToModel extends Command

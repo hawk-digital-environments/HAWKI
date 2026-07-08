@@ -18,7 +18,7 @@
 {#each Object.keys(entries) as groupKey (groupKey)}
     {#if groupKey === 'capabilities' && entries.capabilities.length > 0}
         <DropdownMenuLabel>{__('chat.composer.toolMenu.capabilitiesLabel')}</DropdownMenuLabel>
-        {#each entries.capabilities as entry (entry.name)}
+        {#each entries.capabilities as entry (entry.tool.name)}
             <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
         {/each}
     {:else if groupKey === 'functionTools' && entries.functionTools.length > 0}
@@ -29,20 +29,19 @@
             id="function-tools"
             label={__('chat.composer.toolMenu.hawkiToolsLabel')}
             description={__('chat.composer.toolMenu.hawkiToolsDescription')}/>
-        {#each entries.functionTools as entry (entry.name)}
+        {#each entries.functionTools as entry (entry.tool.name)}
             <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
         {/each}
     {:else if groupKey === 'mcpTools' && entries.mcpTools.length > 0}
-        {#if entries.functionTools.length > 0}
+        {#if entries.functionTools.length > 0 || (entries.capabilities.length > 0 && entries.functionTools.length === 0)}
             <DropdownMenuSeparator/>
         {/if}
-        <DropdownMenuLabel>{__('chat.composer.toolMenu.mcpToolsLabel')}</DropdownMenuLabel>
         {#each entries.mcpTools as serverGroup (serverGroup.id)}
             <ToolMenuGroupHeader
                 id={serverGroup.id}
                 label={serverGroup.label}
                 description={serverGroup.description}/>
-            {#each serverGroup.entries as entry (entry.name)}
+            {#each serverGroup.entries as entry (entry.tool.name)}
                 <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
             {/each}
         {/each}

@@ -7,7 +7,7 @@ namespace App\Services\Ai\StatusCheck;
 
 use App\Collections\AiModelCollection;
 use App\Models\Ai\AiModel;
-use App\Services\Ai\Values\ModelDemand;
+use App\Services\Ai\StatusCheck\Values\ModelDemand;
 use Psr\Log\LoggerInterface;
 
 /**

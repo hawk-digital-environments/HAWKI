@@ -265,7 +265,11 @@ const contextKey = Symbol('chatComposer');
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
-    return getContext(contextKey);
+    const context: ComposerContext | null | undefined = getContext(contextKey);
+    if (!context) {
+        throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
+    }
+    return context;
 }
 
 /**
@@ -304,7 +308,7 @@ export function createComposerContext(
                 case 'thread':
                     return new ChatInThreadMode();
                 case 'regen':
-                    return new ChatRegenMode(aiModelStore, aiToolStore, toastContext);
+                    return new ChatRegenMode(aiModelStore, toastContext);
                 default:
                     throw new Error(`Unsupported mode ${mode}`);
             }
@@ -317,7 +321,6 @@ export function createComposerContext(
     const guard = new GuardAspect((): ComposerContext => context);
     const modelUsage = new ModelUsageAspect(
         aiModelStore,
-        aiToolStore,
         modelContext,
         tool,
         attachment,
@@ -392,7 +395,6 @@ export function createComposerContext(
     onDestroy(() => unbinders.forEach(unbind => unbind()));
 
     oldUiBridge.triggerContextReady();
-
     setContext(contextKey, context);
 
     return context;

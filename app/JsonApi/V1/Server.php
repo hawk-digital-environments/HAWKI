@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\JsonApi\V1;
 
+use App\JsonApi\V1\AiModelDescriptions\AiModelDescriptionSchema;
+use App\JsonApi\V1\AiModelFlags\AiModelFlagSchema;
 use App\JsonApi\V1\AiModels\AiModelSchema;
 use App\JsonApi\V1\AiProviders\AiProviderSchema;
 use App\JsonApi\V1\AiToolCapabilities\AiToolCapabilitySchema;
@@ -44,24 +46,26 @@ class Server extends BaseServer
     protected function allSchemas(): array
     {
         return [
+            AiModelDescriptionSchema::class,
+            AiModelFlagSchema::class,
+            AiModelSchema::class,
+            AiProviderSchema::class,
+            AiToolCapabilitySchema::class,
+            AiToolSchema::class,
+            AttachmentSchema::class,
             ConfigSchema::class,
             ConnectionSchema::class,
             ExtAppSchema::class,
-            TranslationLabelSchema::class,
-            UserSchema::class,
-            AiToolSchema::class,
-            AiToolCapabilitySchema::class,
             McpServerSchema::class,
-            AiModelSchema::class,
-            AiProviderSchema::class,
-            SystemModelSchema::class,
-            SystemPromptSchema::class,
-            RoomSchema::class,
+            MigrationSchema::class,
             RoomMemberSchema::class,
             RoomMessagesSchema::class,
-            AttachmentSchema::class,
+            RoomSchema::class,
+            SystemModelSchema::class,
+            SystemPromptSchema::class,
+            TranslationLabelSchema::class,
             UserKeychainValueSchema::class,
-            MigrationSchema::class
+            UserSchema::class,
         ];
     }
 }

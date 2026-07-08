@@ -5,19 +5,19 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
-use App\Services\Ai\ProviderAdapters\WellKnownAdapterKeys;
-use App\Services\Ai\Registries\AiModelSettingRegistry;
-use App\Services\Ai\Repositories\AiModelRepository;
-use App\Services\Ai\Repositories\AiModelUsageRuleRepository;
-use App\Services\Ai\Repositories\AiProviderRepository;
-use App\Services\Ai\Values\ModelCapabilities;
-use App\Services\Ai\Values\ModelCapabilityValueType;
-use App\Services\Ai\Values\ModelIoMethods;
-use App\Services\Ai\Values\ModelParameters;
-use App\Services\Ai\Values\ModelSettings;
-use App\Services\Ai\Values\ProviderSettings;
-use App\Services\Ai\Values\WellKnownCapabilities;
-use App\Services\Ai\Values\WellKnownProviderSettings;
+use App\Services\Ai\ModelInformation\ModelInfoFetcher;
+use App\Services\Ai\Models\Io\Values\AiModelIoMethods;
+use App\Services\Ai\Models\ModelTypes\Values\WellKnownModelTypes;
+use App\Services\Ai\Models\Parameters\Values\AiModelParameters;
+use App\Services\Ai\Models\Repositories\AiModelDescriptionRepository;
+use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\Models\Repositories\AiModelUsageRuleRepository;
+use App\Services\Ai\Models\Settings\Values\AiModelSettings;
+use App\Services\Ai\Providers\Adapters\WellKnownAdapterKeys;
+use App\Services\Ai\Providers\AiProviderProxyResolver;
+use App\Services\Ai\Providers\Repositories\AiProviderRepository;
+use App\Services\Ai\Providers\Values\ProviderSettings;
+use App\Services\Ai\Providers\Values\WellKnownProviderSettings;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Config;
@@ -25,8 +25,8 @@ use Illuminate\Container\Attributes\Config;
 
 readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 {
-    private const BUILT_IN_PROVIDER_ID_TO_ADAPTER_KEY_MAP = [
-        'openAi' => WellKnownAdapterKeys::OPENAI_RESPONSES,
+    private const array BUILT_IN_PROVIDER_ID_TO_ADAPTER_KEY_MAP = [
+        'openAi' => WellKnownAdapterKeys::OPENAI,
         'gwdg' => WellKnownAdapterKeys::GWDG,
         'google' => WellKnownAdapterKeys::GEMINI,
         'ollama' => WellKnownAdapterKeys::OLLAMA,
@@ -35,11 +35,13 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 
     public function __construct(
         #[Config('model_providers.providers')]
-        private array                      $providers,
-        private AiModelRepository          $modelRepository,
-        private AiProviderRepository       $providerRepository,
-        private AiModelUsageRuleRepository $useRuleRepository,
-        private AiModelSettingRegistry     $settingRegistry
+        private array                        $providers,
+        private AiModelRepository            $modelRepository,
+        private AiModelDescriptionRepository $modelDescriptionRepository,
+        private AiProviderRepository         $providerRepository,
+        private AiProviderProxyResolver      $providerProxyResolver,
+        private AiModelUsageRuleRepository   $useRuleRepository,
+        private ModelInfoFetcher             $modelInfoFetcher,
     )
     {
     }
@@ -73,7 +75,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             if (is_array($config['config'][WellKnownProviderSettings::MODEL_PARAMETERS] ?? null)) {
                 $settings->set(
                     WellKnownProviderSettings::MODEL_PARAMETERS,
-                    ModelParameters::fromArray($config['config'][WellKnownProviderSettings::MODEL_PARAMETERS])
+                    AiModelParameters::fromArray($config['config'][WellKnownProviderSettings::MODEL_PARAMETERS])
                 );
             }
         }
@@ -91,21 +93,27 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             settings: $settings
         );
 
+        $syncedModelIds = [];
         foreach ($config['models'] ?? [] as $modelConfig) {
-            $this->syncModel($provider, $modelConfig, $metrics);
+            $modelId = $this->syncModel($provider, $modelConfig, $metrics);
+            if (!empty($modelId)) {
+                $syncedModelIds[] = $modelId;
+            }
         }
+
+        $this->modelRepository->disableAllExcept($syncedModelIds, $provider);
 
         $metrics->increment('AI providers');
     }
 
-    private function syncModel(AiProvider $provider, array $config, JobMetrics $metrics): void
+    private function syncModel(AiProvider $provider, array $config, JobMetrics $metrics): string|null
     {
         $modelId = $config['id'] ?? null;
         if (empty($modelId)) {
-            return;
+            return null;
         }
 
-        $settings = ModelSettings::fromArray([], $this->settingRegistry);
+        $settings = AiModelSettings::fromArray([]);
         if (!empty($config['max_tool_calling_rounds'])) {
             $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds'], streaming: false);
         }
@@ -113,7 +121,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             $settings->setMaxToolCallingRounds((int)$config['max_tool_calling_rounds_streaming'], streaming: true);
         }
 
-        $parameters = ModelParameters::fromArray([]);
+        $parameters = AiModelParameters::fromArray([]);
         if (!empty($config['default_params'])) {
             if (!empty($config['default_params']['temp'])) {
                 $parameters->setTemperature((float)$config['default_params']['temp']);
@@ -123,46 +131,32 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             }
         }
 
-        $capabilities = ModelCapabilities::fromArray([]);
         if (!empty($config['tools']) && is_array($config['tools'])) {
             $tools = $config['tools'];
 
             $settings->setUseTools(($tools['tool_calling'] ?? false) === true);
             $settings->setHandleFiles(($tools['file_upload'] ?? false) === true);
-
-            foreach ([
-                         WellKnownCapabilities::WEB_SEARCH,
-                         WellKnownCapabilities::KNOWLEDGE_BASE
-                     ] as $capability) {
-                if (isset($tools[$capability])) {
-                    $toolValue = $tools[$capability];
-
-                    $isTruthy = in_array($toolValue, [true, 'true', 1, '1'], true);
-                    $isFalsy = in_array($toolValue, [false, 'false', 0, '0', null, 'null'], true)
-                        || (is_string($toolValue) && strtolower($toolValue) === 'unsupported');
-                    $isNative = $toolValue === 'native';
-
-                    if ($isNative) {
-                        $capabilities->set($capability, ModelCapabilityValueType::NATIVE);
-                    } elseif ($isTruthy && !$isFalsy) {
-                        $capabilities->set($capability, ModelCapabilityValueType::YES);
-                    } else {
-                        $capabilities->set($capability, ModelCapabilityValueType::NO);
-                    }
-                }
-            }
+            $settings->setUseNativeCapabilities(($tools['native_capabilities'] ?? false) === true);
         }
 
+        $modelInfo = $this->modelInfoFetcher->fetchSingle($this->providerProxyResolver->resolve($provider), $modelId);
+
         $model = $this->modelRepository->upsert(
+            modelType: $modelInfo?->type ?? WellKnownModelTypes::CHAT,
             provider: $provider,
             modelId: $modelId,
             active: (bool)($config['active'] ?? true),
-            label: $config['label'] ?? $modelId,
-            input: ModelIoMethods::fromArray($config['input'] ?? []),
-            output: ModelIoMethods::fromArray($config['output'] ?? []),
+            label: $config['label'] ?? $modelInfo?->label ?? $modelId,
+            input: AiModelIoMethods::fromArray($config['input'] ?? []),
+            output: AiModelIoMethods::fromArray($config['output'] ?? []),
             parameters: $parameters,
             settings: $settings,
-            capabilities: $capabilities
+            limits: $modelInfo?->limits,
+            pricing: $modelInfo?->pricing,
+            flags: $modelInfo?->flags,
+            nativeCapabilities: $modelInfo?->native_capabilities,
+            deprecationDate: $modelInfo?->deprecation_date,
+            documentationUrl: $modelInfo?->documentation_url
         );
 
         $this->useRuleRepository->assignTypeToModel($model, WellKnownUsageTypes::MAIN_APP);
@@ -172,8 +166,13 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             isset($config['external']) && $config['external'] === true
         );
 
+        foreach ($modelInfo?->description ?? [] as $description) {
+            $this->modelDescriptionRepository->assignDescriptionToModel($model, $description);
+        }
 
         $metrics->increment('AI models');
+
+        return $modelId;
     }
 
     /**

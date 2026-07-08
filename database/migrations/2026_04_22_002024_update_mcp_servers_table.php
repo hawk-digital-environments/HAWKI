@@ -1,6 +1,6 @@
 <?php
 
-use App\Services\Ai\Values\McpServerType;
+use App\Services\Ai\Tools\Values\McpServerType;
 use App\Services\Ai\Values\OnlineStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

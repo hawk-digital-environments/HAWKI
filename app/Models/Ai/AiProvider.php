@@ -5,7 +5,7 @@ namespace App\Models\Ai;
 use App\Casts\AsInstance;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Policies\AiProviderPolicy;
-use App\Services\Ai\Values\ProviderSettings;
+use App\Services\Ai\Providers\Values\ProviderSettings;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;
 use App\Services\System\Database\Eloquent\ContextualScopes\ScopeRegistrar;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;

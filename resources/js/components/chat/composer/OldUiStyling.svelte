@@ -29,8 +29,6 @@
                 const yOffset = 100; // Adjust this value as needed
                 const y = el.getBoundingClientRect().top + scrollContainer.scrollTop - yOffset;
                 scrollContainer.scrollTo({top: y});
-            } else {
-                console.log('Element is already in view, no need to scroll.');
             }
         }
     }
@@ -111,6 +109,12 @@
         return () => {
             rollbackHighlight();
             rollbackInteractions();
+            document.body.setAttribute('data-no-auto-scroll', 'true');
+            console.log('SCROLLING TO messageId 123 ', messageId);
+            scrollElementIntoViewIfNeeded(messageId);
+            setTimeout(() => {
+                document.body.removeAttribute('data-no-auto-scroll');
+            }, 50);
         };
     }
 

@@ -74,7 +74,6 @@
 
 import type {Component} from 'svelte';
 import {mount, unmount} from 'svelte';
-import appComponent from './components/util/app/App.svelte';
 
 /**
  * Pre-registers all snippet modules via Vite's glob import.
@@ -176,13 +175,9 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
             return;
         }
 
-        this._app = mount(appComponent, {
+        this._app = mount(module.default, {
             target: this,
-            props: {
-                layout: (module as any).layout || null,
-                component: module.default,
-                componentProps: this._getProps()
-            }
+            props: this._getProps()
         });
     }
 

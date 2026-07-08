@@ -2,7 +2,7 @@
 
 namespace App\JsonApi\V1\AiToolCapabilities;
 
-use App\Services\Ai\Registries\AiModelCapabilityRegistry;
+use App\Services\Ai\Models\Capabilities\AiModelCapabilityRegistry;
 use App\Services\System\JsonApi\NonEloquent\Capabilities\GenericQueryAll;
 use LaravelJsonApi\Contracts\Store\QueriesAll;
 use LaravelJsonApi\Contracts\Store\QueryManyBuilder;

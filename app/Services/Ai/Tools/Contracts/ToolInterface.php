@@ -1,44 +1,29 @@
 <?php
 declare(strict_types=1);
 
+
 namespace App\Services\Ai\Tools\Contracts;
 
-use App\Services\Ai\Tools\Values\McpToolDefinition;
-use App\Services\Ai\Tools\Values\ToolResult;
 
-/**
- * AiTool Interface
- *
- * Defines the contract for all AI tools.
- * AiTool availability is determined by model configuration (model_lists/*.php),
- * not by the tool itself.
- */
-interface ToolInterface
+use App\Services\Ai\Tools\AbstractTool;
+use Laravel\Ai\Contracts\Tool;
+
+interface ToolInterface extends Tool
 {
     /**
-     * Get the unique name of the tool
-     * This name is used in model configuration to reference the tool
+     * This method tells HAWKI, which "capability" this tool provides.
+     * You can think of a capability as a "feature" or "functionality" that the tool offers.
+     * If your model is linked to this tool you can use {@see AiModel::$capabilities} to check for it.
+     * @return string|null
      */
-    public function getName(): string;
+    public function capability(): string|null;
 
     /**
-     * Get the tool definition including schema
-     * Used to build the tool payload for model requests
+     * Must return the unique name of this tool, e.g. "get_current_weather".
+     * Where possible I would suggest using a "private namespace" for your tools, e.g. "my_app_get_current_weather",
+     * to avoid name clashes with other tools.
+     * @return string
+     * @see AbstractTool::name() for more details and suggestions on how to name your tools.
      */
-    public function getDefinition(): McpToolDefinition;
-
-    /**
-     * Get the capability key for this tool (used when syncing to DB).
-     * Defaults to snake_case of the tool name.
-     */
-    public function getCapability(): string;
-
-    /**
-     * Execute the tool with given arguments
-     *
-     * @param array $arguments The arguments passed by the model
-     * @param string $toolCallId The ID of the tool call for tracking
-     * @return ToolResult The result of the tool execution
-     */
-    public function execute(array $arguments, string $toolCallId): ToolResult;
+    public function name(): string;
 }

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\Tools\Values;
 
-use App\Services\Ai\Values\ModelCapabilities;
+use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 
 readonly class McpToolDefinition
 {
@@ -23,7 +23,7 @@ readonly class McpToolDefinition
         public array       $config,
         /**
          * An optional "capability" string we can use for mapping this tool to a native tool in our system.
-         * A good example would be "web_search" {@see ModelCapabilities}
+         * A good example would be "web_search" {@see WellKnownCapabilities}
          * @var string|null
          */
         public string|null $capability

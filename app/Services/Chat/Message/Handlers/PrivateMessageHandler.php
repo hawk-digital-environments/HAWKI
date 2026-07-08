@@ -43,6 +43,7 @@ class PrivateMessageHandler extends AbstractMessageHandler
             'metadata' => [
                 'tools' => $data['metadata']['tools'] ?? null,
                 'params' => $data['metadata']['params'] ?? null,
+                'citations' => $data['metadata']['citations'] ?? null,
             ],
         ]);
 
@@ -80,6 +81,7 @@ class PrivateMessageHandler extends AbstractMessageHandler
             'metadata' => [
                 'tools' => $data['metadata']['tools'] ?? null,
                 'params' => $data['metadata']['params'] ?? null,
+                'citations' => $data['metadata']['citations'] ?? null,
             ]
         ]);
 

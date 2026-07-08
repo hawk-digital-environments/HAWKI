@@ -25,6 +25,12 @@
             "fileTooLarge": "Die Datei \":name\" konnte nicht angehängt werden, da sie mit :size die maximale Dateigröße von :maxSize überschreitet.",
             "unsupportedFileType": "Die Datei \":name\" konnte nicht angehängt werden, da der Dateityp \":type\" nicht unterstützt wird."
         },
+        "message": {
+            "sources": "Quellen",
+            "citationReference": {
+                "contextError": "Hier wurde etwas falsch programmiert. Diese Referenz befindet sich nicht in einem CitationContext. Bitte melde diesen Fehler den Entwicklern."
+            }
+        },
         "export": {
             "title": "Exportieren",
             "tooltip": "Wähle eine Option um diese Konversation zu exportieren",
@@ -101,11 +107,18 @@
                 "capabilitiesLabel": "Fähigkeiten",
                 "hawkiToolsLabel": "HAWKI Tools",
                 "hawkiToolsDescription": "Tools, die von HAWKI selbst zur Verfügung gestellt werden",
-                "mcpToolsLabel": "MCP-Tools",
                 "infoOffline": "(offline) | Klick für weitere Informationen",
                 "infoUnsupported": "(nicht von aktuellem Model unterstützt) | Klick für weitere Informationen",
                 "infoDefault": "Weitere Informationen zum Tool anzeigen",
-                "clickForInfo": "Klick für weitere Informationen"
+                "clickForInfo": "Klick für weitere Informationen",
+                "tools": {
+                    "webFetch": "Webinhalte abrufen",
+                    "webFetchDescription": "Dieses Tool ermöglicht es der KI, Informationen aus dem Internet abzurufen. Im Gegensatz zur Websuche kann die KI damit auch auf externe Webseiten zugreifen, um Inhalte zu extrahieren und zu analysieren.",
+                    "webSearch": "Websuche",
+                    "webSearchDescription": "Dieses Tool ermöglicht es der KI, das Internet zu durchsuchen, um aktuelle Informationen zu finden. Es kann Suchanfragen stellen und relevante Ergebnisse liefern, die in die Antworten der KI einfließen.",
+                    "knowledgeBase": "HAWKI-Wissen",
+                    "knowledgeBaseDescription": "Dieses Tool ermöglicht es der KI, auf eine umfangreiche Wissensdatenbank zuzugreifen, die speziell für HAWKI entwickelt wurde. Die Daten werden von deiner Hochschule zur Verfügung gestellt und enthalten Informationen zu Kursen, Veranstaltungen, Richtlinien und vielem mehr."
+                }
             },
             "modelPicker": {
                 "switchModel": "Aktuelles Modell wechseln",
@@ -119,7 +132,22 @@
                 "dropLabel": "Dateien hier ablegen"
             },
             "toolChips": {
-                "showMore": ":count weitere Tools anzeigen"
+                "showMore": ":count weitere Tools anzeigen",
+                "removeToolAriaLabel": "Tool :tool entfernen"
+            },
+            "modelConflict": {
+                "conflictTitleSingle": ":model unterstützt :tool nicht",
+                "conflictTitleMultiple": ":model unterstützt die folgenden Anforderungen nicht",
+                "singleModelCapable": "Dieses Modell kann alles was du brauchst.",
+                "multipleModelsCapable": "Diese :count Modelle können alles was du brauchst.",
+                "noModelsAvailable": "Kein verfügbares Modell unterstützt diese Kombination. Entferne ein Tool oder einen Anhang."
+            },
+            "toolMenuConfig": {
+                "variantLabel": "Variante",
+                "autoLabel": "automatisch",
+                "autoInfo": "Das Modell wählt automatisch die beste Variante für die Aufgabe aus. (Natives Tool bevorzugt, ansonsten die erste verfügbare Alternative)",
+                "nativeLabel": "Natives Tool",
+                "nativeInfo": "Dieses Tool wird vom Modell-Anbieter direkt zur Verfügung gestellt."
             },
             "actions": {
                 "invalidModelTooltip": "Bitte wähle ein anderes Modell oder entferne inkompatible Tools/Dateien",

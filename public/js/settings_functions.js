@@ -37,21 +37,12 @@ function toggleSettingsPanel(activation) {
 async function fetchGuidelines() {
     // Assume fetchLatestPolicy() returns an object {view, announcement}
     const {view, announcement} = await fetchLatestPolicy();
-    const md = await window.hawkiDependencyLoader('md');
-
-    // Render the HTML (MD rendered to HTML string)
-    let renderedHtml = view;
-    if (typeof md === 'undefined' || !md.render) {
-        console.error('Markdown renderer not initialized properly.');
-    } else {
-        renderedHtml = md.render(view, false);
-    }
 
     // const parent = document.querySelector('')
     // Insert the rendered HTML into the designated container
     const settingsModal = document.querySelector('.settings-modal');
     const policyContentBox = settingsModal.querySelector('#policy-content');
-    policyContentBox.innerHTML = renderedHtml;
+    policyContentBox.innerHTML = getMarkdownRendererHtml(view);
 
     // Add target and rel attributes for external links (XSS-protection best practice)
     policyContentBox.querySelectorAll('a').forEach(a => {
@@ -103,7 +94,6 @@ function SwitchDarkMode(isSet) {
     } else {
         //if local storage is not set (first time user...)
         if (localStorage.getItem('darkMode') === null) {
-            // console.log('dark mode not in local storage.');
             if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
                 // dark mode
                 localStorage.setItem('darkMode', 'enabled');
@@ -224,7 +214,6 @@ async function clearPersonalData() {
     }
 
     cleanupUserData(() => {
-        // console.log('cleaned Up previous user data.');
         logout();
     });
 }
@@ -240,7 +229,6 @@ function changeLanguage(lang) {
 
     // Retrieve CSRF token from meta tag
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    // console.log(lang);
     fetch('/req/changeLanguage', {
         method: 'POST',
         headers: {
@@ -257,8 +245,6 @@ function changeLanguage(lang) {
             return response.json(); // Read the response body as text
         })
         .then(data => {
-
-            // console.log(data);
             location.reload(); // Reload the page if language change is successful
         })
         .catch(error => {

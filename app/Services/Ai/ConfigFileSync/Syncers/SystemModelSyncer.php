@@ -6,9 +6,9 @@ namespace App\Services\Ai\ConfigFileSync\Syncers;
 
 
 use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
-use App\Services\Ai\Repositories\AiModelRepository;
-use App\Services\Ai\Repositories\SystemModelRepository;
-use App\Services\Ai\Values\SystemModelType;
+use App\Services\Ai\Models\Repositories\AiModelRepository;
+use App\Services\Ai\SystemModels\SystemModelRepository;
+use App\Services\Ai\SystemModels\Values\WellKnownSystemModelTypes;
 use App\Services\System\UsageTypes\Contracts\WellKnownUsageTypes;
 use App\Utils\JobMetrics;
 use Illuminate\Config\Repository;
@@ -57,7 +57,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
             if ($modelId === null) {
                 try {
                     $this->systemModelRepository->deleteWithTypeFilter(
-                        modelType: SystemModelType::fromLegacyKey($key),
+                        modelType: $this->upgradeOldModelTypes($key),
                         usageType: WellKnownUsageTypes::EXTERNAL_APP,
                         scopeOverrides: $this->systemModelRepository->makeScopeOverrides()
                     );
@@ -94,7 +94,7 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
         }
 
         try {
-            $modelType = SystemModelType::fromLegacyKey($key);
+            $modelType = $this->upgradeOldModelTypes($key);
         } catch (\Throwable) {
             $metrics->error("Invalid system model type key '$key' in configuration.");
             return;
@@ -124,5 +124,17 @@ readonly class SystemModelSyncer implements ConfigSyncerInterface
                 $metrics->error("System model with ID '{$systemModel->id}' is linked to a model with ID '{$systemModel->model_id}' that is not allowed for usage type '{$systemModel->usage_type}' according to its usage rules.");
             }
         }
+    }
+
+    private function upgradeOldModelTypes(string $oldModelType): string
+    {
+        return match ($oldModelType) {
+            'default_model' => WellKnownSystemModelTypes::DEFAULT,
+            'title_generator' => WellKnownSystemModelTypes::TITLE_GENERATION,
+            'prompt_improver' => WellKnownSystemModelTypes::PROMPT_IMPROVEMENT,
+            'summarizer' => WellKnownSystemModelTypes::SUMMARY,
+            // I did not bother to implement a custom exception class for this, as this is only used internally and will be removed soon anyway.
+            default => throw new \InvalidArgumentException("Invalid legacy key: $oldModelType")
+        };
     }
 }

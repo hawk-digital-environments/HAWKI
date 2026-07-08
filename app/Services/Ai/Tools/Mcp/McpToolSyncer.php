@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\Tools\Mcp;
 
-use App\Services\Ai\Repositories\AiToolRepository;
-use App\Services\Ai\Repositories\McpServerRepository;
 use App\Services\Ai\Tools\Mcp\Events\McpServerToolCleanupStartingEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpServerToolSyncCompletedEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpServerToolSyncFailedEvent;
@@ -13,6 +11,8 @@ use App\Services\Ai\Tools\Mcp\Events\McpServerToolSyncStartingEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpToolSyncCompletedEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpToolSyncFailedEvent;
 use App\Services\Ai\Tools\Mcp\Events\McpToolSyncStartingEvent;
+use App\Services\Ai\Tools\Repositories\AiToolRepository;
+use App\Services\Ai\Tools\Repositories\McpServerRepository;
 use App\Services\Ai\Values\OnlineStatus;
 use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Singleton;

@@ -2,26 +2,29 @@ import {getResourceSchema, type ResourceSchemaRegistry} from '$lib/data/resource
 import z from 'zod';
 import {decodeJsonApiIndexResponse, decodeJsonApiResourceResponse, extendResourceCollection, extendResourceSchema, type JsonApiCollection} from '$lib/data/api/jsonApiEncoding.js';
 import {buildQueryString, type FetchCollectionQuery, type FetchResourceQuery} from '$lib/data/api/buildQueryString.js';
+import type {Locale} from '$lib/schemas/resources/compound/locales.schema.js';
+import {getConnection} from '$lib/data/connection/connection.js';
 
-/**
- * Options for resource fetch helpers ({@link getResourceCollectionFromApi}, {@link getResourceFromApi}).
- */
-type FetchResourceApiOptions = {
-    /**
-     * If a resource has a registered schema, by default, we will validate the incoming data against the schema and throw an error
-     * if the data does not conform. This is useful for catching API changes and ensuring type safety.
-     * If there is no schema for a resource, we will skip validation and return the raw data.
-     * Set "false" to skip validation even if a schema exists.
-     */
-    validateSchema?: boolean;
-} & RequestInit;
 
-const API_BASE_URL = '/api/hawki/v1/';
+const API_BASE_URL = 'api/hawki/v1/';
 
-function buildApiUrl(path: string, actionOrId?: string): string {
-    let url = API_BASE_URL + path;
+export function buildApiUrl(path: string, actionOrId?: string | Record<string, any>): string {
+    if (path.startsWith('/')) {
+        path = path.substring(1);
+    }
+    if (path.startsWith(API_BASE_URL)) {
+        path = path.substring(API_BASE_URL.length);
+    }
+    let url = '/' + API_BASE_URL + path;
     if (actionOrId) {
-        url += `/${actionOrId}`;
+        if (typeof actionOrId === 'object') {
+            const queryString = buildQueryString(actionOrId);
+            if (queryString) {
+                url += queryString;
+            }
+        } else {
+            url += `/${actionOrId}`;
+        }
     }
     return url;
 }
@@ -56,6 +59,53 @@ export function setApiTransport(customTransport: ApiTransport) {
 }
 
 /**
+ * Returns the locale string to use for API requests, based on the provided options or the default connection locale.
+ * @param options
+ */
+function getLocaleString(options: FetchApiOptions): string {
+    let locale = options?.locale;
+    if (!locale) {
+        try {
+            locale = getConnection().locale;
+        } catch (e) {
+            // Ignore if we are too early to get the connection (e.g. during initialization)
+            return '';
+        }
+    }
+    if (typeof locale === 'string') {
+        return locale;
+    } else if (locale && typeof locale === 'object' && 'lang' in locale) {
+        return locale.lang;
+    }
+    return '';
+}
+
+type FetchApiOptions = RequestInit & {
+    /**
+     * Optional locale to send with the request. If provided, it will be added as a query parameter to the URL.
+     * If not provided, the default locale from the connection will be used.
+     */
+    locale?: string | Locale;
+
+    /**
+     * Allows you to preprocess the response before it is validated by the schema.
+     * This is useful if the API returns a wrapper object or needs some transformation before validation.
+     */
+    beforeSchema?: (response: any) => any;
+    /**
+     * Supply a Zod schema here if you want the response validated and narrowed to
+     * a specific type. Without it the return type is `any` and the response is
+     * returned as-is.
+     */
+    schema?: z.ZodTypeAny;
+    /**
+     * Allows you to postprocess the response after it is validated by the schema.
+     * This is useful if you want to transform the data into a different shape or extract specific fields.
+     */
+    afterSchema?: (response: any, data: any) => any;
+}
+
+/**
  * Low-level fetch wrapper used by all higher-level API helpers.
  *
  * Sets the required JSON:API `Accept` header, checks for HTTP errors, and
@@ -63,18 +113,54 @@ export function setApiTransport(customTransport: ApiTransport) {
  * array before throwing — so callers get "400: Validation failed" rather than
  * a generic status code.
  */
-export async function fetchApi<T>(path: string, options: FetchResourceApiOptions): Promise<T> {
+export async function fetchApi<S extends z.ZodTypeAny>(
+    path: string,
+    options: FetchApiOptions & { schema: S }
+): Promise<z.infer<S>>;
+export async function fetchApi(
+    path: string,
+    options?: FetchApiOptions
+): Promise<any>;
+export async function fetchApi(
+    path: string,
+    options?: FetchApiOptions
+): Promise<any> {
     const fetchOptions: RequestInit = {
-        ...options,
+        ...(options || {}),
         headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/vnd.api+json,application/json',
-            ...(options.headers || {})
+            'X-App-Locale': getLocaleString(options || {}),
+            ...(options?.headers || {})
         }
     };
 
-    return transport(path, fetchOptions);
+    const response = await transport(path, fetchOptions);
+
+    let data = options?.beforeSchema ? options.beforeSchema(response) : response;
+    data = options?.schema ? options.schema.parse(data) : data;
+    data = options?.afterSchema ? options.afterSchema(response, data) : data;
+
+    return data;
 }
+
+/**
+ * Options for resource fetch helpers ({@link getResourceCollectionFromApi}, {@link getResourceFromApi}).
+ */
+type FetchResourceApiOptions = RequestInit & {
+    /**
+     * Optional locale to send with the request. If provided, it will be added as a query parameter to the URL.
+     * If not provided, the default locale from the connection will be used.
+     */
+    locale: FetchApiOptions['locale'];
+    /**
+     * If a resource has a registered schema, by default, we will validate the incoming data against the schema and throw an error
+     * if the data does not conform. This is useful for catching API changes and ensuring type safety.
+     * If there is no schema for a resource, we will skip validation and return the raw data.
+     * Set "false" to skip validation even if a schema exists.
+     */
+    validateSchema?: boolean;
+};
 
 export type FetchResourceCollectionOptions = FetchResourceApiOptions & {
     /**
@@ -112,16 +198,16 @@ export async function getResourceCollectionFromApi(
     options?: FetchResourceCollectionOptions
 ): Promise<JsonApiCollection<any>> {
     const url = buildApiUrl(resourceType) + buildQueryString(options?.query);
-    const response = await fetchApi<Record<string, any>>(url, {method: 'GET', ...options});
-    const data = decodeJsonApiIndexResponse(response);
-
+    const fetchOptions: FetchApiOptions = {
+        ...options,
+        beforeSchema: decodeJsonApiIndexResponse,
+        afterSchema: (response, data) => extendResourceCollection(response, data)
+    };
     if (options?.validateSchema !== false) {
         const schema = getResourceSchema(resourceType);
-
-        if (schema) return extendResourceCollection(response, z.array(extendResourceSchema(schema)).parse(data));
+        if (schema) fetchOptions.schema = z.array(extendResourceSchema(schema));
     }
-
-    return extendResourceCollection(response, data);
+    return await fetchApi(url, {method: 'GET', ...fetchOptions});
 }
 
 export type FetchResourceOptions = FetchResourceApiOptions & {
@@ -157,25 +243,18 @@ export async function getResourceFromApi(
     options?: FetchResourceOptions
 ): Promise<any> {
     const url = buildApiUrl(resourceType, id.toString());
-    const response = await fetchApi(url, {method: 'GET', ...options});
-    const data = decodeJsonApiResourceResponse(response);
-
+    const fetchOptions: FetchApiOptions = {
+        ...options,
+        beforeSchema: decodeJsonApiResourceResponse
+    };
     if (options?.validateSchema !== false) {
         const schema = getResourceSchema(resourceType);
-        if (schema) return extendResourceSchema(schema).parse(data);
+        if (schema) fetchOptions.schema = extendResourceSchema(schema);
     }
-
-    return data;
+    return await fetchApi(url, {method: 'GET', ...fetchOptions});
 }
 
-type GetFromResourceActionOptions = {
-    /**
-     * Supply a Zod schema here if you want the response validated and narrowed to
-     * a specific type. Without it the return type is `any` and the response is
-     * returned as-is.
-     */
-    schema?: z.ZodTypeAny;
-} & RequestInit;
+type GetFromResourceActionOptions = FetchApiOptions;
 
 /**
  * GETs from a custom action endpoint that doesn't follow the standard
@@ -204,25 +283,13 @@ export async function getFromResourceAction(
     options?: GetFromResourceActionOptions
 ): Promise<any> {
     const url = buildApiUrl(resourceType, action);
-    const response = await fetchApi(url, {method: 'GET', ...options});
-
-    if (options?.schema) {
-        return options.schema.parse(response);
-    }
-    return response;
+    return await fetchApi(url, {method: 'GET', ...options});
 }
 
 /**
  * Options for {@link postToResourceAction}.
  */
-type PostToResourceActionOptions = {
-    /**
-     * Supply a Zod schema here if you want the response validated and narrowed to
-     * a specific type. Without it the return type is `any` and the response is
-     * returned as-is.
-     */
-    schema?: z.ZodTypeAny;
-} & RequestInit;
+type PostToResourceActionOptions = FetchApiOptions;
 
 /**
  * POSTs to a custom action endpoint that doesn't follow the standard
@@ -260,14 +327,9 @@ export async function postToResourceAction(
     options?: PostToResourceActionOptions
 ): Promise<any> {
     const url = buildApiUrl(resourceType, action);
-    const response = await fetchApi(url, {
+    return await fetchApi(url, {
         method: 'POST',
         body: JSON.stringify(data),
         ...options
     });
-
-    if (options?.schema) {
-        return options.schema.parse(response);
-    }
-    return response;
 }

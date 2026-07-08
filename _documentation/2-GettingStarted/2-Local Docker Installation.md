@@ -285,3 +285,41 @@ Or if you want to run all tests and static analysis in one go, you can use the `
 ```bash
 bin/env test php all
 ```
+
+## Debugging
+
+### PHP debug configuration
+The default configuration is mostly configurable by env files.
+
+The defaults are:
+```
+XDEBUG_MODE="${XDEBUG_MODE:-debug}"
+XDEBUG_START_WITH_REQUEST="${XDEBUG_START_WITH_REQUEST:-yes}"
+XDEBUG_CLIENT_HOST="${XDEBUG_CLIENT_HOST:-host.docker.internal}"
+XDEBUG_CLIENT_PORT="${XDEBUG_CLIENT_PORT:-9003}"
+XDEBUG_LOG="${XDEBUG_LOG:-/var/www/html/storage/logs/xdebug.log}"
+XDEBUG_LOG_LEVEL="${XDEBUG_LOG_LEVEL:-7}"
+```
+Example override in .env: `XDEBUG_CLIENT_PORT=9000`
+
+See `docker/app/php/php.dev.ini` for details.
+
+### vscode
+If hawki services have been started successfully e.g. via `bin/env up -f --build`,
+a debugger can be connected to the app container, after installing your favorite vscode php debug extensions.
+Example extensions:
+    - [bmewburn.vscode-intelephense-client](https://github.com/bmewburn/vscode-intelephense)
+    - [xdebug.php-debug](https://github.com/xdebug/vscode-php-debug)
+`` 
+Example for entry in `.vscode/launch.json`:
+```json
+    {
+        "name": "Listen for Xdebug in development app service",
+        "type": "php",
+        "request": "launch",
+        "port": 9003,
+        "pathMappings": {
+            "/var/www/html": "${workspaceFolder}" 
+        }
+    }
+```

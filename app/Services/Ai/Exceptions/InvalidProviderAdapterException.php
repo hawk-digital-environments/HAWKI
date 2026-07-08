@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Services\Ai\Exceptions;
 
-use App\Services\Ai\ProviderAdapters\Contracts\ProviderAdapterInterface;
+use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 
 class InvalidProviderAdapterException extends \RuntimeException implements AiExceptionInterface
 {

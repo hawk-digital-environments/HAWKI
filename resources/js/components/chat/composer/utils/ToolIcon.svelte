@@ -1,27 +1,24 @@
 <script lang="ts">
 
-    import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
     import {Wrench} from '@lucide/svelte';
-    import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
+    import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
 
     interface Props {
-        tool: AiTool;
+        tool: AiToolOrCapability;
         size?: number;
     }
 
     const {tool, size = 16}: Props = $props();
-
-    const capability = $derived.by(() => aiToolStore.capabilities.find(cap => cap.id === tool.capability_key));
 </script>
 
 <span class="tool-icon" style="width: {size}px; height: {size}px;">
-    {#if capability?.icon_path}
-        {#if capability?.icon_path.startsWith('data:image/svg+xml;base64,')}
+    {#if tool?.is_capability}
+        {#if tool?.icon_path.startsWith('data:image/svg+xml;base64,')}
             <span class="tool-icon-svg">
-                {@html (atob(capability?.icon_path.slice(26)))}
+                {@html (atob(tool?.icon_path.slice(26)))}
             </span>
         {:else}
-            <img src={capability?.icon_path} alt="" width={size} height={size}/>
+            <img src={tool?.icon_path} alt="" width={size} height={size}/>
         {/if}
     {:else}
         <Wrench size={size}/>
