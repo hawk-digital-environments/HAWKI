@@ -32,6 +32,9 @@ class IconCssTest extends TestCase
             'border radius' => ['border-radius: 8px;'],
             'rgba' => ['background-color: rgba(0, 0, 0, 0.4);'],
             'repeating conic' => ['background: repeating-conic-gradient(#444cf7 0% 25%, #e5e5f7 0% 50%) 50% / 10px 10px;'],
+            'relative url absolute path' => ['background-image: url(/storage/assistant_avatars/foo.png);'],
+            'relative url double quoted' => ['background: url("/storage/x.png");'],
+            'relative url single quoted' => ["background: url('x.png');"],
             'empty string' => [''],
         ];
     }
@@ -45,7 +48,11 @@ class IconCssTest extends TestCase
     public static function invalidInputs(): array
     {
         return [
-            'url()' => ['background: url(https://evil.test/x.png);'],
+            'external https url' => ['background: url(https://evil.test/x.png);'],
+            'external http url' => ['background: url(http://evil.test/x.png);'],
+            'protocol-relative url' => ['background: url(//evil.test/x.png);'],
+            'data uri' => ['background: url(data:image/png;base64,AAAA);'],
+            'empty url' => ['background: url();'],
             'image()' => ['background: image(x);'],
             'image-set()' => ['background: image-set(x);'],
             '@import' => ['@import url("x");'],

@@ -12,8 +12,11 @@ use Illuminate\Contracts\Validation\ValidationRule;
  *
  * The value is rendered into the DOM of users viewing the assistant, so this
  * enforces a strict property whitelist and bans every value-level injection
- * vector (url(), @import, expression(), markup, etc.). Only safe,
- * presentational properties are permitted.
+ * vector (@import, expression(), markup, etc.). Only safe, presentational
+ * properties are permitted. url() is allowed solely for relative or
+ * server-served paths (schemes such as http/https/data and protocol-relative
+ * "//host" references are rejected), so referenced content is always served by
+ * the application's own storage.
  */
 final class IconCss implements ValidationRule
 {
@@ -24,7 +27,6 @@ final class IconCss implements ValidationRule
      * Case-insensitive.
      */
     private const array DENYLIST = [
-        'url(',
         'image(',
         'image-set(',
         'cross-fade(',
@@ -119,6 +121,38 @@ final class IconCss implements ValidationRule
         foreach (self::DENYLIST as $token) {
             if (str_contains($lower, $token)) {
                 $fail('The :attribute contains a forbidden CSS token.');
+
+                return;
+            }
+        }
+
+        // url() is permitted, but only for relative or server-served paths:
+        // any scheme (http:, https:, data:, ...) and protocol-relative ("//host")
+        // references are rejected so no external content can be loaded.
+        preg_match_all(
+            '/url\(\s*(?:"([^"]*)"|\'([^\']*)\'|([^)]*?))\s*\)/',
+            $lower,
+            $urls,
+            PREG_SET_ORDER | PREG_UNMATCHED_AS_NULL,
+        );
+
+        foreach ($urls as $m) {
+            $ref = trim($m[1] ?? $m[2] ?? $m[3]);
+
+            if ($ref === '') {
+                $fail('The :attribute contains an empty url().');
+
+                return;
+            }
+
+            if (preg_match('/^[a-z][a-z0-9+.\-]*:/', $ref)) {
+                $fail('The :attribute may only reference relative or server-served urls.');
+
+                return;
+            }
+
+            if (str_starts_with($ref, '//')) {
+                $fail('The :attribute may not use protocol-relative urls.');
 
                 return;
             }
