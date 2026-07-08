@@ -150,6 +150,7 @@
                 "nativeInfo": "Dieses Tool wird vom Modell-Anbieter direkt zur Verfügung gestellt."
             },
             "actions": {
+                "noMessageTooltip": "Bitte gib eine Nachricht ein, bevor du sie sendest",
                 "invalidModelTooltip": "Bitte wähle ein anderes Modell oder entferne inkompatible Tools/Dateien",
                 "emptyMessageTooltip": "Bitte gib eine Nachricht ein",
                 "sendTooltip": "Nachricht senden",

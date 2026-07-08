@@ -23,6 +23,9 @@
     }: Props = $props();
 
     const sendTooltip = $derived.by(() => {
+        if (!composerContext.message.trim()) {
+            return __('chat.composer.actions.noMessageTooltip');
+        }
         if (composerContext.modelUsage.isValid) {
             return __('chat.composer.actions.invalidModelTooltip');
         }
