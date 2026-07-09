@@ -15,6 +15,23 @@ use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Tag;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Upserts all PHP function-calling tools registered in the service container into the database.
+ *
+ * The set of tools is collected via the `#[Tag(ToolInterface::class)]` DI tag — every class
+ * bound with that tag is processed. This runs at deployment time (via `ai:tools:sync`) so that
+ * the database always reflects the currently registered tool classes.
+ *
+ * Each tool is passed to {@see AiToolRepository::upsertFunction()}, which creates or updates
+ * the corresponding `ai_tools` row. Tools that are no longer registered are *not* automatically
+ * removed; removal is a deliberate manual step to avoid accidental data loss.
+ *
+ * Events emitted during a sync:
+ *  - {@see FunctionToolSyncStartingEvent} — before iteration begins (carries the metrics object).
+ *  - {@see FunctionToolSyncedEvent}        — after each successful upsert.
+ *  - {@see FunctionToolSyncFailedEvent}    — when a single tool's upsert throws.
+ *  - {@see FunctionToolSyncCompletedEvent} — after all tools have been processed.
+ */
 readonly class FunctionToolSyncer
 {
     public function __construct(
@@ -29,6 +46,12 @@ readonly class FunctionToolSyncer
     {
     }
 
+    /**
+     * Iterates all tagged {@see ToolInterface} instances and upserts each into the database.
+     *
+     * Failures for individual tools are caught and recorded in the returned metrics without
+     * aborting the rest of the sync, so a single broken tool cannot block others.
+     */
     public function sync(): JobMetrics
     {
         $metrics = new JobMetrics('Function Tool Sync', $this->logger);

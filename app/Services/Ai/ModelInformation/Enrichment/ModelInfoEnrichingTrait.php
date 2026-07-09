@@ -117,7 +117,7 @@ trait ModelInfoEnrichingTrait
         }
 
         $descriptions = $model->description;
-        if ($descriptions->contains(fn(AiModelDescription $desc) => $desc->locale === $locale->lang)) {
+        if ($descriptions->contains(fn(AiModelDescription $desc) => $desc->locale->lang === $locale->lang)) {
             return;
         }
 
@@ -144,9 +144,6 @@ trait ModelInfoEnrichingTrait
         }
 
         foreach ($descriptions as $description) {
-            if (!$description instanceof AiModelDescription) {
-                continue;
-            }
             $this->attachDescription($model, $description->locale, $description->description);
         }
     }
@@ -163,7 +160,7 @@ trait ModelInfoEnrichingTrait
             return;
         }
 
-        $existingFlags = $model->flags?->toArray() ?? [];
+        $existingFlags = $model->flags->toArray();
         $mergedFlags = array_unique(array_merge($flags, $existingFlags));
         $model->flags = AiModelFlags::fromArray($mergedFlags);
     }
@@ -180,7 +177,7 @@ trait ModelInfoEnrichingTrait
             return;
         }
 
-        $existingParameters = $model->parameters?->toArray() ?? [];
+        $existingParameters = $model->parameters->toArray();
         $mergedParameters = array_merge($parameters, $existingParameters);
         $model->parameters = AiModelParameters::fromArray($mergedParameters);
     }
@@ -203,7 +200,7 @@ trait ModelInfoEnrichingTrait
         }
 
         $limits = $model->limits;
-        if ($limits === null || $limits instanceof NullAiModelLimits) {
+        if ($limits instanceof NullAiModelLimits) {
             $model->limits = $limits = ChatAiModelLimits::fromArray([]);
         } else if (!$limits instanceof ChatAiModelLimits) {
             throw InvalidModelEnrichmentTypeException::forInvalidLimitsType((string) $model->model_id, get_debug_type($limits));
@@ -240,7 +237,7 @@ trait ModelInfoEnrichingTrait
         }
 
         $currentPricing = $model->pricing;
-        if ($currentPricing === null || $currentPricing instanceof NullPricing) {
+        if ($currentPricing instanceof NullPricing) {
             $currentPricing = $model->pricing = ChatAiModelPricing::fromArray([]);
         } elseif (!$currentPricing instanceof ChatAiModelPricing) {
             throw InvalidModelEnrichmentTypeException::forInvalidPricingType((string) $model->model_id, get_debug_type($currentPricing));
@@ -267,7 +264,7 @@ trait ModelInfoEnrichingTrait
             return;
         }
 
-        $existingCapabilities = $model->native_capabilities?->toArray() ?? [];
+        $existingCapabilities = $model->native_capabilities->toArray();
         $mergedCapabilities = array_merge($capabilities, $existingCapabilities);
         $model->native_capabilities = NativeAiModelCapabilities::fromArray($mergedCapabilities);
     }

@@ -41,7 +41,7 @@ export function autoRegisterMigrations(): void {
         const pathParts = filePath.split('/');
         const dirName = pathParts[pathParts.length - 2];
         if (dirName === 'migrations') {
-            return 'after_login;';
+            return 'after_login';
         }
         return dirName as MigrationRunType;
     };

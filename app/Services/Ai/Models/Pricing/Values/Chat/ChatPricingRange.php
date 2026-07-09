@@ -102,7 +102,8 @@ class ChatPricingRange implements CastableInstanceInterface
 
     public static function fromArray(array $data): static
     {
-        return new self(
+        /** @phpstan-ignore new.static */
+        return new static(
             currency: $data['currency'] ?? self::CURRENCY_USD,
             inputCostPerToken: $data['input_cost_per_token'] ?? null,
             inputCostPerCachedToken: $data['input_cost_per_cached_token'] ?? null,

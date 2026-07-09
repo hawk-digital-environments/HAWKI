@@ -18,11 +18,11 @@ use Psr\Log\LoggerInterface;
  * @see LiteLlmApiDataStore for the live-API implementation with caching.
  * @see StaticLiteLlmDataStore for the offline file-based implementation.
  */
-abstract readonly class AbstractLiteLlmDataStore
+abstract class AbstractLiteLlmDataStore
 {
     public function __construct(
-        protected LoggerInterface                      $logger,
-        protected LiteLlmDriverNameProviderNameMapping $nameMapping
+        protected readonly LoggerInterface                      $logger,
+        protected readonly LiteLlmDriverNameProviderNameMapping $nameMapping
     )
     {
     }

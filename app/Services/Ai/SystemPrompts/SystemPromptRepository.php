@@ -15,6 +15,24 @@ use App\Services\Translation\LocaleService;
 use App\Services\Translation\Value\Locale;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * Database access layer for the {@see SystemPrompt} model.
+ *
+ * System prompts are locale- and usage-type-scoped text templates that are injected as
+ * the AI system message for specific operations (default chat, summarisation, prompt
+ * improvement, title generation).  Each prompt is uniquely identified by the triple
+ * `(prompt_type, usage_type, locale)`.
+ *
+ * The repository resolves the most appropriate locale via {@see LocaleService} and honours
+ * the active usage context via {@see UsageContext}, so callers rarely need to pass these
+ * explicitly.  When a locale or usage type is provided explicitly, the corresponding
+ * contextual scope is disabled for that single query so the explicit value takes precedence
+ * over any ambient scope.
+ *
+ * Named convenience methods ({@see findDefaultPrompt()}, {@see findSummaryPrompt()}, etc.)
+ * cover the well-known prompt types; they all throw {@see SystemPromptNotFoundException}
+ * when no matching record exists so callers receive a meaningful error rather than a null.
+ */
 class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
 {
     public function __construct(
@@ -25,9 +43,12 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Returns the default system prompt for the given locale.
-     * If no locale is provided, the default locale will be used.
-     * If no usage type is provided, the current usage context will be used.
+     * Returns the default system prompt for the given locale and usage type.
+     *
+     * Falls back to the ambient locale (via {@see LocaleService}) and the current usage context
+     * (via {@see UsageContext}) when either argument is omitted.
+     *
+     * @throws \App\Services\Ai\SystemPrompts\Exceptions\SystemPromptNotFoundException
      */
     public function findDefaultPrompt(string|Locale|null $locale = null, string|null $usageType = null): SystemPrompt
     {
@@ -35,10 +56,11 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Returns the summary system prompt for the given locale.
-     * If no locale is provided, the default locale will be used.
-     * If no usage type is provided, the current usage context will be used.
+     * Returns the summary system prompt for the given locale and usage type.
      *
+     * Falls back to the ambient locale and current usage context when either argument is omitted.
+     *
+     * @throws \App\Services\Ai\SystemPrompts\Exceptions\SystemPromptNotFoundException
      */
     public function findSummaryPrompt(string|Locale|null $locale = null, string|null $usageType = null): SystemPrompt
     {
@@ -46,9 +68,11 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Returns the improvement system prompt for the given locale.
-     * If no locale is provided, the default locale will be used.
-     * If no usage type is provided, the current usage context will be used.
+     * Returns the prompt-improvement system prompt for the given locale and usage type.
+     *
+     * Falls back to the ambient locale and current usage context when either argument is omitted.
+     *
+     * @throws \App\Services\Ai\SystemPrompts\Exceptions\SystemPromptNotFoundException
      */
     public function findImprovementPrompt(string|Locale|null $locale = null, string|null $usageType = null): SystemPrompt
     {
@@ -56,9 +80,11 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Returns the title system prompt for the given locale.
-     * If no locale is provided, the default locale will be used.
-     * If no usage type is provided, the current usage context will be used.
+     * Returns the title-generation system prompt for the given locale and usage type.
+     *
+     * Falls back to the ambient locale and current usage context when either argument is omitted.
+     *
+     * @throws \App\Services\Ai\SystemPrompts\Exceptions\SystemPromptNotFoundException
      */
     public function findTitleGenerationPrompt(string|Locale|null $locale = null, string|null $usageType = null): SystemPrompt
     {
@@ -66,15 +92,16 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Upserts a system prompt for the given type and locale.
-     * If a prompt for the given type and locale already exists, it will be updated with the new content.
-     * If no prompt exists, a new one will be created.
+     * Creates or updates a system prompt identified by `(prompt_type, usage_type, locale)`.
      *
-     * @param string $promptType The type of the system prompt.
-     * @param string $usageType The usage type of the system prompt.
-     * @param Locale $locale The locale of the system prompt.
-     * @param string $content The content of the system prompt.
-     * @return SystemPrompt The upserted system prompt.
+     * Used by the config-file sync flow to seed or refresh prompts from a YAML definition.
+     * Contextual scopes are bypassed so the upsert is not restricted by ambient locale or
+     * usage-type filters.
+     *
+     * @param string $promptType One of the {@see WellKnownSystemPromptTypes} constants.
+     * @param string $usageType  The usage type this prompt applies to.
+     * @param Locale $locale     The locale this prompt is written in.
+     * @param string $content    The raw prompt text.
      */
     public function upsert(
         string $promptType,
@@ -97,12 +124,13 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
-     * Finds a system prompt by type, locale, and usage type. If no prompt is found, an exception is thrown.
+     * Looks up a system prompt by type, locale, and usage type and throws when not found.
      *
-     * @param string $type The type of the system prompt.
-     * @param string|Locale|null $locale The locale of the system prompt. If null, the most likely locale will be used.
-     * @param string|null $usageType The usage type of the system prompt. If null, the current usage context will be used.
-     * @return SystemPrompt The found system prompt.
+     * The locale argument is resolved to the most likely concrete locale via
+     * {@see LocaleService::getMostLikelyLocale()} before querying, so passing a generic
+     * language tag (e.g. `"de"`) will be expanded to the best matching DB locale.
+     *
+     * @throws \App\Services\Ai\SystemPrompts\Exceptions\SystemPromptNotFoundException
      */
     private function findOneOrFail(
         string             $type,
@@ -124,6 +152,12 @@ class SystemPromptRepository extends AbstractRepositoryWithContextualScopes
     }
 
     /**
+     * Builds a filtered query for the SystemPrompt model.
+     *
+     * When an explicit locale or usage type is provided, the corresponding contextual scope is
+     * disabled so that the explicit WHERE clause takes full control rather than being shadowed
+     * by the ambient scope value.
+     *
      * @return Builder<SystemPrompt>
      */
     private function makeBaseQuery(

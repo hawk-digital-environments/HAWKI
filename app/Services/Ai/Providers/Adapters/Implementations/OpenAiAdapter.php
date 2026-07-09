@@ -20,11 +20,27 @@ use Laravel\Ai\Providers\OpenAiProvider;
 use Laravel\Ai\Providers\Provider as Driver;
 use Laravel\Ai\Providers\Tools\WebSearch;
 
+/**
+ * Provider adapter for OpenAI (api.openai.com).
+ *
+ * Uses {@see ExtendedOpenAiGateway} instead of the default gateway so that HAWKI's
+ * custom gateway extensions are active (e.g. reasoning-token tracking). The gateway
+ * is injected via the container builder closure so the event dispatcher is resolved
+ * automatically.
+ *
+ * Exposes OpenAI's native web-search tool via {@see getNativeToolFactoryForCapability()},
+ * causing HAWKI to delegate web-search requests to OpenAI's built-in implementation
+ * rather than running its own HTTP tool.
+ */
 class OpenAiAdapter extends AbstractProviderAdapter
 {
     use OpenAiModelListTrait;
     use CreatesOpenAiClient;
 
+    /**
+     * Creates an OpenAI driver using {@see ExtendedOpenAiGateway} so HAWKI's custom
+     * gateway logic is applied to every request sent through this provider.
+     */
     public function createDriver(AiProvider $provider, DriverFactory $factory): Driver
     {
         return $factory->make(
@@ -43,17 +59,28 @@ class OpenAiAdapter extends AbstractProviderAdapter
     }
 
     /**
-     * @inheritDoc
+     * Fetches the available OpenAI models from the standard `/models` endpoint.
+     *
+     * @return Collection<int, \App\Models\Ai\AiModel>
      */
     public function getModels(AiProviderProxy $provider): Collection
     {
         return $this->fetchOpenAiModelList($provider, $this->createModelListClient($this->client($provider->driver)));
     }
 
+    /**
+     * Returns a factory for OpenAI's native web-search tool when the requested
+     * capability is {@see WellKnownCapabilities::WEB_SEARCH}.
+     *
+     * Using the native tool means the model can call OpenAI's built-in search API
+     * directly, which is more tightly integrated than routing through HAWKI's own
+     * HTTP-fetch tool.
+     *
+     * @see https://developers.openai.com/api/docs/guides/tools-web-search
+     */
     public function getNativeToolFactoryForCapability(string $capability): \Closure|null
     {
         return match ($capability) {
-            /* @see https://developers.openai.com/api/docs/guides/tools-web-search */
             WellKnownCapabilities::WEB_SEARCH => static fn() => new WebSearch(),
             default => null
         };

@@ -77,7 +77,7 @@
         stroke: currentColor;
 
         &[data-state*="open"] {
-            :global(svg.lucide) {
+            :global(svg) {
                 stroke-width: 3;
             }
         }

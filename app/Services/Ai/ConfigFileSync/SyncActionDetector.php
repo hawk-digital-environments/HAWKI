@@ -9,12 +9,22 @@ use App\Services\Ai\ConfigFileSync\Contracts\ConfigSyncerInterface;
 use Illuminate\Contracts\Cache\Repository;
 
 /**
+ * Determines whether the AI configuration has changed since it was last synced.
+ *
+ * Each {@see ConfigSyncerInterface} contributes a hash of its own config state.
+ * Those hashes are combined into a single SHA-256 fingerprint and compared with
+ * the value stored in the cache. When the fingerprints differ, a sync is needed.
+ * After a successful sync the cache is updated to reflect the new state.
+ *
+ * The cache key is derived from the class name so it never collides with other
+ * application cache entries.
+ *
  * @internal
  */
-readonly class SyncActionDetector
+class SyncActionDetector
 {
     public function __construct(
-        private Repository $cache
+        private readonly Repository $cache
     )
     {
     }

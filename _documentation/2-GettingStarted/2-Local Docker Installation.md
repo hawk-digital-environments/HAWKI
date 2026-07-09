@@ -86,24 +86,90 @@ bin/env open
 
 Well done!
 
-#### A few words on the `bin/env` script.
+#### The `bin/env` command reference
 
-The script is build using node.js and is located in the `bin` folder.
-For the most part it acts as a convenience wrapper around `docker-compose` and `docker` commands, but it also has some additional features.
-To see all available commands, run `bin/env` without any arguments to see a detailed help.
+The script is built using Node.js and lives in the `bin` folder. It acts as a convenience wrapper around `docker compose` and executes all tools (PHP, Composer, npm, Artisan, etc.) inside the appropriate containers — you never need to install these on your host machine. Run `bin/env --help` at any time to see the full command list.
 
-A few commands that might be useful:
+**Container lifecycle**
 
-- `bin/env up` will start the application. (Supports all docker compose flags + "-f" to follow the output of the containers)
-- `bin/env down` will stop the application and remove all containers. (Supports all docker compose flags)
-- `bin/env restart` will restart the application.
-- `bin/env open` will open the application in your default browser.
-- `bin/env dev` will start the worker and websocket listeners.
-- `bin/env ssh` will open a shell into a container (If no parameter is given, it will open the shell of the php container); can use any "docker-compose" service name to shell into that container.
-- `bin/env logs` will show the logs of the containers. (Supports all docker compose flags)
-- `bin/env composer` executes the composer command in the php container. (Works like a normal composer command)
-- `bin/env npm` executes the npm command in the node container. (Works like a normal npm command)
-- `bin/env artisan` executes the artisan command in the php container. (Works like a normal artisan command)
+| Command | Description |
+|---|---|
+| `bin/env up` | Start containers (detached by default) |
+| `bin/env up -f` | Start containers and follow output |
+| `bin/env down` | Stop and remove containers |
+| `bin/env stop` | Stop containers without removing them |
+| `bin/env restart` | Restart containers |
+| `bin/env restart --force` | Full down + up cycle |
+| `bin/env ps` | Show running containers |
+| `bin/env logs` | Show app container logs |
+| `bin/env logs -f` | Follow logs |
+| `bin/env logs --all` | Show all container logs |
+| `bin/env ssh` | Open a shell in the app container |
+| `bin/env ssh <service>` | Open a shell in a specific service |
+| `bin/env ssh -c "<cmd>"` | Run a single command in the container |
+| `bin/env clean` | Remove all containers, volumes, networks, and images |
+
+**Running code**
+
+| Command | Description |
+|---|---|
+| `bin/env php <args>` | Run a PHP command in the app container |
+| `bin/env artisan <cmd>` | Run an Artisan command |
+| `bin/env composer <cmd>` | Run a Composer command |
+| `bin/env npm <cmd>` | Run an npm command in the node container |
+| `bin/env node <cmd>` | Run a Node command in the node container |
+| `bin/env hawki <cmd>` | Run the HAWKI CLI tool in the app container |
+
+**Testing**
+
+| Command | Description |
+|---|---|
+| `bin/env test php unit` | Run PHPUnit unit tests |
+| `bin/env test php unit --coverage` | Run unit tests with a coverage report |
+| `bin/env test php feature` | Run PHPUnit feature tests |
+| `bin/env test php feature --coverage` | Run feature tests with a coverage report |
+| `bin/env test php stan` | Run PHPStan static analysis |
+| `bin/env test php all` | Run all PHP tests (stan + phpunit) |
+| `bin/env test all` | Run all tests (PHP and JS) |
+
+Extra arguments after a test command are forwarded to the underlying tool, e.g. `bin/env test php unit -- --filter MyTest`.
+
+**Code style**
+
+| Command | Description |
+|---|---|
+| `bin/env style php` | Run php-cs-fixer (auto-fix PHP style) |
+| `bin/env style js` | Run Prettier (auto-fix JS/TS/CSS style) |
+
+**Utilities**
+
+| Command | Description |
+|---|---|
+| `bin/env dev` | Start queue + websocket server in foreground |
+| `bin/env queue` | Start the Laravel queue worker in foreground |
+| `bin/env websocket` | Start the Reverb websocket server in foreground |
+| `bin/env clear-cache` | Clear and rebuild Laravel caches |
+| `bin/env helper-code` | Regenerate IDE helper code |
+| `bin/env setup-models` | Wizard to configure AI models |
+| `bin/env env:reset` | Reset `.env` to the default template |
+| `bin/env mailhog` | Open the Mailhog UI in the browser |
+| `bin/env open` | Open the project URL in the browser |
+
+**Documentation**
+
+| Command | Description |
+|---|---|
+| `bin/env docs build` | Build the documentation |
+| `bin/env docs watch` | Serve docs locally with live reload |
+| `bin/env docs npm <cmd>` | Run an npm command in the docs directory |
+
+**Production**
+
+| Command | Description |
+|---|---|
+| `bin/env docker:build:prod` | Build the production Docker image |
+| `bin/env docker:build:prod --tag <tag>` | Build with a custom image tag |
+| `bin/env start-docker-production-test` | Spin up a production test environment |
 
 ### Manual Installation
 
@@ -271,13 +337,13 @@ However many IDEs also support integrating prettier directly into the editor, so
 HAWKI uses PHPUnit for testing of the PHP code, which also runs inside the php container. You can run the tests with the following command, which will boot up the php container if needed and execute the tests inside it:
 
 ```bash
-bin/env test unit
+bin/env test php unit
 ```
 
 For static code analysis, we use PHPStan, which also runs inside the php container. You can run it with the following command:
 
 ```bash
-bin/env test stan
+bin/env test php stan
 ```
 
 Or if you want to run all tests and static analysis in one go, you can use the `test` command:

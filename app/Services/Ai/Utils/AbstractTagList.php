@@ -9,6 +9,24 @@ use App\Casts\Contracts\CastableInstanceInterface;
 use Illuminate\Support\Traits\Macroable;
 use Traversable;
 
+/**
+ * Ordered, deduplicated list of string tags with case-insensitive comparison.
+ *
+ * Concrete subclasses represent specific tag domains (e.g. {@see AiModelIoMethods} for
+ * input/output modalities, {@see AiModelFlags} for model characteristic labels).
+ * All values are normalised to lowercase and trimmed on insertion, so duplicates that
+ * differ only in case or surrounding whitespace are silently merged.
+ *
+ * Implements {@see CastableInstanceInterface} so instances can be stored and retrieved
+ * from Eloquent JSON columns via a matching cast. Use {@see fromArray()} to create an
+ * instance from a decoded JSON array and {@see toArray()} / {@see jsonSerialize()} to
+ * convert back.
+ *
+ * The {@see Macroable} trait allows consuming packages to extend the list type with
+ * domain-specific helper methods without subclassing.
+ *
+ * @api
+ */
 abstract class AbstractTagList implements CastableInstanceInterface, \JsonSerializable, \IteratorAggregate
 {
     use Macroable;

@@ -38,7 +38,7 @@ class AiModelDescription extends Model
     }
 
     /**
-     * @return BelongsTo<$this, AiModel>
+     * @return BelongsTo<AiModel, $this>
      */
     public function aiModel(): BelongsTo
     {

@@ -8,11 +8,28 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * @deprecated This will become a "repository" in the near future
+ * Records and periodically summarises AI token-usage data.
+ *
+ * Each AI response that returns token counts is written as a raw
+ * {@see UsageRecord} row via {@see submitUsageRecord()}. A separate scheduled
+ * job calls {@see summarizeAndCleanup()} at month boundaries to aggregate the
+ * previous month's rows and purge the originals.
+ *
+ * @deprecated This class will be replaced by a proper repository in a future release.
  */
 class UsageAnalyzerService
 {
 
+    /**
+     * Persists a token-usage record for the currently authenticated user.
+     *
+     * Does nothing when `$usage` is null, which happens when an agent response
+     * did not include usage metadata (e.g. streamed responses before the final
+     * chunk arrives).
+     *
+     * @param string      $type   Caller context: 'private', 'group', or 'api'.
+     * @param int|null    $roomId The room this usage is associated with, or null for direct/API calls.
+     */
     public function submitUsageRecord(?TokenUsage $usage, $type, $roomId = null)
     {
         if ($usage === null) {
@@ -34,6 +51,13 @@ class UsageAnalyzerService
 
     }
 
+    /**
+     * Aggregates the previous month's raw usage rows by user, room, type and model,
+     * then deletes those raw rows.
+     *
+     * The summary storage step is currently a no-op placeholder — implementors should
+     * persist the aggregated data before this method is put into production use.
+     */
     public function summarizeAndCleanup()
     {
         $lastMonth = Carbon::now()->subMonth()->format('Y-m');

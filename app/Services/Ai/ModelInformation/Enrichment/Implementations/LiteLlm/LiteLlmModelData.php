@@ -184,8 +184,8 @@ readonly class LiteLlmModelData
 {
     public function __construct(
         public string $modelId,
+        public array  $data,
         public array  $otherModelIds = [],
-        public array  $data
     )
     {
     }

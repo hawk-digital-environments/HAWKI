@@ -14,6 +14,7 @@ use Illuminate\Console\OutputStyle;
 use Laravel\Prompts\Output\ConsoleOutput;
 use Symfony\Component\Console\Input\ArgvInput;
 
+// @phpstan-ignore trait.unused
 trait ConfigSyncMigrationTrait
 {
     use ServiceLocatorTrait;
@@ -67,8 +68,8 @@ trait ConfigSyncMigrationTrait
 
                 $metrics->writeToCli($io);
             } catch (\Throwable $e) {
-                $io->error(sprintf(
-                    'Error during sync: %s, please run the command `%s` to sync manually.',
+                $io->warning(sprintf(
+                    'Error during sync: %s, please run the command `%s` to sync manually. IMPORTANT: If you are seeing this, but afterwards see output that tells you that the sync was successful, you can ignore this warning.',
                     $e->getMessage(),
                     $syncer['commandOnFailure']
                 ));

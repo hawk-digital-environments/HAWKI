@@ -14,7 +14,43 @@ use Laravel\Ai\Tools\Request;
 use Psr\Log\LoggerInterface;
 use Stringable;
 
-
+/**
+ * Base class for all HAWKI function-calling tools.
+ *
+ * Concrete subclasses implement the tool's behaviour in a `__invoke()` method whose
+ * parameters are resolved from the validated argument map via the {@see ServiceLocator}.
+ * Subclasses also provide {@see name()}, {@see description()}, and {@see schema()} as
+ * required by {@see ToolInterface}.
+ *
+ * The `handle()` entry point called by the Laravel AI layer:
+ *  - validates the incoming arguments against the schema returned by `schema()`,
+ *  - enforces an optional per-instance call-count ceiling (`setMaxRuns`),
+ *  - dispatches `__invoke()` with the validated args via the service locator
+ *    (allowing the container to inject additional dependencies beyond the args),
+ *  - converts the return value to a string (JSON-encoding arrays/objects), and
+ *  - catches any exception, logging it and returning a structured error string to the AI.
+ *
+ * Example — a minimal concrete tool:
+ * ```php
+ * class GetCurrentWeatherTool extends AbstractTool
+ * {
+ *     public function name(): string { return 'get_current_weather'; }
+ *     public function description(): string { return 'Returns the current weather for a city.'; }
+ *
+ *     public function schema(JsonSchema $schema): array
+ *     {
+ *         return ['city' => $schema->string()->required()];
+ *     }
+ *
+ *     // Extra dependencies (WeatherClient) are injected by the container;
+ *     // tool arguments (city) are resolved from the validated argument map.
+ *     public function __invoke(WeatherClient $client, string $city): array
+ *     {
+ *         return $client->current($city);
+ *     }
+ * }
+ * ```
+ */
 abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
 {
     private ServiceLocator|null $serviceLocator = null;
@@ -24,6 +60,10 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
     private Request|null $request = null;
     private array|null $arguments = null;
 
+    /**
+     * Injects a custom service locator, replacing the default container-backed singleton.
+     * Primarily intended for testing, where a pre-configured locator with mock services is injected.
+     */
     final public function setServiceLocator(ServiceLocator $serviceLocator): void
     {
         $this->serviceLocator = $serviceLocator;
@@ -34,6 +74,10 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
         return $this->serviceLocator ??= app(ServiceLocator::class);
     }
 
+    /**
+     * Limits how many times this tool instance may be invoked in a single agent session.
+     * Set to 0 (the default) to allow unlimited calls.
+     */
     protected function setMaxRuns(int $maxRuns): void
     {
         $this->maxRuns = $maxRuns;
@@ -54,6 +98,12 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
         return $this->settings;
     }
 
+    /**
+     * Returns the raw Laravel AI {@see Request} that triggered the current invocation.
+     * Only accessible while `__invoke()` is executing — throws outside that window.
+     *
+     * @throws ToolCallStateException when called outside of an active tool invocation.
+     */
     protected function getRequest(): Request
     {
         if ($this->request === null) {
@@ -62,6 +112,12 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
         return $this->request;
     }
 
+    /**
+     * Returns the schema-validated argument map for the current invocation.
+     * Only accessible while `__invoke()` is executing — throws outside that window.
+     *
+     * @throws ToolCallStateException when called outside of an active tool invocation.
+     */
     protected function getArguments(): array
     {
         if ($this->arguments === null) {
@@ -71,10 +127,9 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
     }
 
     /**
-     * This method tells HAWKI, which "capability" this tool provides.
-     * You can think of a capability as a "feature" or "functionality" that the tool offers.
-     * If your model is linked to this tool you can use {@see AiModel::$capabilities} to check for it.
-     * @return string|null
+     * Declares which HAWKI capability key this tool fulfils (e.g. `"web_search"`).
+     * Returns null when the tool does not map to any well-known capability.
+     * Agents and models use this to locate the right tool via {@see AiModel::$capabilities}.
      */
     public function capability(): string|null
     {
@@ -82,7 +137,11 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
     }
 
     /**
-     * @inheritDoc
+     * Entry point called by the Laravel AI layer on every tool invocation.
+     *
+     * Validates arguments, enforces the max-run ceiling, and delegates to `__invoke()`.
+     * Any unhandled exception from `__invoke()` is caught, logged, and converted into
+     * a structured error string that the AI model can understand and act on.
      */
     final public function handle(Request $request): Stringable|string
     {
@@ -125,6 +184,13 @@ abstract class AbstractTool implements ToolInterface, SettingsAwareToolInterface
         }
     }
 
+    /**
+     * Formats an error message for the AI model and logs it at `error` level.
+     *
+     * The returned string begins with `[ERROR]` so the model recognises it as a failure
+     * and can decide not to retry. The current arguments and settings are included in the
+     * log context for debugging; when a `Throwable` is passed the exception is also captured.
+     */
     protected function errorResponse(string|\Throwable|null $message = null): string
     {
         $context = [

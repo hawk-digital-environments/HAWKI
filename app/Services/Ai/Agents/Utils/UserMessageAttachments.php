@@ -136,8 +136,6 @@ class UserMessageAttachments
 
     private function generateContextMarkdown(): string
     {
-        $contextParts = [];
-
         if (!empty($this->extractReferences)) {
             $this->meta->addSection('Extracted attachments', [
                 'The following attachments were automatically extracted from the original files:',
@@ -164,10 +162,6 @@ class UserMessageAttachments
                 'The following errors occurred while processing attachments:',
                 implode("\n", array_unique($this->errors))
             ]);
-        }
-
-        if (empty($contextParts)) {
-            return '';
         }
 
         return (string)$this->meta;

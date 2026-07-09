@@ -12,14 +12,34 @@ use App\Utils\Arrays\RecursiveMerger;
 use Mcp\Client\Client;
 use Psr\Log\LoggerInterface;
 
-readonly class McpClientFactory
+/**
+ * Creates {@see HawkiMcpClient} instances from either a {@see McpServer} model or raw config values.
+ *
+ * The factory maps HAWKI server configuration to the `mcp/mcp-php` {@see Client} connection
+ * parameters, branching on transport type:
+ *  - {@see McpServerType::STDIO}: uses `args` and `env` from the merged config.
+ *  - {@see McpServerType::SSE} / {@see McpServerType::HTTP}: uses `headers` and `http_options`.
+ *
+ * API keys are injected as `Authorization: Bearer` headers for HTTP/SSE transports.
+ * Timeout values from {@see McpServerTimeouts} are forwarded to the underlying HTTP transport.
+ * Additional per-server config from the database is deep-merged on top of the defaults via
+ * {@see RecursiveMerger}, allowing operators to supply arbitrary transport options.
+ *
+ * The returned client holds the session factory as a closure; the actual TCP/stdio connection
+ * is not established until the client is first used.
+ */
+class McpClientFactory
 {
     public function __construct(
-        private LoggerInterface $logger
+        private readonly LoggerInterface $logger
     )
     {
     }
 
+    /**
+     * Convenience method that reads all connection parameters from a {@see McpServer} model
+     * and delegates to {@see createForConfig()}.
+     */
     public function createForServer(McpServer $server): HawkiMcpClient
     {
         return $this->createForConfig(
@@ -31,6 +51,19 @@ readonly class McpClientFactory
         );
     }
 
+    /**
+     * Builds a {@see HawkiMcpClient} from raw connection parameters.
+     *
+     * Prefer {@see createForServer()} when you have a model; use this directly only when
+     * constructing a client from config-file values (e.g. in {@see ConfigSyncMigrationTrait})
+     * before the server record has been persisted.
+     *
+     * @param string               $url     Command path (STDIO) or server URL (SSE/HTTP).
+     * @param McpServerType        $type    Transport type; controls how `$config` is interpreted.
+     * @param array|null           $config  Additional transport options deep-merged onto defaults.
+     * @param string|null          $apiKey  When set, added as `Authorization: Bearer` for HTTP/SSE transports.
+     * @param McpServerTimeouts|null $timeouts  Connection and read timeout overrides; falls back to 10 s read timeout when null.
+     */
     public function createForConfig(
         string                 $url,
         McpServerType          $type,

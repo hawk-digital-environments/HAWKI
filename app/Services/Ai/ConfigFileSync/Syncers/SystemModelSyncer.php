@@ -15,6 +15,19 @@ use Illuminate\Config\Repository;
 use Illuminate\Container\Attributes\Config;
 
 /**
+ * Syncs system-model assignments from config into the database.
+ *
+ * System models are the specific AI model instances that HAWKI selects automatically for
+ * built-in tasks such as "default chat", "title generation", "prompt improvement" and
+ * "summary". They are configured via `model_providers.system_models` (main app) and
+ * `model_providers.system_models_ext_app` (external app).
+ *
+ * Config keys map to {@see WellKnownSystemModelTypes} via {@see upgradeOldModelTypes()},
+ * which also handles the legacy key names still present in some installations. A null
+ * value for an external-app key removes the corresponding assignment. After all
+ * assignments are written, a sanity check validates that every system model points to an
+ * active model that is permitted for its usage type.
+ *
  * @internal
  */
 readonly class SystemModelSyncer implements ConfigSyncerInterface

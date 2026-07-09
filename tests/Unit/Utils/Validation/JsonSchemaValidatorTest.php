@@ -30,7 +30,7 @@ class JsonSchemaValidatorTest extends TestCase
     // Array schema — happy path
     // =========================================================================
 
-    public function testItReturnsNullWhenDataMatchesArraySchema(): void
+    public function testItReturnsArrayWhenDataMatchesArraySchema(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -39,10 +39,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['name' => 'Alice'],
         );
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsNullWhenOptionalFieldIsAbsent(): void
+    public function testItReturnsArrayWhenOptionalFieldIsAbsent(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -51,23 +51,23 @@ class JsonSchemaValidatorTest extends TestCase
             ['name' => 'Alice'],
         );
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsNullForEmptySchema(): void
+    public function testItReturnsArrayForEmptySchema(): void
     {
         $sut = new JsonSchemaValidator();
 
-        $result = $sut->validate([], ['anything' => 'goes']);
+        $result = $sut->validate([], []);
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
     // =========================================================================
     // Array schema — validation failures
     // =========================================================================
 
-    public function testItReturnsErrorsWhenRequiredFieldIsMissing(): void
+    public function testItReturnsErrorStringWhenRequiredFieldIsMissing(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -76,11 +76,11 @@ class JsonSchemaValidatorTest extends TestCase
             [],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
         static::assertNotEmpty($result);
     }
 
-    public function testItReturnsErrorsWhenFieldTypeIsWrong(): void
+    public function testItReturnsErrorStringWhenFieldTypeIsWrong(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -89,10 +89,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['count' => 'not-an-integer'],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
-    public function testItReturnsErrorsWhenEnumValueIsDisallowed(): void
+    public function testItReturnsErrorStringWhenEnumValueIsDisallowed(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -101,10 +101,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['unit' => 'kelvin'],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
-    public function testItReturnsNullWhenEnumValueIsAllowed(): void
+    public function testItReturnsArrayWhenEnumValueIsAllowed(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -113,10 +113,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['unit' => 'celsius'],
         );
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsErrorsWhenStringIsTooShort(): void
+    public function testItReturnsErrorStringWhenStringIsTooShort(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -125,10 +125,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['code' => 'ab'],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
-    public function testItReturnsNullWhenStringMeetsMinLength(): void
+    public function testItReturnsArrayWhenStringMeetsMinLength(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -137,10 +137,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['code' => 'abc'],
         );
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsErrorsWhenStringExceedsMaxLength(): void
+    public function testItReturnsErrorStringWhenStringExceedsMaxLength(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -149,10 +149,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['tag' => 'toolongvalue'],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
-    public function testItReturnsErrorsWhenIntegerIsBelowMinimum(): void
+    public function testItReturnsErrorStringWhenIntegerIsBelowMinimum(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -161,10 +161,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['age' => 5],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
-    public function testItReturnsNullWhenIntegerMeetsMinimum(): void
+    public function testItReturnsArrayWhenIntegerMeetsMinimum(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -173,10 +173,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['age' => 18],
         );
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsErrorsWhenIntegerExceedsMaximum(): void
+    public function testItReturnsErrorStringWhenIntegerExceedsMaximum(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -185,10 +185,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['score' => 101],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
-    public function testItReturnsNullForNullableFieldSetToNull(): void
+    public function testItReturnsArrayForNullableFieldSetToNull(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -197,14 +197,14 @@ class JsonSchemaValidatorTest extends TestCase
             ['note' => null],
         );
 
-        static::assertNull($result);
+        static::assertEquals(['note' => null], $result);
     }
 
     // =========================================================================
     // Nested objects
     // =========================================================================
 
-    public function testItReturnsNullWhenNestedObjectIsValid(): void
+    public function testItReturnsArrayWhenNestedObjectIsValid(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -217,10 +217,10 @@ class JsonSchemaValidatorTest extends TestCase
 
         $result = $sut->validate($schema, ['location' => ['lat' => 52.5, 'lon' => 13.4]]);
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsErrorsWhenNestedObjectIsMissingRequiredField(): void
+    public function testItReturnsErrorStringWhenNestedObjectIsMissingRequiredField(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -233,14 +233,14 @@ class JsonSchemaValidatorTest extends TestCase
 
         $result = $sut->validate($schema, ['location' => ['lat' => 52.5]]);
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
     // =========================================================================
     // Arrays
     // =========================================================================
 
-    public function testItReturnsNullWhenArrayItemsAreValid(): void
+    public function testItReturnsArrayWhenArrayItemsAreValid(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -249,10 +249,10 @@ class JsonSchemaValidatorTest extends TestCase
             ['tags' => ['php', 'laravel']],
         );
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsErrorsWhenArrayHasTooFewItems(): void
+    public function testItReturnsErrorStringWhenArrayHasTooFewItems(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -261,14 +261,14 @@ class JsonSchemaValidatorTest extends TestCase
             ['tags' => ['only-one']],
         );
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
     // =========================================================================
     // String schema
     // =========================================================================
 
-    public function testItReturnsNullWhenDataMatchesStringSchema(): void
+    public function testItReturnsArrayWhenDataMatchesStringSchema(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -280,10 +280,10 @@ class JsonSchemaValidatorTest extends TestCase
 
         $result = $sut->validate($schemaJson, ['name' => 'Bob']);
 
-        static::assertNull($result);
+        static::assertIsArray($result);
     }
 
-    public function testItReturnsErrorsWhenDataFailsStringSchema(): void
+    public function testItReturnsErrorStringWhenDataFailsStringSchema(): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -295,7 +295,7 @@ class JsonSchemaValidatorTest extends TestCase
 
         $result = $sut->validate($schemaJson, []);
 
-        static::assertIsArray($result);
+        static::assertIsString($result);
     }
 
     // =========================================================================
@@ -303,7 +303,7 @@ class JsonSchemaValidatorTest extends TestCase
     // =========================================================================
 
     #[DataProvider('provideTestItValidatesMultipleFieldsData')]
-    public function testItValidatesMultipleFields(array $data, bool $expectsNull): void
+    public function testItValidatesMultipleFields(array $data, bool $expectsSuccess): void
     {
         $sut = new JsonSchemaValidator();
 
@@ -315,10 +315,10 @@ class JsonSchemaValidatorTest extends TestCase
 
         $result = $sut->validate($schema, $data);
 
-        if ($expectsNull) {
-            static::assertNull($result);
-        } else {
+        if ($expectsSuccess) {
             static::assertIsArray($result);
+        } else {
+            static::assertIsString($result);
         }
     }
 

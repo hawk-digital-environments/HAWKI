@@ -38,11 +38,11 @@ use Psr\Log\LoggerInterface;
  * The optional {@see JobMetrics} reference parameter carries structured log output
  * across multi-step operations. When omitted, one is created automatically.
  */
-readonly class ModelInfoFetcher
+class ModelInfoFetcher
 {
     public function __construct(
-        private LoggerInterface               $logger,
-        private AiModelInfoEnrichmentPipeline $enrichmentPipeline
+        private readonly LoggerInterface               $logger,
+        private readonly AiModelInfoEnrichmentPipeline $enrichmentPipeline
     )
     {
     }

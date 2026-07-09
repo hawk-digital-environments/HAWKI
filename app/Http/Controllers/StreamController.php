@@ -173,7 +173,7 @@ class StreamController extends Controller
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [
                 'exception' => $e,
-                'response' => $e->response?->body()
+                'response' => $e->response->body()
             ]);
             return response()->json(['success' => false], 500);
         } catch (\Throwable $e) {
@@ -304,7 +304,7 @@ class StreamController extends Controller
         } catch (RequestException $e) {
             $this->logger->error('RequestException while streaming response of agent', [
                 'exception' => $e,
-                'response' => $e->response?->body()
+                'response' => $e->response->body()
             ]);
             yield $formatError('There was an error while sending your request to the AI agent. Please try again later.');
             return;

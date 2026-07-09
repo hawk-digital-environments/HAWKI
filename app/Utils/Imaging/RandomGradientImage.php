@@ -92,6 +92,7 @@ class RandomGradientImage implements \Stringable
     {
         $positions = $this->randomEdgePositions(count($colors));
 
+        // @phpstan-ignore arrayValues.list
         return array_values(array_map(
             static fn(array $color, array $pos): array => [...$color, 'cx' => $pos[0], 'cy' => $pos[1]],
             $colors,
@@ -119,6 +120,7 @@ class RandomGradientImage implements \Stringable
 
         shuffle($candidates);
 
+        // @phpstan-ignore arrayValues.list
         return array_values(array_map(
             static fn(array $p): array => [
                 $p[0] + (random_int(-8, 8) / 100.0),

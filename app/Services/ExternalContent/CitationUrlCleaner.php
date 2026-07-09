@@ -50,7 +50,11 @@ readonly class CitationUrlCleaner
         $resolved = $this->urlCleaner->cleanMany($urlsToResolve);
 
         foreach ($urlIndices as $i => $citationKey) {
-            $clone = clone $citations[$citationKey];
+            $originalCitation = $citations[$citationKey];
+            if (!$originalCitation instanceof UrlCitation) {
+                continue;
+            }
+            $clone = clone $originalCitation;
             $clone->url = $resolved[$i];
             $citations[$citationKey] = $clone;
         }

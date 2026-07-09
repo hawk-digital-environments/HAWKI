@@ -332,18 +332,18 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
         $this->attachDescription(
             $modelInfo,
             $this->getService(LocaleService::class)->getLocale('en'),
-            $modelData['description'] ?? null
+            $modelData['description']
         );
 
-        $this->attachFlags($modelInfo, $modelData['flags'] ?? null);
+        $this->attachFlags($modelInfo, $modelData['flags']);
 
         $this->enrichParameters($modelInfo, $modelData['parameters'] ?? null);
 
-        $this->enrichChatLimits($modelInfo, maxInputTokens: $modelData['max_tokens'] ?? null);
+        $this->enrichChatLimits($modelInfo, maxInputTokens: $modelData['max_tokens']);
 
         $this->enrichNativeCapabilities($modelInfo, $modelData['native_capabilities'] ?? null);
 
-        if (!empty($modelData['documentation_url']) && $modelInfo->documentation_url === GwdgAdapter::DEFAULT_DOCUMENTATION_URL) {
+        if ($modelInfo->documentation_url === GwdgAdapter::DEFAULT_DOCUMENTATION_URL) {
             $modelInfo->documentation_url = $modelData['documentation_url'];
         }
 

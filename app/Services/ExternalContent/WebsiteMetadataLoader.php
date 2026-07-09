@@ -82,13 +82,13 @@ readonly class WebsiteMetadataLoader
         // Fallback to Open Graph title
         $nodes = $xpath->query("//meta[@property='og:title']");
         if ($nodes->length > 0) {
-            return $nodes->item(0)->getAttribute('content');
+            return $this->getDomElement($nodes->item(0))?->getAttribute('content');
         }
 
         // Fallback to Twitter Card title
         $nodes = $xpath->query("//meta[@name='twitter:title']");
         if ($nodes->length > 0) {
-            return $nodes->item(0)->getAttribute('content');
+            return $this->getDomElement($nodes->item(0))?->getAttribute('content');
         }
 
         return $this->createFallbackTitle($url);
@@ -99,57 +99,65 @@ readonly class WebsiteMetadataLoader
         // Try to get the description from the Open Graph meta tag
         $nodes = $xpath->query("//meta[@property='og:description']");
         if ($nodes->length > 0) {
-            return $nodes->item(0)->getAttribute('content');
+            return $this->getDomElement($nodes->item(0))?->getAttribute('content');
         }
 
         // Fallback to Twitter Card description
         $nodes = $xpath->query("//meta[@name='twitter:description']");
         if ($nodes->length > 0) {
-            return $nodes->item(0)->getAttribute('content');
+            return $this->getDomElement($nodes->item(0))?->getAttribute('content');
         }
 
         // Fallback to standard meta description
         $nodes = $xpath->query("//meta[@name='description']");
         if ($nodes->length > 0) {
-            return $nodes->item(0)->getAttribute('content');
+            return $this->getDomElement($nodes->item(0))?->getAttribute('content');
         }
 
         return null;
     }
 
-    private function extractPreviewImageUrl(\DOMXPath $xpath, string $url): ?string
+    private function extractPreviewImageUrl(\DOMXPath $xpath, string $url): string
     {
         // Try to get the image from the Open Graph meta tag
         $nodes = $xpath->query("//meta[@property='og:image']");
         if ($nodes->length > 0) {
-            $imageUrl = $nodes->item(0)->getAttribute('content');
-            return $this->createPreviewImageUrl(UrlResolver::resolve($url, $imageUrl));
+            $imageUrl = $this->getDomElement($nodes->item(0))?->getAttribute('content');
+            if (is_string($imageUrl)) {
+                return $this->createPreviewImageUrl(UrlResolver::resolve($url, $imageUrl));
+            }
         }
 
         // Fallback to Twitter Card image
         $nodes = $xpath->query("//meta[@name='twitter:image']");
         if ($nodes->length > 0) {
-            $imageUrl = $nodes->item(0)->getAttribute('content');
-            return $this->createPreviewImageUrl(UrlResolver::resolve($url, $imageUrl));
+            $imageUrl = $this->getDomElement($nodes->item(0))?->getAttribute('content');
+            if (is_string($imageUrl)) {
+                return $this->createPreviewImageUrl(UrlResolver::resolve($url, $imageUrl));
+            }
         }
 
         return $this->createPreviewImageUrl($url, true);
     }
 
-    private function extractFaviconUrl(\DOMXPath $xpath, string $url): ?string
+    private function extractFaviconUrl(\DOMXPath $xpath, string $url): string
     {
         // Try to get the favicon from the <link rel="icon"> tag
         $nodes = $xpath->query("//link[@rel='icon']");
         if ($nodes->length > 0) {
-            $faviconUrl = $nodes->item(0)->getAttribute('href');
-            return $this->createFaviconUrl(UrlResolver::resolve($url, $faviconUrl));
+            $faviconUrl = $this->getDomElement($nodes->item(0))?->getAttribute('href');
+            if (is_string($faviconUrl)) {
+                return $this->createFaviconUrl(UrlResolver::resolve($url, $faviconUrl));
+            }
         }
 
         // Fallback to <link rel="shortcut icon">
         $nodes = $xpath->query("//link[@rel='shortcut icon']");
         if ($nodes->length > 0) {
-            $faviconUrl = $nodes->item(0)->getAttribute('href');
-            return $this->createFaviconUrl(UrlResolver::resolve($url, $faviconUrl));
+            $faviconUrl = $this->getDomElement($nodes->item(0))?->getAttribute('href');
+            if (is_string($faviconUrl)) {
+                return $this->createFaviconUrl(UrlResolver::resolve($url, $faviconUrl));
+            }
         }
 
         return $this->createFaviconUrl($url);
@@ -194,5 +202,10 @@ readonly class WebsiteMetadataLoader
     private function getDomainFromUrl(string $url): string
     {
         return parse_url($url, PHP_URL_HOST) ?? $url;
+    }
+
+    private function getDomElement(mixed $node): ?\DOMElement
+    {
+        return $node instanceof \DOMElement ? $node : null;
     }
 }

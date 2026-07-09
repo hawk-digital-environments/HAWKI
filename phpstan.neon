@@ -15,8 +15,7 @@ parameters:
     paths:
         - app/
     excludePaths:
-        - app/Services/_AI
-        - app/Console/Commands/DbgCommand.php
+        - app/Console/Commands/Dev/DbgCommand.php (?)
     ignoreErrors:
         - identifier: function.alreadyNarrowedType
     level: 5

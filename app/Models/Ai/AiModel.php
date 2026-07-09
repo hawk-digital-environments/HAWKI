@@ -31,9 +31,14 @@ use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 
 /**
+ * @property string $model_id
+ * @property string|null $model_type
+ * @property string $label
+ * @property string|null $documentation_url
  * @property AiModelIoMethods $input
  * @property AiModelIoMethods $output
  * @property AiModelParameters $parameters
@@ -117,9 +122,9 @@ class AiModel extends Model
     /**
      * The descriptions that are associated with this model.
      *
-     * @return HasOneOrMany<AiModelDescription, $this>
+     * @return HasMany<AiModelDescription, $this>
      */
-    public function description(): HasOneOrMany
+    public function description(): HasMany
     {
         return $this->hasMany(AiModelDescription::class, 'ai_model_id');
     }

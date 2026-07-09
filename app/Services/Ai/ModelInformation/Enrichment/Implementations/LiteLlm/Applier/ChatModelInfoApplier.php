@@ -163,7 +163,7 @@ class ChatModelInfoApplier
         if (empty($liteLlmData->tiered_pricing)) {
             $ranges = $this->collectNonTierNonPriorityRanges($liteLlmData);
             $priorityRanges = $this->collectNonTierPriorityRanges($liteLlmData);
-        } else if (is_array($liteLlmData->tiered_pricing)) {
+        } else {
             foreach ($liteLlmData->tiered_pricing as $tier) {
                 $ranges[] = new ChatPricingRange(
                     currency: ChatPricingRange::CURRENCY_USD,

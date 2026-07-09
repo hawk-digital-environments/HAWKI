@@ -23,7 +23,7 @@ use Traversable;
  * ```
  * @implements \IteratorAggregate<int, AiModel>
  */
-final class AiModelOnlineStatusCollection implements \IteratorAggregate
+class AiModelOnlineStatusCollection implements \IteratorAggregate
 {
     private array $statuses = [];
 

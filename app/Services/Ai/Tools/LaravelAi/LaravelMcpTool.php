@@ -19,6 +19,23 @@ use Psr\Log\LoggerInterface;
 use Stringable;
 use Throwable;
 
+/**
+ * A Neuron-compatible tool wrapper around a single MCP tool database record.
+ *
+ * Instances are constructed by {@see LaravelToolConverter::convertMcpTool()} and are never
+ * registered in the container — each one is scoped to a specific {@see AiTool} row.
+ *
+ * The tool schema is derived from the `mcp_config.inputSchema` stored in the database
+ * (populated by {@see McpToolSyncer}) rather than fetched live from the MCP server, keeping
+ * the Neuron tool-building path free of network round-trips.
+ *
+ * When the AI model invokes the tool via `__invoke()`:
+ *  1. Returns an error immediately if the backing MCP server is marked OFFLINE.
+ *  2. Fires {@see BeforeCallingMcpToolFilterEvent}, allowing listeners to short-circuit the
+ *     call and inject a synthetic result.
+ *  3. Calls the MCP server via {@see HawkiMcpClient::callTool()} if no short-circuit occurred.
+ *  4. Fires {@see McpToolCalledFilterEvent}, giving listeners a chance to post-process the result.
+ */
 class LaravelMcpTool extends AbstractTool
 {
     public function __construct(
@@ -46,6 +63,14 @@ class LaravelMcpTool extends AbstractTool
     }
 
     /**
+     * Derives the tool's JSON Schema from the `mcp_config.inputSchema` stored in the database.
+     *
+     * The raw MCP input schema is normalised via {@see SchemaNormalizer} and converted to a
+     * Laravel JsonSchema object. The object's `properties` map is then extracted via a bound
+     * closure — the only way to read the protected field without reflection — and returned
+     * as the array format expected by Neuron. Returns an empty array when the schema is
+     * absent, not an object type, or cannot be parsed.
+     *
      * @inheritDoc
      * @noinspection PhpUndefinedFieldInspection
      */

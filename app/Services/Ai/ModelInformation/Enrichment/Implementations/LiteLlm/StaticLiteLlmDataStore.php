@@ -21,12 +21,12 @@ use Symfony\Component\Filesystem\Path;
  *
  * @see LiteLlmApiDataStore for the live-API counterpart with automatic caching.
  */
-readonly class StaticLiteLlmDataStore extends AbstractLiteLlmDataStore
+class StaticLiteLlmDataStore extends AbstractLiteLlmDataStore
 {
     public function __construct(
         LoggerInterface                      $logger,
         LiteLlmDriverNameProviderNameMapping $nameMapping,
-        private SystemPaths                  $paths,
+        private readonly SystemPaths                  $paths,
     )
     {
         parent::__construct($logger, $nameMapping);

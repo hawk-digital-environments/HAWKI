@@ -37,6 +37,20 @@ readonly class LiteLlmApiEnricher implements ModelInfoEnricherInterface
     {
     }
 
+    /**
+     * Enriches the model with metadata from the LiteLLM catalog.
+     *
+     * Short-circuits and returns the model unchanged when its `model_id` is empty,
+     * since there is nothing to look up.
+     *
+     * When lookup succeeds, the model type is inferred from the LiteLLM `mode` field
+     * (if not already set) and a type-specific applier is invoked. Currently only
+     * {@see WellKnownModelTypes::CHAT} models are enriched; other types are returned
+     * as-is after the type has been stamped.
+     *
+     * Dispatches {@see LiteLlmEnrichmentCompletedEvent} on success or
+     * {@see LiteLlmEnrichmentSkippedEvent} when no data is found in either store.
+     */
     public function enrichModelInfo(AiModel $modelInfo, AiProviderProxy $provider, JobMetrics $jobMetrics): AiModel
     {
         if (empty($modelInfo->model_id)) {
