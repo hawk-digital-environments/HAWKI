@@ -87,11 +87,11 @@
         ],
         "php-cs-fixer": "./vendor/bin/php-cs-fixer fix",
         "test:stan": "./vendor/bin/phpstan analyse",
-        "test:unit": "phpunit --testsuite unit",
+        "test:unit": "XDEBUG_MODE=off _php ./vendor/bin/phpunit --testsuite unit --no-coverage",
         "test:unit:coverage": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-html ./.phpunit.coverage",
         "test:unit:coverage:text": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-text",
         "test:unit:coverage:clover": "XDEBUG_MODE=coverage phpunit --testsuite unit --coverage-clover .phpunit.coverage/coverage-clover.xml",
-        "test:feature": "phpunit --testsuite feature",
+        "test:feature": "XDEBUG_MODE=off _php ./vendor/bin/phpunit --testsuite feature --no-coverage",
         "test:feature:coverage": "XDEBUG_MODE=coverage phpunit --testsuite feature --coverage-html ./.phpunit.feature.coverage; cp ./tests/coverage.dark.css .phpunit.feature.coverage/_css/custom.css",
         "test:all": [
             "composer test:stan",
