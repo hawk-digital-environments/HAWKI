@@ -20,7 +20,7 @@ return [
     |
     */
     'available_tools' => [
-        \App\Services\AI\Tools\Implementations\TestTool::class,
+        \App\Services\Ai\Tools\Implementations\TestTool::class,
     ],
 
     /*
@@ -49,6 +49,10 @@ return [
     |
     */
     'mcp_servers' => [
+        'test' => [
+            'type' => 'sse',
+            'url' => 'https://mcp.deepwiki.com/mcp'
+        ]
         // HAWKI RAG MCP Server - provides web search and knowledge base tools
 //        'hawki-rag' => [
 //            'url'               => env('HAWKI_RAG_MCP_API_URL', 'http://localhost:8080/mcp/rawki'),

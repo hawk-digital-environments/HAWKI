@@ -2,13 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Services\Chat\Attachment\AttachmentService;
-use App\Services\Storage\AvatarStorageService;
-use Illuminate\Console\Command;
-
-use App\Services\Storage\FileStorageService;
 use App\Models\Attachment;
+use App\Services\Storage\FileStorageService;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 
 class CleanupFileStorage extends Command
 {
@@ -29,11 +26,10 @@ class CleanupFileStorage extends Command
     /**
      * Execute the console command.
      */
-    public function handle(AttachmentService $attachmentService,
-                           FileStorageService $fileStorageService)
+    public function handle(FileStorageService $fileStorageService)
     {
         $deleteInterval = config('filesystems.garbage_collections.remove_files_after_months');
-        if($deleteInterval == 0){
+        if ($deleteInterval == 0) {
             $this->info('File Storage cleanup is disabled.');
             return;
         }
@@ -43,41 +39,36 @@ class CleanupFileStorage extends Command
         //DELETE ATTACHMENTS
         $attachments = Attachment::where('created_at', '<', $timeLimit)->get();
 
-        if(count($attachments) > 0){
+        if (count($attachments) > 0) {
             $failsList = [];
             $successCount = 0;
             $this->line("Removing Expired attachments");
             $this->line(count($attachments) . " expired Attachments were found.");
-            foreach($attachments as $atch){
-                $deleted = $attachmentService->delete($atch);
-                if(!$deleted){
+            foreach ($attachments as $atch) {
+                if (!$atch->delete()) {
                     $failsList[] = $atch;
-                }
-                else{
+                } else {
                     $successCount++;
                 }
             }
-            if(count($failsList) > 0){
+            if (count($failsList) > 0) {
                 $this->line("Following Attachments could not be deleted:");
-                foreach($failsList as $fail){
+                foreach ($failsList as $fail) {
                     $this->line("$fail->name ( $fail->uuid ) could not be removed.");
                 }
             }
 
             $this->info($successCount . " of " . count($attachments) . " where deleted");
-        }
-        else{
+        } else {
             $this->info("No expired Attachment found");
         }
 
         $this->line('Cleaning up temp files...');
 
-        $fileStorage = app(FileStorageService::class);
-        $success = $fileStorage->deleteTempExpiredFiles();
-        if($success){
+        $success = $fileStorageService->deleteTempExpiredFiles();
+        if ($success) {
             $this->info("Temp files deleted from File Storage.");
-        }
-        else{
+        } else {
             $this->error("Could not delete temp files, or no expired files were found.");
         }
 

@@ -1,147 +1,185 @@
 @extends('layouts.gateway')
 @section('content')
 
-<button class="slide-back-btn" onclick="switchBackSlide()" aria-label="{{ $translation["Back"] }}">
-    <x-icon name="chevron-left" aria-hidden="true"/>
-</button>
+    <button class="slide-back-btn" onclick="switchBackSlide()" aria-label="{{ __("Back") }}">
+        <x-icon name="chevron-left" aria-hidden="true"/>
+    </button>
 
-<div class="wrapper">
+    <div class="wrapper">
 
-    <div class="container">
+        <div class="container">
 
-        <div class="slide" data-index="0">
-        </div>
-
-        <div class="slide" data-index="1">
-            <h1>{{ $translation["Reg_SL1_H"] }}</h1>
-            <div class="slide-content">
-                <p>{{ $translation["Reg_SL1_T"] }}</p>
+            <div class="slide" data-index="0">
             </div>
-            <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(2)">{{ $translation["Reg_SL1_B"] }}</button>
-            </div>
-        </div>
 
-        <div class="slide" data-index="2">
-            <h1>{{ $translation["Reg_SL2_H"] }}</h1>
-            <div class="slide-content">
-                <p>
-                    {{ $translation["Reg_SL2_T"] }}
+            <div class="slide" data-index="1">
+                <h1>{{ __("Reg_SL1_H") }}</h1>
+                <div class="slide-content">
+                    <p>{{ __("Reg_SL1_T") }}</p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="switchSlide(2)">{{ __("Reg_SL1_B") }}</button>
+                </div>
+            </div>
+
+            <div class="slide" data-index="2">
+                <h1>{{ __("Reg_SL2_H") }}</h1>
+                <div class="slide-content">
+                    <p>
+                        {{ __("Reg_SL2_T") }}
+                    </p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="switchSlide(3)">{{ __("Reg_SL2_B") }}</button>
+                </div>
+            </div>
+
+            <div class="slide" data-index="3" id="policy">
+                <div class="modal" id="data-protection">
+                    <div class="modal-panel">
+                        <div class="modal-content-wrapper">
+                            <div class="modal-content">
+                                {{-- POLICY CONTENT DYNAMICALLY LOADS HERE --}}
+                                <div id="policy-content"></div>
+
+                                <div class="modal-buttons-bar">
+                                    <button id="declineBtn" class="btn-lg-stroke align-end">{{ __("Cancel") }}</button>
+                                    <button id="confirmBtn" class="btn-lg-fill align-end" onclick="modalClick(this)">{{ __("Confirm") }}</button>
+                                </div>
+
+                                <br>
+                                <br>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    window.addEventListener('DOMContentLoaded', async () => {
+                        // Assume fetchLatestPolicy() returns an object {view, announcement}
+                        const res = await fetchLatestPolicy();
+                        if (res === null) {
+                            console.error('Failed to fetch the latest policy.');
+                            const el = document.querySelector('#confirmBtn');
+                            el && modalClick(el);
+                            return;
+                        }
+                        const {view, announcement} = res;
+
+                        const parent = document.querySelector('#data-protection');
+                        // Insert the rendered HTML into the designated container
+                        const policyContentBox = parent.querySelector('#policy-content');
+                        policyContentBox.innerHTML = getMarkdownRendererHtml(view);
+                        // Add target and rel attributes for external links (XSS-protection best practice)
+                        policyContentBox.querySelectorAll('a').forEach(a => {
+                            a.setAttribute('target', '_blank');
+                            a.setAttribute('rel', 'noopener noreferrer');
+                        });
+
+                        parent.querySelector('#declineBtn').addEventListener('click', () => {
+                            forceLogoutUser();
+                        });
+                    });
+                </script>
+            </div>
+
+            <div class="slide" data-index="4">
+                <h1>{{ __("Reg_SL4_H") }}</h1>
+                <div class="slide-content">
+                    <p>
+                        {!! __("Reg_SL4_T") !!}
+                    </p>
+                </div>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="switchSlide(5)">{{ __("Reg_SL4_B") }}</button>
+                </div>
+            </div>
+
+            <div class="slide" data-index="5">
+                <h1>{{ __("Reg_SL5_H") }}</h1>
+                <form id="passkey-form" autocomplete="off">
+                    <div class="password-input-wrapper">
+                        <input
+                            class="passkey-input"
+                            placeholder="{{ __('Reg_SL5_PH1') }}"
+                            id="passkey-input"
+                            type="text"
+                            autocomplete="new-password"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            name="not_a_password_input"
+                        />
+                        <button type="button" class="btn-xs" id="visibility-toggle">
+                            <x-icon name="eye" id="eye"/>
+                            <x-icon name="eye-off" id="eye-off" style="display: none"/>
+                        </button>
+                    </div>
+
+                    <div id="passkey-repeat" class="password-input-wrapper top-gap-2" style="display:none">
+                        <input
+                            class="passkey-input"
+                            placeholder="{{  __("Reg_SL5_PH2") }}"
+                            type="text"
+                            autocomplete="new-password"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            spellcheck="false"
+                            name="not_a_password_input"
+
+                        />
+                        <button type="button" class="btn-xs" id="visibility-toggle-repeat">
+                            <x-icon name="eye" id="eye-repeat" aria-hidden="true"/>
+                            <x-icon name="eye-off" id="eye-off-repeat" style="display: none" aria-hidden="true"/>
+                        </button>
+                    </div>
+                </form>
+                <p class="slide-subtitle top-gap-2">
+                    {!! __("Reg_SL5_T") !!}
                 </p>
-            </div>
-            <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(3)">{{ $translation["Reg_SL2_B"] }}</button>
-            </div>
-        </div>
+                <p class="red-text" id="alert-message"></p>
 
-        <div class="slide" data-index="3" id="policy">
-            @include('partials.home.modals.guidelines-modal')
-        </div>
-
-        <div class="slide" data-index="4">
-            <h1>{{ $translation["Reg_SL4_H"] }}</h1>
-            <div class="slide-content">
-                <p>
-                    {!! $translation["Reg_SL4_T"] !!}
-                </p>
-            </div>
-            <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="switchSlide(5)">{{ $translation["Reg_SL4_B"] }}</button>
-            </div>
-        </div>
-
-        <div class="slide" data-index="5">
-            <h1>{{ $translation["Reg_SL5_H"] }}</h1>
-            <form id="passkey-form"  autocomplete="off">
-                <div class="password-input-wrapper">
-                    <input
-                        class="passkey-input"
-                        placeholder="{{ $translation['Reg_SL5_PH1'] }}"
-                        id="passkey-input"
-                        type="text"
-                        autocomplete="new-password"
-                        autocorrect="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        name="not_a_password_input"
-                    />
-                    <button type="button" class="btn-xs" id="visibility-toggle">
-                        <x-icon name="eye" id="eye"/>
-                        <x-icon name="eye-off" id="eye-off" style="display: none"/>
-                    </button>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="checkPasskey()">{{ __("Save") }}</button>
                 </div>
 
-                <div id="passkey-repeat" class="password-input-wrapper top-gap-2" style="display:none" >
-                    <input
-                        class="passkey-input"
-                        placeholder="{{  $translation["Reg_SL5_PH2"] }}"
-                        type="text"
-                        autocomplete="new-password"
-                        autocorrect="off"
-                        autocapitalize="off"
-                        spellcheck="false"
-                        name="not_a_password_input"
+            </div>
 
-                    />
-                    <button type="button" class="btn-xs" id="visibility-toggle-repeat">
-                        <x-icon name="eye" id="eye-repeat" aria-hidden="true"/>
-                        <x-icon name="eye-off" id="eye-off-repeat" style="display: none" aria-hidden="true"/>
+            <div class="slide" data-index="6">
+                <h1 class="zero-b-margin">{{ __("Reg_SL6_H") }}</h1>
+                <p class="slide-subtitle top-gap-2">
+                    {{ __("Reg_SL6_T") }}
+                </p>
+                <div class="backup-hash-row">
+                    <h3 id="backup-hash" class="demo-hash"></h3>
+                    @php $tooltipId = str()->uuid() @endphp
+                    <button class="btn-sm border" onclick="downloadTextFile()" aria-labelledby="{{ $tooltipId }}">
+                        <x-icon name="download" aria-hidden="true"/>
+                        <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ __("DownloadTextFileTooltip") }}</div>
                     </button>
                 </div>
-            </form>
-            <p class="slide-subtitle top-gap-2">
-                {!! $translation["Reg_SL5_T"] !!}
-            </p>
-            <p class="red-text" id="alert-message"></p>
-
-            <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="checkPasskey()">{{ $translation["Save"] }}</button>
+                <div class="nav-buttons">
+                    <button class="btn-lg-fill" onclick="onBackupCodeComplete()">{{ __("Continue") }}</button>
+                </div>
             </div>
 
-        </div>
-
-        <div class="slide" data-index="6">
-            <h1 class="zero-b-margin">{{ $translation["Reg_SL6_H"] }}</h1>
-            <p class="slide-subtitle top-gap-2">
-                {{ $translation["Reg_SL6_T"] }}
-            </p>
-            <div class="backup-hash-row">
-                <h3 id="backup-hash" class="demo-hash"></h3>
-                @php $tooltipId = str()->uuid() @endphp
-                <button class="btn-sm border" onclick="downloadTextFile()" aria-labelledby="{{ $tooltipId }}">
-                    <x-icon name="download" aria-hidden="true"/>
-                    <div class="tooltip" aria-hidden="true" id="{{ $tooltipId }}">{{ $translation["DownloadTextFileTooltip"] }}</div>
-                </button>
-            </div>
-            <div class="nav-buttons">
-                <button class="btn-lg-fill" onclick="onBackupCodeComplete()">{{ $translation["Continue"] }}</button>
-            </div>
         </div>
 
     </div>
+    @include('partials.home.modals.confirm-modal')
 
-</div>
-@include('partials.home.modals.confirm-modal')
+    <script>
+        window.waitUntilReady(function () {
+            initializeRegistration();
+            switchSlide(1);
+            cleanupUserData();
+            initializePasskeyInputs(true);
+        });
 
-<script>
-    let userInfo = @json($userInfo);
-    const translation = @json($translation);
-
-    initializeRegistration();
-    document.addEventListener('DOMContentLoaded', function(){
-        switchSlide(1);
-        cleanupUserData();
-    });
-
-    document.addEventListener('DOMContentLoaded', function () {
-        initializePasskeyInputs(true, @json($allowPaste), @json($charLimit));
-    });
-
-    setTimeout(() => {
-        if(@json($activeOverlay)){
-            setOverlay(false, true)
-        }
-    }, 100);
-</script>
+        setTimeout(() => {
+            if (@json($activeOverlay)) {
+                setOverlay(false, true);
+            }
+        }, 100);
+    </script>
 
 @endsection

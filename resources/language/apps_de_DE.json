@@ -1,0 +1,27 @@
+{
+    "apps": {
+        "request_timeout": {
+            "title": "Abgelaufene Anfrage",
+            "headline": "Deine Anfrage ist leider nicht mehr gültig.",
+            "description": "Der Link dem du gefolgt bist ist nicht mehr gültig. Bitte starte die Anfrage erneut.",
+            "back_button": "Zurück zu HAWKI"
+        },
+        "confirm_error": {
+            "title": "Es ist ein Fehler aufgetreten",
+            "headline": "Fehler bei Verbindung mit externer Anwendung",
+            "description": "Du wolltest dich mit einer externen Anwendung verbinden, aber es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+            "back_button": "Zurück zu HAWKI"
+        },
+        "confirm": {
+            "title": ":appName mit HAWKI verbinden",
+            "headline": "Verbindung zu Anwendung \":appName\" zulassen?",
+            "description": "Hey :name! Du bist auf dieser Seite gelandet, weil die Anwendung \":appName\" sich mit deinem HAWKI Profil (:username) verbinden möchte. Damit erlaubst du der Anwendung Zugriff auf deine Nachrichten und Chats. Bitte gib nur Anwendungen Zugriff denen du vertraust.",
+            "about_headline": "Über die Anwendung:",
+            "error_message": "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.",
+            "working_message": "Bitte warte einen Moment, du wirst gleich weitergeleitet.",
+            "open_link": "Öffne die Anwendung :appName in neuem Tab",
+            "decline_button": "Lieber nicht",
+            "accept_button": "Verbinden"
+        }
+    }
+}

@@ -3,40 +3,44 @@
 
 namespace App\Services\Chat\Room\Traits;
 
+use App\Models\ExtApp;
+use App\Models\Member;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Member;
 use Exception;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Auth;
 
 
-trait RoomMembers{
+trait RoomMembers
+{
     /**
      * @throws Exception
      */
-    public function add(string $slug, string $data): array
+    public function add(string $slug, array $data): array
     {
-        try{
+        try {
             $room = Room::where('slug', $slug)->firstOrFail();
-            if(!$room->isMember(Auth::id())){
+            if (!$room->isMember(Auth::id())) {
                 throw new AuthorizationException();
             }
 
             $user = User::where('username', $data['username'])->firstOrFail();
             $room->addMember($user->id, $data['role']);
-            return $room->members;
-        }
-        catch (Exception $e){
+            return $room->members->toArray();
+        } catch (Exception $e) {
             throw new Exception('Failed to add new member:' . $e->getMessage());
         }
 
     }
 
 
-    public function leave($slug): bool{
+    public function leave($slug): bool
+    {
+        /** @var Room $room */
         $room = Room::where('slug', $slug)->firstOrFail();
         $user = Auth::user();
+        /** @var Member $member */
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
         return $this->removeMember($member, $room);
     }
@@ -44,13 +48,17 @@ trait RoomMembers{
     /**
      * @throws Exception
      */
-    public function kick($slug, $username): bool{
+    public function kick($slug, $username): bool
+    {
 
+        /** @var Room $room */
         $room = Room::where('slug', $slug)->firstOrFail();
+        /** @var User $user */
         $user = User::where('username', $username)->firstOrFail();
+        /** @var Member $member */
         $member = $room->members()->where('user_id', $user->id)->firstOrFail();
 
-        if($member->user_id === '1'){
+        if ($member->user_id === 1) {
             throw new Exception('You can\'t kick AI Agent.');
         }
 
@@ -61,36 +69,31 @@ trait RoomMembers{
     {
         // Remove the member from the room
         $room->removeMember($member->user_id);
-
-        //Check if All the members have left the room.
-        if ($room->members()->count() === 1) {
-            $this->delete($room->slug);
-        }
-
         return true;
     }
-
 
 
     public function searchUser(string $query): array
     {
         // Search in the database for users matching the query and is not removed
         $users = User::where('isRemoved', false)
-            ->where(function($queryBuilder) use ($query) {
+            ->withoutGlobalScopes()
+            ->where(function ($queryBuilder) use ($query) {
                 $queryBuilder->where('name', 'like', "%{$query}%")
-                            ->orWhere('username', 'like', "%{$query}%")
-                            ->orWhere('email', 'like', "%{$query}%");
+                    ->orWhere('username', 'like', "%{$query}%")
+                    ->orWhere('email', 'like', "%{$query}%");
             })
+            ->where('users.employeetype', '!=', ExtApp::EMPLOYEE_TYPE_APP)
             ->take(5)
             ->get();
 
-            // REF-> SEARCH_FILTER
-        return $users->map(function($user){
+        // REF-> SEARCH_FILTER
+        return $users->map(function ($user) {
             return [
-                'name'      => $user->name,
-                'username'  => $user->username,
-                'email'     => $user->email,
-                'publicKey'=> $user->publicKey
+                'name' => $user->name,
+                'username' => $user->username,
+                'email' => $user->email,
+                'publicKey' => $user->publicKey
             ];
         })->toArray();
     }

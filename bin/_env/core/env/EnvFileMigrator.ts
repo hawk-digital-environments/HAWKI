@@ -24,7 +24,7 @@ export interface EnvVariableOptions {
      * The default value to use if no value could be resolved.
      * If not set, the user will be prompted for a value if needed.
      */
-    default?: string | ((templateValue: string | undefined) => Promise<string>)
+    default?: string | ((templateValue: string | undefined) => Promise<string>);
 
     /**
      * Allows you to determine if the variable needs to be updated.
@@ -62,7 +62,12 @@ export interface EnvVariableOptions {
      * A function to validate the user input (forwarded to the inquirer prompt).
      * @param input
      */
-    validate?: (input: string) => boolean | string | Promise<boolean | string>,
+    validate?: (input: string) => boolean | string | Promise<boolean | string>;
+    /**
+     * This allows you to remove a variable from the .env file if it exists. While it is called "remove",
+     * it will simply comment out the line defining the variable, so it can be easily restored if needed.
+     */
+    remove?: string;
 }
 
 export class EnvFileDefinition {
@@ -85,6 +90,7 @@ export class EnvFileMigrator {
     private _options: Map<string, EnvVariableOptions>;
     private _resolvedValues: Map<string, string | undefined>;
     private _commentedLines: Set<EnvFileLine> | undefined;
+    private _toRemove: Map<string, boolean>;
     private _templateState: EnvFileState | undefined;
 
     public constructor(events: EventBus, paths: Paths) {
@@ -124,6 +130,24 @@ export class EnvFileMigrator {
         const definition = new EnvFileDefinition(this._options);
 
         await this._events.trigger('env:define', {definition, envFile});
+        this._validateOptions();
+    }
+
+    private _validateOptions(): void {
+        const disallowedWithRemove = ['message', 'help', 'default', 'needsUpdate', 'editor', 'allowEmpty', 'uncomment', 'validate'] as const;
+        for (const [key, options] of this._options.entries()) {
+            if (options.remove === undefined) {
+                continue;
+            }
+            if (typeof options.remove !== 'string') {
+                throw new Error(`Variable "${key}": "remove" must be a string.`);
+            }
+            for (const opt of disallowedWithRemove) {
+                if (options[opt] !== undefined) {
+                    throw new Error(`Variable "${key}": "remove" cannot be combined with "${opt}".`);
+                }
+            }
+        }
     }
 
     private async _loadTemplateState() {
@@ -138,10 +162,17 @@ export class EnvFileMigrator {
     private async _collectValues(envFile: EnvFile): Promise<void> {
         this._resolvedValues = new Map<string, string | undefined>();
         this._commentedLines = new Set<EnvFileLine>();
+        this._toRemove = new Map<string, boolean>();
         const state = envFile.state;
         const templateState = this._templateState;
 
         for (const [key, options] of this._options.entries()) {
+            if (typeof options.remove === 'string') {
+                const line = state.getFirstLineForKey(key);
+                this._toRemove.set(key, line !== undefined);
+                continue;
+            }
+
             const line = state.getFirstLineForKey(key);
             const templateLine = templateState?.getFirstLineForKey(key);
 
@@ -193,6 +224,9 @@ export class EnvFileMigrator {
 
     private async _askForMissing(): Promise<void> {
         for (const [key, options] of this._options.entries()) {
+            if (typeof options.remove === 'string') {
+                continue;
+            }
             if (this._resolvedValues.get(key) === undefined && options.default === undefined) {
                 if (options.help) {
                     console.log(chalk.yellow('❓ ' + options.help));
@@ -228,7 +262,22 @@ export class EnvFileMigrator {
             foundChange ||= changed;
             const oldValue = envFile.get(key) ?? 'missing or commented';
             return `- ${chalk.bold(key)}: ${chalk.green(value)}` + (changed ? ' ' + chalk.bold('🔧') + ' was ' + chalk.yellow(oldValue) : '');
-        }).join('\n');
+        });
+
+        const removeValues = Array.from(this._toRemove.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([key, willBeRemoved]) => {
+                if (willBeRemoved) {
+                    foundChange = true;
+                    const currentValue = envFile.get(key);
+                    return `- ${chalk.bold(key)}: ${chalk.red('will be commented out')} 🔇` +
+                        (currentValue !== undefined ? ` (was ${chalk.yellow(currentValue)})` : '');
+                }
+                return null;
+            })
+            .filter(Boolean);
+
+        const allSummaryValues = [...summaryValues, ...removeValues].join('\n');
 
         // If no changes were found, we can skip the confirmation
         // If we are forced, we need to show the confirmation anyway
@@ -251,7 +300,7 @@ To modify any values, press ${chalk.bold('n')} and ${chalk.bold('Enter')}, then 
 
 Collected environment variables:
 ----------------------------------
-${summaryValues}
+${allSummaryValues}
 `);
 
 
@@ -262,15 +311,33 @@ ${summaryValues}
     }
 
     private async _askForEditTarget(): Promise<string> {
+        const allKeys = [
+            ...Array.from(this._resolvedValues.keys()),
+            ...Array.from(this._toRemove.keys())
+        ].sort();
         return select({
             message: 'Which variable do you want to edit?',
-            choices: Array.from(this._resolvedValues.keys()).sort()
+            choices: allKeys
         });
     }
 
     private async _editValue(key: string): Promise<void> {
-        const currentValue = this._resolvedValues.get(key);
         const options = this._options.get(key);
+
+        if (typeof options.remove === 'string') {
+            const willBeRemoved = this._toRemove.get(key) ?? true;
+            if (options.remove) {
+                console.log(chalk.yellow('❓ ' + options.remove));
+            }
+            const keep = await confirm({
+                message: `Keep "${key}" active? (answering "yes" will prevent it from being commented out)`,
+                default: !willBeRemoved
+            });
+            this._toRemove.set(key, !keep);
+            return;
+        }
+
+        const currentValue = this._resolvedValues.get(key);
         if (options.help) {
             console.log(chalk.yellow('❓ ' + options.help));
         }
@@ -297,6 +364,16 @@ ${summaryValues}
         for (const [key, value] of this._resolvedValues.entries()) {
             envFile.set(key, value);
         }
+
+        for (const [key, shouldRemove] of this._toRemove.entries()) {
+            if (shouldRemove) {
+                const line = envFile.state.getFirstLineForKey(key);
+                if (line) {
+                    line.comment();
+                }
+            }
+        }
+
         envFile.write();
         updateEnvFileHash(this._paths);
     }

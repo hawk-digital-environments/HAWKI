@@ -5,7 +5,7 @@
             <div class="scroll-panel">
 
                 <div class="inputs-list">
-                    <h1 class="zero-b-margin">{{ $translation["CreateRoom"] }}</h1>
+                    <h1 class="zero-b-margin">{{ __("CreateRoom") }}</h1>
 
                     <div class="row zero-v-margin">
                         <div class="prop-panel-grid">
@@ -19,11 +19,11 @@
 
                             <div class="prop-panel-titles">
                                 <div class="chat-name-panel text-cont flex-col zero-v-margin">
-                                    <label>{{ $translation["RoomName"] }}</label>
+                                    <label>{{ __("RoomName") }}</label>
                                     <input
                                         class="text-field chat-name zero-v-margin singleLineTextarea"
                                         id="chat-name-input"
-                                        placeholder="{{ $translation["PH_ChooseName"] }}"
+                                        placeholder="{{ __("PH_ChooseName") }}"
                                         maxlength="50"></input>
                                 </div>
                             </div>
@@ -33,20 +33,20 @@
 
 
                     <div class="row flex-col top-gap-2">
-                        <label>{{ $translation["RoomDesc"] }}</label>
+                        <label>{{ __("RoomDesc") }}</label>
                         <textarea
                             class="text-input"
-                            placeholder="{{ $translation["PH_ChooseDescription"] }}"
+                            placeholder="{{ __("PH_ChooseDescription") }}"
                             name="room-description"
                             id="room-description-input"
                             maxlength="300"
                             oninput="resizeInputField(this)" ></textarea>
                     </div>
                     <div class="row flex-col  top-gap-2">
-                        <label>{{ $translation["SystemPrompt"] }}</label>
+                        <label>{{ __("SystemPrompt") }}</label>
                         <textarea
                             class="text-input fit-height"
-                            placeholder="{{ $translation["PH_SystemPrompt"] }}"
+                            placeholder="{{ __("PH_SystemPrompt") }}"
                             name="system-prompt"
                             id="system-prompt-input"
                             {{-- maxlength="300" --}}
@@ -60,8 +60,8 @@
             </div>
             <div class="confirm-panel top-gap-3">
                 <p class="zero-v-margin red-text" id="alert-message"></p>
-                <button class="btn-lg-stroke align-end" onclick="finishRoomCreation()">{{ $translation["Abort"] }}</button>
-                <button class="btn-lg-fill align-end" onclick="createNewRoom()">{{ $translation["CreateRoom"] }}</button>
+                <button class="btn-lg-stroke align-end" onclick="finishRoomCreation()">{{ __("Abort") }}</button>
+                <button class="btn-lg-fill align-end" onclick="createNewRoom()">{{ __("CreateRoom") }}</button>
             </div>
         </div>
     </div>

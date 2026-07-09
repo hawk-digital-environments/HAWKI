@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\System\Health;
 
 
-use App\Events\HealthCheckEvent;
+use App\Services\System\Health\Events\HealthCheckEvent;
 use App\Services\System\Health\Exception\HealthcheckFailedException;
 use App\Services\System\Health\Value\HealthCheckResult;
 use App\Services\System\Health\Value\HealthCheckResultCollection;
@@ -16,13 +16,45 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Main entry point for the health check domain.
+ *
+ * Performs connectivity and smoke tests against all critical infrastructure components
+ * (database, cache, Redis, storage) and aggregates the results into a
+ * {@see HealthCheckResultCollection}.
+ *
+ * Two check modes are supported, selected automatically by {@see HealthTimer}:
+ * - **Quick**: only verifies basic database connectivity. Fast and cheap, run on every scheduled tick.
+ * - **Deep**: verifies all components, dispatches {@see \App\Services\System\Health\Events\HealthCheckEvent} so additional
+ *   checks can be injected via listeners, and records the overall result in {@see HealthTimer}.
+ *
+ * Usage (typically called from a scheduled command or health endpoint):
+ * ```php
+ * $results = $this->healthChecker->check();
+ *
+ * if (!$results->isOk()) {
+ *     // At least one component is unhealthy — log or alert.
+ * }
+ *
+ * // Force a deep check regardless of the timer:
+ * $results = $this->healthChecker->deepCheck();
+ * ```
+ *
+ * @see HealthTimer                Controls whether quick or deep checks run.
+ * @see HealthCheckResultCollection  Holds the individual results of each component check.
+ */
 #[Singleton]
 readonly class HealthChecker
 {
+    /** Check name for the lightweight database connectivity test (quick check only). */
     public const CHECK_NAME_DB_QUICK = 'quick_database';
+    /** Check name for the full database connectivity + query test. */
     public const CHECK_NAME_DB = 'database';
+    /** Check name for the cache read/write smoke test. */
     public const CHECK_NAME_CACHE = 'cache';
+    /** Check name for the Redis connectivity test. */
     public const CHECK_NAME_REDIS = 'redis';
+    /** Check name for the storage writability test. */
     public const CHECK_NAME_STORAGE = 'storage';
 
     public function __construct(

@@ -2,8 +2,8 @@ import {pregQuote} from '../util.ts';
 import {parse as parseEnv} from 'dotenv';
 
 export class EnvFileLine {
-    private _type: 'value' | 'comment' | 'empty';
-    private _template: string;
+    private _type?: 'value' | 'comment' | 'empty';
+    private _template?: string;
     private _key: string | undefined;
     private _value: string | undefined;
 
@@ -40,7 +40,7 @@ export class EnvFileLine {
     }
 
     public commentMatches(search: string | RegExp): boolean {
-        return this.isComment && this._template.match(search) !== null;
+        return this.isComment && !!this._template && this._template.match(search) !== null;
     }
 
     public commentedKeyMatches(key: string): boolean {
@@ -68,11 +68,23 @@ export class EnvFileLine {
     }
 
     public toString(): string {
-        if (this.isValue) {
-            return this._template.replace(/%%%KEY%%%/g, this._key || '').replace(/%%%VALUE%%%/g, '"' + this._value + '"' || '');
+        if (this.isValue && this._template) {
+            let quoteChar = '"';
+            if (this._value && this._value.includes('"')) {
+                if (this._value.includes('\'')) {
+                    // The value contains both single and double quotes,
+                    // there is no way to quote it properly, so we will just return the unquoted value and hope for the best.
+                    quoteChar = '';
+                } else {
+                    quoteChar = '\'';
+                }
+            }
+            return this._template
+                .replace(/%%%KEY%%%/g, this._key || '')
+                .replace(/%%%VALUE%%%/g, quoteChar + this._value + quoteChar || '');
         }
 
-        return this._template;
+        return this._template || '';
     }
 
     private parseLine(line: string): void {
@@ -103,8 +115,8 @@ export class EnvFileLine {
         this._value = parsedLine[this._key];
 
         const regexify = (str: string) => new RegExp('\\s*["\']*' + pregQuote(str) + '["\']*');
-        const templateParts = this._template.split('=');
-        const templateKey = templateParts.shift().replace(regexify(this._key), '%%%KEY%%%');
+        const templateParts = this._template ? this._template.split('=') : [];
+        const templateKey = (templateParts.shift() || '').replace(regexify(this._key), '%%%KEY%%%');
         const templateValue = templateParts.join('=').replace(regexify(this._value), '%%%VALUE%%%');
         this._template = templateKey + '=' + templateValue;
     }

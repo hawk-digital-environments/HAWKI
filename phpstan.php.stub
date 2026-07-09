@@ -1,0 +1,23 @@
+<?php
+declare(strict_types=1);
+
+
+namespace Illuminate\Routing {
+
+    /**
+     * @method string getForcedRoot()
+     */
+    class UrlGenerator
+    {
+    }
+}
+
+namespace Illuminate\Support\Facades {
+
+    /**
+     * @method static string getForcedRoot()
+     */
+    class URL extends Facade
+    {
+    }
+}

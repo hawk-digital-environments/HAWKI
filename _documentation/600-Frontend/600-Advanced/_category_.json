@@ -1,0 +1,7 @@
+{
+    "label": "Advanced",
+    "link": {
+        "type": "generated-index",
+        "description": "Internals: boot lifecycle, event pipelines, legacy UI bridge, encryption, and frontend migrations. Read when building new systems, not for routine feature work."
+    }
+}

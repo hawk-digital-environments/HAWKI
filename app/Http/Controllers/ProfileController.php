@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\PrivateUserData;
 use App\Services\Profile\ApiTokenService;
 use App\Services\Profile\PasskeyService;
 use App\Services\Profile\ProfileService;
@@ -10,7 +9,6 @@ use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 
@@ -18,7 +16,8 @@ class ProfileController extends Controller
 {
 
     // SECTION: PROFILE INFORMATION
-    public function update(Request $request, ProfileService $profileService): JsonResponse{
+    public function update(Request $request, ProfileService $profileService): JsonResponse
+    {
 
         $validatedData = $request->validate([
             'displayName' => 'string|max:20',
@@ -45,7 +44,8 @@ class ProfileController extends Controller
     }
 
 
-    public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse{
+    public function requestProfileReset(ProfileService $profileService): JsonResponse|RedirectResponse
+    {
         $profileService->resetProfile();
         return response()->json([
             'success' => true,
@@ -53,7 +53,11 @@ class ProfileController extends Controller
         ]);
     }
 
-    public function validatePasskey(Request $request){
+    /**
+     * @deprecated This method is deprecated and will be removed in HAWKI v3. There will be no replacement.
+     */
+    public function validatePasskey(Request $request)
+    {
         $passkey = $request->getContent();
         $request->validate([
             'passkey' => 'string',
@@ -93,7 +97,8 @@ class ProfileController extends Controller
 
 
     // SECTION: PASSKEY BACKUP
-    public function backupPassKey(Request $request, PasskeyService $passkeyService): JsonResponse{
+    public function backupPassKey(Request $request, PasskeyService $passkeyService): JsonResponse
+    {
 
         $validatedData = $request->validate([
             'cipherText' => 'required|string',
@@ -111,7 +116,8 @@ class ProfileController extends Controller
 
     }
 
-    public function requestPasskeyBackup(PasskeyService $passkeyService): JsonResponse{
+    public function requestPasskeyBackup(PasskeyService $passkeyService): JsonResponse
+    {
 
         $response = $passkeyService->retrievePasskeyBackup();
         return response()->json([
@@ -119,63 +125,6 @@ class ProfileController extends Controller
             'passkeyBackup' => $response,
         ]);
     }
-
-    public function backupKeychain(Request $request){
-
-        $validatedData = $request->validate([
-            'ciphertext' => 'required|string',
-            'iv' => 'required|string',
-            'tag' => 'required|string',
-        ]);
-
-
-        $user = Auth::user();
-
-        try{
-            $privateUserData = PrivateUserData::updateOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'KCIV' => $validatedData['iv'],
-                    'KCTAG' => $validatedData['tag'],
-                    'keychain' => $validatedData['ciphertext'],
-                ]
-            );
-
-        } catch (\Exception $error) {
-            return response()->json([
-                'success' => false,
-                'error' => $error->getMessage()
-            ]);
-        }
-
-
-        return response()->json([
-            'success' => true,
-        ]);
-    }
-
-    /// Returns the requested salt to the user
-    public function getServerSalt(Request $request)
-    {
-        // Get 'saltlabel' from the header
-        $saltLabel = $request->header('saltlabel');
-
-        // Check if the saltlabel header exists
-        if (!$saltLabel) {
-            return response()->json(['error' => 'saltlabel header is required'], 400);
-        }
-
-        $serverSalt = env(strtoupper($saltLabel));
-
-        // Check if the salt exists
-        if (!$serverSalt) {
-            return response()->json(['error' => 'Salt not found'], 404);
-        }
-
-        // Send back the salt, base64-encoded
-        return response()->json(['salt' => base64_encode($serverSalt)]);
-    }
-
 
     // SECTION: API TOKENS
 
@@ -209,7 +158,6 @@ class ProfileController extends Controller
             'tokens' => $tokenList,
         ]);
     }
-
 
 
     public function revokeToken(Request $request, ApiTokenService $apiTokenService): JsonResponse

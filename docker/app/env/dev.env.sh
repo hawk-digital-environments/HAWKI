@@ -1,0 +1,13 @@
+#!/bin/bash
+
+export XDEBUG_MODE=${XDEBUG_MODE:-'debug,coverage'}
+export XDEBUG_START_WITH_REQUEST=${XDEBUG_START_WITH_REQUEST:-yes}
+export XDEBUG_CLIENT_HOST=${XDEBUG_CLIENT_HOST:-host.docker.internal}
+export XDEBUG_CLIENT_PORT=${XDEBUG_CLIENT_PORT:-9003}
+export XDEBUG_LOG=${XDEBUG_LOG:-/var/www/html/storage/logs/xdebug.log}
+export XDEBUG_LOG_LEVEL=${XDEBUG_LOG_LEVEL:-7}
+
+# If DOCKER_PROJECT_PROTOCOL and DOCKER_PROJECT_HOST, override the APP_URL
+if [ -n "$DOCKER_PROJECT_PROTOCOL" ] && [ -n "$DOCKER_PROJECT_HOST" ]; then
+    export APP_URL="${DOCKER_PROJECT_PROTOCOL}://${DOCKER_PROJECT_HOST}"
+fi

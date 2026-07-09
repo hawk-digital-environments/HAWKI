@@ -1,0 +1,32 @@
+{
+    "markdown": {
+        "markstream": {
+            "common": {
+                "copy": "Kopieren",
+                "copied": "Kopiert",
+                "decrease": "Verkleinern",
+                "reset": "Zurücksetzen",
+                "increase": "Vergrößern",
+                "expand": "Ausklappen",
+                "collapse": "Einklappen",
+                "preview": "Vorschau",
+                "source": "Quellcode",
+                "export": "Exportieren",
+                "open": "Öffnen",
+                "close": "Schließen",
+                "zoomIn": "Hineinzoomen",
+                "zoomOut": "Herauszoomen",
+                "resetZoom": "Zoom zurücksetzen"
+            },
+            "artifacts": {
+                "htmlPreviewTitle": "HTML-Vorschau",
+                "svgPreviewTitle": "SVG-Vorschau"
+            },
+            "image": {
+                "preview": "Bildvorschau",
+                "loadError": "Fehler beim Laden des Bildes",
+                "loading": "Bild wird geladen..."
+            }
+        }
+    }
+}

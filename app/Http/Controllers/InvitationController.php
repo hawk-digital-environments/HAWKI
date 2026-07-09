@@ -2,27 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendEmailJob;
+use App\Models\Invitation;
 use App\Models\Room;
 use App\Models\User;
-use App\Models\Member;
-use App\Models\Invitation;
-
-use App\Jobs\SendEmailJob;
-
 use Illuminate\Http\Request;
-
-use App\Http\Controllers\RoomController;
-
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-
+use Illuminate\Support\Facades\URL;
 
 class InvitationController extends Controller
 {
 
     /// Send the email with the signed URL to external invitee
-    public function sendExternInvitationEmail(Request $request) {
+    public function sendExternInvitationEmail(Request $request)
+    {
 
         // Validate the request
         $validatedData = $request->validate([
@@ -59,22 +53,39 @@ class InvitationController extends Controller
 
         // Dispatch the email job
         SendEmailJob::dispatch($emailData, $user->email, $subjectLine, $viewTemplate)
-                    ->onQueue('emails');
+            ->onQueue('emails');
 
         return response()->json(['message' => 'Invitation email sent successfully.']);
     }
 
 
     /// store invitation on the database
-    public function storeInvitations(Request $request, $slug) {
+    public function storeInvitations(Request $request, $slug)
+    {
         $roomId = Room::where('slug', $slug)->firstOrFail()->id;
         $invitations = $request->input('invitations');
 
-        foreach($invitations as $inv) {
+        foreach ($invitations as $inv) {
+            // Create a sub-request for sending the email if email data is present
+            // This allows us to reuse the sendExternInvitationEmail method while avoiding
+            // sending two requests from the client side.
+            if (is_array($inv['email'] ?? null)) {
+                $subRequest = new Request([
+                    'username' => $inv['username'],
+                    'hash' => $inv['email']['tempHash'] ?? '',
+                    'slug' => $slug
+                ]);
+
+                $res = $this->sendExternInvitationEmail($subRequest);
+                if (!empty($res->getData(true)['error'])) {
+                    abort(400, $res->getData(true)['error'] ?? 'Failed to send invitation email.');
+                }
+            }
+
             // Check if an invitation already exists for this user in this room
             $existingInvitation = Invitation::where('room_id', $roomId)
-                                             ->where('username', $inv['username'])
-                                             ->first();
+                ->where('username', $inv['username'])
+                ->first();
 
             if ($existingInvitation) {
                 // Update the existing invitation
@@ -102,7 +113,8 @@ class InvitationController extends Controller
     /// Open Signed link to external user
     /// user should be first redirected to registration
     /// after registration the decryption process should start
-    public function openExternInvitation(Request $request, $tempHash, $slug) {
+    public function openExternInvitation(Request $request, $tempHash, $slug)
+    {
         // Get the expiration timestamp from the request
         $expires = $request->query('expires');
 
@@ -128,21 +140,20 @@ class InvitationController extends Controller
         $invitations = $user->invitations()->get();
 
         // Map the invitations to the desired format
-        $formattedInvitations = $invitations->map(function($invitation) {
+        $formattedInvitations = $invitations->map(function ($invitation) {
             return [
-                'room_slug'   => $invitation->room->slug,
-                'role'        => $invitation->role,
-                'iv'          => $invitation->iv,
-                'tag'          => $invitation->tag,
-                'invitation'  => $invitation->invitation,
+                'room_slug' => $invitation->room->slug,
+                'role' => $invitation->role,
+                'iv' => $invitation->iv,
+                'tag' => $invitation->tag,
+                'invitation' => $invitation->invitation,
                 'invitation_id' => $invitation->id
             ];
         });
 
 
-
         return response()->json([
-            'formattedInvitations'=>$formattedInvitations]
+                'formattedInvitations' => $formattedInvitations]
         );
     }
 
@@ -168,19 +179,20 @@ class InvitationController extends Controller
 
         // Format the invitation details
         $formattedInvitation = [
-            'room_slug'     => $invitation->room->slug,
-            'role'          => $invitation->role,
-            'iv'            => $invitation->iv,
-            'tag'           => $invitation->tag,
-            'invitation'    => $invitation->invitation,
+            'room_slug' => $invitation->room->slug,
+            'role' => $invitation->role,
+            'iv' => $invitation->iv,
+            'tag' => $invitation->tag,
+            'invitation' => $invitation->invitation,
             'invitation_id' => $invitation->id
         ];
 
         return response()->json($formattedInvitation);
     }
 
-     /// Accept invitation at finishing invitation handling (check groupchat functions)
-    public function onAcceptInvitation(Request $request){
+    /// Accept invitation at finishing invitation handling (check groupchat functions)
+    public function onAcceptInvitation(Request $request)
+    {
 
         // Validate the request to ensure invitation_id is present
         $validated = $request->validate([
@@ -198,7 +210,6 @@ class InvitationController extends Controller
 
         // Add the user to the room (assuming you have a pivot table for room members)
         $room = $invitation->room;
-
         $room->addMember($user->id, $invitation->role);
 
 

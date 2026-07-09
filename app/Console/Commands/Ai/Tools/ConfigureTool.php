@@ -2,8 +2,7 @@
 
 namespace App\Console\Commands\Ai\Tools;
 
-use App\Models\Ai\AiModel;
-use App\Models\Ai\Tools\AiTool;
+use App\Models\Ai\AiTool;
 use Illuminate\Console\Command;
 
 class ConfigureTool extends Command
@@ -42,12 +41,13 @@ class ConfigureTool extends Command
                 break;
             }
 
-            $field = (int) $selected[0];
+            $field = (int)$selected[0];
 
+            // @phpstan-ignore-next-line - we validate input via choice options
             match ($field) {
-                0 => $changed = $this->editActive($tool) || $changed,
-                1 => $changed = $this->editCapability($tool) || $changed,
-                2 => $changed = $this->editDescription($tool) || $changed,
+                0 => $changed = ($this->editActive($tool) || $changed),
+                1 => $changed = ($this->editCapability($tool) || $changed),
+                2 => $changed = ($this->editDescription($tool) || $changed),
             };
         }
 
@@ -57,11 +57,9 @@ class ConfigureTool extends Command
         }
 
         $tool->save();
-        AiModel::clearCapabilitiesCache();
 
         $this->newLine();
         $this->info('✓ Tool updated successfully.');
-        $this->line('  Restart the application (or reload) for registry changes to take effect.');
 
         return Command::SUCCESS;
     }
@@ -69,7 +67,7 @@ class ConfigureTool extends Command
     private function editActive(AiTool $tool): bool
     {
         $current = $tool->active ? 'enabled' : 'disabled';
-        $new     = $tool->active ? 'disabled' : 'enabled';
+        $new = $tool->active ? 'disabled' : 'enabled';
         if ($this->confirm("Toggle active state from <fg=cyan>{$current}</> to <fg=cyan>{$new}</>?", true)) {
             $tool->active = !$tool->active;
             $this->info("  ✓ Active → <fg=cyan>{$new}</>");
@@ -88,8 +86,8 @@ class ConfigureTool extends Command
             ->toArray();
 
         $newOption = '[+ Enter a new capability]';
-        $choices   = array_merge([$newOption], $existing);
-        $choice    = $this->choice(
+        $choices = array_merge([$newOption], $existing);
+        $choice = $this->choice(
             "Select or enter a capability  <fg=gray>(current: {$tool->capability}</>)",
             $choices,
             0
@@ -148,11 +146,11 @@ class ConfigureTool extends Command
             '[%s] %s (%s)',
             $t->active ? 'on' : 'off',
             $t->name,
-            $t->type
+            $t->type->value
         ))->toArray();
 
         $chosen = $this->choice('Select a tool to configure', $labels);
-        $index  = array_search($chosen, $labels);
+        $index = array_search($chosen, $labels);
 
         return $tools[$index] ?? null;
     }
@@ -160,11 +158,9 @@ class ConfigureTool extends Command
     private function showToolSummary(AiTool $tool): void
     {
         $activeLabel = $tool->active ? '<fg=green>enabled</>' : '<fg=red>disabled</>';
-        $statusLabel = $tool->status === 'active' ? '<fg=green>online</>' : '<fg=yellow>offline</>';
 
         $this->line('  <fg=cyan;options=bold>' . $tool->name . '</>');
-        $this->line("  Type:        {$tool->type}");
-        $this->line("  Status:      {$statusLabel}");
+        $this->line("  Type:        {$tool->type->value}");
         $this->line("  Active:      {$activeLabel}");
         $this->line("  Capability:  <fg=yellow>{$tool->capability}</>");
         $this->line("  Description: {$tool->description}");

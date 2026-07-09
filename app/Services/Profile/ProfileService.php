@@ -4,28 +4,34 @@ namespace App\Services\Profile;
 
 
 use App\Models\PasskeyBackup;
-use App\Models\PrivateUserData;
 use App\Models\User;
 use App\Services\Chat\Room\RoomService;
-use App\Services\Profile\Traits\ApiTokenHandler;
-use App\Services\Profile\Traits\PasskeyHandler;
+use App\Services\Frontend\Migrations\Repositories\AppliedFrontendMigrationRepository;
+use App\Services\Frontend\Migrations\Repositories\FrontendMigrationUserdataRepository;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
+use App\Services\System\Container\ServiceLocatorTrait;
+use App\Services\Users\Keychain\Repositories\UserKeychainRepository;
 use Exception;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
 
-class ProfileService{
+class ProfileService
+{
+    use ServiceLocatorTrait;
 
-
-    public function update(array $data): bool{
+    public function update(array $data): bool
+    {
         $user = Auth::user();
 
-        if(!empty($data['displayName'])){
+        if (!empty($data['displayName'])) {
             $user->update(['name' => $data['displayName']]);
         }
 
-        if(!empty($data['bio'])){
+        if (!empty($data['bio'])) {
             $user->update(['bio' => $data['bio']]);
         }
 
@@ -35,40 +41,33 @@ class ProfileService{
     /**
      * @throws Exception
      */
-    public function assignAvatar($image): string{
-        $uuid = Str::uuid();
+    public function assignAvatar(UploadedFile $image): string
+    {
         $user = Auth::user();
-        $extension = $image->getClientOriginalExtension(); // returns 'png', 'jpg', etc.
-        if (!$extension) {
-            // Fall back on MIME type if extension missing
-            $mime = $image->getMimeType(); // e.g. 'image/png'
-            $extension = \Illuminate\Support\Arr::last(explode('/', $mime));
-        }
-        $filename = $uuid . '.' . $extension;
 
         $avatarStorage = app(AvatarStorageService::class);
-        $response = $avatarStorage->store($image,
-                                        $filename,
-                                        $uuid,
-                                        'profile_avatars',
-                                        false);
-        if ($response) {
-            if($user->avatar_id != null){
-                $avatarStorage->delete($user->avatar_id, 'profile_avatars');
-            }
+        $newAvatar = $avatarStorage->store(
+            file: FileReference::fromUploadedFile($image),
+            category: StoredFileCategory::PROFILE_AVATAR
+        );
 
-            $user->update(['avatar_id' => $uuid]);
-            return $avatarStorage->getUrl($uuid, 'profile_avatars');
-        } else {
-            throw new Exception('Failed to store image');
+        if ($newAvatar === null) {
+            throw new \RuntimeException('Failed to store image');
         }
+
+        $avatarStorage->delete(StoredFileIdentifier::tryFromUserAvatar($user));
+
+        $user->update(['avatar_id' => $newAvatar->getUuid()]);
+
+        return $newAvatar->getUrl();
     }
 
 
     /**
      * @throws Exception
      */
-    public function resetProfile(): void{
+    public function resetProfile(): void
+    {
         $user = Auth::user();
         $this->deleteUserData($user);
 
@@ -89,75 +88,48 @@ class ProfileService{
     /**
      * @throws Exception
      */
-    public function deleteUserData(User $user): void{
+    public function deleteUserData(User $user): void
+    {
 
-        try{
-            $roomService = new RoomService();
+        try {
+            $roomService = $this->getService(RoomService::class);
             $rooms = $user->rooms()->get();
 
-            foreach($rooms as $room){
+            foreach ($rooms as $room) {
                 $member = $room->members()->where('user_id', $user->id)->firstOrFail();
-                if ($member) {
-                    $response = $roomService->removeMember($member, $room);
-                }
+                $roomService->removeMember($member, $room);
             }
 
             $convs = $user->conversations()->get();
 
-            foreach($convs as $conv){
+            foreach ($convs as $conv) {
                 $conv->messages()->delete();
                 $conv->delete();
             }
 
             $invitations = $user->invitations()->get();
-            foreach($invitations as $inv){
+            foreach ($invitations as $inv) {
                 $inv->delete();
             }
 
-            $prvUserData = PrivateUserData::where('user_id', $user->id)->get();
-            foreach($prvUserData as $data){
-                $data->delete();
-            }
+            $this->getService(AppliedFrontendMigrationRepository::class)->dropAllForUser($user);
+            $this->getService(FrontendMigrationUserdataRepository::class)->dropAllForUser($user);
+            $this->getService(UserKeychainRepository::class)->dropAllForUser($user);
 
             $backups = PasskeyBackup::where('username', $user->username)->get();
 
-            foreach($backups as $backup){
+            foreach ($backups as $backup) {
                 $backup->delete();
             }
 
             $tokens = $user->tokens()->get();
-            foreach($tokens as $token){
+            foreach ($tokens as $token) {
                 $token->delete();
             }
 
             $user->revokProfile();
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             throw $e;
         }
     }
-
-
-
-    /// Sends back user's encrypted keychain
-    public function fetchUserKeychain(): string{
-
-        $user = Auth::user();
-        $prvUserData = PrivateUserData::where('user_id', $user->id)->first();
-
-        // Corrupted user data, force re-registration
-        if ($prvUserData === null) {
-            $this->deleteUserData($user);
-            redirect()->route('login')
-                ->withErrors(['login_error' => 'User data corrupted. Please register again.'])->send();
-            exit();
-        }
-        
-        return json_encode([
-            'keychain'=> $prvUserData->keychain,
-            'KCIV'=> $prvUserData->KCIV,
-            'KCTAG'=> $prvUserData->KCTAG,
-        ]);
-    }
-
 }

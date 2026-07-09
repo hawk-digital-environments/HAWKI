@@ -3,7 +3,9 @@
 namespace App\Console\Commands\Ai;
 
 use App\Models\Ai\AiModel;
+use App\Models\Ai\AiProvider;
 use Illuminate\Console\Command;
+use Illuminate\Support\Collection;
 
 class ListModels extends Command
 {
@@ -16,7 +18,7 @@ class ListModels extends Command
 
     public function handle(): int
     {
-        $query = AiModel::with('provider', 'status');
+        $query = AiModel::with('provider');
 
         if ($provider = $this->option('provider')) {
             $query->whereHas('provider', fn($q) => $q->where('provider_id', $provider));
@@ -30,20 +32,23 @@ class ListModels extends Command
 
         if ($models->isEmpty()) {
             $this->warn('No models found. Run <comment>php artisan ai:models:sync</comment> first.');
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         if ($this->option('json')) {
             $this->line($models->toJson(JSON_PRETTY_PRINT));
-            return Command::SUCCESS;
+            return self::SUCCESS;
         }
 
         // Group by provider
-        $grouped = $models->groupBy(fn($m) => $m->provider?->provider_id ?? 'unknown');
+        /** @var Collection<string, Collection<int, AiModel>> $grouped */
+        $grouped = $models->groupBy(fn($m) => $m->provider->provider_id ?? 'unknown');
 
         foreach ($grouped as $providerId => $providerModels) {
-            $provider = $providerModels->first()->provider;
-            $status   = $provider?->active ? '<fg=green>active</>' : '<fg=red>inactive</>';
+            /** @var AiProvider|null $provider */
+            $provider = $providerModels->first()?->provider;
+
+            $status = $provider?->active ? '<fg=green>active</>' : '<fg=red>inactive</>';
             $this->newLine();
             $this->line("Provider: <fg=cyan;options=bold>{$providerId}</> [{$status}]");
             $this->line(str_repeat('─', 70));
@@ -52,8 +57,8 @@ class ListModels extends Command
                 $m->model_id,
                 $m->label,
                 $m->active ? '<fg=green>✓</>' : '<fg=red>✗</>',
-                $m->status?->status?->value ?? 'unknown',
-                implode(', ', $m->input ?? []),
+                $m->status->value ?? 'unknown',
+                implode(', ', $m->input->toArray()),
             ])->toArray();
 
             $this->table(['Model ID', 'Label', 'Active', 'Status', 'Input'], $rows);

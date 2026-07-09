@@ -7,6 +7,7 @@ export const addon: AddonEntrypoint = async (context) => ({
             .description('runs a certain npm command for the project')
             .allowExcessArguments(true)
             .allowUnknownOption(true)
+            .helpOption(false)
             .action(async (options, command) => {
                 await context.docker.executeCommandInService('node', ['npm', ...command.args], {interactive: true});
             });

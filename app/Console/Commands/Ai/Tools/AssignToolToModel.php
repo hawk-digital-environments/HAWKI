@@ -4,7 +4,8 @@ namespace App\Console\Commands\Ai\Tools;
 
 use App\Models\Ai\AiModel;
 use App\Models\Ai\AiProvider;
-use App\Models\Ai\Tools\AiTool;
+use App\Models\Ai\AiTool;
+use App\Services\Ai\Tools\Repositories\AiModelToolRepository;
 use Illuminate\Console\Command;
 
 class AssignToolToModel extends Command
@@ -18,22 +19,22 @@ class AssignToolToModel extends Command
 
     protected $description = 'Manage which AI models are allowed to use which tools';
 
-    public function handle(): int
+    public function handle(AiModelToolRepository $assignments): int
     {
         if ($this->option('list')) {
             return $this->showAssignments();
         }
 
         if ($this->option('detach')) {
-            return $this->detachTool();
+            return $this->detachTool($assignments);
         }
 
-        return $this->attachTool();
+        return $this->attachTool($assignments);
     }
 
     // ── Attach / detach ────────────────────────────────────────────────────────
 
-    private function attachTool(): int
+    private function attachTool(AiModelToolRepository $assignments): int
     {
         [$tool, $models] = $this->resolveToolAndModels();
 
@@ -43,18 +44,15 @@ class AssignToolToModel extends Command
 
         $count = 0;
         foreach ($models as $model) {
-            $model->assignedTools()->syncWithoutDetaching([
-                $tool->id => ['type' => $tool->type],
-            ]);
+            $assignments->assignTool($model, $tool);
             $count++;
         }
 
-        AiModel::clearCapabilitiesCache();
         $this->info("  ✓ Tool <fg=cyan>{$tool->name}</> assigned to {$count} model(s).");
         return Command::SUCCESS;
     }
 
-    private function detachTool(): int
+    private function detachTool(AiModelToolRepository $assignments): int
     {
         [$tool, $models] = $this->resolveToolAndModels();
 
@@ -64,11 +62,10 @@ class AssignToolToModel extends Command
 
         $count = 0;
         foreach ($models as $model) {
-            $model->assignedTools()->detach($tool->id);
+            $assignments->unassignTool($model, $tool);
             $count++;
         }
 
-        AiModel::clearCapabilitiesCache();
         $this->info("  ✓ Tool <fg=cyan>{$tool->name}</> detached from {$count} model(s).");
         return Command::SUCCESS;
     }
@@ -94,7 +91,7 @@ class AssignToolToModel extends Command
             $this->line(sprintf(
                 "  <fg=yellow>%s</> [%s]  →  %s",
                 $tool->name,
-                $tool->type,
+                $tool->type->value,
                 $modelList
             ));
         }
@@ -112,7 +109,7 @@ class AssignToolToModel extends Command
     {
         // ── Resolve tool ───────────────────────────────────────────────────────
         $toolSearch = $this->option('tool');
-        $tool       = null;
+        $tool = null;
 
         if ($toolSearch) {
             $tool = AiTool::where('name', $toolSearch)
@@ -127,7 +124,7 @@ class AssignToolToModel extends Command
                 return [null, []];
             }
             $choice = $this->choice('Select a tool', $tools->pluck('name')->toArray());
-            $tool   = $tools->firstWhere('name', $choice);
+            $tool = $tools->firstWhere('name', $choice);
         }
 
         if (!$tool) {
@@ -136,9 +133,9 @@ class AssignToolToModel extends Command
         }
 
         // ── Resolve models ─────────────────────────────────────────────────────
-        $modelSearch    = $this->option('model');
+        $modelSearch = $this->option('model');
         $providerSearch = $this->option('provider');
-        $models         = [];
+        $models = [];
 
         if ($modelSearch) {
             // Non-interactive: find by model_id
@@ -163,7 +160,7 @@ class AssignToolToModel extends Command
             $eligible = AiModel::where('provider_id', $provider->id)
                 ->where('active', true)
                 ->get()
-                ->filter(fn($m) => ($m->tools ?: [])['tool_calling'] ?? true);
+                ->filter(fn(AiModel $m) => $m->settings->canUseTools());
 
             if ($eligible->isEmpty()) {
                 $this->warn("No eligible models found for provider '{$provider->name}'.");
@@ -194,7 +191,7 @@ class AssignToolToModel extends Command
     }
 
     /**
-     * Interactive provider selection — returns array of eligible AiModel instances.
+     * Interactive provider selection — returns array of eligible AiModelConfig instances.
      */
     private function selectByProvider(AiTool $tool): array
     {
@@ -229,7 +226,7 @@ class AssignToolToModel extends Command
         $models = AiModel::whereHas('provider', fn($q) => $q->whereIn('name', $selectedNames))
             ->where('active', true)
             ->get()
-            ->filter(fn($m) => ($m->tools ?: [])['tool_calling'] ?? true);
+            ->filter(fn(AiModel $m) => $m->settings->canUseTools());
 
         if ($models->isEmpty()) {
             $this->warn('No eligible models found for the selected providers.');
@@ -242,7 +239,7 @@ class AssignToolToModel extends Command
     }
 
     /**
-     * Interactive model selection — returns array of selected AiModel instances.
+     * Interactive model selection — returns array of selected AiModelConfig instances.
      */
     private function selectByModel(AiTool $tool): array
     {
@@ -250,7 +247,7 @@ class AssignToolToModel extends Command
             ->where('active', true)
             ->orderBy('model_id')
             ->get()
-            ->filter(fn($m) => ($m->tools ?: [])['tool_calling'] ?? true);
+            ->filter(fn(AiModel $m) => $m->settings->canUseTools());
 
         if ($allModels->isEmpty()) {
             $this->warn('No active tool-capable models found. Run <comment>php artisan ai:models:sync</comment> first.');

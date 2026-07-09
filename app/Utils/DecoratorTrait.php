@@ -45,6 +45,7 @@ namespace App\Utils;
  * echo $decorated->foo(); // outputs 'overridden'
  * echo $decorated->baz(); // outputs 'value'
  * ```
+ * @api
  */
 trait DecoratorTrait
 {
@@ -114,6 +115,14 @@ trait DecoratorTrait
                 } else {
                     if (!$sourceProperty->isInitialized($parent)) {
                         continue;
+                    }
+                    if ($sourceProperty->isReadOnly()) {
+                        throw new \LogicException(sprintf(
+                            'Cannot inherit read-only property %s::$%s from parent class %s',
+                            $sourceReflection->getName(),
+                            $sourceProperty->getName(),
+                            $sourceReflection->getName()
+                        ));
                     }
                     $value = $sourceProperty->getValue($parent);
                     $targetProperty->setValue($instance, $value);

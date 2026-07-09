@@ -4,30 +4,46 @@
     "type": "module",
     "scripts": {
         "dev": "npm install && vite",
-        "build": "vite build"
+        "build": "vite build",
+        "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
+        "test": "echo \"Heads up: no test specified\" && exit 0",
+        "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.json"
     },
     "devDependencies": {
-        "concurrently": "^9.2.1",
-        "laravel-vite-plugin": "^2.1.0",
-        "pusher-js": "^8.4.0",
-        "shelljs": "^0.10.0",
-        "vite": "^7.3.1"
-    },
-    "dependencies": {
-        "cropperjs": "^2.1.0",
-        "docx": "^9.6.0",
+        "@antv/infographic": "^0.2.19",
+        "@csstools/postcss-global-data": "^4.0.0",
+        "@hugeicons/core-free-icons": "^4.2.2",
+        "@hugeicons/svelte": "^1.1.4",
+        "@sveltejs/vite-plugin-svelte": "^7.1.2",
+        "@tsconfig/svelte": "^5.0.8",
+        "@types/node": "^26.1.0",
+        "bits-ui": "^2.18.1",
+        "class-variance-authority": "^0.7.1",
+        "cropperjs": "^2.1.1",
+        "docx": "^9.7.1",
         "docx-preview": "^0.3.7",
-        "highlight.js": "^11.11.1",
-        "jquery": "^3.7.1",
-        "jspdf": "^4.2.0",
-        "katex": "^0.16.33",
-        "laravel-echo": "^2.3.0",
-        "markdown-it": "^14.1.1",
-        "pako": "^2.1.0",
-        "pdfjs-dist": "^5.4.624",
-        "pusher-js": "^8.4.0"
+        "esbuild": "^0.28.1",
+        "jsona": "^1.14.0",
+        "jspdf": "^4.2.1",
+        "katex": "^0.17.0",
+        "laravel-echo": "^2.3.7",
+        "laravel-vite-plugin": "^3.1.0",
+        "markstream-svelte": "^0.0.1",
+        "mermaid": "^11.16.0",
+        "monaco-editor": "^0.55.1",
+        "pdfjs-dist": "^5.6.205",
+        "postcss-custom-media": "^12.0.1",
+        "prettier": "^3.9.4",
+        "pusher-js": "^8.5.0",
+        "shadcn-svelte": "^1.2.7",
+        "stream-monaco": "^0.0.45",
+        "svelte": "^5.56.4",
+        "svelte-check": "^4.7.1",
+        "typescript": "~6.0.3",
+        "vite": "^8.1.3",
+        "zod": "^4.4.3"
     },
     "optionalDependencies": {
-        "@rollup/rollup-linux-x64-gnu": "^4.59.0"
+        "@rollup/rollup-linux-x64-gnu": "^4.62.2"
     }
 }

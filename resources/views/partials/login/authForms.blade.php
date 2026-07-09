@@ -1,15 +1,15 @@
 @if($showLoginForm)
     <form class="form-column" id="hawkiLoginForm">
         @csrf
-        <label for="account">{{ $translation["username"] }}</label>
+        <label for="account">{{ __("username") }}</label>
         <input type="text" name="account" id="account" onkeypress="onLoginKeydown(event)">
-        <label for="password">{{ $translation["password"] }}</label>
+        <label for="password">{{ __("password") }}</label>
         <input type="password" name="password" id="password" onkeypress="onLoginKeydown(event)">
     </form>
     <div id="login-Button-panel">
         <div id="login-message"></div>
         <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="button"
-                onclick="submitLogin()">{{ $translation['Login'] }}</button>
+                onclick="submitLogin()">{{ __('Login') }}</button>
     </div>
 @else
     <form class="form-column" method="post" id="hawkiLoginForm" action="/req/login">
@@ -20,6 +20,6 @@
             </div>
         @endif
         <button id="loginButton" class="btn-lg-fill align-end top-gap-1" type="submit"
-                name="submit">{{ $translation['Login'] }}</button>
+                name="submit">{{ __('Login') }}</button>
     </form>
 @endif

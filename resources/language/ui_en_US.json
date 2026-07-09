@@ -1,0 +1,23 @@
+{
+    "ui": {
+        "dialog": {
+            "closeLabel": "Close",
+            "okLabel": "OK",
+            "cancelLabel": "Cancel"
+        },
+        "sheet": {
+            "menuTitle": "Menu"
+        },
+        "statusDot": {
+            "ariaLabel": "Status indicator",
+            "onlineTooltip": "Online",
+            "offlineTooltip": "Offline",
+            "unknownTooltip": "Unknown"
+        },
+        "dropdownMenu": {
+            "switchItem": {
+                "toggleLabel": "Toggle item"
+            }
+        }
+    }
+}

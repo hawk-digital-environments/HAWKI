@@ -1,0 +1,58 @@
+/* ==========================================================================
+   Base Layer
+   Applies design tokens to the document root. Only targets element selectors
+   (no classes). New Svelte components inherit from here automatically.
+
+   NOTE: These rules intentionally do NOT re-style legacy Blade pages — those
+   continue to use public/css/style.css until migrated.
+   ========================================================================== */
+
+@layer base {
+    :root {
+        --icon-stroke-width: 1.8;
+    }
+
+    body {
+        font-family: var(--font-family-base);
+        font-size: var(--font-size-sm);
+        line-height: var(--line-height-normal);
+        color: var(--color-text);
+        background: var(--color-bg);
+    }
+
+    svg.lucide {
+        stroke-width: var(--icon-stroke-width);
+        transition: stroke-width var(--duration-fast) ease-in-out;
+    }
+
+    /* ── Focus ring ─────────────────────────────────────────────────────── */
+    :focus-visible {
+        outline: 1px solid var(--color-focus-ring);
+        outline-offset: 2px;
+        border-radius: var(--corner-xs);
+    }
+
+    /* ── Scrollbar ──────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--color-border-strong);
+        border-radius: var(--corner-full);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--color-text-muted);
+    }
+
+    /* ── Links ──────────────────────────────────────────────────────────── */
+    a {
+        color: var(--color-link);
+    }
+}

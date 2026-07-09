@@ -124,7 +124,7 @@ async function showLinkPreview(linkElement) {
         showPreviewContent(metadata);
     } catch (error) {
         console.error('Failed to fetch link preview:', error);
-        previewCache.set(url, { error: true });
+        previewCache.set(url, {error: true});
         showPreviewError();
     }
 }
@@ -229,7 +229,7 @@ function showPreviewContent(metadata) {
 
         imgContainer.addEventListener('click', () => {
             openLink();
-        })
+        });
 
         // Handle image load error
         imgElement.onerror = () => {
@@ -253,7 +253,7 @@ function showPreviewContent(metadata) {
     domainElement.textContent = metadata.domain || new URL(metadata.url).hostname;
     domainElement.addEventListener('click', () => {
         openLink();
-    })
+    });
     // Show content
     previewPanel.querySelector('.preview-loading').style.display = 'none';
     previewPanel.querySelector('.preview-error').style.display = 'none';
@@ -272,7 +272,7 @@ function showPreviewError() {
 }
 
 //Open Link in new Tab
-function openLink(){
+function openLink() {
     window.open(currentPreviewLink, '_blank').focus();
 }
 
@@ -293,9 +293,9 @@ async function fetchLinkMetadata(url) {
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json',
+            'Accept': 'application/json'
         },
-        body: JSON.stringify({ url })
+        body: JSON.stringify({url})
     });
 
     if (!response.ok) {
@@ -305,9 +305,4 @@ async function fetchLinkMetadata(url) {
     return await response.json();
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeLinkPreview);
-} else {
-    initializeLinkPreview();
-}
+window.waitUntilReady(initializeLinkPreview);

@@ -1,0 +1,57 @@
+/* ==========================================================================
+   Breakpoint Tokens
+   Uses @custom-media (postcss-custom-media + postcss-global-data).
+
+   Breakpoint ranges:
+     xxs  0 – 300px
+     xs   0 – 549px
+     sm   550px – 767px
+     md   768px – 991px
+     lg   992px – 1199px
+     xl   1200px+
+
+   "and bigger" / "and smaller" variants that cover the full range (i.e.
+   always match) are omitted — use no media query in those cases:
+     bpXxsAndBigger, bpXsAndBigger, bpXlAndSmaller
+   ========================================================================== */
+
+/* XXS (0 – 300px)
+   ========================================================================== */
+@custom-media --bp-xxs              (max-width: 300px);
+@custom-media --bp-bigger-than-xxs  (min-width: 300px);
+
+/* XS (0 – 549px)
+   Note: since xs-min = 0, --bp-xs and --bp-xs-and-smaller are identical.
+   ========================================================================== */
+@custom-media --bp-xs               (max-width: 549px);
+@custom-media --bp-xs-and-smaller   (max-width: 549px);
+@custom-media --bp-bigger-than-xs   (min-width: 549px);
+
+/* SM (550px – 767px)
+   ========================================================================== */
+@custom-media --bp-smaller-than-sm  (max-width: 550px);
+@custom-media --bp-sm               (min-width: 550px) and (max-width: 767px);
+@custom-media --bp-sm-and-smaller   (max-width: 767px);
+@custom-media --bp-sm-and-bigger    (min-width: 550px);
+@custom-media --bp-bigger-than-sm   (min-width: 767px);
+
+/* MD (768px – 991px)
+   ========================================================================== */
+@custom-media --bp-smaller-than-md  (max-width: 768px);
+@custom-media --bp-md               (min-width: 768px) and (max-width: 991px);
+@custom-media --bp-md-and-smaller   (max-width: 991px);
+@custom-media --bp-md-and-bigger    (min-width: 768px);
+@custom-media --bp-bigger-than-md   (min-width: 991px);
+
+/* LG (992px – 1199px)
+   ========================================================================== */
+@custom-media --bp-smaller-than-lg  (max-width: 992px);
+@custom-media --bp-lg               (min-width: 992px) and (max-width: 1199px);
+@custom-media --bp-lg-and-smaller   (max-width: 1199px);
+@custom-media --bp-lg-and-bigger    (min-width: 992px);
+@custom-media --bp-bigger-than-lg   (min-width: 1199px);
+
+/* XL (1200px+)
+   ========================================================================== */
+@custom-media --bp-smaller-than-xl  (max-width: 1200px);
+@custom-media --bp-xl               (min-width: 1200px);

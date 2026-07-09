@@ -4,6 +4,8 @@ namespace App\Models\Announcements;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class Announcement extends Model
 {
@@ -25,7 +27,10 @@ class Announcement extends Model
         'expires_at' => 'datetime',
     ];
 
-    public function users()
+    /**
+     * @return BelongsToMany<User, $this, AnnouncementUser>
+     */
+    public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'announcement_user')
                     ->using(AnnouncementUser::class) // use custom pivot model

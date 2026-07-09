@@ -2,25 +2,43 @@
 
 namespace App\Services\Profile;
 
-use Exception;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use laravel\Sanctum\NewAccessToken;
+use App\Models\User;
+use App\Services\Profile\Exception\NoCurrentUserException;
+use Illuminate\Contracts\Auth\Factory;
+use Illuminate\Support\Collection;
+use Laravel\Sanctum\NewAccessToken;
+use Psr\Log\LoggerInterface;
 
-class ApiTokenService{
-
-    public function createApiToken(string $name): NewAccessToken{
-        $user = Auth::user();
-        return $user->createToken($name);
+readonly class ApiTokenService
+{
+    public function __construct(
+        private Factory         $authFactory,
+        private LoggerInterface $logger
+    )
+    {
     }
 
+    public function createApiToken(string $name): NewAccessToken
+    {
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
+            throw NoCurrentUserException::forMethod(__METHOD__);
+        }
+        return $currentUser->createToken($name);
+    }
 
-    public function fetchTokenList(){
-        $user = Auth::user();
-        // Retrieve all tokens associated with the authenticated user
-        $tokens = $user->tokens()->get();
+    /**
+     * @return Collection<array{id: int, name: string}>
+     */
+    public function fetchTokenList(): Collection
+    {
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
+            throw NoCurrentUserException::forMethod(__METHOD__);
+        }
+
         // Construct an array of token data
-        return $tokens->map(function ($token) {
+        return $currentUser->tokens()->get()->map(function ($token) {
             return [
                 'id' => $token->id,
                 'name' => $token->name,
@@ -28,18 +46,29 @@ class ApiTokenService{
         });
     }
 
-
-    public function revokeToken(int $tokenId){
-        try{
-            $user = Auth::user();
-            $token = $user->tokens()->where('id', $tokenId);
-            $token->delete();
+    public function revokeToken(int $tokenId): void
+    {
+        $currentUser = $this->getCurrentUser();
+        if (!$currentUser) {
+            throw NoCurrentUserException::forMethod(__METHOD__);
         }
-        catch(Exception $e){
-            Log::error($e->getMessage());
+        try {
+            $token = $currentUser->tokens()->where('id', $tokenId);
+            $token->delete();
+        } catch (\Throwable $e) {
+            $this->logger->error('Error revoking API token', ['token_id' => $tokenId, 'exception' => $e]);
             throw $e;
         }
-
     }
 
+    /**
+     * We resolve the current user from the auth factory to ensure we are using the currently resolved
+     * user, even if the user was set after the service was constructed.
+     * This is important for cases where the user might be set in a middleware or other part of the request lifecycle.
+     * @return User|null
+     */
+    private function getCurrentUser(): User|null
+    {
+        return $this->authFactory->guard()->user();
+    }
 }

@@ -11,6 +11,9 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
+/**
+ * @deprecated will be removed in a future release! Don't rely on this class.
+ */
 class RoomMessageEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
@@ -24,7 +27,8 @@ class RoomMessageEvent implements ShouldBroadcast
         $this->data = $data;
     }
 
-    public function broadcastOn(): array {
+    public function broadcastOn(): array
+    {
         try {
             return [
                 new PrivateChannel('Rooms.' . $this->slug),

@@ -1,0 +1,98 @@
+/* ==========================================================================
+   Color Tokens
+   Keep the application chrome neutral. Chromatic color is reserved for
+   focus/accessibility, accents, warnings/status, and custom SVG assets.
+   ========================================================================== */
+@layer tokens {
+    :root {
+        /* ── Accent scale ──────────────────────────────────────────────── */
+        --color-accent-100: oklch(93% 0.04 265);
+        --color-accent-200: oklch(84% 0.09 265);
+        --color-accent-300: oklch(74% 0.14 265);
+        --color-accent-400: oklch(60% 0.2 265);
+        --color-accent-500: oklch(45% 0.24 265);
+        --color-accent-600: oklch(37% 0.22 265);
+        --color-accent-700: oklch(29% 0.19 265);
+        --color-accent-800: oklch(21% 0.15 265);
+        --color-accent-900: oklch(14% 0.1 265);
+
+        /* ── Accent dark variants ──────────────────────────────────────── */
+        --color-accent-dark-300: oklch(78% 0.07 240);
+        --color-accent-dark-400: oklch(64% 0.09 240);
+        --color-accent-dark-500: oklch(54% 0.11 240);
+
+        /* ── Semantic aliases — light mode defaults ─────────────────────── */
+        --color-interactive: oklch(20% 0 0);
+        --color-interactive-hover: oklch(32% 0 0);
+        --color-interactive-active: oklch(12% 0 0);
+        --color-focus-ring: var(--color-accent-300);
+        --color-on-interactive: oklch(100% 0 0);
+        --color-accent-text: var(--color-accent-500);
+
+        /* ── Status colors ──────────────────────────────────────────────── */
+        --color-success: oklch(50% 0.17 145);
+        --color-warning: oklch(62% 0.17 75);
+        --color-error: oklch(52% 0.21 25);
+        --color-info: oklch(55% 0.14 230);
+
+        /* ── Neutral surfaces ───────────────────────────────────────────── */
+        --color-bg: oklch(100% 0 0);
+        --color-bg-secondary: oklch(96% 0.01 265); /* --background-secondary (#F4F6FB) */
+        --color-surface: oklch(94% 0 0);
+        --color-surface-raised: oklch(100% 0 0);
+        --color-surface-invert: oklch(20% 0 0);
+        --color-highlight: oklch(92% 0 0);
+        --color-message-me: oklch(94% 0 0);
+        --color-message-ai: oklch(100% 0 0);
+
+        --color-hover: oklch(94% 0 0);
+        /* Lighter-than-surface neutral fill. Used as a resting background for
+           controls so the standard --color-hover reads as a darker hover. */
+        --color-surface-light: oklch(96% 0 0);
+        --color-surface-light-raised: oklch(95% 0 0);
+        --color-border: oklch(92% 0 0);
+        --color-border-strong: oklch(50% 0 0);
+        --color-text: oklch(20% 0 0);
+        --color-text-muted: oklch(57% 0 0);
+        --color-text-invert: oklch(97% 0 0);
+        --color-text-disabled: oklch(75% 0 0);
+        --color-disabled-bg: oklch(93% 0 0);
+
+        --color-link: oklch(0% 0 0); /* --link-color (#000) */
+    }
+
+    html.darkMode {
+        --color-interactive: oklch(93% 0 0);
+        --color-on-interactive: oklch(20% 0 0);
+        --color-interactive-hover: oklch(82% 0 0);
+        --color-interactive-active: oklch(72% 0 0);
+        --color-focus-ring: var(--color-accent-dark-300);
+        --color-accent-text: var(--color-accent-dark-400);
+
+        --color-bg: oklch(18% 0 0);
+        --color-bg-secondary: oklch(0.213 0 0);
+        --color-surface: oklch(20% 0 0);
+        --color-surface-raised: oklch(19% 0 0);
+        --color-surface-invert: oklch(20% 0 0);
+        --color-surface-light: oklch(32% 0 0);
+        --color-surface-light-raised: oklch(27% 0 0);
+        --color-highlight: oklch(26% 0 0);
+        --color-message-me: oklch(24% 0 0);
+        --color-message-ai: oklch(20% 0 0);
+
+        --color-hover: oklch(27% 0 0);
+        --color-border: oklch(31% 0 0);
+        --color-border-strong: oklch(74% 0 0);
+        --color-text: oklch(93% 0 0);
+        --color-text-muted: oklch(86% 0 0);
+        --color-text-invert: oklch(24% 0 0);
+        --color-text-disabled: oklch(45% 0 0);
+        --color-disabled-bg: oklch(25% 0 0);
+
+        --color-link: oklch(100% 0 0);
+    }
+}
+
+foo {
+    color: rgb(249, 163, 134), rgb(240, 117, 158)
+}
