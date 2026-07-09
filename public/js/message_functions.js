@@ -466,7 +466,7 @@ function deconstContent(inputContent) {
     }
 
     if (typeof inputContent === 'string') {
-        if (isValidJson(inputContent)) {
+        if (isValidJson(inputContent) && inputContent.trim().startsWith('{')) {
             inputContent = JSON.parse(inputContent);
         } else {
             return createResult(inputContent);
@@ -495,15 +495,19 @@ function deconstContent(inputContent) {
         inputContent = inputContent.content;
     }
 
-    if (inputContent.hasOwnProperty('text') && typeof inputContent.text === 'string' && isValidJson(inputContent.text)) {
+    if (inputContent.hasOwnProperty('text')
+        && typeof inputContent.text === 'string'
+        && isValidJson(inputContent.text)
+        && inputContent.text.trim().startsWith('{')
+    ) {
         inputContent = JSON.parse(inputContent.text);
     } else if (inputContent.hasOwnProperty('text') && typeof inputContent.text === 'object') {
         inputContent = inputContent.text;
     }
 
-    if (inputContent.hasOwnProperty('text') && typeof inputContent.text === 'string') {
+    if (inputContent.hasOwnProperty('text') && (typeof inputContent.text === 'string' || typeof inputContent.text === 'number')) {
         return createResult(
-            inputContent.text,
+            String(inputContent.text),
             inputContent.groundingMetadata || '',
             inputContent.citations || []
         );
@@ -531,6 +535,8 @@ function escapeRegExp(string) {
 /// Finds out if HAWKI is mentioned in the text.
 /// rawText = text from input field or decrypted from server.
 function detectMentioning(rawText) {
+    rawText = String(rawText);
+
     // aiMentioned: if AI is mentioned
     // filteredText: text without mentioning,
     // modifiedText: text with mentioning (bold),

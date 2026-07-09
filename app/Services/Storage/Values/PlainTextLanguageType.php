@@ -1,7 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Storage\Values;
 
+/**
+ * Identifies the specific plain-text sub-format of a file (e.g. markdown, Python, JSON).
+ *
+ * Used when {@see FileType::PLAIN_TEXT} is not specific enough — for example to apply syntax
+ * highlighting or to decide whether to wrap content in a fenced code block when sending it to
+ * an AI model. Detection runs in this order:
+ *   1. File extension via {@see self::tryFromFilename()}
+ *   2. MIME type via {@see self::tryFromMimetype()}
+ *
+ * MARKDOWN is treated as a special case throughout the codebase: its content is forwarded
+ * as-is without any additional wrapping.
+ */
 enum PlainTextLanguageType: string
 {
     case CUCUMBER = 'cucumber';

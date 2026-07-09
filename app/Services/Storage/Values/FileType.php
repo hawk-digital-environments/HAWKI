@@ -1,9 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Storage\Values;
 
 use Symfony\Component\Mime\MimeTypes;
 
+/**
+ * Broad file-type categorisation used to decide how a file should be rendered or handled
+ * (e.g. showing an image preview vs. a document download link).
+ *
+ * Unlike MIME type, this enum collapses hundreds of MIME variants into a small set of
+ * UI-relevant buckets. Plain-text files carry additional context via {@see PlainTextLanguageType}.
+ */
 enum FileType: string
 {
     case IMAGE = 'image';

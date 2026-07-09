@@ -364,6 +364,7 @@ async function handleUpdateMessage(messageData, slug) {
         regenerateBtn.style.opacity = '1';
     }
 
+    window.oldUiMessageHistory.updateMessageInConversation(messageData);
     updateMessageElement(element, messageData, true);
 
 

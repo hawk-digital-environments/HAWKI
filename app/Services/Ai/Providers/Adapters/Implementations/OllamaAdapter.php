@@ -9,6 +9,8 @@ use App\Models\Ai\AiProvider;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
+use App\Services\Ai\StatusCheck\AiModelDemandCollection;
+use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Gateway\Ollama\Concerns\CreatesOllamaClient;
@@ -48,7 +50,7 @@ class OllamaAdapter extends AbstractProviderAdapter
     }
 
     /**
-     * Fetches the list of currently running models from the Ollama `/ps` endpoint.
+     * Fetches the list of currently running models from the Ollama `/api/ps` endpoint.
      *
      * Only models that are actively loaded in Ollama's memory appear here. Models
      * installed but not running are excluded, which prevents returning models that
@@ -61,12 +63,28 @@ class OllamaAdapter extends AbstractProviderAdapter
     public function getModels(AiProviderProxy $provider): Collection
     {
         return $this->createModelListClient($this->client($provider->driver))
-            ->get('/api/ps')
+            ->get('/api/tags')
             ->getMapped('models.*', function ($item) use ($provider) {
                 return $this->createNewModelInfo(
                     modelId: data_get($item, 'model'),
                     provider: $provider,
                 );
             });
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function checkModelStatus(
+        AiModelOnlineStatusCollection $statusCollection,
+        AiModelDemandCollection       $demandCollection,
+        AiProviderProxy               $provider): void
+    {
+        foreach ($this->getModels($provider) as $model) {
+            $statusCollection->setUnknown($model->model_id);
+        }
+        foreach ($this->createModelListClient($this->client($provider->driver))->get('/api/ps')->getList('models.*') as $model) {
+            $statusCollection->setOnline(data_get($model, 'model'));
+        }
     }
 }

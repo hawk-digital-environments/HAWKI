@@ -11,6 +11,19 @@ use App\Services\Storage\UrlGenerator;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
+/**
+ * Represents a file that has been persisted to a storage disk, together with all of its metadata.
+ *
+ * Instances are always created via the two static factory methods — never directly:
+ * - {@see self::fromNewFile()} when a file has just been written to disk for the first time.
+ * - {@see self::fromMetaJson()} when loading metadata from the `.meta.json` sidecar file.
+ *
+ * The `diskFolderPath` is intentionally NOT included in the JSON serialisation: sidecar files can be
+ * relocated on disk without touching their content, and the path is re-injected on every deserialization.
+ *
+ * The ETag is derived from the upload timestamp and file size, not from a content hash, to avoid
+ * reading the full file on every request.
+ */
 readonly class StoredFile implements FileInterface, \JsonSerializable
 {
     /**

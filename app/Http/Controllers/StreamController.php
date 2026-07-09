@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\RoomAiWritingEndedEvent;
-use App\Events\RoomAiWritingStartedEvent;
+use App\Services\Chat\Events\RoomAiWritingEndedEvent;
+use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;

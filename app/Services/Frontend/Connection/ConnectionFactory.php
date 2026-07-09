@@ -24,6 +24,28 @@ use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Http\Request;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @api
+ *
+ * Builds `Connection` value objects for the JSON:API `/connections` resource.
+ *
+ * Each connection describes the current session to the frontend: who the user is, which
+ * authentication state they're in, and what secrets or pending work the frontend needs.
+ * Two connection types exist:
+ *
+ * - **Native HAWKI** (`"hawki"`) — always available; type depends on authentication state.
+ * - **External app** (keyed by the ext-app's user ID) — only available when the request
+ *   originates from a registered external application.
+ *
+ * Usage (in `ConnectionRepository`):
+ * ```php
+ * // Native HAWKI connection (guest, registering, or authenticated)
+ * $connection = $factory->createHawkiConnection();
+ *
+ * // External app connection (linked or unlinked user)
+ * $connection = $factory->createExtAppConnection($extAppUserId);
+ * ```
+ */
 #[Singleton]
 readonly class ConnectionFactory
 {
@@ -41,6 +63,18 @@ readonly class ConnectionFactory
     {
     }
 
+    /**
+     * Builds the native HAWKI connection for the current request.
+     *
+     * Returns `null` — and logs a warning — when the request is not coming from the main
+     * app context (e.g. an external-app iframe), because native connections are only valid
+     * for the main HAWKI UI.
+     *
+     * The connection type is determined by the user context:
+     * - Authenticated user → `INTERNAL_AUTHENTICATED` with full `Userinfo`
+     * - Mid-registration user → `INTERNAL_REGISTERING_USER` with partial `Userinfo` (id = 0)
+     * - Guest → `INTERNAL` with no `Userinfo`
+     */
     public function createHawkiConnection(): Connection|null
     {
         $userContext = $this->request->getUserContext();
@@ -78,6 +112,20 @@ readonly class ConnectionFactory
         );
     }
 
+    /**
+     * Builds an external-app connection for the given external user ID.
+     *
+     * Returns `null` — and logs a warning — when:
+     * - The request does not originate from an external-app context.
+     * - The authenticated request user is not the external app itself (only the app
+     *   credential, not an individual user token, may fetch this resource).
+     * - No `ExtApp` record is associated with the authenticated user.
+     *
+     * When the external user is already linked to a HAWKI account the connection is
+     * `EXTERNAL_APP_AUTHENTICATED` and includes `ExtAppSecrets`.
+     * When the user is not yet linked the connection is `EXTERNAL_APP` and includes an
+     * encrypted `extAppConnectRequest` payload to initiate the linking flow.
+     */
     public function createExtAppConnection(string $extAppUserId): Connection|null
     {
         $app = $this->tryFindingExtApp();

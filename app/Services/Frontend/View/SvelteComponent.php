@@ -87,6 +87,13 @@ class SvelteComponent extends Component
         };
     }
 
+    /**
+     * Builds the attribute string for the `<svelte-snippet>` element.
+     *
+     * Merges `type` and `props` with any extra Blade attributes (e.g. `class`, `id`).
+     * Attribute names are converted to kebab-case. Arrays and objects are JSON-encoded;
+     * all values are HTML-escaped to prevent XSS through prop injection.
+     */
     private function attributesForTag(): string
     {
         $attr = array_merge(

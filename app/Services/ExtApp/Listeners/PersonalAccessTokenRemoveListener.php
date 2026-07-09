@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services\ExtApp\Listeners;
 
 
-use App\Events\ExtAppUserRemovedEvent;
-use App\Events\PersonalAccessTokenRemovedEvent;
+use App\Services\ExtApp\Events\ExtAppUserRemovedEvent;
+use App\Services\Users\Events\PersonalAccessTokenRemovedEvent;
 use App\Services\ExtApp\Repositories\ExtAppUserRepository;
 use Psr\Log\LoggerInterface;
 use Throwable;

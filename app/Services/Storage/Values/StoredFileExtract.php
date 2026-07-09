@@ -10,6 +10,18 @@ use App\Services\Storage\Interfaces\FileInterface;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
+/**
+ * Represents a single derived output produced by the file-converter pipeline for a source file —
+ * for example, a Markdown transcript extracted from a PDF.
+ *
+ * Plain-text files are a special case: instead of spawning a converter, the storage engine creates
+ * a virtual extract that points back at the source file itself ({@see self::fromPlainTextFile()}).
+ * Non-markdown plain text is dynamically wrapped in a fenced code block when {@see getContent()} is called,
+ * so callers always receive consistently formatted text without needing to store a duplicate file.
+ *
+ * The `diskFolderPath` (source file folder) is not persisted in JSON — it is re-injected when the
+ * owning {@see StoredFile} is loaded, mirroring the same design decision made for `StoredFile`.
+ */
 readonly class StoredFileExtract implements FileInterface, \JsonSerializable
 {
     public function __construct(

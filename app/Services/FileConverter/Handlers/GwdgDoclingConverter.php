@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services\FileConverter\Handlers;
 
@@ -9,20 +10,44 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Symfony\Component\Mime\MimeTypes;
 
+/**
+ * Converter that delegates to the GWDG Academic Cloud document conversion API (Docling).
+ *
+ * Documents are uploaded via multipart HTTP POST to the configured endpoint. The API returns
+ * a JSON response containing a `markdown` field (extracted text) and an optional `images` array
+ * (base64-encoded images found in the document, either as plain base64 or as `data:…;base64,…`
+ * data URIs). Each image and the Markdown file are returned as separate {@see FileReference} entries.
+ *
+ * Required config keys (under `file_converter.converters.gwdg_docling`):
+ *   - `api_url` — full URL of the Docling conversion endpoint
+ *   - `api_key` — Bearer token for API authentication (non-empty string)
+ */
 class GwdgDoclingConverter extends AbstractFileConverter
 {
     /**
      * @inheritDoc
+     * Requires both a valid `api_url` and a non-empty `api_key`.
      */
     public static function isValidConfig(array $config): bool
     {
-        return isset($config['api_url'])
-            && is_string($config['api_key'])
-            && !empty($config['api_key'])
+        return isset($config['api_url'], $config['api_key'])
             && is_string($config['api_url'])
-            && filter_var($config['api_url'], FILTER_VALIDATE_URL);
+            && filter_var($config['api_url'], FILTER_VALIDATE_URL)
+            && is_string($config['api_key'])
+            && !empty($config['api_key']);
     }
 
+    /**
+     * POSTs the file to the GWDG Docling API and returns the extracted artefacts.
+     *
+     * The response is expected to contain:
+     * - `markdown` — extracted text; emitted as `{filename}.md`.
+     * - `images`   — optional array of base64-encoded images; each emitted as its own FileReference.
+     *
+     * The request uses a 240-second timeout because large documents can take significant time to process.
+     *
+     * @throws ConversionFailedException if the API returns a non-2xx response.
+     */
     public function convert(FileReference $file): FileCollection
     {
         $response = Http::withHeaders([
@@ -76,7 +101,8 @@ class GwdgDoclingConverter extends AbstractFileConverter
     }
 
     /**
-     * @inheritDoc
+     * Always returns true — the GWDG API is considered available as long as its config is valid.
+     * Actual connectivity is not checked; HTTP errors during {@see convert()} will throw instead.
      */
     public function isAvailable(): bool
     {
@@ -84,7 +110,11 @@ class GwdgDoclingConverter extends AbstractFileConverter
     }
 
     /**
-     * @inheritDoc
+     * Returns the hard-coded list of MIME types supported by the GWDG Docling API.
+     * Covers common office documents (PDF, DOCX, PPTX, XLSX), markup (HTML, Markdown, AsciiDoc),
+     * data files (CSV, VTT), and raster images (PNG, JPEG, TIFF, BMP, WebP).
+     *
+     * @return string[] Lowercase MIME type strings.
      */
     public function getAllowedMimeTypes(): array
     {

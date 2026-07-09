@@ -6,7 +6,7 @@ namespace App\Services\Ai\Providers\Adapters\Implementations;
 
 
 use App\Models\Ai\AiProvider;
-use App\Services\Ai\LaravelAi\Drivers\OpenAi\ExtendedOpenAiGateway;
+use App\Services\Ai\LaravelAi\Drivers\OpenAiExtended\ExtendedOpenAiGateway;
 use App\Services\Ai\Models\Capabilities\Values\WellKnownCapabilities;
 use App\Services\Ai\Providers\Adapters\AbstractProviderAdapter;
 use App\Services\Ai\Providers\Adapters\DriverFactory;

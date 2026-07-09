@@ -12,6 +12,30 @@ use App\Services\System\Time\Clock;
 use Illuminate\Contracts\Cache\Repository;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Fetches and caches favicons for external URLs, routing through Google's Favicon Service.
+ *
+ * Resolution order:
+ *  1. {@see ResolvingFaviconFilterEvent} — listeners may supply a pre-resolved icon and
+ *     skip the HTTP fetch entirely.
+ *  2. Google's Favicon Service ({@code s2/favicons?domain=…&sz=32}) — fetched via {@see ProxyClient}.
+ *  3. An inline SVG fallback (a HAWKI globe icon) when Google returns no usable image or
+ *     the request fails.
+ *
+ * Resolved icons are cached for seven days, keyed by MD5 of the full input URL (not just
+ * the domain), so callers need not normalise URLs before calling. The {@see FaviconResolvedFilterEvent}
+ * fires after resolution and before the result is written to the cache, allowing listeners to
+ * post-process or override the icon.
+ *
+ * Usage:
+ * ```php
+ * $icon = $favIconProxy->getFaviconOf('https://example.com/some/page');
+ * return response($icon->content, 200)->header('Content-Type', $icon->mimeType);
+ * ```
+ *
+ * @see FaviconResolvedFilterEvent   dispatched after resolution, before caching
+ * @see ResolvingFaviconFilterEvent  dispatched before the HTTP fetch, allows short-circuit
+ */
 readonly class FavIconProxy
 {
     public function __construct(
@@ -23,6 +47,12 @@ readonly class FavIconProxy
     {
     }
 
+    /**
+     * Return the favicon for the given URL, serving from the 7-day cache when available.
+     *
+     * On any error during the fetch, a fallback SVG icon is returned and cached so the
+     * error is not retried on every request within the cache TTL window.
+     */
     public function getFaviconOf(string $url): ResolvedExternalImage
     {
         return $this->cache->remember(
@@ -48,6 +78,14 @@ readonly class FavIconProxy
         );
     }
 
+    /**
+     * Attempt to fetch a 32px favicon for the domain via Google's Favicon Service.
+     *
+     * Returns null when the response is not successful or does not have an {@code image/}
+     * Content-Type, allowing the caller to fall back to the SVG placeholder.
+     *
+     * @todo detect if we got the google "no favicon" image, and if so, return a default favicon instead of the google one
+     */
     private function fetchFaviconThroughGoogle(string $url): ResolvedExternalImage|null
     {
         $domain = parse_url($url, PHP_URL_HOST);
@@ -56,8 +94,6 @@ readonly class FavIconProxy
         $response = $this->client->fetchOrThrow($faviconUrl, 2);
 
         if ($response->successful() && str_starts_with($response->header('Content-Type'), 'image/')) {
-
-            // @todo detect if we got the google "no favicon" image, and if so, return a default favicon instead of the google one
 
             return new ResolvedExternalImage(
                 content: $response->body(),
@@ -68,6 +104,11 @@ readonly class FavIconProxy
         return null;
     }
 
+    /**
+     * Build the built-in SVG fallback icon (a HAWKI globe) for when no favicon can be resolved.
+     *
+     * The returned image always has {@see ResolvedExternalImage::$isFallback} set to true.
+     */
     private function makeFallbackFavicon(): ResolvedExternalImage
     {
         return new ResolvedExternalImage(

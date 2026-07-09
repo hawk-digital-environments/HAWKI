@@ -16,6 +16,21 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Mime\MimeTypes;
 
+/**
+ * Synchronous content-extraction pipeline invoked during file storage.
+ *
+ * For most binary files (PDFs, Word documents) it delegates to the configured
+ * {@see FileConverterInterface}, writes each output file into an `output/` subfolder
+ * beside the source file, and returns a collection of {@see StoredFileExtract} objects.
+ *
+ * Plain-text files bypass the converter entirely: a virtual extract pointing at the source
+ * file is returned directly, with MIME type `text/markdown` so that downstream code can
+ * treat all extracts uniformly.
+ *
+ * When the file converter is unavailable (not configured or not running) the method
+ * returns `null` instead of an empty collection. Callers can distinguish "extraction
+ * skipped" (`null`) from "extraction ran but produced nothing" (empty collection).
+ */
 #[Singleton]
 readonly class ContentExtractor
 {

@@ -8,8 +8,20 @@ namespace App\Services\Storage\Config;
 use App\Services\Config\AbstractConfig;
 use Symfony\Component\Mime\MimeTypes;
 
+/**
+ * Base class for storage-related public config objects. Provides a shared helper for
+ * deriving allowed file extensions from a list of MIME types.
+ */
 abstract class AbstractStorageConfig extends AbstractConfig
 {
+    /**
+     * Converts a list of MIME types into the file extensions recognised by Symfony's MIME type database.
+     * Extensions that contain non-alphanumeric characters (e.g. `[1-9]`) are filtered out because
+     * browsers and file-input elements would not accept them as valid extension filters.
+     *
+     * @param string[] $mimeTypes
+     * @return string[]
+     */
     protected static function extensionsFromMimeTypes(array $mimeTypes): array
     {
         $mime = new MimeTypes();

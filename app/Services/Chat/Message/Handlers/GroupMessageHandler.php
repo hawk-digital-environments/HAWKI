@@ -3,8 +3,8 @@
 
 namespace App\Services\Chat\Message\Handlers;
 
-use App\Events\MessageSentEvent;
-use App\Events\MessageUpdatedEvent;
+use App\Services\Chat\Events\MessageSentEvent;
+use App\Services\Chat\Events\MessageUpdatedEvent;
 use App\Models\AiConv;
 use App\Models\Message;
 use App\Models\Room;

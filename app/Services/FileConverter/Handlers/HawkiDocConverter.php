@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services\FileConverter\Handlers;
 
@@ -13,22 +14,38 @@ use RecursiveIteratorIterator;
 use Symfony\Component\Mime\MimeTypes;
 use ZipArchive;
 
+/**
+ * Converter that delegates to the HAWKI internal document conversion service.
+ *
+ * Documents are uploaded via multipart HTTP POST with Bearer-token authentication.
+ * The service responds with a ZIP archive whose contents are extracted to a temporary
+ * directory; each extracted file is returned as a {@see FileReference} pointing to its
+ * local disk path. Temporary files are cleaned up via a registered shutdown function
+ * so they are never left on disk after the request completes.
+ *
+ * Required config keys (under `file_converter.converters.hawki_converter`):
+ *   - `api_url` — full URL of the conversion endpoint
+ *   - `api_key` — Bearer token for API authentication (non-empty string)
+ */
 class HawkiDocConverter extends AbstractFileConverter
 {
     /**
      * @inheritDoc
+     * Requires both a valid `api_url` and a non-empty `api_key`.
      */
     public static function isValidConfig(array $config): bool
     {
-        return isset($config['api_url'])
-            && is_string($config['api_key'])
-            && !empty($config['api_key'])
+        return isset($config['api_url'], $config['api_key'])
             && is_string($config['api_url'])
-            && filter_var($config['api_url'], FILTER_VALIDATE_URL);
+            && filter_var($config['api_url'], FILTER_VALIDATE_URL)
+            && is_string($config['api_key'])
+            && !empty($config['api_key']);
     }
 
     /**
-     * @inheritDoc
+     * Returns the MIME types accepted by the HAWKI converter: PDF, DOC, and DOCX.
+     *
+     * @return string[] Lowercase MIME type strings.
      */
     public function getAllowedMimeTypes(): array
     {
@@ -42,8 +59,16 @@ class HawkiDocConverter extends AbstractFileConverter
     }
 
     /**
-     * @throws ConnectionException
-     * @throws Exception
+     * POSTs the file to the HAWKI converter and unpacks the returned ZIP archive.
+     *
+     * The response body must be a valid ZIP file. Its contents are extracted to a temporary
+     * directory and each entry is returned as a {@see FileReference}. A shutdown function is
+     * registered to delete all temporary files once the request finishes.
+     *
+     * @throws ConversionFailedException if the API returns a non-2xx response, the temporary
+     *         directory cannot be created, or the ZIP archive cannot be opened.
+     * @throws ConnectionException if the HTTP connection to the API fails.
+     * @throws Exception if PHP's ZipArchive extension encounters an unexpected error.
      */
     public function convert(FileReference $file): FileCollection
     {
@@ -91,7 +116,15 @@ class HawkiDocConverter extends AbstractFileConverter
         return new FileCollection(...$files);
     }
 
-    private function unzipContent($zipContent, $extractToDirectory): bool
+    /**
+     * Writes the raw ZIP binary to a temp file, extracts it into `$extractToDirectory`,
+     * then removes the temp file. Throws {@see ConversionFailedException} when the archive
+     * cannot be opened.
+     *
+     * @param string $zipContent  Raw binary content of the ZIP archive.
+     * @param string $extractToDirectory  Absolute path to an existing directory.
+     */
+    private function unzipContent(string $zipContent, string $extractToDirectory): bool
     {
         $tmpZip = tempnam(sys_get_temp_dir(), 'unzipped_') . '.zip';
         file_put_contents($tmpZip, $zipContent);
@@ -109,7 +142,8 @@ class HawkiDocConverter extends AbstractFileConverter
     }
 
     /**
-     * @inheritDoc
+     * Always returns true — the HAWKI converter is considered available as long as its config is valid.
+     * Actual connectivity is not checked; HTTP errors during {@see convert()} will throw instead.
      */
     public function isAvailable(): bool
     {

@@ -10,22 +10,29 @@ use App\Services\Config\Contracts\PublicConfigInterface;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 
+/**
+ * Frontend config for file-transfer functionality, exposed under the `transfer` key.
+ *
+ * Provides the base API URL for upload/download endpoints and, for authenticated users,
+ * the WebSocket connection details required to receive real-time transfer progress events.
+ * WebSocket credentials are withheld from unauthenticated responses to prevent information leakage.
+ */
 class TransferConfig extends AbstractConfig implements PublicConfigInterface
 {
     /**
-     * Base URL for transfer-related API endpoints, e.g. for file uploads.
-     * This is used by the frontend to know where to send transfer-related requests.
-     * @var string
+     * Base URL of the HAWKI application, used as the root for all transfer-related API requests.
      */
     public readonly string $baseUrl;
 
     /**
-     * Websocket configuration for real-time transfer updates.
-     * This is used by the frontend to establish websocket connections for transfer-related events.
-     * @var WebsocketTransferConfig
+     * WebSocket connection details for real-time transfer events (progress, completion, errors).
+     * Only included in the public response for authenticated users.
      */
     public readonly WebsocketTransferConfig $websocket;
 
+    /**
+     * Builds the transfer config from `app.url` and the reverb WebSocket settings.
+     */
     public static function make(Repository $repo): static
     {
         return self::fromArray([
@@ -43,7 +50,8 @@ class TransferConfig extends AbstractConfig implements PublicConfigInterface
     }
 
     /**
-     * @inheritDoc
+     * Returns the base URL for all callers, plus WebSocket credentials only for authenticated users.
+     * Unauthenticated requests receive only `baseUrl` so the frontend can still reach the login endpoint.
      */
     public function toPublicArray(Request $request): array|null
     {

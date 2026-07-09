@@ -11,6 +11,8 @@ use App\Services\Ai\Providers\Adapters\Implementations\OllamaAdapter;
 use App\Services\Ai\Providers\Adapters\ModelList\ModelListClient;
 use App\Services\Ai\Providers\Adapters\ModelList\ModelListResponse;
 use App\Services\Ai\Providers\Values\AiProviderProxy;
+use App\Services\Ai\StatusCheck\AiModelDemandCollection;
+use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Collection;
 use Laravel\Ai\Enums\Lab;
@@ -45,7 +47,7 @@ class OllamaAdapterTest extends TestCase
         );
     }
 
-    private function makeModelListClient(array $payload, string $expectedRoute = '/api/ps'): ModelListClient
+    private function makeModelListClient(array $payload, string $expectedRoute = '/api/tags'): ModelListClient
     {
         $rawResponse = $this->createMock(Response::class);
         $rawResponse->method('json')->willReturn($payload);
@@ -72,6 +74,23 @@ class OllamaAdapterTest extends TestCase
             protected function createModelListClient(\Illuminate\Http\Client\PendingRequest $request): ModelListClient
             {
                 return $this->injectedClient;
+            }
+        };
+    }
+
+    private function makeAdapterWithOrderedClients(ModelListClient ...$clients): OllamaAdapter
+    {
+        return new class($clients) extends OllamaAdapter {
+            private array $queue;
+
+            public function __construct(array $queue)
+            {
+                $this->queue = $queue;
+            }
+
+            protected function createModelListClient(\Illuminate\Http\Client\PendingRequest $request): ModelListClient
+            {
+                return array_shift($this->queue);
             }
         };
     }
@@ -148,14 +167,14 @@ class OllamaAdapterTest extends TestCase
     // getModels — /ps endpoint
     // =========================================================================
 
-    public function testItGetModelsQueriesPsEndpoint(): void
+    public function testItGetModelsQueriesTagsEndpoint(): void
     {
-        // The expectation is baked into makeModelListClient with expectedRoute='/api/ps'
+        // The expectation is baked into makeModelListClient with expectedRoute='/api/tags'
         $client = $this->makeModelListClient([
             'models' => [
                 ['model' => 'llama3:latest'],
             ],
-        ], '/api/ps');
+        ], '/api/tags');
 
         $provider = $this->makeProvider();
 
@@ -216,6 +235,75 @@ class OllamaAdapterTest extends TestCase
         $result = $sut->getModels($provider);
 
         static::assertCount(0, $result);
+    }
+
+    // =========================================================================
+    // checkModelStatus
+    // =========================================================================
+
+    public function testItCheckModelStatusSetsUnknownForEachTagsModel(): void
+    {
+        $tagsClient = $this->makeModelListClient([
+            'models' => [
+                ['model' => 'llama3:latest'],
+                ['model' => 'mistral:7b'],
+            ],
+        ], '/api/tags');
+        $psClient = $this->makeModelListClient(['models' => []], '/api/ps');
+
+        $provider = $this->makeProvider();
+        $statusCollection = $this->createMock(AiModelOnlineStatusCollection::class);
+        $demandCollection = $this->createMock(AiModelDemandCollection::class);
+
+        $setUnknownCalls = [];
+        $statusCollection->method('setUnknown')
+            ->willReturnCallback(function (string $id) use (&$setUnknownCalls): void {
+                $setUnknownCalls[] = $id;
+            });
+
+        $sut = $this->makeAdapterWithOrderedClients($tagsClient, $psClient);
+        $sut->checkModelStatus($statusCollection, $demandCollection, $provider);
+
+        static::assertSame(['llama3:latest', 'mistral:7b'], $setUnknownCalls);
+    }
+
+    public function testItCheckModelStatusSetsOnlineForEachPsModel(): void
+    {
+        $tagsClient = $this->makeModelListClient(['models' => []], '/api/tags');
+        $psClient = $this->makeModelListClient([
+            'models' => [
+                ['model' => 'llama3:latest'],
+            ],
+        ], '/api/ps');
+
+        $provider = $this->makeProvider();
+        $statusCollection = $this->createMock(AiModelOnlineStatusCollection::class);
+        $demandCollection = $this->createMock(AiModelDemandCollection::class);
+
+        $setOnlineCalls = [];
+        $statusCollection->method('setOnline')
+            ->willReturnCallback(function (string $id) use (&$setOnlineCalls): void {
+                $setOnlineCalls[] = $id;
+            });
+
+        $sut = $this->makeAdapterWithOrderedClients($tagsClient, $psClient);
+        $sut->checkModelStatus($statusCollection, $demandCollection, $provider);
+
+        static::assertSame(['llama3:latest'], $setOnlineCalls);
+    }
+
+    public function testItCheckModelStatusDoesNotTouchDemandCollection(): void
+    {
+        $tagsClient = $this->makeModelListClient(['models' => []], '/api/tags');
+        $psClient = $this->makeModelListClient(['models' => []], '/api/ps');
+
+        $provider = $this->makeProvider();
+        $statusCollection = $this->createMock(AiModelOnlineStatusCollection::class);
+        $demandCollection = $this->createMock(AiModelDemandCollection::class);
+        $demandCollection->expects(static::never())->method(static::anything());
+
+        $sut = $this->makeAdapterWithOrderedClients($tagsClient, $psClient);
+        $sut->checkModelStatus($statusCollection, $demandCollection, $provider);
     }
 
     // =========================================================================

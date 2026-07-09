@@ -9,6 +9,13 @@ use App\Services\Storage\FileStorageService;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 
+/**
+ * Exposes upload constraints for chat-attachment file uploads to the frontend under the
+ * `storage_files` public-config key.
+ *
+ * The values are derived at runtime from the {@see FileStorageService} so that the frontend
+ * always reflects the same limits that the backend enforces.
+ */
 class FileStorageConfig extends AbstractStorageConfig implements PublicConfigInterface
 {
     /**

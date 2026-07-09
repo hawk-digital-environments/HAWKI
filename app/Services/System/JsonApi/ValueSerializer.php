@@ -5,13 +5,20 @@ declare(strict_types=1);
 namespace App\Services\System\JsonApi;
 
 
+/**
+ * Utility class for serialising sensitive or binary values for JSON API output.
+ *
+ * Methods here are called from API Resources where the raw value must not be exposed
+ * to clients as-is — either because it is a secret (API key masking) or because the
+ * client needs an inline data-URL instead of a file-system path.
+ */
 class ValueSerializer
 {
     /**
      * Masks an API key by replacing all but the last 4 characters with asterisks.
      *
-     * @param string|null $apiKey The API key to mask.
-     * @return string|null The masked API key, or null if the input was null.
+     * Keys of 8 characters or fewer are masked entirely. Returns null when the input is
+     * null or empty so callers can distinguish "no key set" from "key set but hidden".
      */
     public static function apiKey(?string $apiKey): ?string
     {
@@ -29,10 +36,10 @@ class ValueSerializer
     }
 
     /**
-     * Converts a local file to a data URL.
+     * Converts a local file to an inline data URL (`data:<mime>;base64,<content>`).
      *
-     * @param string|null $filePath The path to the local file.
-     * @return string|null The data URL representation of the file, or null if the file does not exist.
+     * Returns null when the path is empty or the file does not exist, so callers can
+     * omit the field rather than sending a broken data URL.
      */
     public static function localFileAsDataUrl(?string $filePath): ?string
     {

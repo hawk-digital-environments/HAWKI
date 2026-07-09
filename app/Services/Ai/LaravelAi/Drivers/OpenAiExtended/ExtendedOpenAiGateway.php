@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 
-namespace App\Services\Ai\LaravelAi\Drivers\OpenAi;
+namespace App\Services\Ai\LaravelAi\Drivers\OpenAiExtended;
 
 
 use App\Services\Ai\LaravelAi\Values\UrlMultiCitation;

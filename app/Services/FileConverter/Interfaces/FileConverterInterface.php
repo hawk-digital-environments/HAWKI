@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services\FileConverter\Interfaces;
 
@@ -7,71 +8,79 @@ use App\Services\FileConverter\Utils\ImagePreProcessingConverter;
 use App\Services\Storage\Values\FileCollection;
 use App\Services\Storage\Values\FileReference;
 
+/**
+ * Contract for document converters that extract structured content from binary files.
+ *
+ * Each converter connects to an external service or CLI tool. The active converter is assembled
+ * and bound by {@see \App\Providers\FileConverterServiceProvider}, which always wraps the chosen
+ * implementation with {@see ImagePreProcessingConverter} to pre-process exotic image formats
+ * (SVG, TIFF, PSD, EPS, …) before the underlying converter sees them.
+ *
+ * Typical usage via the bound singleton:
+ * ```php
+ * // Inject via constructor:
+ * public function __construct(private readonly FileConverterInterface $converter) {}
+ *
+ * // Then use it:
+ * if ($this->converter->isAvailable() && $this->converter->canConvertMimetype($file->getMimeType())) {
+ *     $extracts = $this->converter->convert($file); // FileCollection of extracted artefacts
+ * }
+ * ```
+ *
+ * @see \App\Providers\FileConverterServiceProvider  assembles and binds the converter pipeline
+ * @see \App\Services\Storage\Utils\ContentExtractor primary consumer
+ */
 interface FileConverterInterface
 {
     /**
-     * Validates the provided configuration array for the converter.
-     * The specific validation rules will depend on the implementation of the converter.
-     * For example, it may check for required keys, value types, or value ranges.
-     *
-     * @param array $config
-     * @return bool Returns true if the configuration is valid, false otherwise.
+     * Returns true when the given configuration array contains all keys required by this converter.
+     * Called by {@see \App\Providers\FileConverterServiceProvider} before instantiating a converter
+     * to skip candidates whose environment variables are not set.
      */
     public static function isValidConfig(array $config): bool;
 
     /**
-     * Allows the outside caller to set configuration options for the converter.
-     * The specific configuration options will depend on the implementation of the converter.
-     *
-     * @param array $config
-     * @return void
+     * Injects the resolved configuration array into this converter instance.
+     * Called by the service provider immediately after construction.
      */
     public function setConfig(array $config): void;
 
     /**
-     * Receives a File Reference as input, extracts all possible content from it, and returns a collection of
-     * {@see FileReference} objects representing the extracted content. The specific extraction process will depend on
-     * the implementation of the converter and the type of file being processed.
-     * @param FileReference $file
-     * @return FileCollection
+     * Extracts all content from the given file and returns the results as a collection of
+     * {@see FileReference} objects. Depending on the file type and the converter, results
+     * typically include a Markdown text file and one or more image files.
+     *
+     * @throws \App\Services\FileConverter\Exception\ConversionFailedException on any extraction error.
      */
     public function convert(FileReference $file): FileCollection;
 
     /**
-     * Returns true if the converter is available and can be used, false otherwise.
-     * @return bool
+     * Returns true when the converter's backing service or binary is reachable and ready.
+     * {@see \App\Providers\FileConverterServiceProvider} skips converters that return false here.
      */
     public function isAvailable(): bool;
 
     /**
-     * Get the list of allowed MIME types supported by this converter
+     * Returns the list of MIME types this converter can process.
+     * Used by {@see canConvertMimetype()} and by callers deciding whether to invoke the converter.
      *
-     * @return array The list of allowed MIME types
+     * @return string[] Lowercase MIME type strings, e.g. `['application/pdf', 'image/png']`.
      */
     public function getAllowedMimeTypes(): array;
 
     /**
-     * Checks if the converter can extract content from the given MIME type.
-     *
-     * @param string $mimetype The MIME type to check.
-     * @return bool True if the converter can extract content from the given MIME type, false otherwise.
+     * Returns true when the given MIME type is in the list returned by {@see getAllowedMimeTypes()}.
      */
     public function canConvertMimetype(string $mimetype): bool;
 
     /**
-     * This method can be implemented if your converter is technically able to handle a filetype,
-     * but, if there are other, better solutions available, they should handle the conversion.
+     * Signals that this converter prefers another converter to handle the given MIME type,
+     * even though it technically supports it.
      *
-     * Why this? For example the {@see KreuzbergConverter} can technically convert svg files, but
-     * the result is, lets say "meh". It only extracts the text content but does not provide an image
-     * for the AI to see. Our internal {@see ImagePreProcessingConverter} does a much better job to handle
-     * svgs but requires a dedicated command line tool on the server. So, if a svg is presented, we first ask
-     * check if our command line tool is enabled, if so we ask the real converter,
-     * "would you like someone else to handle this?". If it agrees the image preprocessor will handle it,
-     * otherwise if the command line tool is not installed, Kreuzberg will always handle svgs in its own way.
-     *
-     * @param string $mimetype
-     * @return bool
+     * For example, {@see KreuzbergConverter} can convert SVG but only extracts text — it returns
+     * true here for `image/svg+xml` so the wrapping {@see ImagePreProcessingConverter} can intercept
+     * the file and produce a proper PNG rendering instead. If no better handler is available the
+     * original converter will still be used as a fallback.
      */
     public function wouldLikeSomeoneElseToConvertMimetype(string $mimetype): bool;
 }

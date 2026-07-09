@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Message;
 
 
-use App\Events\MessageUpdatedEvent;
+use App\Services\Chat\Events\MessageUpdatedEvent;
 use App\Models\Message;
 use App\Models\Room;
 

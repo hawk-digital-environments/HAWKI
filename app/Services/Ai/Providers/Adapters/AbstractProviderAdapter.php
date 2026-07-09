@@ -110,7 +110,7 @@ abstract class AbstractProviderAdapter implements ProviderAdapterInterface
      * Required for adapters backed by a user-configured endpoint (e.g. Ollama, OpenAI-like
      * providers) where a missing URL would cause a silent or misleading HTTP failure later.
      *
-     * @throws \App\Services\Ai\Exceptions\InvalidProviderConfigurationException when $apiUrl is empty.
+     * @throws InvalidProviderConfigurationException when $apiUrl is empty.
      */
     protected function assertNonEmptyApiUrl(string|null $apiUrl, AgentRequestContext|AiProvider $context): string
     {

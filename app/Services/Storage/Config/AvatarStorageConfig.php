@@ -10,6 +10,13 @@ use App\Services\Storage\AvatarStorageService;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 
+/**
+ * Exposes upload constraints for user and room avatar uploads to the frontend under the
+ * `storage_avatars` public-config key.
+ *
+ * The values are derived at runtime from the {@see AvatarStorageService} so that the frontend
+ * always reflects the same limits that the backend enforces.
+ */
 class AvatarStorageConfig extends AbstractStorageConfig implements PublicConfigInterface
 {
     /**

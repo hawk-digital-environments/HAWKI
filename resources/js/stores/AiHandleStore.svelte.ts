@@ -33,7 +33,7 @@ export class AiHandleStore {
 
         // Currently we only match against the single AI handle, but as soon as the assistant systems are implemented
         // we will have various handles to work with, so this will be the place where we look them up in our store.
-        while ((match = genericHandleRegex.exec(message)) !== null) {
+        while ((match = genericHandleRegex.exec(message + '')) !== null) {
             const handleName = match[2];
             if (handleName === this.hawkiHandle) {
                 yield handleName;
