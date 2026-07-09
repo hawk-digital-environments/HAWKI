@@ -48,7 +48,7 @@ class WebsocketTransferConfig extends AbstractConfig
         return self::fromArray([
             'key' => $repo->get('reverb.frontend.key'),
             'host' => $reverbHost,
-            'port' => $reverbPort,
+            'port' => (int)$reverbPort,
             'forceTls' => $reverbScheme === 'https',
             'path' => $reverbPath ? rtrim($reverbPath, '/') . '/ws/transfer' : '/ws/transfer',
         ]);
