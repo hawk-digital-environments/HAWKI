@@ -49,7 +49,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelParams::TOP_P => 0.9,
             ],
         ],
-        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
+        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
         'deepseek-r1-distill-llama-70b' => [
             'max_tokens' => 32000,
             'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
@@ -110,7 +110,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING
             ],
         ],
-        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
+        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
         'internvl3.5-30b-a3b' => [
             'max_tokens' => 40000,
             'documentation_url' => 'https://huggingface.co/OpenGVLab/InternVL3_5-30B-A3B-HF',
@@ -187,7 +187,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
+        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
         'qwen3-coder-30b-a3b-instruct' => [
             'max_tokens' => 256000,
             'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8',
@@ -305,7 +305,7 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        // NOTE: MODEL LISTED IN GWDG WEBSITE BUT NOT API RESPONSE
+        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
         'teuken-7b-instruct-research' => [
             'max_tokens' => 128000,
             'documentation_url' => 'https://huggingface.co/openGPT-X/Teuken-7B-instruct-research-v0.4',
