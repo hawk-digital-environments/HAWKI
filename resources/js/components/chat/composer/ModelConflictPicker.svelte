@@ -4,13 +4,13 @@
   for sorting by recommendation, cost, or capability tier.
 -->
 <script lang="ts">
-    import {TriangleAlert} from '@lucide/svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import ModelDemandBars from '$lib/components/chat/composer/ModelDemandBars.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import StatusDotForModel from '$lib/components/chat/composer/StatusDotForModel.svelte';
     import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
     import {__} from '$lib/utils/translator.js';
+    import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
 
     const composerContext = useComposerContext();
     const currentModel = $derived(composerContext.model.current);
@@ -30,7 +30,7 @@
             <!-- Header -->
             <div class="conflict-header">
                 <div class="conflict-icon-wrapper">
-                    <TriangleAlert size={12} class="conflict-icon"/>
+                    <Alert02Icon size={12} class="conflict-icon"/>
                 </div>
                 <div class="conflict-content">
                     <p class="conflict-title">

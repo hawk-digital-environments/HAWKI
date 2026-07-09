@@ -24,10 +24,19 @@ use Psr\Log\LoggerInterface;
 /**
  * Converts {@see AiTool} database records into Neuron-compatible {@see ToolInterface} instances.
  *
- * Rather than calling {@see McpConnector::tools()} on every message — which would query the MCP
- * server even when no tool is invoked — this class uses {@see LaravelMcpTool} as a custom MCP tool implementation.
- * Actual MCP calls are deferred to {@see HawkiMcpClient}, giving full control over request handling, logging, and plugin hooks
- * via {@see BeforeCallingMcpToolFilterEvent} and {@see McpToolCalledFilterEvent}.
+ * Rather than calling the MCP connector's tool-listing endpoint on every agent message — which
+ * would hit the MCP server even when no tool is invoked — this class builds tool objects from
+ * the database-cached metadata. Actual MCP calls are deferred to invocation time via
+ * {@see HawkiMcpClient}, giving HAWKI full control over request handling, logging, and plugin
+ * hooks ({@see BeforeCallingMcpToolFilterEvent} / {@see McpToolCalledFilterEvent}).
+ *
+ * Two tool types are supported:
+ *  - {@see ToolType::FUNCTION}: resolves the PHP class from the service container.
+ *  - {@see ToolType::MCP}: constructs a {@see LaravelMcpTool} backed by a {@see HawkiMcpClient}.
+ *
+ * The MCP client instances are managed as lazy singletons per {@see McpServer} via the
+ * `AiServiceProvider::MCP_CLIENT_LIST` binding, so each server gets exactly one persistent
+ * connection across all tool invocations in a request.
  */
 #[Singleton]
 readonly class LaravelToolConverter
@@ -115,6 +124,10 @@ readonly class LaravelToolConverter
     }
 
 
+    /**
+     * Passes caller-supplied settings to the tool when it implements {@see SettingsAwareToolInterface}.
+     * Tools that do not implement the interface receive no settings and are returned unchanged.
+     */
     private function provideSettingsForTool(ToolInterface $tool, array $settings): ToolInterface
     {
         if ($tool instanceof SettingsAwareToolInterface) {

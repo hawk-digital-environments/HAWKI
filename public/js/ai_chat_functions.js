@@ -27,8 +27,9 @@ function initializeAiChatModule(chatsObject) {
         startNewChat();
     });
     window.oldUiBridge.onOpenChat((slug) => {
+        const switchConversations = slug !== window.oldUiMessageHistory.conversationSlug;
         loadConv(null, slug);
-        onSidebarButtonDown('chat');
+        onSidebarButtonDown('chat', switchConversations);
     });
     window.oldUiBridge.onActiveConversationSystemPromptUpdate(newPrompt => {
         if (!activeConv) {

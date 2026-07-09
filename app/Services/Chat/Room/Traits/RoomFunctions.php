@@ -2,7 +2,7 @@
 
 namespace App\Services\Chat\Room\Traits;
 
-use App\Events\RoomCreatedEvent;
+use App\Services\Chat\Events\RoomCreatedEvent;
 use App\Http\Resources\Legacy\RoomResource;
 use App\Models\Member;
 use App\Models\Room;

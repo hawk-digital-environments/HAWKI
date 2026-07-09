@@ -49,7 +49,7 @@ use Illuminate\Support\Traits\Macroable;
  *
  * @api
  */
-final class AiModelSettings implements \JsonSerializable, CastableInstanceInterface
+class AiModelSettings implements \JsonSerializable, CastableInstanceInterface
 {
     use Macroable;
 
@@ -188,7 +188,8 @@ final class AiModelSettings implements \JsonSerializable, CastableInstanceInterf
      */
     public static function fromArray(array $data): static
     {
-        return new self($data);
+        /** @phpstan-ignore new.static */
+        return new static($data);
     }
 
     /** Returns the settings that are explicitly set on this model, keyed by setting name. */

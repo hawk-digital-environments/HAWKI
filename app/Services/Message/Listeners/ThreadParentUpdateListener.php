@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Message\Listeners;
 
 
-use App\Events\MessageSentEvent;
+use App\Services\Chat\Events\MessageSentEvent;
 use App\Services\Message\MessageDb;
 
 readonly class ThreadParentUpdateListener

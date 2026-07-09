@@ -359,7 +359,7 @@ export class OldUiBridge {
         }
 
         const r = await this.async.trigger(IMPROVE_MESSAGE_PIPELINE, {message, systemPrompt});
-        return r.message;
+        return r.improvedMessage ?? message;
     }
 
     public onImproveMessage(handler: (data: { message: string, systemPrompt: string }) => string | Promise<string>): () => void {

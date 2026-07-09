@@ -2,9 +2,14 @@
 
 ## Overview
 
-[//]: # (Briefly describe what makes this upgrade different from a routine update)
-
-[//]: # (and why manual intervention is required.)
+> **BEWARE**
+>
+> This upgrade introduces **LOTS of breaking changes**! If you have customized HAWKI to match your needs, we strongly recommend to **NOT UPGRADE** to this version. Version %%VERSION%% lays the foundation for a new major version; v3.0, and cleans up many legacy APIs and code paths. If you have custom code that depended on those, it will break after upgrading. However, we still have a lot to refactor,
+> so we can not guarantee that the versions until v3.0 will not break your custom code again. Therefore, if you have custom code, we recommend to **stay on your current version** until v3.0 is released and then upgrade directly to v3.0.
+>
+> **v3.0 is expected to be released in Q3 2026.**
+>
+> If you have not customized HAWKI, you can safely upgrade to this version. Follow the steps below to ensure a smooth upgrade.
 
 ## Steps
 
@@ -123,12 +128,12 @@ php artisan ai:config:sync
 
 The following classes have been removed. Update any custom code that references them:
 
-| Removed | Replacement |
-|---|---|
-| `FileConverterFactory` | Inject `FileConverterInterface` directly; call `isAvailable()` to check if a converter is configured |
-| `AttachmentService` / `AttachmentFactory` | `AttachmentRepository` |
-| `MessageHandlerFactory` | Resolve `PrivateMessageHandler` / `GroupMessageHandler` from the Laravel service container |
-| `ExternalCommunicationCheck` middleware | `ExternalAccessMiddleware` or `AppAccessMiddleware` — configure feature toggles in `config/external_access.php` |
+| Removed                                   | Replacement                                                                                                     |
+|-------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| `FileConverterFactory`                    | Inject `FileConverterInterface` directly; call `isAvailable()` to check if a converter is configured            |
+| `AttachmentService` / `AttachmentFactory` | `AttachmentRepository`                                                                                          |
+| `MessageHandlerFactory`                   | Resolve `PrivateMessageHandler` / `GroupMessageHandler` from the Laravel service container                      |
+| `ExternalCommunicationCheck` middleware   | `ExternalAccessMiddleware` or `AppAccessMiddleware` — configure feature toggles in `config/external_access.php` |
 
 ## 8. Update custom code reading `AiModel` attributes
 

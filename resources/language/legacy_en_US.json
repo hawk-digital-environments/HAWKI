@@ -20,7 +20,8 @@
         "groupchat": {
             "typingStatusOne": ":user is typing...",
             "typingStatusTwo": ":user1 & :user2 are typing...",
-            "typingStatusMany": ":user & others are typing..."
+            "typingStatusMany": ":user & others are typing...",
+            "serverError": "An error occurred while processing the group chat messages. Please try again."
         }
     }
 }

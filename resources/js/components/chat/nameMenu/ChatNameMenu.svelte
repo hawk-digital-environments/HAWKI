@@ -1,15 +1,17 @@
 <script lang="ts">
 
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
-    import {ChevronDown, type LucideProps, Pencil} from '@lucide/svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import type {Component, ComponentProps} from 'svelte';
+    import type {ComponentProps} from 'svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
     import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
     import {__} from '$lib/utils/translator.js';
+    import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
+    import type {IconComponent} from '$lib/components/ui/icons/index.js';
+    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
 
     const toastContext = useToastContext();
 
@@ -17,7 +19,7 @@
         name: string;
         slug: string;
         onNameChange?: (slug: string, newName: string) => void;
-        triggerIcon?: Component<LucideProps>;
+        triggerIcon?: IconComponent;
         allowRename?: boolean;
         nameClickRenames?: boolean;
         /**
@@ -33,7 +35,7 @@
         name = $bindable(''),
         slug,
         onNameChange = (slug, newName) => oldUiBridge.triggerRenameChat(slug, newName),
-        triggerIcon = ChevronDown,
+        triggerIcon = ChevronDownIcon,
         allowRename = true,
         nameClickRenames = false,
         buttonProps,
@@ -135,7 +137,7 @@
                 )}/>
             {/snippet}
             {#if allowRename && !!slug}
-                <DropdownMenuItem onclick={() => isRenaming = true} icon={Pencil}>
+                <DropdownMenuItem onclick={() => isRenaming = true} icon={PencilEdit01Icon}>
                     {__('chat.nameMenu.rename')}
                 </DropdownMenuItem>
             {/if}

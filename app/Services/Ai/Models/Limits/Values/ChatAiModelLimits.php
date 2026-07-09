@@ -66,7 +66,8 @@ class ChatAiModelLimits implements AiModelLimitsInterface
 
     public static function fromArray(array $data): static
     {
-        return new self(
+        /** @phpstan-ignore new.static */
+        return new static(
             maxInputTokens: $data['max_input_tokens'] ?? null,
             maxOutputTokens: $data['max_output_tokens'] ?? null
         );

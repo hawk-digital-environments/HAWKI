@@ -3,12 +3,12 @@
   multiple files to a chat message.
 -->
 <script lang="ts">
-    import {Paperclip} from '@lucide/svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {reportAttachmentIssues} from '$lib/components/chat/utils/attachmentIssues.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {__} from '$lib/utils/translator.js';
+    import AttachmentIcon from '$lib/components/ui/icons/iconset/AttachmentIcon.svelte';
 
     const composerContext = useComposerContext();
     const toastContext = useToastContext();
@@ -41,7 +41,7 @@
     tooltip={__('chat.composer.attachFileTooltip')}
     variant="ghost"
     disabled={composerContext.guard.disablesFeature('attachments')}
-    iconLeft={Paperclip}
+    iconLeft={AttachmentIcon}
     highlight={isAdding}
     onclick={openFilePicker}
 />

@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use App\Casts\AsSymmetricCryptoValue;
-use App\Events\UserKeychainValueCreatedEvent;
-use App\Events\UserKeychainValueDeletingEvent;
-use App\Events\UserKeychainValueUpdatedEvent;
+use App\Services\Users\Events\UserKeychainValueCreatedEvent;
+use App\Services\Users\Events\UserKeychainValueDeletingEvent;
+use App\Services\Users\Events\UserKeychainValueUpdatedEvent;
 use App\Models\Scopes\Generic\BelongsToUserScope;
 use App\Policies\UserKeychainValuePolicy;
 use App\Services\System\Database\Eloquent\ContextualScopes\HasContextualScopesTrait;

@@ -35,7 +35,7 @@ use Illuminate\Http\Client\PendingRequest;
  * }
  * ```
  */
-readonly class ModelListClient
+class ModelListClient
 {
     public function __construct(
         /**
@@ -44,7 +44,7 @@ readonly class ModelListClient
          *
          * @var \Closure(): PendingRequest
          */
-        private \Closure $requestFactory
+        private readonly \Closure $requestFactory
     )
     {
     }

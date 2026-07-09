@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\ExtApp\Repositories;
 
 
-use App\Events\PersonalAccessTokenCreatedEvent;
+use App\Services\Users\Events\PersonalAccessTokenCreatedEvent;
 use App\Http\Middleware\SystemContextBootingMiddleware;
 use App\Models\ExtApp;
 use App\Models\User;

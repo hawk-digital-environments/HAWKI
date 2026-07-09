@@ -10,22 +10,29 @@ use App\Services\Config\Contracts\PublicConfigInterface;
 use Illuminate\Config\Repository;
 use Illuminate\Http\Request;
 
+/**
+ * Frontend config for passkey input restrictions, exposed to the frontend under the `security` key.
+ *
+ * Controls how strictly the passkey input behaves: whether users may paste their passkey
+ * or must type it manually, and whether the input enforces an ASCII character set.
+ */
 class SecurityConfig extends AbstractConfig implements PublicConfigInterface
 {
     /**
-     * True if it is allowed to paste the passkey value into the input box.
-     * If false, the user must type the passkey manually.
-     * @var bool
+     * When true, the user may paste their passkey into the input box.
+     * When false, the input rejects clipboard paste events so the user must type the passkey manually.
      */
     public readonly bool $passkeyAllowPaste;
 
     /**
-     * When true (default): Only allows [A-Za-z0-9!@#$%^&*()_+-]
-     * When false: Allows all characters that the user can input, including spaces and unicode characters.
-     * @var bool
+     * When true (default), only printable ASCII characters [A-Za-z0-9!@#$%^&*()_+-] are accepted.
+     * When false, all characters the user can type — including spaces and Unicode — are allowed.
      */
     public readonly bool $passkeyRestrictCharacters;
 
+    /**
+     * Reads passkey settings from the `hawki.security.passkey` config namespace.
+     */
     public static function make(Repository $repo): static
     {
         $repo->get('hawki.security.passkey.allow_paste');
@@ -44,7 +51,8 @@ class SecurityConfig extends AbstractConfig implements PublicConfigInterface
     }
 
     /**
-     * @inheritDoc
+     * Returns the full passkey configuration.
+     * This config is safe to expose publicly — it contains no secrets.
      */
     public function toPublicArray(Request $request): array|null
     {

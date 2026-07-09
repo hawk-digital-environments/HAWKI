@@ -17,7 +17,7 @@
                     <div class="password-input-wrapper">
                         <input
                             class="passkey-input"
-                            placeholder="{{ __('Reg_SL5_PH1') }}"
+                            placeholder="{{ __('HS_EnterPasskeyMsg') }}"
                             id="passkey-input"
                             type="text"
                             autocomplete="new-password"

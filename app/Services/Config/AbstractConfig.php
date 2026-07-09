@@ -8,25 +8,69 @@ namespace App\Services\Config;
 use App\Utils\Casts\AbstractCastableObject;
 
 /**
- * Your config class MUST implement a static ::make() method, that returns an instance of the config class.
- * The ::make() method is loaded via ServiceLocator::call() in ConfigService, so you can use constructor injection to get dependencies.
+ * Base class for all HAWKI domain configuration objects.
+ *
+ * Each concrete subclass must implement a static `make()` method that constructs and returns
+ * an instance of that config. The method is invoked through {@see ConfigService::get()} via
+ * {@see \App\Services\System\Container\ServiceLocator::call()}, so its parameters are resolved
+ * from the Laravel container — constructor injection is supported.
+ *
+ * Configs are loaded once and cached by class name for the lifetime of the request. They are
+ * registered in the container by {@see \App\Providers\ConfigServiceProvider}, which means
+ * subclasses can also be injected directly via constructor injection in services:
+ *
+ * ```php
+ * // Option 1 — inject the config class directly (resolved via ConfigServiceProvider)
+ * class MyService
+ * {
+ *     public function __construct(private readonly MyConfig $config) {}
+ * }
+ *
+ * // Option 2 — load via ConfigService (useful when the config class is not known statically)
+ * class MyService
+ * {
+ *     public function __construct(private readonly ConfigService $configs) {}
+ *
+ *     public function doSomething(): void
+ *     {
+ *         $value = $this->configs->get(MyConfig::class)->myProperty;
+ *     }
+ * }
+ * ```
+ *
+ * A typical config class looks like:
+ *
+ * ```php
+ * class MyConfig extends AbstractConfig
+ * {
+ *     public readonly string $apiKey;
+ *     public readonly int $timeout;
+ *
+ *     // Parameters are injected by the container — use anything registered there.
+ *     public static function make(Repository $repo, MyRepository $myRepo): static
+ *     {
+ *         return self::fromArray([
+ *             'apiKey'  => $repo->get('myservice.api_key'),
+ *             'timeout' => $repo->get('myservice.timeout', 30),
+ *         ]);
+ *     }
+ * }
+ * ```
+ *
+ * @api
+ * @see ConfigService
+ * @see AbstractCastableObject for property hydration and serialization
  */
 abstract class AbstractConfig extends AbstractCastableObject
 {
     /**
-     * Derives the DB namespace from the containing plugin's Composer package name.
-     * e.g. hawk/deepl-plugin → "hawk-deepl-plugin"
+     * Returns the namespace that groups this config in the public API response.
      *
-     * The namespace is anchored to the Composer package name, not the PHP class name.
-     * This means:
-     * - Collision-free by design — Composer package names are globally unique
-     * - Survives PHP class renames without requiring a ConfigSchema::rename() migration
-     * - Human-readable in the database (no md5 hashes)
+     * All core HAWKI configs share the `'hawki-core'` namespace, which is the key under which
+     * their values appear in the `GET /api/v1/configs` response. The method is `final` to ensure
+     * all subclasses in the core stay under a single, predictable namespace.
      *
-     * Resolution uses PluginAwareTrait: either the explicit PLUGIN_NAME constant
-     * or namespace prefix matching via InstalledPlugins::guessPlugin().
-     *
-     * This method is final; there is no per-class namespace override.
+     * @see \App\Services\Config\Contracts\PublicConfigInterface::publicKey() for the per-config key within this namespace
      */
     final public static function namespace(): string
     {

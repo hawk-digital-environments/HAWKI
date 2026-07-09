@@ -1,7 +1,13 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Services\Frontend\Connection\Values;
 
+/**
+ * Describes both the origin (native HAWKI vs. external app) and the authentication state
+ * of a frontend connection. The frontend uses this to determine which UI and API flows
+ * are available to the current visitor.
+ */
 enum ConnectionType: string
 {
     /**

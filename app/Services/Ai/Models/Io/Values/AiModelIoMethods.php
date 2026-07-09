@@ -16,7 +16,7 @@ use App\Services\Ai\Utils\AbstractTagList;
  *
  * @api
  */
-final class AiModelIoMethods extends AbstractTagList
+class AiModelIoMethods extends AbstractTagList
 {
     // -------------------------------------------------------
     // Well known methods

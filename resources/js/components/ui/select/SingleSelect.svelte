@@ -27,10 +27,10 @@
     import {mergeProps, Select as SelectPrimitive, type WithoutChildren} from 'bits-ui';
     import type {ComponentProps, Snippet} from 'svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
-    import {ChevronDown} from '@lucide/svelte';
     import SnippetOrStringTrigger from '$lib/components/util/snippetOrString/SnippetOrStringTrigger.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
+    import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
 
 
     type Props = Omit<WithoutChildren<SelectPrimitive.RootProps>, 'type' | 'items'> & Partial<{
@@ -171,7 +171,7 @@
                         onpointerdown: updateContentAlign
                     }, props)}
                 >
-                    <ChevronDown size={18} class="select-trigger-chevron"/>
+                    <ChevronDownIcon size={18} class="select-trigger-chevron"/>
                     {#if !value && placeholder}
                         {placeholder}
                     {:else}

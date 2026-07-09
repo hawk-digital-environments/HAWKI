@@ -11,6 +11,18 @@ use Illuminate\Container\Attributes\Tag;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Orchestrates all registered {@see ConfigSyncerInterface} implementations in a single
+ * sync pass and tracks the outcome via {@see JobMetrics}.
+ *
+ * Called by the `ai:config:sync` Artisan command and during database migrations via
+ * {@see \App\Services\Ai\ConfigFileSync\ConfigSyncMigrationTrait}. Syncers are discovered
+ * automatically through the Laravel service-container tag `ConfigSyncerInterface::class`
+ * (registered in {@see \App\Providers\AiServiceProvider}).
+ *
+ * Change detection is delegated to {@see SyncActionDetector}: a SHA-256 hash of every
+ * syncer's current config state is compared with the previously cached hash. Unchanged
+ * configs are skipped unless `$force = true` is passed.
+ *
  * @internal
  */
 #[Singleton]
@@ -28,6 +40,17 @@ readonly class ConfigFileSyncer
     {
     }
 
+    /**
+     * Runs all registered syncers and returns the collected metrics.
+     *
+     * Returns null without doing any work when the config hash is unchanged since the
+     * last successful sync, unless `$force` is true. Syncer failures are caught
+     * individually and recorded as errors in the metrics rather than aborting the
+     * remaining syncers.
+     *
+     * @param bool $force Skip change-detection and always perform a full sync.
+     * @return JobMetrics|null Null when nothing was synced because the config was already up to date.
+     */
     public function sync(bool $force = false): ?JobMetrics
     {
         if (!$force && !$this->detector->shouldSync($this->syncers)) {

@@ -63,8 +63,8 @@ class AsInstance implements Castable
 
         $classNameResolver = function ($model, string $key, $value, array $attributes) use ($arguments) {
             $className = base64_decode($arguments[0]);
-            if (isset(static::$dynamicClassNameResolvers[$className])) {
-                $resolver = static::$dynamicClassNameResolvers[$className];
+            if (isset(self::$dynamicClassNameResolvers[$className])) {
+                $resolver = self::$dynamicClassNameResolvers[$className];
                 return $resolver($model, $key, $value, $attributes);
             }
             if (!class_exists($className)) {
@@ -101,7 +101,7 @@ class AsInstance implements Castable
                 $data = json_decode($value, true);
                 if (!is_array($data)) {
                     // Silent fix for "null" values (default for json columns in MySQL) by treating them as empty arrays
-                    if (empty($data) || $data === 'null' || $data === null) {
+                    if (empty($data) || $data === 'null') {
                         $data = [];
                     } else {
                         throw InvalidCastValueException::forInvalidJson();
@@ -155,11 +155,20 @@ class AsInstance implements Castable
     {
         if ($classOrResolver instanceof \Closure) {
             $resolverId = 'dynamic_class_resolver_' . spl_object_id($classOrResolver);
-            static::$dynamicClassNameResolvers[$resolverId] = $classOrResolver;
+            self::$dynamicClassNameResolvers[$resolverId] = $classOrResolver;
             $class = $resolverId;
         } else {
             $class = $classOrResolver;
         }
-        return static::class . ':' . base64_encode($class);
+        return self::class . ':' . base64_encode($class);
+    }
+
+    /**
+     * @return void
+     * @internal This method is intended for testing purposes only. It clears the dynamic class name resolvers.
+     */
+    public static function clearDynamicResolvers(): void
+    {
+        self::$dynamicClassNameResolvers = [];
     }
 }

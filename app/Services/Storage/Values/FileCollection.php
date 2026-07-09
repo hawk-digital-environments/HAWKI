@@ -9,7 +9,14 @@ use App\Services\Storage\Interfaces\FileInterface;
 use Illuminate\Contracts\Support\Arrayable;
 
 /**
- * @implements \IteratorAggregate<FileInterface>
+ * Typed, immutable collection of {@see FileInterface} items (typically {@see StoredFileExtract} objects).
+ *
+ * Nested collections passed to the constructor are automatically flattened, so you can merge
+ * two collections by doing `new FileCollection($collectionA, $collectionB)`.
+ *
+ * All filter methods return a new instance; the original is not modified.
+ *
+ * @implements \IteratorAggregate<int, FileInterface>
  */
 readonly class FileCollection implements \IteratorAggregate, \Countable, \JsonSerializable, Arrayable
 {

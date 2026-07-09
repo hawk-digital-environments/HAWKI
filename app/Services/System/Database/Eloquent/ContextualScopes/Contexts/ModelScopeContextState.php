@@ -5,6 +5,14 @@ declare(strict_types=1);
 namespace App\Services\System\Database\Eloquent\ContextualScopes\Contexts;
 
 
+/**
+ * Plain mutable value object holding the scope state for a single model within one snapshot.
+ *
+ * Owned by {@see ScopeContextState} and managed via {@see ScopeContextState::getOrMakeModelScopeContextState()}.
+ * Cloned when a sandbox is entered and restored when the sandboxed closure exits.
+ *
+ * @internal
+ */
 class ModelScopeContextState
 {
     public function __construct(

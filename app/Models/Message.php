@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Events\MessageUpdatedEvent;
+use App\Services\Chat\Events\MessageUpdatedEvent;
 use App\Policies\RoomMessagePolicy;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;

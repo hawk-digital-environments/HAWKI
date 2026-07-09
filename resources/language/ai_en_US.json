@@ -1,0 +1,27 @@
+{
+    "ai": {
+        "model": {
+            "detail": {
+                "flag": {
+                    "openWeights": "Open Weights",
+                    "openWeightsTooltip": "This model is open-source and its weights are publicly accessible",
+                    "ecoFriendly": "Eco-Friendly",
+                    "ecoFriendlyTooltip": "This model was developed with a focus on energy efficiency and sustainability to minimize its environmental footprint",
+                    "selfHosted": "Self-Hosted",
+                    "selfHostedTooltip": "This model is hosted on own servers, achieving full marks for privacy and control over data",
+                    "strengthCreativeWriting": "Creative Writing",
+                    "strengthCreativeWritingTooltip": "This model excels at creative writing, e.g. for stories, poems, or creative content",
+                    "strengthCodeGeneration": "Code",
+                    "strengthCodeGenerationTooltip": "This model excels at code generation, e.g. for programming tasks or software development",
+                    "strengthMath": "Mathematics",
+                    "strengthMathTooltip": "This model excels at mathematical tasks, e.g. for calculations, equations, or mathematical analyses",
+                    "strengthReasoning": "Logical Reasoning",
+                    "strengthReasoningTooltip": "This model excels at logical reasoning, e.g. for problem solving, drawing conclusions, or analytical tasks"
+                }
+            }
+        },
+        "error": {
+            "backendError": "Sorry, an error occurred while this message was being generated. Please try regenerating it."
+        }
+    }
+}

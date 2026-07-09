@@ -1,6 +1,5 @@
 <script lang="ts">
 
-    import {Upload} from '@lucide/svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import {oldUiBridge, type OldUiExportType} from '$lib/oldUi/OldUiBridge.svelte.js';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
@@ -8,6 +7,7 @@
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
 
     import {__} from '$lib/utils/translator.js';
+    import FileExportIcon from '$lib/components/ui/icons/iconset/FileExportIcon.svelte';
 
     function handleExport(format: OldUiExportType) {
         oldUiBridge.triggerExport(format);
@@ -19,7 +19,7 @@
         <ButtonWithTooltip
             variant="stroke"
             size="xs"
-            iconLeft={Upload}
+            iconLeft={FileExportIcon}
             tooltip={__('chat.export.tooltip')}
             highlight={props['data-state']}
             {...props}>

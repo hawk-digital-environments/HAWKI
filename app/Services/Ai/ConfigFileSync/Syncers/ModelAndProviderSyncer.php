@@ -23,6 +23,21 @@ use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Config;
 
 
+/**
+ * Syncs AI providers and their models from the `model_providers.providers` config array into the database.
+ *
+ * For each provider entry the syncer:
+ *  - resolves the adapter key (from the explicit `adapter_key` field or the built-in
+ *    ID-to-adapter map in {@see BUILT_IN_PROVIDER_ID_TO_ADAPTER_KEY_MAP}),
+ *  - creates or updates the {@see AiProvider} record via {@see AiProviderRepository::upsert()},
+ *  - iterates the provider's `models` list and upserts each model, enriching it with
+ *    live metadata fetched via {@see ModelInfoFetcher} (type, limits, pricing, flags, etc.),
+ *  - assigns usage-type rules so models appear in the main app and/or external-app contexts,
+ *  - disables all provider models that are no longer listed in the config.
+ *
+ * Legacy API URL suffixes (`/chat/completions`, `/completions`) are silently stripped from
+ * the `api_url` to avoid breaking old configurations that hardcoded the full completion path.
+ */
 readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
 {
     private const array BUILT_IN_PROVIDER_ID_TO_ADAPTER_KEY_MAP = [
@@ -142,11 +157,11 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
         $modelInfo = $this->modelInfoFetcher->fetchSingle($this->providerProxyResolver->resolve($provider), $modelId);
 
         $model = $this->modelRepository->upsert(
-            modelType: $modelInfo?->type ?? WellKnownModelTypes::CHAT,
+            modelType: $modelInfo->model_type ?? WellKnownModelTypes::CHAT,
             provider: $provider,
             modelId: $modelId,
             active: (bool)($config['active'] ?? true),
-            label: $config['label'] ?? $modelInfo?->label ?? $modelId,
+            label: $config['label'] ?? $modelInfo->label ?? $modelId,
             input: AiModelIoMethods::fromArray($config['input'] ?? []),
             output: AiModelIoMethods::fromArray($config['output'] ?? []),
             parameters: $parameters,
@@ -166,7 +181,7 @@ readonly class ModelAndProviderSyncer implements ConfigSyncerInterface
             isset($config['external']) && $config['external'] === true
         );
 
-        foreach ($modelInfo?->description ?? [] as $description) {
+        foreach ($modelInfo->description ?? [] as $description) {
             $this->modelDescriptionRepository->assignDescriptionToModel($model, $description);
         }
 

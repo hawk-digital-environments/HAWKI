@@ -12,6 +12,10 @@ use App\Services\FileConverter\Interfaces\FileConverterInterface;
  */
 class InvalidFileConverterConfigException extends \InvalidArgumentException implements FileConverterExceptionInterface
 {
+    /**
+     * Used when the `file_converter.default` or `file_converter.fallback` config value
+     * names a type that has no entry under `file_converter.converters`.
+     */
     public static function forInvalidConverterType(string $type): self
     {
         return new self(sprintf(
@@ -20,6 +24,10 @@ class InvalidFileConverterConfigException extends \InvalidArgumentException impl
         ));
     }
 
+    /**
+     * Used when a converter entry exists under `file_converter.converters` but is missing
+     * the required `class` key that points to the implementation class.
+     */
     public static function forMissingClassInConfig(string $type): self
     {
         return new self(sprintf(
@@ -28,6 +36,10 @@ class InvalidFileConverterConfigException extends \InvalidArgumentException impl
         ));
     }
 
+    /**
+     * Used when the `class` key in a converter config points to a class that either does
+     * not exist or does not implement {@see FileConverterInterface}.
+     */
     public static function forInvalidClassInConfig(string $type, string $class): self
     {
         return new self(sprintf(

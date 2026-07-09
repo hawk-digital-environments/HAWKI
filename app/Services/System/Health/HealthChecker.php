@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\System\Health;
 
 
-use App\Events\HealthCheckEvent;
+use App\Services\System\Health\Events\HealthCheckEvent;
 use App\Services\System\Health\Exception\HealthcheckFailedException;
 use App\Services\System\Health\Value\HealthCheckResult;
 use App\Services\System\Health\Value\HealthCheckResultCollection;
@@ -25,7 +25,7 @@ use Psr\Log\LoggerInterface;
  *
  * Two check modes are supported, selected automatically by {@see HealthTimer}:
  * - **Quick**: only verifies basic database connectivity. Fast and cheap, run on every scheduled tick.
- * - **Deep**: verifies all components, dispatches {@see \App\Events\HealthCheckEvent} so additional
+ * - **Deep**: verifies all components, dispatches {@see \App\Services\System\Health\Events\HealthCheckEvent} so additional
  *   checks can be injected via listeners, and records the overall result in {@see HealthTimer}.
  *
  * Usage (typically called from a scheduled command or health endpoint):

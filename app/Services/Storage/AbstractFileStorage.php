@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Storage;
 
 use App\Services\Storage\Interfaces\StorageServiceInterface;
@@ -14,6 +16,43 @@ use Illuminate\Contracts\Filesystem\Filesystem;
 use JsonException;
 use Symfony\Component\Filesystem\Path;
 
+/**
+ * Common implementation for all file storage services.
+ *
+ * Subclasses define which MIME types are accepted ({@see getAllowedMimeTypes()}) and whether
+ * content extraction should run after a file is written ({@see $extractFileContent}).
+ *
+ * ## File layout on disk
+ * Each file is stored inside its own folder, sharded by the first four characters of its UUID
+ * to avoid filesystem limits on large directories:
+ * ```
+ * {category}/{uuid[0]}/{uuid[1]}/{uuid[2]}/{uuid[3]}/{uuid}/{uuid}.{ext|blob}
+ *                                                           └─ .meta.json      (sidecar)
+ *                                                           └─ output/          (extracts)
+ * ```
+ * Temporary files live under an additional `temp/` prefix and are moved by {@see persistTemporaryFile()}.
+ *
+ * ## Two-step upload flow
+ * When a file must be uploaded before the owning resource exists (e.g. a file attachment
+ * before the message is sent), use the two-step flow to avoid orphaned permanent files:
+ * ```php
+ * // Step 1 — upload lands in temp/
+ * $stored = $storageService->storeTemporary($fileRef, StoredFileCategory::PRIVATE);
+ *
+ * // Step 2 — after the message is persisted, move to permanent storage
+ * $storageService->persistTemporaryFile($stored->getIdentifier());
+ * ```
+ *
+ * ## Security: blob extension
+ * Unknown file extensions are stored with a `.blob` extension on disk to prevent browsers from
+ * executing them if the storage disk is publicly accessible. The original extension is preserved
+ * in the `.meta.json` sidecar and restored when the file is served.
+ *
+ * ## Legacy support
+ * Files uploaded before the `.meta.json` sidecar was introduced are handled transparently by
+ * {@see retrieve()}: on first access a meta file is synthesised from the attachment database
+ * and written to disk so subsequent accesses hit the fast path.
+ */
 abstract class AbstractFileStorage implements StorageServiceInterface
 {
     /**
@@ -291,9 +330,13 @@ abstract class AbstractFileStorage implements StorageServiceInterface
     }
 
     /**
-     * Deletes expired temporary files from the storage system.
+     * Removes files from the `temp/` area that have not been moved to permanent storage within
+     * five minutes of being written, then cleans up any resulting empty directories.
      *
-     * @return bool True if any files were deleted, false otherwise.
+     * The five-minute buffer prevents accidentally deleting a file that is still mid-upload.
+     * This method is intended to be called by a scheduled command, not on every request.
+     *
+     * @return bool True if at least one file was deleted, false when nothing expired.
      */
     public function deleteTempExpiredFiles(): bool
     {
@@ -373,16 +416,21 @@ abstract class AbstractFileStorage implements StorageServiceInterface
     }
 
     /**
-     * Filters available MIME types based on the configured allowed MIME types.
+     * Intersects the MIME types supported by the current service (images, converter output, etc.)
+     * with the administrator-configured allow-list from {@see StorageServiceContext::$allowedMimeTypes}.
      *
-     * @param array $availableMimeTypes The list of available MIME types.
-     * @return array The filtered list of MIME types.
+     * When the allow-list is empty (not configured), all available types are returned.
+     * When the allow-list is non-empty but nothing matches, a warning is logged and all
+     * available types are returned as a safe fallback to avoid silently rejecting all uploads.
+     *
+     * @param string[] $availableMimeTypes MIME types supported by this service implementation.
+     * @return string[] De-duplicated, lower-cased list of MIME types to advertise and accept.
      */
     protected function filterMimeTypesByAllowed(array $availableMimeTypes): array
     {
         $availableMimeTypes = array_values(array_unique(array_map('strtolower', $availableMimeTypes)));
 
-        if (empty($this->allowedMimeTypes)) {
+        if (empty($this->context->allowedMimeTypes)) {
             return $availableMimeTypes;
         }
 

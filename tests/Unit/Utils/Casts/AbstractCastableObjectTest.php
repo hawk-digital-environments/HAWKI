@@ -8,6 +8,7 @@ use App\Utils\Casts\AbstractCastableObject;
 use App\Utils\Casts\CastedValue;
 use App\Utils\Casts\Exceptions\InvalidCastTypeException;
 use App\Utils\Casts\Values\CastType;
+use Illuminate\Contracts\Encryption\StringEncrypter;
 use Illuminate\Support\Facades\Crypt;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
@@ -250,8 +251,12 @@ class AbstractCastableObjectTest extends TestCase
 
     public function testItDecryptsOnHydrateViaFullPipeline(): void
     {
-        Crypt::setFacadeApplication($this->app);
-        Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('my-secret');
+        $encrypter = $this->createMock(StringEncrypter::class);
+        $encrypter->expects(static::once())
+            ->method('decryptString')
+            ->with('ciphertext')
+            ->willReturn('my-secret');
+        Crypt::swap($encrypter);
 
         $sut = CastsEncryptedStringConfig::fromStringArray(['secret' => 'ciphertext']);
         static::assertSame('my-secret', $sut->secret);
@@ -259,8 +264,12 @@ class AbstractCastableObjectTest extends TestCase
 
     public function testItEncryptsOnSerializeViaFullPipeline(): void
     {
-        Crypt::setFacadeApplication($this->app);
-        Crypt::shouldReceive('encryptString')->with('my-secret')->once()->andReturn('ciphertext');
+        $encrypter = $this->createMock(StringEncrypter::class);
+        $encrypter->expects(static::once())
+            ->method('encryptString')
+            ->with('my-secret')
+            ->willReturn('ciphertext');
+        Crypt::swap($encrypter);
 
         $sut = CastsEncryptedStringConfig::fromArray(['secret' => 'my-secret']);
         static::assertSame('ciphertext', $sut->toStringArray()['secret']);

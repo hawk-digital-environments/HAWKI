@@ -11,7 +11,7 @@ use Traversable;
  * An immutable, iterable collection of {@see HealthCheckResult} objects.
  *
  * Returned by {@see HealthChecker::check()} and {@see HealthChecker::deepCheck()} after
- * running all configured component checks. Also passed to {@see \App\Events\HealthCheckEvent}
+ * running all configured component checks. Also passed to {@see \App\Services\System\Health\Events\HealthCheckEvent}
  * so listeners can append their own results.
  *
  * Iterating over the collection yields the results keyed by their check name:

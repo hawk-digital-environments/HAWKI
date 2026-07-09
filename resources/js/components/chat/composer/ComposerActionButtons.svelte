@@ -1,13 +1,16 @@
 <script lang="ts">
 
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import {Check, Send, Sparkles, Square} from '@lucide/svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {__} from '$lib/utils/translator.js';
+    import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
+    import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
+    import ArtificialIntelligence08Icon from '$lib/components/ui/icons/iconset/ArtificialIntelligence08Icon.svelte';
+    import SquareIcon from '$lib/components/ui/icons/iconset/SquareIcon.svelte';
 
     const toastContext = useToastContext();
     const composerContext = useComposerContext();
@@ -23,6 +26,9 @@
     }: Props = $props();
 
     const sendTooltip = $derived.by(() => {
+        if (!composerContext.message.trim()) {
+            return __('chat.composer.actions.noMessageTooltip');
+        }
         if (composerContext.modelUsage.isValid) {
             return __('chat.composer.actions.invalidModelTooltip');
         }
@@ -76,9 +82,9 @@
 
     const SendIcon = $derived.by(() => {
         if (composerContext.mode.isRegen || composerContext.mode.isEdit) {
-            return Check;
+            return Tick02Icon;
         }
-        return Send;
+        return SentIcon;
     });
 
     function handleSendButtonKeyDown(e: KeyboardEvent) {
@@ -115,7 +121,7 @@
             tooltip={__('chat.composer.actions.improveTooltip')}
             size="xs"
             variant="ghost"
-            iconRight={Sparkles}
+            iconRight={ArtificialIntelligence08Icon}
             onclick={handleImprovement}
             disabled={!composerContext.guard.canSend || composerContext.guard.disablesFeature('suggestions')}
         />
@@ -125,7 +131,7 @@
 {#if showCancel}
     <div transition:growTransition={{mode: 'horizontal'}}>
         <ButtonWithTooltip
-            iconRight={Square}
+            iconRight={SquareIcon}
             tooltip={cancelTooltip}
             size="xs"
             variant="stroke"

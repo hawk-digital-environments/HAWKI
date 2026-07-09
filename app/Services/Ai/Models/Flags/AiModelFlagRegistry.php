@@ -18,6 +18,7 @@ use Illuminate\Container\Attributes\Singleton;
  * color token). Built-in flag keys and their meanings are defined in {@see WellKnownModelFlags}.
  *
  * Color-code constants (COLOR_*) are UI theme tokens, not raw CSS values.
+ * However, it is absolutely possible to use a CSS hex code (e.g. `#ff0000`) for a custom color if desired.
  *
  * Declarations are made from service providers using {@see declare()}.
  *

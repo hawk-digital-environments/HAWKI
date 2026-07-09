@@ -1,12 +1,12 @@
 <script lang="ts">
     import {onMount} from 'svelte';
-    import {ArrowLeft} from '@lucide/svelte';
     import type {ToolMenuEntry} from './ToolMenu.svelte';
     import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
     import StatusDotForTool from '$lib/components/chat/composer/StatusDotForTool.svelte';
     import {__} from '$lib/utils/translator.js';
     import ToolMenuConfig from '$lib/components/chat/composer/ToolMenuConfig.svelte';
+    import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
 
     interface Props {
         entry: ToolMenuEntry;
@@ -94,7 +94,7 @@
                     e.stopPropagation();
                     onCloseDetail?.();
                 }}>
-        <ArrowLeft size={14}/>
+        <ArrowLeft01Icon size={14}/>
         <span>{__('chat.composer.toolMenu.backButton')}</span>
     </button>
 

@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use League\Flysystem\Filesystem;
 use League\Flysystem\WebDAV\WebDAVAdapter;
+use Psr\Log\LoggerInterface;
 use Sabre\DAV\Client;
 
 class StorageServiceProvider extends ServiceProvider
@@ -47,7 +48,7 @@ class StorageServiceProvider extends ServiceProvider
                     context: new StorageServiceContext(
                         allowedMimeTypes: $config->get('filesystems.upload_limits.allowed_avatar_mime_types'),
                         maxFileSize: $config->get('filesystems.upload_limits.max_avatar_file_size'),
-                        logger: $app->get('log'),
+                        logger: $app->get(LoggerInterface::class),
                         filesystem: $filesystem,
                         urlGenerator: $app->get(UrlGenerator::class),
                         contentExtractor: $app->get(ContentExtractor::class),
@@ -68,7 +69,7 @@ class StorageServiceProvider extends ServiceProvider
                     context: new StorageServiceContext(
                         allowedMimeTypes: $config->get('filesystems.upload_limits.allowed_file_mime_types'),
                         maxFileSize: $config->get('filesystems.upload_limits.max_file_size'),
-                        logger: $app->get('log'),
+                        logger: $app->get(LoggerInterface::class),
                         filesystem: $filesystem,
                         urlGenerator: $app->get(UrlGenerator::class),
                         contentExtractor: $app->get(ContentExtractor::class),

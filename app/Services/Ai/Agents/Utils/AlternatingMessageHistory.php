@@ -10,11 +10,34 @@ use Laravel\Ai\Messages\Message;
 use Laravel\Ai\Messages\MessageRole;
 use Laravel\Ai\Messages\UserMessage;
 
-// The job of this class is to enforce the alternating pattern of messages between user and assistant,
-// initially I tried to simply pass along an empty message for the assistant if the user sent two messages in a row,
-// but that caused issues with the model's context, so instead we will merge all messages from the same role into a single message.
-// This way a pattern of user, user, assistant, user, assistant will become user, assistant, user, assistant, and a pattern of user,
-// assistant, assistant, user will become user, assistant, user.
+/**
+ * Accumulates chat turn messages and normalises them into a strictly alternating
+ * user / assistant sequence before handing them to an agent.
+ *
+ * Most AI providers require that the message history strictly alternates between user and
+ * assistant roles. The HAWKI frontend can produce sequences that violate this — for example
+ * a user sending two messages in a row before the model responds, or an assistant producing
+ * two consecutive responses. Inserting an empty placeholder message for the missing role
+ * caused context issues in testing, so instead consecutive messages with the same role are
+ * merged into a single message using a visible `[[MESSAGE BOUNDARY]]` separator.
+ *
+ * Example transformations:
+ * - `user, user, assistant, user` → `user (merged), assistant, user`
+ * - `user, assistant, assistant, user` → `user, assistant (merged), user`
+ *
+ * Merged messages include a {@see MessageMetaBlocks} preamble that tells the model about
+ * the boundary so it can treat them as distinct turns in its reasoning.
+ *
+ * Usage:
+ * ```php
+ * $history = new AlternatingMessageHistory();
+ * $history->registerUserMessage('First question', $attachments);
+ * $history->registerUserMessage('Follow-up question');
+ * $history->registerAiMessage('Answer');
+ *
+ * $messages = $history->toArray(); // [UserMessage(merged), Message(assistant)]
+ * ```
+ */
 class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
 {
     /**
@@ -22,6 +45,9 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
      */
     private array $messages = [];
 
+    /**
+     * Appends an assistant turn to the history.
+     */
     public function registerAiMessage(string $content): self
     {
         $this->messages[] = new Message(
@@ -32,6 +58,10 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
         return $this;
     }
 
+    /**
+     * Appends a user turn to the history and optionally applies file attachments and their
+     * associated metadata blocks to the resulting {@see UserMessage}.
+     */
     public function registerUserMessage(string $content, UserMessageAttachments|null $attachments = null): self
     {
         $message = new UserMessage(
@@ -42,6 +72,13 @@ class AlternatingMessageHistory implements \IteratorAggregate, Arrayable
         return $this;
     }
 
+    /**
+     * Yields the normalised, alternating sequence of messages.
+     *
+     * Consecutive messages with the same role are merged into a single message via
+     * {@see mergeMessages()} before being yielded, guaranteeing strict user/assistant
+     * alternation. Returns an empty traversable when no messages have been registered.
+     */
     public function build(): \Traversable
     {
         if (empty($this->messages)) {

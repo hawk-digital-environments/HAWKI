@@ -14,9 +14,21 @@ use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\LazyCollection;
 
+/**
+ * Persists and queries encrypted per-user context data attached to frontend migrations.
+ *
+ * When a migration is registered with a `$userDataFinder` closure, the resulting data
+ * (e.g. the current state of a user's encrypted store) is saved here, encrypted at rest.
+ * The frontend JS receives this data when it picks up the migration, so it knows what to
+ * transform without having to request it separately.
+ */
 #[UseModel(FrontendMigrationUserdata::class)]
 class FrontendMigrationUserdataRepository extends AbstractRepositoryWithContextualScopes
 {
+    /**
+     * Stores the context data collected for `$user` during migration registration.
+     * The model's cast layer handles encryption before persisting.
+     */
     public function insert(User $user, FrontendMigration $migration, array $data): FrontendMigrationUserdata
     {
         return $this->getQueryWithoutContextualScopes()->create([
@@ -38,6 +50,12 @@ class FrontendMigrationUserdataRepository extends AbstractRepositoryWithContextu
         return $this->getQuery($scopeOverrides)->where('migration_id', $migration->id)->lazy(50);
     }
 
+    /**
+     * Looks up the context data for a specific migration and user.
+     *
+     * Accepts either a `FrontendMigration` model or a raw migration name string so callers
+     * do not need to load the model just to do a lookup.
+     */
     public function findOneForMigrationAndUser(string|FrontendMigration $migration, User $user): ?FrontendMigrationUserdata
     {
         $migrationName = $migration instanceof FrontendMigration ? $migration->migration_name : $migration;

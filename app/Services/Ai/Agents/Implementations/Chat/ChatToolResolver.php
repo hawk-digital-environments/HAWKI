@@ -13,6 +13,25 @@ use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
 use Laravel\Ai\Contracts\Tool;
 use Laravel\Ai\Providers\Tools\ProviderTool;
 
+/**
+ * Resolves a list of frontend tool-transfer strings into concrete {@see Tool} or
+ * {@see ProviderTool} instances ready to be passed to an agent.
+ *
+ * Tool-transfer strings use a colon-separated format understood by {@see ToolTransferData}:
+ *
+ * | Format                               | Meaning                                                          |
+ * |--------------------------------------|------------------------------------------------------------------|
+ * | `capability:<key>:auto[:<settings>]` | Let the model's native_capabilities decide: native if available, HAWKI tool otherwise. |
+ * | `capability:<key>:native[:<settings>]` | Force the provider's own native implementation of the capability. |
+ * | `capability:<key>:<toolName>[:<settings>]` | Use a specific HAWKI tool name for the capability. |
+ * | `<toolName>[:<settings>]`            | Resolve a HAWKI tool directly by name.                           |
+ *
+ * The `<settings>` segment, when present, must be a JSON object string and is forwarded to
+ * the underlying tool factory as a configuration array.
+ *
+ * Used by {@see ChatAgentFromLegacyRequestFactory} to materialise the `tools` array from the
+ * legacy request payload.
+ */
 readonly class ChatToolResolver
 {
     public function __construct(
@@ -22,6 +41,16 @@ readonly class ChatToolResolver
     {
     }
 
+    /**
+     * Resolves each tool-transfer string in $toolTransferStrings into a tool instance.
+     *
+     * Yields results lazily so the caller (typically an agent constructor) can consume them
+     * without materialising the full list upfront.
+     *
+     * @param string[] $toolTransferStrings Serialised tool descriptors from the frontend payload.
+     * @throws InvalidToolTransferStringException when an entry is not a string, has an unrecognised
+     *         type prefix, references an undeclared capability, or contains invalid JSON settings.
+     */
     public function findTools(
         array               $toolTransferStrings,
         AgentRequestContext $context
@@ -48,6 +77,14 @@ readonly class ChatToolResolver
         }
     }
 
+    /**
+     * Resolves a capability transfer string to the appropriate tool implementation.
+     *
+     * The `auto` inner-tool keyword checks whether the model declares native support for the
+     * capability; if so, the provider's native tool is preferred over a HAWKI MCP/PHP tool.
+     * The `native` keyword forces the provider's own implementation regardless of model flags.
+     * Any other inner-tool value is treated as an explicit HAWKI tool name.
+     */
     private function findToolByCapability(
         ToolTransferData    $toolData,
         AgentRequestContext $context

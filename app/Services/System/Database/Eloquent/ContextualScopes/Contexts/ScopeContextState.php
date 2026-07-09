@@ -5,6 +5,15 @@ declare(strict_types=1);
 namespace App\Services\System\Database\Eloquent\ContextualScopes\Contexts;
 
 
+/**
+ * Plain mutable value object holding the global contextual scope state for one snapshot.
+ *
+ * Owned by {@see ScopeContext}. Cloned before running a sandboxed closure and restored
+ * via {@see restore()} when the closure exits, ensuring that per-query scope mutations
+ * do not leak between requests (or between different callers in a long-running process).
+ *
+ * @internal
+ */
 class ScopeContextState
 {
     public function __construct(

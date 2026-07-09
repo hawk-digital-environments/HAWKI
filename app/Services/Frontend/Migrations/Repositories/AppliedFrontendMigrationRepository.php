@@ -12,6 +12,13 @@ use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithCon
 use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
 use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * Persists and queries which frontend migrations have already been applied for a given user.
+ *
+ * A row in `applied_frontend_migrations` means "this user's browser has already run this
+ * migration and their data is up to date." The frontend migration runner creates these
+ * records via the API after successfully completing each migration.
+ */
 #[UseModel(AppliedFrontendMigration::class)]
 class AppliedFrontendMigrationRepository extends AbstractRepositoryWithContextualScopes
 {
@@ -21,6 +28,10 @@ class AppliedFrontendMigrationRepository extends AbstractRepositoryWithContextua
         return $this->getQueryWithoutContextualScopes('access')->where('user_id', $user->id)->get();
     }
 
+    /**
+     * Records that `$migration` has been applied for `$user`.
+     * Idempotent — returns the existing record if one already exists.
+     */
     public function applyForUser(FrontendMigration $migration, User $user): AppliedFrontendMigration
     {
         $existing = $this->getQueryWithoutContextualScopes('access')
@@ -39,6 +50,11 @@ class AppliedFrontendMigrationRepository extends AbstractRepositoryWithContextua
     }
 
     /**
+     * Bulk-marks all given migrations as applied for a newly created user.
+     *
+     * Purges any existing records for the user first to ensure a clean state,
+     * then inserts one row per migration.
+     *
      * @param Collection<int, FrontendMigration> $migrations
      */
     public function applyAllForNewUser(Collection $migrations, User $user): void
@@ -52,6 +68,10 @@ class AppliedFrontendMigrationRepository extends AbstractRepositoryWithContextua
         ]));
     }
 
+    /**
+     * Removes all applied-migration records for `$user`, effectively resetting them
+     * so all migrations will be delivered again on next login.
+     */
     public function dropAllForUser(User $user): void
     {
         $this->getQueryWithoutContextualScopes('access')->where('user_id', $user->id)->delete();

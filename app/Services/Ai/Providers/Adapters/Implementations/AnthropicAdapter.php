@@ -15,10 +15,21 @@ use Laravel\Ai\Gateway\Anthropic\Concerns\CreatesAnthropicClient;
 use Laravel\Ai\Providers\Provider as Driver;
 
 
+/**
+ * Provider adapter for Anthropic (Claude models).
+ *
+ * Builds the Laravel AI Anthropic driver using the provider's stored API key and
+ * fetches the available model list from the Anthropic REST API.
+ *
+ * @see https://platform.claude.com/docs/en/api/models/list Anthropic models API
+ */
 class AnthropicAdapter extends AbstractProviderAdapter
 {
     use CreatesAnthropicClient;
 
+    /**
+     * Creates an Anthropic driver instance authenticated with the provider's API key.
+     */
     public function createDriver(AiProvider $provider, DriverFactory $factory): Driver
     {
         return $factory->make(
@@ -30,11 +41,17 @@ class AnthropicAdapter extends AbstractProviderAdapter
     }
 
     /**
-     * @inheritDoc
+     * Fetches available Claude models from the Anthropic API.
+     *
+     * The response shape is `{ "data": [ { "id": "claude-...", … }, … ] }`.
+     * Each entry is mapped to an unsaved {@see \App\Models\Ai\AiModel} instance.
+     *
+     * @return Collection<int, \App\Models\Ai\AiModel>
+     *
+     * @see https://platform.claude.com/docs/en/api/models/list
      */
     public function getModels(AiProviderProxy $provider): Collection
     {
-        /* @see https://platform.claude.com/docs/en/api/models/list */
         return $this->createModelListClient($this->client($provider->driver))
             ->get('/models')
             ->getMapped('data.*', function ($item) use ($provider) {

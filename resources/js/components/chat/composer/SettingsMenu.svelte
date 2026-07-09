@@ -3,7 +3,6 @@
   Includes preset buttons for quick configuration.
 -->
 <script lang="ts">
-    import {Pencil, Settings, Undo2} from '@lucide/svelte';
     import Popover from '$lib/components/ui/popover/Popover.svelte';
     import BottomSheet from '$lib/components/ui/sheet/BottomSheet.svelte';
     import Tabs, {type TabItem} from '$lib/components/ui/tabs/Tabs.svelte';
@@ -16,6 +15,9 @@
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
     import {__} from '$lib/utils/translator.js';
+    import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
+    import UndoIcon from '$lib/components/ui/icons/iconset/UndoIcon.svelte';
 
     const composerContext = useComposerContext();
 
@@ -69,7 +71,7 @@
                 <h4 class="settings-heading">{__('chat.composer.settings.systemPromptHeading')}</h4>
                 <ButtonWithTooltip
                     tooltip={__('chat.composer.settings.resetSystemPrompt')}
-                    iconLeft={Undo2}
+                    iconLeft={UndoIcon}
                     onclick={handleSystemPromptReset}
                     variant="iconGhost"
                     disabled={!hasCustomSystemPrompt}
@@ -78,7 +80,7 @@
                 ></ButtonWithTooltip>
             </div>
             <button type="button" class="system-prompt-preview" onclick={() => systemPromptOpen = true}>
-                <Pencil size={14} class="system-prompt-icon"/>
+                <PencilEdit01Icon size={14} class="system-prompt-icon"/>
                 <span class="system-prompt-text">
                         {composerContext.systemPrompt?.trim() ? composerContext.systemPrompt : __('chat.composer.settings.noSystemPrompt')}
                     </span>
@@ -90,7 +92,7 @@
                 <h4 class="settings-heading">{__('chat.composer.settings.settingsHeading')}</h4>
                 <ButtonWithTooltip
                     tooltip={__('chat.composer.settings.resetModelSettings')}
-                    iconLeft={Undo2}
+                    iconLeft={UndoIcon}
                     onclick={handleReset}
                     variant="iconGhost"
                     disabled={!modifiedParameters}
@@ -151,7 +153,7 @@
         <ButtonWithTooltip
             tooltip={__('chat.composer.settings.adjustSettingsTooltip')}
             variant="ghost"
-            iconLeft={Settings}
+            iconLeft={Settings01Icon}
             disabled={composerContext.guard.disablesFeature('settings')}
             highlight={settingsOpen}
             onclick={() => (settingsOpen = true)}
@@ -173,7 +175,7 @@
                 <ButtonWithTooltip
                     tooltip={__('chat.composer.settings.adjustSettingsTooltip')}
                     variant="ghost"
-                    iconLeft={Settings}
+                    iconLeft={Settings01Icon}
                     disabled={composerContext.guard.disablesFeature('settings')}
                     highlight={props['data-state']}
                     {...props}/>

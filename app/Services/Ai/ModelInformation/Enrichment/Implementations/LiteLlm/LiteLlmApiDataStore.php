@@ -15,14 +15,14 @@ use Psr\Log\LoggerInterface;
  *
  * @see StaticLiteLlmDataStore for the offline fallback used when the API is unavailable.
  */
-readonly class LiteLlmApiDataStore extends AbstractLiteLlmDataStore
+class LiteLlmApiDataStore extends AbstractLiteLlmDataStore
 {
     public function __construct(
-        private LiteLlmApiClient             $apiClient,
-        private Repository                   $cache,
+        private readonly LiteLlmApiClient             $apiClient,
+        private readonly Repository                   $cache,
         LoggerInterface                      $logger,
         LiteLlmDriverNameProviderNameMapping $nameMapping,
-        private Clock                        $clock = new Clock()
+        private readonly Clock                        $clock = new Clock()
     )
     {
         parent::__construct($logger, $nameMapping);

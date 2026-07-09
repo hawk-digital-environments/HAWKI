@@ -16,43 +16,75 @@ use App\Services\Ai\StatusCheck\AiModelOnlineStatusCollection;
 use App\Services\Ai\StatusCheck\Values\ModelDemand;
 use App\Services\Ai\Values\OnlineStatus;
 use App\Services\Storage\Interfaces\FileInterface;
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Collection;
+use Laravel\Ai\Enums\Lab;
 use Laravel\Ai\Providers\Provider as Driver;
 
+/**
+ * Provider adapter for the GWDG Chat-AI service (AcademicCloud).
+ *
+ * GWDG runs an OpenAI-compatible chat-completion endpoint for academic institutions.
+ * It uses a custom driver ({@see OpenAiCompatibleProvider}) instead of the standard
+ * OpenAI driver because the Laravel AI framework does not yet support chat-completion
+ * endpoints natively — only the newer "responses" API.
+ *
+ * This adapter extends {@see OpenAiLikeAdapter} but overrides:
+ * - {@see createDriver()} — uses the `openai-compatible` custom provider with GWDG's
+ *   default base URL (`https://chat-ai.academiccloud.de/v1`).
+ * - {@see getModels()} — maps GWDG's richer model metadata (modality arrays, display
+ *   names, documentation links) on top of the standard OpenAI model shape.
+ * - {@see checkModelStatus()} — reads per-model `status` and `demand` fields from
+ *   the same `/models` response to populate online-status and demand collections.
+ * - {@see supportsFileAsAttachment()} — restricts native attachments to images only,
+ *   falling back to text embedding for all other file types.
+ *
+ * @see https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html GWDG model docs
+ * @see app/Services/Ai/LaravelAi/Drivers/OpenaiCompatible/README.md Custom driver rationale
+ */
 class GwdgAdapter extends OpenAiLikeAdapter implements ProviderAdapterCreatesDriverInterface
 {
     public const string DEFAULT_DOCUMENTATION_URL = 'https://docs.hpc.gwdg.de/services/ai-services/chat-ai/models/index.html';
 
+    /**
+     * Returns true only for image MIME types.
+     *
+     * GWDG's endpoint accepts inline image attachments but not arbitrary binary files,
+     * so non-image uploads are sent as extracted text instead.
+     */
     public function supportsFileAsAttachment(FileInterface $file): bool
     {
         return str_starts_with($file->getMimeType(), 'image/');
     }
 
+    /**
+     * Creates an OpenAI-compatible driver pointed at GWDG's chat-completion endpoint.
+     *
+     * Falls back to `https://chat-ai.academiccloud.de/v1` when no `api_url` is stored,
+     * because that is the stable public GWDG base URL for academic users.
+     */
     public function createDriver(AiProvider $provider, DriverFactory $factory): Driver
     {
-        /* IMPORTANT
-         * Currently, Laravel AI does not support chat completion endpoints (only responses)!
-         * There is already an open PR to add support for chat completion endpoints, but it is not yet merged.
-         * For more details, see: {@see app/Services/Ai/LaravelAi/Drivers/OpenaiCompatible/README.md}
-        */
         return $factory->make(
-            driverName: 'openai-compatible',
+            driverName: Lab::OpenAICompatible,
             config: [
                 'key' => $provider->api_key,
                 'url' => $provider->api_url ?? 'https://chat-ai.academiccloud.de/v1',
             ],
-            builder: function (Dispatcher $dispatcher, array $config) {
-                return new OpenAiCompatibleProvider(
-                    $config,
-                    $dispatcher
-                );
-            }
         );
     }
 
     /**
-     * @inheritDoc
+     * Fetches models from GWDG's `/models` endpoint using a custom mapper that reads
+     * GWDG-specific fields beyond what the standard OpenAI shape provides.
+     *
+     * Extra fields mapped per model:
+     * - `input` / `output` — modality arrays (e.g. `["text", "image"]`) used to populate
+     *   the model's I/O method sets. A model is only typed as {@see WellKnownModelTypes::CHAT}
+     *   when both arrays contain `"text"`.
+     * - `name` — human-readable display label stored as `model->label`.
+     * - `documentation_url` — set to {@see DEFAULT_DOCUMENTATION_URL} for all GWDG models.
+     *
+     * @return Collection<int, \App\Models\Ai\AiModel>
      */
     public function getModels(AiProviderProxy $provider): Collection
     {
@@ -77,6 +109,22 @@ class GwdgAdapter extends OpenAiLikeAdapter implements ProviderAdapterCreatesDri
         );
     }
 
+    /**
+     * Probes GWDG's `/models` endpoint and populates both status and demand collections.
+     *
+     * GWDG includes `status` and `demand` fields in the standard model-list response,
+     * so a single HTTP call covers both concerns without a dedicated health endpoint.
+     *
+     * Status mapping:
+     * - `"ready"`   → {@see OnlineStatus::ONLINE}
+     * - `"offline"` → {@see OnlineStatus::OFFLINE}
+     * - anything else → {@see OnlineStatus::UNKNOWN}
+     *
+     * Demand mapping (numeric `demand` field):
+     * - ≥ 4 → {@see ModelDemand::HIGH}
+     * - ≥ 2 → {@see ModelDemand::MEDIUM}
+     * - < 2 → {@see ModelDemand::LOW}
+     */
     public function checkModelStatus(
         AiModelOnlineStatusCollection $statusCollection,
         AiModelDemandCollection       $demandCollection,

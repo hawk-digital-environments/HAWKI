@@ -8,10 +8,10 @@
 
     import type {Snippet} from 'svelte';
     import {Dialog as DialogPrimitive, type DialogContentProps, type DialogDescriptionProps, type DialogOverlayProps, type DialogTitleProps, mergeProps} from 'bits-ui';
-    import {X} from '@lucide/svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import {__} from '$lib/utils/translator.js';
+    import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open for two-way binding. */
@@ -103,7 +103,7 @@
             {/if}
             {#if closable}
                 <DialogPrimitive.Close class="dialog-close" aria-label={__('ui.dialog.closeLabel')}>
-                    <X size={16}/>
+                    <Cancel01Icon size={16}/>
                 </DialogPrimitive.Close>
             {/if}
         </DialogPrimitive.Content>

@@ -10,7 +10,35 @@ use App\Services\Ai\Providers\Adapters\Contracts\ProviderAdapterInterface;
 use Illuminate\Support\Traits\ForwardsCalls;
 use Laravel\Ai\Providers\Provider;
 
-/** @mixin AiProvider */
+/**
+ * A resolved, ready-to-use bundle that ties an {@see AiProvider} Eloquent model to its
+ * instantiated adapter and driver.
+ *
+ * Callers that need the full provider context — model data AND the ability to invoke the
+ * underlying AI driver — receive one of these from {@see \App\Services\Ai\Providers\AiProviderProxyResolver}.
+ * The proxy transparently forwards property reads and method calls to the wrapped
+ * {@see AiProvider} model, so existing code that expects an `AiProvider` instance can
+ * consume an `AiProviderProxy` without modification.
+ *
+ * ```php
+ * $proxy = $resolver->resolve('openAi');
+ *
+ * // Access Eloquent model attributes directly:
+ * echo $proxy->name;          // forwarded to $provider->name
+ * echo $proxy->api_url;       // forwarded to $provider->api_url
+ *
+ * // Use the adapter for business logic:
+ * $models = $proxy->adapter->getModels($proxy);
+ *
+ * // Use the driver for AI calls:
+ * $proxy->driver->chat(...);
+ *
+ * // Retrieve the underlying Eloquent model when needed:
+ * $aiProvider = $proxy->getRealProvider();
+ * ```
+ *
+ * @mixin AiProvider
+ */
 readonly class AiProviderProxy
 {
     use ForwardsCalls;
@@ -23,46 +51,46 @@ readonly class AiProviderProxy
     {
     }
 
+    /**
+     * Returns the underlying {@see AiProvider} Eloquent model.
+     *
+     * Use this when you need the concrete model type — e.g. for repository calls or
+     * policy checks — rather than the proxy surface.
+     */
     public function getRealProvider(): AiProvider
     {
         return $this->provider;
     }
 
     /**
-     * Determine if an attribute exists on the provider.
-     *
-     * @param string $key
-     * @return bool
+     * Checks whether an attribute exists on the underlying provider model.
      */
-    public function __isset(string $key)
+    public function __isset(string $key): bool
     {
         return isset($this->provider->{$key});
     }
 
     /**
-     * Unset an attribute on the provider.
-     *
-     * @param string $key
-     * @return void
+     * Unsets an attribute on the underlying provider model.
      */
-    public function __unset(string $key)
+    public function __unset(string $key): void
     {
         unset($this->provider->{$key});
     }
 
     /**
-     * Dynamically get properties from the underlying provider.
-     *
-     * @param string $key
-     * @return mixed
+     * Forwards property reads to the underlying provider model.
      */
-    public function __get(string $key)
+    public function __get(string $key): mixed
     {
         return $this->provider->{$key};
     }
 
-    public function __call($name, $arguments)
+    /**
+     * Forwards method calls to the underlying provider model.
+     */
+    public function __call(string $name, array $arguments): mixed
     {
-        $this->forwardCallTo($this->provider, $name, $arguments);
+        return $this->forwardCallTo($this->provider, $name, $arguments);
     }
 }

@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use App\Events\MemberAddedToRoomEvent;
-use App\Events\MemberRemovedFromRoomEvent;
-use App\Events\MemberUpdatedEvent;
-use App\Events\RoomDeletingEvent;
-use App\Events\RoomUpdatedEvent;
+use App\Services\Chat\Events\MemberAddedToRoomEvent;
+use App\Services\Chat\Events\MemberRemovedFromRoomEvent;
+use App\Services\Chat\Events\MemberUpdatedEvent;
+use App\Services\Chat\Events\RoomDeletingEvent;
+use App\Services\Chat\Events\RoomUpdatedEvent;
 use App\Models\Scopes\RoomAccessScope;
 use App\Policies\RoomPolicy;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;

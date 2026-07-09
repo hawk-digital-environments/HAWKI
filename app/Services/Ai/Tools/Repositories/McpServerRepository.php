@@ -12,9 +12,26 @@ use App\Services\Ai\Values\OnlineStatus;
 use App\Services\System\Database\Eloquent\Repositories\AbstractRepository;
 use Illuminate\Database\Eloquent\Collection;
 
+/**
+ * Repository for the {@see McpServer} Eloquent model.
+ *
+ * Centralises all database access for MCP server records, providing targeted finders
+ * and write operations used by the status-check, config-sync, and tool-sync subsystems.
+ *
+ * Notable design points:
+ *  - Servers can be managed manually (via the UI/CLI) or automatically via config files.
+ *    The `added_by_file` flag distinguishes them; file-managed servers are removed by
+ *    {@see removeAllConfiguredByFileNotWithUrlIn()} when they disappear from the config.
+ *  - {@see setOnlineStatus()} is the only sanctioned way to update a server's status —
+ *    keeping the mutation path narrow and auditable.
+ *  - {@see upsertByFile()} always sets `added_by_file = true`; {@see upsert()} lets the
+ *    caller control that flag for UI/CLI-driven changes.
+ */
 class McpServerRepository extends AbstractRepository
 {
     /**
+     * Returns all servers currently marked as {@see OnlineStatus::ONLINE}.
+     *
      * @return Collection<int, McpServer>
      */
     public function findAllOnline(): Collection
@@ -49,6 +66,16 @@ class McpServerRepository extends AbstractRepository
         $server->save();
     }
 
+    /**
+     * Creates or updates an MCP server record matched by URL.
+     *
+     * The URL is the natural unique key for MCP servers — changing it will create a new record
+     * rather than updating the existing one, so URL changes require a manual cleanup of the
+     * orphaned row. The `api_key` is stored encrypted; pass null to clear it.
+     *
+     * @param string|null $requireApproval  Approval policy string (e.g. `'never'`, `'always'`).
+     *                                      Defaults to `'never'` when null.
+     */
     public function upsert(
         string                 $url,
         McpServerType          $type,
@@ -76,6 +103,11 @@ class McpServerRepository extends AbstractRepository
         );
     }
 
+    /**
+     * Convenience wrapper around {@see upsert()} that always sets `added_by_file = true`.
+     * Called by the config-file sync path so these servers can be identified and cleaned up
+     * when they are removed from the configuration.
+     */
     public function upsertByFile(
         string                 $url,
         McpServerType          $type,

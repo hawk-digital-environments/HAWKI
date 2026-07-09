@@ -330,7 +330,7 @@ class FileReference implements \Stringable, FileInterface
             return $this->plainTextLanguageType;
         }
 
-        $this->plainTextLanguageType = PlainTextLanguageType::tryFromFilename($this->filename ?? '')
+        $this->plainTextLanguageType = PlainTextLanguageType::tryFromFilename($this->originalFileName)
             ?? PlainTextLanguageType::tryFromMimeType($this->getMimeType());
 
         $this->plainTextLangaugeTypeDetermined = true;

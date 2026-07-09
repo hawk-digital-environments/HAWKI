@@ -17,6 +17,24 @@ use Symfony\Component\Clock\Clock;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Mime\MimeTypes;
 
+/**
+ * Converter that delegates to a self-hosted Kreuzberg API instance for text and image extraction.
+ *
+ * Kreuzberg is an open-source document extraction service that accepts binary files via
+ * multipart HTTP upload and returns structured JSON with extracted text and embedded images.
+ * Files are POSTed to the `/extract` endpoint with a fixed base configuration (OCR via
+ * Tesseract in German + English, image extraction at up to 300 DPI, page-marker injection)
+ * that can be partially overridden per the `extraction_config` config key.
+ *
+ * Supported MIME types are fetched dynamically from the `/formats` endpoint and cached for 24 h.
+ * SVG files are technically supported by Kreuzberg but {@see wouldLikeSomeoneElseToConvertMimetype()}
+ * returns true for them so the wrapping {@see \App\Services\FileConverter\Utils\ImagePreProcessingConverter}
+ * can intercept and produce a proper PNG rendering instead.
+ *
+ * Required config keys (under `file_converter.converters.kreuzberg`):
+ *   - `api_url`           — base URL of the Kreuzberg service, e.g. `http://kreuzberg:8000`
+ *   - `extraction_config` — (optional) key/value pairs merged on top of the default extraction payload
+ */
 class KreuzbergConverter extends AbstractFileConverter
 {
     public function __construct(
@@ -28,6 +46,7 @@ class KreuzbergConverter extends AbstractFileConverter
 
     /**
      * @inheritDoc
+     * Requires `api_url` to be a valid URL.
      */
     public static function isValidConfig(array $config): bool
     {
@@ -37,8 +56,8 @@ class KreuzbergConverter extends AbstractFileConverter
     }
 
     /**
-     * Clears the cache of the kreuzberg converter
-     * @return bool
+     * Sends a DELETE request to the Kreuzberg `/cache/clear` endpoint to flush its server-side cache.
+     * Returns true on success, false if the request fails.
      */
     public function clearCache(): bool
     {
@@ -46,7 +65,16 @@ class KreuzbergConverter extends AbstractFileConverter
     }
 
     /**
-     * @inheritDoc
+     * POSTs the file to the Kreuzberg `/extract` endpoint and returns the extracted artefacts.
+     *
+     * Successful responses produce:
+     * - A `{filename}_content.md` FileReference containing the extracted text (if non-empty).
+     * - One binary FileReference per image under `images/{name}.{format}`.
+     * - An optional `{name}_ocr.md` sidecar FileReference when the image has an OCR result.
+     *
+     * Mask images (`is_mask: true`) are silently skipped.
+     *
+     * @throws \App\Services\FileConverter\Exception\ConversionFailedException on any HTTP failure or unexpected exception.
      */
     public function convert(FileReference $file): FileCollection
     {
@@ -158,7 +186,8 @@ class KreuzbergConverter extends AbstractFileConverter
     }
 
     /**
-     * @inheritDoc
+     * Always returns true — the Kreuzberg service is considered available as long as its config is valid.
+     * Actual connectivity is not checked; HTTP errors during {@see convert()} will throw instead.
      */
     public function isAvailable(): bool
     {
@@ -166,7 +195,13 @@ class KreuzbergConverter extends AbstractFileConverter
     }
 
     /**
-     * @inheritDoc
+     * Fetches the list of supported MIME types from the Kreuzberg `/formats` endpoint.
+     *
+     * The result is cached for 24 hours to avoid a network round-trip on every request.
+     * Both the `mime_type` field and any additional types derived from the file extension
+     * (via Symfony MimeTypes) are included and de-duplicated.
+     *
+     * @return string[] Lowercase MIME type strings.
      */
     public function getAllowedMimeTypes(): array
     {
@@ -196,7 +231,11 @@ class KreuzbergConverter extends AbstractFileConverter
     }
 
     /**
-     * @inheritDoc
+     * Returns true for `image/svg+xml`.
+     *
+     * Kreuzberg can convert SVG but only extracts embedded text — it does not render the graphic.
+     * By yielding SVG to another handler, the wrapping {@see \App\Services\FileConverter\Utils\ImagePreProcessingConverter}
+     * can convert the SVG to PNG first and then pass the PNG image to Kreuzberg for richer results.
      */
     public function wouldLikeSomeoneElseToConvertMimetype(string $mimetype): bool
     {

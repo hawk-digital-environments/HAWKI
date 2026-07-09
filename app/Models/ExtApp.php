@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Casts\AsAsymmetricPublicKey;
-use App\Events\ExtExtAppCreatedEvent;
-use App\Events\ExtExtAppRemovedEvent;
+use App\Services\ExtApp\Events\ExtExtAppCreatedEvent;
+use App\Services\ExtApp\Events\ExtExtAppRemovedEvent;
 use App\Policies\ExtAppPolicy;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Model;

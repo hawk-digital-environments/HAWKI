@@ -231,20 +231,35 @@ function createMsgObject(msg) {
 
 async function requestPromptImprovement(message, chatSystemPrompt) {
     const language = window.getConnection().locale;
+    // @todo when migrating split this up into two prompts, one for chat and one for group chat, that way we don't need to do the if statement here.
+    const improvementPrompt = window.getSystemPrompt('prompt_improvement');
+    const aiHandle = window.getConfig().ai.handle;
 
-    let prompt = `
-This is the message you should improve:
-[[[MESSAGE_START]]]
-${message}
-[[[MESSAGE_END]]]
+    let extendedSystemPrompt = improvementPrompt;
 
-The current chat contains the following system prompt, use this only as context for improving the message!
-[[[SYSTEM_PROMPT_START]]]
-${chatSystemPrompt}
-[[[SYSTEM_PROMPT_END]]]
+    if (activeModule === 'chat') {
+        extendedSystemPrompt += `
+You are currently in a one-on-one chat with a user.
+The prompt you are improving is a message that the user has sent to the AI.
+`;
+    } else {
+        extendedSystemPrompt += `
+You are currently in a group chat with multiple users and an AI model.
+The prompt you are improving is a message that that one of the users has written to either others, or the AI.
+If the message contains "${aiHandle}", it is directed to the AI, otherwise it is directed to other users.
+If it contains "${aiHandle}", you MUST keep that marker in the improved message.
+`;
+    }
 
+    extendedSystemPrompt += `
 You MUST answer in the language with code: ${language}
-    `;
+
+IMPERATIVE: Notify the user about issues!
+Your response will replace the original message! You must start your message with \`[NOT_IMPROVED]\` followed by a short explanation
+of why the message could not be improved, if applicable. Then, you will provide the improved message. That way, the message will be
+kept, but a warning will be shown to the user. If the message is improved, just return the improved message without anything else;
+which will be shown directly to the user. If the message is already good, just return it as is. Do not add any extra text or explanation.
+`;
 
     const requestObject = {
         payload: {
@@ -254,13 +269,13 @@ You MUST answer in the language with code: ${language}
                 {
                     role: 'system',
                     content: {
-                        text: __('Improvement_Prompt')
+                        text: extendedSystemPrompt
                     }
                 },
                 {
                     role: 'user',
                     content: {
-                        text: prompt
+                        text: message
                     }
                 }
             ]
@@ -273,10 +288,14 @@ You MUST answer in the language with code: ${language}
     let result = '';
     const response = await postData(requestObject);
 
-
-    const onData = (data) => {
-        if (data && data.content !== '') {
-            result += deconstContent(JSON.parse(data.content).text).messageText;
+    const onData = (data, done) => {
+        if (!done && data && data.content !== '') {
+            result += data.content;
+        }
+        // If the model failed, we will show the user and return the original message so that the user can try again.
+        if (done && result.includes('[NOT_IMPROVED]')) {
+            window.oldUiBridge.triggerSendToast(result.replace('[NOT_IMPROVED]', '').trim(), 'error');
+            result = message;
         }
     };
 

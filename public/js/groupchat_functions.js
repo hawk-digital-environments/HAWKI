@@ -37,8 +37,9 @@ function initializeGroupChatModule(roomsData) {
         startNewChat();
     });
     window.oldUiBridge.onOpenChat((slug) => {
+        const switchConversations = slug !== window.oldUiMessageHistory.conversationSlug;
         loadRoom(null, slug);
-        onSidebarButtonDown('groupchat');
+        onSidebarButtonDown('groupchat', switchConversations);
     });
     window.oldUiBridge.onActiveConversationSystemPromptUpdate(newPrompt => {
         if (!activeRoom) {
@@ -363,6 +364,7 @@ async function handleUpdateMessage(messageData, slug) {
         regenerateBtn.style.opacity = '1';
     }
 
+    window.oldUiMessageHistory.updateMessageInConversation(messageData);
     updateMessageElement(element, messageData, true);
 
 
@@ -493,6 +495,9 @@ function openRoomCreatorPanel() {
     activeRoom = null;
     history.replaceState(null, '', `/groupchat`);
     switchDyMainContent('room-creation');
+    if (sidebarIsMobileStyle()) {
+        closeSidebar();
+    }
 
     const lastActive = document.getElementById('rooms-list').querySelector('.selection-item.active');
     if (lastActive) {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Storage\Interfaces;
 
 use App\Services\Storage\Values\FileReference;

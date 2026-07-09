@@ -7,6 +7,7 @@ namespace Tests\Unit\Utils\Casts\Casters;
 use App\Utils\Casts\Casters\EncryptedCaster;
 use App\Utils\Casts\Exceptions\InvalidCastTypeException;
 use App\Utils\Casts\Values\CastType;
+use Illuminate\Contracts\Encryption\StringEncrypter;
 use Illuminate\Support\Facades\Crypt;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
@@ -17,12 +18,44 @@ use Tests\Unit\Utils\Casts\Casters\EncryptedCasterTestFixtures\EncryptedCasterTe
 class EncryptedCasterTest extends TestCase
 {
     // ==========================================================================
+    // Helpers
+    // ==========================================================================
+
+    /**
+     * Swap the Crypt facade with a PHPUnit mock expecting exactly one
+     * decryptString() call with the given payload.
+     */
+    private function mockDecryptString(string $payload, string $plaintext): void
+    {
+        $encrypter = $this->createMock(StringEncrypter::class);
+        $encrypter->expects(static::once())
+            ->method('decryptString')
+            ->with($payload)
+            ->willReturn($plaintext);
+        Crypt::swap($encrypter);
+    }
+
+    /**
+     * Swap the Crypt facade with a PHPUnit mock expecting exactly one
+     * encryptString() call with the given plaintext.
+     */
+    private function mockEncryptString(string $plaintext, string $ciphertext): void
+    {
+        $encrypter = $this->createMock(StringEncrypter::class);
+        $encrypter->expects(static::once())
+            ->method('encryptString')
+            ->with($plaintext)
+            ->willReturn($ciphertext);
+        Crypt::swap($encrypter);
+    }
+
+    // ==========================================================================
     // Hydration — get()
     // ==========================================================================
 
     public function testItDecryptsString(): void
     {
-        Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('my-secret');
+        $this->mockDecryptString('ciphertext', 'my-secret');
 
         $sut = new EncryptedCaster(CastType::STRING);
         static::assertSame('my-secret', $sut->get(new \stdClass(), 'ciphertext', 'prop'));
@@ -30,7 +63,7 @@ class EncryptedCasterTest extends TestCase
 
     public function testItDecryptsArray(): void
     {
-        Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('["a","b"]');
+        $this->mockDecryptString('ciphertext', '["a","b"]');
 
         $sut = new EncryptedCaster(CastType::ARRAY);
         static::assertSame(['a', 'b'], $sut->get(new \stdClass(), 'ciphertext', 'prop'));
@@ -38,7 +71,7 @@ class EncryptedCasterTest extends TestCase
 
     public function testItDecryptsJsonAliasAsArray(): void
     {
-        Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('["x"]');
+        $this->mockDecryptString('ciphertext', '["x"]');
 
         $sut = new EncryptedCaster(CastType::JSON);
         static::assertSame(['x'], $sut->get(new \stdClass(), 'ciphertext', 'prop'));
@@ -46,7 +79,7 @@ class EncryptedCasterTest extends TestCase
 
     public function testItDecryptsObject(): void
     {
-        Crypt::shouldReceive('decryptString')->with('ciphertext')->once()->andReturn('{"k":"v"}');
+        $this->mockDecryptString('ciphertext', '{"k":"v"}');
 
         $sut = new EncryptedCaster(CastType::OBJECT);
         $result = $sut->get(new \stdClass(), 'ciphertext', 'prop');
@@ -60,7 +93,7 @@ class EncryptedCasterTest extends TestCase
 
     public function testItEncryptsString(): void
     {
-        Crypt::shouldReceive('encryptString')->with('my-secret')->once()->andReturn('ciphertext');
+        $this->mockEncryptString('my-secret', 'ciphertext');
 
         $sut = new EncryptedCaster(CastType::STRING);
         static::assertSame('ciphertext', $sut->set(new \stdClass(), 'my-secret', 'prop'));
@@ -68,7 +101,7 @@ class EncryptedCasterTest extends TestCase
 
     public function testItEncryptsArrayAsJson(): void
     {
-        Crypt::shouldReceive('encryptString')->with('["a","b"]')->once()->andReturn('ciphertext');
+        $this->mockEncryptString('["a","b"]', 'ciphertext');
 
         $sut = new EncryptedCaster(CastType::ARRAY);
         $sut->set(new \stdClass(), ['a', 'b'], 'prop');
@@ -76,7 +109,7 @@ class EncryptedCasterTest extends TestCase
 
     public function testItEncryptsObjectAsJson(): void
     {
-        Crypt::shouldReceive('encryptString')->with('{"k":"v"}')->once()->andReturn('ciphertext');
+        $this->mockEncryptString('{"k":"v"}', 'ciphertext');
 
         $obj = new \stdClass();
         $obj->k = 'v';

@@ -13,6 +13,14 @@ use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Clock\Clock;
 
+/**
+ * Bundles all infrastructure dependencies required by {@see AbstractFileStorage} implementations
+ * into a single constructor argument, keeping the storage service constructors lean and the
+ * service-provider wiring explicit.
+ *
+ * Each storage service variant (file uploads, avatars) creates its own context with a different
+ * filesystem disk, size limit, and allowed MIME-type list — see `StorageServiceProvider`.
+ */
 readonly class StorageServiceContext
 {
     public function __construct(

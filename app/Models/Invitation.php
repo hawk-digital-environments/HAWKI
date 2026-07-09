@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Events\InvitationCreatedEvent;
-use App\Events\InvitationUpdatedEvent;
+use App\Services\Chat\Events\InvitationCreatedEvent;
+use App\Services\Chat\Events\InvitationUpdatedEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

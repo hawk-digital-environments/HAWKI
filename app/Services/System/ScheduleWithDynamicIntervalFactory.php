@@ -100,12 +100,13 @@ readonly class ScheduleWithDynamicIntervalFactory
     }
 
     /**
-     * Parses the interval arguments from a mixed input.
-     * The input can be a JSON string representing an array of arguments, a single numeric value, or a simple string.
-     * If the input is empty or cannot be parsed, it returns an empty array.
+     * Parses interval arguments from a mixed input into a positional argument array.
      *
-     * @param mixed $args
-     * @return array|float[]|int[]|string[]
+     * Accepted formats (tried in order):
+     *  - null / empty string → empty array (no arguments).
+     *  - Valid JSON array string → decoded array.
+     *  - Numeric string → single-element array `[(int|float) value]`.
+     *  - Any other string → single-element array `[(string) value]`.
      */
     private function parseIntervalArgs(mixed $args): array
     {
@@ -134,14 +135,13 @@ readonly class ScheduleWithDynamicIntervalFactory
     }
 
     /**
-     * Validates the given interval and its arguments against the available scheduling methods.
-     * It checks if the interval is either the special "never" value or a valid method from the ManagesFrequencies trait.
-     * If the interval requires arguments, it also checks if the provided arguments meet the required count.
+     * Validates the interval string and its arguments against the public methods of {@see ManagesFrequencies}.
      *
-     * @param mixed $interval The interval to validate, which can be a string representing a scheduling method or the special "never" value.
-     * @param array $args The arguments to validate against the required parameters of the scheduling method.
-     * @param string $command The command being scheduled, used for logging purposes in case of validation failure.
-     * @return bool Returns true if the interval and arguments are valid, false otherwise.
+     * Logs an error and returns false when:
+     *  - The interval is not a string or not a method on {@see ManagesFrequencies}.
+     *  - The method has required parameters that are not covered by the provided arguments.
+     *
+     * @param string $command Used in error log messages to identify which job failed to schedule.
      */
     private function validateIntervalAndArgs(mixed $interval, array $args, string $command): bool
     {

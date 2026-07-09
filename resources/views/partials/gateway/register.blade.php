@@ -65,14 +65,10 @@
                         }
                         const {view, announcement} = res;
 
-                        // Render the HTML (MD rendered to HTML string)
-                        const md = await window.hawkiDependencyLoader('md');
-                        const renderedHtml = md.render(view, false);
-
                         const parent = document.querySelector('#data-protection');
                         // Insert the rendered HTML into the designated container
                         const policyContentBox = parent.querySelector('#policy-content');
-                        policyContentBox.innerHTML = renderedHtml;
+                        policyContentBox.innerHTML = getMarkdownRendererHtml(view);
                         // Add target and rel attributes for external links (XSS-protection best practice)
                         policyContentBox.querySelectorAll('a').forEach(a => {
                             a.setAttribute('target', '_blank');

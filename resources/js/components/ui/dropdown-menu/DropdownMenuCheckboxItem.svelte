@@ -3,9 +3,9 @@
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
-    import {Check} from '@lucide/svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
+    import Tick02Icon from '../icons/iconset/Tick02Icon.svelte';
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Whether the checkbox is checked. Supports bind:checked. */
@@ -39,7 +39,7 @@
         <div bind:this={ref} {...mergeProps({class: `dropdown-checkbox-item${className ? ` ${className}` : ''}`}, restProps, props)}>
             <span class="dropdown-item-indicator">
                 {#if isChecked}
-                    <Check size={12}/>
+                    <Tick02Icon size={12}/>
                 {/if}
             </span>
             {@render children?.(isChecked)}

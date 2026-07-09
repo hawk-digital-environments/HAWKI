@@ -4,8 +4,8 @@ namespace App\Models;
 
 use App\Casts\AsAsymmetricPublicKey;
 use App\Casts\AsHybridCryptoValue;
-use App\Events\ExtAppUserCreatedEvent;
-use App\Events\ExtAppUserRemovedEvent;
+use App\Services\ExtApp\Events\ExtAppUserCreatedEvent;
+use App\Services\ExtApp\Events\ExtAppUserRemovedEvent;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Sanctum\PersonalAccessToken;

@@ -233,6 +233,7 @@ class ChatAiModelPricing implements AiModelPricingInterface
         $priorityRanges = $priorityRangesRaw !== null
             ? array_map(fn(array $rangeData) => ChatPricingRange::fromArray($rangeData), $priorityRangesRaw)
             : null;
+        /** @phpstan-ignore new.static */
         return new static($ranges, $priorityRanges);
     }
 

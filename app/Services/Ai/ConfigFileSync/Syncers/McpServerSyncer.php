@@ -14,6 +14,20 @@ use App\Utils\JobMetrics;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Str;
 
+/**
+ * Syncs MCP server definitions from the `tools.mcp_servers` config array into the database.
+ *
+ * For each configured server entry the syncer:
+ *  - validates that a URL is present (skips the entry with an error if missing),
+ *  - pings the server to verify reachability (skips upsert if ping fails),
+ *  - creates or updates the corresponding {@see \App\Models\Ai\McpServer} record via
+ *    {@see McpServerRepository::upsertByFile()},
+ *  - removes any database records that were previously created from config but are no
+ *    longer present in the current config array.
+ *
+ * Legacy `timeout` and `discovery_timeout` fields are still accepted but emit deprecation
+ * warnings via {@see JobMetrics}.
+ */
 readonly class McpServerSyncer implements ConfigSyncerInterface
 {
     public function __construct(

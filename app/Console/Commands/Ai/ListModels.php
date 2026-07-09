@@ -48,7 +48,7 @@ class ListModels extends Command
             /** @var AiProvider|null $provider */
             $provider = $providerModels->first()?->provider;
 
-            $status = $provider?->active ? '<fg=green>active</' : '<fg=red>inactive</>';
+            $status = $provider?->active ? '<fg=green>active</>' : '<fg=red>inactive</>';
             $this->newLine();
             $this->line("Provider: <fg=cyan;options=bold>{$providerId}</> [{$status}]");
             $this->line(str_repeat('─', 70));
@@ -58,7 +58,7 @@ class ListModels extends Command
                 $m->label,
                 $m->active ? '<fg=green>✓</>' : '<fg=red>✗</>',
                 $m->status->value ?? 'unknown',
-                implode(', ', $m->input ?? []),
+                implode(', ', $m->input->toArray()),
             ])->toArray();
 
             $this->table(['Model ID', 'Label', 'Active', 'Status', 'Input'], $rows);

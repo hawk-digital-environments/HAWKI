@@ -18,6 +18,11 @@ use Tests\Unit\Casts\AsInstanceTestFixtures\CastableStub;
 #[CoversClass(InvalidCastValueException::class)]
 class AsInstanceTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        AsInstance::clearDynamicResolvers();
+    }
+
     // =========================================================================
     // castUsing() — configuration errors
     // =========================================================================
@@ -39,7 +44,8 @@ class AsInstanceTest extends TestCase
         $this->expectException(InvalidCastConfigurationException::class);
         $this->expectExceptionMessage('Class [NonExistent\\Foo] does not exist for');
 
-        AsInstance::castUsing([base64_encode('NonExistent\\Foo')]);
+        AsInstance::castUsing([base64_encode('NonExistent\\Foo')])
+            ->get(null, 'key', '{"foo":"bar"}', []);
     }
 
     public function testItCastUsingThrowsWhenClassDoesNotImplementInterface(): void
@@ -51,7 +57,8 @@ class AsInstanceTest extends TestCase
             CastableInstanceInterface::class
         ));
 
-        AsInstance::castUsing([base64_encode(\stdClass::class)]);
+        AsInstance::castUsing([base64_encode(\stdClass::class)])
+            ->get(null, 'key', '{"foo":"bar"}', []);
     }
 
     public function testItCastUsingReturnsCastsAttributesForValidClass(): void

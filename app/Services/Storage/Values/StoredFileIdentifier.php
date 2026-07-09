@@ -12,6 +12,28 @@ use App\Services\Storage\Exception\CouldNotInflectStoredFieldIdentifierException
 use App\Services\Storage\Exception\InvalidStorageFileIdentifierStringGivenException;
 use Illuminate\Support\Str;
 
+/**
+ * Uniquely identifies a file in the storage system.
+ *
+ * String format: `{category}-{uuid}[.{extension}]`
+ * Example: `private-550e8400-e29b-41d4-a716-446655440000.pdf`
+ *
+ * The extension is optional and only carried as metadata (it is NOT the actual disk extension,
+ * which may be `.blob` for security reasons). It is used to derive the correct filename when
+ * serving the file to a browser or passing it to a converter.
+ *
+ * Usage:
+ * ```php
+ * // Create from an uploaded file (generates a new UUID)
+ * $identifier = StoredFileIdentifier::fromCategoryAndFilename(StoredFileCategory::PRIVATE, 'report.pdf');
+ *
+ * // Round-trip through a string (e.g. from a route parameter)
+ * $identifier = StoredFileIdentifier::fromString('private-550e8400-e29b-41d4-a716-446655440000.pdf');
+ *
+ * // Derive from a domain model
+ * $identifier = StoredFileIdentifier::tryFromUserAvatar($user); // null if no avatar set
+ * ```
+ */
 readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
 {
     private function __construct(
@@ -45,6 +67,10 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         return (string)$this;
     }
 
+    /**
+     * Derives an identifier from an Attachment model.
+     * Throws if the attachment is missing a uuid, category, or carries an unknown category value.
+     */
     public static function fromAttachment(Attachment $attachment): self
     {
         if (empty($attachment->uuid)) {
@@ -64,6 +90,10 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         );
     }
 
+    /**
+     * Derives an identifier from a User's avatar. Throws if the user has no avatar set.
+     * Use {@see tryFromUserAvatar} when the avatar may legitimately be absent.
+     */
     public static function fromUserAvatar(User $user): self
     {
         $result = self::tryFromUserAvatar($user);
@@ -73,6 +103,9 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         return $result;
     }
 
+    /**
+     * Returns null when the user has no avatar set, avoiding a thrown exception for the common "no avatar yet" case.
+     */
     public static function tryFromUserAvatar(User|null $user): self|null
     {
         if (empty($user->avatar_id)) {
@@ -86,6 +119,10 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         );
     }
 
+    /**
+     * Derives an identifier from a Room's avatar. Throws if the room has no icon set.
+     * Use {@see tryFromRoomAvatar} when the icon may legitimately be absent.
+     */
     public static function fromRoomAvatar(Room $room): self
     {
         $result = self::tryFromRoomAvatar($room);
@@ -95,6 +132,9 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         return $result;
     }
 
+    /**
+     * Returns null when the room has no icon set, avoiding a thrown exception for the common "no icon yet" case.
+     */
     public static function tryFromRoomAvatar(Room $room): self|null
     {
         if (empty($room->room_icon)) {
@@ -108,6 +148,11 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         );
     }
 
+    /**
+     * Parses an identifier from its string representation (e.g. a route parameter or JSON value).
+     * Throws {@see InvalidStorageFileIdentifierStringGivenException} when the string is malformed
+     * or contains an unknown category prefix.
+     */
     public static function fromString(string $id): self
     {
         $parts = explode('-', $id, 2);
@@ -137,6 +182,10 @@ readonly class StoredFileIdentifier implements \Stringable, \JsonSerializable
         return new self($category, $uuid, $extension);
     }
 
+    /**
+     * Creates a new identifier for an incoming upload, generating a fresh UUID and extracting
+     * the file extension from the original filename. Used by the storage engine on every store call.
+     */
     public static function fromCategoryAndFilename(StoredFileCategory $category, string $filename): self
     {
         $extension = pathinfo($filename, PATHINFO_EXTENSION);
