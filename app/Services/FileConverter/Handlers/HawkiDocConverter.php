@@ -172,7 +172,7 @@ class HawkiDocConverter extends AbstractFileConverter
         // to avoid leaving temporary files on disk.
         register_shutdown_function(static function () use ($files) {
             foreach ($files as $file) {
-                @unlink($file->getDiskFilePath());
+                    @unlink($file->getDiskFilePath());
             }
         });
 

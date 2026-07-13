@@ -35,6 +35,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 SystemContextBootingMiddleware::class,
             ]
         );
+        $middleware->convertEmptyStringsToNull([
+            fn (Request $request) => $request->is('api/hawki/v1/*'),
+        ]);
     })
     ->withBroadcasting(
         channels: __DIR__ . '/../routes/channels.php',

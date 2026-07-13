@@ -1,0 +1,46 @@
+{
+    "assistants": {
+        "categories": {
+            "academic_writing": "Wissenschaftliches Schreiben",
+            "computer_science": "Informatik",
+            "study_tools": "Lernhilfen",
+            "science": "Naturwissenschaften",
+            "campus_life": "Campusleben",
+            "research": "Forschung",
+            "math": "Mathematik",
+            "languages": "Sprachen"
+        },
+        "settings": {
+            "language": {
+                "label": "Sprache",
+                "description": "Die Sprache, die der Assistent für jede Antwort verwenden soll.",
+                "options": {
+                    "not_set": "Nicht festgelegt",
+                    "en": "Englisch",
+                    "de": "Deutsch"
+                }
+            },
+            "formality": {
+                "label": "Formalität",
+                "description": "Der Formalitätsgrad der Antworten des Assistenten.",
+                "options": {
+                    "not_set": "Nicht festgelegt",
+                    "casual": "Locker",
+                    "balanced": "Ausgewogen",
+                    "professional": "Formell",
+                    "academic": "Akademisch"
+                }
+            },
+            "answer_length": {
+                "label": "Antwortlänge",
+                "description": "Die Ausführlichkeit der Antworten des Assistenten.",
+                "options": {
+                    "not_set": "Nicht festgelegt",
+                    "concise": "Kurz",
+                    "balanced": "Mittel",
+                    "detailed": "Detailliert"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,46 @@
+{
+    "assistants": {
+        "categories": {
+            "academic_writing": "Academic Writing",
+            "computer_science": "Computer Science",
+            "study_tools": "Study Tools",
+            "science": "Natural Sciences",
+            "campus_life": "Campus Life",
+            "research": "Research",
+            "math": "Mathematics",
+            "languages": "Languages"
+        },
+        "settings": {
+            "language": {
+                "label": "Language",
+                "description": "The language the assistant must use for every response.",
+                "options": {
+                    "not_set": "Not set",
+                    "en": "English",
+                    "de": "German"
+                }
+            },
+            "formality": {
+                "label": "Formality",
+                "description": "The formality level of the assistant responses.",
+                "options": {
+                    "not_set": "Not set",
+                    "casual": "Casual",
+                    "balanced": "Balanced",
+                    "professional": "Professional",
+                    "academic": "Academic"
+                }
+            },
+            "answer_length": {
+                "label": "Answer Length",
+                "description": "The verbosity level of the assistant responses.",
+                "options": {
+                    "not_set": "Not set",
+                    "concise": "Concise",
+                    "balanced": "Balanced",
+                    "detailed": "Detailed"
+                }
+            }
+        }
+    }
+}

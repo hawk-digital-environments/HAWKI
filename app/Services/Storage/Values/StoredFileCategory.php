@@ -1,26 +1,34 @@
 <?php
+
 declare(strict_types=1);
 
-
 namespace App\Services\Storage\Values;
-
 
 enum StoredFileCategory: string
 {
     /**
-     * Avatars of groups/rooms (a.k.a. multi-user chats)
+     * Avatars of groups/rooms (a.k.a. multi-user chats).
      */
     case ROOM_AVATAR = 'room_avatars';
+
     /**
-     * Avatars of users
+     * Avatars of users.
      */
     case PROFILE_AVATAR = 'profile_avatars';
+
     /**
-     * Files shared in group/room chats
+     * Files shared in group/room chats.
      */
     case GROUP = 'group';
+
     /**
-     * Files shared in one-on-one chats (ai-conv)
+     * Files shared in one-on-one chats (ai-conv).
      */
     case PRIVATE = 'private';
+
+    /**
+     * Knowledge files attached to an assistant (creator-uploaded reference
+     * material injected into the assistant's system prompt).
+     */
+    case ASSISTANT = 'assistant';
 }
