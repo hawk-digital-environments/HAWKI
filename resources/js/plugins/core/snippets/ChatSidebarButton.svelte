@@ -112,7 +112,7 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         height: 2.5rem;
         border-radius: 5px;
         background-color: transparent;
-        transition: background-color var(--transition-fast);
+        transition: background-color var(--duration-fast);
         cursor: pointer;
         width: 100%;
         text-align: left;
@@ -129,17 +129,17 @@ document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug=
         }
 
         &:global(:not(.selected):hover) {
-            background-color: var(--panel-main);
-            /* border: var(--border-stroke-thin); */
+            background-color: var(--color-hover);
+            /* border: var(--border); */
         }
 
         &:global(.selected) {
-            background-color: var(--panel-main);
-            border: var(--border-stroke-thin);
+            background-color: var(--color-active-surface);
+            border: var(--border);
         }
     }
 
     :global(.active) .sidebar-button {
-        background-color: var(--highlight-color);
+        background-color: var(--color-highlight);
     }
 </style>

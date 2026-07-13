@@ -1,0 +1,307 @@
+{
+    "assistants": {
+
+        "assistant" : "Assistant",
+        "assistants" : "Assistants",
+        "categories": {
+            "academic_writing": "Academic Writing",
+            "computer_science": "Computer Science",
+            "study_tools": "Study Tools",
+            "science": "Natural Sciences",
+            "campus_life": "Campus Life",
+            "research": "Research",
+            "math": "Mathematics",
+            "languages": "Languages",
+            "all": "All"
+        },
+        "settings": {
+            "language": {
+                "label": "Language",
+                "description": "The language the assistant must use for every response.",
+                "options": {
+                    "not_set": "Not set",
+                    "en": "English",
+                    "de": "German"
+                }
+            },
+            "formality": {
+                "label": "Formality",
+                "description": "The formality level of the assistant responses.",
+                "options": {
+                    "not_set": "Not set",
+                    "casual": "Casual",
+                    "balanced": "Balanced",
+                    "professional": "Professional",
+                    "academic": "Academic"
+                }
+            },
+            "answer_style": {
+                "label": "Answer Style",
+                "description": "The verbosity style of the assistant responses.",
+                "options": {
+                    "not_set": "Not set",
+                    "concise": "Concise",
+                    "balanced": "Balanced",
+                    "detailed": "Detailed"
+                }
+            }
+        },
+        "sidebar": {
+            "home": "Home",
+            "store":"Store",
+            "drafts": "Drafts",
+            "favourites": "Favourites",
+            "shared": "Shared",
+            "create": "Create",
+            "switch_case": "Switch Section",
+            "back": "Back"
+        },
+
+        "entry": {
+            "title": "Create assistant",
+            "description":"Choose how you want to create your new assistant.",
+            "advanced": "Advanced",
+            "advanced_description": "Full control over all settings, knowledge, model and release.",
+            "coming_soon": "Coming soon",
+            "assisted": "Assisted",
+            "assisted_description": "Let us guide you through the creation step by step."
+        },
+        "store": {
+            "title": "Assistant Store",
+            "empty_title": "No assistants found",
+            "empty_description": ""
+        },
+        "drafts": {
+            "title": "My drafts",
+            "empty_title":  "No drafts yet",
+            "empty_description": "You haven't saved any assistants as a draft yet."
+        },
+        "shared": {
+            "title": "Shared assistants",
+            "empty_title":  "No shared assistants",
+            "empty_description": ""
+        },
+        "favourites": {
+            "title": "Favourites",
+            "empty_title":  "No favourites saved",
+            "empty_description": "Mark assistants with the heart icon to see them here."
+        },
+
+        "browser": {
+            "empty_title": "No assistants found",
+            "empty_description": "No assistants match your current filters.",
+            "loading": "Loading assistants…",
+            "no_results": "No results were found",
+            "pagination_of": "of"
+        },
+
+        "card": {
+            "remix": "Remix",
+            "category_unknown": "Unknown",
+            "remixed_via": ". via"
+        },
+
+        "release_stage": {
+            "private": "Private",
+            "organizational": "Federated release",
+            "federated": "Verified"
+        },
+
+        "risk": {
+            "low": "Low risk",
+            "medium": "Medium risk",
+            "high": "High risk"
+        },
+
+        "detail": {
+            "back": "Back to the store",
+            "edit": "Edit",
+            "edit_aria": "Edit assistant",
+            "remix": "Remix",
+            "remix_disabled": "Remixing is not allowed for this assistant",
+            "try_out": "Try it out",
+            "meta_creator": "Creator",
+            "meta_version": "Version",
+            "meta_usage": "Usage",
+            "meta_usage_unit": "uses",
+            "meta_updated": "Updated",
+            "trust_title": "Trust & risk",
+            "history_title": "Change history",
+            "changed_fields": "Fields:",
+            "creation": "Creation",
+            "feedback_sent": "Feedback sent."
+        },
+
+        "feedback": {
+            "feedback_to": "Feedback to",
+            "visible_to_creator": "Only visible to creator",
+            "send_feedback": "Send Feedback"
+        },
+        "remix": {
+            "remix_from": "Remix from",
+            "remix_from_creator": "Originally created by",
+            "original_status": "Original-Status:",
+            "remix_hint": "Your remix starts as a private draft and must be reviewed before it can be shared more widely. The trust status is not carried over from the original."
+        },
+        "builder":{
+            "sidebar": {
+                "general": "General",
+                "behaviour": "Behaviour",
+                "knowledge": "Knowledge & data",
+                "model": "Model",
+                "test": "Test",
+                "publish": "Publish"
+            },
+            "exit_dialog": {
+                "title": "Keep draft?",
+                "description": "This assistant hasn't been published yet. Keep the draft or discard it permanently?",
+                "keep": "Keep draft",
+                "discard": "Discard draft",
+                "keep_failed": "The draft could not be saved. Please check your input and try again.",
+                "discard_failed": "The draft could not be discarded."
+            },
+            "general": {
+                "title": "General information",
+                "description": "Basic details about your assistant.",
+                "input_name": "Assistant name",
+                "input_handle": "Unique @handle",
+                "input_description": "Short description",
+                "input_short_description": "Detailed description",
+                "input_category": "Category",
+                "input_allow_remix": "Allow remixing",
+                "input_allow_remix_description": "Others can create their own version.",
+                "avatar_title": "Appearance",
+                "avatar_description": "Choose a background and a symbol – used in the app store and as the cover image of the detail page.",
+                "avatar_symbol": "Symbol",
+                "avatar_symbol_change": "Change emoji",
+                "avatar_background": "Background",
+                "avatar_preview_name": "Your assistant",
+                "avatar_preview_handle": "@your-handle",
+                "tag_add": "Add tag",
+                "tag_input_aria": "Enter tag",
+                "tag_confirm_aria": "Confirm tag"
+            },
+            "behaviour": {
+                "title": "Behaviour",
+                "description": "Define how your assistant communicates.",
+                "warning_system_prompt": "Changes to the system prompt affect the trust review.",
+                "input_system_prompt": "System prompt",
+                "input_system_prompt_placeholder": "Write a system prompt",
+                "input_greeting": "Greeting message",
+                "input_greeting_placeholder": "Write a greeting message",
+                "input_starter_prompts": "Suggested starter prompts",
+                "input_starter_prompts_add": "Add prompt"
+            },
+            "knowledge": {
+                "title": "Knowledge & data",
+                "description": "Add context sources to improve the answers.",
+                "warning_knowledge_sources": "Knowledge sources can affect the approval requirements.",
+                "upload_title": "Upload files",
+                "upload_hint": "Supported file types",
+                "upload_max_size": "Maximum file size",
+                "upload_allowed_extensions": "Allowed extensions",
+                "upload_rejected_type": "File type not supported",
+                "upload_browse": "Browse files",
+                "attached_files": "Attached files",
+                "input_vector_databases": "Vector databases",
+                "documents_unit": "documents"
+            },
+            "model": {
+                "title": "Model settings",
+                "description": "Choose and configure the AI model.",
+                "input_allow_model_select": "End users may choose the model",
+                "input_allow_model_select_description": "Users can pick between the approved models.",
+                "input_temperature": "Temperature",
+                "input_temperature_description": "Higher values make the answers more creative but less predictable.",
+                "input_temperature_hint": "Controls the randomness of the answers. Common values are between 0 and 1.",
+                "input_top_p": "Top_P",
+                "input_top_p_description": "Limits the probability mass the model samples from.",
+                "input_top_p_hint": "Lower values make sampling more focused, higher values more open.",
+                "input_max_tokens": "Max. output length",
+                "input_max_tokens_description": "Maximum number of tokens per answer.",
+                "input_max_tokens_hint": "Higher values allow longer answers but take more time.",
+                "conflict": {
+                    "titleSingle": ":model does not support :tool",
+                    "titleMultiple": ":model does not support one or more of the selected tools",
+                    "singleModelCapable": "This model can do everything you need.",
+                    "multipleModelsCapable": "These :count models can do everything you need.",
+                    "noModelsAvailable": "No available model supports this combination. Remove a tool."
+                }
+            },
+            "tools": {
+                "title": "Tools & MCP",
+                "description": "Choose individual tools from approved MCP servers. Every tool affects the risk level and the publishing paths."
+            },
+            "test": {
+                "title": "Private test environment",
+                "description": "Test and refine your assistant."
+            },
+            "publish": {
+                "title": "Publish",
+                "description": "Choose the publishing path.",
+                "release_stage": {
+                    "title": "Choose the publishing path",
+                    "private_label": "Save as private draft",
+                    "private_description": "Visible only to you, no approval needed.",
+                    "organizational_label": "Submit for internal review",
+                    "organizational_description": "For release within your university.",
+                    "federated_label": "Verified",
+                    "federated_description": "Visible across universities. Strict validation."
+                },
+                "status": {
+                    "draft": "Draft",
+                    "private": "Private",
+                    "organizational": "In review",
+                    "federated": "In review"
+                },
+                "visibility": {
+                    "draft": "Draft",
+                    "private": "Only you",
+                    "organizational": "University-wide",
+                    "federated": "Public"
+                },
+                "publishability": {
+                    "draft": "Draft",
+                    "private": "Usable privately only",
+                    "organizational": "Usable university-wide",
+                    "federated": "Usable publicly"
+                },
+                "risk": {
+                    "title": "Risk overview",
+                    "description": "Assistant with knowledge files or tools. Standard review required.",
+                    "label_status": "Status",
+                    "label_risk_level": "Risk level",
+                    "risk_level_low": "Low risk",
+                    "label_visibility": "Visibility",
+                    "label_publishability": "Publishability"
+                },
+                "completeness": {
+                    "title": "Completeness check",
+                    "description": "Mandatory for publishing."
+                },
+                "triggers": {
+                    "title": "Review triggers"
+                },
+                "review_info": {
+                    "title": "Start review",
+                    "description": "As soon as you move the assistant from “Private” to “Available within the university” or “Federated”, a review is triggered.",
+                    "note": "MCP configurations are reviewed by us separately."
+                },
+                "input_version_note": "Version note",
+                "input_version_note_placeholder": "What has changed?",
+                "save_as_private_draft": "Save as private draft",
+                "save_as_review": "Submit for review",
+                "save_as_draft": "Save as draft",
+                "saved": "Assistant saved.",
+                "submitted": "Assistant submitted for review.",
+                "save_failed": "Could not save the assistant."
+            }
+        },
+        "testChat": {
+            "empty_hint": "Start a conversation to test the assistant."
+        }
+
+
+
+    }
+}

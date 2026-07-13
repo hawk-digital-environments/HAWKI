@@ -11,14 +11,17 @@
     import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
     import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
     import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
+    import MobileNavCollapse from '$lib/app/components/sidebar/MobileNavCollapse.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName} from '$lib/kernel/routing/routeInflection.js';
 
     const app = useApp();
     const router = useRouter();
+    const sidebar = useSidebar();
     const chatStore = useStore('chat');
     const {__} = useTranslator();
     const activeModule = $derived.by(() => app.modules.all.find(module =>
@@ -31,12 +34,14 @@
     function startNewChat(event: MouseEvent) {
         if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
         event.preventDefault();
+        if (sidebar.mobile) sidebar.navOpen = false;
         chatStore.startNew();
         void router.goToRoute('chat.index');
     }
 </script>
 
 <Sidebar label={__('ui.navigation.label')}>
+    <MobileNavCollapse />
     <SidebarHeader brandHref={chatPath} onBrandClick={startNewChat}>
         <HawkLogo label={__('ui.navigation.newChat')} />
     </SidebarHeader>

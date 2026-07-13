@@ -55,8 +55,6 @@
         flex-direction: column;
         width: var(--nav-track);
         height: 100%;
-        /* A little more breathing room at the top and bottom edges than on the
-           sides, so the header and the footer row don't sit on the edge. */
         padding: var(--space-3) var(--space-2);
         border-right: var(--divider);
     }

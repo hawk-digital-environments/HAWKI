@@ -1,4 +1,4 @@
-import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
+import type {HawkiCoreModule, HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
@@ -40,7 +40,7 @@ export function createModuleRegistrar(
         if (moduleRoutes) {
             registeredModule.routes = (registrar: RouteRegistrar) => {
                 registrar.group(
-                    getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin),
+                    getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin, (module as HawkiCoreModule).pluginNameInRoutes),
                     moduleRoutes,
                     {name: getModuleRouteGroupName(plugin.name, module.name)}
                 );

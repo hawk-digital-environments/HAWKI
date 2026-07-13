@@ -23,25 +23,8 @@ use Laravel\Ai\Messages\MessageRole;
 use Psr\Log\LoggerInterface;
 
 /**
- * Factory that creates a {@see ChatAgent} from the legacy frontend request payload format.
- *
- * The legacy format is a plain array with the shape:
- * ```php
- * [
- *     'payload' => [
- *         'model'     => 'gpt-4o',           // required: model slug
- *         'messages'  => [                    // required
- *             ['role' => 'system',    'content' => ['text' => '...']],  // system instructions
- *             ['role' => 'user',      'content' => ['text' => '...', 'attachments' => ['uuid1']]],
- *             ['role' => 'assistant', 'content' => ['text' => '...']],
- *             // ... more turns ...
- *         ],
- *         'params'    => ['temp' => 0.7, 'top_p' => 1.0, 'max_tokens' => 2048],  // optional
- *         'tools'     => ['capability:web_search:auto'],                           // optional
- *         'broadcast' => false,               // optional: true → group storage for attachments
- *     ],
- * ]
- * ```
+ * Factory that creates a {@see ChatAgent} from the legacy frontend request payload format
+ * ({@see LegacyChatRequestPayload} documents the shape).
  *
  * {@see createAgent()} returns `null` for any request that does not match this shape, allowing
  * higher-priority factories registered in {@see AgentRegistry} to claim the request first.
@@ -68,38 +51,30 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
      */
     public function createAgent(mixed $request): AgentInterface|null
     {
-        if (
-            !is_array($request)
-            || !is_array($request['payload'] ?? null)
-            || !is_array($request['payload']['messages'] ?? null)
-            || !is_string($request['payload']['model'] ?? null)
-        ) {
+        $payload = LegacyChatRequestPayload::tryFromRequest($request);
+        if ($payload === null) {
             return null;
         }
 
-        $payload = $request['payload'];
         $model = $this->getModelFromPayload($payload);
         $context = $this->createRequestContext(
             $model,
             $this->getModelParametersFromPayload($payload)
         );
 
-        $instructions = $this->getInstructionsFromPayload($payload);
-        $messages = $this->getMessagesFromPayload($payload, $context);
-
         return new ChatAgent(
             context: $context,
-            instructions: $instructions,
-            messages: $messages,
-            tools: $this->toolResolver->findTools($payload['tools'] ?? [], $context)
+            instructions: $payload->systemInstructions(),
+            messages: $this->getMessagesFromPayload($payload, $context),
+            tools: $this->toolResolver->findTools($payload->tools(), $context)
         );
     }
 
-    private function getModelFromPayload(array $payload): AiModel
+    private function getModelFromPayload(LegacyChatRequestPayload $payload): AiModel
     {
-        $modelId = $payload['model'] ?? null;
-        if (empty($modelId)) {
-            throw new ModelNotInPayloadException($payload);
+        $modelId = $payload->modelId();
+        if ($modelId === '') {
+            throw new ModelNotInPayloadException($payload->toArray());
         }
 
         return $this->modelRepository->findOneOrFail($modelId);
@@ -110,47 +85,33 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
      * an {@see AiModelParameters} instance. Only keys that are present in the payload are set;
      * absent keys fall back to the model's stored defaults downstream.
      */
-    private function getModelParametersFromPayload(array $payload): AiModelParameters
+    private function getModelParametersFromPayload(LegacyChatRequestPayload $payload): AiModelParameters
     {
-        $params = new AiModelParameters();
+        $params = $payload->params();
 
-        if (isset($payload['params']['temp'])) {
-            $params->setTemperature((float)$payload['params']['temp']);
-        }
-        if (isset($payload['params']['top_p'])) {
-            $params->setTopP((float)$payload['params']['top_p']);
-        }
-        if (isset($payload['params']['max_tokens'])) {
-            $params->setMaxTokens((int)$payload['params']['max_tokens']);
-        }
-        if (isset($payload['params']['max_thinking_tokens'])) {
-            $params->setMaxThinkingTokens((int)$payload['params']['max_thinking_tokens']);
-        }
+        $modelParameters = new AiModelParameters();
 
-        return $params;
-    }
-
-    /**
-     * Extracts the system instructions from the first message whose role is "system".
-     *
-     * @throws InvalidLegacyRequestPayloadException when no system message is found.
-     */
-    private function getInstructionsFromPayload(array $payload): string
-    {
-        foreach ($payload['messages'] ?? [] as $message) {
-            if (isset($message['role']) && $message['role'] === 'system' && isset($message['content'])) {
-                return $message['content']['text'];
-            }
+        if (isset($params['temp'])) {
+            $modelParameters->setTemperature((float)$params['temp']);
+        }
+        if (isset($params['top_p'])) {
+            $modelParameters->setTopP((float)$params['top_p']);
+        }
+        if (isset($params['max_tokens'])) {
+            $modelParameters->setMaxTokens((int)$params['max_tokens']);
+        }
+        if (isset($params['max_thinking_tokens'])) {
+            $modelParameters->setMaxThinkingTokens((int)$params['max_thinking_tokens']);
         }
 
-        throw InvalidLegacyRequestPayloadException::forMissingSystemInstructions();
+        return $modelParameters;
     }
 
     /**
      * Converts the payload messages array into a Laravel AI message array suitable for passing
      * to the agent constructor.
      *
-     * System messages are skipped (handled separately via {@see getInstructionsFromPayload()}).
+     * System messages are skipped (handled separately via {@see LegacyChatRequestPayload::systemInstructions()}).
      * Attachment UUIDs are resolved to stored files; missing files are collected as errors on
      * the {@see UserMessageAttachments} instance rather than aborting processing. The resulting
      * message list is fed through {@see AlternatingMessageHistory} to guarantee alternating roles.
@@ -158,12 +119,12 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
      * The `broadcast` flag controls which storage category (group vs. private) is used when
      * resolving attachment UUIDs.
      */
-    private function getMessagesFromPayload(array $payload, AgentRequestContext $context): array
+    private function getMessagesFromPayload(LegacyChatRequestPayload $payload, AgentRequestContext $context): array
     {
-        $storageCategory = ($payload['broadcast'] ?? null) === true ? StoredFileCategory::GROUP : StoredFileCategory::PRIVATE;
+        $storageCategory = $payload->isBroadcast() ? StoredFileCategory::GROUP : StoredFileCategory::PRIVATE;
 
         $history = new AlternatingMessageHistory();
-        foreach ($payload['messages'] ?? [] as $payloadMessage) {
+        foreach ($payload->messages() as $payloadMessage) {
             if (($payloadMessage['role'] ?? null) === 'system') {
                 continue; // Skip system instructions as they are handled separately
             }

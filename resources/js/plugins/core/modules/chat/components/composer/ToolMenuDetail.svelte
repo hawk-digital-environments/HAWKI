@@ -2,10 +2,11 @@
   @component Detail panel for a single tool, shown in place of the tool list inside
   `ToolMenu`'s `DropdownMenuDetailView` when the user clicks a row's info icon.
 
-  Shows the tool's icon/name, a toggle (mirrors the checkbox in `ToolMenuListItem`,
-  wired to the same `entry.onToggle`), a `StatusDotForTool` with its label spelled out,
-  the tool's description, and — for multi-option capabilities — the `ToolMenuConfig`
-  variant picker.
+  Shows the tool's icon on a swatch (the same one `AssistantMenuDetail` gives its emoji)
+  and its name, a toggle (mirrors the checkbox in `ToolMenuListItem`, wired to the same
+  `entry.onToggle`), a `StatusDotForTool` with its label spelled out, the tool's
+  description, and — for multi-option capabilities — the `ToolMenuConfig` variant picker.
+  A `MenuPinButton` sits beside the toggle.
 
   Owns its own keyboard handling (`onDetailKeydown`): because this panel lives inside a
   bits-ui dropdown menu whose roving-tabindex model doesn't fit a sub-panel, Escape/ArrowLeft
@@ -34,6 +35,7 @@
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
     import ToolMenuConfig from '$plugins/core/modules/chat/components/composer/ToolMenuConfig.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
@@ -128,27 +130,30 @@
                     e.stopPropagation();
                     onCloseDetail?.();
                 }}>
-        <ArrowLeft01Icon size={14}/>
+        <ArrowLeft01Icon size={16}/>
         <span>{__('chat.composer.toolMenu.backButton')}</span>
     </button>
 
     <div class="tool-detail-header">
         <span class="tool-detail-title">
-            <ToolIcon tool={entry.tool}/>
+            <ToolIcon tool={entry.tool} swatch/>
             <span class="tool-detail-name">{entry.tool.displayName}</span>
         </span>
-        <button
-            type="button"
-            class="tool-detail-toggle"
-            role="switch"
-            bind:this={toggleEl}
-            aria-label={entry.active ? __('chat.composer.toolMenu.deactivateTool') : __('chat.composer.toolMenu.activateTool')}
-            aria-checked={entry.active ? 'true' : 'false'}
-            disabled={entry.disabled}
-            onpointerdowncapture={(e) => e.stopPropagation()}
-            onclick={toggleActive}>
-            <Switch checked={entry.active} disabled={entry.disabled} presentational/>
-        </button>
+        <span class="tool-detail-actions">
+            <MenuPinButton kind="tool" id={entry.tool.name} variant="detail"/>
+            <button
+                type="button"
+                class="tool-detail-toggle"
+                role="switch"
+                bind:this={toggleEl}
+                aria-label={entry.active ? __('chat.composer.toolMenu.deactivateTool') : __('chat.composer.toolMenu.activateTool')}
+                aria-checked={entry.active ? 'true' : 'false'}
+                disabled={entry.disabled}
+                onpointerdowncapture={(e) => e.stopPropagation()}
+                onclick={toggleActive}>
+                <Switch checked={entry.active} disabled={entry.disabled} presentational/>
+            </button>
+        </span>
     </div>
 
     <div class="tool-detail-status">
@@ -215,6 +220,13 @@
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium, 500);
         color: var(--color-text);
+    }
+
+    .tool-detail-actions {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: var(--space-2, calc(0.25rem * 2));
     }
 
     .tool-detail-toggle {

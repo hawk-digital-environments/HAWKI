@@ -9,6 +9,15 @@
        `#hawki-app` is the SPA root: without it, padded width/height:100%
        boxes overflow their containers and get clipped — e.g. the sidebar's
        .inner (--nav-track + padding) clipped on the right. */
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+    /* Temporary specific targeting, in the future *, *::before, *::after.
+       `#hawki-app` is the SPA root: without it, padded width/height:100%
+       boxes overflow their containers and get clipped — e.g. the sidebar's
+       .inner (--nav-track + padding) clipped on the right. */
     svelte-snippet,
     [id^="bits-"],
     #hawki-app {

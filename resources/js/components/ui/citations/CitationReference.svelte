@@ -79,7 +79,7 @@
         cursor: pointer;
         display: inline-block;
         padding: 0 0.35rem;
-        border-radius: var(--border-radius-tight);
+        border-radius: var(--corner-sm);
         background-color: var(--color-surface-light);
         margin-left: 0.2rem;
         font-size: var(--font-size-xs);

@@ -207,22 +207,39 @@ export class RestApi {
      * Creates a resource via a JSON:API `POST /{resourceType}` request and
      * returns the decoded created resource (`{ id, ...attributes }`).
      *
+     * Pass `options.relationships` for resources whose create/update rules
+     * require a relationship alongside attributes (e.g. a `belongsTo` set on
+     * create) — it's merged into the request document as JSON:API's
+     * `data.relationships`, the same shape `assistantToApi()`-style mappers
+     * already produce.
+     *
      * @example
      * const conversation = await createResource('ai-convs', {name: 'New chat'});
+     * @example
+     * const prompt = await createResource('assistant-user-prompts', {text}, {
+     *     relationships: {assistant: {data: {type: 'assistants', id}}}
+     * });
      */
     public async createResource(
         resourceType: string,
         attributes: Record<string, unknown>,
-        options?: CommonGetResourceOptions
+        options?: CommonGetResourceOptions & { relationships?: Record<string, unknown> }
     ): Promise<any> {
         return this.writeResource('POST', this.uriBuilder.jsonApiUri(resourceType), resourceType, {
-            data: {type: resourceType, attributes}
+            data: {
+                type: resourceType,
+                attributes,
+                ...(options?.relationships ? {relationships: options.relationships} : {})
+            }
         }, options);
     }
 
     /**
      * Updates a resource via a JSON:API `PATCH /{resourceType}/{id}` request and
      * returns the decoded updated resource (`{ id, ...attributes }`).
+     *
+     * Pass `options.relationships` to update relationships alongside
+     * attributes in the same request — see {@link createResource}.
      *
      * @example
      * await updateResource('ai-convs', slug, {name: 'Renamed chat'});
@@ -231,10 +248,15 @@ export class RestApi {
         resourceType: string,
         id: string | number,
         attributes: Record<string, unknown>,
-        options?: CommonGetResourceOptions
+        options?: CommonGetResourceOptions & { relationships?: Record<string, unknown> }
     ): Promise<any> {
         return this.writeResource('PATCH', this.uriBuilder.jsonApiUri(resourceType, id.toString()), resourceType, {
-            data: {type: resourceType, id: id.toString(), attributes}
+            data: {
+                type: resourceType,
+                id: id.toString(),
+                attributes,
+                ...(options?.relationships ? {relationships: options.relationships} : {})
+            }
         }, options);
     }
 
@@ -346,7 +368,14 @@ export class RestApi {
         return await this.fetch(url, {
             method: 'POST',
             body: data instanceof FormData ? data : JSON.stringify(data),
-            ...options
+            ...options,
+            headers: {
+                // Custom actions still live under the JSON:API server prefix, which
+                // rejects write requests with any other content type — same reason
+                // writeResource() sets this for plain create/update.
+                ...(data instanceof FormData ? {} : {'Content-Type': 'application/vnd.api+json'}),
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
         });
     }
 
@@ -376,7 +405,11 @@ export class RestApi {
         return await this.fetch(url, {
             method: 'PATCH',
             body: data instanceof FormData ? data : JSON.stringify(data),
-            ...options
+            ...options,
+            headers: {
+                ...(data instanceof FormData ? {} : {'Content-Type': 'application/vnd.api+json'}),
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
         });
     }
 

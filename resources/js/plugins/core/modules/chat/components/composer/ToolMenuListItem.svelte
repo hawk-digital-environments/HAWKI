@@ -1,6 +1,9 @@
 <!--
   @component A single toggleable tool row inside `ToolMenuList`'s `DropdownMenuCheckboxItem`
-  list. The whole row toggles the tool (checkbox semantics, wired to `entry.onToggle`); a
+  list: the tool's icon on a swatch, its name, and its description truncated to one line —
+  the same row shape the composer's `/` menu shows via `ToolRow`.
+
+  The whole row toggles the tool (checkbox semantics, wired to `entry.onToggle`); a
   separate info button on the right — tinted by status (available/warning/error) — opens
   `ToolMenuDetail` for that tool instead, stopping propagation so it never also toggles.
 
@@ -24,8 +27,8 @@
     import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import {useToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
     import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
-    import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
+    import MenuPinButton from '$plugins/core/modules/chat/components/composer/MenuPinButton.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
@@ -109,14 +112,12 @@
     class="tool-menu-item">
     {#snippet children(checked)}
         <span class="tool-item-main">
-            <ToolIcon tool={entry.tool}/>
-            <span class="tool-item-label">{entry.tool.displayName}</span>
-            <span class="tool-item-check">
-                {#if checked}
-                    <Tick02Icon size={12}/>
-                {/if}
+            <ToolIcon tool={entry.tool} swatch checked={checked}/>
+            <span class="tool-item-text">
+                <span class="tool-item-label">{entry.tool.displayName}</span>
+                <span class="tool-item-description">{entry.tool.description}</span>
             </span>
-
+            <MenuPinButton kind="tool" id={entry.tool.name}/>
             <button
                 type="button"
                 class={['tool-item-info', `tool-item-info--${status}`]}
@@ -135,7 +136,7 @@
                     supported={entry.available}
                     tooltipSuffix={__('chat.composer.toolMenu.clickForInfo')}
                 />
-                <ArrowRight01Icon size={10}/>
+                <ArrowRight01Icon size={16}/>
             </button>
 
         </span>
@@ -150,7 +151,7 @@
     /* The whole row toggles the tool, so signal it as clickable. */
     :global(.dropdown-checkbox-item.tool-menu-item) {
         cursor: pointer;
-        /* Check now lives in the row flow, so drop the reserved right padding. */
+        /* Check now lives on the icon swatch, so drop the reserved right padding. */
         padding-right: var(--space-2, calc(0.25rem * 2));
     }
 
@@ -158,19 +159,9 @@
         cursor: not-allowed;
     }
 
-    /* Built-in absolute check is replaced by the in-flow one below. */
+    /* Built-in absolute check is replaced by the one laid over the icon swatch. */
     :global(.dropdown-checkbox-item.tool-menu-item .dropdown-item-indicator) {
         display: none;
-    }
-
-    .tool-item-check {
-        display: inline-flex;
-        flex-shrink: 0;
-        align-items: center;
-        justify-content: center;
-        width: calc(0.25rem * 3.5);
-        height: calc(0.25rem * 3.5);
-        color: var(--color-text);
     }
 
     .tool-item-main {
@@ -181,12 +172,34 @@
         flex: 1;
     }
 
-    .tool-item-label {
+    .tool-item-text {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
         flex: 1;
+    }
+
+    /* Leading is set on the lines themselves, not the column: the menu row sets its own,
+       and an inherited value loses to it. Matches `ToolRow` in the `/` menu. */
+    .tool-item-label,
+    .tool-item-description {
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        line-height: var(--line-height-tight);
+    }
+
+    .tool-item-description {
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xs);
+    }
+
+    /* The pin only shows on the row the user is pointing at (a pinned row keeps its own
+       button visible), so the list stays quiet when nothing is being aimed at. */
+    :global(.dropdown-checkbox-item.tool-menu-item:hover .menu-pin-button),
+    :global(.dropdown-checkbox-item.tool-menu-item:focus-within .menu-pin-button) {
+        opacity: 1;
     }
 
     .tool-item-info {
@@ -202,7 +215,13 @@
         line-height: 0;
         color: var(--color-text-muted);
         cursor: pointer;
-        transition: color var(--duration-fast, 150ms), opacity var(--duration-fast, 150ms);
+    }
+
+    /* The chevron takes the same semantic color as the dot beside it (`StatusDot` maps
+       online/unknown/offline to success/warning/error), so the pair reads as one signal
+       instead of a tinted dot next to a grey arrow. */
+    .tool-item-info--available {
+        color: var(--color-success, var(--color-text-muted));
     }
 
     .tool-item-info--warning {
@@ -211,14 +230,5 @@
 
     .tool-item-info--error {
         color: var(--color-error, var(--color-text-muted));
-    }
-
-    .tool-item-info--available:hover {
-        color: var(--color-text);
-    }
-
-    .tool-item-info--warning:hover,
-    .tool-item-info--error:hover {
-        opacity: 0.75;
     }
 </style>

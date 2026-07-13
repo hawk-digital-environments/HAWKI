@@ -12,8 +12,7 @@
     import type {Attachment} from 'svelte/attachments';
     import type {HTMLButtonAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {slide} from 'svelte/transition';
-    import {cubicOut} from 'svelte/easing';
+    import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
     import {useMenuList} from '$lib/components/ui/menu-list/MenuListContext.svelte.js';
     import MenuListItem from '$lib/components/ui/menu-list/MenuListItem.svelte';
@@ -162,7 +161,7 @@
 </MenuListItem>
 
 {#if showChildren}
-    <div class="subtree" transition:slide={{duration: 120, easing: cubicOut}}>
+    <div class="subtree" transition:growTransition>
         {@render children?.()}
     </div>
 {/if}

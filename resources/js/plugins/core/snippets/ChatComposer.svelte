@@ -33,6 +33,8 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import FilePicker from '$plugins/core/modules/chat/components/composer/FilePicker.svelte';
     import ToolMenu from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
     import ToolChips from '$plugins/core/modules/chat/components/composer/ToolChips.svelte';
+    import AssistantMenu from '$plugins/core/modules/chat/components/composer/AssistantMenu.svelte';
+    import MentionChips from '$plugins/core/modules/chat/components/composer/MentionChips.svelte';
     import ComposerActionButtons from '$plugins/core/modules/chat/components/composer/ComposerActionButtons.svelte';
 
     interface Props {
@@ -87,6 +89,21 @@ Rendered once per page for either an AI conversation or a group room chat (see
     let toolPickerOpen = $state(false);
 
     const hasFiles = $derived(chatContext.attachments.list.length > 0);
+
+    const aiHandleStore = useStore('ai-handle');
+
+    // Model and settings belong to HAWKI itself: an assistant brings its own model and
+    // configuration, so tagging one hides both controls. Nothing tagged (a 1:1 AI chat, or
+    // regen in a room) still counts as addressing HAWKI.
+    const isAssistant = $derived(
+        chatContext.handlesInMessage.some(handle => handle !== aiHandleStore.hawkiHandle)
+    );
+    const showHawkiControls = $derived(chatContext.guard.showsAiUiElements && !isAssistant);
+
+    // Whether the top row has anything in it at all. In a room it does not until the message
+    // addresses someone: no tags, and no model/settings controls either. An AI conversation
+    // always shows the controls, so the row is open there from the start.
+    const hasTopRowContent = $derived(showHawkiControls || chatContext.handlesInMessage.length > 0);
 
     async function handleSend() {
         const status = chatContext.send();
@@ -157,21 +174,60 @@ Rendered once per page for either an AI conversation or a group room chat (see
                         {@render dragOverlay()}
                         <div class="chat-composer-body" class:chat-composer-body--hidden={isDragging}>
                             <ModePanel/>
-                            <!-- Upper row: model selector (left) + settings (right) -->
-                            <div class="chat-composer-top-row">
-                                {#if chatContext.guard.showsAiUiElements}
-                                    <!-- Left: model controls -->
-                                    <div class="chat-composer-left" transition:growTransition>
-                                        {#if experiments.isEnabled('modelPickerV2')}
-                                            <ModelPickerV2/>
-                                        {:else}
-                                            <ModelPicker/>
-                                        {/if}
-                                    </div>
+                            <!--
+                                 Upper row: model selector (left) + settings (right). In a room
+                                 it stands empty until the message addresses someone, so tagging
+                                 the first assistant is what gives the card a top row at all —
+                                 and that is a 2rem step in the composer's height. It unrolls
+                                 like the file chips and the conflict panel further down instead
+                                 of snapping open. The row element itself stays mounted and keeps
+                                 the block padding, so an untagged composer still rests at
+                                 exactly the height it always had.
 
-                                    <!-- Right: settings -->
-                                    <div class="chat-composer-right" transition:growTransition>
-                                        <SettingsMenu/>
+                                 Everything inside is created together with this block, so the
+                                 tag's and the picker's own transitions sit the first open out —
+                                 they are local, and on the way in there is nothing beside them
+                                 yet to glide aside. They play as before once the row is open and
+                                 only its contents change, e.g. swapping HAWKI for a study
+                                 assistant.
+                            -->
+                            <div class="chat-composer-top-row">
+                                {#if hasTopRowContent}
+                                    <!-- Springier than the default swing, which at this size
+                                         lands under a pixel past and so reads as a plain slide.
+                                         Opting in here rather than raising the default: this row
+                                         is a 2rem step that the whole card follows, where the
+                                         settle is worth seeing, while most of the other grows are
+                                         single controls easing sideways. -->
+                                    <div class="chat-composer-top-row-content" transition:growTransition={{overshoot: 1.3}}>
+                                        <!-- Left: model controls. In a room the picker only appears
+                                             once the message actually addresses the AI — until then
+                                             there is no model to choose. Tagging HAWKI keeps the
+                                             picker, sitting right next to the chip; a study assistant
+                                             brings its own model, so only its chip remains. -->
+                                        <div class="chat-composer-left">
+                                            <MentionChips/>
+                                            {#if showHawkiControls}
+                                                <!-- Collapsed rather than dropped: tagging a study
+                                                     assistant swaps the picker for that chip, and both
+                                                     halves of the row should move at the same time —
+                                                     the settings group on the right already does. -->
+                                                <div class="chat-composer-model" transition:growTransition={{mode: 'horizontal'}}>
+                                                    {#if experiments.isEnabled('modelPickerV2')}
+                                                        <ModelPickerV2/>
+                                                    {:else}
+                                                        <ModelPicker/>
+                                                    {/if}
+                                                </div>
+                                            {/if}
+                                        </div>
+
+                                        {#if showHawkiControls}
+                                            <!-- Right: settings -->
+                                            <div class="chat-composer-right" transition:growTransition>
+                                                <SettingsMenu/>
+                                            </div>
+                                        {/if}
                                     </div>
                                 {/if}
                             </div>
@@ -198,6 +254,7 @@ Rendered once per page for either an AI conversation or a group room chat (see
                             <div class="chat-composer-bottom-row">
                                 <div class="chat-bottom-left">
                                     <FilePicker/>
+                                    <AssistantMenu/>
                                     <ToolMenu bind:open={toolPickerOpen}/>
                                     <div class="chat-tool-chip-lane">
                                         <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
@@ -257,6 +314,16 @@ Rendered once per page for either an AI conversation or a group room chat (see
         box-shadow: 0 0 0 2px var(--color-focus-ring);
     }
 
+    /*
+      One height for every pill in the card — the model picker, the assistant tags next to
+      it, and the tool chips in the bottom row. Each of those otherwise derives its own
+      height from its padding and line box, which is how the picker ended up 1.6px shorter
+      than a tag sitting right beside it. Declared here so all three read the same number.
+    */
+    .chat-composer-body {
+        --chat-composer-control-height: 2rem;
+    }
+
     /* Keep the body in flow so the card preserves its height, but hide it
            behind the drop hint. */
     .chat-composer-body--hidden {
@@ -265,20 +332,37 @@ Rendered once per page for either an AI conversation or a group room chat (see
 
     /* ── Top row ──────────────────────────────────────────────────────── */
 
+    /* Holds nothing but the padding that frames the row, so it survives the collapse: the
+       block below is what grows and shrinks, and an empty row keeps its usual 12px rather
+       than pulling the card's top edge down onto the text. */
     .chat-composer-top-row {
+        padding-inline: var(--space-2, calc(0.25rem * 2));
+        padding-top: var(--space-2, calc(0.25rem * 2));
+        padding-bottom: 4px;
+    }
+
+    .chat-composer-top-row-content {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: var(--space-2);
-        padding-inline: var(--space-2, calc(0.25rem * 2));
-        padding-top: var(--space-2, calc(0.25rem * 2));
-        padding-bottom: 4px;
     }
 
     .chat-composer-left {
         display: flex;
         align-items: center;
         gap: calc(0.25rem * 1.5);
+        min-width: 0;
+        /* Several tagged assistants wrap onto a second line instead of squeezing the
+           model picker or pushing the settings button off the row. */
+        flex-wrap: wrap;
+    }
+
+    /* Carries the picker's collapse, so `min-width` has to pass through it for the
+       truncation below to still bite. */
+    .chat-composer-model {
+        display: flex;
+        align-items: center;
         min-width: 0;
     }
 

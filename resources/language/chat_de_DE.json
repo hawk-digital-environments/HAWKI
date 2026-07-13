@@ -95,10 +95,6 @@
                 "file_too_large": "Die Datei „:name“ ist zu groß. Maximal erlaubt sind :maxSize.",
                 "unknown_file": "Unbekannt"
             },
-            "assistantButtonTooltip": {
-                "addHandle": "Mit HAWKI sprechen",
-                "removeHandle": "Nicht mehr mit HAWKI sprechen"
-            },
             "systemPromptDialog": {
                 "title": "Systemprompt bearbeiten",
                 "description": "Der Systemprompt definiert das Verhalten des Modells für diese Sitzung.",
@@ -170,7 +166,38 @@
                     "webSearchDescription": "Dieses Tool ermöglicht es der KI, das Internet zu durchsuchen, um aktuelle Informationen zu finden. Es kann Suchanfragen stellen und relevante Ergebnisse liefern, die in die Antworten der KI einfließen.",
                     "knowledgeBase": "HAWKI-Wissen",
                     "knowledgeBaseDescription": "Dieses Tool ermöglicht es der KI, auf eine umfangreiche Wissensdatenbank zuzugreifen, die speziell für HAWKI entwickelt wurde. Die Daten werden von deiner Hochschule zur Verfügung gestellt und enthalten Informationen zu Kursen, Veranstaltungen, Richtlinien und vielem mehr."
-                }
+                },
+                "searchPlaceholder": "Werkzeuge suchen",
+                "noResults": "Keine passenden Werkzeuge"
+            },
+            "assistantMenu": {
+                "title": "Assistenz taggen",
+                "tagAssistant": "KI-Assistenz taggen (@)",
+                "backButton": "Assistenten",
+                "tagAssistantAction": "Assistenz taggen",
+                "untagAssistantAction": "Tag entfernen",
+                "infoDefault": "Weitere Informationen zur Assistenz anzeigen",
+                "hawkiLabel": "HAWKI",
+                "studyAssistantsLabel": "Assistenten",
+                "assistants": {
+                    "hawki": "HAWKI",
+                    "hawkiDescription": "Die allgemeine HAWKI-Assistenz für diesen Raum",
+                    "tutor": "Tutor",
+                    "tutorDescription": "Erklärt Kursthemen Schritt für Schritt",
+                    "research": "Recherche",
+                    "researchDescription": "Findet und fasst Literatur und Quellen zusammen",
+                    "writing": "Schreiben",
+                    "writingDescription": "Hilft bei Struktur, Stil und Zitation",
+                    "exam": "Prüfungsvorbereitung",
+                    "examDescription": "Erstellt Übungsfragen und Quizze",
+                    "code": "Programmieren",
+                    "codeDescription": "Erklärt und überprüft Code aus deinen Aufgaben"
+                },
+                "searchPlaceholder": "Assistenten suchen",
+                "noResults": "Keine passenden Assistenten"
+            },
+            "mentionChips": {
+                "removeAriaLabel": ":assistant aus der Nachricht entfernen"
             },
             "modelPicker": {
                 "switchModel": "Aktuelles Modell wechseln",
@@ -248,6 +275,11 @@
             "sending": {
                 "responseError": "Fehler beim Verarbeiten der Antwort.",
                 "sendError": "Fehler beim Senden der Nachricht."
+            },
+            "pin": {
+                "pinnedLabel": "Angeheftet",
+                "pin": "Oben in diesem Menü anheften",
+                "unpin": "Nicht mehr anheften"
             }
         }
     }

@@ -1,0 +1,36 @@
+<script lang="ts">
+    import type {ChatMessage} from "../types";
+    import TextPart from "./parts/TextPart.svelte";
+    import ReasoningPart from "./parts/ReasoningPart.svelte";
+    import ToolCallPart from "./parts/ToolCallPart.svelte";
+
+    let {message} = $props<{ message: ChatMessage }>();
+</script>
+
+<div class="ai-message">
+    {#each message.parts as part, i (i)}
+        {#if part.type === "text"}
+            <TextPart text={part.text} streaming={message.streaming}/>
+        {:else if part.type === "reasoning"}
+            <ReasoningPart text={part.text}/>
+        {:else if part.type === "tool-call"}
+            <ToolCallPart name={part.name}/>
+        {/if}
+    {/each}
+    {#if message.streaming && message.parts.length === 0}
+        <span class="pending">…</span>
+    {/if}
+</div>
+
+<style>
+    .ai-message {
+        padding: .5rem .75rem;
+        background: var(--color-message-ai);
+        border: var(--border);
+        border-radius: var(--corner-md);
+    }
+
+    .pending {
+        color: var(--color-text-muted);
+    }
+</style>

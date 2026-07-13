@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Announcements\Announcement;
 use App\Models\Announcements\AnnouncementUser;
+use App\Models\Assistants\Assistant;
 use App\Models\Scopes\Generic\ActiveFilterScope;
 use App\Models\Scopes\KnownUsersAccessScope;
 use App\Policies\UserPolicy;
@@ -91,6 +92,33 @@ class User extends Authenticatable
         $this->update(['isRemoved' => 1]);
     }
 
+    /**
+     * @return BelongsToMany<Organization, $this>
+     */
+    public function organizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class, 'organization_user')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<Assistant, $this>
+     */
+    public function favoriteAssistants(): BelongsToMany
+    {
+        return $this->belongsToMany(Assistant::class, 'assistant_favorite_users')
+            ->withTimestamps();
+    }
+
+    /**
+     * @return BelongsToMany<Assistant, $this>
+     */
+    public function sharedAssistants(): BelongsToMany
+    {
+        return $this->belongsToMany(Assistant::class, 'assistant_shared_users')
+            ->withTimestamps();
+    }
 
     // SECTION: ANNOUNCEMENTS
 

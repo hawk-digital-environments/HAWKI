@@ -110,8 +110,10 @@
         --color-interactive-active: oklch(72% 0 0);
         --color-focus-ring: var(--color-accent-dark-300);
         --color-accent-text: oklch(80% 0.11 240);
-        --color-accent-fill: oklch(25.9% 0.103 272.4);
-        --color-accent-fill-hover: oklch(31.2% 0.128 272.4);
+        /*--color-accent-fill: oklch(25.9% 0.103 272.4);*/
+        /*--color-accent-fill-hover: oklch(31.2% 0.128 272.4);*/
+        --color-accent-fill: #151b54;
+        --color-accent-fill-hover: #1e2570;
 
         /* Active/hover rows track the blue button accent fill, slightly translucent. */
         --color-active-surface: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
@@ -160,6 +162,7 @@
         --color-message-ai: oklch(20% 0 0);
 
         --color-hover: color-mix(in oklab, var(--color-accent-fill) 70%, transparent);
+        --color-surface-light: oklch(32% 0 0);
         --color-border: oklch(31% 0 0);
         --color-border-strong: oklch(74% 0 0);
         --color-text: oklch(93% 0 0);

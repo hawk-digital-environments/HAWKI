@@ -34,6 +34,9 @@ export {
     createRouterFromRegistrar,
     type CreateRouterOptions,
     type IsActiveOptions,
+    type NavigationGuard,
+    type NavigationGuardContext,
+    type NavigationVerdict,
     type Router,
     type RouterHandle
 } from '$lib/components/ui/routing/logistics/router.js';

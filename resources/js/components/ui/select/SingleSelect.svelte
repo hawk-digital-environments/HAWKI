@@ -321,6 +321,29 @@
 
     :global(.select-viewport) {
         padding: 0;
+        /*
+          Keyboard navigation moves bits-ui's highlight and calls `scrollIntoView` on the
+          item, which honours the scrollport's own CSS — so the animation and the breathing
+          room around the item are set here rather than in JS. The scroll padding keeps a
+          highlighted item at either end of the list off the content's padding edge, instead
+          of flush against the popover border, and the extra row of lead makes a run of
+          arrow presses scroll in fewer, larger steps.
+
+          The lead is sized to the *shorter* of the two item variants (the desktop row: an
+          `xs` line box plus its block padding). The sheet's rows are taller, so there it
+          reveals a little less than a full row — undershooting the neighbour is harmless,
+          whereas a lead taller than the row would scroll past it.
+        */
+        --select-item-height-min: calc(var(--font-size-xs) * var(--line-height-normal) + var(--space-1) * 2);
+
+        scroll-behavior: smooth;
+        scroll-padding-block: calc(var(--space-2) + var(--select-item-height-min));
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        :global(.select-viewport) {
+            scroll-behavior: auto;
+        }
     }
 
     :global(.select-group-label) {

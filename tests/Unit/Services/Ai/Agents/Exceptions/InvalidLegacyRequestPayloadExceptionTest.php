@@ -16,27 +16,14 @@ class InvalidLegacyRequestPayloadExceptionTest extends TestCase
 
     public function testItIsInvalidArgumentException(): void
     {
-        $sut = InvalidLegacyRequestPayloadException::forMissingSystemInstructions();
+        $sut = InvalidLegacyRequestPayloadException::forMessageMissingFields();
         static::assertInstanceOf(\InvalidArgumentException::class, $sut);
     }
 
     public function testItImplementsAgentExceptionInterface(): void
     {
-        $sut = InvalidLegacyRequestPayloadException::forMissingSystemInstructions();
+        $sut = InvalidLegacyRequestPayloadException::forMessageMissingFields();
         static::assertInstanceOf(AgentExceptionInterface::class, $sut);
-    }
-
-    // =========================================================================
-    // forMissingSystemInstructions
-    // =========================================================================
-
-    public function testItForMissingSystemInstructionsMatchesExpectedMessage(): void
-    {
-        $sut = InvalidLegacyRequestPayloadException::forMissingSystemInstructions();
-        static::assertSame(
-            'No system instructions found in messages payload.',
-            $sut->getMessage()
-        );
     }
 
     // =========================================================================

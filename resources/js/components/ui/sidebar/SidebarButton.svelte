@@ -23,9 +23,7 @@
     const sidebar = useSidebar();
     const collapsed = $derived(!sidebar.navOpen);
 
-    // The rail row still spans the full panel width, so a tooltip anchored to
-    // the button would open a row's width away from the icon it describes.
-    // Anchor it to the icon instead.
+    // Anchor it to the icon. The rail row still spans the full panel width. 
     let iconEl = $state<HTMLElement | null>(null);
 </script>
 
@@ -101,15 +99,9 @@
     .label {
         overflow: hidden;
         text-overflow: ellipsis;
-        /* Out fast, in late — the text is gone well before the rail is narrow
-           enough to squeeze it, and only returns once there is room again. */
         transition: opacity 160ms ease 100ms;
     }
 
-    /* Icon-only rail. The padding is deliberately unchanged: the icon keeps
-       the exact same offset from the panel edge in both states, so it never
-       drifts sideways while the column animates. The label fades out and is
-       clipped by the panel instead of being pulled from the flow. */
     .sidebar-button.collapsed .label {
         opacity: 0;
         pointer-events: none;

@@ -42,12 +42,19 @@
 </Loader>
 
 <style>
-    :global(html, body) {
+    /* `#hawki-app` is created by `index.blade.php`; give it, and its ancestors, the
+       height chain a full-height page (or the boot loader) needs to size against the
+       viewport. The `:has()` guard keeps this off the legacy Blade pages, which share
+       the same `html`/`body` but never contain the mount node. */
+    :global(html:has(#hawki-app)),
+    :global(body:has(#hawki-app)) {
         margin: 0;
         height: 100%;
     }
 
     :global(#hawki-app) {
+        display: flex;
+        flex-direction: column;
         height: 100%;
     }
 </style>

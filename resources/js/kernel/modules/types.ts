@@ -59,3 +59,13 @@ export interface HawkiModule {
 export interface HawkiModuleWithPlugin extends HawkiModule {
     readonly plugin: HawkiPluginWithMetadata;
 }
+
+/** A module of a core plugin that keeps its plugin name in route prefixes
+ *  (see {@link getModuleRoutePrefix}). */
+export interface HawkiCoreModule extends HawkiModule {
+    readonly pluginNameInRoutes?: boolean;
+}
+
+export interface HawkiCoreModuleWithPlugin extends HawkiCoreModule {
+    readonly plugin: HawkiPluginWithMetadata;
+}

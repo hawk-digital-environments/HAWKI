@@ -12,7 +12,6 @@
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/index.js';
-    import { fade } from 'svelte/transition';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import type {HTMLAttributes} from 'svelte/elements';
 
@@ -74,6 +73,7 @@
     }
 
     function newChat() {
+        if (sidebar.mobile) sidebar.navOpen = false;
         store.startNew();
         void router.goToRoute('chat.index');
     }

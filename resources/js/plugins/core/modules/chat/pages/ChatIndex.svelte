@@ -164,10 +164,20 @@ from the store's in-flight cache.
     @keyframes spin { to { transform: rotate(360deg); } }
 
     @media (--bp-sm-and-smaller) {
-        .messages { padding-inline: var(--space-3); padding-top: var(--space-5); }
+        .messages { padding-inline: var(--space-3); }
+    }
+
+    /* Mobile: the floating nav toggle overlays the content top, so the message
+       list and the empty-state welcome reserve room to clear it (toggle inset +
+       height + gap) while still letting content scroll up under the
+       SidebarContent fade overlay. */
+    @media (--bp-md-and-smaller) {
+        .messages { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
+        .empty :global(.welcome) { padding-top: calc(var(--space-2_5) + var(--nav-row-h) + var(--space-2)); }
     }
 
     @media print {
+        :global(.app-sidebar) { display: none !important; }
         .chat-page, .chat-body, .scroll-region { display: block; height: auto; overflow: visible; }
     }
 </style>

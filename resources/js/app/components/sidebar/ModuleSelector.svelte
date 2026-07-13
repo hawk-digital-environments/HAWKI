@@ -10,6 +10,7 @@
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte';
     import {useRouter} from '$lib/components/ui/routing/index.js';
     import {getModuleRouteGroupName, getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
+    import type {HawkiCoreModule} from '$lib/kernel/modules/types.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
 
     const sidebar = useSidebar();
@@ -21,28 +22,52 @@
     const { translate } = useTranslator();
     const locale = $derived(app.localization.locale);
 
-    const moduleItems: CommandItemDefinition[] = $derived(modules.map((v) => {
-        const icon = v.icon?.(locale);
-        return {
-            label: v.title?.(translate, locale) ?? v.name,
-            value: `${v.plugin.name}:${v.name}`,
-            // The palette renders icons as components; a string (URL) icon has no slot here.
-            icon: typeof icon === 'string' ? undefined : icon as IconComponent | undefined
-        };
-    }));
+    // Only modules that declare a title appear in the selector — modules
+    // without one (e.g. the assistants builder, which belongs to the
+    // "Assistants" entry's sidebar) stay reachable through their routes.
+    const moduleItems: CommandItemDefinition[] = $derived(
+        modules
+            .filter((v) => typeof v.title === 'function')
+            .map((v) => {
+                const icon = v.icon?.(locale);
+                return {
+                    label: v.title!(translate, locale),
+                    value: `${v.plugin.name}:${v.name}`,
+                    // The palette renders icons as components; a string (URL) icon has no slot here.
+                    icon: typeof icon === 'string' ? undefined : icon as IconComponent | undefined
+                };
+            })
+    );
 
     let open = $state(false);
 
     const current = $derived.by(() => {
         const module = modules.find(candidate =>
             router.isRouteActive(getModuleRouteGroupName(candidate.plugin.name, candidate.name)));
-        return module ? `${module.plugin.name}:${module.name}` : moduleItems[0]?.value;
+        if (module && typeof module.title === 'function') {
+            return `${module.plugin.name}:${module.name}`;
+        }
+        // The active module is a titled-module-less companion (e.g. the
+        // assistants builder): show its plugin's titled module instead.
+        if (module) {
+            const titled = modules.find(candidate =>
+                candidate.plugin.name === module.plugin.name && typeof candidate.title === 'function');
+            if (titled) {
+                return `${titled.plugin.name}:${titled.name}`;
+            }
+        }
+        return moduleItems[0]?.value;
     });
 
     function selectModule(moduleId: string) {
         const module = modules.find(candidate => `${candidate.plugin.name}:${candidate.name}` === moduleId);
         if (!module) return;
-        const prefix = getModuleRoutePrefix(module.plugin.name, module.name, module.plugin.isCorePlugin);
+        const prefix = getModuleRoutePrefix(
+            module.plugin.name,
+            module.name,
+            module.plugin.isCorePlugin,
+            (module as HawkiCoreModule).pluginNameInRoutes
+        );
         void router.goTo(router.p(prefix));
     }
 

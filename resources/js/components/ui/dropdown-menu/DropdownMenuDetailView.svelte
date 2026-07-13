@@ -32,7 +32,7 @@
 
     import {type Snippet} from 'svelte';
     import {Spring} from 'svelte/motion';
-    import {fly} from 'svelte/transition';
+    import {drillTransition} from '$lib/utils/transitions/drillTransition';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
 
@@ -90,15 +90,15 @@
     {#if open}
         <div class="view"
              bind:clientHeight={detailHeight}
-             in:fly={{x: 16, duration: 150}}
-             out:fly={{x: 16, duration: 150}}>
+             in:drillTransition={{distance: 16, duration: 150}}
+             out:drillTransition={{distance: 16, duration: 150}}>
             {@render details?.()}
         </div>
     {:else}
         <div class="view"
              bind:clientHeight={defaultHeight}
-             in:fly={{x: -16, duration: 150}}
-             out:fly={{x: -16, duration: 150}}>
+             in:drillTransition={{direction: 'back', distance: 16, duration: 150}}
+             out:drillTransition={{direction: 'back', distance: 16, duration: 150}}>
             {@render children?.()}
         </div>
     {/if}

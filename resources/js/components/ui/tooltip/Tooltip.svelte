@@ -51,6 +51,13 @@
         /** If true, the tooltip will not open on hover/focus. */
         disabled?: boolean;
         /**
+         * CSS `max-width` for the tooltip bubble, e.g. `'400px'` or
+         * `'calc(100vw - var(--space-8))'`. Inline, so it overrides the shared
+         * 300px cap from the `.tooltip-content` rule; when unset, that CSS
+         * default applies.
+         */
+        maxWidth?: string;
+        /**
          * If false, the trigger is removed from the tab order. Use this for decorative
          * tooltips nested inside another focusable control (a status dot inside a button,
          * for example) — without it every such tooltip adds its own tab stop.
@@ -78,6 +85,7 @@
         sideOffset = 4,
         open = $bindable(false),
         disabled,
+        maxWidth,
         focusable = true,
         hiddenLabel,
         ...restProps
@@ -149,7 +157,7 @@
         </TooltipPrimitive.Trigger>
         <TooltipPrimitive.Portal>
             <TooltipPrimitive.Content
-                {...mergeProps({class: 'tooltip-content', side, sideOffset}, restProps) as TooltipContentProps}
+                {...mergeProps({class: 'tooltip-content', side, sideOffset, style: maxWidth ? {'max-width': maxWidth} : undefined}, restProps) as TooltipContentProps}
             >
                 <SnippetOrString value={tooltip}/>
             </TooltipPrimitive.Content>

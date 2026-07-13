@@ -91,6 +91,10 @@
     /* Combine with .select-trigger so these win over SingleSelect's own
        resting/hover backgrounds regardless of style injection order. */
     :global(.select-trigger.chat-model-trigger) {
+        /* Pinned rather than left to the line box: the trigger's text sits at the inherited
+           1.5 line-height, which lands a couple of pixels short of the assistant tags it
+           shares the row with. Includes the border, since everything here is border-box. */
+        height: var(--chat-composer-control-height, 2rem);
         gap: var(--space-0_5);
         /* Lighter-than-surface neutral fill so the darker --color-hover below
            reads as a visible hover (the SingleSelect default is the slightly

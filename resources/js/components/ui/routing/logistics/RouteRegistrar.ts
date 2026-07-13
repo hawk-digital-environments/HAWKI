@@ -412,8 +412,12 @@ export class RouteRegistrar {
     public group(path: string, callback: RouteRegistrationCallback, options?: RouteGroupOptions) {
         if (this.groups.has(path)) {
             const existingGroup = this.groups.get(path)!;
+            // Capture the previous callback before overwriting it — calling
+            // `existingGroup.children` inside the wrapper would recurse into
+            // the wrapper itself.
+            const previousChildren = existingGroup.children;
             existingGroup.children = (registrar) => {
-                existingGroup.children(registrar);
+                previousChildren(registrar);
                 callback(registrar);
             };
             return this;
