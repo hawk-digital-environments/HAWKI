@@ -42,10 +42,11 @@
     "require-dev": {
         "ergebnis/php-cs-fixer-config": "^6.61",
         "fakerphp/faker": "^1.24.1",
-        "laravel-json-api/testing": "^3.2",
         "friendsofphp/php-cs-fixer": "^3.95",
         "larastan/larastan": "^3.9",
+        "laravel-json-api/testing": "^3.2",
         "laravel/sail": "^1.46.0",
+        "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8.2",
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.0.1",

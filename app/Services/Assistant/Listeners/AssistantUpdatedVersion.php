@@ -1,0 +1,76 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Assistant\Listeners;
+
+use App\Events\AssistantUpdated;
+use App\Services\Assistant\Values\AssistantReleaseStage;
+use Illuminate\Contracts\Config\Repository as ConfigRepository;
+
+class AssistantUpdatedVersion
+{
+    public function __construct(private readonly ConfigRepository $config)
+    {
+    }
+
+    public function handle(AssistantUpdated $event): void
+    {
+        if ($event->assistant->release_stage === AssistantReleaseStage::DRAFT->value) {
+            return;
+        }
+
+        /** @var int $seconds */
+        $seconds = (int) $this->config->get('assistant.assistant_versions.debounce_seconds', 10);
+
+        $latest = $event->assistant->assistantVersions()->latest('version')->first();
+
+        // Sliding window: if the most recent version was touched within the
+        // debounce window, merge this change into it. The update refreshes
+        // updated_at, which extends the window for the next change.
+        if (null !== $latest && now()->subSeconds($seconds) <= $latest->updated_at) {
+            $keys = $this->mergeKeys($latest->changed_keys ?? [], $event->changedKeys);
+
+            $latest->update([
+                'changed_keys' => $keys,
+                'text' => $this->encodeText($keys),
+            ]);
+
+            return;
+        }
+
+        $lastVersion = $event->assistant->assistantVersions()->max('version') ?? 0.0;
+
+        $event->assistant->assistantVersions()->create([
+            'text' => $this->encodeText($event->changedKeys),
+            'version' => $lastVersion + 1.0,
+            'changed_keys' => $event->changedKeys,
+        ]);
+    }
+
+    /**
+     * @param array<int, string> $existing
+     * @param array<int, string> $incoming
+     *
+     * @return array<int, string>
+     */
+    private function mergeKeys(array $existing, array $incoming): array
+    {
+        $merged = array_unique(array_merge(
+            array_map('strval', $existing),
+            array_map('strval', $incoming),
+        ));
+
+        sort($merged);
+
+        return $merged;
+    }
+
+    /**
+     * @param array<int, string> $keys
+     */
+    private function encodeText(array $keys): string
+    {
+        return json_encode(['changes' => $keys], \JSON_THROW_ON_ERROR);
+    }
+}

@@ -10,7 +10,9 @@ use App\Http\Middleware\PreventBackHistory;
 use App\Http\Middleware\RegistrationAccess;
 use App\Http\Middleware\SessionExpiryChecker;
 use App\Http\Middleware\TokenCreationCheck;
-use App\Services\System\Http\Exceptions\SsrfBlockedException;
+use App\JsonApi\V1\Server;
+use App\Services\Ai\Streaming\AgentStreamer;
+use App\Services\Ai\Streaming\AgentStreamerInterface;
 use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
 use App\Services\System\Time\CarbonClock;
@@ -23,9 +25,8 @@ use App\Utils\Arrays\RecursiveMerger;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Console\Scheduling\Event;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Foundation\Application;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
@@ -34,6 +35,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
+use LaravelJsonApi\Core\Support\AppResolver;
 use Psr\Clock\ClockInterface;
 
 
@@ -47,6 +49,21 @@ class AppServiceProvider extends ServiceProvider
         $this->registerMiddlewareAliases();
         $this->registerDisablingGlobalScopesForEloquentUserProvider();
         $this->registerClockForInterface();
+        $this->registerJsonApiServer();
+        $this->registerAssistantServices();
+    }
+
+    private function registerJsonApiServer(): void
+    {
+        $this->app->singleton(Server::class, static fn (Application $app) => new Server(
+            new AppResolver(static fn () => $app),
+            'v1',
+        ));
+    }
+
+    private function registerAssistantServices(): void
+    {
+        $this->app->singleton(AgentStreamerInterface::class, AgentStreamer::class);
     }
 
     /**
