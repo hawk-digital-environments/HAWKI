@@ -8,7 +8,6 @@ namespace App\Models\Scopes\Traits;
 use App\Http\Middleware\SystemContextBootingMiddleware;
 use App\Models\User;
 use App\Services\System\Container\SystemEnvironment;
-use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Http\Request;
 
 trait UserAwareScopeTrait
@@ -22,7 +21,7 @@ trait UserAwareScopeTrait
     public function initializeUserAwareScopeTrait(SystemEnvironment $environment): void
     {
         $this->uast_isRunningInConsole = $environment->runningInConsole();
-        $this->uast_currentUserResolver = static fn(Guard $auth) => $auth->user();
+        $this->uast_currentUserResolver = static fn(Request $request) => $request->user();
         $this->uast_onNoUser = static function () {
             tracee();
             abort(403, sprintf("No authenticated user found for applying scope: '%s'.", class_basename(static::class)));
