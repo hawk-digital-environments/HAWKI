@@ -55,4 +55,18 @@ class UserAwareScopeTraitTest extends TestCase
     {
         self::assertNull($this->sut->exposeCurrentUser());
     }
+
+    public function testItResolvesUserInConsoleWhereRequestHasNoUserResolver(): void
+    {
+        // Console reality: unlike the HTTP lifecycle, the request's user-resolver is NOT
+        // wired to the auth manager. A command sets the user directly on the guard via
+        // auth()->setUser() (see CreateSanctumTokenForUser:82). Undo setUp()'s HTTP-style
+        // wiring so we reproduce a real console request.
+        $this->app['request']->setUserResolver(static fn ($guard = null) => null);
+
+        $user = User::factory()->create();
+        $this->app['auth']->setUser($user);
+
+        self::assertSame($user, $this->sut->exposeCurrentUser());
+    }
 }
