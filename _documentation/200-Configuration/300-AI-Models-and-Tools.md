@@ -416,5 +416,5 @@ For further details on individual components see:
 - [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) — current provider adapter implementation
 - [Backend → Provider Adapters](../500-Backend/500-AI-Service-Layer/100-Provider-Adapters.md) — `ProviderAdapterInterface` and `ProviderAdapterRegistry`
 - [Model Configuration Variables](200-Model-Configuration-Variables.md) — environment variable reference for fine-grained model control
-- [dot Env](100-dot-Env.md) — complete `.env` reference
+- [dot Env](100-Dot-Env.md) — complete `.env` reference
 - [HAWKI CLI](700-HAWKI-CLI.md) — full CLI command reference

@@ -516,6 +516,6 @@ MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD=true
 ## Related Documentation
 
 - [AI Models & Tools](300-AI-Models-and-Tools.md) — complete architecture guide for models and tools, including MCP servers and function-calling tools
-- [dot Env Configuration](100-dot-Env.md) — complete `.env` reference
+- [dot Env Configuration](100-Dot-Env.md) — complete `.env` reference
 - [HAWKI CLI](700-HAWKI-CLI.md) — CLI command reference
 - [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) — provider adapter and model enrichment implementation
