@@ -27,7 +27,26 @@ class FileStorageConverterTypesList extends Command
      * Execute the console command.
      */
     public function handle(FileConverterInterface $converter): void
-    {
+    {   
+
+        $config = app()->get('config');
+
+        $converterType = $config->get('file_converter.default');
+        $converterConfig = $config->get("file_converter.converters.$converterType");
+        if(empty($converterConfig['class'])){
+            $this -> warn("No converter class configured for '{$converterType}'.");
+            return;
+        }
+        $converterClass = $converterConfig["class"];
+
+        if(!$converterClass::isValidConfig($converterConfig)){
+            $this -> warn("Converter config for '{$converterType}'");
+            return;
+        }
+
+        $converter = app()->make($converterClass, ['config' => $converterConfig]);
+        $converter->setConfig($converterConfig);
+
         if (!$converter->isAvailable()) {
             $this->warn('No file converter is currently installed or available.');
             return;

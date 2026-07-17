@@ -9,6 +9,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+use function PHPUnit\Framework\assertSame;
+
 #[CoversClass(UrlResolver::class)]
 class UrlResolverTest extends TestCase
 {
@@ -99,5 +101,27 @@ class UrlResolverTest extends TestCase
         $result = UrlResolver::resolve('invalid-base', 'https://example.com/page.html');
 
         static::assertSame('https://example.com/page.html', $result);
+    }
+
+    public static function urlsToReturnBase(): iterable
+    {
+        yield [
+            'http://example.com/page',
+            'http://example.com'
+        ];
+                yield [
+            'example.com/page',
+            'example.com'
+        ];
+        yield [
+            'http://example.com/page/nested/with?=123&swe',
+            'http://example.com'
+        ];
+    }
+
+    #[DataProvider('urlsToReturnBase')]
+    public function testItCreatesBAse(string $givenUrl, string $expectedBase): void
+    {
+        static::assertSame($expectedBase, UrlResolver::baseUrl($givenUrl));
     }
 }
