@@ -294,7 +294,9 @@ which will be shown directly to the user. If the message is already good, just r
         }
         // If the model failed, we will show the user and return the original message so that the user can try again.
         if (done && result.includes('[NOT_IMPROVED]')) {
-            window.oldUiBridge.triggerSendToast(result.replace('[NOT_IMPROVED]', '').trim(), 'error');
+            window.oldUiBridge.triggerSendToast(window.__('chat.composer.actions.improvementModelSaidNoError'), 'error');
+            // Give ourselves a bit more logging context if someone complains in the future.
+            console.warn('Prompt improvement model said no: ', result);
             result = message;
         }
     };

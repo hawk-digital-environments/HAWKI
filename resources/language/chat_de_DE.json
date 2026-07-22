@@ -161,6 +161,7 @@
                 "cancelEdit": "Bearbeitung abbrechen",
                 "cancelResponse": "KI-Antwort abbrechen",
                 "improvementError": "Verbesserungsvorschläge konnten nicht geladen werden",
+                "improvementModelSaidNoError": "Deine Message ist gut. Keine Verbesserungsvorschläge verfügbar.",
                 "improveTooltip": "Verbessere deine Eingabe mit KI-gestützten Vorschlägen",
                 "cancelLabel": "Abbrechen"
             },

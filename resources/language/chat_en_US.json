@@ -161,6 +161,7 @@
                 "cancelEdit": "Cancel editing",
                 "cancelResponse": "Cancel AI response",
                 "improvementError": "Could not load improvement suggestions",
+                "improvementModelSaidNoError": "Your message is good as it is. No improvements suggested.",
                 "improveTooltip": "Improve your input with AI-powered suggestions",
                 "cancelLabel": "Cancel"
             },
