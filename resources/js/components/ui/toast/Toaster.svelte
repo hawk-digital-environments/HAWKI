@@ -162,7 +162,7 @@
         padding: var(--space-3, 0.75rem) var(--space-3, 0.75rem);
         border-radius: var(--corner-md);
         border: none;
-        background-color: color-mix(in oklch, var(--toast-color) 12%, var(--color-surface-raised));
+        background-color: color-mix(var(--toast-color) 20%, var(--color-surface-raised));
         color: var(--color-text);
         font-size: 0.875rem;
         pointer-events: auto;
