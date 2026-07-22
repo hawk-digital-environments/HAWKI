@@ -30,10 +30,12 @@
             target.value = '';
         }
         isAdding = false;
+        composerContext.focusInput();
     }
 
     function handleCancel() {
         isAdding = false;
+        composerContext.focusInput();
     }
 </script>
 
