@@ -67,4 +67,39 @@ class AbstractFileConverterTest extends TestCase
         static::assertFalse($sut->wouldLikeSomeoneElseToConvertMimetype('image/svg+xml'));
         static::assertFalse($sut->wouldLikeSomeoneElseToConvertMimetype(''));
     }
+
+    // =========================================================================
+    // getRequestTimeout
+    // =========================================================================
+
+    public function testItGetRequestTimeoutUsesDefaultWhenConfigHasNoTimeout(): void
+    {
+        $sut = new ConcreteFileConverterStub();
+        $sut->setConfig(['api_url' => 'http://example.com']);
+
+        static::assertSame(60, $sut->exposeRequestTimeout());
+    }
+
+    public function testItGetRequestTimeoutUsesDefaultWhenConfigNeverSet(): void
+    {
+        $sut = new ConcreteFileConverterStub();
+
+        static::assertSame(60, $sut->exposeRequestTimeout());
+    }
+
+    public function testItGetRequestTimeoutUsesConfiguredTimeoutWhenSet(): void
+    {
+        $sut = new ConcreteFileConverterStub();
+        $sut->setConfig(['api_url' => 'http://example.com', 'timeout' => 12]);
+
+        static::assertSame(12, $sut->exposeRequestTimeout());
+    }
+
+    public function testItGetRequestTimeoutCastsNonIntConfigValueToInt(): void
+    {
+        $sut = new ConcreteFileConverterStub();
+        $sut->setConfig(['timeout' => '120']);
+
+        static::assertSame(120, $sut->exposeRequestTimeout());
+    }
 }

@@ -1,10 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
+// @php-cs-fixer-ignore error_suppression
 
 namespace App\Services\FileConverter\Utils;
 
-
+use App\Services\FileConverter\Interfaces\FileConverterExtensionInterface;
 use App\Services\FileConverter\Interfaces\FileConverterInterface;
 use App\Services\Storage\Values\FileCollection;
 use App\Services\Storage\Values\FileReference;
@@ -28,20 +30,19 @@ use Symfony\Component\Mime\MimeTypes;
  * All binary paths are configurable via {@see \App\Providers\FileConverterServiceProvider}
  * and the `file_converter.binaries` config key.
  */
-readonly class ImagePreProcessingConverter implements FileConverterInterface
+readonly class ImagePreProcessingConverter implements FileConverterExtensionInterface
 {
     private array $imagickMimeTypes;
     private array $imagickGhostscriptMimeTypes;
 
     public function __construct(
         private FileConverterInterface $concreteConverter,
-        private LoggerInterface        $logger,
-        private Repository             $cache,
-        private string                 $rsvgConvertBinary = 'rsvg-convert',
-        private string                 $imageMagickBinary = 'convert',
-        private string                 $ghostscriptBinary = 'gs',
-    )
-    {
+        private LoggerInterface $logger,
+        private Repository $cache,
+        private string $rsvgConvertBinary = 'rsvg-convert',
+        private string $imageMagickBinary = 'convert',
+        private string $ghostscriptBinary = 'gs',
+    ) {
         $mime = new MimeTypes();
         $this->imagickGhostscriptMimeTypes = array_merge(
             $mime->getMimeTypes('ai'),
@@ -70,6 +71,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
             // Check if rsvg-convert is installed on the machine
             $found = exec('which ' . escapeshellarg($this->rsvgConvertBinary)) !== '';
             $this->logger->debug('SVG conversion tool found: ' . ($found ? 'yes' : 'no'));
+
             return $found;
         });
     }
@@ -86,6 +88,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         return $this->cache->remember('common-image-format-extractor.hasImagemagickCli', 60 * 60 * 24, function () {
             $found = exec('which ' . escapeshellarg($this->imageMagickBinary)) !== '';
             $this->logger->debug('ImageMagick CLI conversion tool found: ' . ($found ? 'yes' : 'no'));
+
             return $found;
         });
     }
@@ -101,25 +104,13 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         return $this->cache->remember('common-image-format-extractor.hasGhostscriptCli', 60 * 60 * 24, function () {
             $found = exec('which ' . escapeshellarg($this->ghostscriptBinary)) !== '';
             $this->logger->debug('Ghostscript CLI tool found: ' . ($found ? 'yes' : 'no'));
+
             return $found;
         });
     }
 
     /**
-     * Returns the ImageMagick-supported MIME types that are currently available,
-     * excluding PostScript-based formats when Ghostscript is not installed.
-     */
-    private function getAvailableImagickMimeTypes(): array
-    {
-        $types = $this->imagickMimeTypes;
-        if ($this->canConvertWithGhostscript()) {
-            $types = array_merge($types, $this->imagickGhostscriptMimeTypes);
-        }
-        return $types;
-    }
-
-    /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public static function isValidConfig(array $config): bool
     {
@@ -127,7 +118,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function setConfig(array $config): void
     {
@@ -135,7 +126,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function convert(FileReference $file): FileCollection
     {
@@ -153,7 +144,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
 
         if ($shouldUsePreProcessor
             && $this->canConvertWithImagick()
-            && in_array($file->getMimeType(), $this->getAvailableImagickMimeTypes(), true)
+            && \in_array($file->getMimeType(), $this->getAvailableImagickMimeTypes(), true)
         ) {
             return $this->convertWithImagick($file);
         }
@@ -163,6 +154,77 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         }
 
         return new FileCollection();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function isAvailable(): bool
+    {
+        return $this->canConvertSvg() || $this->canConvertWithImagick() || $this->concreteConverter->isAvailable();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getAllowedMimeTypes(): array
+    {
+        $types = [];
+        $mime = new MimeTypes();
+
+        if ($this->canConvertSvg()) {
+            $types = array_merge($types, $mime->getMimeTypes('svg'));
+        }
+
+        if ($this->canConvertWithImagick()) {
+            $types = array_merge($types, $this->getAvailableImagickMimeTypes());
+        }
+
+        return array_unique(array_merge(
+            $types,
+            $this->concreteConverter->getAllowedMimeTypes(),
+        ));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function canConvertMimetype(string $mimetype): bool
+    {
+        $mimeTypes = $this->getAllowedMimeTypes();
+
+        return \in_array($mimetype, $mimeTypes, true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function wouldLikeSomeoneElseToConvertMimetype(string $mimetype): bool
+    {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getInnerConverter(): FileConverterInterface
+    {
+        return $this->concreteConverter;
+    }
+
+    /**
+     * Returns the ImageMagick-supported MIME types that are currently available,
+     * excluding PostScript-based formats when Ghostscript is not installed.
+     */
+    private function getAvailableImagickMimeTypes(): array
+    {
+        $types = $this->imagickMimeTypes;
+
+        if ($this->canConvertWithGhostscript()) {
+            $types = array_merge($types, $this->imagickGhostscriptMimeTypes);
+        }
+
+        return $types;
     }
 
     /**
@@ -178,7 +240,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         $pngPath = sys_get_temp_dir() . '/' . uniqid('converted_', true) . '.png';
 
         // Automatically clean up the temporary files after the request is complete
-        register_shutdown_function(static function () use ($svgPath, $pngPath) {
+        register_shutdown_function(static function () use ($svgPath, $pngPath): void {
             @unlink($svgPath);
             @unlink($pngPath);
         });
@@ -186,10 +248,10 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         $result = exec(
             escapeshellarg($this->rsvgConvertBinary) . ' -u -f png -o ' . escapeshellarg($pngPath) . ' ' . escapeshellarg($svgPath) . ' 2>&1',
             $output,
-            $returnVar
+            $returnVar,
         );
 
-        if ($returnVar !== 0) {
+        if (0 !== $returnVar) {
             $this->logger->error('Failed to convert SVG to JPG', [
                 'svgPath' => $svgPath,
                 'pngPath' => $pngPath,
@@ -199,7 +261,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
             ]);
         }
 
-        $filenameWithoutExt = pathinfo($file->getOriginalFilename(), PATHINFO_FILENAME);
+        $filenameWithoutExt = pathinfo($file->getOriginalFilename(), \PATHINFO_FILENAME);
         $extractFilename = $filenameWithoutExt . '.png';
         $pngRef = FileReference::fromDisk($pngPath, $extractFilename);
         $results = [$pngRef];
@@ -212,6 +274,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
                 'result' => $result,
                 'returnVar' => $returnVar,
             ]);
+
             return new FileCollection();
         }
 
@@ -236,7 +299,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
     private function convertWithImagick(FileReference $file): FileCollection
     {
         // Write the source to a temp file so the CLI tool can read it.
-        $ext = pathinfo($file->getOriginalFilename(), PATHINFO_EXTENSION) ?: 'bin';
+        $ext = pathinfo($file->getOriginalFilename(), \PATHINFO_EXTENSION) ?: 'bin';
         $inputPath = sys_get_temp_dir() . '/' . uniqid('imagick_in_', true) . '.' . $ext;
         file_put_contents($inputPath, $file->getContent());
 
@@ -251,7 +314,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
 
         exec($cmd . ' 2>&1', $output, $returnVar);
 
-        if ($returnVar !== 0) {
+        if (0 !== $returnVar) {
             $this->logger->error('Failed to convert file with ImageMagick CLI', [
                 'inputPath' => $inputPath,
                 'outputPattern' => $outputPattern,
@@ -259,6 +322,7 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
                 'returnVar' => $returnVar,
             ]);
             @unlink($inputPath);
+
             return new FileCollection();
         }
 
@@ -273,16 +337,18 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
                 'output' => $output,
             ]);
             @unlink($inputPath);
+
             return new FileCollection();
         }
 
         $filesToCleanUp = [$inputPath, ...$outputFiles];
-        $filenameWithoutExt = pathinfo($file->getOriginalFilename(), PATHINFO_FILENAME);
+        $filenameWithoutExt = pathinfo($file->getOriginalFilename(), \PATHINFO_FILENAME);
         $results = [];
         $idx = 0;
+
         foreach ($outputFiles as $outputFile) {
             $extractFilename = $filenameWithoutExt . '-' . $idx . '.jpg';
-            $idx++;
+            ++$idx;
             $jpgRef = FileReference::fromDisk($outputFile, $extractFilename);
             $results[] = $jpgRef;
 
@@ -293,60 +359,12 @@ readonly class ImagePreProcessingConverter implements FileConverterInterface
         }
 
         // Automatically clean up the temporary files after the request is complete
-        register_shutdown_function(static function () use ($filesToCleanUp) {
+        register_shutdown_function(static function () use ($filesToCleanUp): void {
             foreach ($filesToCleanUp as $file) {
                 @unlink($file);
             }
         });
 
         return new FileCollection(...$results);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function isAvailable(): bool
-    {
-        return $this->canConvertSvg() || $this->canConvertWithImagick() || $this->concreteConverter->isAvailable();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getAllowedMimeTypes(): array
-    {
-        $types = [];
-        $mime = new MimeTypes();
-        if ($this->canConvertSvg()) {
-            $types = array_merge($types, $mime->getMimeTypes('svg'));
-        }
-
-        if ($this->canConvertWithImagick()) {
-            $types = array_merge($types, $this->getAvailableImagickMimeTypes());
-        }
-
-        return array_unique(
-            array_merge(
-                $types,
-                $this->concreteConverter->getAllowedMimeTypes()
-            )
-        );
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function canConvertMimetype(string $mimetype): bool
-    {
-        $mimeTypes = $this->getAllowedMimeTypes();
-        return in_array($mimetype, $mimeTypes, true);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function wouldLikeSomeoneElseToConvertMimetype(string $mimetype): bool
-    {
-        return false;
     }
 }

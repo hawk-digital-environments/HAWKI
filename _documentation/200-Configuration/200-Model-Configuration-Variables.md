@@ -232,7 +232,7 @@ File upload requires a working converter:
 
 ```bash
 FILE_CONVERTER=hawki_converter
-HAWKI_FILE_CONVERTER_API_URL=127.0.0.1:8001/extract
+HAWKI_FILE_CONVERTER_API_URL=127.0.0.1/extract
 HAWKI_FILE_CONVERTER_API_KEY=your-key
 
 # Or use GWDG Docling:

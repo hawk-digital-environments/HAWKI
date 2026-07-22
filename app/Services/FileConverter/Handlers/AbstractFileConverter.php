@@ -51,4 +51,15 @@ abstract class AbstractFileConverter implements FileConverterInterface
     {
         return false;
     }
+
+    /**
+     * Resolves the HTTP timeout (in seconds) applied to the converter's main conversion request.
+     *
+     * Returns the per-converter `timeout` config value when present, otherwise falls back to
+     * the 60-second default.
+     */
+    protected function getRequestTimeout(): int
+    {
+        return isset($this->config['timeout']) ? (int) $this->config['timeout'] : 60;
+    }
 }

@@ -83,7 +83,9 @@ class KreuzbergConverter extends AbstractFileConverter
                 'files',
                 $file->getStream(),
                 $file->getOriginalFilename()
-            )->post(
+            )
+                ->timeout($this->getRequestTimeout())
+                ->post(
                 $this->config['api_url'] . '/extract',
                 [
                     'config' => json_encode(
