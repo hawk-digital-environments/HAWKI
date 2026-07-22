@@ -342,6 +342,9 @@ class StreamController extends Controller
         }
 
         // Record usage
+        // The "private" here is crap. Because this may not be a private request, but for example a group chat export.
+        // However, I would have to pass a lot of additional data to resolve this properly.
+        // For now this is fine and in the future we should generally clean up the token tracking.
         $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
 
         return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
