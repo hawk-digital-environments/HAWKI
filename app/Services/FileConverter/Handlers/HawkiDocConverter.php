@@ -41,7 +41,7 @@ class HawkiDocConverter extends AbstractFileConverter {
     {
         return $this->cache->remember(
             key: $this->cacheKey,
-            ttl: (new Carbon($this-> clock->now()))->addDay(),
+            ttl: (new Carbon($this->clock->now()))->addDay(),
             callback: function () {
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $this->config['api_key'],
