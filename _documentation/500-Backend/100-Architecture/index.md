@@ -74,7 +74,7 @@ readonly class AiService
         #[Config('hawki.aiHandle')]
         private string $aiHandle,
         private Psr\Log\LoggerInterface $logger,
-        private Psr\Clock\ClockInterface $clock,
+        private App\Services\System\Time\CarbonClockInterface $clock,
     ) {}
 }
 ```
@@ -86,9 +86,11 @@ readonly class AiService
 | Config value | `#[Config('section.key')] string $value`                |
 | Cache        | `#[Cache] Illuminate\Contracts\Cache\Repository $cache` |
 | Logging      | `Psr\Log\LoggerInterface $logger`                       |
-| Current time | `Psr\Clock\ClockInterface $clock`                       |
+| Current time | `App\Services\System\Time\CarbonClockInterface $clock`  |
 
 `now()`, `Carbon::now()`, and `new \DateTime()` are banned in services, repositories, and value objects. They make time non-deterministic in tests.
+
+`CarbonClockInterface` extends the PSR-20 `Psr\Clock\ClockInterface` but types `now()` to return `CarbonImmutable` instead of a plain `DateTimeImmutable`, so services get Carbon's API without an extra cast. Both interfaces are bound to the same `CarbonClock` singleton (see `AppServiceProvider::registerClockForInterface()`); inject `Psr\Clock\ClockInterface` instead only when a class needs to stay framework/PSR-agnostic (e.g. shared library code).
 
 ## ServiceLocatorTrait (API Resources only)
 

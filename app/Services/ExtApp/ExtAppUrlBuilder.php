@@ -7,7 +7,7 @@ namespace App\Services\ExtApp;
 
 use App\Models\ExtApp;
 use App\Services\ExtApp\Config\ExtAppConfig;
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClock;
 use GuzzleHttp\Psr7\Uri;
 use Illuminate\Contracts\Routing\UrlGenerator;
 
@@ -20,7 +20,7 @@ readonly class ExtAppUrlBuilder
     public function __construct(
         private UrlGenerator $urlGenerator,
         private ExtAppConfig $config,
-        private Clock        $clock = new Clock(),
+        private CarbonClock  $clock = new CarbonClock(),
     )
     {
     }

@@ -8,7 +8,7 @@ use App\Models\ExtApp;
 use App\Services\ExtApp\Config\ExtAppConfig;
 use App\Services\ExtApp\Repositories\ExtAppRepository;
 use App\Services\Frontend\Connection\Values\ExtAppConnectRequestPayload;
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClock;
 use Carbon\Carbon;
 use Hawk\HawkiCrypto\SymmetricCrypto;
 use Hawk\HawkiCrypto\Value\SymmetricCryptoValue;
@@ -27,7 +27,7 @@ readonly class ConnectRequestCrypto
         private ExtAppConfig     $config,
         private SymmetricCrypto  $crypto,
         private ExtAppRepository $extAppRepository,
-        private Clock            $clock = new Clock()
+        private CarbonClock      $clock = new CarbonClock()
     )
     {
     }

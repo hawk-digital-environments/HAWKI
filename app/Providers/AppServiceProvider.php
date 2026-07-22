@@ -13,7 +13,8 @@ use App\Http\Middleware\TokenCreationCheck;
 use App\Services\System\Http\Exceptions\SsrfBlockedException;
 use App\Services\System\Http\SsrfSafeGetterMacro;
 use App\Services\System\ScheduleWithDynamicIntervalFactory;
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClock;
+use App\Services\System\Time\CarbonClockInterface;
 use App\Services\System\UsageTypes\UsageContext;
 use App\Services\System\UserTypes\UserContext;
 use App\Services\Translation\LocaleService;
@@ -208,6 +209,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerClockForInterface(): void
     {
-        $this->app->singleton(ClockInterface::class, static fn() => new Clock());
+        $this->app->singleton(ClockInterface::class, static fn() => new CarbonClock());
+        $this->app->singleton(CarbonClockInterface::class, static fn() => new CarbonClock());
     }
 }

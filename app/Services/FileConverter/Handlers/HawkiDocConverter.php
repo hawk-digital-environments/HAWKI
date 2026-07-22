@@ -3,56 +3,54 @@ declare(strict_types=1);
 
 namespace App\Services\FileConverter\Handlers;
 
+use App\Services\FileConverter\Exception\ConversionFailedException;
 use App\Services\Storage\Values\FileCollection;
 use App\Services\Storage\Values\FileReference;
 use App\Services\System\Http\UrlResolver;
-use Carbon\Carbon;
+use App\Services\System\Time\CarbonClockInterface;
+use Exception;
 use Illuminate\Cache\Repository;
 use Illuminate\Support\Facades\Http;
-use Psr\Clock\ClockInterface;
-use App\Services\FileConverter\Exception\ConversionFailedException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Symfony\Component\Mime\MimeTypes;
 use ZipArchive;
-use Symfony\Component\Mime\MimeTypes;use Symfony\Component\Clock\Clock;
-use Exception;
 
 
-class HawkiDocConverter extends AbstractFileConverter {
-
+class HawkiDocConverter extends AbstractFileConverter
+{
     /**
      * Cached information supplied by service endpoint.
      */
     protected string $cacheKey = "hawki_converter_service_info";
 
     public function __construct(
-        private readonly Repository $cache,
-        private readonly ClockInterface $clock = new Clock()   
-    ) {
+        private readonly Repository           $cache,
+        private readonly CarbonClockInterface $clock
+    )
+    {
 
     }
 
     /**
-     * Collects and returns a cached version of the service description endpoint of the 
+     * Collects and returns a cached version of the service description endpoint of the
      * HAWKI file converter endpoint (`/`
-     * @return array  
+     * @return array
      */
     protected function getServiceInfo(): array
     {
         return $this->cache->remember(
             key: $this->cacheKey,
-            ttl: (new Carbon($this->clock->now()))->addDay(),
+            ttl: $this->clock->now()->addDay(),
             callback: function () {
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer ' . $this->config['api_key'],
                     'Accept' => 'application/json',
                 ])->get(UrlResolver::baseUrl($this->config['api_url']));
-                $serviceInfo = $response->json();
-                return $serviceInfo;
+                return (array)$response->json();
             }
         );
     }
-
 
     /**
      * Returns the MIME types accepted by the HAWKI converter.
@@ -62,14 +60,12 @@ class HawkiDocConverter extends AbstractFileConverter {
     public function getAllowedMimeTypes(): array
     {
         $mime = new MimeTypes();
-        
-        $getMimeTypesFromFileExt = fn(string $fileExt): array => $mime->getMimeTypes(ltrim($fileExt,  '.'));
 
-        $mimeTypes = array_values(array_unique(array_merge(
+        $getMimeTypesFromFileExt = fn(string $fileExt): array => $mime->getMimeTypes(ltrim($fileExt, '.'));
+
+        return array_values(array_unique(array_merge(
             ...array_map($getMimeTypesFromFileExt, $this->getServiceInfo()["supported_formats"]
         ))));
-        
-        return $mimeTypes;
     }
 
     /**
@@ -80,7 +76,7 @@ class HawkiDocConverter extends AbstractFileConverter {
     {
         return true;
     }
-    
+
     /**
      * @inheritDoc
      * Requires both a valid `api_url` and a non-empty `api_key`.
@@ -99,8 +95,8 @@ class HawkiDocConverter extends AbstractFileConverter {
      * then removes the temp file. Throws {@see ConversionFailedException} when the archive
      * cannot be opened.
      *
-     * @param string $zipContent  Raw binary content of the ZIP archive.
-     * @param string $extractToDirectory  Absolute path to an existing directory.
+     * @param string $zipContent Raw binary content of the ZIP archive.
+     * @param string $extractToDirectory Absolute path to an existing directory.
      */
     public function unzipContent(string $zipContent, string $extractToDirectory): bool
     {
