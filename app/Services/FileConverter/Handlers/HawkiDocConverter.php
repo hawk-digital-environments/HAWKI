@@ -34,7 +34,7 @@ class HawkiDocConverter extends AbstractFileConverter
 
     /**
      * Collects and returns a cached version of the service description endpoint of the
-     * HAWKI file converter endpoint (`/`
+     * HAWKI file converter endpoint (`/`). The returned array contains a `supported_formats` key with an array of supported file extensions.
      * @return array
      */
     protected function getServiceInfo(): array
@@ -47,7 +47,10 @@ class HawkiDocConverter extends AbstractFileConverter
                     'Authorization' => 'Bearer ' . $this->config['api_key'],
                     'Accept' => 'application/json',
                 ])->get(UrlResolver::baseUrl($this->config['api_url']));
-                return (array)$response->json();
+                return (array)array_merge(
+                    ['supported_formats' => []],
+                    $response->json() ?? []
+                );
             }
         );
     }
@@ -64,8 +67,11 @@ class HawkiDocConverter extends AbstractFileConverter
         $getMimeTypesFromFileExt = fn(string $fileExt): array => $mime->getMimeTypes(ltrim($fileExt, '.'));
 
         return array_values(array_unique(array_merge(
-            ...array_map($getMimeTypesFromFileExt, $this->getServiceInfo()["supported_formats"]
-        ))));
+            ...array_map(
+                $getMimeTypesFromFileExt,
+                $this->getServiceInfo()["supported_formats"]
+            )
+        )));
     }
 
     /**
