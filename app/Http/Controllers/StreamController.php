@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\Chat\Events\RoomAiWritingEndedEvent;
-use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Events\RoomMessageEvent;
 use App\Jobs\SendMessage;
 use App\Models\Ai\AiModel;
 use App\Models\Room;
 use App\Services\Ai\AiService;
 use App\Services\Ai\UsageAnalyzerService;
+use App\Services\Chat\Events\RoomAiWritingEndedEvent;
+use App\Services\Chat\Events\RoomAiWritingStartedEvent;
 use App\Services\Chat\Message\Handlers\GroupMessageHandler;
 use App\Services\ExternalContent\CitationUrlCleaner;
 use App\Services\Storage\AvatarStorageService;
@@ -158,6 +158,10 @@ class StreamController extends Controller
             });
 
             return response()->json(['success' => true]);
+        }
+
+        if ($validatedData['payload']['stream'] === false) {
+            return response()->json($this->handleNonStreamingRequest($validatedData));
         }
 
         try {
@@ -315,6 +319,32 @@ class StreamController extends Controller
         }
 
         $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
+    }
+
+    /**
+     * Handle a non-streaming request that is not part of a group chat.
+     * This is used for the "export" feature, or any other feature that requires a single response from the AI agent without streaming.
+     */
+    private function handleNonStreamingRequest(array $validatedData): array
+    {
+        try {
+            $agent = $this->aiService->getAgent($validatedData);
+            $res = $agent->send();
+        } catch (RequestException $e) {
+            $this->logger->error('RequestException while sending request to agent', [
+                'exception' => $e,
+                'response' => $e->response->body()
+            ]);
+            return ['success' => false, 'error' => 'There was an error while sending your request to the AI agent. Please try again later.'];
+        } catch (\Throwable $e) {
+            $this->logger->error('Unexpected error while sending request to agent', ['exception' => $e]);
+            return ['success' => false, 'error' => 'There was an unexpected error while processing your request. Please try again later.'];
+        }
+
+        // Record usage
+        $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
+
+        return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
     }
 
     /**
