@@ -209,7 +209,7 @@ class AppServiceProvider extends ServiceProvider
 
     private function registerClockForInterface(): void
     {
-        $this->app->singleton(ClockInterface::class, static fn() => new CarbonClock());
         $this->app->singleton(CarbonClockInterface::class, static fn() => new CarbonClock());
+        $this->app->alias(CarbonClockInterface::class, ClockInterface::class);
     }
 }
