@@ -136,7 +136,7 @@ At this point, the project is transferred to the server, but you may encounter a
 ### Configuration
 
 To configure the environment variable open `.env` file in the root directory.
-For a complete guide to environment variables please refer to [.env section](../200-Configuration/100-dot-Env.md) of the
+For a complete guide to environment variables please refer to [.env section](../200-Configuration/100-Dot-Env.md) of the
 documentation.
 
 > <details>
