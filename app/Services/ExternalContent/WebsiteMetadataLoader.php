@@ -9,7 +9,7 @@ use App\Services\ExternalContent\Events\ResolvingWebsiteMetadataFilterEvent;
 use App\Services\ExternalContent\Events\WebsiteMetadataResolvedFilterEvent;
 use App\Services\ExternalContent\Values\WebsiteMetadata;
 use App\Services\System\Http\UrlResolver;
-use App\Services\System\Time\CarbonClock;
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Support\Str;
@@ -44,11 +44,11 @@ use Psr\Log\LoggerInterface;
 readonly class WebsiteMetadataLoader
 {
     public function __construct(
-        private UrlGenerator    $urlGenerator,
-        private ProxyClient     $client,
-        private Repository      $cache,
-        private LoggerInterface $logger,
-        private CarbonClock     $clock = new CarbonClock()
+        private UrlGenerator         $urlGenerator,
+        private ProxyClient          $client,
+        private Repository           $cache,
+        private LoggerInterface      $logger,
+        private CarbonClockInterface $clock
     )
     {
     }

@@ -8,7 +8,7 @@ namespace App\Services\ExternalContent;
 use App\Services\ExternalContent\Events\FaviconResolvedFilterEvent;
 use App\Services\ExternalContent\Events\ResolvingFaviconFilterEvent;
 use App\Services\ExternalContent\Values\ResolvedExternalImage;
-use App\Services\System\Time\CarbonClock;
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Contracts\Cache\Repository;
 use Psr\Log\LoggerInterface;
 
@@ -39,10 +39,10 @@ use Psr\Log\LoggerInterface;
 readonly class FavIconProxy
 {
     public function __construct(
-        private ProxyClient     $client,
-        private Repository      $cache,
-        private LoggerInterface $logger,
-        private CarbonClock     $clock = new CarbonClock()
+        private ProxyClient          $client,
+        private Repository           $cache,
+        private LoggerInterface      $logger,
+        private CarbonClockInterface $clock
     )
     {
     }
