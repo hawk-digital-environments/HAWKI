@@ -157,7 +157,7 @@ services:
             nofile:
                 soft: 65536
                 hard: 65536
-        restart: no
+        restart: always
         volumes:
             - mysql_data:/var/lib/mysql
         ports:
