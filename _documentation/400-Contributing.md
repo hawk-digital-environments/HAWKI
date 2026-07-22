@@ -120,7 +120,7 @@ Before submitting your PR:
 - [ ] Value objects are `readonly` with `from...` / `tryFrom...` factory methods
 - [ ] Enums used for all constrained string or int values
 - [ ] DocBlocks only where needed (complex types, non-obvious intent)
-- [ ] No `now()`, `new \DateTime()`, `Carbon::now()`, or similar — use injected `Psr\Clock\ClockInterface`
+- [ ] No `now()`, `new \DateTime()`, `Carbon::now()`, or similar — use injected `CarbonClockInterface` (`Psr\Clock\ClockInterface` if the class must stay PSR-only)
 - [ ] No debug statements (`dd()`, `dump()`, `var_dump()`)
 - [ ] No hardcoded values (use config or constants)
 - [ ] You provided good test coverage for new features and bug fixes

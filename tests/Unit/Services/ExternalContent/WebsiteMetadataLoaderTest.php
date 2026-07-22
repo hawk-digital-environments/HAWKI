@@ -6,7 +6,7 @@ namespace Tests\Unit\Services\ExternalContent;
 use App\Services\ExternalContent\ProxyClient;
 use App\Services\ExternalContent\Values\WebsiteMetadata;
 use App\Services\ExternalContent\WebsiteMetadataLoader;
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClock;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Http\Client\Response;
@@ -59,17 +59,18 @@ class WebsiteMetadataLoaderTest extends TestCase
     }
 
     private function makeSut(
-        UrlGenerator $urlGenerator = null,
-        ProxyClient $client = null,
-        Repository $cache = null,
+        UrlGenerator    $urlGenerator = null,
+        ProxyClient     $client = null,
+        Repository      $cache = null,
         LoggerInterface $logger = null,
-    ): WebsiteMetadataLoader {
+    ): WebsiteMetadataLoader
+    {
         return new WebsiteMetadataLoader(
             urlGenerator: $urlGenerator ?? $this->makeUrlGenerator(),
             client: $client ?? $this->makeProxyClient(),
             cache: $cache ?? $this->makeCache(),
             logger: $logger ?? $this->createMock(LoggerInterface::class),
-            clock: new Clock(new \DateTimeImmutable('2026-01-01 12:00:00')),
+            clock: new CarbonClock(new \DateTimeImmutable('2026-01-01 12:00:00')),
         );
     }
 

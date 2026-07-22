@@ -139,6 +139,7 @@
 - `ApiDataScopeContextSettingMiddleware` lets API clients opt out of specific contextual scopes per request via the `?no_scope[resource]=*` query parameter, providing escape hatches for admin queries that need unfiltered data.
 - The `AiService` facade has been expanded with: `getAgent(name)`, `tryToGetAgent(name)`, `getMcpClient(server)`, `getSystemPrompts()`, `getSystemModels()` — making it the single entry point for all AI-related service resolution.
 - Background queue workers now run with `--timeout=0` (no per-job timeout), preventing long-running AI streaming jobs from being killed mid-response.
+- The `Clock` service has been renamed to `CarbonClock` and a new `CarbonClockInterface` (extending `Psr\Clock\ClockInterface`) has been introduced. The interface guarantees `CarbonImmutable` as the return type of `now()`, improving type safety across all time-dependent services. Both `ClockInterface` and `CarbonClockInterface` resolve to the same singleton in the service container. All internal services (caching, crypto, URL signing, file converters, frontend migrations) now use constructor injection of this clock, making time-dependent logic fully testable.
 
 ### Deprecation
 

@@ -8,12 +8,10 @@ namespace App\Services\FileConverter\Handlers;
 use App\Services\FileConverter\Exception\ConversionFailedException;
 use App\Services\Storage\Values\FileCollection;
 use App\Services\Storage\Values\FileReference;
+use App\Services\System\Time\CarbonClockInterface;
 use Arr;
-use Carbon\Carbon;
 use Illuminate\Cache\Repository;
 use Illuminate\Support\Facades\Http;
-use Psr\Clock\ClockInterface;
-use Symfony\Component\Clock\Clock;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Mime\MimeTypes;
 
@@ -38,8 +36,8 @@ use Symfony\Component\Mime\MimeTypes;
 class KreuzbergConverter extends AbstractFileConverter
 {
     public function __construct(
-        private Repository     $cache,
-        private ClockInterface $clock = new Clock()
+        private readonly Repository           $cache,
+        private readonly CarbonClockInterface $clock
     )
     {
     }
@@ -86,44 +84,44 @@ class KreuzbergConverter extends AbstractFileConverter
             )
                 ->timeout($this->getRequestTimeout())
                 ->post(
-                $this->config['api_url'] . '/extract',
-                [
-                    'config' => json_encode(
-                        Arr::mergeRecursive(
-                            [
-                                'use_cache' => false,
-                                'ocr' => [
-                                    'backend' => 'tesseract',
-                                    'language' => 'deu+eng'
-                                ],
-                                'pdf_options' => [
-                                    'extract_images' => true,
-                                    'extract_metadata' => false,
-                                    'hierarchy' => [
-                                        'enabled' => false
+                    $this->config['api_url'] . '/extract',
+                    [
+                        'config' => json_encode(
+                            Arr::mergeRecursive(
+                                [
+                                    'use_cache' => false,
+                                    'ocr' => [
+                                        'backend' => 'tesseract',
+                                        'language' => 'deu+eng'
+                                    ],
+                                    'pdf_options' => [
+                                        'extract_images' => true,
+                                        'extract_metadata' => false,
+                                        'hierarchy' => [
+                                            'enabled' => false
+                                        ]
+                                    ],
+                                    'images' => [
+                                        'extract_images' => true,
+                                        'target_dpi' => 100,
+                                        'max_image_dimension' => 2048,
+                                        'max_dpi' => 300,
+                                        'auto_adjust_dpi' => true,
+                                        'inject_placeholders' => true,
+                                    ],
+                                    'include_document_structure' => true,
+                                    'pages' => [
+                                        'extract_pages' => false,
+                                        'insert_page_markers' => true,
+                                        'marker_format' => "\n\n--- Page {page_num} ---\n\n"
                                     ]
                                 ],
-                                'images' => [
-                                    'extract_images' => true,
-                                    'target_dpi' => 100,
-                                    'max_image_dimension' => 2048,
-                                    'max_dpi' => 300,
-                                    'auto_adjust_dpi' => true,
-                                    'inject_placeholders' => true,
-                                ],
-                                'include_document_structure' => true,
-                                'pages' => [
-                                    'extract_pages' => false,
-                                    'insert_page_markers' => true,
-                                    'marker_format' => "\n\n--- Page {page_num} ---\n\n"
-                                ]
-                            ],
-                            $this->config['extraction_config'] ?? []
+                                $this->config['extraction_config'] ?? []
+                            ),
+                            JSON_THROW_ON_ERROR
                         ),
-                        JSON_THROW_ON_ERROR
-                    ),
-                ]
-            );
+                    ]
+                );
 
             if (!$response->successful()) {
                 throw ConversionFailedException::forFailedResponse($this, $response);
@@ -209,7 +207,7 @@ class KreuzbergConverter extends AbstractFileConverter
     {
         return $this->cache->remember(
             key: 'kreuzberg_converter_mimetypes',
-            ttl: (new Carbon($this->clock->now()))->addDay(),
+            ttl: $this->clock->now()->addDay(),
             callback: function () {
                 $response = Http::get(
                     $this->config['api_url'] . '/formats',
@@ -224,11 +222,7 @@ class KreuzbergConverter extends AbstractFileConverter
                     $mimeTypes[] = $mime->getMimeTypes($format['extension']);
                 }
 
-                $filteredList = array_unique(array_map('strtolower', array_merge(...$mimeTypes)));
-
-                // Remove svg from the list, because or
-
-                return $filteredList;
+                return array_unique(array_map('strtolower', array_merge(...$mimeTypes)));
             });
     }
 

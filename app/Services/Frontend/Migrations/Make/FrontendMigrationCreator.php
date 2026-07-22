@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Frontend\Migrations\Make;
 
 
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Support\Str;
-use Psr\Clock\ClockInterface;
 
 /**
  * Scaffolds a new frontend migration by creating a paired set of stub files:
@@ -31,7 +30,7 @@ readonly class FrontendMigrationCreator
     public function __construct(
         private BackendMigrationCreator $phpMigrationCreator,
         private JsMigrationCreator      $jsMigrationCreator,
-        private ClockInterface          $clock = new Clock()
+        private CarbonClockInterface    $clock
     )
     {
     }
@@ -39,9 +38,9 @@ readonly class FrontendMigrationCreator
     /**
      * Creates both stub files and returns their absolute paths.
      *
-     * @param string $name     Snake-case migration name without timestamp or run-type prefix,
+     * @param string $name Snake-case migration name without timestamp or run-type prefix,
      *                          e.g. `update_user_prefs`.
-     * @param string $runType  When the JS migration should execute; use the `RUN_TYPE_*` constants
+     * @param string $runType When the JS migration should execute; use the `RUN_TYPE_*` constants
      *                          or any custom string that matches a folder in `resources/js/migrations/`.
      * @return array{0: string, 1: string} Tuple of [phpMigrationPath, jsMigrationPath].
      */

@@ -9,7 +9,7 @@ control.
 `Session::put()` (session access from a service), and `now()` (direct time construction) — all
 of which violate HAWKI's coding standards for services. This is a confirmed deviation tracked
 in the [Technical Debt Register](../100-Architecture/300-Technical-Debt.md). Do not copy these
-patterns; follow the standard (constructor-injected `ClockInterface`, no facades in services,
+patterns; follow the standard (constructor-injected `CarbonClockInterface`, no facades in services,
 no session access) in any new code you write in this area.
 :::
 
