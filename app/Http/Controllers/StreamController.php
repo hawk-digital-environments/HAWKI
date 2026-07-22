@@ -347,7 +347,15 @@ class StreamController extends Controller
         // For now this is fine and in the future we should generally clean up the token tracking.
         $this->usageAnalyzer->submitUsageRecord($agent->getUsage(), 'private');
 
-        return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
+        try {
+            return ['success' => true, 'content' => json_encode(['text' => $res->text], JSON_THROW_ON_ERROR)];
+        } catch (\Throwable $e) {
+            $this->logger->error('Error encoding message data to JSON', [
+                'exception' => $e
+            ]);
+
+            return ['success' => false, 'error' => 'There was an error while processing the AI agent response. Please try again later.'];
+        }
     }
 
     /**
