@@ -5,6 +5,7 @@
             "connectionErrorTitle": "Something went wrong"
         },
         "aiChat": {
+            "noResponse": "The AI did not return a response, or the request was aborted. Please try again.",
             "streamProcessingError": "An error occurred while processing the AI response. Please try again."
         },
         "export": {
