@@ -110,7 +110,6 @@
             rollbackHighlight();
             rollbackInteractions();
             document.body.setAttribute('data-no-auto-scroll', 'true');
-            console.log('SCROLLING TO messageId 123 ', messageId);
             scrollElementIntoViewIfNeeded(messageId);
             setTimeout(() => {
                 document.body.removeAttribute('data-no-auto-scroll');

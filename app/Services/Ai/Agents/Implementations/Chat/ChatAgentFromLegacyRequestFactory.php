@@ -87,8 +87,6 @@ class ChatAgentFromLegacyRequestFactory extends AbstractAgentFactory
         $instructions = $this->getInstructionsFromPayload($payload);
         $messages = $this->getMessagesFromPayload($payload, $context);
 
-        logFile($messages);
-
         return new ChatAgent(
             context: $context,
             instructions: $instructions,
