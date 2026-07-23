@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Routing\CacheBusting;
 
 
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Foundation\Application;
@@ -17,18 +18,36 @@ readonly class CacheBusterGenerator
 
     public function __construct(
         #[Config('app.version')]
-        private string      $versionString,
+        string               $versionString,
         #[Config('app.cache_buster')]
-        private string|null $customCacheBuster,
-        private Application $application,
+        string|null          $customCacheBuster,
+        private Application  $application,
+        CarbonClockInterface $clock
     )
     {
+        if ($this->application->isLocal()) {
+            // In local environment, we want to disable cache busting to make development easier.
+            $versionString = 'local-' . $clock->now()->getTimestamp();
+        }
+
         $this->baseCacheBuster = md5(
             implode('-', [
-                $this->versionString,
-                $this->customCacheBuster ?? 'default',
+                $versionString,
+                $customCacheBuster ?? 'default',
             ])
         );
+    }
+
+    /**
+     * Generates an ETag for a given local value. This can be used for API responses or any other content that needs cache validation.
+     * "Local value" can be anything that represents the content, such as a version string, a timestamp, or a hash of the content itself.
+     * It will be combined with the base cache buster to ensure that the ETag changes whenever the app version or custom cache buster changes, even if the local value remains the same.
+     * @param string $localValue
+     * @return string
+     */
+    public function getEtag(string $localValue): string
+    {
+        return md5($this->baseCacheBuster . '-' . $localValue);
     }
 
     /**

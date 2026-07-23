@@ -1,12 +1,13 @@
 <?php
 
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\FileType;
+use App\Services\Storage\Values\StoredFileCategory;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 
-return new class extends Migration
-{
+return new class extends Migration {
     private readonly LoggerInterface $logger;
     private readonly AvatarStorageService $avatarStorage;
 
@@ -18,7 +19,6 @@ return new class extends Migration
 
     public function up(): void
     {
-        $avatarUuid = Str::uuid();
         $avatarPath = public_path('img/' . config('hawki.migration.avatar_id'));
         if (!is_file($avatarPath)) {
             $this->logger->warning('HAWKI avatar file not found at ' . $avatarPath);
@@ -30,16 +30,19 @@ return new class extends Migration
                 throw new \RuntimeException('HAWKI avatar file not found and default avatar also missing.');
             }
         }
-        $file = file_get_contents($avatarPath);
-        if (!$file) {
+
+        if (!is_readable($avatarPath) || !is_file($avatarPath)) {
             throw new \RuntimeException('Unable to open HAWKI avatar file at ' . $avatarPath);
         }
 
-        $this->avatarStorage->store(
-            $file,
-            $avatarPath,
-            $avatarUuid,
-            'profile_avatars'
+        $ref = FileReference::fromDisk($avatarPath);
+        if ($ref->getFileType() !== FileType::IMAGE) {
+            throw new \RuntimeException('HAWKI avatar file is not a valid image. Detected type: ' . $ref->getFileType()->value);
+        }
+
+        $stored = $this->avatarStorage->store(
+            file: $ref,
+            category: StoredFileCategory::PROFILE_AVATAR
         );
 
         $hawki = DB::table('users')->where('id', 1)->first();
@@ -48,14 +51,14 @@ return new class extends Migration
         DB::table('users')->updateOrInsert(
             ['id' => 1],
             [
-                'name'        => config('hawki.migration.name'),
-                'username'    => config('hawki.migration.username'),
-                'email'       => config('hawki.migration.email'),
-                'employeetype'=> config('hawki.migration.employeetype'),
-                'publicKey'   => '0',
-                'avatar_id' => $avatarUuid,
-                'updated_at'  => now(),
-                'created_at'  => $hawki?->created_at ?? now(),
+                'name' => config('hawki.migration.name'),
+                'username' => config('hawki.migration.username'),
+                'email' => config('hawki.migration.email'),
+                'employeetype' => config('hawki.migration.employeetype'),
+                'publicKey' => '0',
+                'avatar_id' => $stored->getUuid(),
+                'updated_at' => now(),
+                'created_at' => $hawki?->created_at ?? now(),
             ]
         );
     }

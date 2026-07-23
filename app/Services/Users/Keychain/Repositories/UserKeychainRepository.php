@@ -1,0 +1,160 @@
+<?php
+declare(strict_types=1);
+
+
+namespace App\Services\Users\Keychain\Repositories;
+
+
+use App\Models\Room;
+use App\Models\User;
+use App\Models\UserKeychainValue;
+use App\Services\System\Database\Eloquent\Repositories\AbstractRepositoryWithContextualScopes;
+use App\Services\System\Database\Eloquent\Repositories\Attributes\UseModel;
+use App\Services\Users\Keychain\Value\UserKeychainValueToRemove;
+use App\Services\Users\Keychain\Value\UserKeychainValueToSet;
+use App\Services\Users\Keychain\Value\UserKeychainValueType;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+
+#[UseModel(UserKeychainValue::class)]
+class UserKeychainRepository extends AbstractRepositoryWithContextualScopes
+{
+    /**
+     * Sets multiple keychain values for a user.
+     * If a value with the same key and type already exists, it will be updated.
+     * @param User $user The user to set the values for.
+     * @param UserKeychainValueToSet ...$values The values to set.
+     * @return void
+     */
+    public function setValues(User $user, UserKeychainValueToSet ...$values): void
+    {
+        $query = $this->getQueryWithoutContextualScopes('access');
+        foreach ($values as $value) {
+            $query->updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'key' => $value->key,
+                    'type' => $value->type->value,
+                ],
+                [
+                    'value' => $value->value
+                ]
+            );
+        }
+    }
+
+    /**
+     * Removes multiple keychain values for a user.
+     * @param User $user The user to remove the values for.
+     * @param UserKeychainValueToRemove ...$values The values to remove.
+     * @return void
+     */
+    public function removeValues(User $user, UserKeychainValueToRemove ...$values): void
+    {
+        $query = $this->getQueryWithoutContextualScopes('access');
+        foreach ($values as $entry) {
+            $query->orWhere(function (Builder $query) use ($user, $entry) {
+                $query
+                    ->where('user_id', $user->id)
+                    ->where('key', $entry->key)
+                    ->where('type', $entry->type->value);
+            });
+        }
+
+        $query->each(fn(UserKeychainValue $val) => $val->delete());
+
+        $this->removeRoomKeysWithoutMembership($user);
+    }
+
+    /**
+     * Removes all keychain values for a user.
+     * @param User $user The user to remove the values for.
+     * @return void
+     */
+    public function dropAllForUser(User $user): void
+    {
+        $this->getQueryWithoutContextualScopes('access')
+            ->where('user_id', $user->id)
+            ->each(fn(UserKeychainValue $val) => $val->delete());
+    }
+
+    /**
+     * Returns the count of keychain values for a user.
+     * Used for the full sync log generation.
+     * @param User $user
+     * @return int
+     */
+    public function getCountForUser(User $user): int
+    {
+        return $this->getQueryWithoutContextualScopes('access')->where('user_id', $user->id)->count();
+    }
+
+    /**
+     * Finds all keychain values for a user.
+     * Used for migration purposes.
+     * @param User $user The user to find the values for.
+     * @return Collection<int, UserKeychainValue> The found keychain values.
+     */
+    public function findAllOfUser(User $user): Collection
+    {
+        return $this->getQueryWithoutContextualScopes('access')->where('user_id', $user->id)->get();
+    }
+
+    /**
+     * Returns the first available public key of a user, or null if none exists.
+     * This can be used as a possibility to decrypt data via a given passkey in the frontend.
+     * @param User $user
+     * @return UserKeychainValue|null
+     */
+    public function findFirstPublicKeyOfUser(User $user): ?UserKeychainValue
+    {
+        return $this->getQueryWithoutContextualScopes('access')
+            ->where('user_id', $user->id)
+            ->where('type', 'public_key')
+            ->first();
+    }
+
+    /**
+     * Removes all room keys for a user for a given room.
+     * This should be called when a user is removed from a room to ensure they no longer have access to the room's key.
+     * @param User $user
+     * @param Room $room
+     * @return void
+     */
+    public function removeRoomKey(User $user, Room $room): void
+    {
+        $this->getQueryWithoutContextualScopes('access')
+            ->where('user_id', $user->id)
+            ->whereIn('type', [
+                UserKeychainValueType::ROOM->value,
+                UserKeychainValueType::ROOM_AI->value,
+                UserKeychainValueType::ROOM_AI_LEGACY->value
+            ])
+            ->where('key', $room->slug)
+            ->each(fn(UserKeychainValue $val) => $val->delete());
+    }
+
+    /**
+     * A basic housekeeping method that removes all room keys for rooms the user is no longer a member of.
+     * This should be run once in a while to keep the database clean.
+     * @param User $user
+     * @return void
+     */
+    private function removeRoomKeysWithoutMembership(User $user): void
+    {
+        $knownSlugs = $user->rooms()
+            ->pluck('slug')
+            ->toArray();
+
+        $this->getQueryWithoutContextualScopes()
+            ->where('user_id', $user->id)
+            ->whereIn('type', [
+                UserKeychainValueType::ROOM->value,
+                UserKeychainValueType::ROOM_AI->value,
+                UserKeychainValueType::ROOM_AI_LEGACY->value
+            ])
+            ->whereNotIn('key', $knownSlugs)
+            ->where('updated_at', '<', now()->subDays(7)) // Give some time to new keys to be used
+            ->each(fn(UserKeychainValue $val) => $val->delete());
+    }
+}

@@ -1,0 +1,189 @@
+{
+    "chat": {
+        "nameMenu": {
+            "emptyNameError": "The chat name must not be empty",
+            "leaveAction": "Leave chat",
+            "deleteAction": "Delete chat",
+            "leaveConfirmDescription": "Are you sure you want to leave this chat? You can rejoin at any time if it is a group chat.",
+            "deleteConfirmDescription": "Are you sure you want to delete this chat? This action cannot be undone.",
+            "leaveConfirmTitle": "Leave room :name",
+            "deleteConfirmTitle": "Delete chat :name",
+            "newNameAriaLabel": "New chat name",
+            "actionsTooltip": "Chat actions",
+            "rename": "Rename",
+            "manageRoom": "Manage room",
+            "markAsRead": "Mark as read"
+        },
+        "attachmentDropdown": {
+            "deleteTitle": "Delete file",
+            "deleteDescription": "Are you sure you want to delete the file \":name\"?",
+            "preview": "Show",
+            "download": "Download",
+            "delete": "Delete"
+        },
+        "attachments": {
+            "fileTooLarge": "The file \":name\" could not be attached because its size of :size exceeds the maximum file size of :maxSize.",
+            "unsupportedFileType": "The file \":name\" could not be attached because the file type \":type\" is not supported."
+        },
+        "message": {
+            "sources": "Sources",
+            "citationReference": {
+                "contextError": "Something was coded wrong. This reference is not inside a CitationContext. Please report this bug to the developers."
+            }
+        },
+        "export": {
+            "title": "Export",
+            "tooltip": "Choose an option to export this conversation",
+            "print": "Print",
+            "pdf": "PDF",
+            "word": "WORD",
+            "csv": "CSV",
+            "json": "JSON"
+        },
+        "composer": {
+            "textareaPlaceholder": "Enter your message here…",
+            "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
+            "attachFileTooltip": "Attach file",
+            "assistantButtonTooltip": {
+                "addHandle": "Talk to HAWKI",
+                "removeHandle": "Stop talking to HAWKI"
+            },
+            "systemPromptDialog": {
+                "title": "Edit system prompt",
+                "description": "The system prompt defines the model's behaviour for this session.",
+                "cancel": "Cancel",
+                "save": "Save",
+                "placeholder": "You are a helpful assistant for academic work…"
+            },
+            "modePanel": {
+                "editTitle": "Edit message",
+                "regenTitle": "Regenerate AI response",
+                "threadTitle": "Write message in thread",
+                "defaultTitle": "Mode",
+                "cancelEdit": "Exit edit mode",
+                "cancelRegen": "Cancel regeneration",
+                "cancelThread": "Leave thread view",
+                "cancelDefault": "Exit mode",
+                "actionBusy": "You can not do this right now. Please wait until the current action is finished."
+            },
+            "settings": {
+                "presetCreative": "Creative",
+                "presetBalanced": "Balanced",
+                "presetPrecise": "Precise",
+                "systemPromptHeading": "System prompt",
+                "resetSystemPrompt": "Reset to default system prompt",
+                "noSystemPrompt": "No system prompt set",
+                "settingsHeading": "Settings",
+                "resetModelSettings": "Reset to model defaults",
+                "temperature": "Temperature",
+                "temperatureInfo": "Controls the creativity of the AI's responses. Higher values (e.g. 0.8) lead to more diverse and imaginative results; lower values (e.g. 0.2) make responses more focused and predictable.",
+                "temperatureAriaLabel": "Adjust temperature",
+                "topP": "Top P",
+                "topPInfo": "Limits the AI's choices to the most probable words whose combined probability does not exceed this value. A lower Top P value (e.g. 0.7) leads to more conservative responses; higher values (e.g. 0.9) allow greater variety.",
+                "topPAriaLabel": "Adjust Top P",
+                "adjustSettingsTooltip": "Adjust model settings",
+                "settingsTitle": "Model settings"
+            },
+            "statusDot": {
+                "onlineLabel": "Online",
+                "onlineTooltip": "Online — fully available",
+                "unknownLabel": "Unknown",
+                "unknownAvailability": "Unknown availability",
+                "unknownTooltip": "Unknown availability — increased error rate",
+                "offlineLabel": "Offline",
+                "offlineTooltip": "Offline — currently unreachable",
+                "tool": {
+                    "notSupportedLabel": "Not supported by :model",
+                    "notSupportedTooltip": "This tool is not supported by :model",
+                    "offlineLabel": "Not available (offline)"
+                }
+            },
+            "toolMenu": {
+                "backButton": "Tools",
+                "deactivateTool": "Deactivate tool",
+                "activateTool": "Activate tool",
+                "showGroupDescription": ":label — show description",
+                "capabilitiesLabel": "Capabilities",
+                "hawkiToolsLabel": "HAWKI Tools",
+                "hawkiToolsDescription": "Tools provided by HAWKI itself",
+                "infoOffline": "(offline) | Click for more information",
+                "infoUnsupported": "(not supported by current model) | Click for more information",
+                "infoDefault": "Show more information about the tool",
+                "clickForInfo": "Click for more information",
+                "tools": {
+                    "webFetch": "Fetch web content",
+                    "webFetchDescription": "This tool enables the AI to retrieve information from the internet. Unlike web search, the AI can also access external websites to extract and analyse content.",
+                    "webSearch": "Web search",
+                    "webSearchDescription": "This tool enables the AI to search the internet for current information. It can submit search queries and provide relevant results that feed into the AI's responses.",
+                    "knowledgeBase": "HAWKI Knowledge",
+                    "knowledgeBaseDescription": "This tool enables the AI to access an extensive knowledge base developed specifically for HAWKI. The data is provided by your university and contains information about courses, events, policies, and much more."
+                }
+            },
+            "modelPicker": {
+                "switchModel": "Switch current model",
+                "placeholder": "Select model"
+            },
+            "fileChips": {
+                "conflictMessage": "Not supported by the current model",
+                "uploadError": "Upload error: :issue"
+            },
+            "fileDrop": {
+                "dropLabel": "Drop files here"
+            },
+            "toolChips": {
+                "showMore": "Show :count more tools",
+                "removeToolAriaLabel": "Remove tool :tool"
+            },
+            "modelConflict": {
+                "conflictTitleSingle": ":model does not support :tool",
+                "conflictTitleMultiple": ":model does not support the following requirements",
+                "singleModelCapable": "This model can do everything you need.",
+                "multipleModelsCapable": "These :count models can do everything you need.",
+                "noModelsAvailable": "No available model supports this combination. Remove a tool or an attachment."
+            },
+            "toolMenuConfig": {
+                "variantLabel": "Variant",
+                "autoLabel": "automatic",
+                "autoInfo": "The model automatically selects the best variant for the task. (Native tool preferred, otherwise the first available alternative)",
+                "nativeLabel": "Native Tool",
+                "nativeInfo": "This tool is provided directly by the model provider."
+            },
+            "actions": {
+                "noMessageTooltip": "Please enter a message before sending",
+                "invalidModelTooltip": "Please select a different model or remove incompatible tools/files",
+                "emptyMessageTooltip": "Please enter a message",
+                "sendTooltip": "Send message",
+                "saveLabel": "Save",
+                "regenerateLabel": "Regenerate",
+                "sendLabel": "Send",
+                "cancelRegeneration": "Cancel regeneration",
+                "leaveThread": "Leave thread",
+                "cancelEdit": "Cancel editing",
+                "cancelResponse": "Cancel AI response",
+                "improvementError": "Could not load improvement suggestions",
+                "improvementModelSaidNoError": "Your message is good as it is. No improvements suggested.",
+                "improveTooltip": "Improve your input with AI-powered suggestions",
+                "cancelLabel": "Cancel"
+            },
+            "demandBars": {
+                "low": "Low",
+                "lowTooltip": "Low load — fast responses",
+                "medium": "Medium",
+                "mediumTooltip": "Medium load — slightly delayed",
+                "high": "High",
+                "highTooltip": "High load — responses delayed",
+                "ariaLabel": "Load: :label"
+            },
+            "regen": {
+                "onlyAssistantMessages": "Only assistant messages can be regenerated",
+                "modelNotAvailable": "The model used for this message (:model) is not available. Using fallback model :fallback.",
+                "toolNotAvailable": "The tool :tool used for this message is not available. It will be skipped in regeneration.",
+                "toolNotAvailableForModel": "The tool :tool used for this message is not available for the selected model. It will be skipped in regeneration."
+            },
+            "sending": {
+                "responseError": "An error occurred while processing the response.",
+                "sendError": "An error occurred while sending the message."
+            }
+        }
+    }
+}

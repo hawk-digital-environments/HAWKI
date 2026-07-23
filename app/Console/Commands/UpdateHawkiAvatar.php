@@ -4,8 +4,11 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Services\Storage\AvatarStorageService;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\FileType;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 
 class UpdateHawkiAvatar extends Command
 {
@@ -29,30 +32,34 @@ class UpdateHawkiAvatar extends Command
         $path = $this->argument('path');
 
         $hawki = User::find(1);
-        if($hawki->username != config('hawki.migration.username')){
+        if ($hawki->username != config('hawki.migration.username')) {
             $this->error('HAWKI user does not exist or is manipulated. Please double check your migration file and hawki config.');
-            return;
+            return 1;
         }
 
-        $file = file_get_contents($path);
-        if(!$file){
+        if (!is_readable($path) || !is_file($path)) {
             $this->error('Unable to open file.');
+            return 1;
         }
 
-        $array = explode('/', $path);
-        $filename = end($array);
-        $extension = pathinfo($filename, PATHINFO_EXTENSION);
-        $avatarStorage = app(AvatarStorageService::class);
-        $uuid = Str::uuid();
-        $avatarStorage->store($file,
-                            $filename,
-                            $uuid,
-                            'profile_avatars');
+        $ref = FileReference::fromDisk($path);
+        if ($ref->getFileType() !== FileType::IMAGE) {
+            $this->error('HAWKI avatar file is not a valid image. Detected type: ' . $ref->getFileType()->value);
+            return 1;
+        }
 
+        $avatarStorage = app(AvatarStorageService::class);
+        $avatarStorage->delete(StoredFileIdentifier::tryFromUserAvatar($hawki));
+
+        $stored = $avatarStorage->store(
+            file: $ref,
+            category: StoredFileCategory::PROFILE_AVATAR
+        );
 
         $hawki->update([
-            'avatar_id' => $uuid,
+            'avatar_id' => $stored->getUuid(),
         ]);
         $this->info('HAWKI Avatar was successfully updated.');
+        return 0;
     }
 }

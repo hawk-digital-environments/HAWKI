@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Services\Ai\UsageAnalyzerService;
 use Illuminate\Console\Command;
-use App\Services\AI\UsageAnalyzerService;
 
 
 class MonthlyUsageSummary extends Command
@@ -29,6 +29,6 @@ class MonthlyUsageSummary extends Command
     {
         $service = new UsageAnalyzerService();
         $service->summarizeAndCleanup();
-        
+
     }
 }

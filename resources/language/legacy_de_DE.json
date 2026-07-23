@@ -1,0 +1,28 @@
+{
+    "legacy": {
+        "stream": {
+            "connectionErrorMessage": "Bei der Verbindung zum KI-Stream ist ein Fehler aufgetreten. Bitte überprüfe deine Internetverbindung und versuche es erneut.",
+            "connectionErrorTitle": "Kein Anschluss unter diesem Chat"
+        },
+        "aiChat": {
+            "noResponse": "Die KI hat keine Antwort zurückgegeben, oder die Anfrage wurde abgebrochen. Bitte versuche es erneut.",
+            "streamProcessingError": "Es ist ein Fehler aufgetreten, während die KI-Antwort verarbeitet wurde. Bitte versuche es erneut."
+        },
+        "export": {
+            "noDataError": "Es liegen keine Daten zum Export vor"
+        },
+        "fileManager": {
+            "invalidServerResponse": "Der Server hat eine ungültige Antwort zurückgegeben",
+            "networkError": "Es gab ein Problem mit der Netzwerkverbindung. Bitte überprüfe deine Internetverbindung und versuche es erneut."
+        },
+        "messageStream": {
+            "nativeToolRunning": "Das Model führt gerade ein natives Tool aus. Einen Moment..."
+        },
+        "groupchat": {
+            "typingStatusOne": ":user tippt gerade...",
+            "typingStatusTwo": ":user1 & :user2 tippen gerade...",
+            "typingStatusMany": ":user & andere tippen gerade...",
+            "serverError": "Es ist ein Fehler aufgetreten, während die Gruppenchat-Nachrichten verarbeitet wurden. Bitte versuche es erneut."
+        }
+    }
+}

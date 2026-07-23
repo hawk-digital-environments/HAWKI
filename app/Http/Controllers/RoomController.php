@@ -3,24 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attachment;
-
 use App\Models\Message;
 use App\Models\User;
+use App\Services\Chat\Message\MessageContentValidator;
+use App\Services\Chat\Room\RoomService;
 use App\Services\Storage\FileStorageService;
+use App\Services\Storage\Values\FileReference;
+use App\Services\Storage\Values\StoredFileCategory;
+use App\Services\Storage\Values\StoredFileIdentifier;
 use Dotenv\Exception\ValidationException;
+use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
-use App\Services\Chat\Room\RoomService;
-
-use App\Services\Chat\Message\MessageContentValidator;
-use App\Services\Chat\Attachment\AttachmentService;
-
-use Exception;
-use Illuminate\Auth\Access\AuthorizationException;
-
-use Illuminate\Http\JsonResponse;
 
 class RoomController extends Controller
 {
@@ -52,7 +49,6 @@ class RoomController extends Controller
     }
 
 
-
     public function update(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
@@ -76,16 +72,17 @@ class RoomController extends Controller
         ]);
 
         $response = $this->roomService->assignAvatar($validatedData['image'],
-                                        $slug);
+            $slug);
 
         return response()->json([
             "success" => true,
             "url" => $response['url'],
-            "uuid"=> $response['uuid'],
+            "uuid" => $response['uuid'],
         ]);
     }
 
-    public function delete($slug): JsonResponse{
+    public function delete($slug): JsonResponse
+    {
         $this->roomService->delete($slug);
         return response()->json([
             'success' => true,
@@ -98,15 +95,16 @@ class RoomController extends Controller
     public function addMember(Request $request, $slug): JsonResponse
     {
         $validatedData = $request->validate([
-            'invitee' => 'string',
-            'role'=>'string'
+            'username' => 'string',
+            'role' => 'string'
         ]);
         $members = $this->roomService->add($slug, $validatedData);
         return response()->json($members);
     }
 
 
-    public function leaveRoom($slug): JsonResponse{
+    public function leaveRoom($slug): JsonResponse
+    {
         $success = $this->roomService->leave($slug);
 
         return response()->json([
@@ -115,12 +113,13 @@ class RoomController extends Controller
     }
 
 
-    public function kickMember(Request $request, $slug): JsonResponse{
+    public function kickMember(Request $request, $slug): JsonResponse
+    {
         $validatedData = $request->validate([
             'username' => 'string|max:16',
         ]);
         $username = $validatedData['username'];
-        if($username === User::find(1)->username){
+        if ($username === User::find(1)->username) {
             return response()->json([
                 'success' => false,
                 'message' => "You can't remove HAWKI from the room!"
@@ -157,10 +156,9 @@ class RoomController extends Controller
     }
 
 
-
     // SECTION: MESSAGE
-    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator): JsonResponse {
-
+    public function sendMessage(Request $request, $slug, MessageContentValidator $contentValidator): JsonResponse
+    {
         $validatedData = $request->validate([
             'content' => 'required|array',
             'metadata' => 'nullable|array',
@@ -171,7 +169,7 @@ class RoomController extends Controller
         ]);
         $validatedData['content'] = $contentValidator->validate($validatedData['content']);
 
-        $messageData = $this->roomService->sendMessage($validatedData, $slug);
+        $messageData = $this->roomService->sendMessage($validatedData, $slug, $request->user());
 
         return response()->json([
             'success' => true,
@@ -181,9 +179,8 @@ class RoomController extends Controller
     }
 
 
-
-    public function updateMessage(Request $request, $slug): JsonResponse {
-
+    public function updateMessage(Request $request, $slug): JsonResponse
+    {
         $validatedData = $request->validate([
             'content' => 'required|array',
             'metadata' => 'nullable|array',
@@ -203,7 +200,8 @@ class RoomController extends Controller
     }
 
 
-    public function retrieveMessage($slug, $message_id): JsonResponse{
+    public function retrieveMessage($slug, $message_id): JsonResponse
+    {
         if (!is_string($slug) || !is_string($message_id)) {
             throw new ValidationException();
         }
@@ -212,7 +210,8 @@ class RoomController extends Controller
     }
 
 
-    public function markAsRead(Request $request, $slug){
+    public function markAsRead(Request $request, $slug): JsonResponse
+    {
         $validatedData = $request->validate([
             'message_id' => 'required|string',
         ]);
@@ -224,28 +223,47 @@ class RoomController extends Controller
 
 
     // SECTION: ATTACHMENTS
-    public function storeAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
+    public function storeAttachment(Request $request, FileStorageService $fileStorage): JsonResponse
+    {
         $validateData = $request->validate([
-            'file' => 'required|file|max:20480'
+            'file' => 'required|file|max:' . ($fileStorage->getMaxFileSize() / 1024)
         ]);
-        $result = $attachmentService->store($validateData['file'], 'group');
-        return response()->json($result);
 
+        $storedFile = $fileStorage->storeTemporary(
+            file: FileReference::fromUploadedFile($validateData['file']),
+            category: StoredFileCategory::GROUP
+        );
+
+        if ($storedFile === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to store file'
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'uuid' => $storedFile->getUuid(),
+        ]);
     }
 
-    public function getAttachmentUrl(string $uuid, AttachmentService $attachmentService): JsonResponse {
+    public function getAttachmentUrl(string $uuid, FileStorageService $fileStorage): JsonResponse
+    {
 
         try {
             $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
 
             // If the requesting User is NOT a member of this group RETURN 403
-            if(!$attachment->attachable->room->isMember(Auth::id())){
+            /** @var Message $attachable */
+            $attachable = $attachment->attachable;
+            $room = $attachable->room;
+
+            if (!$room->isMember(Auth::id())) {
                 throw new AuthorizationException();
             }
 
-            $url = $attachmentService->getFileUrl($attachment, null);
-        }
-        catch (Exception $e) {
+            $url = $fileStorage->retrieve(StoredFileIdentifier::fromAttachment($attachment))?->getUrl();
+        } catch (Exception $e) {
             throw $e;
         }
 
@@ -254,63 +272,42 @@ class RoomController extends Controller
             'url' => $url
         ]);
     }
-    public function downloadAttachment(string $uuid, string $path)
-    {
-        try {
-            $attachment = Attachment::where('uuid', $uuid)->firstOrFail();
-            if(!$attachment->attachable->room->isMember(Auth::id())){
-                throw new AuthorizationException();
-            }
-
-            $storageService = app(FileStorageService::class);
-            $stream = $storageService->streamFromSignedPath($path); // returns a resource
-
-            return response()->streamDownload(function () use ($stream)
-            {
-                fpassthru($stream); // send stream directly to browser
-            },
-                $attachment->filename,
-                [
-                    'Content-Type' => $attachment->mime,
-                ]
-            );
-        } catch (\Illuminate\Contracts\Filesystem\FileNotFoundException $e) {
-            abort(404, 'File not found');
-        }
-    }
 
     /**
      * @throws Exception
      */
-    public function deleteAttachment(Request $request, AttachmentService $attachmentService): JsonResponse {
+    public function deleteAttachment(Request $request): JsonResponse
+    {
 
         $validateData = $request->validate([
             'fileId' => 'required|string',
         ]);
-        try{
+        try {
             $attachment = Attachment::where('uuid', $validateData['fileId'])->firstOrFail();
+            /** @var Message $attachable */
+            $attachable = $attachment->attachable;
+            $room = $attachable->room;
 
-            $room = $attachment->attachable->room;
-            if(!$room->isMember(Auth::id())){
+            if (!$room->isMember(Auth::id())) {
                 throw new AuthorizationException();
             }
+
             $membership = $room->members->where('user_id', Auth::id())->firstOrFail();
-            if(!$membership->hasRole('admin') || !$attachment->user->is(Auth::user())) {
+            if (!$membership->hasRole('admin') || !$attachment->user->is(Auth::user())) {
                 throw new AuthorizationException();
             }
             if (!$attachment->attachable instanceof Message) {
                 return response()->json([
-                    'success'=> false,
-                    'error'=> 'File Category does not match the properties!'
+                    'success' => false,
+                    'error' => 'File Category does not match the properties!'
                 ], 500);
             }
 
-            $result = $attachmentService->delete($attachment);
+            $result = $attachment->delete();
             return response()->json([
                 "success" => $result
             ]);
-        }
-        catch(Exception $e) {
+        } catch (Exception $e) {
             Log::error($e);
             throw $e;
         }

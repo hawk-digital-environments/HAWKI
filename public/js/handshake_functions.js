@@ -5,33 +5,32 @@ function switchSlide(targetIndex) {
     const target = document.querySelector(`.slide[data-index="${targetIndex}"]`);
 
     if (previousSlide) {
-        previousSlide.style.opacity = "0";
+        previousSlide.style.opacity = '0';
     }
 
     setTimeout(() => {
         if (previousSlide) {
-            previousSlide.style.display = "none";
+            previousSlide.style.display = 'none';
         }
 
-        target.style.display = "flex";
+        target.style.display = 'flex';
         const backBtn = document.querySelector('.slide-back-btn');
 
-        if(targetIndex > 1){
-            backBtn.style.display = "flex";
+        if (targetIndex > 1) {
+            backBtn.style.display = 'flex';
             setTimeout(() => {
-                backBtn.style.opacity = "1";
+                backBtn.style.opacity = '1';
             }, 20);
-        }
-        else{
-            backBtn.style.opacity = "0";
-            setTimeout( () => {
-                backBtn.style.display = "none";
-            }, 500)
+        } else {
+            backBtn.style.opacity = '0';
+            setTimeout(() => {
+                backBtn.style.display = 'none';
+            }, 500);
         }
 
         // Add a small delay before changing the opacity to ensure the display change has been processed
         setTimeout(() => {
-            target.style.opacity = "1";
+            target.style.opacity = '1';
         }, 300);
 
         previousSlide = target;
@@ -39,49 +38,53 @@ function switchSlide(targetIndex) {
     }, 300);
 }
 
-function switchBackSlide(){
+function switchBackSlide() {
     const targetIndex = currentSlideIndex - 1;
     switchSlide(targetIndex);
 }
 
-function modalClick(btn){
+function modalClick(btn) {
     switchSlide(4);
 }
 
 
 let backupHash = '';
-async function checkPasskey(){
+
+async function checkPasskey() {
 
     const msg = document.querySelector('#alert-message');
     const enteredPasskey = String(document.getElementById('passkey-input').dataset.realValue);
 
     // if passkey field is left empty.
-    if(enteredPasskey === ''){
-        msg.innerText = translation.HS_EnterPasskeyMsg
+    if (enteredPasskey === '') {
+        msg.innerText = __('HS_EnterPasskeyMsg');
         return;
     }
 
     const repeatWrapper = document.getElementById('passkey-repeat');
 
     //Show Repeat Passkey
-    if(repeatWrapper.style.display === 'none'){
+    if (!repeatWrapper) {
+        return;
+    }
+    if (repeatWrapper.style.display === 'none') {
         repeatWrapper.style.display = 'flex';
         repeatWrapper.querySelector('input').focus();
         return;
     }
-    const repeatField = repeatWrapper.querySelector('.passkey-input')
+    const repeatField = repeatWrapper.querySelector('.passkey-input');
     const repeatedKey = String(repeatField.dataset.realValue);
 
 
     //if repeat passkey is empty
-    if(repeatedKey === ''){
-        msg.innerText = translation.HS_RepeatPassKey
+    if (repeatedKey === '') {
+        msg.innerText = __('HS_RepeatPassKey');
         return;
     }
 
     //if the inputs are not the same.
-    if(enteredPasskey != repeatedKey){
-        msg.innerText = translation.HS_DifferentEntries
+    if (enteredPasskey != repeatedKey) {
+        msg.innerText = __('HS_DifferentEntries');
         return;
     }
 
@@ -91,12 +94,12 @@ async function checkPasskey(){
         serverVerified = await validatePasskeyByServer(enteredPasskey);
     } catch (error) {
         console.error('Error verifying passkey with server:', error);
-        msg.innerText = "Error verifying passkey with server"
+        msg.innerText = 'Error verifying passkey with server';
         return;
     }
 
-    if(!serverVerified){
-        msg.innerText = "PassKey could not be verified by the server"
+    if (!serverVerified) {
+        msg.innerText = 'PassKey could not be verified by the server';
         return;
     }
 
@@ -104,8 +107,9 @@ async function checkPasskey(){
     backupHash = generatePasskeyBackupHash();
 
     document.querySelector('#backup-hash').innerText = backupHash;
+    const userInfo = await window.getConnectionWithUserInfo().userinfo;
     // derive key from backup hash
-    const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
+    const passkeyBackupSalt = window.getConfig().salts.backup;
     const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
     //encrypt Passkey as plaintext
     const cryptoPasskey = await encryptWithSymKey(derivedKey, enteredPasskey, false);
@@ -114,8 +118,8 @@ async function checkPasskey(){
         'username': userInfo.username,
         'cipherText': cryptoPasskey.ciphertext,
         'tag': cryptoPasskey.tag,
-        'iv': cryptoPasskey.iv,
-    }
+        'iv': cryptoPasskey.iv
+    };
 
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -124,8 +128,8 @@ async function checkPasskey(){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                "X-CSRF-TOKEN": csrfToken,
-                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
             },
             body: JSON.stringify(dataToSend)
         });
@@ -138,10 +142,6 @@ async function checkPasskey(){
         }
 
         const data = await response.json();
-        if (data.success) {
-            // console.log(data.message)
-        }
-
     } catch (error) {
         console.error('Error Creating Passkey Backup:', error);
         throw error;
@@ -154,7 +154,7 @@ async function checkPasskey(){
 }
 
 
-async function validatePasskeyByServer(enteredKey){
+async function validatePasskeyByServer(enteredKey) {
 
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -163,8 +163,8 @@ async function validatePasskeyByServer(enteredKey){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                "X-CSRF-TOKEN": csrfToken,
-                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
             },
             body: JSON.stringify({passkey: enteredKey})
         });
@@ -182,8 +182,7 @@ async function validatePasskeyByServer(enteredKey){
                 success: true,
                 message: data.message
             };
-        }
-        else{
+        } else {
             return {
                 success: false,
                 message: data.message
@@ -198,14 +197,13 @@ async function validatePasskeyByServer(enteredKey){
 }
 
 
-
 function downloadTextFile() {
 
-    if(backupHash === ''){
+    if (backupHash === '') {
         return;
     }
     // Create a Blob from the text content
-    const blob = new Blob([backupHash], { type: 'text/plain' });
+    const blob = new Blob([backupHash], {type: 'text/plain'});
 
     // Create a link element
     const link = document.createElement('a');
@@ -226,13 +224,12 @@ function downloadTextFile() {
 }
 
 
-async function initializeRegistration(){
-    cleanupUserData(()=>{
-        // console.log('cleaned Up previous user data.');
+async function initializeRegistration() {
+    cleanupUserData(() => {
     });
 }
 
-async function onBackupCodeComplete(){
+async function onBackupCodeComplete() {
     // const confirmed = await openModal(ModalType.WARNING,
     //     'Speichere diese Datei an einem sicheren Ort. Damit können wir im Notfall deine Chats wieder herstellen.')
     // if (!confirmed) {
@@ -245,46 +242,27 @@ async function completeRegistration() {
 
     setOverlay(true, true);
 
-    // Generate a key pair (public and private keys)
-    const keyPair = await generateKeyPair();
-
-    // Export the public key and private key
-    const exportedPublicKey = await window.crypto.subtle.exportKey("spki", keyPair.publicKey);
-    const exportedPrivateKey = await window.crypto.subtle.exportKey("pkcs8", keyPair.privateKey);
-
-    publicKeyBase64 = arrayBufferToBase64(exportedPublicKey);
-    privateKeyBase64 = arrayBufferToBase64(exportedPrivateKey);
-
-
-    await keychainSet('publicKey', publicKeyBase64, false, false);
-    await keychainSet('privateKey', privateKeyBase64, false, false);
-
-    // Generate and encrypt the aiConvKey and keychain
-    const aiConvKey = await generateKey();
-    const keychainData = await keychainSet('aiConvKey', aiConvKey, true, false);
-
-
-    // Prepare the data to send to the server
-    const dataToSend = {
-        publicKey: publicKeyBase64,
-        keychain: keychainData.ciphertext,
-        KCIV: keychainData.iv,
-        KCTAG: keychainData.tag,
-    };
-
     try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
         // Send the registration data to the server
         const response = await fetch('/req/complete_registration', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                "X-CSRF-TOKEN": csrfToken,
-                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
             },
-            body: JSON.stringify(dataToSend)
+            body: JSON.stringify({})
         });
+
+        const newCsrfToken = response.headers.get('X-HAWKI-CSRF-TOKEN');
+        if (!newCsrfToken) {
+            throw new Error('No CSRF token received from server');
+        }
+
+        // Update CSRF token in meta tag
+        document.querySelector('meta[name="csrf-token"]').setAttribute('content', newCsrfToken);
 
         // Handle the server response
         if (!response.ok) {
@@ -295,7 +273,8 @@ async function completeRegistration() {
 
         const data = await response.json();
         if (data.success) {
-            userInfo = data.userData;
+            await window.userKeychain.initializeNewKeychain();
+
             window.location.href = data.redirectUri;
         }
 
@@ -306,61 +285,32 @@ async function completeRegistration() {
 }
 
 
+async function verifyEnteredPassKey(provider) {
 
-
-
-
-async function verifyEnteredPassKey(provider){
-
-    const slide = provider.closest(".slide");
-    const inputField = slide.querySelector("#passkey-input");
+    const slide = provider.closest('.slide');
+    const inputField = slide.querySelector('#passkey-input');
     const enteredKey = String(inputField.dataset.realValue.trim());
-    const errorMessage = slide.querySelector("#alert-message");
+    const errorMessage = slide.querySelector('#alert-message');
 
     if (!enteredKey) {
         errorMessage.innerText = 'Please enter your passkey!';
         return;
     }
 
-    isVerified = await verifyPasskey(enteredKey);
-
-    if(isVerified){
+    if (await window.userKeychain.validateKeychainPassword(enteredKey)) {
         await setPassKey(enteredKey);
-        await syncKeychain(serverKeychainCryptoData);
+        // This is the trigger for the migrations when the user logged in but did not have a passkey already in local storage.
+        // The call in handshake.blade.php is used to trigger the migration for users who already have a passkey in local storage when they login.
+        await window.applyMigrations('after_passkey');
         window.location.href = '/chat';
-    }
-    else{
-        errorMessage.innerText = "Failed to verify passkey. Please try again.";
+    } else {
+        errorMessage.innerText = 'Failed to verify passkey. Please try again.';
         setTimeout(() => {
-            errorMessage.innerText = "";
+            errorMessage.innerText = '';
         }, 10000);
     }
 
 }
-
-async function verifyPasskey(passkey) {
-    try {
-        const udSalt = await fetchServerSalt('USERDATA_ENCRYPTION_SALT');
-        const keychainEncryptor = await deriveKey(passkey, "keychain_encryptor", udSalt);
-
-        const { keychain, KCIV, KCTAG } = JSON.parse(serverKeychainCryptoData);
-
-        const decryptedKeychain = await decryptWithSymKey(
-            keychainEncryptor,
-            keychain,
-            KCIV,
-            KCTAG,
-            false
-        );
-
-        return true;
-    } catch (error) {
-        // You can log the error if needed
-        // console.error("Error during verification or decryption:", error);
-        return false;
-    }
-}
-
 
 function uploadTextFile() {
     // Create a file input element
@@ -370,12 +320,12 @@ function uploadTextFile() {
     const msg = document.querySelector('#backup-alert-message');
 
     // Set up an event listener to handle the file once the user selects it
-    input.addEventListener('change', function(event) {
+    input.addEventListener('change', function (event) {
         const file = event.target.files[0]; // Get the first selected file
         if (file) {
             const reader = new FileReader();
             // Once the file is read, invoke the callback with the file content
-            reader.onload = function(e) {
+            reader.onload = function (e) {
                 const content = e.target.result;
                 if (isValidBackupKeyFormat(content.trim())) {
                     document.querySelector('#backup-hash-input').value = content;
@@ -391,56 +341,54 @@ function uploadTextFile() {
     // Trigger the file input dialog
     input.click();
 }
+
 function isValidBackupKeyFormat(content) {
     // Define a regular expression to match the format xxxx-xxxx-xxxx-xxxx
     const pattern = /^[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}$/;
     return pattern.test(content);
 }
 
-async function extractPasskey(){
+async function extractPasskey() {
     const msg = document.querySelector('#backup-alert-message');
     const backupHash = document.querySelector('#backup-hash-input').value;
-    if(!backupHash){
+    if (!backupHash) {
         msg.innerText = 'Enter backupHash or upload your backup file.';
         return;
     }
-    if(!isValidBackupKeyFormat){
+    if (!isValidBackupKeyFormat) {
         msg.innerText = 'Backup key is not valid!';
         return;
     }
 
     // Get passkey backup from server.
     const passkeyBackup = await requestPasskeyBackup();
-    if(!passkeyBackup){
+    if (!passkeyBackup) {
         return;
     }
 
     // derive Key from entered backupkey
-    const passkeyBackupSalt = await fetchServerSalt('BACKUP_SALT');
+    const passkeyBackupSalt = window.getConfig().salts.backup;
     const derivedKey = await deriveKey(backupHash, `${userInfo.username}_backup`, passkeyBackupSalt);
-    // console.log(derivedKey);
-    try{
+    try {
         //encrypt Passkey as plaintext
         const passkey = await decryptWithSymKey(derivedKey,
-                                                passkeyBackup.ciphertext,
-                                                passkeyBackup.iv,
-                                                passkeyBackup.tag,
-                                                false);
+            passkeyBackup.ciphertext,
+            passkeyBackup.iv,
+            passkeyBackup.tag,
+            false);
 
-        if(verifyPasskey(passkey)){
-            setPassKey(passkey);
+        if (await window.userKeychain.validateKeychainPassword(passkey)) {
+            await setPassKey(passkey);
             switchSlide(4);
             document.querySelector('#passkey-field').innerText = passkey;
-            setTimeout(()=>{
+            setTimeout(() => {
                 document.querySelector('.slide-back-btn').remove();
-            }, 300)
+            }, 300);
 
+        } else {
+            msg.innerText = 'Failed to verify passkey';
         }
-        else{
-            msg.innerText = "Failed to verify passkey";
-        }
-    }
-    catch (error) {
+    } catch (error) {
         msg.innerText = 'Error decrypting passkey with backup code.';
         throw error;
     }
@@ -448,46 +396,45 @@ async function extractPasskey(){
 }
 
 
-async function requestPasskeyBackup(){
-        // Request passkey backup from server.
-        try {
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            // Send the registration data to the server
-            const response = await fetch('/req/profile/requestPasskeyBackup', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    "X-CSRF-TOKEN": csrfToken,
-                    'Accept': 'application/json',
-                },
-            });
-
-            // Handle the server response
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Server Error:', errorData.error);
-                throw new Error(`Server Error: ${errorData.error}`);
+async function requestPasskeyBackup() {
+    // Request passkey backup from server.
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        // Send the registration data to the server
+        const response = await fetch('/req/profile/requestPasskeyBackup', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
             }
+        });
 
-            const data = await response.json();
-            if (data.success) {
-                const passKeyJson = data.passkeyBackup;
-                return passKeyJson;
-            }
-
-        } catch (error) {
-            console.error('Error downloading passkey backup:', error);
-            throw error;
+        // Handle the server response
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('Server Error:', errorData.error);
+            throw new Error(`Server Error: ${errorData.error}`);
         }
+
+        const data = await response.json();
+        if (data.success) {
+            const passKeyJson = data.passkeyBackup;
+            return passKeyJson;
+        }
+
+    } catch (error) {
+        console.error('Error downloading passkey backup:', error);
+        throw error;
+    }
 }
 
-async function redirectToChat(){
-    await syncKeychain(serverKeychainCryptoData);
+async function redirectToChat() {
     window.location.href = '/chat';
 }
 
 
-async function requestProfileReset(){
+async function requestProfileReset() {
     try {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         // Send the registration data to the server
@@ -495,9 +442,9 @@ async function requestProfileReset(){
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                "X-CSRF-TOKEN": csrfToken,
-                'Accept': 'application/json',
-            },
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
         });
 
         // Handle the server response

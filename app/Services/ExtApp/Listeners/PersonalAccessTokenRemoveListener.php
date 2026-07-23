@@ -1,0 +1,42 @@
+<?php
+declare(strict_types=1);
+
+
+namespace App\Services\ExtApp\Listeners;
+
+
+use App\Services\ExtApp\Events\ExtAppUserRemovedEvent;
+use App\Services\Users\Events\PersonalAccessTokenRemovedEvent;
+use App\Services\ExtApp\Repositories\ExtAppUserRepository;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+class PersonalAccessTokenRemoveListener
+{
+    public function __construct(
+        protected ExtAppUserRepository $appUserDb,
+        protected LoggerInterface      $log
+    )
+    {
+    }
+
+    /**
+     * @throws Throwable
+     */
+    public function handle(PersonalAccessTokenRemovedEvent $event): void
+    {
+        try {
+            $appUser = $this->appUserDb->findByToken($event->token);
+            if ($appUser !== null) {
+                ExtAppUserRemovedEvent::dispatch($appUser);
+                $appUser->delete();
+            }
+        } catch (\Throwable $e) {
+            $this->log->error(
+                'Failed to delete AppUser for PersonalAccessToken',
+                ['exception' => $e]
+            );
+            throw $e;
+        }
+    }
+}

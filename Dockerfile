@@ -13,7 +13,7 @@ RUN npm ci && npm run build
 # =====================================================
 # APP - ROOT
 # -----------------------------------------------------
-FROM neunerlei/php-nginx:8.5 AS app_root
+FROM neunerlei/php-nginx:8.3 AS app_root
 
 LABEL org.opencontainers.image.authors="HAWKI Team <ki@hawk.de>"
 LABEL org.opencontainers.image.description="The HAWKI application image"
@@ -23,6 +23,13 @@ RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
     --mount=type=bind,from=mlocati/php-extension-installer:2,source=/usr/bin/install-php-extensions,target=/usr/local/bin/install-php-extensions \
     install-php-extensions \
         ldap
+
+RUN --mount=type=cache,id=apt-cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
+        ghostscript \
+        imagemagick \
+        librsvg2-bin
 
 # -----------------------------------------------------
 # APP - DEV

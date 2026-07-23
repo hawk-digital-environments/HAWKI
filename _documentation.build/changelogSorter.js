@@ -10,7 +10,7 @@ export function changelogSorter(
     const versionRegex = /^(\d+\.\d+\.\d+)(?:-upgrade)?$/;
 
     for (const doc of docs) {
-        if (doc.id === 'index') {
+        if (doc.id === 'index' || doc.id === 'README') {
             indexDoc = doc;
             continue;
         }

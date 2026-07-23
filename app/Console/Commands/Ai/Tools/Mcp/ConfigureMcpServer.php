@@ -2,7 +2,8 @@
 
 namespace App\Console\Commands\Ai\Tools\Mcp;
 
-use App\Models\Ai\Tools\McpServer;
+use App\Models\Ai\McpServer;
+use App\Services\Ai\Tools\Values\McpServerTimeouts;
 use Illuminate\Console\Command;
 
 class ConfigureMcpServer extends Command
@@ -76,26 +77,28 @@ class ConfigureMcpServer extends Command
             }
         }
 
-        // ── Timeout ───────────────────────────────────────────────────────────
-        $this->line("  Current timeout: <fg=cyan>{$server->timeout}s</>");
-        if ($this->confirm("Update execution timeout?", false)) {
-            $val = $this->ask('Enter timeout in seconds', (string) $server->timeout);
-            if (is_numeric($val) && (int) $val !== (int) $server->timeout) {
-                $server->timeout = (int) $val;
-                $changed = true;
-                $this->info("  ✓ Timeout → <fg=cyan>{$val}s</>");
-            }
-        }
+        // ── Timeouts ──────────────────────────────────────────────────────────
+        $this->line("  Current timeouts: <fg=cyan>{$this->formatTimeouts($server->timeouts)}</>");
+        if ($this->confirm("Update timeouts?", false)) {
+            $currentRead = $server->timeouts->readTimeout;
+            $currentConnect = $server->timeouts->connectionTimeout;
+            $currentSse = $server->timeouts->sseIdleTimeout;
 
-        // ── Discovery timeout ─────────────────────────────────────────────────
-        $this->line("  Current discovery_timeout: <fg=cyan>{$server->discovery_timeout}s</>");
-        if ($this->confirm("Update discovery timeout?", false)) {
-            $val = $this->ask('Enter discovery timeout in seconds', (string) $server->discovery_timeout);
-            if (is_numeric($val) && (int) $val !== (int) $server->discovery_timeout) {
-                $server->discovery_timeout = (int) $val;
-                $changed = true;
-                $this->info("  ✓ Discovery timeout → <fg=cyan>{$val}s</>");
-            }
+            $readVal = $this->ask('Read timeout in seconds (blank to clear)', $currentRead !== null ? (string)$currentRead : null);
+            $connectVal = $this->ask('Connection timeout in seconds (blank to clear)', $currentConnect !== null ? (string)$currentConnect : null);
+            $sseVal = $this->ask('SSE idle timeout in seconds (blank to clear)', $currentSse !== null ? (string)$currentSse : null);
+
+            $newRead = ($readVal !== null && $readVal !== '') ? (float)$readVal : null;
+            $newConnect = ($connectVal !== null && $connectVal !== '') ? (float)$connectVal : null;
+            $newSse = ($sseVal !== null && $sseVal !== '') ? (float)$sseVal : null;
+
+            $server->timeouts = new McpServerTimeouts(
+                readTimeout: $newRead,
+                connectionTimeout: $newConnect,
+                sseIdleTimeout: $newSse
+            );
+            $changed = true;
+            $this->info("  ✓ Timeouts → <fg=cyan>{$this->formatTimeouts($server->timeouts)}</>");
         }
 
         // ── API key ───────────────────────────────────────────────────────────
@@ -151,7 +154,7 @@ class ConfigureMcpServer extends Command
 
         $labels = $servers->map(fn($s) => "{$s->server_label} (id:{$s->id}, {$s->tools_count} tools)")->toArray();
         $chosen = $this->choice('Select a server to configure', $labels);
-        $index  = array_search($chosen, $labels);
+        $index = array_search($chosen, $labels);
 
         return $servers[$index] ?? null;
     }
@@ -162,11 +165,25 @@ class ConfigureMcpServer extends Command
         $this->line("  URL:                <fg=cyan>{$server->url}</>");
         $this->line("  Description:        " . ($server->description ?: '<fg=gray>—</>'));
         $this->line("  Require approval:   {$server->require_approval}");
-        $this->line("  Timeout:            {$server->timeout}s");
-        $this->line("  Discovery timeout:  {$server->discovery_timeout}s");
+        $this->line("  Timeouts:           {$this->formatTimeouts($server->timeouts)}");
         $this->line("  API key:            {$this->maskApiKey($server->api_key)}");
         $toolCount = $server->tools()->count();
         $this->line("  Tools:              {$toolCount} registered");
+    }
+
+    private function formatTimeouts(McpServerTimeouts $t): string
+    {
+        $parts = [];
+        if ($t->connectionTimeout !== null) {
+            $parts[] = "connect={$t->connectionTimeout}s";
+        }
+        if ($t->readTimeout !== null) {
+            $parts[] = "read={$t->readTimeout}s";
+        }
+        if ($t->sseIdleTimeout !== null) {
+            $parts[] = "sse={$t->sseIdleTimeout}s";
+        }
+        return $parts !== [] ? implode(' ', $parts) : '—';
     }
 
     /**

@@ -113,9 +113,9 @@ services:
     # or other file types. By using a dedicated container for this service, we can isolate its dependencies and resource usage from the main application,
     # ensuring better performance and scalability.
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.2.0
+        image: digitalenvironments/hawki-toolkit-file-converter:3.0.1
         container_name: ${PROJECT_NAME}-file-converter
-        restart: always
+        restart: no
         environment:
             # Defines the API key for the file converter service, which is used for authentication when the main HAWKI application communicates with the file converter.
             # This is set by the "HAWKI_FILE_CONVERTER_API_KEY" environment variable in your .env file, so both the app and file converter can share the same API key for secure communication.
@@ -128,7 +128,7 @@ services:
     redis:
         container_name: ${PROJECT_NAME}-redis
         image: redis:8-trixie
-        restart: always
+        restart: no
         volumes:
             - redis_data:/root/redis
         environment:
@@ -161,7 +161,7 @@ services:
         ports:
             - ${DOCKER_PROJECT_IP:-127.0.0.1}:${DB_PORT:-3306}:3306
         healthcheck:
-            test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+            test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
             start_period: 2s
             timeout: 20s
             interval: 5s

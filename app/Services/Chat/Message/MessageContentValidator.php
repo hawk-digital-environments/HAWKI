@@ -2,26 +2,33 @@
 
 namespace App\Services\Chat\Message;
 
+use Illuminate\Container\Attributes\Config;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Log;
+use Psr\Log\LoggerInterface;
 
 
-class MessageContentValidator
+readonly class MessageContentValidator
 {
+    public function __construct(
+        #[Config('filesystems.upload_limits.max_attachment_files')]
+        private int             $maxAttachments,
+        private LoggerInterface $logger
+    )
+    {
+    }
+
     public function validate(array $content): ?array
     {
-        try{
+        try {
             $rules = [
                 'text' => 'nullable|array',
                 'text.ciphertext' => 'required_with:text|string',
                 'text.iv' => 'required_with:text|string',
                 'text.tag' => 'required_with:text|string',
 
-                'attachments' => 'nullable|array',
-                'attachments.*.uuid' => 'required_with:attachments|string',
-                'attachments.*.name' => 'required_with:attachments|string',
-                'attachments.*.mime' => 'required_with:attachments|string',
+                'attachments' => 'nullable|array|max:' . ($this->maxAttachments > 0 ? $this->maxAttachments : PHP_INT_MAX),
+                'attachments.*' => 'required_with:attachments|string'
             ];
 
             $validator = Validator::make($content, $rules);
@@ -35,10 +42,9 @@ class MessageContentValidator
             });
 
             return $validator->validate();
-        }
-        catch (ValidationException $e) {
-            Log::error($e->getMessage());
-            return null;
+        } catch (ValidationException $e) {
+            $this->logger->error($e->getMessage());
+            abort(422, 'Invalid message content: ' . $e->getMessage());
         }
     }
 }

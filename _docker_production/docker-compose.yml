@@ -113,13 +113,13 @@ services:
     # or other file types. By using a dedicated container for this service, we can isolate its dependencies and resource usage from the main application,
     # ensuring better performance and scalability.
     file-converter:
-        image: digitalenvironments/hawki-toolkit-file-converter:1.2.0
+        image: digitalenvironments/hawki-toolkit-file-converter:3.0.1
         container_name: ${PROJECT_NAME}-file-converter
         restart: always
         environment:
             - F_API_KEY=${HAWKI_FILE_CONVERTER_API_KEY:-}
         healthcheck:
-            test: [ "CMD", "curl", "-f", "http://localhost:8001/health" ]
+            test: [ "CMD", "curl", "-f", "http://localhost/health" ]
             interval: 30s
             timeout: 10s
             retries: 3
@@ -157,7 +157,7 @@ services:
             nofile:
                 soft: 65536
                 hard: 65536
-        restart: no
+        restart: always
         volumes:
             - mysql_data:/var/lib/mysql
         ports:

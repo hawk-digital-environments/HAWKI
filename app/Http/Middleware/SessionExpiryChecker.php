@@ -4,10 +4,9 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+use Symfony\Component\HttpFoundation\Response;
 
 
 class SessionExpiryChecker
@@ -15,12 +14,12 @@ class SessionExpiryChecker
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param Closure(Request): (Response) $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(Auth::user()->isRemoved === 1){
-            return redirect('/logout')->withErrors('Your accound has been suspended.');
+        if(Auth::user()->isRemoved === true){
+            return redirect('/logout')->withErrors('Your account has been suspended.');
         }
 
         if(Session::get('lastActivity')){

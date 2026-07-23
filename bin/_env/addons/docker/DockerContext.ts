@@ -3,7 +3,7 @@ import {promisify} from 'util';
 import {exec, execSync} from 'node:child_process';
 import {confirm, input, select} from '@inquirer/prompts';
 import process from 'node:process';
-import {executeCommand, type ExecuteCommandOptions, type ExecuteCommandResult, type InteractiveCommandResult, type InteractiveExecuteCommandOptions, type NonInteractiveCommandResult, type NonInteractiveExecuteCommandOptions} from '@/executeCommand.js';
+import {executeCommand, type ExecuteCommandOptions, type ExecuteCommandResult, type InteractiveCommandResult, type InteractiveExecuteCommandOptions, type NonInteractiveCommandResult, type NonInteractiveExecuteCommandOptions} from '@/executeCommand.ts';
 import chalk from 'chalk';
 
 const execAsync = promisify(exec);
@@ -221,11 +221,18 @@ export class DockerContext {
         execFlags?: Array<string>
     } & ExecuteCommandOptions): Promise<ExecuteCommandResult> {
         await this.ensureComposeServiceIsRunning(serviceName);
+        // Only request a pseudo-TTY/stdin when the current shell actually provides one;
+        // non-interactive callers (CI, AI agents, pipes) would otherwise fail with
+        // "the input device is not a TTY" or receive \r\n-mangled output.
+        const execFlags = opts?.execFlags ?? [
+            ...(process.stdout.isTTY ? ['-t'] : []),
+            ...(opts?.interactive && process.stdin.isTTY ? ['-i'] : [])
+        ];
         return executeCommand(
             await this.getDockerExecutable(),
             [
                 'exec',
-                ...(opts?.execFlags || (opts?.interactive ? ['-ti'] : ['-t'])),
+                ...execFlags,
                 await this.getContainerIdFromServiceName(serviceName),
                 ...command
             ],
@@ -401,6 +408,14 @@ export class DockerContext {
     public async ensureComposeServiceIsRunning(serviceName?: string): Promise<void> {
         const isRunning = await this.isComposeServiceRunning(serviceName);
         if (!isRunning) {
+            const service = serviceName ?? this.defaultServiceName;
+
+            if (!process.stdin.isTTY) {
+                console.log(chalk.yellow(`The container for the service ${chalk.bold(`"${service}"`)} is not running; starting it automatically (non-interactive shell).`));
+                await this.up({args: [service]});
+                return;
+            }
+
             console.log(chalk.yellow(`The container for the service ${chalk.bold(`"${serviceName}"`)} is not running. I can try to start it for you.`));
             const doStart = await select({
                 message: 'Should I start the container for you?',
@@ -441,7 +456,9 @@ export class DockerContext {
             if (create !== false) {
                 console.log(chalk.yellow(`I could not find a container for the service ${chalk.bold(`"${service}"`)}. This might be because the container was removed.
 I can try to let docker compose create the containers (without starting them) for you.`));
-                const tryContainerCreate = await confirm({
+
+                // In non-interactive shells fall back to the prompt's default (create it)
+                const tryContainerCreate = !process.stdin.isTTY || await confirm({
                     message: 'Should I try to create the container for you?',
                     default: true
                 });
@@ -546,17 +563,21 @@ I can try to let docker compose create the containers (without starting them) fo
     }) {
         let imageName = options?.imageName;
         if (!imageName) {
-            imageName = await input({
-                message: 'How should the image be named?',
-                default: this.projectName + '-app'
-            });
+            imageName = !process.stdin.isTTY
+                ? this.projectName + '-app'
+                : await input({
+                    message: 'How should the image be named?',
+                    default: this.projectName + '-app'
+                });
         }
         let tag = options?.tag;
         if (!tag) {
-            tag = await input({
-                message: 'What tag should the image be tagged with?',
-                default: 'latest'
-            });
+            tag = !process.stdin.isTTY
+                ? 'latest'
+                : await input({
+                    message: 'What tag should the image be tagged with?',
+                    default: 'latest'
+                });
         }
 
         const args = Array.isArray(options?.args) ? options.args : [];
@@ -584,6 +605,10 @@ I can try to let docker compose create the containers (without starting them) fo
      */
     public async clean(doConfirm?: boolean): Promise<void> {
         if (!doConfirm) {
+            // Destructive operation: never proceed silently without a real user confirming
+            if (!process.stdin.isTTY) {
+                throw new Error('Refusing to remove all containers and volumes in a non-interactive shell. Pass the confirmation explicitly or run this command in a terminal.');
+            }
             doConfirm = await confirm({
                 message: 'Are you sure you want to remove all containers and volumes?',
                 default: true

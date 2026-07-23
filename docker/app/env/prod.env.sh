@@ -64,6 +64,4 @@ fi
 
 # Define dynamic environment variables
 export APP_URL="${APP_PROTOCOL}://${APP_HOST}"
-export VITE_REVERB_HOST="${APP_HOST}"
-export VITE_REVERB_SCHEME="${APP_PROTOCOL}"
 export REVERB_HOST="${REVERB_HOST:-reverb}"

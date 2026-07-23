@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Services\Chat\Events\InvitationCreatedEvent;
+use App\Services\Chat\Events\InvitationUpdatedEvent;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Invitation extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'room_id',
         'username',
@@ -18,19 +18,24 @@ class Invitation extends Model
         'invitation'
     ];
 
-    public function room()
+    protected $dispatchesEvents = [
+        'created' => InvitationCreatedEvent::class,
+        'updated' => InvitationUpdatedEvent::class
+    ];
+
+    /**
+     * @return BelongsTo<Room, $this>
+     */
+    public function room(): BelongsTo
     {
-        return $this->belongsTo(Room::class);
+        return $this->belongsTo(Room::class)->withoutGlobalScopes();
     }
 
-    // public function user()
-    // {
-    //     $user = User::where('username', $username)->first();
-    //     if($user){
-    //         return $user;
-    //     }
-    //     else{
-    //         return null;
-    //     }
-    // }
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'username', 'username');
+    }
 }

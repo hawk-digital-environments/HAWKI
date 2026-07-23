@@ -1,124 +1,126 @@
-.lightMode {
-  --code-background: rgb(248, 248, 248);
-  --main-txt: #4d4d4c;
-  --string: #718c00; /* Tomorrow green */
-  --comment: #8e908c; /* Tomorrow comment */
-  --tag: #c82829; /* Tomorrow red */
-  --var: #c82829; /* Also Tomorrow red */
-  --addition: #4271ae; /* Tomorrow blue */
-  --meta: #3e999f; /* Tomorrow aqua */
-  --doctag: grey; /* No exact match, keeping it grey */
-  --attr: #eab700; /* Tomorrow yellow */
-  --link: #f5871f; /* Tomorrow orange */
-}
+@layer legacy {
+    .lightMode {
+        --code-background: rgb(248, 248, 248);
+        --main-txt: #4d4d4c;
+        --string: #718c00; /* Tomorrow green */
+        --comment: #8e908c; /* Tomorrow comment */
+        --tag: #c82829; /* Tomorrow red */
+        --var: #c82829; /* Also Tomorrow red */
+        --addition: #4271ae; /* Tomorrow blue */
+        --meta: #3e999f; /* Tomorrow aqua */
+        --doctag: grey; /* No exact match, keeping it grey */
+        --attr: #eab700; /* Tomorrow yellow */
+        --link: #f5871f; /* Tomorrow orange */
+    }
 
-.darkMode {
-  --code-background: #171717;
-  --main-txt: #ffffff;
-  --string: #99cc99; /* Tomorrow green */
-  --comment: #999999; /* Tomorrow comment */
-  --tag: #bedfff; /* Tomorrow red */
-  --var: #f2777a; /* Also Tomorrow red */
-  --addition: #6699cc; /* Tomorrow blue */
-  --meta: #66cccc; /* Tomorrow aqua */
-  --doctag: grey; /* No exact match, keeping it grey */
-  --attr: #ffcc66; /* Tomorrow yellow */
-  --link: #f99157; /* Tomorrow orange */
-}
+    .darkMode {
+        --code-background: #171717;
+        --main-txt: #ffffff;
+        --string: #99cc99; /* Tomorrow green */
+        --comment: #999999; /* Tomorrow comment */
+        --tag: #bedfff; /* Tomorrow red */
+        --var: #f2777a; /* Also Tomorrow red */
+        --addition: #6699cc; /* Tomorrow blue */
+        --meta: #66cccc; /* Tomorrow aqua */
+        --doctag: grey; /* No exact match, keeping it grey */
+        --attr: #ffcc66; /* Tomorrow yellow */
+        --link: #f99157; /* Tomorrow orange */
+    }
 
-pre {
-  background: var(--code-background);
-  border: var(--border-stroke-thin);
-  border-radius: var(--border-radius-tight);
-}
+    pre {
+        background: var(--code-background);
+        border: var(--border-stroke-thin);
+        border-radius: var(--border-radius-tight);
+    }
 
-pre code.hljs {
-  display: block;
-  overflow-x: auto;
-  padding: 1em;
-}
+    pre code.hljs {
+        display: block;
+        overflow-x: auto;
+        padding: 1em;
+    }
 
-code.hljs {
-  padding: 3px 5px;
-}
+    code.hljs {
+        padding: 3px 5px;
+    }
 
-.hljs-code-header {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  text-transform: capitalize;
-  
-  padding-top: .25rem;
-  padding-bottom: .25rem;
-  padding-left: 1rem;
-  padding-right: 0;
+    .hljs-code-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        text-transform: capitalize;
 
-  color: var(--main-txt);
-  border-bottom: var(--border-stroke-thin);
-  font-size: var(--font-xs);
-}
+        padding-top: .25rem;
+        padding-bottom: .25rem;
+        padding-left: 1rem;
+        padding-right: 0;
 
-.hljs {
-  color: var(--main-txt);
-}
+        color: var(--main-txt);
+        border-bottom: var(--border-stroke-thin);
+        font-size: var(--font-xs);
+    }
 
-.hljs-variable {
-  color: var(--var);
-}
+    .hljs {
+        color: var(--main-txt);
+    }
 
-.hljs-string {
-  color: var(--string);
-}
+    .hljs-variable {
+        color: var(--var);
+    }
 
-.hljs-comment,
-.hljs-quote {
-  color: var(--comment);
-}
+    .hljs-string {
+        color: var(--string);
+    }
 
-.hljs-built_in,
-.hljs-keyword,
-.hljs-name,
-.hljs-selector-tag,
-.hljs-tag {
-  color: var(--tag);
-}
+    .hljs-comment,
+    .hljs-quote {
+        color: var(--comment);
+    }
 
-.hljs-addition,
-.hljs-attribute,
-.hljs-literal,
-.hljs-section,
-.hljs-template-tag,
-.hljs-template-variable,
-.hljs-title,
-.hljs-type {
-  color: var(--addition);
-}
+    .hljs-built_in,
+    .hljs-keyword,
+    .hljs-name,
+    .hljs-selector-tag,
+    .hljs-tag {
+        color: var(--tag);
+    }
 
-.hljs-deletion,
-.hljs-meta,
-.hljs-selector-attr,
-.hljs-selector-pseudo {
-  color: var(--meta);
-}
+    .hljs-addition,
+    .hljs-attribute,
+    .hljs-literal,
+    .hljs-section,
+    .hljs-template-tag,
+    .hljs-template-variable,
+    .hljs-title,
+    .hljs-type {
+        color: var(--addition);
+    }
 
-.hljs-doctag {
-  color: var(--doctag);
-}
+    .hljs-deletion,
+    .hljs-meta,
+    .hljs-selector-attr,
+    .hljs-selector-pseudo {
+        color: var(--meta);
+    }
 
-.hljs-attr {
-  color: var(--attr);
-}
+    .hljs-doctag {
+        color: var(--doctag);
+    }
 
-.hljs-bullet,
-.hljs-link,
-.hljs-symbol {
-  color: var(--link);
-}
+    .hljs-attr {
+        color: var(--attr);
+    }
 
-.hljs-emphasis {
-  font-style: italic;
-}
+    .hljs-bullet,
+    .hljs-link,
+    .hljs-symbol {
+        color: var(--link);
+    }
 
-.hljs-strong {
-  font-weight: 700;
+    .hljs-emphasis {
+        font-style: italic;
+    }
+
+    .hljs-strong {
+        font-weight: 700;
+    }
 }

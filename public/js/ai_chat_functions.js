@@ -1,92 +1,125 @@
 let convMessageTemplate;
 let chatItemTemplate;
+/** @type {OldUiConversation} */
 let activeConv;
-let defaultPrompt;
 let chatlogElement;
 
-function initializeAiChatModule(chatsObject){
-
+function initializeAiChatModule(chatsObject) {
     convMessageTemplate = document.getElementById('message-template');
     chatItemTemplate = document.getElementById('selection-item-template');
     chatlogElement = document.querySelector('.chatlog');
-
-    defaultPrompt = translation.Default_Prompt;
-
-    const systemPromptFields = document.querySelectorAll('.system_prompt_field');
-    systemPromptFields.forEach(field => {
-        field.textContent = defaultPrompt;
-    });
 
     chats = chatsObject;
     chats.forEach(conv => {
         createChatItem(conv);
     });
 
-    if(document.querySelector('.trunk').childElementCount == 0){
+    if (document.querySelector('.trunk').childElementCount == 0) {
         chatlogElement.classList.add('start-state');
     }
 
-
-    const input = document.getElementById('input-container');
-    initFileUploader(input);
-
     initializeChatlogFunctions();
-}
 
-
-function onHandleKeydownConv(event){
-
-    if(getSendBtnStat() === SendBtnStatus.SENDABLE){
-        if(event.key == "Enter" && !event.shiftKey){
-            event.preventDefault();
-            selectActiveThread(event.target);
-            sendMessageConv(event.target);
+    window.oldUiBridge.onSendMessage('aiConv', async function (payload) {
+        await sendMessageConv(payload);
+    });
+    window.oldUiBridge.onNewChat(() => {
+        startNewChat();
+    });
+    window.oldUiBridge.onOpenChat((slug) => {
+        const switchConversations = slug !== window.oldUiMessageHistory.conversationSlug;
+        loadConv(null, slug);
+        onSidebarButtonDown('chat', switchConversations);
+    });
+    window.oldUiBridge.onActiveConversationSystemPromptUpdate(newPrompt => {
+        if (!activeConv) {
+            console.error('No active conversation to update system prompt for!');
+            return;
         }
-    }
+        updateAiChatInfo(activeConv.slug, newPrompt);
+    });
+    window.oldUiBridge.onRenameChat(async (slug, newName) => {
+        updateAiChatInfo(slug, undefined, newName);
+    });
+    window.oldUiBridge.onDeleteChat((slug) => {
+        requestDeleteConv(slug);
+    });
 }
 
-function onSendClickConv(btn){
-
-    if(getSendBtnStat() === SendBtnStatus.SENDABLE){
-
-        selectActiveThread(btn);
-        //get inputfield relative to the button for multiple inputfields
-        const input = btn.closest('.input');
-        const inputField = input.querySelector('.input-field');
-        sendMessageConv(inputField);
-    }
-    else if(getSendBtnStat() === SendBtnStatus.STOPPABLE){
-        abortCtrl.abort();
-    }
-}
 
 // SEND MESSAGE FUNCTION
-async function sendMessageConv(inputField) {
-    // block empty input field.
-    if (inputField.value.trim() === "") {
+/**
+ * @param {OldUiSendMessagePayload} payload
+ * @return {Promise<void>}
+ */
+async function sendMessageConv(payload) {
+    activeThreadIndex = 0;
+
+    async function handleUploads() {
+        if (payload.attachments.length > 0) {
+            const attachmentsWithoutUuid = payload.attachments.filter(file => {
+                return payload.status.getFileUuid(file) === null;
+            });
+
+            if (attachmentsWithoutUuid.length > 0) {
+                attachmentsWithoutUuid.map(file => payload.status.clearFileIssue(file));
+                await uploadAttachmentQueue(payload.status, attachmentsWithoutUuid, 'conv');
+            }
+        }
+    }
+
+    if (payload.mode.is === 'edit') {
+        await handleUploads();
+
+        if (payload.status.failed) {
+            console.warn('Message has issues, not proceeding to edit.');
+            return;
+        }
+
+        await confirmEditMessage(payload);
         return;
     }
-    const input = inputField.closest('.input');
-    let inputText = String(escapeHTML(inputField.value.trim()));
 
-    setSendBtnStatus(SendBtnStatus.LOADING);
+    if (payload.mode.is === 'regen') {
+        await regenerateMessage(payload);
+        return;
+    }
+
+    if (payload.mode.is === 'thread') {
+        activeThreadIndex = payload.mode.threadId;
+    }
+
+    let plainContent = {
+        text: payload.message
+    };
+
+    let inputText = String(escapeHTML(payload.message));
 
     // if the chat is empty we need to initialize a new chatlog.
     if (document.querySelector('.trunk').childElementCount === 0) {
-        await initNewConv(inputText);
+        await initNewConv(inputText, payload);
     }
 
     /// UPLOAD ATTACHMENTS
-    const attachments = await uploadAttachmentQueue(input.id, 'conv');
+    await handleUploads();
+
+    // If there are already issues, do not proceed to send the message.
+    if (payload.status.failed) {
+        return;
+    }
+
+    // Build attachments array for legacy format
+    const attachments = payload.attachments
+        .map(file => payload.status.getFileUuid(file))
+        .filter(uuid => uuid !== null)
+    ;
 
     /// Encrypt message
-    const convKey = await keychainGet('aiConvKey');
+    const convKey = window.userKeychain.aiConvKey;
     const cryptoMsg = await encryptWithSymKey(convKey, inputText, false);
     const ciphertext = cryptoMsg.ciphertext;
     const iv = cryptoMsg.iv;
     const tag = cryptoMsg.tag;
-
-
 
     /// Submit Message to server.
     const messageObj = {
@@ -95,185 +128,220 @@ async function sendMessageConv(inputField) {
         'completion': true,
 
         'content': {
-            "text": {
+            'text': {
                 'ciphertext': ciphertext,
-                "iv": iv,
-                "tag": tag,
+                'iv': iv,
+                'tag': tag
             },
-            "attachments": attachments
-        },
-    }
+            'attachments': attachments
+        }
+    };
 
-    const submissionData = await submitMessageToServer(messageObj, `/req/conv/sendMessage/${activeConv.slug}`);
+    const submissionData = await submitMessageToServer(messageObj, `/req/conv/sendMessage/${activeConv.slug}`, plainContent);
 
     // Replace the original text
     submissionData.content.text = inputText;
 
-    // empty input field
-    inputField.value = "";
-    resizeInputField(inputField);
-    const thumbnails = input.querySelectorAll('.attachment');
-    thumbnails.forEach(thumbnails => {
-        removeAtchFromList(atch.dataset.fileId, input.id);
-    });
-
-    const messageElement = addMessageToChatlog(submissionData);
+    const messageElement = addMessageToChatlog(submissionData, false, false);
 
     // create and add message element to chatlog.
     messageElement.dataset.rawMsg = submissionData.content.text;
     scrollToLast(true, messageElement);
 
-    const tools = input
-        ? Array.from(input.querySelectorAll('.tool-selector.active')).map(
-            tog => tog.dataset.reference
-        ): [];
-
-    const msgAttributes = {
-        'threadIndex': activeThreadIndex,
-        'broadcasting': false,
-        'slug': '',
-        'stream': true,
-        'model': activeModel.id,
-        'metadata': {
-            'tools' : tools,
-            'params': activeModel.params,
-        },
-    }
-    buildRequestObjectForAiConv(msgAttributes);
+    payload.waitForResponse(async (response) => {
+        const msgAttributes = {
+            'threadIndex': activeThreadIndex,
+            'broadcasting': false,
+            'slug': '',
+            'stream': true,
+            'model': payload.model.model_id,
+            'metadata': {
+                'tools': payload.tools.map(tool => tool.toTransferString()),
+                'params': payload.parameters
+            }
+        };
+        await buildRequestObjectForAiConv(response, msgAttributes);
+        response.triggerReceived();
+    });
 }
 
-
-async function buildRequestObjectForAiConv(msgAttributes, messageElement = null, isUpdate = false, isDone = null){
+/**
+ * @param {SendMessageResponse} response
+ * @param {Object} msgAttributes
+ * @param {HTMLElement} messageElement
+ * @param {boolean} isUpdate
+ * @param {function} isDone
+ * @return {Promise<void>}
+ */
+async function buildRequestObjectForAiConv(
+    response,
+    msgAttributes,
+    messageElement = null,
+    isUpdate = false,
+    isDone = null
+) {
     // let messageElement;
-    let msg = "";
+    let msg = '';
+    /** @type {HTMLSvelteSnippetElement|undefined} */
+    let messageBodyElement;
+    let headerReceived = false;
     let messageObj;
-    let metadata;
-
-    // Start buildRequestObject processing
-    buildRequestObject(msgAttributes, async (data, done) => {
-
-        if(data){
-            if(!msgAttributes['broadcasting'] && msgAttributes['stream']){
-                setSendBtnStatus(SendBtnStatus.STOPPABLE);
-            }
-
-            const {messageText, groundingMetadata} = deconstContent(data.content);
-            if(groundingMetadata !== ""){
-                metadata = groundingMetadata;
-            }
-
-            const content = messageText;
-            msg += content;
-            messageObj = data;
-            messageObj.message_role = 'assistant';
-            messageObj.content = content;
-            messageObj.completion = data.isDone;
-            messageObj.model = msgAttributes['model'];
-            messageObj.tools = msgAttributes['metadata'].tools;
-            messageObj.params = msgAttributes['metadata'].params;
-
-            if (!messageElement) {
-                initializeMessageFormating()
-                messageElement = addMessageToChatlog(messageObj, false);
-            }
-            messageElement.dataset.rawMsg = msg;
-
-            if(data.type === "status"){
-                createStatusElement(data.status, messageElement);
-                return;
-            }
+    let citations = [];
+    let messageTextEl;
 
 
-            const msgTxtElement = messageElement.querySelector(".message-text");
+    return new Promise((resolve, reject) => {
+        // Start buildRequestObject processing
+        buildRequestObject(msgAttributes, async (data, done) => {
+            if (data) {
+                response.triggerBodyChunk(data);
 
-            msgTxtElement.innerHTML = formatChunk(content, groundingMetadata);
-            formatMathFormulas(msgTxtElement);
-            formatHljs(messageElement);
+                // This clears out the status element implicitly.
+                if (headerReceived && data.type !== 'status') {
+                    messageTextEl.replaceChildren();
+                }
 
-            if (groundingMetadata &&
-                groundingMetadata !== '' &&
-                groundingMetadata.searchEntryPoint &&
-                groundingMetadata.searchEntryPoint.renderedContent) {
+                if (data.type === 'error') {
+                    window.oldUiBridge.triggerSendToast(
+                        data.content, 'error'
+                    );
+                    response.triggerReceived();
+                    resolve();
+                    return;
+                } else if (data.type === 'header') {
+                    headerReceived = true;
+                    messageObj = {
+                        ...data,
+                        message_role: 'assistant',
+                        content: '',
+                        completion: false,
+                        model: msgAttributes['model'],
+                        tools: msgAttributes['metadata'].tools,
+                        params: msgAttributes['metadata'].params
+                    };
 
-                addGoogleRenderedContent(messageElement, groundingMetadata);
-            }
-            else{
-                if(messageElement.querySelector('.google-search')){
-                    messageElement.querySelector('.google-search').remove();
+                    let reusesElement = true;
+                    if (!messageElement) {
+                        reusesElement = false;
+                        messageElement = addMessageToChatlog(messageObj, false);
+                    }
+
+                    messageBodyElement = messageElement.querySelector('[data-id="message-body"]');
+                    if (!messageBodyElement) {
+                        console.error('Message body element not found!');
+                    } else if (reusesElement) {
+                        messageBodyElement.setProps({message: '', isStreaming: true});
+                    }
+
+                    messageTextEl = messageElement.querySelector('.message-text');
+                    if (!messageTextEl) {
+                        console.error('Message text element not found!');
+                    } else {
+                        messageTextEl.replaceChildren();
+                    }
+
+                    createStatusElement({key: 'running'}, messageElement);
+
+                    return;
+                } else if (data.type === 'citation') {
+                    citations.push(data.content);
+                    return;
+                } else if (data.type === 'status') {
+                    createStatusElement(data.status, messageElement);
+                    return;
+                } else if (data.type === 'message') {
+                    const content = data.content;
+                    msg += content;
+                    messageObj.content = content;
+
+                    messageBodyElement.dispatchEvent(new CustomEvent('messageUpdate', {detail: msg}));
+
+                    // Streaming continuation: don't force, so a user who scrolled
+                    // up to read isn't yanked back down by every chunk.
+                    scrollToLast(false, messageElement);
+                    return;
+                } else if (data.type === 'completion') {
+                    messageObj.content = data.content;
+                    messageObj.completion = data.isDone;
+                    messageElement.dataset.rawMsg = msg;
+                } else {
+                    console.warn('Unknown data type received:', data.type);
+                    return;
                 }
             }
 
+            if (done) {
+                if (messageTextEl) {
+                    messageTextEl.replaceChildren();
+                }
 
-            if(messageElement.querySelector('.think')){
-                messageElement.querySelectorAll('.think').forEach(el => {
-                    scrollPanelToLast(el.querySelector('.content-container'));
-                })
-            }
+                if (!headerReceived || !messageElement || !messageObj) {
+                    return;
+                }
 
-            scrollToLast(false, messageElement);
-        }
+                const text = !msg || msg.trim() === '' ? window.__('legacy.aiChat.noResponse') : msg;
 
-        if(done){
+                const plainContent = {
+                    text,
+                    citations
+                };
 
-            const msgTxtElement = messageElement.querySelector(".message-text");
-            msgTxtElement.innerHTML = formatMessage(messageElement.dataset.rawMsg, metadata);
-            formatMathFormulas(msgTxtElement);
-            formatHljs(messageElement);
+                const cryptoContent = JSON.stringify(plainContent);
+                const convKey = window.userKeychain.aiConvKey;
+                const cryptoMsg = await encryptWithSymKey(convKey, cryptoContent, false);
 
-            setSendBtnStatus(SendBtnStatus.SENDABLE);
-
-            const cryptoContent = JSON.stringify({
-                text: msg,
-                groundingMetadata : metadata
-            });
-
-            const convKey = await keychainGet('aiConvKey');
-            const cryptoMsg = await encryptWithSymKey(convKey, cryptoContent, false);
-
-            messageObj.ciphertext = cryptoMsg.ciphertext;
-            messageObj.iv = cryptoMsg.iv;
-            messageObj.tag = cryptoMsg.tag;
-
-            activateMessageControls(messageElement);
-
-            const requestObj = {
-                'isAi': true,
-                'threadId': activeThreadIndex,
-                'content':{
-                    'text': {
-                        'ciphertext': messageObj.ciphertext,
-                        'iv': messageObj.iv,
-                        'tag': messageObj.tag,
-                    }
-                },
-                'metadata': {
-                    'tools' : messageObj.tools,
-                    'params': msgAttributes['metadata']?.params ?? null,
-                },
-
-                'model': messageObj.model,
-                'completion': messageObj.completion,
-            }
-
-            if(isUpdate){
-                requestObj.message_id = messageElement.id;
-                await requestMsgUpdate(requestObj, messageElement, `/req/conv/updateMessage/${activeConv.slug}`)
-            }
-            else{
-                const submittedObj = await submitMessageToServer(requestObj, `/req/conv/sendMessage/${activeConv.slug}`);
-
-                submittedObj.content = cryptoContent;
-                messageElement.dataset.rawMsg = msg;
-                // messageElement.dataset.groundingMetadata = metadata;
-                addGoogleRenderedContent(messageElement, metadata);
-                updateMessageElement(messageElement, submittedObj);
+                messageBodyElement.dispatchEvent(new CustomEvent('doneStreaming', {detail: {text, citations}}));
                 activateMessageControls(messageElement);
-            }
 
-            if(isDone){
-                isDone(true);
+                const requestObj = {
+                    'isAi': true,
+                    'threadId': activeThreadIndex,
+                    'content': {
+                        'text': {
+                            'ciphertext': cryptoMsg.ciphertext,
+                            'iv': cryptoMsg.iv,
+                            'tag': cryptoMsg.tag
+                        }
+                    },
+                    'metadata': {
+                        'tools': messageObj.tools,
+                        'params': msgAttributes['metadata']?.params ?? null
+                    },
+
+                    'model': messageObj.model,
+                    'completion': messageObj.completion
+                };
+
+                if (isUpdate) {
+                    requestObj.message_id = messageElement.id;
+                    await requestMsgUpdate(requestObj, messageElement, `/req/conv/updateMessage/${activeConv.slug}`, plainContent);
+                } else {
+                    const submittedObj = await submitMessageToServer(
+                        requestObj,
+                        `/req/conv/sendMessage/${activeConv.slug}`,
+                        plainContent
+                    );
+
+                    submittedObj.content = cryptoContent;
+                    messageElement.dataset.rawMsg = msg;
+                    updateMessageElement(messageElement, submittedObj);
+                }
+
+                if (isDone) {
+                    isDone(true);
+                }
+
+                response.triggerReceived();
+
+                resolve();
             }
-        }
+        }, () => {
+            response.triggerError(window.__('legacy.aiChat.streamProcessingError'));
+            if (!isUpdate && messageElement) {
+                messageElement.remove();
+            }
+            reject();
+        }).catch(reject);
     });
 }
 
@@ -281,14 +349,20 @@ async function buildRequestObjectForAiConv(msgAttributes, messageElement = null,
 //#region CONVERSATION FUNCTIONS
 
 /// Initializing a new conversation.
-async function initNewConv(firstMessage){
+/**
+ * @param {string} firstMessage
+ * @param {OldUiSendMessagePayload} payload
+ * @return {Promise<void>}
+ */
+async function initNewConv(firstMessage, payload) {
 
     // if start State panel is there remove it.
     chatlogElement.classList.remove('start-state');
 
     // empty chatlog
     clearChatlog();
-    //
+    window.oldUiMessageHistory.clearConversation();
+
     history.replaceState(null, '', `/chat`);
 
     //create conversation button in the list.
@@ -296,77 +370,85 @@ async function initNewConv(firstMessage){
     convItem.classList.add('active');
 
     //create conversation name.
-    const convName = await generateChatName(firstMessage, convItem);
+    const convName = await generateChatName(firstMessage);
 
     //submit conv to server.
     // after the server has accepted Submission conv data will be updated.
-    const convData = await submitConvToServer(convName);
+    const convData = await submitConvToServer(convName, payload);
 
     //assign Slug to conv Item.
-    convItem.setAttribute('slug', convData.slug);
+    convItem.setAttribute('data-room-slug', convData.slug);
+    convItem.setProps({
+        slug: convData.slug,
+        name: convName
+    });
     //update URL
     history.replaceState(null, '', `/chat/${convData.slug}`);
 
+    const convKey = window.userKeychain.aiConvKey;
+    const systemPromptObj = JSON.parse(convData.system_prompt);
+    convData.name = convName;
+    convData.system_prompt = await decryptWithSymKey(convKey, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
+
     //update active conv cache.
     activeConv = convData;
-
-    return;
+    window.oldUiMessageHistory.loadConversation('aiConv', convData);
 }
 
-
-function startNewChat(){
+function startNewChat() {
     chatlogElement.classList.add('start-state');
     clearChatlog();
     clearInput();
+    window.oldUiMessageHistory.clearConversation();
     history.replaceState(null, '', `/chat`);
 
-    const systemPromptFields = document.querySelectorAll('.system_prompt_field');
-    systemPromptFields.forEach(field => {
-        field.textContent = defaultPrompt;
-    });
-
-    const lastActive = document.getElementById('chats-list').querySelector('.selection-item.active');
-    if(lastActive){
-        lastActive.classList.remove('active')
+    const lastActive = document.getElementById('chats-list').querySelector('svelte-snippet[type="ChatSidebarButton"].active');
+    if (lastActive) {
+        lastActive.classList.remove('active');
     }
-
-    document.getElementById('input-container').focus();
 }
 
-function createChatItem(conv = null){
+function createChatItem(conv = null) {
 
-    const convItem = chatItemTemplate.content.cloneNode(true);
+    /** @type {HTMLSvelteSnippetElement} */
+    const snippet = document.createElement('svelte-snippet');
+    snippet.setAttribute('type', 'ChatSidebarButton');
+
     const chatsList = document.getElementById('chats-list');
-    const label = convItem.querySelector('.label');
 
-    if(conv){
-        convItem.querySelector('.selection-item').setAttribute('slug', conv.slug);
-        label.textContent = conv.conv_name;
+    if (conv) {
+        snippet.setProps({
+            slug: conv.slug,
+            name: conv.conv_name,
+            context: 'aiConv'
+        });
+        snippet.setAttribute('data-room-slug', conv.slug);
+    } else {
+        snippet.setProps({
+            context: 'aiConv'
+        });
     }
-    else{
-        label.textContent = 'New Chat';
-    }
 
-    chatsList.insertBefore(convItem, chatsList.firstChild);
+    chatsList.insertBefore(snippet, chatsList.firstChild);
 
-    return chatsList.firstElementChild;
+    return snippet;
 }
 
 
-async function generateChatName(firstMessage, convItem) {
+async function generateChatName(firstMessage) {
     const requestObject = {
         payload: {
-            model: systemModels.title_generator,
+            model: window.getSystemModel('title_generation').model_id,
             stream: true,
             messages: [
                 {
-                    role: "system",
+                    role: 'system',
                     content: {
-                        text: translation.Name_Prompt
+                        text: window.getSystemPrompt('title_generation')
                     }
                 },
                 {
-                    role: "user",
+                    role: 'user',
                     content: {
                         text: firstMessage
                     }
@@ -375,55 +457,55 @@ async function generateChatName(firstMessage, convItem) {
         },
         broadcast: false,
         threadIndex: '',
-        slug: '',
+        slug: ''
     };
 
     return new Promise((resolve, reject) => {
         postData(requestObject)
-        .then(response => {
-            const convElement = convItem.querySelector('.label');
-            let convName = ""; // Initialize to an empty string
-            const onData = (data, done) => {
-                if (data) {
-                    convName += deconstContent(data.content).messageText;
-                    convElement.innerText = convName;
-                }
-                if (done) {
-                    resolve(convName); // Resolve the promise with convName
-                }
-            };
-            processStream(response.body, onData);
-        })
-        .catch(error => reject(error));
+            .then(response => {
+                let convName = ''; // Initialize to an empty string
+                const onData = (data, done) => {
+                    if (data && data.type === 'message' && data.content) {
+                        convName += deconstContent(data.content).messageText;
+                    }
+                    if (done) {
+                        resolve(convName); // Resolve the promise with convName
+                    }
+                };
+                return processStream(response.body, onData);
+            })
+            .catch(error => reject(error));
     });
 
 }
 
-
-
-async function submitConvToServer(convName) {
-    const systemPrompt = document.querySelector('#system_prompt_field').textContent;
-    const convKey = await keychainGet('aiConvKey');
-    const cryptSystemPrompt = await encryptWithSymKey(convKey, systemPrompt, false);
+/**
+ * @param {string} convName
+ * @param {OldUiSendMessagePayload} payload
+ * @return {Promise<*>}
+ */
+async function submitConvToServer(convName, payload) {
+    const convKey = window.userKeychain.aiConvKey;
+    const cryptSystemPrompt = await encryptWithSymKey(convKey, payload.systemPrompt, false);
     const systemPromptStr = JSON.stringify({
-        'ciphertext':cryptSystemPrompt.ciphertext,
-        'iv':cryptSystemPrompt.iv,
-        'tag':cryptSystemPrompt.tag,
+        'ciphertext': cryptSystemPrompt.ciphertext,
+        'iv': cryptSystemPrompt.iv,
+        'tag': cryptSystemPrompt.tag
     });
 
 
     const requestObject = {
         conv_name: convName,
         system_prompt: systemPromptStr
-    }
+    };
 
     try {
         const response = await fetch('/req/conv/createChat', {
-            method: "POST",
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(requestObject)
         });
@@ -442,24 +524,23 @@ async function submitConvToServer(convName) {
 }
 
 
-async function loadConv(btn=null, slug=null){
+async function loadConv(btn = null, slug = null) {
 
     abortCtrl.abort();
 
-    if(!btn && !slug){
+    if (!btn && !slug) {
         return;
     }
 
-    if(!slug) slug = btn.getAttribute('slug');
-    if(!btn) btn = document.querySelector(`.selection-item[slug="${slug}"]`);
+    if (!slug) slug = btn.getAttribute('data-room-slug');
+    if (!btn) btn = document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${slug}"]`);
     // switchDyMainContent('chat');
 
-    const lastActive = document.getElementById('chats-list').querySelector('.selection-item.active');
-    if(lastActive){
-        lastActive.classList.remove('active')
+    const lastActive = document.getElementById('chats-list').querySelector('svelte-snippet[type="ChatSidebarButton"].active');
+    if (lastActive) {
+        lastActive.classList.remove('active');
     }
     btn.classList.add('active');
-
 
 
     switchDyMainContent('chat');
@@ -468,7 +549,7 @@ async function loadConv(btn=null, slug=null){
 
     const convData = await RequestConvContent(slug);
 
-    if(!convData){
+    if (!convData) {
         return;
     }
 
@@ -476,82 +557,64 @@ async function loadConv(btn=null, slug=null){
     clearInput();
     activeConv = convData;
 
-    const convKey = await keychainGet('aiConvKey');
+    const convKey = window.userKeychain.aiConvKey;
     const systemPromptObj = JSON.parse(convData.system_prompt);
-    const systemPrompt = await decryptWithSymKey(convKey, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
-
-    activeConv.system_prompt = systemPrompt;
-
-    const systemPromptFields = document.querySelectorAll('.system_prompt_field');
-    systemPromptFields.forEach(field => {
-        field.textContent = systemPrompt;
-    });
+    activeConv.system_prompt = await decryptWithSymKey(convKey, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
 
     const msgs = convData.messages;
     for (const msg of msgs) {
-        const decryptedContent =  await decryptWithSymKey(convKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+        const decryptedContent = await decryptWithSymKey(convKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
         msg.content.text = decryptedContent;
     }
 
-    if(msgs.length > 0){
+    if (msgs.length > 0) {
         chatlogElement.classList.remove('start-state');
-    }
-    else{
+    } else {
         chatlogElement.classList.add('start-state');
     }
-    initModelFilter();
+    window.oldUiMessageHistory.loadConversation('aiConv', activeConv);
+    window.oldUiBridge.triggerLoadSystemPrompt(activeConv.system_prompt);
     loadMessagesOnGUI(convData.messages);
-    scrollToLast(true);
+    setTimeout(() => scrollToLast(true), 500);
 }
 
 
-
-
-async function RequestConvContent(slug){
+async function RequestConvContent(slug) {
 
     url = `/req/conv/${slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-    try{
+    try {
         const response = await fetch(url, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
 
-            },
+            }
         });
 
-        if(!response.ok){
+        if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const responseJson = await response.json();
-        if(responseJson.success){
+        if (responseJson.success) {
             return responseJson.data;
-        }
-        else{
+        } else {
             console.error(responseJson.message);
             return;
         }
-    }
-    catch (err){
-        console.error('Error fetching data:', error);
+    } catch (err) {
+        console.error('Error fetching data:', err);
         throw err;
     }
 }
 
 
-
-async function requestDeleteConv() {
-
-    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteConv);
-    if (!confirmed) {
-        return;
-    }
-
-    const url = `/req/conv/removeConv/${activeConv.slug}`;
+async function requestDeleteConv(slug) {
+    const url = `/req/conv/removeConv/${slug}`;
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
     try {
@@ -560,22 +623,22 @@ async function requestDeleteConv() {
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
-            },
+                'Accept': 'application/json'
+            }
         });
         const data = await response.json();
 
         if (data.success) {
-            const listItem = document.querySelector(`.selection-item[slug="${activeConv.slug}"]`);
+            const listItem = document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${slug}"]`);
             const list = listItem.parentElement;
             listItem.remove();
 
-            if(list.childElementCount > 0){
-                loadConv(list.firstElementChild, null);
-            }
-            else{
+            if (list.childElementCount > 0) {
+                await loadConv(list.firstElementChild, null);
+            } else {
                 clearChatlog();
                 clearInput();
+                window.oldUiMessageHistory.clearConversation();
                 chatlogElement.classList.remove('active');
                 chatlogElement.classList.add('start-state');
 
@@ -591,9 +654,8 @@ async function requestDeleteConv() {
 }
 
 
-
-async function deleteMessage(btn){
-    const confirmed = await openModal(ModalType.WARNING , translation.Cnf_deleteConv);
+async function deleteMessage(btn) {
+    const confirmed = await openModal(ModalType.WARNING, __('Cnf_deleteConv'));
     if (!confirmed) {
         return;
     }
@@ -603,16 +665,23 @@ async function deleteMessage(btn){
 
     const message = btn.closest('.message');
 
+    if (!message || !message.id) {
+        message.remove();
+        return;
+    }
+
+    window.oldUiMessageHistory.removeMessageFromConversation(message.id);
+
     try {
         const response = await fetch(url, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
-                'message_id' : message.id
+                'message_id': message.id
             })
         });
 
@@ -621,7 +690,6 @@ async function deleteMessage(btn){
         if (data.success) {
 
             message.remove();
-
 
 
         } else {
@@ -636,3 +704,57 @@ async function deleteMessage(btn){
 
 
 //#endregion
+
+async function updateAiChatInfo(slug, systemPrompt, chatName) {
+    const payload = {};
+    /** @type {Array<() => void>} */
+    const updaters = [];
+
+    if (systemPrompt) {
+        const convKey = window.userKeychain.aiConvKey;
+        const cryptSystemPrompt = await encryptWithSymKey(convKey, systemPrompt, false);
+        payload.system_prompt = JSON.stringify({
+            'ciphertext': cryptSystemPrompt.ciphertext,
+            'iv': cryptSystemPrompt.iv,
+            'tag': cryptSystemPrompt.tag
+        });
+        if (activeConv && activeConv.slug === slug) {
+            updaters.push(() => activeConv.system_prompt = systemPrompt);
+            updaters.push(() => window.oldUiMessageHistory.updateConversation({system_prompt: systemPrompt}));
+            updaters.push(() => window.oldUiBridge.triggerLoadSystemPrompt(systemPrompt));
+        }
+    }
+
+    if (chatName) {
+        payload.conv_name = chatName;
+        if (activeConv && activeConv.slug === slug) {
+            updaters.push(() => activeConv.name = chatName);
+            updaters.push(() => window.oldUiMessageHistory.updateConversation({name: chatName}));
+        }
+    }
+
+    const url = `/req/conv/updateInfo/${slug}`;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            updaters.forEach(updater => updater());
+        } else {
+            console.error('Update not successfull');
+        }
+    } catch (error) {
+        console.error('Failed to Update System Prompt!');
+    }
+
+}

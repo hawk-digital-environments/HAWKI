@@ -1,29 +1,27 @@
-async function toggleAccessTokensPanel(active){
+async function toggleAccessTokensPanel(active) {
 
     const panel = document.querySelector('#access-token-modal');
     const newTokenField = panel.querySelector('#newAccessTokenName');
     const chart = panel.querySelector('#access-token-chart');
 
-    if(active){
+    if (active) {
         newTokenField.style.display = 'none';
         chart.innerHTML = '';
         const tokens = await fetchUserTokens();
 
-        // console.log(tokens);
-        for(let i = 0; i < tokens.length; i++){
+        for (let i = 0; i < tokens.length; i++) {
             const t = tokens[i];
             addTokenToList(t);
-        };
+        }
 
-        panel.style.display = "flex";
+        panel.style.display = 'flex';
 
-    }
-    else{
-        panel.style.display = "none"
+    } else {
+        panel.style.display = 'none';
     }
 }
 
-async function fetchUserTokens(){
+async function fetchUserTokens() {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     try {
         const response = await fetch(`/req/profile/fetch-tokens`, {
@@ -31,8 +29,8 @@ async function fetchUserTokens(){
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
-            },
+                'Accept': 'application/json'
+            }
         });
         const data = await response.json();
         if (data.success) {
@@ -45,14 +43,14 @@ async function fetchUserTokens(){
     }
 }
 
-async function addNewToken(){
+async function addNewToken() {
     const panel = document.querySelector('#access-token-modal');
     const newTokenField = panel.querySelector('#newAccessTokenName');
 
-    if(newTokenField.style.display === "block"){
+    if (newTokenField.style.display === 'block') {
         const name = newTokenField.value;
 
-        if(name === ''){
+        if (name === '') {
             return;
         }
         const data = await requestNewToken(name);
@@ -60,28 +58,28 @@ async function addNewToken(){
             'id': data.id,
             'name': data.name,
             'token': data.token
-        }
+        };
         addTokenToList(token);
         newTokenField.value = '';
         newTokenField.style.display = 'none';
         await openModal(ModalType.INFO,
             `
-             <p>${translation.Cnf_tokenMsg1}</p>
+             <p>${__('Cnf_tokenMsg1')}</p>
              <p>******</p>
              <p><b>${data.token}</b></p>
              <p>******</p>
-             <p class="red-text">${translation.Cnf_tokenMsg2}</p>
+             <p class="red-text">${__('Cnf_tokenMsg2')}</p>
             `,
-            `<h3>${translation.Cnf_tokenMsgSuccess}</h3>`
-        )
+            `<h3>${__('Cnf_tokenMsgSuccess')}</h3>`
+        );
 
         return;
     }
-    newTokenField.style.display="block";
-    panel.querySelector('#createButton').innerText='Confirm';
+    newTokenField.style.display = 'block';
+    panel.querySelector('#createButton').innerText = 'Confirm';
 }
 
-async function requestNewToken(name){
+async function requestNewToken(name) {
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     try {
         const response = await fetch(`/req/profile/create-token`, {
@@ -89,7 +87,7 @@ async function requestNewToken(name){
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 'name': name
@@ -97,7 +95,7 @@ async function requestNewToken(name){
         });
         const data = await response.json();
         if (data.success) {
-           return data;
+            return data;
         } else {
             console.error(data.error);
         }
@@ -106,13 +104,13 @@ async function requestNewToken(name){
     }
 }
 
-function addTokenToList(token){
+function addTokenToList(token) {
     const panel = document.querySelector('#access-token-modal');
     const chart = panel.querySelector('#access-token-chart');
 
     const rowTemp = document.getElementById('token-list-row-temp');
     const rowClone = rowTemp.content.cloneNode(true);
-    const rowElement = rowClone.querySelector("#token-item");
+    const rowElement = rowClone.querySelector('#token-item');
 
     rowElement.querySelector('.index').innerText = chart.childElementCount + 1;
     rowElement.querySelector('.token-name').innerText = token.name;
@@ -121,11 +119,11 @@ function addTokenToList(token){
     chart.appendChild(rowElement);
 }
 
-async function requestTokenRevoke(btn){
-    const item = btn.closest('#token-item')
+async function requestTokenRevoke(btn) {
+    const item = btn.closest('#token-item');
     const name = item.querySelector('.token-name').innerText;
-    const confirm = await openModal(ModalType.WARNING, `${translation.Cnf_tokenRevoke} ${name}`)
-    if(!confirm){
+    const confirm = await openModal(ModalType.WARNING, `${__('Cnf_tokenRevoke')} ${name}`);
+    if (!confirm) {
         return;
     }
 
@@ -137,7 +135,7 @@ async function requestTokenRevoke(btn){
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 'tokenId': tokenId

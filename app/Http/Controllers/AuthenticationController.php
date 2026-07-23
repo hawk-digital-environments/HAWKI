@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 
-use App\Models\PrivateUserData;
-use App\Models\User;
 use App\Services\Announcements\AnnouncementService;
 use App\Services\Auth\Contract\AuthServiceInterface;
 use App\Services\Auth\Contract\AuthServiceWithCredentialsInterface;
@@ -12,9 +10,10 @@ use App\Services\Auth\Contract\AuthServiceWithLogoutRedirectInterface;
 use App\Services\Auth\Contract\AuthServiceWithPostProcessingInterface;
 use App\Services\Auth\Exception\AuthFailedException;
 use App\Services\Auth\Value\AuthenticatedUserInfo;
-use App\Services\Profile\ProfileService;
-use App\Services\System\SettingsService;
+use App\Services\System\Database\Eloquent\Repositories\Value\ScopeOverrides;
+use App\Services\Users\Repositories\UserRepository;
 use Cookie;
+use Illuminate\Auth\AuthManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,6 +29,7 @@ class AuthenticationController extends Controller
         protected AuthServiceInterface   $authService,
         protected LanguageController     $languageController,
         private readonly LoggerInterface $logger,
+        private readonly UserRepository  $userRepository
     )
     {
     }
@@ -100,9 +100,10 @@ class AuthenticationController extends Controller
 
             $this->logger->info('LOGIN: ' . $authenticateResult->username);
 
-            $user = User::where('username', $authenticateResult->username)
-                ->where('isRemoved', 0)
-                ->first();
+            $user = $this->userRepository->findOneByUsername(
+                $authenticateResult->username,
+                ScopeOverrides::makeWithForcefullyDisabled('access')
+            );
 
             if ($user) {
                 Auth::login($user);
@@ -133,6 +134,8 @@ class AuthenticationController extends Controller
         } catch (\Throwable $e) {
             $error = $e instanceof AuthFailedException ? $e->getMessage() : 'An unexpected error occurred during authentication.';
 
+            $this->logger->warning('Failed login attempt', ['exception' => $e]);
+
             if ($authHasForm) {
                 // Tell the form that the login failed...
                 return response()->json([
@@ -153,27 +156,14 @@ class AuthenticationController extends Controller
     /// keychain sync will be done on the frontend side (check encryption.js)
     public function handshake(Request $request)
     {
-
-        $userInfo = Auth::user();
-
-        // Call getTranslation method from LanguageController
-        $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsService())->render();
-
-        $profileService = new ProfileService();
-        $keychainData = $profileService->fetchUserKeychain();
-
         $activeOverlay = false;
         if (Session::get('last-route') && Session::get('last-route') != 'handshake') {
             $activeOverlay = true;
         }
         Session::put('last-route', 'handshake');
 
-        $allowPaste = config('hawki.security.passkey.allow_paste', true);
-        $charLimit = config('hawki.security.passkey.char_limitation', true);
-
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.handshake', compact('translation', 'settingsPanel', 'userInfo', 'keychainData', 'activeOverlay', 'allowPaste', 'charLimit'));
+        return view('partials.gateway.handshake', compact('activeOverlay'));
 
     }
 
@@ -187,62 +177,41 @@ class AuthenticationController extends Controller
             return redirect('/handshake');
         }
 
-        $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
-
-
-        // Call getTranslation method from LanguageController
-        $translation = $this->languageController->getTranslation();
-        $settingsPanel = (new SettingsService())->render();
-
         $activeOverlay = false;
         if (Session::get('last-route') && Session::get('last-route') != 'register') {
             $activeOverlay = true;
         }
         Session::put('last-route', 'register');
 
-        $allowPaste = config('hawki.security.passkey.allow_paste', true);
-        $charLimit = config('hawki.security.passkey.char_limitation', true);
         // Pass translation, authenticationMethod, and authForms to the view
-        return view('partials.gateway.register', compact('translation', 'settingsPanel', 'userInfo', 'activeOverlay', 'allowPaste', 'charLimit'));
+        return view('partials.gateway.register', compact('activeOverlay'));
     }
 
 
 
     /// Setup User
     /// Create backup for userkeychain on the DB
-    public function completeRegistration(Request $request, AnnouncementService $announcementService)
+    public function completeRegistration(
+        Request             $request,
+        UserRepository      $userRepository,
+        AnnouncementService $announcementService,
+        AuthManager         $auth
+    )
     {
         try {
-            // Validate input data
-            $validatedData = $request->validate([
-                'publicKey' => 'required|string',
-                'keychain' => 'required|string',
-                'KCIV' => 'required|string',
-                'KCTAG' => 'required|string',
-            ]);
+            if (!$request->getUserContext()->isRegisteringUser()) {
+                abort(403, 'No registration in progress');
+            }
 
             // Retrieve user info from session
-            $userInfo = json_decode(Session::get('authenticatedUserInfo'), true);
-
-            // Process user info
-            $username = $userInfo['username'] ?? null;
-            $name = $userInfo['name'] ?? null;
-            $email = $userInfo['email'] ?? null;
-            $employeetype = $userInfo['employeetype'] ?? null;
-
-            $avatarId = $validatedData['avatar_id'] ?? '';
+            $userInfo = $request->getUserContext()->getRegisteringUser();
 
             // Update or create the local user
-            $user = User::updateOrCreate(
-                ['username' => $username],
-                [
-                    'name' => $name,
-                    'email' => $email,
-                    'employeetype' => $employeetype,
-                    'publicKey' => $validatedData['publicKey'],
-                    'avatar_id' => $avatarId,
-                    'isRemoved' => false
-                ]
+            $user = $userRepository->insert(
+                username: $userInfo->username,
+                name: $userInfo->name,
+                email: $userInfo->email,
+                employeeType: $userInfo->employeeType
             );
 
             try {
@@ -252,24 +221,17 @@ class AuthenticationController extends Controller
             } catch (\Throwable) {
             }
 
-            // Update or create the Private User Data
-            PrivateUserData::create(
-                [
-                    'user_id' => $user->id,
-                    'KCIV' => $validatedData['KCIV'],
-                    'KCTAG' => $validatedData['KCTAG'],
-                    'keychain' => $validatedData['keychain']
-                ]
-            );
             // Log the user in
-            Session::put('registration_access', false);
-            Auth::login($user);
+            $session = $request->session();
+            $session->put('authenticatedUserInfo', null);
+            $session->put('registration_access', false);
+            $auth->login($user);
 
             return response()->json([
                 'success' => true,
                 'redirectUri' => '/chat',
-                'userData' => $user
-            ]);
+                'userData' => $user,
+            ])->withHeaders(['X-HAWKI-CSRF-TOKEN' => $request->session()->token()]);
 
         } catch (ValidationException $e) {
             throw $e;

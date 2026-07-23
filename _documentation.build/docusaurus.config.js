@@ -13,7 +13,7 @@ const githubProject = 'HAWKI';
 const config = {
     title: 'HAWKI Docs - Learn how to HAWKI',
     tagline: 'Latest documentation',
-    favicon: 'img/favicon-32x32.png',
+    favicon: 'img/hawki_logo_blau.png',
 
     url: 'https://docs.hawki.info',
     baseUrl: '/',
@@ -22,7 +22,15 @@ const config = {
     projectName: githubProject, // Update with your actual project name
 
     onBrokenLinks: 'throw',
-    onBrokenMarkdownLinks: 'warn',
+
+    markdown: {
+        hooks: {
+            onBrokenMarkdownImages: 'warn',
+            onBrokenMarkdownLinks: 'throw'
+        }
+    },
+
+    staticDirectories: ['static'],
 
     i18n: {
         defaultLocale: 'en',
@@ -43,6 +51,23 @@ const config = {
                     return changelogSorter(docs, githubOrganization, githubProject);
                 }
             }
+        ],
+        [
+            require.resolve('@easyops-cn/docusaurus-search-local'),
+            /** @type {import('@easyops-cn/docusaurus-search-local').PluginOptions} */
+            {
+                hashed: true,
+                indexBlog: false,
+                docsRouteBasePath: [
+                    '/changelog',
+                    '/'
+                ],
+                docsDir: [
+                    '../_changelog',
+                    '../_documentation'
+                ]
+            }
+
         ]
     ],
 
@@ -53,6 +78,7 @@ const config = {
             ({
                 docs: {
                     path: '../_documentation',
+                    exclude: ['**/assets/**'],
                     routeBasePath: '/',
                     sidebarPath: require.resolve('./sidebars-docs.js'),
                     editUrl: editUrl,
@@ -70,9 +96,9 @@ const config = {
         navbar: {
             title: '',
             logo: {
-                alt: 'HAWK Logo',
-                src: '/img/hawk-logo.svg',
-                srcDark: '/img/hawk-logo-dark.svg'
+                alt: 'HAWKI Logo',
+                src: '/img/hawki_Logo_blau.svg',
+                srcDark: '/img/hawki_Logo_weiß.svg'
             },
             items: [
                 {

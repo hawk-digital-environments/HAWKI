@@ -1,9 +1,4 @@
-
-
-
-
-
-function convertChatlogToJson(){
+function convertChatlogToJson() {
     const thread = document.querySelector('.trunk');
     const messageElements = thread.querySelectorAll('.message');
 
@@ -19,13 +14,13 @@ function convertChatlogToJson(){
         msgObj.timestamp = messageElement.dataset.created_at;
         msgObj.model = messageElement.dataset.model ? messageElement.dataset.model : null,
 
-        msgObj.attachments = Array.from(messageElement.querySelectorAll('.attachment')).map(atch => {
-            return {
-                name: atch.querySelector('.name-tag')?.innerText || "",
-                mime: atch.dataset.mime || "",
-                imageUrl: atch.querySelector('img')?.getAttribute('src') || null
-            };
-        });
+            msgObj.attachments = Array.from(messageElement.querySelectorAll('.attachment')).map(atch => {
+                return {
+                    name: atch.querySelector('.name-tag')?.innerText || '',
+                    mime: atch.dataset.mime || '',
+                    imageUrl: atch.querySelector('img')?.getAttribute('src') || null
+                };
+            });
 
         messagesList.push(msgObj);
     });
@@ -34,19 +29,18 @@ function convertChatlogToJson(){
 }
 
 
-
 function exportAsJson() {
     const messages = convertChatlogToJson();  // Get the messages list
     const jsonContent = JSON.stringify(messages, null, 2);  // Convert to JSON string
 
     // Create a Blob from the JSON string
-    const blob = new Blob([jsonContent], { type: "application/json" });
+    const blob = new Blob([jsonContent], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
 
     // Create a temporary anchor element to trigger download
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "chatlog.json";
+    a.download = 'chatlog.json';
     document.body.appendChild(a);  // Append to the DOM to make it clickable
     a.click();  // Trigger the download
     document.body.removeChild(a);  // Clean up by removing the element
@@ -54,26 +48,23 @@ function exportAsJson() {
 }
 
 
-
-
 function exportAsCsv() {
     const messages = convertChatlogToJson();  // Get the messages list
 
     if (messages.length === 0) {
-        console.log("No data to export");
         return;
     }
 
     // Define headers explicitly
-    const headers = ["id", "author", "role", "content", "timestamp", "model", "attachments"];
-    const headerRow = headers.join(",") + "\n";
+    const headers = ['id', 'author', 'role', 'content', 'timestamp', 'model', 'attachments'];
+    const headerRow = headers.join(',') + '\n';
 
     // Convert messages to CSV rows
     const csvRows = messages.map(msg => {
         // Only keep attachment names
-        let attachmentsStr = "";
+        let attachmentsStr = '';
         if (msg.attachments && msg.attachments.length > 0) {
-            attachmentsStr = msg.attachments.map(atch => atch.name).join("; ");
+            attachmentsStr = msg.attachments.map(atch => atch.name).join('; ');
         }
 
         // Escape quotes in content
@@ -81,24 +72,24 @@ function exportAsCsv() {
             msg.id,
             msg.author,
             msg.role,
-            msg.content?.replace(/"/g, '""') || "",
+            msg.content?.replace(/"/g, '""') || '',
             msg.timestamp,
-            msg.model || "",
+            msg.model || '',
             attachmentsStr
-        ].map(v => `"${v}"`).join(",");
+        ].map(v => `"${v}"`).join(',');
 
         return row;
-    }).join("\n");
+    }).join('\n');
 
     const csvContent = headerRow + csvRows;
 
     // Download as CSV
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], {type: 'text/csv;charset=utf-8;'});
     const url = URL.createObjectURL(blob);
 
-    const a = document.createElement("a");
+    const a = document.createElement('a');
     a.href = url;
-    a.download = "chatlog.csv";
+    a.download = 'chatlog.csv';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -106,23 +97,16 @@ function exportAsCsv() {
 }
 
 
-
-
 async function exportAsPDF() {
-
-    //disable button
-    const btn = document.getElementById('export-btn-pdf');
-    btn.disabled = true;
-    btn.querySelector('.loading').style.display = 'flex';
-
-
 
     const messages = convertChatlogToJson(); // Get the messages list
 
     if (messages.length === 0) {
-        console.log("No data to export");
+        window.oldUiBridge.triggerSendToast(window.__('legacy.export.noDataError'), 'error');
         return;
     }
+
+    window.oldUiBridge.triggerSendToast('Einen Moment, das PDF wird vorbereitet', 'info');
 
 
     // summery
@@ -130,7 +114,7 @@ async function exportAsPDF() {
     const summery = await requestChatlogSummery(summeryMsg);
 
 
-
+    const jsPDF = await window.hawkiDependencyLoader('jsPdf');
     const doc = new jsPDF();
 
     const maxPageHeight = 270; // Maximum height before adding a new page
@@ -143,30 +127,31 @@ async function exportAsPDF() {
     const titleFS = 14;
     const textFS = 12;
     const smallFS = 10;
-    const font = 'helvetica'
+    const font = 'helvetica';
     let yOffset = 20; // Start below the header
 
+    const userInfo = window.getAuthenticatedConnection().userinfo;
 
     // Add a header with title and date
     const date = new Date();
-    const formattedDate = `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()}`
+    const formattedDate = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 
     doc.setFont(font, 'normal');
 
     // doc.setFontSize(16);
     // doc.text("Chatlog Export", 10, 15); // x, y
     doc.setFontSize(textFS);
-    doc.text(`${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}`, margin, yOffset); // x, y
+    doc.text(`${__('Exported_At')} ${formattedDate} ${__('By')} ${userInfo.name}`, margin, yOffset); // x, y
 
     yOffset += 20;
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(translation.Summery, margin, yOffset);
+    doc.text(__('Summery'), margin, yOffset);
 
-    const textLenght = translation.Summery.length;
+    const textLenght = __('Summery').length;
     doc.setFont(font, 'italic');
     doc.setFontSize(titleFS);
-    doc.text(` (${translation.Auto_Generated})`, margin + (textLenght * 4) + 0, yOffset);
+    doc.text(` (${__('Auto_Generated')})`, margin + (textLenght * 4) + 0, yOffset);
     doc.setFont(font, 'normal');
 
 
@@ -189,13 +174,13 @@ async function exportAsPDF() {
     yOffset += 20;
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(translation.SystemPrompt, margin, yOffset);
+    doc.text(__('SystemPrompt'), margin, yOffset);
 
     yOffset += 15;
     doc.setFont(font, 'normal');
     doc.setFontSize(textFS);
     // Create summery
-    const systemPromptTxt = document.querySelector('#system_prompt_field').textContent;
+    const systemPromptTxt = window.oldUiMessageHistory.systemPrompt;
     const wrappedSP = doc.splitTextToSize(systemPromptTxt, maxWidth);
     wrappedSP.forEach(line => {
         // Check if the line will fit on the current page
@@ -213,21 +198,20 @@ async function exportAsPDF() {
     //START OF CONVERSATION
     doc.setFontSize(sectionFS);
     doc.setFont(font, 'bold');
-    doc.text(`${translation.Chatlog}:`, margin, yOffset);
+    doc.text(`${__('Chatlog')}:`, margin, yOffset);
     doc.setFont(font, 'normal');
 
     yOffset += 10;
 
-    for(let i = 0; i < messages.length; i++){
+    for (let i = 0; i < messages.length; i++) {
         const msg = messages[i];
-    // messages.forEach((msg, index) => {
+        // messages.forEach((msg, index) => {
         // Calculate the height required for the full message
         const metadataHeight = lineHeight * 3; // Header (Message #, Author, Role, etc.)
 
-        if(isValidJson(msg.content)){
+        if (isValidJson(msg.content)) {
             msg.content = JSON.parse(msg.content).text;
-        }
-        else{
+        } else {
             msg.content = msg.content;
         }
 
@@ -248,13 +232,12 @@ async function exportAsPDF() {
         doc.setFontSize(textFS);
         doc.setFont(font, 'bold');
 
-        if(msg.model){
+        if (msg.model) {
             doc.text(`${msg.author}`, margin, yOffset);
             doc.setFontSize(smallFS);
             const textLenght = msg.model.length;
             doc.text(`(${msg.model}):`, margin + (textLenght * 2.5) + 3, yOffset);
-        }
-        else{
+        } else {
             doc.text(`${msg.author}:`, margin, yOffset);
         }
         yOffset += 10;
@@ -294,27 +277,19 @@ async function exportAsPDF() {
             doc.text(line, margin, yOffset); // Indent content slightly
             yOffset += lineHeight; // Increment yOffset after each line
         });
-        yOffset += 10
-    };
+        yOffset += 10;
+    }
 
-    // Save the PDF
-    btn.disabled = false;
-    btn.querySelector('.loading').style.display = 'none';
-
-    doc.save(`${translation.Chatlog}_${formattedDate}.pdf`);
+    doc.save(`${__('Chatlog')}_${formattedDate}.pdf`);
 }
 
 
-
-
-
-
-function transformMarkdownToDocxContent(text) {
+function transformMarkdownToDocxContent(text, docx) {
     const markdownPatterns = [
-        { regex: /\*\*(.*?)\*\*/g, tag: 'bold' },      // Bold: **text**
-        { regex: /\*(.*?)\*/g, tag: 'italics' },       // Italic: *text*
-        { regex: /__(.*?)__/g, tag: 'underline' },     // Underline: __text__
-        { regex: /`([^`]+)`/g, tag: 'code' }           // Code: `text`
+        {regex: /\*\*(.*?)\*\*/g, tag: 'bold'},      // Bold: **text**
+        {regex: /\*(.*?)\*/g, tag: 'italics'},       // Italic: *text*
+        {regex: /__(.*?)__/g, tag: 'underline'},     // Underline: __text__
+        {regex: /`([^`]+)`/g, tag: 'code'}           // Code: `text`
         // More patterns can be added here if needed
     ];
 
@@ -327,14 +302,14 @@ function transformMarkdownToDocxContent(text) {
         let currentIndex = 0;
 
         // Process each line for markdown formatting
-        markdownPatterns.forEach(({ regex, tag }) => {
+        markdownPatterns.forEach(({regex, tag}) => {
             let match;
             while ((match = regex.exec(line)) !== null) {
                 // Add any preceding text as a normal text run
                 if (match.index > currentIndex) {
                     transformedRuns.push(new docx.TextRun({
                         text: line.substring(currentIndex, match.index),
-                        size: 24,
+                        size: 24
                     }));
                 }
 
@@ -345,7 +320,7 @@ function transformMarkdownToDocxContent(text) {
                     bold: tag === 'bold',
                     italics: tag === 'italics',
                     underline: tag === 'underline' ? {} : undefined,
-                    font: tag === 'code' ? 'Courier New' : undefined,
+                    font: tag === 'code' ? 'Courier New' : undefined
                 }));
 
                 currentIndex = regex.lastIndex;
@@ -356,14 +331,14 @@ function transformMarkdownToDocxContent(text) {
         if (currentIndex < line.length) {
             transformedRuns.push(new docx.TextRun({
                 text: line.substring(currentIndex),
-                size: 24,
+                size: 24
             }));
         }
 
         // Add this line's content as a paragraph
         transformedParagraphs.push(new docx.Paragraph({
             children: transformedRuns,
-            spacing: { after: 200 }, // Adjust spacing between paragraphs as needed
+            spacing: {after: 200} // Adjust spacing between paragraphs as needed
         }));
     });
 
@@ -372,18 +347,16 @@ function transformMarkdownToDocxContent(text) {
 
 // In your main export function, adapt to handle multiple paragraphs per message:
 async function exportAsWord() {
-    // Disable button
-    const btn = document.getElementById('export-btn-word');
-    btn.disabled = true;
-    btn.querySelector('.loading').style.display = 'flex';
+    window.oldUiBridge.triggerSendToast('Einen Moment, das Word-Dokument wird vorbereitet', 'info');
 
     const messages = convertChatlogToJson();
+
     if (messages.length === 0) {
-        console.log("No data to export");
-        btn.disabled = false;
-        btn.querySelector('.loading').style.display = 'none';
+        window.oldUiBridge.triggerSendToast(window.__('legacy.export.noDataError'), 'error');
         return;
     }
+
+    const docx = await window.hawkiDependencyLoader('docx');
 
     const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
     const summery = await requestChatlogSummery(summeryMsg);
@@ -392,15 +365,16 @@ async function exportAsWord() {
     const date = new Date();
     const formattedDate = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 
+    const userInfo = window.getAuthenticatedConnection().userinfo;
     chatLogChildren.push(
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: `${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}`,
-                    size: 24,
-                }),
+                    text: `${__('Exported_At')} ${formattedDate} ${__('By')} ${userInfo.name}`,
+                    size: 24
+                })
             ],
-            spacing: { after: 400 },
+            spacing: {after: 400}
         })
     );
 
@@ -408,34 +382,34 @@ async function exportAsWord() {
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: translation.Summery,
+                    text: __('Summery'),
                     bold: true,
-                    size: 36,
+                    size: 36
                 }),
                 new docx.TextRun({
-                    text: ` (${translation.Auto_Generated})`,
+                    text: ` (${__('Auto_Generated')})`,
                     italics: true,
-                    size: 28,
-                }),
+                    size: 28
+                })
             ],
-            spacing: { after: 200 },
+            spacing: {after: 200}
         })
     );
 
-    chatLogChildren.push(...transformMarkdownToDocxContent(summery));
+    chatLogChildren.push(...transformMarkdownToDocxContent(summery, docx));
 
 
-    const systemPromptTxt = document.querySelector('#system_prompt_field').textContent;
+    const systemPromptTxt = window.oldUiMessageHistory.systemPrompt;
     chatLogChildren.push(
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: `${translation.SystemPrompt}:`,
+                    text: `${__('SystemPrompt')}:`,
                     bold: true,
-                    size: 36,
-                }),
+                    size: 36
+                })
             ],
-            spacing: { after: 200 },
+            spacing: {after: 200}
         })
     );
     chatLogChildren.push(
@@ -444,25 +418,24 @@ async function exportAsWord() {
                 new docx.TextRun({
                     text: systemPromptTxt,
                     bold: false,
-                    size: 24,
-                }),
+                    size: 24
+                })
             ],
-            spacing: { after: 200 },
+            spacing: {after: 200}
         })
     );
-
 
 
     chatLogChildren.push(
         new docx.Paragraph({
             children: [
                 new docx.TextRun({
-                    text: `${translation.Chatlog}:`,
+                    text: `${__('Chatlog')}:`,
                     bold: true,
-                    size: 36,
-                }),
+                    size: 36
+                })
             ],
-            spacing: { after: 200 },
+            spacing: {after: 200}
         })
     );
 
@@ -475,13 +448,13 @@ async function exportAsWord() {
                     new docx.TextRun({
                         text: authorText,
                         bold: true,
-                        size: 24,
-                    }),
+                        size: 24
+                    })
                 ],
                 spacing: {
                     before: 200,
                     after: 200
-                },
+                }
             })
         );
 
@@ -497,52 +470,47 @@ async function exportAsWord() {
                                 data: imageData,
                                 transformation: {
                                     width: 25, // px
-                                    height: 25,
-                                },
+                                    height: 25
+                                }
                             }),
                             new docx.TextRun({
                                 text: `   ${atch.name} (${checkFileFormat(atch.mime)})`,
-                                size: 20,
-                            }),
+                                size: 20
+                            })
                         ],
-                        spacing: { after: 200 },
+                        spacing: {after: 200}
                     })
                 );
             }
         }
-        chatLogChildren.push(...transformMarkdownToDocxContent(message.content));
+        chatLogChildren.push(...transformMarkdownToDocxContent(message.content, docx));
 
-    };
-
+    }
     const doc = new docx.Document({
         sections: [
             {
                 headers: {
                     default: new docx.Header({
-                        children: [new docx.Paragraph("Chat Log Export")],
-                    }),
+                        children: [new docx.Paragraph('Chat Log Export')]
+                    })
                 },
                 properties: {
-                    type: docx.SectionType.CONTINUOUS,
+                    type: docx.SectionType.CONTINUOUS
                 },
-                children: chatLogChildren,
-            },
-        ],
+                children: chatLogChildren
+            }
+        ]
     });
 
     docx.Packer.toBlob(doc).then((blob) => {
         const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
+        const link = document.createElement('a');
         link.href = url;
-        link.download = `${translation.Chatlog}_${formattedDate}.docx`;
+        link.download = `${__('Chatlog')}_${formattedDate}.docx`;
         link.click();
         URL.revokeObjectURL(url);
     });
-
-    btn.disabled = false;
-    btn.querySelector('.loading').style.display = 'none';
 }
-
 
 
 // Helper to fetch an image URL and convert it into Uint8Array for docx
@@ -554,17 +522,16 @@ async function fetchImageAsUint8Array(url) {
 }
 
 
-function exportPrintPage(){
+function exportPrintPage() {
 
-    if(!activeModule) return;
+    if (!activeModule) return;
 
     let slug;
-    if(activeModule === 'chat'){
-        if(!activeConv) return;
+    if (activeModule === 'chat') {
+        if (!activeConv) return;
         slug = activeConv.slug;
-    }
-    else{
-        if(!activeRoom) return;
+    } else {
+        if (!activeRoom) return;
         slug = activeRoom.slug;
     }
 
@@ -575,68 +542,74 @@ function exportPrintPage(){
 
 }
 
-async function preparePrintPage(){
+async function preparePrintPage() {
 
     let systemPrompt;
     let key;
     let aiKey;
     let messages;
 
+    await getPassKey();
+    await window.userKeychain.waitingToLoad;
 
-    if(activeModule === 'chat'){
+    if (activeModule === 'chat') {
         //data is received from the server
 
-        key = await keychainGet('aiConvKey');
+        key = window.userKeychain.aiConvKey;
         const systemPromptObj = JSON.parse(chatData.system_prompt);
         systemPrompt = await decryptWithSymKey(key, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
         messages = chatData.messages;
 
         for (const msg of messages) {
-            const decryptedContent =  await decryptWithSymKey(key, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
-            if(isValidJson(decryptedContent)){
+            const decryptedContent = await decryptWithSymKey(key, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+            if (isValidJson(decryptedContent)) {
                 msg.content.text = JSON.parse(decryptedContent).text;
-            }
-            else{
+            } else {
                 msg.content.text = decryptedContent;
             }
-        };
+        }
 
-    }
-    else{
+    } else {
 
-        key = await keychainGet(chatData.slug);
-        const aiCryptoSalt = await fetchServerSalt('AI_CRYPTO_SALT');
-        aiKey = await deriveKey(key, chatData.slug, aiCryptoSalt);
+        key = (window.userKeychain.roomKeys[chatData.slug] || {});
 
-        if(chatData.system_prompt){
+        if (chatData.system_prompt) {
             const systemPromptObj = JSON.parse(chatData.system_prompt);
-            systemPrompt = await decryptWithSymKey(key, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
+            systemPrompt = await decryptWithSymKey(key.roomKey, systemPromptObj.ciphertext, systemPromptObj.iv, systemPromptObj.tag, false);
         }
         messages = chatData.messagesData;
         //extract messages
-        let msgKey = key;
+        let msgKey = key.roomKey;
         for (const msg of messages) {
-            msgKey = msg.message_role === 'assistant' ? aiKey : key;
-            const decryptedContent =  await decryptWithSymKey(msgKey, msg.content.text, msg.content.text.iv, msg.content.text.tag);
+            msgKey = msg.message_role === 'assistant' ? key.aiKey : key.roomKey;
+            let decryptedContent = await decryptWithSymKey(msgKey, msg.content.text.ciphertext, msg.content.text.iv, msg.content.text.tag);
+            if (decryptedContent.startsWith('{') || decryptedContent.startsWith('"')) {
+                decryptedContent = JSON.parse(decryptedContent);
+                if (decryptedContent.text) {
+                    decryptedContent = decryptedContent.text;
+                }
+            }
             msg.content.text = decryptedContent;
-        };
+        }
     }
 
     const scrollPanel = document.querySelector('.scroll-panel');
     const date = new Date();
-    const formattedDate = `${date.getDate()}.${date.getMonth()+1}.${date.getFullYear()}`
+    const formattedDate = `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
 
     const summeryMsg = convertMsgObjToLog(Array.from(messages).slice(-100));
     const summery = await requestChatlogSummery(summeryMsg);
 
+    const userInfo = window.getAuthenticatedConnection().userinfo;
+
     scrollPanel.innerHTML =
-    `
-        <p>${translation.Exported_At} ${formattedDate} ${translation.By} ${userInfo.name}</p>
-        <h1>${translation.Summery}:</h1>
+        `
+        <p>${__('Exported_At')} ${formattedDate} ${__('By')} ${userInfo.name}</p>
+        <h1>${__('Summery')}:</h1>
         <p>${summery}</p>
         <h3>System Prompt</h3>
         <p>${systemPrompt}</p>
-        <h1>${translation.Chatlog}</h1>
+        <h1>${__('Chatlog')}</h1>
         <div class="thread trunk" id="0">
         </div>
     `;
@@ -653,33 +626,31 @@ async function preparePrintPage(){
     // window.print();
 }
 
-function generateMessageElements(messageObj){
+function generateMessageElements(messageObj) {
 
     // clone message element
-    const messageTemp = document.getElementById('message-template')
+    const messageTemp = document.getElementById('message-template');
     const messageClone = messageTemp.content.cloneNode(true);
-    const messageElement = messageClone.querySelector(".message");
+    const messageElement = messageClone.querySelector('.message');
 
-    if(messageObj.model && messageObj.message_role === 'assistant'){
-        model = modelsList.find(m => m.id === messageObj.model);
+    if (messageObj.model && messageObj.message_role === 'assistant') {
+        model = window.getAiModel(messageObj.model);
         messageElement.querySelector('.message-author').innerHTML =
             model ?
-            `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>`:
-            `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
-    }
-    else{
+                `<span>${messageObj.author.username} </span><span class="message-author-model">(${model.label})</span>` :
+                `<span>${messageObj.author.username} </span><span class="message-author-model">(${messageObj.model}) !!! Obsolete !!!</span>`;
+    } else {
         messageElement.querySelector('.message-author').innerText = messageObj.author.name;
     }
 
-    const id =  messageObj.message_id.split('.');
+    const id = messageObj.message_id.split('.');
     const wholeNum = Number(id[0]);
     const deciNum = Number(id[1]);
 
     let threadIndex;
-    if(deciNum === 0){
+    if (deciNum === 0) {
         threadIndex = 0;
-    }
-    else{
+    } else {
         threadIndex = wholeNum;
     }
     let activeThread = document.querySelector(`.thread#${CSS.escape(threadIndex)}`);
@@ -687,20 +658,19 @@ function generateMessageElements(messageObj){
     // if message has a date it's already submitted and comes from the server.
     // if not, it has been created by user and does not have a date stamp -> today is the date
     let msgDate;
-    if(messageObj.created_at){
+    if (messageObj.created_at) {
         msgDate = messageObj.created_at.split('+')[0];
-    }
-    else{
+    } else {
         todayDate = new Date();
         msgDate = `${todayDate.getFullYear()}-${(todayDate.getMonth() + 1).toString().padStart(2, '0')}-${todayDate.getDate().toString().padStart(2, '0')}`;
     }
     setDateSpan(activeThread, msgDate, false);
 
     // Setup Message Content
-    const msgTxtElement = messageElement.querySelector(".message-text");
+    const msgTxtElement = messageElement.querySelector('.message-text');
 
 
-    if(messageObj.content.attachments && messageObj.content.attachments.length != 0){
+    if (messageObj.content.attachments && messageObj.content.attachments.length != 0) {
         const attachmentContainer = messageElement.querySelector('.attachments');
 
         messageObj.content.attachments.forEach(attachment => {
@@ -711,18 +681,10 @@ function generateMessageElements(messageObj){
         });
     }
 
-
-    if(!messageObj.message_role === "assistant"){
-        msgTxtElement.innerHTML = detectMentioning(messageObj.content.text).modifiedText;
-    }
-    else{
-        let markdownProcessed = formatMessage(messageObj.content.text);
-        msgTxtElement.innerHTML = markdownProcessed;
-        formatMathFormulas(msgTxtElement);
-    }
+    insertOrUpdateSvelteBody(messageElement, messageObj, false);
 
     // insert into target thread
-    if(threadIndex === 0){
+    if (threadIndex === 0) {
         // if message is a main message then it needs a thread inside
         const threadTemplate = document.getElementById('thread-template');
         const threadElement = threadTemplate.content.cloneNode(true);
@@ -731,48 +693,39 @@ function generateMessageElements(messageObj){
         threadDiv.id = wholeNum;
         messageElement.appendChild(threadDiv);
         activeThread.appendChild(messageElement);
-    }
-    else{
+    } else {
         activeThread.appendChild(messageElement);
     }
-    formatHljs(messageElement);
-    return  messageElement;
+    return messageElement;
 }
 
 // Add file to the UI for display
 function createAttachmentPrintIcon(fileData) {
 
-    const attachTemp = document.getElementById('attachment-thumbnail-template')
+    const attachTemp = document.getElementById('attachment-thumbnail-template');
     const attachClone = attachTemp.content.cloneNode(true);
-    const attachment = attachClone.querySelector(".attachment");
+    const attachment = attachClone.querySelector('.attachment');
     attachment.querySelector('.name-tag').innerText = fileData.name;
     const iconImg = attachment.querySelector('img');
     let imgPreview = '';
 
     const type = checkFileFormat(fileData.mime);
-    switch(type){
+    switch (type) {
         case('img'):
-        if(fileData.url){
-            imgPreview = fileData.url;
-        }
-        if (fileData.file) {
-            imgPreview = URL.createObjectURL(fileData.file);
-        }
+            if (fileData.url) {
+                imgPreview = fileData.url;
+            }
+            if (fileData.file) {
+                imgPreview = URL.createObjectURL(fileData.file);
+            }
 
-        attachment.querySelector('.attachment-icon').classList.add('boarder');
-        break;
-        case('pdf'):
-            imgPreview = '/img/fileformat/pdf.png';
-        break;
-        case('docx'):
-            imgPreview = '/img/fileformat/doc.png';
-        break;
+            attachment.querySelector('.attachment-icon').classList.add('boarder');
+            break;
+        default:
+            imgPreview = getFileIconSvg(fileData.name.split('.').pop());
+            break;
     }
 
-    attachment.querySelector('.controls').remove();
-    attachment.querySelector('.status-indicator').remove();
     iconImg.setAttribute('src', imgPreview);
     return attachment;
 }
-
-

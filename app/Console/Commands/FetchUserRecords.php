@@ -2,9 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Services\AI\UsageAnalyzerService;
 use App\Models\Records\UsageRecord;
+use Illuminate\Console\Command;
 
 
 class FetchUserRecords extends Command

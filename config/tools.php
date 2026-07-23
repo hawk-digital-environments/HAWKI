@@ -20,7 +20,7 @@ return [
     |
     */
     'available_tools' => [
-        \App\Services\AI\Tools\Implementations\TestTool::class,
+        \App\Services\Ai\Tools\Implementations\TestTool::class,
     ],
 
     /*

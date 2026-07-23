@@ -1,30 +1,26 @@
-
 <!DOCTYPE html>
 <html class="lightMode">
 <head>
 
 
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no" />
-	<meta name="csrf-token" content="{{ csrf_token() }}">
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <title>{{ env('APP_NAME') }}</title>
 
-	<title>{{ env('APP_NAME') }}</title>
-
-	<link rel="icon" href="{{ asset('favicon.ico') }}">
-
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
+    <x-css-layers/>
 
     <link rel="stylesheet" href="{{ asset('css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/home-style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/settings_style.css') }}">
     <link rel="stylesheet" href="{{ asset('css/hljs_custom.css') }}">
 
-    @vite('resources/js/app.js')
+    @vite('resources/js/app.ts')
     @vite('resources/css/app.css')
 
+    <x-early-frontend-bridge/>
     <script src="{{ asset('js/functions.js') }}"></script>
     <script src="{{ asset('js/home_functions.js') }}"></script>
     <script src="{{ asset('js/stream_functions.js') }}"></script>
@@ -41,126 +37,98 @@
     <script src="{{ asset('js/user_profile.js') }}"></script>
     <script src="{{ asset('js/file_manager.js') }}"></script>
     <script src="{{ asset('js/attachment_handler.js') }}"></script>
-    <script src="{{ asset('js/model_list_filtering.js') }}"></script>
     <script src="{{ asset('js/announcements.js') }}"></script>
     <script src="{{ asset('js/link_preview.js') }}"></script>
-    <script src="{{ asset('js/model_functions.js') }}"></script>
 
-	@if(config('sanctum.allow_external_communication'))
+    @if(config('external_access.enabled'))
         <script src="{{ asset('js/sanctum_functions.js') }}"></script>
     @endif
 
-	{!! $settingsPanel !!}
+    <x-settings-panel/>
     <script>
-		SwitchDarkMode(false);
-		UpdateSettingsLanguage('{{ Session::get("language")['id'] }}');
-	</script>
-
+        SwitchDarkMode(false);
+        UpdateSettingsLanguage();
+    </script>
 </head>
 <body>
 
-	<div class="wrapper">
+<div class="wrapper">
 
-		@include('partials.home.sidebar')
-		<div class="main">
-			@yield('content')
-		</div>
-	</div>
-    @include('partials.home.components.regenerationControls')
-    @include('partials.home.components.model-parameters-controller')
+    @include('partials.home.sidebar')
+    <div class="main">
+        @yield('content')
+    </div>
+</div>
+@include('partials.home.modals.add-member-modal')
+@include('partials.home.modals.session-expiry-modal')
+@include('partials.home.modals.file-viewer-modal')
+@include('partials.home.modals.announcements-modal')
 
-	@include('partials.home.modals.guidelines-modal')
-	@include('partials.home.modals.add-member-modal')
-	@include('partials.home.modals.session-expiry-modal')
-	@include('partials.home.modals.file-viewer-modal')
-	@include('partials.home.modals.announcements-modal')
+@include('partials.overlay')
 
-	@include('partials.overlay')
-
-    @php
-        $templates = collect(File::files(resource_path('views/partials/home/templates')))
-            ->sortBy(fn($file) => $file->getFilename())
-            ->values();
-    @endphp
-    @foreach ($templates as $temp)
-        @include('partials.home.templates.' . $viewName = str_replace('.blade', '',  $temp->getFilenameWithoutExtension()))
-    @endforeach
-    @include('partials.home.modals.confirm-modal')
+@php
+    $templates = collect(File::files(resource_path('views/partials/home/templates')))
+        ->sortBy(fn($file) => $file->getFilename())
+        ->values();
+@endphp
+@foreach ($templates as $temp)
+    @include('partials.home.templates.' . $viewName = str_replace('.blade', '',  $temp->getFilenameWithoutExtension()))
+@endforeach
+@include('partials.home.modals.confirm-modal')
 
 </body>
 </html>
 
 <script>
 
-	const userInfo = @json($user);
-	const userAvatarUrl = @json($userData['avatar_url']);
-	const hawkiAvatarUrl = @json($userData['hawki_avatar_url']);
-	const activeModule = @json($activeModule);
-    const hawkiUsername = @json($userData['hawki_username'])
-
-    const activeLocale = {!! json_encode(Session::get('language')) !!};
-	const translation = @json($translation);
-
-	const modelsList = @json($models).models;
-	const defaultModels = @json($models).defaultModels;
-	const systemModels = @json($models).systemModels;
-	const toolKit = @json($toolKit);
-	const toolKitLabels = @json($toolKitLabels);
-	const aiHandle = "{{ config('hawki.aiHandle') }}";
-
+    const activeModule = @json($activeModule);
     const announcementList = @json($announcements);
 
-    const converterActive = @json($converterActive);
+    window.waitUntilReady(async (event) => {
+        const passkey = await getPassKey();
+        if (!passkey) {
+            window.location.href = '/handshake';
+        }
+
+        setSessionCheckerTimer(0);
+        CheckModals();
+
+        const tempLink = @json(session('invitation_tempLink'));
+        if (tempLink) {
+            await handleTempLinkInvitation(tempLink);
+        }
+
+        handleUserInvitations();
 
 
-    window.addEventListener('DOMContentLoaded', async (event) => {
-        setModel();
+        //Module Checkup
+        setActiveSidebarButton(activeModule);
 
-		const passkey = await getPassKey()
-		if(!passkey){
-			console.log('passkey not found!');
-			window.location.href = '/handshake';
-		}
-
-		setSessionCheckerTimer(0);
-		CheckModals()
-
-		const tempLink = @json(session('invitation_tempLink'));
-	    if (tempLink){
-			await handleTempLinkInvitation(tempLink);
-		}
-
-		handleUserInvitations();
+        const sidebarBtn = document.getElementById('profile-sb-btn');
+        const userInfo = window.getConnection().userinfo;
+        const userAvatarUrl = window.buildStorageFileUrl(userInfo.avatar);
+        if (userAvatarUrl) {
+            sidebarBtn.querySelector('.user-inits').style.display = 'none';
+            sidebarBtn.querySelector('.icon-img').style.display = 'flex';
+            sidebarBtn.querySelector('.icon-img').setAttribute('src', userAvatarUrl);
+        } else {
+            sidebarBtn.querySelector('.icon-img').style.display = 'none';
+            const userInitials = userInfo.name.slice(0, 1).toUpperCase();
+            sidebarBtn.querySelector('.user-inits').style.display = 'flex';
+            sidebarBtn.querySelector('.user-inits').innerText = userInitials;
+        }
 
 
-		//Module Checkup
-		setActiveSidebarButton(activeModule);
-
-		const sidebarBtn = document.getElementById('profile-sb-btn');
-		if(userAvatarUrl){
-			sidebarBtn.querySelector('.user-inits').style.display = 'none';
-			sidebarBtn.querySelector('.icon-img').style.display = 'flex';
-			sidebarBtn.querySelector('.icon-img').setAttribute('src', userAvatarUrl);
-		}
-		else{
-			sidebarBtn.querySelector('.icon-img').style.display = 'none';
-			const userInitials =  userInfo.name.slice(0, 1).toUpperCase();
-			sidebarBtn.querySelector('.user-inits').style.display = "flex";
-			sidebarBtn.querySelector('.user-inits').innerText = userInitials
-		}
-
-
-		initializeGUI();
-		checkWindowSize(800, 200);
+        initializeGUI();
 
         initAnnouncements(announcementList);
 
 
-		setTimeout(() => {
-			if(@json($activeOverlay)){
-				setOverlay(false, true)
-			}
-		}, 100);
+        setTimeout(() => {
+            if (@json($activeOverlay)) {
+                setOverlay(false, true);
+            }
+        }, 100);
     });
 
 

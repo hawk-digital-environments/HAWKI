@@ -28,6 +28,13 @@ class AssetCacheBustingUrlGenerator extends UrlGenerator
             return $path;
         }
 
+        // Vite build assets already contain a content hash in their filename,
+        // so appending ?v= would cause ES module URLs to mismatch between the
+        // script tag and inter-chunk imports, loading the module twice.
+        if (str_starts_with(ltrim($path, '/'), 'build/')) {
+            return parent::asset($path, $secure);
+        }
+
         return $this->attachCacheBusterToUrl(
             parent::asset($path, $secure),
             $path

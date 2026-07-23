@@ -1,0 +1,189 @@
+{
+    "chat": {
+        "nameMenu": {
+            "emptyNameError": "Der Chatname darf nicht leer sein",
+            "leaveAction": "Chat verlassen",
+            "deleteAction": "Chat löschen",
+            "leaveConfirmDescription": "Bist du sicher, dass du diesen Chat verlassen möchtest? Du kannst jederzeit wieder beitreten, wenn es sich um einen Gruppenchat handelt.",
+            "deleteConfirmDescription": "Bist du sicher, dass du diesen Chat löschen möchtest? Dieser Vorgang kann nicht rückgängig gemacht werden.",
+            "leaveConfirmTitle": "Raum :name verlassen",
+            "deleteConfirmTitle": "Chat :name löschen",
+            "newNameAriaLabel": "Neuer Chatname",
+            "actionsTooltip": "Chat Aktionen",
+            "rename": "Umbenennen",
+            "manageRoom": "Raum verwalten",
+            "markAsRead": "Als gelesen markieren"
+        },
+        "attachmentDropdown": {
+            "deleteTitle": "Datei löschen",
+            "deleteDescription": "Bist du sicher, dass du die Datei \":name\" löschen möchtest?",
+            "preview": "Anzeigen",
+            "download": "Herunterladen",
+            "delete": "Löschen"
+        },
+        "attachments": {
+            "fileTooLarge": "Die Datei \":name\" konnte nicht angehängt werden, da sie mit :size die maximale Dateigröße von :maxSize überschreitet.",
+            "unsupportedFileType": "Die Datei \":name\" konnte nicht angehängt werden, da der Dateityp \":type\" nicht unterstützt wird."
+        },
+        "message": {
+            "sources": "Quellen",
+            "citationReference": {
+                "contextError": "Hier wurde etwas falsch programmiert. Diese Referenz befindet sich nicht in einem CitationContext. Bitte melde diesen Fehler den Entwicklern."
+            }
+        },
+        "export": {
+            "title": "Exportieren",
+            "tooltip": "Wähle eine Option um diese Konversation zu exportieren",
+            "print": "Print",
+            "pdf": "PDF",
+            "word": "WORD",
+            "csv": "CSV",
+            "json": "JSON"
+        },
+        "composer": {
+            "textareaPlaceholder": "Hier kannst du deine Anfrage stellen…",
+            "textareaPlaceholderRoom": "Schreibe eine Gruppennachricht oder nutze die KI mit @hawki...",
+            "attachFileTooltip": "Datei anhängen",
+            "assistantButtonTooltip": {
+                "addHandle": "Mit HAWKI sprechen",
+                "removeHandle": "Nicht mehr mit HAWKI sprechen"
+            },
+            "systemPromptDialog": {
+                "title": "Systemprompt bearbeiten",
+                "description": "Der Systemprompt definiert das Verhalten des Modells für diese Sitzung.",
+                "cancel": "Abbrechen",
+                "save": "Speichern",
+                "placeholder": "Du bist ein hilfreicher Assistent für akademische Arbeit…"
+            },
+            "modePanel": {
+                "editTitle": "Nachricht bearbeiten",
+                "regenTitle": "KI Nachricht regenerieren",
+                "threadTitle": "Nachricht in Thread schreiben",
+                "defaultTitle": "Modus",
+                "cancelEdit": "Bearbeitungsmodus verlassen",
+                "cancelRegen": "Regenerieren abbrechen",
+                "cancelThread": "Thread-Ansicht verlassen",
+                "cancelDefault": "Modus verlassen",
+                "actionBusy": "You can not do this right now. Please wait until the current action is finished."
+            },
+            "settings": {
+                "presetCreative": "Kreativ",
+                "presetBalanced": "Ausgeglichen",
+                "presetPrecise": "Präzise",
+                "systemPromptHeading": "Systemprompt",
+                "resetSystemPrompt": "Auf Standard-Systemprompt zurücksetzen",
+                "noSystemPrompt": "Kein Systemprompt gesetzt",
+                "settingsHeading": "Einstellungen",
+                "resetModelSettings": "Auf Model-Standard zurücksetzen",
+                "temperature": "Temperatur",
+                "temperatureInfo": "Steuert die Kreativität der Antworten der KI. Höhere Werte (z. B. 0,8) führen zu vielfältigeren und einfallsreicheren Ergebnissen; niedrigere Werte (z. B. 0,2) machen die Antworten fokussierter und vorhersehbarer.",
+                "temperatureAriaLabel": "Temperature einstellen",
+                "topP": "Top P",
+                "topPInfo": "Begrenzt die Auswahlmöglichkeiten der KI auf die wahrscheinlichsten Wörter, deren Gesamtwahrscheinlichkeit diesen Wert nicht überschreitet. Ein niedrigerer Top_P-Wert (z. B. 0,7) führt zu zurückhaltenderen Antworten; höhere Werte (z. B. 0,9) ermöglichen eine größere Vielfalt.",
+                "topPAriaLabel": "Top P einstellen",
+                "adjustSettingsTooltip": "Modelleinstellungen anpassen",
+                "settingsTitle": "Modelleinstellungen"
+            },
+            "statusDot": {
+                "onlineLabel": "Online",
+                "onlineTooltip": "Online — voll verfügbar",
+                "unknownLabel": "Unbekannt",
+                "unknownAvailability": "Unbekannte Verfügbarkeit",
+                "unknownTooltip": "Unbekannte Verfügbarkeit — erhöhte Fehlerquote",
+                "offlineLabel": "Offline",
+                "offlineTooltip": "Offline — derzeit nicht erreichbar",
+                "tool": {
+                    "notSupportedLabel": "Nicht unterstützt von :model",
+                    "notSupportedTooltip": "Dieses Tool wird von :model nicht unterstützt",
+                    "offlineLabel": "Nicht verfügbar (offline)"
+                }
+            },
+            "toolMenu": {
+                "backButton": "Tools",
+                "deactivateTool": "Tool deaktivieren",
+                "activateTool": "Tool aktivieren",
+                "showGroupDescription": ":label — Beschreibung anzeigen",
+                "capabilitiesLabel": "Fähigkeiten",
+                "hawkiToolsLabel": "HAWKI Tools",
+                "hawkiToolsDescription": "Tools, die von HAWKI selbst zur Verfügung gestellt werden",
+                "infoOffline": "(offline) | Klick für weitere Informationen",
+                "infoUnsupported": "(nicht von aktuellem Modell unterstützt) | Klick für weitere Informationen",
+                "infoDefault": "Weitere Informationen zum Tool anzeigen",
+                "clickForInfo": "Klick für weitere Informationen",
+                "tools": {
+                    "webFetch": "Webinhalte abrufen",
+                    "webFetchDescription": "Dieses Tool ermöglicht es der KI, Informationen aus dem Internet abzurufen. Im Gegensatz zur Websuche kann die KI damit auch auf externe Webseiten zugreifen, um Inhalte zu extrahieren und zu analysieren.",
+                    "webSearch": "Websuche",
+                    "webSearchDescription": "Dieses Tool ermöglicht es der KI, das Internet zu durchsuchen, um aktuelle Informationen zu finden. Es kann Suchanfragen stellen und relevante Ergebnisse liefern, die in die Antworten der KI einfließen.",
+                    "knowledgeBase": "HAWKI-Wissen",
+                    "knowledgeBaseDescription": "Dieses Tool ermöglicht es der KI, auf eine umfangreiche Wissensdatenbank zuzugreifen, die speziell für HAWKI entwickelt wurde. Die Daten werden von deiner Hochschule zur Verfügung gestellt und enthalten Informationen zu Kursen, Veranstaltungen, Richtlinien und vielem mehr."
+                }
+            },
+            "modelPicker": {
+                "switchModel": "Aktuelles Modell wechseln",
+                "placeholder": "Modellauswahl"
+            },
+            "fileChips": {
+                "conflictMessage": "Vom aktuellen Modell nicht unterstützt",
+                "uploadError": "Fehler beim Hochladen: :issue"
+            },
+            "fileDrop": {
+                "dropLabel": "Dateien hier ablegen"
+            },
+            "toolChips": {
+                "showMore": ":count weitere Tools anzeigen",
+                "removeToolAriaLabel": "Tool :tool entfernen"
+            },
+            "modelConflict": {
+                "conflictTitleSingle": ":model unterstützt :tool nicht",
+                "conflictTitleMultiple": ":model unterstützt die folgenden Anforderungen nicht",
+                "singleModelCapable": "Dieses Modell kann alles was du brauchst.",
+                "multipleModelsCapable": "Diese :count Modelle können alles was du brauchst.",
+                "noModelsAvailable": "Kein verfügbares Modell unterstützt diese Kombination. Entferne ein Tool oder einen Anhang."
+            },
+            "toolMenuConfig": {
+                "variantLabel": "Variante",
+                "autoLabel": "automatisch",
+                "autoInfo": "Das Modell wählt automatisch die beste Variante für die Aufgabe aus. (Natives Tool bevorzugt, ansonsten die erste verfügbare Alternative)",
+                "nativeLabel": "Natives Tool",
+                "nativeInfo": "Dieses Tool wird vom Model-Anbieter direkt zur Verfügung gestellt."
+            },
+            "actions": {
+                "noMessageTooltip": "Bitte gib eine Nachricht ein, bevor du sie sendest",
+                "invalidModelTooltip": "Bitte wähle ein anderes Modell oder entferne inkompatible Tools/Dateien",
+                "emptyMessageTooltip": "Bitte gib eine Nachricht ein",
+                "sendTooltip": "Nachricht senden",
+                "saveLabel": "Speichern",
+                "regenerateLabel": "Regenerieren",
+                "sendLabel": "Senden",
+                "cancelRegeneration": "Regeneration abbrechen",
+                "leaveThread": "Thread verlassen",
+                "cancelEdit": "Bearbeitung abbrechen",
+                "cancelResponse": "KI-Antwort abbrechen",
+                "improvementError": "Verbesserungsvorschläge konnten nicht geladen werden",
+                "improvementModelSaidNoError": "Deine Nachricht ist gut so. Keine Verbesserungsvorschläge verfügbar.",
+                "improveTooltip": "Verbessere deine Eingabe mit KI-gestützten Vorschlägen",
+                "cancelLabel": "Abbrechen"
+            },
+            "demandBars": {
+                "low": "Niedrig",
+                "lowTooltip": "Geringe Auslastung — schnelle Antworten",
+                "medium": "Mittel",
+                "mediumTooltip": "Mittlere Auslastung — leicht verzögert",
+                "high": "Hoch",
+                "highTooltip": "Hohe Auslastung — Antworten verzögert",
+                "ariaLabel": "Auslastung: :label"
+            },
+            "regen": {
+                "onlyAssistantMessages": "Nur Nachrichten des Assistenten können regeneriert werden",
+                "modelNotAvailable": "Das Modell, das für diese Nachricht verwendet wurde (:model), ist nicht verfügbar. Es wird das Ausweich-Modell :fallback verwendet.",
+                "toolNotAvailable": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist nicht verfügbar. Es wird bei der Regeneration übersprungen.",
+                "toolNotAvailableForModel": "Das Tool :tool, das für diese Nachricht verwendet wurde, ist für das ausgewählte Modell nicht verfügbar. Es wird bei der Regeneration übersprungen."
+            },
+            "sending": {
+                "responseError": "Fehler beim Verarbeiten der Antwort.",
+                "sendError": "Fehler beim Senden der Nachricht."
+            }
+        }
+    }
+}

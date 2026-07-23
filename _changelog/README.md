@@ -1,66 +1,105 @@
-# How to release a new version of HAWKI
+# Changelog
 
-The main work of release ing a new version of HAWKI is done using a GitHub action workflow. This workflow is triggered by pushing something into the "main" branch. If your commit contains a version file in the `_changelog` folder, that is not yet represented by a git tag, the workflow will start the release process. If you push to `main` without a new version file, nothing will happen.
+Welcome to the HAWKI changelog! 🚀
 
-> 🚨 SUPER-IMPORTANT: DO NOT squash the PR into `main` when merging!
-> Always create a merge commit, otherwise everything gets messed up.
+Whether you're checking out what's new in the latest release or catching up after some time away, you'll find all our updates, improvements, and bug fixes organized by version in the menu on the left.
 
-## Writing a changelog entry
+## What you'll find here
 
-To create a new changelog entry, create a new markdown file in the `_changelog` folder. The file name must be the `semver` version number you want to release, e.g. `2.1.0.md`. The content of the file should contain the changelog entry in markdown format.
+- **Version history** grouped by major releases for easy browsing
+- **Upgrade instructions** right alongside each release when setup changes are needed
+- **Clear descriptions** of what's changed and why it matters
+
+## Need help?
+
+Got questions about a release or running into issues? Our
+[Discord community](https://discord.gg/zzR54sRWDE) is full of helpful folks who'd love to help out.
+
+Happy updating! ✨
+
+---
+
+## For contributors
+
+The sections below explain how the changelog and release process work for developers contributing to HAWKI. The release pipeline is powered by [hawk-pipeline-actions](https://github.com/hawk-digital-environments/hawk-pipeline-actions).
+
+### Tracking changes day-to-day
+
+There are two working files in this directory: `next.md` and `next-upgrade.md`. These are **living documents** — treat them like a running notepad for the next release.
+
+**Every pull request to `development` that introduces a change worth communicating should update one or both of these files as part of the PR itself.** Don't save it for later; changelog entries written close to the actual change are far more accurate and useful.
+
+> **Both files are automatically reset to a clean template after every release.** You will never need to manually clear or recreate them — just start filling in `next.md` for the next release cycle.
+
+#### Which parts are written?
+
+Lines written as `[//]: # (text)` are template hints — they are visible in your editor but render as nothing in markdown. When the pipeline processes a release, these lines are stripped first; any section that contains only those hints is then dropped entirely. Write your real content as normal (non-commented) lines anywhere under the appropriate heading.
+
+#### `next.md` — the next release notes
+
+This is the primary changelog file. Add bullet points under the appropriate section when your PR introduces something new, fixes a bug, or deprecates something.
+
+#### `next-upgrade.md` — the next upgrade guide
+
+This file is **optional**. Only fill it in if your change requires administrators to take manual action when upgrading (e.g. running a migration, changing a config value, updating an environment variable). If your change needs no upgrade steps, leave the file alone.
+
+---
 
 ### Which version number to use?
 
-Always adhere to [Semantic Versioning](https://semver.org/) when choosing a version number. In short:
+Always follow [Semantic Versioning](https://semver.org/). In short:
 
-**Patch version Z (x.y.Z | x > 0)** MUST be incremented if only backward compatible bug fixes are introduced. A bug fix is defined as an internal change that fixes incorrect behavior.
+**Patch — `x.y.Z`**
+Increment for backward-compatible bug fixes only. A bug fix corrects incorrect behaviour without changing any public interface.
 
-**Minor version Y (x.Y.z | x > 0)** MUST be incremented if new, backward compatible functionality is introduced to the public API. It MUST be incremented if any public API functionality is marked as deprecated. It MAY be incremented if substantial new functionality or improvements are introduced within the private code. It MAY include patch level changes. Patch version MUST be reset to 0 when minor version is incremented.
+**Minor — `x.Y.0`**
+Increment when new, backward-compatible functionality is introduced. Also increment when public API functionality is marked as deprecated, or when substantial internal improvements are made. Reset the patch version to `0`.
 
-**Major version X (X.y.z | X > 0)** MUST be incremented if any backward incompatible changes are introduced to the public API. It MAY also include minor and patch level changes. Patch and minor versions MUST be reset to 0 when major version is incremented.
+**Major — `X.0.0`**
+Increment when backward-incompatible changes are introduced. Reset both minor and patch versions to `0`.
 
-### How to track changes?
+When in doubt, err on the side of a minor bump rather than a patch. A version number that's slightly higher than necessary causes no harm; a patch version that hides a breaking change causes real problems for people upgrading.
 
-There SHOULD always be a `next.md` file in the `_changelog` folder. This file is used to track changes that are planned for the next release. Before creating a new pull request for the `development` branch, simply add your changes to the `next.md` file. When you are ready to release a new version, copy the content of the `next.md` file into a new version file with the appropriate version number, and then clear the content of the `next.md` file.
+---
 
-### Changelog template
+### Releasing a new version
 
-Here is a simple template you can use for your changelog entry:
+Releases are triggered manually via two GitHub Actions workflows, run in order.
+You will find both under **Actions** in the repository.
 
-```markdown
-# vX.Y.Z
+#### Step 1 — Create the release branch
 
-### What's New
+1. Go to **Actions** → **[MANUAL] - 1. Create Release Branch**
+2. Click **Run workflow**
+3. Select the source branch from the **"Use workflow from"** dropdown:
+    - `development` for a normal release
+    - `main` for a hotfix (patch release on top of what's already in production)
+4. Enter the version number (e.g. `2.1.0`) and run
 
-- The main new features and changes in this version.
+The pipeline validates `next.md`, renames it to `2.1.0.md`, resets both working files to their templates, updates `config/hawki_version.json`, and pushes the result as a new `release/2.1.0` branch. You can review the branch, make last-minute corrections, or simply proceed.
 
-### Quality of Life
+#### Step 2 — Trigger the release
 
-- Improvements and enhancements that improve the user experience.
+1. Go to **Actions** → **[MANUAL] - 2. Trigger Release**
+2. Click **Run workflow**
+3. Select **`release/v2.1.0`** from the **"Use workflow from"** dropdown — this is your release selector, there is no separate input field for the branch
+4. Run the workflow
 
-### Bugfix
+The pipeline validates the branch name, runs a Docker build test, then squash-merges the release branch into `main` and back into `development`, pushes the version tag, and deletes the release branch. This tag push automatically triggers the automated release pipeline, which builds the Docker image, creates the GitHub Release, and announces the update on Discord.
 
-- List of bugs that have been fixed in this version.
+> **Hotfix?** The process is identical — the only difference is that you selected `main` as the source in Step 1 instead of `development`. The rest of the workflow is the same.
 
-### Deprecation
+---
 
-- List of features or functionalities that have been deprecated in this version.
-```
+### Versioning convention
 
-## Providing upgrade instructions
+Git **tags** and working **branch names** do not carry a `v` prefix. The version `2.1.0` is tagged as `2.1.0` and the release branch is named `release/2.1.0`.
 
-If your new version requires special upgrade instructions, you can provide them in a separate markdown file in the `_changelog` folder. The file name must be the same as the version file, but with the suffix `-upgrade`, e.g. `2.1.0-upgrade.md`. The content of the file should contain the upgrade instructions in markdown format.
+The only place the `v` prefix appears is in the **GitHub Release display name** (`v2.1.0`), which is cosmetic and matches GitHub's conventions for release pages. This is intentional and consistent with HAWKI's historical versioning schema.
 
-## What the release workflow does
-
-When you push a new version file to the `main` branch, the release workflow will:
-
-1. Read the list of files in the `_changelog` folder and determine the latest version to release.
-2. Check if there is a git tag for that version. If there is, the workflow will exit without doing anything.
-3. If there is no git tag for that version, the workflow will continue...
-4. Update the `config/hawki_version.json` file with the new version number.
-5. It will push the updated `hawki_version.json` file back to the `main` branch.
-6. Create a new git tag for the new version.
-7. Create a new release in GitHub with the content of the changelog file as the release notes.
-8. Build and push new docker images to Docker Hub with the new version tag.
-9. Yell out the release in the #update channel on our HAWKI Community Discord server.
+| Thing               | Format            | Example                           |
+|---------------------|-------------------|-----------------------------------|
+| Git tag             | no prefix         | `2.1.0`                           |
+| Release branch      | `release/` prefix | `release/2.1.0`                   |
+| GitHub Release name | `v` prefix        | `v2.1.0`                          |
+| Docker image tag    | no prefix         | `digitalenvironments/hawki:2.1.0` |

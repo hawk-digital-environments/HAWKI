@@ -1,0 +1,11 @@
+/* ==========================================================================
+   Border Tokens
+   ========================================================================== */
+
+@layer tokens {
+    :root {
+        --border: 1.5px solid var(--color-border);
+        --border-strong: 2px solid var(--color-border-strong);
+        --divider: 1.5px solid var(--color-border);
+    }
+}

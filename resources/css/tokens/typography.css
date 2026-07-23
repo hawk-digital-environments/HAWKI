@@ -1,0 +1,31 @@
+/* ==========================================================================
+   Typography Tokens
+   Scale mirrors the existing custom-styles.css font system.
+   Base: --font-sm = 1rem (16px browser default)
+   ========================================================================== */
+
+@layer tokens {
+    :root {
+        --font-family-base: 'Fire Sans', system-ui, sans-serif;
+
+        /* ── Font sizes ─────────────────────────────────────────────────── */
+        /* Matches legacy: xxs=×0.7, xs=×0.85, sm=1rem, md=×1.1, lg=×1.25, xl=×1.8, xxl=×2.5 */
+        --font-size-xxs: 0.70rem; /* --font-xxs  ≈ 11.2px */
+        --font-size-xs: 0.85rem; /* --font-xs   ≈ 13.6px */
+        --font-size-sm: 1rem; /* --font-sm   = 16px   */
+        --font-size-base: 1.10rem; /* --font-md   ≈ 17.6px */
+        --font-size-lg: 1.25rem; /* --font-lg   = 20px   */
+        --font-size-xl: 1.80rem; /* --font-xl   ≈ 28.8px */
+        --font-size-2xl: 2.50rem; /* --font-xxl  = 40px   */
+
+        /* ── Line heights ───────────────────────────────────────────────── */
+        --line-height-tight: 1.2;
+        --line-height-normal: 1.5;
+        --line-height-loose: 1.8;
+
+        /* ── Font weights ───────────────────────────────────────────────── */
+        --font-weight-normal: 400;
+        --font-weight-medium: 500;
+        --font-weight-semibold: 600;
+    }
+}

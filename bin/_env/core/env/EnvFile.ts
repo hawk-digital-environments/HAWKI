@@ -86,6 +86,16 @@ export class EnvFile {
         return this;
     }
 
+    public delete(key: string): this {
+        this._state.deleteLinesForKey(key);
+        return this;
+    }
+
+    public comment(key: string): this {
+        this._state.commentLinesForKey(key);
+        return this;
+    }
+
     public get state(): EnvFileState {
         return this._state;
     }
@@ -100,7 +110,7 @@ export async function createEnvFile({events, paths}: Context): Promise<EnvFile> 
 
     const envFile = new EnvFile(loadEnvFileState(paths.envFilePath));
 
-    if (envFileHashChanged(paths)) {
+    if (envFileHashChanged(paths) && process.env.TESTING_SKIP_CLI_INPUT !== "true") {
         await (new EnvFileMigrator(events, paths)).migrate(envFile);
     }
 
