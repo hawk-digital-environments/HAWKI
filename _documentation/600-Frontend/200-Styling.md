@@ -227,6 +227,37 @@ Do not use `:global()` in Svelte components for rules that apply across componen
 
 ---
 
+## Z-Index and Stacking
+
+**Avoid ad-hoc `z-index`.** In a component ecosystem where you cannot predict how components nest into each other, hand-rolled stacking values are brittle — they break down as soon as two popovers or tooltips are open at the same time, or a modal must open from inside a tooltip while the popover behind it stays visible. A global token ladder (`--z-popover: 600`, `--z-modal: 800`, …) looks tidy until components combine in ways the ladder didn't anticipate, at which point every fix requires raising numbers and introducing exceptions.
+
+**The real fix for overlay components is portals.** Components like `Dialog`, `BottomSheet`, and `Popover` teleport their DOM to a root-level container (typically `<body>`), placing the rendered node completely outside any ancestor stacking context that would otherwise trap it. This is why simply moving a component tag to the end of the Svelte template is often enough — the teleported node lands at the end of the portal target, not because of local sibling order, but because it escapes the subtree entirely.
+
+```svelte
+<!-- ✗ Don't roll your own overlay with position: fixed + z-index -->
+<div style="position: fixed; z-index: 600">…</div>
+
+<!-- ✓ Use a component that portals its DOM — stacking context is no longer your problem -->
+<Dialog bind:open={dialogOpen} />
+```
+
+Note that portaled components may carry a `z-index` value internally — that is the library's concern, not yours. What you must avoid is adding `z-index` in your own component code to patch a stacking problem.
+
+**DOM ordering is a secondary technique**, valid only when elements share the same stacking context and no ancestor breaks it. Many CSS properties create a new stacking context (`transform`, `opacity < 1`, `filter`, `isolation: isolate`, positioned `z-index`) — once a new stacking context exists, later siblings outside it cannot paint over elements inside it regardless of order. Do not rely on DOM ordering alone for overlay elements.
+
+Only introduce `z-index` as a genuine last resort, and only with a component-local token so the value is visible and scoped:
+
+```css
+.my-component {
+    --my-component-z: 1;  /* document why 1 and what it sits above */
+    z-index: var(--my-component-z);
+}
+```
+
+Never use bare numeric `z-index` values or a global `--z-*` token ladder.
+
+---
+
 ## Rules
 
 - **No `!important`** — ever. Cascade layers make it unnecessary.
@@ -235,4 +266,5 @@ Do not use `:global()` in Svelte components for rules that apply across componen
 - **States reassign component-local tokens**, not global ones. Because the browser re-evaluates every property referencing the token automatically, one reassignment line replaces what would otherwise be repeated property declarations in every state rule.
 - **No utility-class spam** — if a pattern repeats across 3+ components, extract a shared Svelte primitive, not a utility class.
 - **Dark mode is free** — do not add `[data-theme="dark"]` rules inside component styles. The token layer handles it globally.
+- **No ad-hoc `z-index`** — use portaled overlay components instead of rolling `position: fixed` + `z-index`. DOM ordering is only a secondary aid within a shared stacking context. See [Z-Index and Stacking](#z-index-and-stacking) for the full rationale and the allowed exception form.
 - **Do not add new rules to `public/css/`** — those files belong to the legacy layer and are being phased out. New styles must use the token system described above.
