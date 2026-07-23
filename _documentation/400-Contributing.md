@@ -79,7 +79,7 @@ git push origin feature/your-feature-name --force-with-lease
 
 HAWKI follows a lightweight Domain-Driven Design approach on top of Laravel 13 / PHP 8.3. The backend is in transition from server-rendered MVC to a pure API server for the Svelte frontend.
 
-The full architecture documentation lives in the **[Backend section](./_documentation/Backend/)**:
+The full architecture documentation lives in the **[Backend section](500-Backend/index.md)**:
 
 | I want to understand…                                            | Read                                                                                        |
 |------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
@@ -167,7 +167,7 @@ There is currently no automated frontend test suite. Frontend testing will be in
 
 ## Frontend Code
 
-> **Planned Svelte rewrite:** The HAWKI frontend is being progressively migrated to a Svelte 5 SPA. **Do not add new code to the legacy vanilla-JS layer** (`public/js/`). All new frontend work must follow the patterns in the [Frontend documentation](600-Frontend/).
+> **Planned Svelte rewrite:** The HAWKI frontend is being progressively migrated to a Svelte 5 SPA. **Do not add new code to the legacy vanilla-JS layer** (`public/js/`). All new frontend work must follow the patterns in the [Frontend documentation](600-Frontend/index.md).
 
 | Topic                                       | Document                                                          |
 |---------------------------------------------|-------------------------------------------------------------------|
