@@ -28,6 +28,20 @@
         --color-focus-ring: var(--color-accent-300);
         --color-on-interactive: oklch(100% 0 0);
         --color-accent-text: var(--color-accent-500);
+        /* Label color for text sat on the accent fill (typeFilled hover/active).
+           Unlike --color-on-interactive, this does not flip in dark mode: the
+           accent-500/600 hover backgrounds stay dark in both themes. */
+        --color-on-accent-fill: oklch(100% 0 0);
+
+        /* Accent-blue button/trigger fill + hover, shared by the accent button
+           and the help aside trigger. */
+        --color-accent-fill: var(--color-accent-500);
+        --color-accent-fill-hover: var(--color-accent-600);
+
+        /* Active-selection surface + ink, shared by nav rows, the profile item,
+           the neutral avatar, and single-select menus. */
+        --color-active-surface: var(--color-accent-100);
+        --color-active-text: var(--color-accent-text);
 
         /* ── Status colors ──────────────────────────────────────────────── */
         --color-success: oklch(50% 0.17 145);
@@ -45,11 +59,11 @@
         --color-message-me: oklch(94% 0 0);
         --color-message-ai: oklch(100% 0 0);
 
-        --color-hover: oklch(94% 0 0);
+        /* Muted light blue used as the shared hover across sidebar, composer, etc. */
+        --color-hover: oklch(97% 0.018 265);
         /* Lighter-than-surface neutral fill. Used as a resting background for
            controls so the standard --color-hover reads as a darker hover. */
-        --color-surface-light: oklch(96% 0 0);
-        --color-surface-light-raised: oklch(95% 0 0);
+        --color-surface-light: oklch(97% 0 0);
         --color-border: oklch(92% 0 0);
         --color-border-strong: oklch(50% 0 0);
         --color-text: oklch(20% 0 0);
@@ -67,11 +81,22 @@
         --color-interactive-hover: oklch(82% 0 0);
         --color-interactive-active: oklch(72% 0 0);
         --color-focus-ring: var(--color-accent-dark-300);
-        --color-accent-text: var(--color-accent-dark-400);
+        --color-accent-text: oklch(80% 0.11 240);
+        --color-accent-fill: #151b54;
+        --color-accent-fill-hover: #1e2570;
+
+        /* Active/hover rows track the blue button accent fill, slightly translucent. */
+        --color-active-surface: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
+        --color-active-text: var(--color-accent-text);
+
+        /* Match the sidebar's active-surface blue for the shared light-blue fill
+           (filled buttons, tags, selected cards, radio switches) so it reads as
+           an accent on dark chrome instead of a bright light-blue patch. */
+        --color-accent-100: color-mix(in oklab, var(--color-accent-fill-hover) 70%, transparent);
 
         --color-bg: oklch(18% 0 0);
         --color-bg-secondary: oklch(0.213 0 0);
-        --color-surface: oklch(20% 0 0);
+        --color-surface: oklch(24% 0 0);
         --color-surface-raised: oklch(19% 0 0);
         --color-surface-invert: oklch(20% 0 0);
         --color-surface-light: oklch(32% 0 0);
@@ -80,7 +105,7 @@
         --color-message-me: oklch(24% 0 0);
         --color-message-ai: oklch(20% 0 0);
 
-        --color-hover: oklch(27% 0 0);
+        --color-hover: color-mix(in oklab, var(--color-accent-fill) 70%, transparent);
         --color-border: oklch(31% 0 0);
         --color-border-strong: oklch(74% 0 0);
         --color-text: oklch(93% 0 0);
@@ -91,8 +116,4 @@
 
         --color-link: oklch(100% 0 0);
     }
-}
-
-foo {
-    color: rgb(249, 163, 134), rgb(240, 117, 158)
 }

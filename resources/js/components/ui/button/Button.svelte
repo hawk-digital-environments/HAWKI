@@ -15,6 +15,7 @@
         variants: {
             variant: {
                 fill: 'btn--fill',
+                accent: 'btn--accent',
                 stroke: 'btn--stroke',
                 ghost: 'btn--ghost',
                 iconGhost: 'btn--iconGhost',
@@ -142,8 +143,20 @@
 
     /* ── Variants ──────────────────────────────────────────────────────── */
 
-    .btn--fill {
+    .btn--accent:not(:disabled) {
+        --btn-bg: var(--color-accent-fill);
+        --btn-color: var(--color-on-interactive);
+        --btn-bg-hover: var(--color-accent-fill-hover);
+    }
+
+    :global(html.darkMode) .btn--accent:not(:disabled) {
+        --btn-color: var(--color-active-text);
+    }
+
+    .btn--fill,
+    .btn--accent {
         --btn-bg: var(--color-interactive);
+        --btn-bg-hover: var(--color-interactive-hover);
         --btn-color: var(--color-on-interactive);
 
         background: var(--btn-bg);
@@ -152,7 +165,7 @@
         border-color: transparent;
 
         &:not(:disabled):hover {
-            --btn-bg: var(--color-interactive-hover);
+            --btn-bg: var(--btn-bg-hover);
         }
 
         &:disabled {
