@@ -13,19 +13,10 @@ This document describes HAWKI's AI model registry and tool system: how models an
     - [Database Registry](#database-registry)
     - [Model Sync](#model-sync)
     - [Model Online Status](#model-online-status)
-    - [Value Object vs Eloquent Model](#value-object-vs-eloquent-model)
 4. [Tool System](#tool-system)
-    - [Architecture: DB-First](#architecture-db-first)
-    - [Tool Types](#tool-types)
-    - [Tool Registry](#tool-registry)
-    - [Function-Calling Tools](#function-calling-tools)
-    - [MCP Tools](#mcp-tools)
-    - [Tool Status vs Active State](#tool-status-vs-active-state)
 5. [Model–Tool Assignments](#modeltool-assignments)
 6. [Database Schema](#database-schema)
-7. [Service Providers](#service-providers)
-8. [Command Reference](#command-reference)
-9. [How-To Guides](#how-to-guides)
+7. [How-To Guides](#how-to-guides)
 
 ---
 
