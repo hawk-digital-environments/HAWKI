@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\AiModelFlagController;
 use App\Http\Controllers\Api\V1\AiProviderController;
 use App\Http\Controllers\Api\V1\AiToolController;
 use App\Http\Controllers\Api\V1\ConfigController;
+use App\Http\Controllers\Api\V1\OpenaiResponsesController;
 use App\Http\Controllers\Api\V1\ConnectionController;
 use App\Http\Controllers\Api\V1\ExtAppController;
 use App\Http\Controllers\Api\V1\McpServerController;
@@ -63,6 +64,17 @@ Route::middleware([
 
         Route::get('/proxy/storage/{identifier}', [StorageProxyController::class, 'streamRouted'])
             ->where(['identifier' => '.*']);
+    });
+});
+
+Route::middleware([
+    'auth:sanctum',
+    BlockExtAppsIfNotAllowedMiddleware::class,
+    AppTokenForbiddenMiddleware::class,
+])->group(static function (): void {
+    Route::prefix('openai/v1')->group(static function (): void {
+        Route::post('/responses', OpenaiResponsesController::class)
+            ->name('api.openai.responses');
     });
 });
 
