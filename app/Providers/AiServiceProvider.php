@@ -47,6 +47,8 @@ use App\Services\Ai\Providers\Adapters\Implementations\OpenRouterAdapter;
 use App\Services\Ai\Providers\Adapters\ProviderAdapterRegistry;
 use App\Services\Ai\Providers\Adapters\WellKnownAdapterKeys;
 use App\Services\Ai\Providers\AiProviderProxyResolver;
+use App\Services\Ai\Streaming\AgentStreamer;
+use App\Services\Ai\Streaming\AgentStreamerInterface;
 use App\Services\Ai\Tools\AbstractTool;
 use App\Services\Ai\Tools\Contracts\ToolInterface;
 use App\Services\Ai\Tools\LaravelAi\LaravelToolResolver;
@@ -228,6 +230,8 @@ class AiServiceProvider extends ServiceProvider
             fn(AgentRegistry $registry) => $registry
                 ->declare(ChatAgentFromLegacyRequestFactory::class)
         );
+
+        $this->app->singleton(AgentStreamerInterface::class, AgentStreamer::class);
 
         $this->app->singleton(
             self::PROVIDER_ADAPTER_LIST,

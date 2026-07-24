@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -20,12 +23,12 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'username' => fake()->unique()->userName(),
-            'employeetype' => fake()->randomElement(['full-time', 'part-time', 'contractor']),
-            'publicKey' => '',
             'avatar_id' => null,
             'bio' => fake()->text(),
             'created_at' => now(),
             'updated_at' => now(),
+            'employeetype' => fake()->randomElement(['staff', 'student', 'faculty', 'guest']),
+            'publicKey' => Str::random(64),
             'isRemoved' => false,
         ];
     }
