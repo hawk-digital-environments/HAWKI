@@ -40,6 +40,8 @@
         tooltipOffline?: Snippet | string;
         /** Tooltip content for the `'unknown'` status. Defaults to the translated string. */
         tooltipUnknown?: Snippet | string;
+        /** Set to false when the dot sits inside another focusable control, so it does not add a tab stop. */
+        focusable?: boolean;
     }
 
     const {__} = useTranslator();
@@ -52,7 +54,8 @@
         labelUnknown,
         tooltipOnline = __('ui.statusDot.onlineTooltip'),
         tooltipOffline = __('ui.statusDot.offlineTooltip'),
-        tooltipUnknown = __('ui.statusDot.unknownTooltip')
+        tooltipUnknown = __('ui.statusDot.unknownTooltip'),
+        focusable = true
     }: Props = $props();
 
     const label = $derived.by(() => {
@@ -68,7 +71,7 @@
     });
 </script>
 
-<Tooltip tooltip={tooltip} delayDuration={300}>
+<Tooltip tooltip={tooltip} delayDuration={300} {focusable}>
     {#snippet children({props})}
         <div class="status-dot-wrapper status-dot-wrapper--{status}">
             <span
