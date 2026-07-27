@@ -125,6 +125,8 @@
             },
             "fileChips": {
                 "conflictMessage": "Not supported by the current model",
+                "listAriaLabel": "Attached files, use the arrow keys to browse",
+                "removeFileAriaLabel": "Remove file :file",
                 "uploadError": "Upload error: :issue"
             },
             "fileDrop": {
@@ -139,7 +141,8 @@
                 "conflictTitleMultiple": ":model does not support the following requirements",
                 "singleModelCapable": "This model can do everything you need.",
                 "multipleModelsCapable": "These :count models can do everything you need.",
-                "noModelsAvailable": "No available model supports this combination. Remove a tool or an attachment."
+                "noModelsAvailable": "No available model supports this combination. Remove a tool or an attachment.",
+                "modelListAriaLabel": "Compatible models, use the arrow keys to browse"
             },
             "toolMenuConfig": {
                 "variantLabel": "Variant",

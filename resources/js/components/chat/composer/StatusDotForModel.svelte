@@ -14,13 +14,16 @@
         size?: 'sm' | 'md';
         /** If true, the human-readable status label will be shown next to the dot. */
         showLabel?: boolean;
+        /** Set to false when the dot sits inside another focusable control, so it does not add a tab stop. */
+        focusable?: boolean;
     }
-    const {model, size, showLabel = false}: Props = $props();
+    const {model, size, showLabel = false, focusable = true}: Props = $props();
 </script>
 
 <StatusDot
     status={model.status}
     size={size}
+    {focusable}
     labelOnline={showLabel ? __('chat.composer.statusDot.onlineLabel') : undefined}
     tooltipOnline={__('chat.composer.statusDot.onlineTooltip')}
     labelUnknown={showLabel ? __('chat.composer.statusDot.unknownLabel') : undefined}

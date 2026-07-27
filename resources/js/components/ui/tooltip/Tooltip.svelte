@@ -25,6 +25,13 @@
         /** If true, the tooltip will not open on hover/focus. */
         disabled?: boolean;
         /**
+         * If false, the trigger is removed from the tab order. Use this for decorative
+         * tooltips nested inside another focusable control (a status dot inside a button,
+         * for example) — without it every such tooltip adds its own tab stop.
+         * The tooltip still opens on hover and on focus of the surrounding control.
+         */
+        focusable?: boolean;
+        /**
          * The content that triggers the tooltip, typically an icon or button. Can be a string or a Svelte snippet.
          * If a snippet is provided, it will receive a `props` object as an argument, which MUST be used to spread onto the root element of the snippet.
          * This ensures proper functionality of the tooltip trigger.
@@ -40,8 +47,17 @@
         sideOffset = 4,
         open = $bindable(false),
         disabled,
+        focusable = true,
         ...restProps
     }: Props = $props();
+
+    // bits-ui makes every trigger focusable. For decorative triggers inside another
+    // control that would add a redundant tab stop, so strip the tabindex it injects.
+    function applyFocusable(props: Record<string, any>): Record<string, any> {
+        if (focusable) return props;
+        const {tabindex, tabIndex, ...rest} = props;
+        return {...rest, tabindex: -1};
+    }
 
     const longPress = $state.raw({
         timer: null as ReturnType<typeof setTimeout> | null
@@ -83,7 +99,7 @@
         <TooltipPrimitive.Trigger>
             {#snippet child(a)}
                 <SnippetOrStringTrigger value={children as string|Snippet} snippetArgs={{
-                    props: mergeProps(
+                    props: applyFocusable(mergeProps(
                         a.props,
                         {
                             ontouchstart: handleTouchStart,
@@ -91,7 +107,7 @@
                             ontouchcancel: handleTouchEnd,
                             oncontextmenu: handleContextMenu
                         }
-                    )
+                    ))
                 }}/>
             {/snippet}
         </TooltipPrimitive.Trigger>

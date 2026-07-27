@@ -13,8 +13,100 @@
     import {__} from '$lib/utils/translator.js';
     import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {tick} from 'svelte';
 
     const composerContext = useComposerContext();
+
+    let chipsEl = $state(null as HTMLDivElement | null);
+
+    // Roving tabindex, matching the conflict picker: the chip row is a single tab
+    // stop, arrow keys move between the chips inside it.
+    let activeIndex = $state(0);
+
+    // Keep the roving index in range when chips are added or removed.
+    $effect(() => {
+        if (activeIndex > composerContext.attachments.list.length - 1) {
+            activeIndex = 0;
+        }
+    });
+
+    function chipButtons(): HTMLElement[] {
+        return chipsEl ? Array.from(chipsEl.querySelectorAll<HTMLElement>('[data-file-chip]')) : [];
+    }
+
+    function focusChip(index: number) {
+        const chip = chipButtons()[index];
+        if (!chip) return;
+        activeIndex = index;
+        chip.focus();
+    }
+
+    /**
+     * Removes a chip and lands focus somewhere sensible: the chip that slid into the
+     * removed slot, otherwise the preceding one, otherwise the textarea once the row
+     * is empty. Without this, focus falls back to `<body>` and keyboard users have to
+     * tab in from the top of the page again.
+     */
+    async function removeAndMoveFocus(file: File, index: number) {
+        composerContext.attachments.remove(file);
+        // tick() flushes the re-render; the extra frame lets the removed chip's
+        // (zero-duration) out-transition finish so it is out of the DOM before we
+        // pick the chip to focus by index.
+        await tick();
+        await new Promise(requestAnimationFrame);
+
+        if (!composerContext.attachments.hasAny) {
+            composerContext.focusInput();
+            return;
+        }
+
+        const chips = chipButtons();
+        if (chips.length === 0) {
+            composerContext.focusInput();
+            return;
+        }
+        focusChip(Math.min(index, chips.length - 1));
+    }
+
+    // Enter/Space is handled here rather than through the button's click handler so
+    // keyboard removal can move focus onward while a mouse click returns to the textarea.
+    // preventDefault stops the browser from firing a synthetic click afterwards.
+    function onChipKeydown(event: KeyboardEvent, file: File, index: number) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            void removeAndMoveFocus(file, index);
+            return;
+        }
+
+        const last = composerContext.attachments.list.length - 1;
+        let target: number | null = null;
+
+        switch (event.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                target = Math.min(index + 1, last);
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                target = Math.max(index - 1, 0);
+                break;
+            case 'Home':
+                target = 0;
+                break;
+            case 'End':
+                target = last;
+                break;
+        }
+
+        if (target === null) return;
+        event.preventDefault();
+        focusChip(target);
+    }
+
+    function onChipClick(file: File) {
+        composerContext.attachments.remove(file);
+        composerContext.focusInput();
+    }
 
     // The issue is either that we can not upload files at all,
     // or if we want to upload an image, that the model does not support vision.
@@ -36,7 +128,13 @@
 </script>
 
 {#if composerContext.attachments.hasAny}
-    <div class="file-chips" class:file-chips--no-conflict={!currentModelHasFileIssue}>
+    <div
+        class="file-chips"
+        class:file-chips--no-conflict={!currentModelHasFileIssue}
+        role="group"
+        aria-label={__('chat.composer.fileChips.listAriaLabel')}
+        bind:this={chipsEl}
+    >
         {#each composerContext.attachments.list as file, i (`${file.name}-${i}`)}
             {@const conflict = currentModelHasFileIssue}
             <span class="file-chip-mask" out:maskSlideDown|global style:--file-chip-delay={`${Math.min(i, 4) * 35}ms`}>
@@ -56,8 +154,12 @@
                                         hasIssue ? 'file-chip--conflict' : 'file-chip--default'
                                     ],
                                     title: issueMessage,
-                                    onclick: () => composerContext.attachments.remove(file),
-                                    'aria-label': `${file.name} entfernen`
+                                    onclick: () => onChipClick(file),
+                                    onkeydown: (event: KeyboardEvent) => onChipKeydown(event, file, i),
+                                    onfocus: () => activeIndex = i,
+                                    tabindex: i === activeIndex ? 0 : -1,
+                                    'data-file-chip': '',
+                                    'aria-label': __('chat.composer.fileChips.removeFileAriaLabel', {file: file.name})
                                 }
                             )}
                         >
@@ -111,6 +213,23 @@
         animation-delay: var(--file-chip-delay, 0ms);
     }
 
+    /* The chip's mask clips overflow for the slide animation, so the focus ring is
+       drawn inside the chip rather than around it. */
+    .file-chip:focus-visible {
+        outline: 1px solid var(--color-focus-ring);
+        outline-offset: -2px;
+        border-radius: var(--corner-sm);
+    }
+
+    .file-chip--default:focus-visible {
+        background-color: var(--color-hover);
+        color: var(--color-text);
+    }
+
+    .file-chip--conflict:focus-visible {
+        background-color: color-mix(in oklch, var(--color-error) 18%, transparent);
+    }
+
     .file-chip--default {
         background-color: var(--color-surface);
         color: var(--color-text-muted);
@@ -157,11 +276,13 @@
         color: color-mix(in oklch, var(--color-error) 70%, transparent);
     }
 
-    .file-chip--default:hover :global(.file-chip-remove) {
+    .file-chip--default:hover :global(.file-chip-remove),
+    .file-chip--default:focus-visible :global(.file-chip-remove) {
         color: var(--color-text);
     }
 
-    .file-chip--conflict:hover :global(.file-chip-remove) {
+    .file-chip--conflict:hover :global(.file-chip-remove),
+    .file-chip--conflict:focus-visible :global(.file-chip-remove) {
         color: var(--color-error);
     }
 

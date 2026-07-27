@@ -22,6 +22,52 @@
                 .flatMap(issue => issue.missingTools ?? []);
         }
     );
+
+    // Roving tabindex: the card list is a single tab stop. Tab moves past the whole
+    // list to the next composer control; arrow keys move between the cards.
+    let listEl = $state(null as HTMLDivElement | null);
+    let activeIndex = $state(0);
+
+    // Keep the roving index in range when the list of usable models changes.
+    $effect(() => {
+        if (activeIndex > usableModels.length - 1) {
+            activeIndex = 0;
+        }
+    });
+
+    function focusCard(index: number) {
+        const cards = listEl?.querySelectorAll<HTMLElement>('[data-conflict-card]');
+        const card = cards?.[index];
+        if (!card) return;
+        activeIndex = index;
+        card.focus();
+    }
+
+    function onListKeydown(event: KeyboardEvent) {
+        const last = usableModels.length - 1;
+        let target: number | null = null;
+
+        switch (event.key) {
+            case 'ArrowRight':
+            case 'ArrowDown':
+                target = Math.min(activeIndex + 1, last);
+                break;
+            case 'ArrowLeft':
+            case 'ArrowUp':
+                target = Math.max(activeIndex - 1, 0);
+                break;
+            case 'Home':
+                target = 0;
+                break;
+            case 'End':
+                target = last;
+                break;
+        }
+
+        if (target === null) return;
+        event.preventDefault();
+        focusCard(target);
+    }
 </script>
 
 {#if !composerContext.modelUsage.isValid && composerContext.guard.showsAiUiElements}
@@ -55,19 +101,28 @@
             <!-- Model list -->
             {#if usableModels.length > 0}
                 <!-- Scrollable model cards -->
-                <div class="conflict-models-scroll">
-                    {#each usableModels as m (m.id)}
+                <div
+                    class="conflict-models-scroll"
+                    role="group"
+                    aria-label={__('chat.composer.modelConflict.modelListAriaLabel')}
+                    bind:this={listEl}
+                    onkeydown={onListKeydown}
+                >
+                    {#each usableModels as m, i (m.id)}
                         <button
                             onclick={() => composerContext.model.set(m.id)}
+                            onfocus={() => activeIndex = i}
                             class="conflict-model-card"
+                            data-conflict-card
+                            tabindex={i === activeIndex ? 0 : -1}
                         >
                             <div class="conflict-card-top">
                                 <div class="conflict-provider-row">
-                                    <StatusDotForModel model={m}/>
+                                    <StatusDotForModel model={m} focusable={false}/>
                                     <span class="conflict-provider-name">{m.provider?.name}</span>
                                 </div>
                                 <div class="conflict-card-right">
-                                    <ModelDemandBars model={m}/>
+                                    <ModelDemandBars model={m} focusable={false}/>
                                 </div>
                             </div>
                             <span class="conflict-model-name">{m.label}</span>
@@ -107,7 +162,8 @@
         gap: calc(0.25rem * 2.5);
         padding-inline: var(--space-3, calc(0.25rem * 3));
         padding-top: var(--space-3, calc(0.25rem * 3));
-        padding-bottom: calc(0.25rem * 2.5);
+        /* Trimmed by the top padding the card scroller needs for its focus ring. */
+        padding-bottom: calc(0.25rem * 1.5);
     }
 
     .conflict-icon-wrapper {
@@ -151,6 +207,10 @@
         gap: calc(0.25rem * 2);
         overflow-x: auto;
         padding-inline: var(--space-3, calc(0.25rem * 3));
+        /* The top padding is what keeps the focus ring (1px outline + 2px offset) of
+           each card from being clipped by the scroll container and the panel's
+           `overflow: hidden`. Don't remove it without replacing the clearance. */
+        padding-top: var(--space-1, calc(0.25rem * 1));
         padding-bottom: var(--space-3, calc(0.25rem * 3));
         scrollbar-width: thin;
         scroll-snap-type: x mandatory;
@@ -184,6 +244,10 @@
 
         &:hover {
             box-shadow: var(--elevation-1);
+        }
+
+        &:focus-visible {
+            border-radius: var(--corner-sm);
         }
     }
 
