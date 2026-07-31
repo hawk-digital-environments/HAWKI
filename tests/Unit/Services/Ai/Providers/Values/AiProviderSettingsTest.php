@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\AI\Providers\Values;
+namespace Tests\Unit\Services\Ai\Providers\Values;
 
 use App\Services\Ai\Exceptions\InvalidProviderSettingsOperationException;
 use App\Services\Ai\Models\Parameters\Values\AiModelParameters;

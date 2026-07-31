@@ -6,6 +6,7 @@ namespace Tests\Unit\Services\FileConverter\Handlers;
 use App\Services\FileConverter\Exception\ConversionFailedException;
 use App\Services\FileConverter\Handlers\HawkiDocConverter;
 use App\Services\Storage\Values\FileReference;
+use App\Services\System\Time\CarbonClock;
 use Illuminate\Cache\Repository;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -26,7 +27,7 @@ class HawkiDocConverterTest extends TestCase
 
     private function makeSut(?Repository $cache = null): HawkiDocConverter
     {
-        $sut = new HawkiDocConverter($cache ?? $this->makeCache());
+        $sut = new HawkiDocConverter($cache ?? $this->makeCache(), new CarbonClock());
         $sut->setConfig(['api_url' => self::API_URL, 'api_key' => self::API_KEY]);
         return $sut;
     }
@@ -69,7 +70,7 @@ class HawkiDocConverterTest extends TestCase
 
     public function testItConstructs(): void
     {
-        static::assertInstanceOf(HawkiDocConverter::class, new HawkiDocConverter($this->makeCache()));
+        static::assertInstanceOf(HawkiDocConverter::class, new HawkiDocConverter($this->makeCache(), new CarbonClock()));
     }
 
     // =========================================================================

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\AI\Providers\Adapters\ModelList;
+namespace Tests\Unit\Services\Ai\Providers\Adapters\ModelList;
 
 use App\Services\Ai\Exceptions\ModelListResponseException;
 use App\Services\Ai\Providers\Adapters\ModelList\ModelListResponse;
@@ -178,7 +178,7 @@ class ModelListResponseTest extends TestCase
 
     private function makeResponse(array $data): Response
     {
-        return $this->makeRawResponse((string) json_encode($data));
+        return $this->makeRawResponse((string)json_encode($data));
     }
 
     private function makeRawResponse(string $body): Response

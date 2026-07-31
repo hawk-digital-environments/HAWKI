@@ -6,9 +6,9 @@ namespace Tests\Unit\Services\Frontend\Migrations\Make;
 use App\Services\Frontend\Migrations\Make\BackendMigrationCreator;
 use App\Services\Frontend\Migrations\Make\FrontendMigrationCreator;
 use App\Services\Frontend\Migrations\Make\JsMigrationCreator;
+use App\Services\System\Time\CarbonClock;
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\CoversClass;
-use Psr\Clock\ClockInterface;
 use Tests\TestCase;
 
 #[CoversClass(FrontendMigrationCreator::class)]
@@ -120,8 +120,7 @@ class FrontendMigrationCreatorTest extends TestCase
         $files = $this->createMock(Filesystem::class);
         $files->method('get')->willReturn('');
 
-        $clock = $this->createMock(ClockInterface::class);
-        $clock->method('now')->willReturn($now ?? new \DateTimeImmutable('2024-01-01 00:00:00'));
+        $clock = new CarbonClock($now ?? new \DateTimeImmutable('2024-01-01 00:00:00'));
 
         return new FrontendMigrationCreator(
             phpMigrationCreator: new BackendMigrationCreator($files),

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\AI\StatusCheck;
+namespace Tests\Unit\Services\Ai\StatusCheck;
 
 use App\Models\Ai\McpServer;
 use App\Services\Ai\StatusCheck\Events\McpServerStatusCheckedEvent;
