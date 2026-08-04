@@ -49,11 +49,10 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelParams::TOP_P => 0.9,
             ],
         ],
-        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
-        'deepseek-r1-distill-llama-70b' => [
-            'max_tokens' => 32000,
-            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Llama-70B',
-            'description' => 'Developed by the Chinese company DeepSeek (深度求索), DeepSeek R1 Distill Llama 70B is a dense model distilled from DeepSeek-R1 but based on LLama 3.3 70B, in order to fit the capabilities and performance of R1 into a 70B parameter-size model.',
+        'deepseek-v4-flash' => [
+            'max_tokens' => 1000000,
+            'documentation_url' => 'https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash',
+            'description' => 'DeepSeek V4 Flash is a strong Mixture-of-Experts (MoE) model with 284B parameters (13B activated) and a context window size of one million tokens. With a high reasoning effort, it achieves comparable reasoning performance to DeepSeek V4 Pro, but lacks the deep knowledge and most complex agentic capabilities of state-of-the-art models.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
                 WellKnownModelFlags::FEATURE_REASONING,
@@ -61,8 +60,11 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.7,
-                WellKnownModelParams::TOP_P => 0.8,
+                WellKnownModelParams::TEMPERATURE => 1.0,
+                WellKnownModelParams::TOP_P => 1.0,
+            ],
+            'native_capabilities' => [
+                WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
         'devstral-2-123b-instruct-2512' => [
@@ -110,27 +112,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING
             ],
         ],
-        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
-        'internvl3.5-30b-a3b' => [
-            'max_tokens' => 40000,
-            'documentation_url' => 'https://huggingface.co/OpenGVLab/InternVL3_5-30B-A3B-HF',
-            'description' => 'InternVL 3.5 30B-A3B is a lightweight, fast and powerful multimodal model developed by OpenGVLab. It significantly advances versatility, reasoning capability, and efficiency, by featuring a Visual Resolution Router (ViR) for dynamic visual token adjustment and Decoupled Vision-Language Deployment (DvD) for efficient GPU load balancing, achieving up to 4× inference speedup compared to its predecessor. The model excels at multimodal reasoning, OCR, document understanding, multi-image comprehension, video understanding, GUI tasks, and embodied agency.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-        ],
-        'medgemma-27b-it' => [
-            'max_tokens' => 128000,
-            'documentation_url' => 'https://huggingface.co/google/medgemma-27b-it',
-            'description' => 'MedGemma 27B Instruct is a variant of Gemma 3 suitable for medical text and image comprehension. It has been trained on a variety of medical image data, including chest X-rays, dermatology images, ophthalmology images, and histopathology slides, as well as medical text, such as medical question-answer pairs, and FHIR-based electronic health record data. MedGemma variants have been evaluated on a range of clinically relevant benchmarks to illustrate their baseline performance.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_STREAMING,
-            ],
-        ],
         'meta-llama-3.1-8b-instruct' => [
             'max_tokens' => 128000,
             'documentation_url' => 'https://huggingface.co/nvidia/Llama-3.1-8B-Instruct-FP8',
@@ -143,14 +124,12 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
                 WellKnownCapabilities::TOOL_CALLING,
             ],
         ],
-        'mistral-large-3-675b-instruct-2512' => [
+        'mistral-medium-3.5-128b' => [
             'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/mistralai/Mistral-Large-3-675B-Instruct-2512-NVFP4',
-            'description' => 'Developed by Mistral AI, Mistral Large 3 is a general-purpose multimodal MoE model with 675B total and 41B active parameters. This model is fine-tuned for instruction tasks, ideal for chat, agentic and instruction based use cases. It supports dozens of languages, including English, French, Spanish, German, Italian, Portuguese, Dutch, Chinese, Japanese, Korean, Arabic, and has a large 256K context window size.',
+            'documentation_url' => 'https://huggingface.co/mistralai/Mistral-Medium-3.5-128B',
+            'description' => 'Mistral Medium 3.5 128B is a dense model with 128B parameters and a 256k context window, combining instruction-following, reasoning, and coding capabilities in a single model. Therefore, this model replaces its predecessors in Le Chat and the coding agent Vibe, and produces better results for a variety of tasks including instruct, reasoning, and coding, compared to previous models.',
             'flags' => [
                 WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::MULTI_MODAL,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
                 WellKnownModelFlags::FEATURE_STREAMING,
             ],
             'native_capabilities' => [
@@ -186,25 +165,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
             'native_capabilities' => [
                 WellKnownCapabilities::TOOL_CALLING,
             ],
-        ],
-        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
-        'qwen3-coder-30b-a3b-instruct' => [
-            'max_tokens' => 256000,
-            'documentation_url' => 'https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8',
-            'description' => 'Qwen 3 Coder 30B A3B Instruct is a specialized coding model that achieves strong performance on agentic coding, browser-use, and other foundational coding tasks among open models.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::STRENGTH_CODE_GENERATION,
-                WellKnownModelFlags::FEATURE_SAMPLING_PARAMETERS,
-                WellKnownModelFlags::FEATURE_STREAMING
-            ],
-            'parameters' => [
-                WellKnownModelParams::TEMPERATURE => 0.7,
-                WellKnownModelParams::TOP_P => 0.8,
-            ],
-            'native_capabilities' => [
-                WellKnownCapabilities::TOOL_CALLING
-            ]
         ],
         'qwen3-coder-next' => [
             'max_tokens' => 256000,
@@ -303,16 +263,6 @@ class StaticGwdgEnricher implements ModelInfoEnricherInterface
             ],
             'native_capabilities' => [
                 WellKnownCapabilities::TOOL_CALLING,
-            ],
-        ],
-        // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
-        'teuken-7b-instruct-research' => [
-            'max_tokens' => 128000,
-            'documentation_url' => 'https://huggingface.co/openGPT-X/Teuken-7B-instruct-research-v0.4',
-            'description' => 'OpenGPT-X is a research project funded by the German Federal Ministry of Economics and Climate Protection (BMWK) and led by Fraunhofer, Forschungszentrum Jülich, TU Dresden, and DFKI. Teuken 7B Instruct Research v0.4 is an instruction-tuned 7B parameter multilingual LLM pre-trained with 4T tokens, focusing on covering all 24 EU languages and reflecting European values.',
-            'flags' => [
-                WellKnownModelFlags::OPEN_WEIGHTS,
-                WellKnownModelFlags::FEATURE_STREAMING,
             ],
         ],
     ];

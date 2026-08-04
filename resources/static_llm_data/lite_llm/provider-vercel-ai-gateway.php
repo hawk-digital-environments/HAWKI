@@ -650,6 +650,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,

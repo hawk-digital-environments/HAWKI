@@ -22,11 +22,10 @@ return [
             'top_p' => env('MODELS_GWDG_APERTUS_70B_INSTRUCT_2509_PARAMS_TOP_P', 0.9),
         ],
     ],
-    // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
     [
-        'active' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_ACTIVE', false),
-        'id' => 'deepseek-r1-distill-llama-70b',
-        'label' => 'GWDG DeepSeek R1 Distill Llama 70B',
+        'active' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_ACTIVE', true),
+        'id' => 'deepseek-v4-flash',
+        'label' => 'GWDG DeepSeek V4 Flash',
         'input' => [
             'text',
         ],
@@ -35,13 +34,13 @@ return [
         ],
         'tools' => [
             'stream' => true,
-            'tool_calling' => false, // Reasoning/R1 model; chain-of-thought output is incompatible with tool calling
-            'file_upload' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_TOOLS_FILE_UPLOAD', true),
+            'tool_calling' => true,
+            'file_upload' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            // GWDG recommended values: temp=0.7, top_p=0.8
-            'temp' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_PARAMS_TEMP', 0.7),
-            'top_p' => env('MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_PARAMS_TOP_P', 0.8),
+            // GWDG recommended values: temp=1.0, top_p=1.0
+            'temp' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_GWDG_DEEPSEEK_V4_FLASH_PARAMS_TOP_P', 1.0),
         ],
     ],
     [
@@ -108,53 +107,6 @@ return [
             'top_p' => env('MODELS_GWDG_GLM_4_7_PARAMS_TOP_P', 0.95),
         ],
     ],
-    // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
-    [
-        'active' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_ACTIVE', false),
-        'id' => 'internvl3.5-30b-a3b',
-        'label' => 'GWDG InternVL 3.5 30B A3B',
-        'input' => [
-            'text',
-            'image',
-            'video',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => false, // Vision-focused model; tool-calling not exposed via GWDG API
-            'file_upload' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_TOOLS_FILE_UPLOAD', true),
-            'vision' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_TOOLS_VISION', true),
-        ],
-        'default_params' => [
-            // Model card recommends temp=0.6 and top_p=0.95, especially when thinking mode is enabled
-            'temp' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_PARAMS_TEMP', 0.6),
-            'top_p' => env('MODELS_GWDG_INTERNVL3_5_30B_A3B_PARAMS_TOP_P', 0.95),
-        ],
-    ],
-    [
-        'active' => env('MODELS_GWDG_MEDGEMMA_27B_IT_ACTIVE', true),
-        'id' => 'medgemma-27b-it',
-        'label' => 'GWDG MedGemma 27B Instruct',
-        'input' => [
-            'text',
-            'image',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => false, // Medical fine-tune; specialized task model, tool calling not supported
-            'file_upload' => env('MODELS_GWDG_MEDGEMMA_27B_IT_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // vLLM example config for MedGemma 27B Instruct uses temp=0.7 and top_p=0.95
-            'temp' => env('MODELS_GWDG_MEDGEMMA_27B_IT_PARAMS_TEMP', 0.7),
-            'top_p' => env('MODELS_GWDG_MEDGEMMA_27B_IT_PARAMS_TOP_P', 0.95),
-        ],
-    ],
     [
         'active' => env('MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_ACTIVE', true),
         'id' => 'meta-llama-3.1-8b-instruct',
@@ -177,12 +129,11 @@ return [
         ],
     ],
     [
-        'active' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_ACTIVE', true),
-        'id' => 'mistral-large-3-675b-instruct-2512',
-        'label' => 'GWDG Mistral Large 3 675B Instruct 2512',
+        'active' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_ACTIVE', true),
+        'id' => 'mistral-medium-3.5-128b',
+        'label' => 'GWDG Mistral Medium 3.5 128B',
         'input' => [
             'text',
-            'image',
         ],
         'output' => [
             'text',
@@ -190,12 +141,12 @@ return [
         'tools' => [
             'stream' => true,
             'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_TOOLS_FILE_UPLOAD', true),
+            'file_upload' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_TOOLS_FILE_UPLOAD', true),
         ],
         'default_params' => [
-            // GWDG recommends near-deterministic temp (<0.1) for typical tasks; top_p=0.95 is the standard vLLM value
-            'temp' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_PARAMS_TEMP', 0.1),
-            'top_p' => env('MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_PARAMS_TOP_P', 0.95),
+            // GWDG lists no specific recommendation; API defaults apply unless overridden via env
+            'temp' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_PARAMS_TEMP'),
+            'top_p' => env('MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_PARAMS_TOP_P'),
         ],
     ],
     [
@@ -238,28 +189,6 @@ return [
             // GWDG recommended values: temp=0.6, top_p=0.95
             'temp' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_PARAMS_TEMP', 0.6),
             'top_p' => env('MODELS_GWDG_QWEN3_30B_A3B_INSTRUCT_2507_PARAMS_TOP_P', 0.95),
-        ],
-    ],
-    // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
-    [
-        'active' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_ACTIVE', false),
-        'id' => 'qwen3-coder-30b-a3b-instruct',
-        'label' => 'GWDG Qwen 3 Coder 30B A3B Instruct',
-        'input' => [
-            'text',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => true,
-            'file_upload' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // Model card best practices: temp=0.7, top_p=0.8
-            'temp' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_PARAMS_TEMP', 0.7),
-            'top_p' => env('MODELS_GWDG_QWEN3_CODER_30B_A3B_INSTRUCT_PARAMS_TOP_P', 0.8),
         ],
     ],
     [
@@ -397,28 +326,6 @@ return [
             // vLLM examples for Qwen 3 Omni use temp=0.6 and top_p=0.95
             'temp' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_GWDG_QWEN_3.6_35B_A3B_PARAMS_TOP_P', 0.95),
-        ],
-    ],
-    // NOTE: MODEL LISTED ON GWDG WEBSITE BUT NOT API RESPONSE
-    [
-        'active' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_ACTIVE', false),
-        'id' => 'teuken-7b-instruct-research',
-        'label' => 'GWDG Teuken 7B Instruct Research',
-        'input' => [
-            'text',
-        ],
-        'output' => [
-            'text',
-        ],
-        'tools' => [
-            'stream' => true,
-            'tool_calling' => false, // Specialized German/multilingual research model; tool calling not supported
-            'file_upload' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_TOOLS_FILE_UPLOAD', true),
-        ],
-        'default_params' => [
-            // No specific recommendations available; API defaults temp=1.0 and top_p=1.0 used
-            'temp' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_PARAMS_TEMP', 1.0),
-            'top_p' => env('MODELS_GWDG_TEUKEN_7B_INSTRUCT_RESEARCH_PARAMS_TOP_P', 1.0),
         ],
     ],
 ];

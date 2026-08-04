@@ -7,15 +7,15 @@ declare(strict_types=1);
 
 return [
     array (
-  'id' => 'jina-reranker-v2-base-multilingual',
+  'id' => 'tinyfish/search',
   'object' => 'model_catalog.entry',
-  'provider' => 'jina_ai',
-  'mode' => 'rerank',
-  'max_input_tokens' => 1024,
-  'max_output_tokens' => 1024,
-  'max_tokens' => 1024,
-  'input_cost_per_token' => 1.8E-8,
-  'output_cost_per_token' => 1.8E-8,
+  'provider' => 'tinyfish',
+  'mode' => 'search',
+  'max_input_tokens' => NULL,
+  'max_output_tokens' => NULL,
+  'max_tokens' => NULL,
+  'input_cost_per_token' => NULL,
+  'output_cost_per_token' => NULL,
   'cache_read_input_token_cost' => NULL,
   'input_cost_per_audio_token' => NULL,
   'output_cost_per_reasoning_token' => NULL,
@@ -30,5 +30,10 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'input_cost_per_query' => 0.0,
+  'metadata' => 
+  array (
+    'notes' => 'TinyFish Search API',
+  ),
 ),
 ];
