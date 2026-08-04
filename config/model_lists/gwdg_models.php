@@ -134,6 +134,7 @@ return [
         'label' => 'GWDG Mistral Medium 3.5 128B',
         'input' => [
             'text',
+            'image'
         ],
         'output' => [
             'text',
