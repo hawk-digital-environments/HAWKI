@@ -660,8 +660,6 @@ enum PlainTextLanguageType: string
         'text/x-python2' => self::PYTHON,
         'text/x-python3' => self::PYTHON,
         'text/x-script.python' => self::PYTHON,
-        'application/x-python' => self::PYTHON,
-        'application/x-python-code' => self::PYTHON,
         // RB
         'application/x-ruby' => self::RB,
         'text/x-ruby' => self::RB,
