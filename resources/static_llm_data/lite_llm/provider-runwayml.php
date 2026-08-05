@@ -41,11 +41,6 @@ return [
   array (
     0 => 'video',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '720x1280',
-  ),
   'metadata' => 
   array (
     'comment' => '5 credits per second @ $0.01 per credit = $0.05 per second',
@@ -86,11 +81,6 @@ return [
   array (
     0 => 'video',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '720x1280',
-  ),
   'metadata' => 
   array (
     'comment' => '15 credits per second @ $0.01 per credit = $0.15 per second',
@@ -130,11 +120,6 @@ return [
   'supported_output_modalities' => 
   array (
     0 => 'video',
-  ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '720x1280',
   ),
   'metadata' => 
   array (
@@ -177,11 +162,6 @@ return [
   array (
     0 => 'image',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '1920x1080',
-  ),
   'metadata' => 
   array (
     'comment' => '5 credits per 720p image or 8 credits per 1080p image @ $0.01 per credit. Using 5 credits ($0.05) as base cost',
@@ -222,11 +202,6 @@ return [
   'supported_output_modalities' => 
   array (
     0 => 'image',
-  ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '1920x1080',
   ),
   'metadata' => 
   array (
