@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\AI\Providers\Adapters\ProviderAdapterRegistryTestFixtures;
+namespace Tests\Unit\Services\Ai\Providers\Adapters\ProviderAdapterRegistryTestFixtures;
 
 use App\Models\Ai\AiProvider;
 use App\Services\Ai\Agents\Values\AgentRequestContext;
@@ -52,8 +52,8 @@ class StubProviderAdapter implements ProviderAdapterInterface
 
     public function checkModelStatus(
         AiModelOnlineStatusCollection $statusCollection,
-        AiModelDemandCollection $demandCollection,
-        AiProviderProxy $provider
+        AiModelDemandCollection       $demandCollection,
+        AiProviderProxy               $provider
     ): void
     {
     }

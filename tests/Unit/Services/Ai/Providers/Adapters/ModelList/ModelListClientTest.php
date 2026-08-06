@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\AI\Providers\Adapters\ModelList;
+namespace Tests\Unit\Services\Ai\Providers\Adapters\ModelList;
 
 use App\Services\Ai\Exceptions\ModelListRequestException;
 use App\Services\Ai\Providers\Adapters\ModelList\ModelListClient;
@@ -130,7 +130,7 @@ class ModelListClientTest extends TestCase
 
     private function makeSuccessRequest(array $data): PendingRequest
     {
-        $body = (string) json_encode($data);
+        $body = (string)json_encode($data);
         $pendingRequest = $this->createMock(PendingRequest::class);
         $pendingRequest->method('get')
             ->willReturn(new Response(new PsrResponse(200, [], $body)));

@@ -110,6 +110,7 @@
                 "infoUnsupported": "(nicht von aktuellem Modell unterstützt) | Klick für weitere Informationen",
                 "infoDefault": "Weitere Informationen zum Tool anzeigen",
                 "clickForInfo": "Klick für weitere Informationen",
+                "manageTools": "Tools verwalten",
                 "tools": {
                     "webFetch": "Webinhalte abrufen",
                     "webFetchDescription": "Dieses Tool ermöglicht es der KI, Informationen aus dem Internet abzurufen. Im Gegensatz zur Websuche kann die KI damit auch auf externe Webseiten zugreifen, um Inhalte zu extrahieren und zu analysieren.",
