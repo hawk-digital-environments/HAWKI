@@ -3,7 +3,6 @@ However, as we want to merge them both anyway, it's not worth the effort to spli
 <script lang="ts">
     import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-    import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
     import type {HTMLSvelteSnippetElement} from '$lib/svelteSnippetLoader.js';
     import RoomNameMenu from '$lib/components/chat/nameMenu/RoomNameMenu.svelte';
     import AiConvNameMenu from '$lib/components/chat/nameMenu/AiConvNameMenu.svelte';
@@ -36,11 +35,11 @@ However, as we want to merge them both anyway, it's not worth the effort to spli
     let isRenaming = $state(false);
 
     $effect(() => {
-        if (slug && oldUiMessageHistory.conversationSlug === slug) {
-            if (name !== oldUiMessageHistory.conversationName) {
-                root.setProps({name: oldUiMessageHistory.conversationName});
+        return oldUiBridge.onRenameChat((renamedSlug, newName) => {
+            if (slug && renamedSlug === slug) {
+                root.setProps({name: newName});
             }
-        }
+        });
     });
 
     const sharedProps: ComponentProps<typeof RoomNameMenu | typeof AiConvNameMenu> = $derived.by(() => ({

@@ -8,14 +8,12 @@ export class OldUiMessageHistory {
     private sync = new SyncPipeline<{ [LOAD_CONVERSATION_EVENT]: OldUiConversation }>();
 
     private _type: ComposerContextType = $state('room');
-    private _conversation: OldUiConversation | null = null;
+    private _conversation = $state<OldUiConversation | null>(null);
     private _systemPrompt = $state('');
-    private _conversationName = $state('');
-    private _conversationSlug = $state('');
     private _isInConversation = $state(false);
 
-    public readonly conversationName = $derived.by(() => this._conversationName);
-    public readonly conversationSlug = $derived.by(() => this._conversationSlug);
+    public readonly conversationName = $derived.by(() => this._conversation?.name ?? '');
+    public readonly conversationSlug = $derived.by(() => this._conversation?.slug ?? '');
     public readonly isInConversation = $derived.by(() => this._isInConversation);
     public readonly systemPrompt = $derived.by(() => this._systemPrompt);
     public readonly canAdministrate = $derived.by(() => this._conversation?.role === 'admin' || this._type === 'aiConv');
@@ -42,12 +40,6 @@ export class OldUiMessageHistory {
             update = {...update, messages: update.messages.map(m => this.legacyFixMessageContent(m))};
         }
         this._conversation = {...this._conversation, ...update};
-        if (update.name !== undefined) {
-            this._conversationName = update.name;
-        }
-        if (update.slug !== undefined) {
-            this._conversationSlug = update.slug;
-        }
         if (update.system_prompt !== undefined) {
             this._systemPrompt = update.system_prompt;
         }
@@ -55,8 +47,6 @@ export class OldUiMessageHistory {
 
     public clearConversation(): void {
         this._conversation = null;
-        this._conversationName = '';
-        this._conversationSlug = '';
         this._systemPrompt = '';
         this._isInConversation = false;
     }

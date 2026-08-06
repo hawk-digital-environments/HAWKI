@@ -58,12 +58,6 @@
     }
 </script>
 
-<SystemPromptDialog
-    bind:open={systemPromptOpen}
-    value={composerContext.systemPrompt ?? ''}
-    onChange={(newPrompt) => { composerContext.systemPrompt = newPrompt; }}
-/>
-
 {#snippet settingsBody()}
     <div class="settings-body">
         <div class="system-prompt-section">
@@ -186,6 +180,12 @@
         </Popover>
     {/snippet}
 </Breakpoint>
+
+<SystemPromptDialog
+    bind:open={systemPromptOpen}
+    value={composerContext.systemPrompt ?? ''}
+    onChange={(newPrompt) => { composerContext.systemPrompt = newPrompt; }}
+/>
 
 <style>
 

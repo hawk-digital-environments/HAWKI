@@ -8,7 +8,7 @@ namespace App\Services\ExternalContent;
 use App\Services\ExternalContent\Events\ExternalImageResolvedFilterEvent;
 use App\Services\ExternalContent\Events\ResolvingExternalImageFilterEvent;
 use App\Services\ExternalContent\Values\ResolvedExternalImage;
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClockInterface;
 use App\Utils\Imaging\RandomGradientImage;
 use Illuminate\Contracts\Cache\Repository;
 use Psr\Log\LoggerInterface;
@@ -41,10 +41,10 @@ use Psr\Log\LoggerInterface;
 readonly class ExternalImageProxy
 {
     public function __construct(
-        private ProxyClient     $client,
-        private Repository      $cache,
-        private LoggerInterface $logger,
-        private Clock           $clock = new Clock()
+        private ProxyClient          $client,
+        private Repository           $cache,
+        private LoggerInterface      $logger,
+        private CarbonClockInterface $clock
     )
     {
     }

@@ -232,7 +232,7 @@ File upload requires a working converter:
 
 ```bash
 FILE_CONVERTER=hawki_converter
-HAWKI_FILE_CONVERTER_API_URL=127.0.0.1:8001/extract
+HAWKI_FILE_CONVERTER_API_URL=127.0.0.1/extract
 HAWKI_FILE_CONVERTER_API_KEY=your-key
 
 # Or use GWDG Docling:
@@ -471,24 +471,24 @@ MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_FILE_UPLOAD=true
 MODELS_GOOGLE_GEMINI_2_5_PRO_TOOLS_NATIVE_CAPABILITIES=true
 
 MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD=true
-MODELS_GWDG_INTERNVL3_5_30B_A3B_TOOLS_FILE_UPLOAD=true
+MODELS_GWDG_GEMMA_4_31B_INSTRUCT_TOOLS_FILE_UPLOAD=true
 ```
 
 ### Example 4: Research & Document Analysis
 
 ```bash
 # Enable reasoning models
-MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_ACTIVE=true
+MODELS_GWDG_DEEPSEEK_V4_FLASH_ACTIVE=true
 MODELS_GWDG_QWEN35_122B_A10B_ACTIVE=true
 
 # Enable file processing for relevant models
-MODELS_GWDG_DEEPSEEK_R1_DISTILL_LLAMA_70B_TOOLS_FILE_UPLOAD=true
+MODELS_GWDG_DEEPSEEK_V4_FLASH_TOOLS_FILE_UPLOAD=true
 MODELS_GWDG_META_LLAMA_3_1_8B_INSTRUCT_TOOLS_FILE_UPLOAD=true
-MODELS_GWDG_MISTRAL_LARGE_3_675B_INSTRUCT_2512_TOOLS_FILE_UPLOAD=true
+MODELS_GWDG_MISTRAL_MEDIUM_3_5_128B_TOOLS_FILE_UPLOAD=true
 MODELS_OPENAI_GPT4_1_TOOLS_FILE_UPLOAD=true
 
 DEFAULT_MODEL=qwen3.5-122b-a10b
-DEFAULT_FILEUPLOAD_MODEL=mistral-large-3-675b-instruct-2512
+DEFAULT_FILEUPLOAD_MODEL=mistral-medium-3.5-128b
 DEFAULT_WEBSEARCH_MODEL=gemini-2.5-pro
 ```
 
@@ -516,6 +516,6 @@ MODELS_GWDG_QWEN3_OMNI_30B_A3B_INSTRUCT_TOOLS_FILE_UPLOAD=true
 ## Related Documentation
 
 - [AI Models & Tools](300-AI-Models-and-Tools.md) — complete architecture guide for models and tools, including MCP servers and function-calling tools
-- [dot Env Configuration](100-dot-Env.md) — complete `.env` reference
+- [dot Env Configuration](100-Dot-Env.md) — complete `.env` reference
 - [HAWKI CLI](700-HAWKI-CLI.md) — CLI command reference
 - [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) — provider adapter and model enrichment implementation

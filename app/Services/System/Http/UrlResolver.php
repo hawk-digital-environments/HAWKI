@@ -58,4 +58,45 @@ class UrlResolver
         $basePath = $basePath === '/' ? '' : $basePath; // Avoid double slashes
         return $baseUri . $basePath . '/' . $relativeUrl;
     }
+
+    /**
+     * Extract the origin (scheme + host + port) from a URL.
+     * 
+     * Example:
+     *   http://localhost:8000/asd/qwe?awe=123
+     * becomes:
+     *   http://localhost:8000
+     */
+    public static function baseUrl(string $url): string
+    {
+        $parts = parse_url($url);
+
+        if ($parts === false) {
+            throw InvalidBaseUrlException::forBaseUrl($url);
+        }
+
+        $hasScheme = isset($parts['scheme']);
+
+        if (!$hasScheme) {
+            // Fake a scheme and do not return it
+            $parts = parse_url('http://' . $url);
+
+            if ($parts === false) {
+                throw InvalidBaseUrlException::forBaseUrl($url);
+            }
+        }
+
+        if (empty($parts['host'])) {
+            throw InvalidBaseUrlException::forBaseUrl($url);
+        }
+
+        $host = $parts['host'];
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+
+        if (!$hasScheme) {
+            return $host . $port;
+        }
+
+        return "{$parts['scheme']}://{$host}{$port}";
+    }
 }

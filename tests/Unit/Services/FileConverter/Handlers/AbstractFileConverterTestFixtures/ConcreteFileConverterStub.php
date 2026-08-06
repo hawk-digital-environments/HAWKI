@@ -35,4 +35,12 @@ class ConcreteFileConverterStub extends AbstractFileConverter
     {
         return $this->mimeTypes;
     }
+
+    /**
+     * Exposes the protected {@see AbstractFileConverter::getRequestTimeout()} for testing.
+     */
+    public function exposeRequestTimeout(): int
+    {
+        return $this->getRequestTimeout();
+    }
 }

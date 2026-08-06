@@ -5,6 +5,7 @@
             "connectionErrorTitle": "Kein Anschluss unter diesem Chat"
         },
         "aiChat": {
+            "noResponse": "Die KI hat keine Antwort zurückgegeben, oder die Anfrage wurde abgebrochen. Bitte versuche es erneut.",
             "streamProcessingError": "Es ist ein Fehler aufgetreten, während die KI-Antwort verarbeitet wurde. Bitte versuche es erneut."
         },
         "export": {

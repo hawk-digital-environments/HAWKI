@@ -64,6 +64,7 @@ class PlainTextLanguageTypeTest extends TestCase
         yield 'application/json' => ['application/json', PlainTextLanguageType::JSON];
         yield 'text/html' => ['text/html', PlainTextLanguageType::HTML];
         yield 'text/x-python' => ['text/x-python', PlainTextLanguageType::PYTHON];
+        yield 'text/x-script.python' => ['text/x-script.python', PlainTextLanguageType::PYTHON];
         yield 'text/x-php' => ['text/x-php', PlainTextLanguageType::PHP];
         yield 'text/css' => ['text/css', PlainTextLanguageType::CSS];
         yield 'text/javascript' => ['text/javascript', PlainTextLanguageType::JS];

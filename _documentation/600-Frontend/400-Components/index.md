@@ -237,7 +237,7 @@ Snippets import from `components/`, not directly from `components/ui/`, unless t
 
 ## Accessing Server Data
 
-Use `getConfig()` for runtime configuration values and the `getConnection()` family for auth-state-aware access. Both are available after the `preparation` boot stage. See [Data Layer](../300-Data) for the full reference.
+Use `getConfig()` for runtime configuration values and the `getConnection()` family for auth-state-aware access. Both are available after the `preparation` boot stage. See [Data Layer](../300-Data/index.md) for the full reference.
 
 Use `__()` from `$lib/utils/translator.js` for all user-facing strings. See [Translations](../500-Utilities/100-Translations.md).
 

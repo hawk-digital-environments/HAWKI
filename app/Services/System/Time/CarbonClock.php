@@ -30,7 +30,7 @@ use Psr\Clock\ClockInterface;
  * static::assertSame('2024-01-15', $service->getTodayString());
  * ```
  */
-readonly class Clock implements ClockInterface
+readonly class CarbonClock implements CarbonClockInterface
 {
     private ClockInterface|DateTimeImmutable|DateTime $clockOrTime;
 

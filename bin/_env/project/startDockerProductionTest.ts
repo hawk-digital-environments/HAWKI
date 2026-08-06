@@ -3,6 +3,11 @@ import path from 'path';
 import fs from 'fs';
 import {executeCommand} from '@/executeCommand.ts';
 
+const LDAP_IMAGE = 'rroemhild/test-openldap';
+const LDAP_BASE_DN = 'dc=planetexpress,dc=com';
+const LDAP_BIND_DN = `cn=admin,${LDAP_BASE_DN}`;
+const LDAP_BIND_PW = 'GoodNewsEveryone';
+
 export async function startDockerProductionTest(context: Context, pull: boolean) {
     const testDirectory = path.join(context.paths.projectDir, '_docker_production_test');
     if (fs.existsSync(testDirectory)) {
@@ -26,14 +31,17 @@ export async function startDockerProductionTest(context: Context, pull: boolean)
     fs.cpSync(path.join(context.paths.projectDir, '_docker_production'), testDirectory, {recursive: true});
 
     await createDummyCertificates(testDirectory);
+    createLdapComposeFile(testDirectory);
+    createLdapInfoFile(testDirectory);
 
-    // Add additional config to .env file
+    // Add LDAP service to the compose stack and configure the app to connect to it
     let env = `
-LDAP_HOST="ldaps://ldap.forumsys.com"
-LDAP_BIND_DN="cn=read-only-admin,dc=example,dc=com"
-LDAP_BIND_PW="password"
-LDAP_BASE_DN="dc=example,dc=com"
-LDAP_ATTR_EMPLOYEETYPE="cn"
+COMPOSE_FILE=docker-compose.yml:docker-compose.ldap.yml
+LDAP_HOST="ldap://ldap:10389"
+LDAP_BIND_DN="${LDAP_BIND_DN}"
+LDAP_BIND_PW="${LDAP_BIND_PW}"
+LDAP_BASE_DN="${LDAP_BASE_DN}"
+LDAP_ATTR_EMPLOYEETYPE="employeeType"
 LDAP_ATTR_NAME="cn,sn"
 LDAP_FILTER="(|(uid=username))"
 `;
@@ -75,6 +83,47 @@ LDAP_FILTER="(|(uid=username))"
 
     console.log('Starting Docker containers for production test...');
     await executeCommand('./deploy.sh', [], {cwd: testDirectory, interactive: true});
+}
+
+function createLdapComposeFile(testDirectory: string) {
+    const content = `services:
+  ldap:
+    image: ${LDAP_IMAGE}
+    ports:
+      - '10389:10389'
+      - '10636:10636'
+`;
+    fs.writeFileSync(path.join(testDirectory, 'docker-compose.ldap.yml'), content, 'utf-8');
+}
+
+function createLdapInfoFile(testDirectory: string) {
+    const content = `LDAP Test Users (${LDAP_IMAGE})
+${'='.repeat(40 + LDAP_IMAGE.length)}
+
+Base DN:   ${LDAP_BASE_DN}
+Admin DN:  ${LDAP_BIND_DN}
+Admin PW:  ${LDAP_BIND_PW}
+
+Users (ou=people,${LDAP_BASE_DN})
+${'─'.repeat(20 + LDAP_BASE_DN.length)}
+
+uid          password     CN (Full Name)                      Employment
+-----------  -----------  ----------------------------------  ---------------------------
+professor    professor    Hubert J. Farnsworth                Owner, Founder
+fry          fry          Philip J. Fry                       Delivery boy
+zoidberg     zoidberg     John A. Zoidberg                    Doctor
+hermes       hermes       Hermes Conrad                       Bureaucrat, Accountant
+leela        leela        Turanga Leela                       Captain, Pilot
+bender       bender       Bender Bending Rodriguez            Ship's Robot
+amy          amy          Amy Wong                            Intern
+
+Groups (ou=groups,${LDAP_BASE_DN})
+${'─'.repeat(21 + LDAP_BASE_DN.length)}
+
+admin_staff:  professor, hermes
+ship_crew:    leela, fry, bender
+`;
+    fs.writeFileSync(path.join(testDirectory, 'LDAP.txt'), content, 'utf-8');
 }
 
 async function createDummyCertificates(testDirectory: string) {

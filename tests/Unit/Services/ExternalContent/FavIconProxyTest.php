@@ -6,7 +6,7 @@ namespace Tests\Unit\Services\ExternalContent;
 use App\Services\ExternalContent\FavIconProxy;
 use App\Services\ExternalContent\ProxyClient;
 use App\Services\ExternalContent\Values\ResolvedExternalImage;
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClock;
 use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Http\Client\Response;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -42,8 +42,9 @@ class FavIconProxyTest extends TestCase
     private function makeImageResponse(
         string $contentType = 'image/x-icon',
         string $body = 'icon-bytes',
-        bool $successful = true,
-    ): MockObject {
+        bool   $successful = true,
+    ): MockObject
+    {
         $response = $this->createMock(Response::class);
         $response->method('successful')->willReturn($successful);
         $response->method('header')->with('Content-Type')->willReturn($contentType);
@@ -52,15 +53,16 @@ class FavIconProxyTest extends TestCase
     }
 
     private function makeSut(
-        ProxyClient $client = null,
-        Repository $cache = null,
+        ProxyClient     $client = null,
+        Repository      $cache = null,
         LoggerInterface $logger = null,
-    ): FavIconProxy {
+    ): FavIconProxy
+    {
         return new FavIconProxy(
             client: $client ?? $this->makeProxyClient(),
             cache: $cache ?? $this->makeCache(),
             logger: $logger ?? $this->createMock(LoggerInterface::class),
-            clock: new Clock(new \DateTimeImmutable('2026-01-01 12:00:00')),
+            clock: new CarbonClock(new \DateTimeImmutable('2026-01-01 12:00:00')),
         );
     }
 
@@ -110,7 +112,7 @@ class FavIconProxyTest extends TestCase
         $client->expects(static::once())
             ->method('fetchOrThrow')
             ->with(
-                // Google favicon URL contains the extracted domain, not the full path
+            // Google favicon URL contains the extracted domain, not the full path
                 static::stringContains('domain=example.com'),
                 static::anything()
             )

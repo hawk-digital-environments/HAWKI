@@ -6,7 +6,7 @@ namespace App\Services\Ai\ModelInformation\Enrichment\Implementations\LiteLlm;
 
 
 use App\Services\Ai\Providers\Values\AiProviderProxy;
-use App\Services\System\Time\Clock;
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Contracts\Cache\Repository;
 use Psr\Log\LoggerInterface;
 
@@ -18,11 +18,11 @@ use Psr\Log\LoggerInterface;
 class LiteLlmApiDataStore extends AbstractLiteLlmDataStore
 {
     public function __construct(
-        private readonly LiteLlmApiClient             $apiClient,
-        private readonly Repository                   $cache,
-        LoggerInterface                      $logger,
-        LiteLlmDriverNameProviderNameMapping $nameMapping,
-        private readonly Clock                        $clock = new Clock()
+        private readonly LiteLlmApiClient     $apiClient,
+        private readonly Repository           $cache,
+        LoggerInterface                       $logger,
+        LiteLlmDriverNameProviderNameMapping  $nameMapping,
+        private readonly CarbonClockInterface $clock
     )
     {
         parent::__construct($logger, $nameMapping);

@@ -44,7 +44,9 @@ class GwdgDoclingConverter extends AbstractFileConverter
      * - `markdown` — extracted text; emitted as `{filename}.md`.
      * - `images`   — optional array of base64-encoded images; each emitted as its own FileReference.
      *
-     * The request uses a 240-second timeout because large documents can take significant time to process.
+     * The request uses the converter's configured timeout (defaulting to 240 seconds via
+     * {@see AbstractFileConverter::getRequestTimeout()}) because large documents can take
+     * significant time to process.
      *
      * @throws ConversionFailedException if the API returns a non-2xx response.
      */
@@ -54,7 +56,7 @@ class GwdgDoclingConverter extends AbstractFileConverter
             'Authorization' => 'Bearer ' . $this->config['api_key'],
             'Accept' => 'application/json',
         ])
-            ->timeout(240)
+            ->timeout($this->getRequestTimeout())
             ->attach('document', $file->getStream(), $file->getOriginalFilename())
             ->post($this->config['api_url']);
 

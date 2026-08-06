@@ -288,7 +288,6 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'input_cost_per_token_batch_requests' => 5.0E-9,
   'output_vector_size' => 768,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
 ),

@@ -9,6 +9,7 @@ use App\Services\Ai\Tools\Values\McpToolDefinition;
 use Illuminate\Container\RewindableGenerator;
 use Mcp\Client\ClientSession;
 use Mcp\Types\CallToolResult;
+use Mcp\Types\CreateTaskResult;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -100,7 +101,7 @@ class HawkiMcpClient
      *
      * @throws \Throwable on any transport or protocol error.
      */
-    public function callTool(string $name, ?array $arguments = null): CallToolResult
+    public function callTool(string $name, ?array $arguments = null): CallToolResult|CreateTaskResult
     {
         try {
             $this->initializeIfNotAlready();

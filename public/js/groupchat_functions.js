@@ -61,8 +61,11 @@ function initializeGroupChatModule(roomsData) {
     });
     window.oldUiBridge.onRenameChat(async (slug, newName) => {
         const formData = new FormData();
-        if (chatName) formData.append('name', chatName);
-        updateRoomInfo(activeRoom.slug, formData);
+        if (newName) formData.append('name', newName);
+        updateRoomInfo(slug, formData);
+        if (window.oldUiMessageHistory.conversationSlug === slug) {
+            window.oldUiMessageHistory.updateConversation({name: newName});
+        }
     });
     window.oldUiBridge.onOpenRoomControlPanel((slug) => {
         openRoomCP(slug);

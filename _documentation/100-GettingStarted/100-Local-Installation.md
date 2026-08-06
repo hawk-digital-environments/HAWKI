@@ -97,7 +97,7 @@ At this point the dependency packages should be installed. `node_modules` and `v
 ### Configuration
 
 To configure the environment variable open `.env` file in the root directory.
-For a complete guide to environment variables please refer to [.env section](../200-Configuration/100-dot-Env.md) of the
+For a complete guide to environment variables please refer to [.env section](../200-Configuration/100-Dot-Env.md) of the
 documentation.
 
 > <details>

@@ -110,6 +110,7 @@
                 "infoUnsupported": "(not supported by current model) | Click for more information",
                 "infoDefault": "Show more information about the tool",
                 "clickForInfo": "Click for more information",
+                "manageTools": "Manage tools",
                 "tools": {
                     "webFetch": "Fetch web content",
                     "webFetchDescription": "This tool enables the AI to retrieve information from the internet. Unlike web search, the AI can also access external websites to extract and analyse content.",
@@ -161,6 +162,7 @@
                 "cancelEdit": "Cancel editing",
                 "cancelResponse": "Cancel AI response",
                 "improvementError": "Could not load improvement suggestions",
+                "improvementModelSaidNoError": "Your message is good as it is. No improvements suggested.",
                 "improveTooltip": "Improve your input with AI-powered suggestions",
                 "cancelLabel": "Cancel"
             },

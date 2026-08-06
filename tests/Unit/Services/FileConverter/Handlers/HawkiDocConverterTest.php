@@ -6,9 +6,12 @@ namespace Tests\Unit\Services\FileConverter\Handlers;
 use App\Services\FileConverter\Exception\ConversionFailedException;
 use App\Services\FileConverter\Handlers\HawkiDocConverter;
 use App\Services\Storage\Values\FileReference;
+use App\Services\System\Time\CarbonClock;
+use Illuminate\Cache\Repository;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\MockObject\MockObject;
 use Tests\TestCase;
 use ZipArchive;
 
@@ -22,11 +25,22 @@ class HawkiDocConverterTest extends TestCase
     // Helpers
     // =========================================================================
 
-    private function makeSut(): HawkiDocConverter
+    private function makeSut(?Repository $cache = null): HawkiDocConverter
     {
-        $sut = new HawkiDocConverter();
+        $sut = new HawkiDocConverter($cache ?? $this->makeCache(), new CarbonClock());
         $sut->setConfig(['api_url' => self::API_URL, 'api_key' => self::API_KEY]);
         return $sut;
+    }
+
+    /** @return MockObject&Repository */
+    private function makeCache(mixed $returnValue = null): MockObject
+    {
+        $cache = $this->createMock(Repository::class);
+        $cache->method('remember')
+            ->willReturnCallback(function ($key, $ttl, $callback) use ($returnValue) {
+                return $returnValue ?? $callback();
+            });
+        return $cache;
     }
 
     /**
@@ -56,7 +70,7 @@ class HawkiDocConverterTest extends TestCase
 
     public function testItConstructs(): void
     {
-        static::assertInstanceOf(HawkiDocConverter::class, new HawkiDocConverter());
+        static::assertInstanceOf(HawkiDocConverter::class, new HawkiDocConverter($this->makeCache(), new CarbonClock()));
     }
 
     // =========================================================================
@@ -94,6 +108,12 @@ class HawkiDocConverterTest extends TestCase
 
     public function testItGetAllowedMimeTypesReturnsPdfAndDocTypes(): void
     {
+        Http::fake([
+            'http://hawki-converter.test' => Http::response([
+                'supported_formats' => ['pdf', 'doc', 'docx'],
+            ], 200),
+        ]);
+
         $types = $this->makeSut()->getAllowedMimeTypes();
 
         static::assertIsArray($types);

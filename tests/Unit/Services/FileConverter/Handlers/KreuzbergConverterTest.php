@@ -6,6 +6,7 @@ namespace Tests\Unit\Services\FileConverter\Handlers;
 use App\Services\FileConverter\Exception\ConversionFailedException;
 use App\Services\FileConverter\Handlers\KreuzbergConverter;
 use App\Services\Storage\Values\FileReference;
+use App\Services\System\Time\CarbonClock;
 use Illuminate\Cache\Repository;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -35,7 +36,7 @@ class KreuzbergConverterTest extends TestCase
 
     private function makeSut(Repository $cache = null): KreuzbergConverter
     {
-        $sut = new KreuzbergConverter($cache ?? $this->makeCache());
+        $sut = new KreuzbergConverter($cache ?? $this->makeCache(), new CarbonClock());
         $sut->setConfig(['api_url' => self::API_URL]);
         return $sut;
     }
@@ -46,7 +47,7 @@ class KreuzbergConverterTest extends TestCase
 
     public function testItConstructs(): void
     {
-        $sut = new KreuzbergConverter($this->makeCache());
+        $sut = new KreuzbergConverter($this->makeCache(), new CarbonClock());
         static::assertInstanceOf(KreuzbergConverter::class, $sut);
     }
 
@@ -122,11 +123,11 @@ class KreuzbergConverterTest extends TestCase
     {
         $cachedTypes = ['application/pdf', 'image/png'];
         $cache = $this->createMock(Repository::class);
-        $cache->expects(static::once())
+        $cache->expects($this->once())
             ->method('remember')
             ->willReturn($cachedTypes);
 
-        $sut = new KreuzbergConverter($cache);
+        $sut = new KreuzbergConverter($cache, new CarbonClock());
         $sut->setConfig(['api_url' => self::API_URL]);
 
         $result = $sut->getAllowedMimeTypes();

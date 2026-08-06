@@ -55,10 +55,7 @@ class ExtendedGeminiGateway extends GeminiGateway
     ): array
     {
         $out = parent::buildTextRequestBody($provider, $instructions, $messages, $tools, $schema, $options);
-        return [
-            $this->postProcessRequestBody($out[0]),
-            $out[1]
-        ];
+        return $this->postProcessRequestBody($out);
     }
 
     /**

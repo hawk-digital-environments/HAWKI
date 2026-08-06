@@ -30,6 +30,5 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'max_document_chunks_per_query' => 2048,
 ),
 ];

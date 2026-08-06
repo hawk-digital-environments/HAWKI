@@ -13,19 +13,10 @@ This document describes HAWKI's AI model registry and tool system: how models an
     - [Database Registry](#database-registry)
     - [Model Sync](#model-sync)
     - [Model Online Status](#model-online-status)
-    - [Value Object vs Eloquent Model](#value-object-vs-eloquent-model)
 4. [Tool System](#tool-system)
-    - [Architecture: DB-First](#architecture-db-first)
-    - [Tool Types](#tool-types)
-    - [Tool Registry](#tool-registry)
-    - [Function-Calling Tools](#function-calling-tools)
-    - [MCP Tools](#mcp-tools)
-    - [Tool Status vs Active State](#tool-status-vs-active-state)
 5. [Model–Tool Assignments](#modeltool-assignments)
 6. [Database Schema](#database-schema)
-7. [Service Providers](#service-providers)
-8. [Command Reference](#command-reference)
-9. [How-To Guides](#how-to-guides)
+7. [How-To Guides](#how-to-guides)
 
 ---
 
@@ -416,5 +407,5 @@ For further details on individual components see:
 - [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) — current provider adapter implementation
 - [Backend → Provider Adapters](../500-Backend/500-AI-Service-Layer/100-Provider-Adapters.md) — `ProviderAdapterInterface` and `ProviderAdapterRegistry`
 - [Model Configuration Variables](200-Model-Configuration-Variables.md) — environment variable reference for fine-grained model control
-- [dot Env](100-dot-Env.md) — complete `.env` reference
+- [dot Env](100-Dot-Env.md) — complete `.env` reference
 - [HAWKI CLI](700-HAWKI-CLI.md) — full CLI command reference

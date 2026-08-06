@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace App\Services\Routing\CacheBusting;
 
 
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Container\Attributes\Config;
 use Illuminate\Container\Attributes\Singleton;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
-use Psr\Clock\ClockInterface;
-use Symfony\Component\Clock\Clock;
 
 #[Singleton]
 readonly class CacheBusterGenerator
@@ -19,16 +18,14 @@ readonly class CacheBusterGenerator
 
     public function __construct(
         #[Config('app.version')]
-        string              $versionString,
+        string               $versionString,
         #[Config('app.cache_buster')]
-        string|null         $customCacheBuster,
-        private Application $application,
-        ClockInterface|null $clock = null
+        string|null          $customCacheBuster,
+        private Application  $application,
+        CarbonClockInterface $clock
     )
     {
         if ($this->application->isLocal()) {
-            $clock = $clock ?? new Clock();
-
             // In local environment, we want to disable cache busting to make development easier.
             $versionString = 'local-' . $clock->now()->getTimestamp();
         }

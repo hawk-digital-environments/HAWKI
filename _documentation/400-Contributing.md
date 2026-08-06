@@ -79,7 +79,7 @@ git push origin feature/your-feature-name --force-with-lease
 
 HAWKI follows a lightweight Domain-Driven Design approach on top of Laravel 13 / PHP 8.3. The backend is in transition from server-rendered MVC to a pure API server for the Svelte frontend.
 
-The full architecture documentation lives in the **[Backend section](./_documentation/Backend/)**:
+The full architecture documentation lives in the **[Backend section](500-Backend/index.md)**:
 
 | I want to understand…                                            | Read                                                                                        |
 |------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
@@ -120,7 +120,7 @@ Before submitting your PR:
 - [ ] Value objects are `readonly` with `from...` / `tryFrom...` factory methods
 - [ ] Enums used for all constrained string or int values
 - [ ] DocBlocks only where needed (complex types, non-obvious intent)
-- [ ] No `now()`, `new \DateTime()`, `Carbon::now()`, or similar — use injected `Psr\Clock\ClockInterface`
+- [ ] No `now()`, `new \DateTime()`, `Carbon::now()`, or similar — use injected `CarbonClockInterface` (`Psr\Clock\ClockInterface` if the class must stay PSR-only)
 - [ ] No debug statements (`dd()`, `dump()`, `var_dump()`)
 - [ ] No hardcoded values (use config or constants)
 - [ ] You provided good test coverage for new features and bug fixes
@@ -167,7 +167,7 @@ There is currently no automated frontend test suite. Frontend testing will be in
 
 ## Frontend Code
 
-> **Planned Svelte rewrite:** The HAWKI frontend is being progressively migrated to a Svelte 5 SPA. **Do not add new code to the legacy vanilla-JS layer** (`public/js/`). All new frontend work must follow the patterns in the [Frontend documentation](600-Frontend/).
+> **Planned Svelte rewrite:** The HAWKI frontend is being progressively migrated to a Svelte 5 SPA. **Do not add new code to the legacy vanilla-JS layer** (`public/js/`). All new frontend work must follow the patterns in the [Frontend documentation](600-Frontend/index.md).
 
 | Topic                                       | Document                                                          |
 |---------------------------------------------|-------------------------------------------------------------------|

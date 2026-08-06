@@ -4,9 +4,8 @@ declare(strict_types=1);
 namespace App\Services\Ai\Tools\Implementations;
 
 use App\Services\Ai\Tools\AbstractTool;
-use Carbon\Carbon;
+use App\Services\System\Time\CarbonClockInterface;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Psr\Clock\ClockInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -55,9 +54,9 @@ class TestTool extends AbstractTool
     }
 
     public function __invoke(
-        ClockInterface $clock,
-        string         $message,
-        int            $count = 1,
+        CarbonClockInterface $clock,
+        string               $message,
+        int                  $count = 1,
     ): array
     {
         $this->logger->info('TestTool executed', [
@@ -73,7 +72,7 @@ class TestTool extends AbstractTool
             'instruction' => 'Now greet the user and let them know the tool test was successful. Do not call this tool again.',
             'original_message' => $message,
             'count' => $count,
-            'timestamp' => (new Carbon($clock->now()))->toIso8601String()
+            'timestamp' => $clock->now()->toIso8601String()
         ];
     }
 }
