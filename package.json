@@ -8,7 +8,7 @@
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
         "test": "echo \"Heads up: no test specified\" && exit 0",
         "tsc": "tsc -p ./tsconfig.json",
-        "check": "svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"
+        "check": "node --max-old-space-size=8192 ./node_modules/svelte-check/bin/svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",

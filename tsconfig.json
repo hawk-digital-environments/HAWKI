@@ -32,8 +32,7 @@
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.js",
-        "resources/js/**/*.svelte",
-        "public/js/encryption.js"
+        "resources/js/**/*.svelte"
     ],
     "exclude": [
         "node_modules",

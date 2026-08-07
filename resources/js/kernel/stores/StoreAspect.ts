@@ -35,9 +35,8 @@ export class StoreAspect implements HawkiAppAspect {
         return store;
     }
 
-    public async init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
+    public async init(app: UnfinishedHawkiApp) {
         const registrar = createStoreRegistrar(this.stores);
-        console.log('INIT STORE ASPECT', registrar);
         await app.getOrFail('plugins').bootstrapper.runStores(registrar);
     }
 
