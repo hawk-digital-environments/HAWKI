@@ -1,5 +1,8 @@
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 
+/**
+ * @deprecated
+ */
 export class AppContext {
     public constructor() {
     }
@@ -27,6 +30,7 @@ const appContext = new AppContext();
 
 /** Returns the current {@link AppContext}. Must be used within a component running {@link createAppContext}.
  * @throws Error If no app context is found.
+ * @deprecated
  */
 export function useAppContext(): AppContext {
     // @todo this is a temporary workaround until we have a real single page app, and can use svelte contexts.
@@ -35,6 +39,7 @@ export function useAppContext(): AppContext {
 
 /** Creates a new {@link AppContext} and sets it in context. Should be used once in a parent component,
  * e.g. the main app component or layout.
+ * @deprecated
  */
 export function createAppContext(): AppContext {
     // @todo this is a temporary workaround until we have a real single page app, and can use svelte contexts.

@@ -53,11 +53,7 @@
  * The only concrete transport today is `OldUiBridgeTransport`, which forwards
  * the request to the legacy UI layer.
  */
-import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
-import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
-import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-import {getContext, onDestroy, setContext} from 'svelte';
-import {systemPromptStore} from '$lib/stores/SystemPromptStore.svelte.js';
+import {createContext, onDestroy} from 'svelte';
 import {ModelParameterAspect} from '$lib/components/chat/composer/contexts/aspects/ModelParameterAspect.svelte.js';
 import {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
 import {AttachmentAspect} from '$lib/components/chat/composer/contexts/aspects/AttachmentAspect.svelte.js';
@@ -74,8 +70,9 @@ import {MessageSender} from '$lib/components/chat/composer/contexts/sending/Mess
 import {OldUiBridgeTransport} from '$lib/components/chat/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
-import {aiHandleStore} from '$lib/stores/AiHandleStore.svelte.js';
-import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
+import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
 
 const allowedContextTypes = ['aiConv', 'room'] as const;
 export type ComposerContextType = typeof allowedContextTypes[number];
@@ -261,11 +258,11 @@ export class ComposerContext {
     }
 }
 
-const contextKey = Symbol('chatComposer');
+const [get, set] = createContext<ComposerContext>();
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
 export function useComposerContext(): ComposerContext {
-    const context: ComposerContext | null | undefined = getContext(contextKey);
+    const context: ComposerContext | null | undefined = get();
     if (!context) {
         throw new Error('No ComposerContext found in Svelte context tree. Make sure to call createComposerContext() in a parent component.');
     }
@@ -279,6 +276,7 @@ export function useComposerContext(): ComposerContext {
  * via `onDestroy`.
  */
 export function createComposerContext(
+    app: HawkiApp,
     type: ComposerContextType,
     toastContext: ToastContext
 ): ComposerContext {
@@ -288,6 +286,11 @@ export function createComposerContext(
 
     let parameterContext: ModelParameterAspect | null = null;
     const parameterContextFactory = () => parameterContext!;
+
+    const aiModelStore = app.stores.get('ai-models');
+    const aiToolStore = app.stores.get('ai-tools');
+    const systemPromptStore = app.stores.get('system-prompts');
+    const aiHandleStore = app.stores.get('ai-handle');
 
     const modelContext = new ModelAspect(
         aiModelStore,
@@ -299,6 +302,7 @@ export function createComposerContext(
 
     const checkpointer = new ContextCheckpointer();
     const mode = new ModeAspect(
+        app.translator,
         checkpointer,
         toastContext,
         (mode) => {
@@ -308,7 +312,7 @@ export function createComposerContext(
                 case 'thread':
                     return new ChatInThreadMode();
                 case 'regen':
-                    return new ChatRegenMode(aiModelStore, toastContext);
+                    return new ChatRegenMode(aiModelStore, toastContext, app.translator);
                 default:
                     throw new Error(`Unsupported mode ${mode}`);
             }
@@ -316,7 +320,7 @@ export function createComposerContext(
         (): ComposerContext => context,
         (oldState) => oldUiBridge.triggerExitMode(oldState)
     );
-    const attachment = new AttachmentAspect();
+    const attachment = new AttachmentAspect(app.config);
     const tool = new ToolAspect(modelContext, aiToolStore);
     const guard = new GuardAspect((): ComposerContext => context);
     const modelUsage = new ModelUsageAspect(
@@ -337,7 +341,7 @@ export function createComposerContext(
         oldUiBridge.updateActiveConversationSystemPrompt(prompt);
     };
 
-    const sender = new MessageSender(new OldUiBridgeTransport(oldUiBridge));
+    const sender = new MessageSender(new OldUiBridgeTransport(oldUiBridge), app.localization.translator);
 
     const context = new ComposerContext(
         type,
@@ -395,7 +399,7 @@ export function createComposerContext(
     onDestroy(() => unbinders.forEach(unbind => unbind()));
 
     oldUiBridge.triggerContextReady();
-    setContext(contextKey, context);
+    set(context);
 
     return context;
 }

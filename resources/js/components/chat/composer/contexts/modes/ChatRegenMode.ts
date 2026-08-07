@@ -1,11 +1,11 @@
-import type {OldUiConversationMessage} from '$lib/oldUi/OldUiBridge.svelte.js';
+import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 import {type ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import type {AiModelStore} from '$lib/stores/AiModelStore.svelte.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
 import type {ChatDefaultModeState} from '$lib/components/chat/composer/contexts/modes/ChatDefaultMode.js';
 import {AbstractMode} from '$lib/components/chat/composer/contexts/modes/contracts/AbstractMode.js';
-import {__} from '$lib/utils/translator.js';
+import type {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
+import type {Translator} from '$lib/kernel/localization/translator.js';
 
 export interface ChatRegenModeState {
     messageId: string;
@@ -24,7 +24,8 @@ export interface ChatRegenModeState {
 export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRegenModeState> {
     constructor(
         private modelStore: AiModelStore,
-        private toast: ToastContext
+        private toast: ToastContext,
+        private translator: Translator
     ) {
         super();
     }
@@ -47,7 +48,7 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
 
     public canEnter(context: ComposerContext, data: OldUiConversationMessage): boolean | string {
         if (data.message_role !== 'assistant') {
-            return __('chat.composer.regen.onlyAssistantMessages');
+            return this.translator.translate('chat.composer.regen.onlyAssistantMessages');
         }
 
         return true;
@@ -59,7 +60,7 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
         if (data.model) {
             let model = this.modelStore.getModelByIdOrFallback(data.model);
             if (model.model_id !== data.model) {
-                this.toast.info(__('chat.composer.regen.modelNotAvailable', {model: data.model, fallback: model.label}));
+                this.toast.info(this.translator.translate('chat.composer.regen.modelNotAvailable', {model: data.model, fallback: model.label}));
             }
 
             context.model.set(model);
@@ -79,9 +80,9 @@ export class ChatRegenMode extends AbstractMode<OldUiConversationMessage, ChatRe
             data.metadata.tools.forEach((toolId: string) => {
                 context.tools.setFromTransferString(toolId, (reason, toolName) => {
                     if (reason === 'tool_not_found') {
-                        this.toast.info(__('chat.composer.regen.toolNotAvailable', {tool: toolName}));
+                        this.toast.info(this.translator.translate('chat.composer.regen.toolNotAvailable', {tool: toolName}));
                     } else if (reason === 'tool_not_available') {
-                        this.toast.info(__('chat.composer.regen.toolNotAvailableForModel', {tool: toolName}));
+                        this.toast.info(this.translator.translate('chat.composer.regen.toolNotAvailableForModel', {tool: toolName}));
                     }
                 });
             });

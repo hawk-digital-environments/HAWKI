@@ -3,7 +3,7 @@
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import type {Snippet} from 'svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {__} from '$lib/utils/translator.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         children?: (args: {
@@ -18,6 +18,7 @@
 
     const composerContext = useComposerContext();
     const toastContext = useToastContext();
+    const translator = useTranslator();
 
     let isDragging = $state(false);
     let dragDepth = 0;
@@ -55,7 +56,7 @@
         isDragging = false;
         const files = e.dataTransfer?.files;
         if (files?.length) {
-            reportAttachmentIssues(toastContext, composerContext.attachments.add(files));
+            reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(files));
         }
     }
 </script>
@@ -76,7 +77,7 @@
                 <span class="chat-drop-page chat-drop-page--1"></span>
                 <span class="chat-drop-page chat-drop-page--0"></span>
             </div>
-            <span class="chat-drop-label">{__('chat.composer.fileDrop.dropLabel')}</span>
+            <span class="chat-drop-label">{translator.translate('chat.composer.fileDrop.dropLabel')}</span>
         </div>
     {/if}
 {/snippet}

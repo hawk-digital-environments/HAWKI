@@ -7,11 +7,12 @@
     import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import {reportAttachmentIssues} from '$lib/components/chat/utils/attachmentIssues.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {__} from '$lib/utils/translator.js';
     import AttachmentIcon from '$lib/components/ui/icons/iconset/AttachmentIcon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const composerContext = useComposerContext();
     const toastContext = useToastContext();
+    const translator = useTranslator();
 
     let inputEl: HTMLInputElement;
     let isAdding = $state(false);
@@ -26,7 +27,7 @@
     function handleChange(e: Event) {
         const target = e.target as HTMLInputElement;
         if (target.files?.length) {
-            reportAttachmentIssues(toastContext, composerContext.attachments.add(target.files));
+            reportAttachmentIssues(translator, toastContext, composerContext.attachments.add(target.files));
             target.value = '';
         }
         isAdding = false;
@@ -40,7 +41,7 @@
 </script>
 
 <ButtonWithTooltip
-    tooltip={__('chat.composer.attachFileTooltip')}
+    tooltip={translator.translate('chat.composer.attachFileTooltip')}
     variant="ghost"
     disabled={composerContext.guard.disablesFeature('attachments')}
     iconLeft={AttachmentIcon}

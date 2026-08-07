@@ -1,6 +1,6 @@
-import type {AiModel, AiModelParameterKeyType} from '$lib/schemas/resources/ai-models.schema.js';
 import type {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
+import {type AiModel, AiModelParameterKeyType} from '$plugins/core/schemas/resources/ai-models.schema';
 
 const defaultParameters: Record<AiModelParameterKeyType, any> = {
     temperature: 0.7,

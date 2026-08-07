@@ -41,7 +41,7 @@
     import type {HTMLAnchorAttributes, MouseEventHandler} from 'svelte/elements';
     import * as svelte from 'svelte';
     import {mergeProps} from 'bits-ui';
-    import {buildLinkPreviewFaviconUrl} from '$lib/data/api/linkPreview.js';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
 
     interface NonConflictingProps extends HTMLAnchorAttributes {
         children?: any; // widen so Props can redefine safely
@@ -105,6 +105,8 @@
 
     let faviconFailed = $state(false);
 
+    const app = useApp();
+
     const faviconUrl = $derived.by(() => {
         if (!hrefRaw || faviconFailed) {
             return null;
@@ -114,7 +116,7 @@
             if (!/^https?:$/.test(parsed.protocol) || parsed.origin === window.location.origin) {
                 return null;
             }
-            return buildLinkPreviewFaviconUrl(hrefRaw);
+            return app.uriBuilder.linkPreviewFaviconUri(hrefRaw);
         } catch {
             return null;
         }

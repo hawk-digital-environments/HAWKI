@@ -13,6 +13,9 @@
             ],
             "$lib/*": [
                 "./resources/js/*"
+            ],
+            "$plugins/*": [
+                "./resources/js/plugins/*"
             ]
         },
         "noEmit": true,
@@ -31,5 +34,9 @@
         "resources/js/**/*.js",
         "resources/js/**/*.svelte",
         "public/js/encryption.js"
+    ],
+    "exclude": [
+        "node_modules",
+        "vendor"
     ]
 }

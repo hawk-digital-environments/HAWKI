@@ -1,14 +1,14 @@
 import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
 import type {ContextCheckpointer} from '$lib/components/chat/composer/contexts/utils/ContextCheckpointer.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
-import {type OldUiConversationMessage} from '$lib/oldUi/OldUiBridge.svelte.js';
 import {ChatDefaultMode} from '$lib/components/chat/composer/contexts/modes/ChatDefaultMode.js';
 import type {ChatModeInterface} from '$lib/components/chat/composer/contexts/modes/contracts/ChatModeInterface.js';
 import {ChatEditMode} from '$lib/components/chat/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$lib/components/chat/composer/contexts/modes/ChatInThreadMode.js';
 import type {ChatRegenMode} from '$lib/components/chat/composer/contexts/modes/ChatRegenMode.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-import {__} from '$lib/utils/translator.js';
+import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
+import type {Translator} from '$lib/kernel/localization/translator.js';
 
 export interface ComposerModeRegistry {
     default: {
@@ -60,6 +60,7 @@ export type ModeInstanceFactory = (mode: Exclude<ComposerMode, 'default'>) => Ch
  */
 export class ModeAspect implements CheckpointingInterface<ModeAspectCheckpoint> {
     constructor(
+        private translator: Translator,
         private checkpointer: ContextCheckpointer,
         private toast: ToastContext,
         private modeFactory: ModeInstanceFactory,
@@ -115,7 +116,7 @@ export class ModeAspect implements CheckpointingInterface<ModeAspectCheckpoint> 
 
         const context = this.contextResolver();
         if (!context.guard.canChangeMode) {
-            this.toast.info(__('chat.composer.modePanel.actionBusy'));
+            this.toast.info(this.translator.translate('chat.composer.modePanel.actionBusy'));
             return;
         }
 

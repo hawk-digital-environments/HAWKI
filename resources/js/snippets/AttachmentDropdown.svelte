@@ -6,7 +6,7 @@
     import {__} from '$lib/utils/translator.js';
     import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
     import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
-    import {getAuthenticatedConnection} from '$lib/data/connection/connection.js';
+    import {getAuthenticatedConnection} from '$lib/kernel/connection/helpers.js';
     import FileViewIcon from '$lib/components/ui/icons/iconset/FileViewIcon.svelte';
     import Download01Icon from '$lib/components/ui/icons/iconset/Download01Icon.svelte';
     import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';

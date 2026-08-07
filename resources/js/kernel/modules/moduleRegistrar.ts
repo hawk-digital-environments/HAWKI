@@ -1,0 +1,42 @@
+import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
+import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
+import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
+import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
+
+export function createModuleRegistrar(
+    modules: Map<string, HawkiModuleWithPlugin>,
+    plugin: HawkiPluginWithMetadata
+) {
+    function add(module: HawkiModule) {
+        if (typeof module.name !== 'string' || module.name.trim() === '') {
+            throw new Error(`Module from plugin "${plugin.name}" does not have a valid 'name' property.`);
+        }
+
+        const fullModuleName = `${plugin.name}:${module.name}`;
+        if (modules.has(fullModuleName)) {
+            throw new Error(`Module with name "${fullModuleName}" is already registered.`);
+        }
+
+        if (module.routes) {
+            // Wrap the routes callback to automatically prefix the module's routes with the plugin and module name.
+            const innerRoutes = module.routes;
+            module = Object.assign({}, module, {
+                routes: async (registrar: RouteRegistrar) => {
+                    registrar.group(getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin), innerRoutes);
+                }
+            });
+        }
+
+        modules.set(fullModuleName, Object.assign({}, module, {plugin}) as HawkiModuleWithPlugin);
+    }
+
+    return {
+        add
+    };
+}
+
+export function createModuleRegistrarFactory(modules: Map<string, HawkiModuleWithPlugin>) {
+    return (plugin: HawkiPluginWithMetadata) => createModuleRegistrar(modules, plugin);
+}
+
+export type ModuleRegistrar = ReturnType<typeof createModuleRegistrar>;

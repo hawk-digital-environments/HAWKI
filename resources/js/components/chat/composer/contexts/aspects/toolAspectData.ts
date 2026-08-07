@@ -1,7 +1,7 @@
-import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
-import type {AiToolStore} from '$lib/stores/AiToolStore.svelte.js';
-import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
-import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
+import {AiTool} from '$lib/plugins/core/schemas/resources/ai-tools.schema';
+import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';
+import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
+import type {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 
 const rootToolSymbol = Symbol('rootTool');
 

@@ -7,7 +7,8 @@
         "build": "vite build",
         "prettier": "prettier \"{resources,public,.github,_docker-production,_documentation.build}/**/*.{js,ts,svelte,css,yml,yaml,json}\" --write",
         "test": "echo \"Heads up: no test specified\" && exit 0",
-        "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.json"
+        "tsc": "tsc -p ./tsconfig.json",
+        "check": "svelte-check --tsconfig ./tsconfig.json --config ./svelte.config.js && tsc -p ./tsconfig.json"
     },
     "devDependencies": {
         "@antv/infographic": "^0.2.19",
@@ -41,7 +42,8 @@
         "svelte-check": "^4.7.4",
         "typescript": "~6.0.3",
         "vite": "^8.2.0",
-        "zod": "^4.4.3"
+        "zod": "^4.4.3",
+        "universal-router": "^10.0.3"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "^4.62.3"

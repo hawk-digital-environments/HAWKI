@@ -1,7 +1,7 @@
-import type {AiModelStore} from '$lib/stores/AiModelStore.svelte.js';
-import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
 import type {ModelParameterAspect} from '$lib/components/chat/composer/contexts/aspects/ModelParameterAspect.svelte.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
+import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte';
+import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 
 interface ModelAspectCheckpoint {
     currentModelId: string;

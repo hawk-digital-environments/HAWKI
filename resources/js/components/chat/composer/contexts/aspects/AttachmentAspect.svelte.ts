@@ -1,5 +1,5 @@
-import {getConfig} from '$lib/data/config/config.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 
 /**
  * Describes an issue encountered when trying to add a file attachment, such as unsupported type or excessive size.
@@ -16,6 +16,11 @@ interface AttachmentAspectCheckpoint {
 }
 
 export class AttachmentAspect implements CheckpointingInterface<AttachmentAspectCheckpoint> {
+    constructor(
+        private readonly config: HawkiApp['config']
+    ) {
+    }
+
     /** Files staged for the next message. Managed via {@link add} / {@link remove}. */
     private _list = $state<File[]>([]);
 
@@ -26,10 +31,10 @@ export class AttachmentAspect implements CheckpointingInterface<AttachmentAspect
     public assignedUuids = $derived.by(() => [...(this._assignedUuids.map(a => [a[0], a[1]] as [File, string]))]);
 
     /** MIME types permitted by server config. Use for the `accept` attribute on file inputs. */
-    public allowedMimeTypes = $derived.by(() => getConfig().storage_files?.allowedMimeTypes ?? []);
+    public allowedMimeTypes = $derived.by(() => this.config.get().storage_files?.allowedMimeTypes ?? []);
 
     /** File extensions permitted by server config (e.g. `['pdf', 'png']`). */
-    public allowedExtensions = $derived.by(() => getConfig().storage_files?.allowedExtensions ?? []);
+    public allowedExtensions = $derived.by(() => this.config.get().storage_files?.allowedExtensions ?? []);
 
     /** `true` when at least one file is staged. */
     public hasAny = $derived.by(() => this._list.length > 0);
@@ -48,7 +53,7 @@ export class AttachmentAspect implements CheckpointingInterface<AttachmentAspect
         const filesToAdd = file instanceof FileList ? Array.from(file) : [file];
         const filesToAddFiltered = [];
         const issues: FileAttachmentIssue[] = [];
-        const maxSize = getConfig().storage_files?.maxFileSize ?? Infinity;
+        const maxSize = this.config.get().storage_files?.maxFileSize ?? Infinity;
         for (const f of filesToAdd) {
             if (this.allowedMimeTypes.length > 0 && !this.allowedMimeTypes.includes(f.type)) {
                 issues.push({type: 'unsupported_file_type', file: f});

@@ -2,7 +2,7 @@ import type {ComposerContext} from '$lib/components/chat/composer/contexts/Compo
 import {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {createResponseReader, type ResponseBody, type ResponseReader, SendMessageResponse} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
 import type {MessageSenderTransportInterface} from '$lib/components/chat/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
-import {__} from '$lib/utils/translator.js';
+import type {Translator} from '$lib/kernel/localization/translator.js';
 
 /**
  * Orchestrates the message-send flow.
@@ -19,7 +19,8 @@ import {__} from '$lib/utils/translator.js';
  */
 export class MessageSender {
     constructor(
-        private transport: MessageSenderTransportInterface
+        private transport: MessageSenderTransportInterface,
+        private translator: Translator
     ) {
     }
 
@@ -70,7 +71,7 @@ export class MessageSender {
                 } catch (error) {
                     console.error('An error occurred while handling the response:', error);
                     if (!response.done) {
-                        response.triggerError(__('chat.composer.sending.responseError'));
+                        response.triggerError(this.translator.translate('chat.composer.sending.responseError'));
                     }
                 }
             })();
@@ -92,8 +93,8 @@ export class MessageSender {
                 }
             } catch (error) {
                 console.error('An error occurred while sending the message:', error);
-                status.addSendIssue(__('chat.composer.sending.sendError'));
-                response.triggerError(__('chat.composer.sending.sendError'));
+                status.addSendIssue(this.translator.translate('chat.composer.sending.sendError'));
+                response.triggerError(this.translator.translate('chat.composer.sending.sendError'));
             }
 
             responsePromiseResolve(responseListener);

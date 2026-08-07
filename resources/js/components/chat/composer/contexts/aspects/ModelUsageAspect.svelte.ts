@@ -1,10 +1,10 @@
-import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
-import type {AiModelStore} from '$lib/stores/AiModelStore.svelte.js';
 import type {ToolAspect} from '$lib/components/chat/composer/contexts/aspects/ToolAspect.svelte.js';
 import type {AttachmentAspect} from '$lib/components/chat/composer/contexts/aspects/AttachmentAspect.svelte.js';
 import type {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
 import type {GuardAspect} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
 import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+import type {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
+import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 
 /**
  * Describes why a particular model cannot be used given the current chat state.

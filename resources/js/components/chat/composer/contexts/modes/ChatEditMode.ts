@@ -1,8 +1,8 @@
-import type {OldUiConversationMessage} from '$lib/oldUi/OldUiBridge.svelte.js';
 import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
 import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
 import {AbstractMode} from '$lib/components/chat/composer/contexts/modes/contracts/AbstractMode.js';
 import {RemoteFile} from '$lib/components/chat/composer/utils/RemoteFile.js';
+import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 
 export interface ChatEditModeState {
     messageId: string;

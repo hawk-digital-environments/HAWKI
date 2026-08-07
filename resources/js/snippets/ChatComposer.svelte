@@ -21,6 +21,7 @@
     import ComposerFocusWrap from '$lib/components/chat/composer/utils/ComposerFocusWrap.svelte';
     import ComposerBorderBeam from '$lib/components/chat/composer/ComposerBorderBeam.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
 
     interface Props {
         context: ComposerContextType;
@@ -28,9 +29,10 @@
 
     const {context: contextType = 'aiConv'}: Props = $props();
 
+    const app = useApp();
     const toastContext = useToastContext();
     // This is a bit of a hack to work around the "state_referenced_locally" warning thrown by svelte.
-    const chatContext = createComposerContext((() => contextType)(), toastContext);
+    const chatContext = createComposerContext(app, (() => contextType)(), toastContext);
 
     let textareaEl = $state(null as HTMLTextAreaElement | null);
     let buttonEl = $state(null as HTMLButtonElement | null);

@@ -1,4 +1,4 @@
-import type {AppTheme} from '$lib/stores/ThemeStore.svelte.js';
+import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
 
 /**
  * Size/type preset for the border beam effect
@@ -29,13 +29,13 @@ export interface SizeConfig {
  * Theme color configuration
  */
 export interface ThemeColors {
-  strokeOpacity: number;
-  innerOpacity: number;
-  bloomOpacity: number;
-  innerShadow: string;
-  saturation: number;
-  /** Optional per-type default brightness. Falls back to 1.3. */
-  brightness?: number;
-  /** Optional opacity of the 1px hairline border that frames the element. Falls back to 0 (no hairline). */
-  hairlineOpacity?: number;
+    strokeOpacity: number;
+    innerOpacity: number;
+    bloomOpacity: number;
+    innerShadow: string;
+    saturation: number;
+    /** Optional per-type default brightness. Falls back to 1.3. */
+    brightness?: number;
+    /** Optional opacity of the 1px hairline border that frames the element. Falls back to 0 (no hairline). */
+    hairlineOpacity?: number;
 }

@@ -1,6 +1,4 @@
-import {getConfig} from '$lib/data/config/config.js';
-
-const STORAGE_PROXY_BASE_PATH = '/api/hawki/v1/proxy/storage/';
+import {getHawkiApp} from '$lib/legacy/legacy.js';
 
 /**
  * Builds the proxied URL for a stored file so the browser can fetch it through
@@ -11,12 +9,8 @@ const STORAGE_PROXY_BASE_PATH = '/api/hawki/v1/proxy/storage/';
  * @example
  * const url = buildStorageFileUrl(attachment.file_identifier);
  * if (url) { img.src = url; }
+ * @deprecated use {@link UriBuilder.storageFileUri} instead
  */
 export function buildStorageFileUrl(fileIdentifier: string | null): string | null {
-    if (!fileIdentifier) {
-        return null;
-    }
-
-    const baseUrl = (getConfig().transfer.baseUrl).replace(/\/+$/, '');
-    return `${baseUrl}${STORAGE_PROXY_BASE_PATH}${encodeURIComponent(fileIdentifier)}`;
+    return getHawkiApp().uriBuilder.storageFileUri(fileIdentifier);
 }

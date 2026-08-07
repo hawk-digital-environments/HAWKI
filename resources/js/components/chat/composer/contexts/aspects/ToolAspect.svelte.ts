@@ -1,8 +1,8 @@
 import type {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
-import type {AiToolStore} from '$lib/stores/AiToolStore.svelte.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
-import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
 import {type AiToolOrCapabilityWithState, createToolOrCapabilityWithState, createToolOrCapabilityWithStateFromTransferString} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+import {AiToolStore} from '$lib/plugins/core/stores/AiToolStore.svelte';
+import {AiToolOrCapability} from '$lib/plugins/core/stores/aiToolStoreData';
 
 export interface ToolAspectCheckpoint {
     active: string[];
