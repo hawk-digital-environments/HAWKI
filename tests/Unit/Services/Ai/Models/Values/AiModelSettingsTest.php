@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\AI\Models\Values;
+namespace Tests\Unit\Services\Ai\Models\Values;
 
 use App\Services\Ai\Exceptions\InvalidModelSettingException;
 use App\Services\Ai\Models\Settings\AiModelSettingRegistry;

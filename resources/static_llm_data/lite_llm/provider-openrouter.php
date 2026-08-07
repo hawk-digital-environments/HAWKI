@@ -209,6 +209,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
@@ -274,6 +275,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'supports_assistant_prefill' => true,
   'supports_computer_use' => true,
@@ -367,6 +369,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
@@ -618,12 +621,6 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'supports_tool_choice' => true,
 ),
     array (
@@ -650,12 +647,6 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'supports_tool_choice' => true,
   'supports_image_size' => false,
 ),
@@ -683,12 +674,6 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'supports_tool_choice' => true,
 ),
     array (
@@ -719,28 +704,22 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 2.5E-7,
   'input_cost_per_token_above_200k_tokens' => 4.0E-6,
   'input_cost_per_token_batches' => 1.0E-6,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'output_cost_per_token_batches' => 6.0E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -772,28 +751,22 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'rpm' => 2000,
   'source' => 'https://ai.google.dev/pricing/gemini-3',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -826,34 +799,25 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_per_audio_token' => 5.0E-8,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'rpm' => 2000,
   'source' => 'https://ai.google.dev/pricing/gemini-3',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
-  'supports_code_execution' => true,
-  'supports_file_search' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -884,34 +848,25 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_per_audio_token' => 5.0E-8,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'rpm' => 2000,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-lite',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
-  'supports_code_execution' => true,
-  'supports_file_search' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
@@ -947,14 +902,14 @@ return [
   'input_cost_per_token_above_200k_tokens' => 4.0E-6,
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'source' => 'https://openrouter.ai/google/gemini-3.1-pro-preview',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1590,12 +1545,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1625,12 +1580,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1660,12 +1615,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1695,12 +1650,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1730,12 +1685,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1765,12 +1720,12 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1801,12 +1756,12 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://openrouter.ai/openai/gpt-5.1-codex-max',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),

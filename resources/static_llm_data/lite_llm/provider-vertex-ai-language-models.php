@@ -30,28 +30,22 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://ai.google.dev/pricing#2_0flash',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
   'supports_tool_choice' => true,
   'supports_url_context' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -82,27 +76,21 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -133,26 +121,20 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 50,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini-2.0-flash',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -183,26 +165,20 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 50,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models#gemini-2.0-flash',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -233,40 +209,33 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://ai.google.dev/gemini-api/docs/models#gemini-2.5-flash-preview',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
-  'supports_service_tier' => true,
   'supports_image_size' => false,
 ),
     array (
@@ -293,30 +262,24 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => false,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_image' => 0.039,
   'output_cost_per_image_token' => 3.0E-5,
   'rpm' => 100000,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-image',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -325,7 +288,6 @@ return [
   'supports_tool_choice' => true,
   'supports_url_context' => true,
   'tpm' => 8000000,
-  'supports_service_tier' => true,
   'supports_image_size' => false,
 ),
     array (
@@ -358,30 +320,29 @@ return [
   'output_cost_per_image_token' => 0.00012,
   'output_cost_per_token_batches' => 6.0E-6,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
   'web_search_billing_unit' => 'per_query',
-  'supports_service_tier' => true,
 ),
     array (
   'id' => 'gemini-3.1-flash-image-preview',
@@ -411,23 +372,23 @@ return [
   'output_cost_per_image' => 0.0672,
   'output_cost_per_image_token' => 6.0E-5,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -459,46 +420,36 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_per_audio_token' => 5.0E-8,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://ai.google.dev/gemini-api/docs/models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
-  'supports_code_execution' => true,
-  'supports_file_search' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
   'supports_video_input' => true,
   'supports_native_streaming' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
   'web_search_billing_unit' => 'per_query',
-  'supports_service_tier' => true,
 ),
     array (
   'id' => 'gemini-3.1-flash-lite',
@@ -524,55 +475,107 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_batches' => 1.25E-8,
   'cache_read_input_token_cost_flex' => 1.25E-8,
-  'cache_read_input_token_cost_per_audio_token' => 5.0E-8,
   'cache_read_input_token_cost_priority' => 4.5E-8,
   'input_cost_per_token_batches' => 1.25E-7,
   'input_cost_per_token_flex' => 1.25E-7,
   'input_cost_per_token_priority' => 4.5E-7,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_batches' => 7.5E-7,
   'output_cost_per_token_flex' => 7.5E-7,
   'output_cost_per_token_priority' => 2.7E-6,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing#gemini-3.1-flash-lite',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
-  'supports_code_execution' => true,
-  'supports_file_search' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
   'supports_video_input' => true,
   'supports_native_streaming' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
   'web_search_billing_unit' => 'per_query',
-  'supports_service_tier' => true,
+),
+    array (
+  'id' => 'gemini-3.5-flash-lite',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-language-models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 65536,
+  'max_tokens' => 65536,
+  'input_cost_per_token' => 3.0E-7,
+  'output_cost_per_token' => 2.5E-6,
+  'cache_read_input_token_cost' => 3.0E-8,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => 2.5E-6,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => true,
+  'supports_audio_output' => false,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_flex' => 2.0E-8,
+  'cache_read_input_token_cost_priority' => 5.0E-8,
+  'input_cost_per_token_batches' => 1.5E-7,
+  'input_cost_per_token_flex' => 1.5E-7,
+  'input_cost_per_token_priority' => 5.4E-7,
+  'output_cost_per_token_batches' => 1.25E-6,
+  'output_cost_per_token_flex' => 1.25E-6,
+  'output_cost_per_token_priority' => 4.5E-6,
+  'source' => 'https://ai.google.dev/gemini-api/docs/pricing',
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/completions',
+    2 => '/v1/batch',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'audio',
+    3 => 'video',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_url_context' => true,
+  'supports_video_input' => true,
+  'supports_native_streaming' => true,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_low' => 0.014,
+    'search_context_size_medium' => 0.014,
+    'search_context_size_high' => 0.014,
+  ),
+  'web_search_billing_unit' => 'per_query',
 ),
     array (
   'id' => 'deep-research-pro-preview-12-2025',
@@ -604,18 +607,18 @@ return [
   'output_cost_per_image_token' => 0.00012,
   'output_cost_per_token_batches' => 6.0E-6,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -645,40 +648,33 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://ai.google.dev/gemini-api/docs/models#gemini-2.5-flash-preview',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
-  'supports_service_tier' => true,
   'supports_image_size' => false,
 ),
     array (
@@ -705,34 +701,28 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://developers.googleblog.com/en/continuing-to-bring-you-our-latest-models-with-an-improved-gemini-2-5-flash-and-flash-lite-release/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -764,34 +754,28 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://developers.googleblog.com/en/continuing-to-bring-you-our-latest-models-with-an-improved-gemini-2-5-flash-and-flash-lite-release/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -823,26 +807,20 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_audio_token' => 1.2E-5,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/vertex_ai/live',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -850,12 +828,13 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
+  'gemini_native_audio' => true,
 ),
     array (
   'id' => 'gemini-2.5-flash-lite-preview-06-17',
@@ -881,34 +860,28 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://ai.google.dev/gemini-api/docs/models#gemini-2.5-flash-preview',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -943,40 +916,33 @@ return [
   'cache_read_input_token_cost_above_200k_tokens' => 2.5E-7,
   'cache_creation_input_token_cost_above_200k_tokens' => 2.5E-7,
   'input_cost_per_token_above_200k_tokens' => 2.5E-6,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_above_200k_tokens' => 1.5E-5,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_video_input' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
     'search_context_size_high' => 0.035,
   ),
-  'supports_service_tier' => true,
 ),
     array (
   'id' => 'gemini-3-pro-preview',
@@ -1006,29 +972,23 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 2.5E-7,
   'input_cost_per_token_above_200k_tokens' => 4.0E-6,
   'input_cost_per_token_batches' => 1.0E-6,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'output_cost_per_token_batches' => 6.0E-6,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1042,8 +1002,7 @@ return [
   'output_cost_per_token_above_200k_tokens_priority' => 3.24E-5,
   'cache_read_input_token_cost_priority' => 3.6E-7,
   'cache_read_input_token_cost_above_200k_tokens_priority' => 7.2E-7,
-  'supports_service_tier' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -1079,30 +1038,24 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 2.5E-7,
   'input_cost_per_token_above_200k_tokens' => 4.0E-6,
   'input_cost_per_token_batches' => 1.0E-6,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'output_cost_per_token_batches' => 6.0E-6,
   'output_cost_per_image' => 0.00012,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1117,8 +1070,7 @@ return [
   'output_cost_per_token_above_200k_tokens_priority' => 3.24E-5,
   'cache_read_input_token_cost_priority' => 3.6E-7,
   'cache_read_input_token_cost_above_200k_tokens_priority' => 7.2E-7,
-  'supports_service_tier' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -1154,30 +1106,24 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 2.5E-7,
   'input_cost_per_token_above_200k_tokens' => 4.0E-6,
   'input_cost_per_token_batches' => 1.0E-6,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'output_cost_per_token_batches' => 6.0E-6,
   'output_cost_per_image' => 0.00012,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1186,7 +1132,7 @@ return [
   'supports_video_input' => true,
   'supports_url_context' => true,
   'supports_native_streaming' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -1220,24 +1166,18 @@ return [
   'supports_web_search' => true,
   'cache_read_input_token_cost_above_200k_tokens' => 2.5E-7,
   'input_cost_per_token_above_200k_tokens' => 2.5E-6,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_above_200k_tokens' => 1.5E-5,
   'source' => 'https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-pro-preview',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'audio',
   ),
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.035,
     'search_context_size_medium' => 0.035,
@@ -1269,19 +1209,19 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://ai.google.dev/gemini-api/docs/models#gemini-robotics-er-1-5-preview',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'video',
     3 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1313,15 +1253,14 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'input_cost_per_token_above_200k_tokens' => 2.5E-6,
-  'max_images_per_prompt' => 3000,
   'output_cost_per_token_above_200k_tokens' => 1.5E-5,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/docs/computer-use',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1381,27 +1320,21 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://ai.google.dev/pricing/gemini-3',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1413,14 +1346,57 @@ return [
   'input_cost_per_audio_token_priority' => 1.8E-6,
   'output_cost_per_token_priority' => 5.4E-6,
   'cache_read_input_token_cost_priority' => 9.0E-8,
-  'supports_service_tier' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
   'web_search_billing_unit' => 'per_query',
+),
+    array (
+  'id' => 'gemini-omni-flash-preview',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-language-models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 65535,
+  'max_tokens' => 65535,
+  'input_cost_per_token' => 1.5E-6,
+  'output_cost_per_token' => 9.0E-6,
+  'cache_read_input_token_cost' => NULL,
+  'input_cost_per_audio_token' => 1.5E-6,
+  'output_cost_per_reasoning_token' => 9.0E-6,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => NULL,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => true,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => NULL,
+  'supports_reasoning' => true,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => true,
+  'supports_web_search' => NULL,
+  'output_cost_per_video_token' => 1.75E-5,
+  'source' => 'https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/omni-flash-preview',
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'audio',
+    3 => 'video',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'video',
+  ),
+  'supports_video_input' => true,
 ),
     array (
   'id' => 'gemini-3.5-flash',
@@ -1446,27 +1422,21 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://ai.google.dev/pricing/gemini-3',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1479,8 +1449,70 @@ return [
   'input_cost_per_audio_token_priority' => 1.8E-6,
   'output_cost_per_token_priority' => 1.62E-5,
   'cache_read_input_token_cost_priority' => 2.7E-7,
-  'supports_service_tier' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_low' => 0.014,
+    'search_context_size_medium' => 0.014,
+    'search_context_size_high' => 0.014,
+  ),
+  'web_search_billing_unit' => 'per_query',
+),
+    array (
+  'id' => 'gemini-3.6-flash',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-language-models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 65536,
+  'max_tokens' => 65536,
+  'input_cost_per_token' => 1.5E-6,
+  'output_cost_per_token' => 7.5E-6,
+  'cache_read_input_token_cost' => 1.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => 7.5E-6,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => true,
+  'supports_audio_output' => false,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_flex' => 7.5E-8,
+  'input_cost_per_token_batches' => 7.5E-7,
+  'input_cost_per_token_flex' => 7.5E-7,
+  'output_cost_per_token_batches' => 3.75E-6,
+  'output_cost_per_token_flex' => 3.75E-6,
+  'source' => 'https://ai.google.dev/pricing/gemini-3',
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/completions',
+    2 => '/v1/batch',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'audio',
+    3 => 'video',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_url_context' => true,
+  'supports_video_input' => true,
+  'supports_native_streaming' => true,
+  'input_cost_per_token_priority' => 2.7E-6,
+  'output_cost_per_token_priority' => 1.35E-5,
+  'cache_read_input_token_cost_priority' => 2.7E-7,
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -1566,34 +1598,28 @@ return [
   'supports_audio_input' => NULL,
   'supports_audio_output' => false,
   'supports_prompt_caching' => true,
-  'supports_reasoning' => NULL,
+  'supports_reasoning' => false,
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => false,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_image' => 0.039,
   'output_cost_per_image_token' => 3.0E-5,
   'rpm' => 100000,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/image-generation#edit-an-image',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -1603,6 +1629,37 @@ return [
   'supports_url_context' => true,
   'tpm' => 8000000,
   'supports_image_size' => false,
+),
+    array (
+  'id' => 'vertex_ai/gemini-3-pro-image',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-language-models',
+  'mode' => 'image_generation',
+  'max_input_tokens' => 65536,
+  'max_output_tokens' => 32768,
+  'max_tokens' => 32768,
+  'input_cost_per_token' => 2.0E-6,
+  'output_cost_per_token' => 1.2E-5,
+  'cache_read_input_token_cost' => NULL,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => NULL,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => NULL,
+  'supports_reasoning' => false,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'input_cost_per_image' => 0.0011,
+  'input_cost_per_token_batches' => 1.0E-6,
+  'output_cost_per_image' => 0.134,
+  'output_cost_per_image_token' => 0.00012,
+  'output_cost_per_token_batches' => 6.0E-6,
+  'source' => 'https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-pro-image',
 ),
     array (
   'id' => 'vertex_ai/gemini-3-pro-image-preview',
@@ -1624,7 +1681,7 @@ return [
   'supports_audio_input' => NULL,
   'supports_audio_output' => NULL,
   'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
+  'supports_reasoning' => false,
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
@@ -1634,6 +1691,35 @@ return [
   'output_cost_per_image_token' => 0.00012,
   'output_cost_per_token_batches' => 6.0E-6,
   'source' => 'https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-pro-image',
+),
+    array (
+  'id' => 'vertex_ai/gemini-3.1-flash-image',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-language-models',
+  'mode' => 'image_generation',
+  'max_input_tokens' => 65536,
+  'max_output_tokens' => 32768,
+  'max_tokens' => 32768,
+  'input_cost_per_token' => 5.0E-7,
+  'output_cost_per_token' => 3.0E-6,
+  'cache_read_input_token_cost' => NULL,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => NULL,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => NULL,
+  'supports_reasoning' => false,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'input_cost_per_image' => 0.00056,
+  'output_cost_per_image' => 0.0672,
+  'output_cost_per_image_token' => 6.0E-5,
+  'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
 ),
     array (
   'id' => 'vertex_ai/gemini-3.1-flash-image-preview',
@@ -1655,7 +1741,7 @@ return [
   'supports_audio_input' => NULL,
   'supports_audio_output' => NULL,
   'supports_prompt_caching' => NULL,
-  'supports_reasoning' => NULL,
+  'supports_reasoning' => false,
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
@@ -1688,39 +1774,30 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_per_audio_token' => 5.0E-8,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
-  'supports_code_execution' => true,
-  'supports_file_search' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
   'supports_video_input' => true,
   'supports_native_streaming' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -1752,55 +1829,107 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_batches' => 1.25E-8,
   'cache_read_input_token_cost_flex' => 1.25E-8,
-  'cache_read_input_token_cost_per_audio_token' => 5.0E-8,
   'cache_read_input_token_cost_priority' => 4.5E-8,
   'input_cost_per_token_batches' => 1.25E-7,
   'input_cost_per_token_flex' => 1.25E-7,
   'input_cost_per_token_priority' => 4.5E-7,
-  'max_audio_length_hours' => 8.4,
-  'max_audio_per_prompt' => 1,
-  'max_images_per_prompt' => 3000,
-  'max_pdf_size_mb' => 30,
-  'max_video_length' => 1,
-  'max_videos_per_prompt' => 10,
   'output_cost_per_token_batches' => 7.5E-7,
   'output_cost_per_token_flex' => 7.5E-7,
   'output_cost_per_token_priority' => 2.7E-6,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
-  'supports_code_execution' => true,
-  'supports_file_search' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_url_context' => true,
   'supports_video_input' => true,
   'supports_native_streaming' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
     'search_context_size_high' => 0.014,
   ),
   'web_search_billing_unit' => 'per_query',
-  'supports_service_tier' => true,
+),
+    array (
+  'id' => 'vertex_ai/gemini-3.5-flash-lite',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-language-models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1048576,
+  'max_output_tokens' => 65536,
+  'max_tokens' => 65536,
+  'input_cost_per_token' => 3.0E-7,
+  'output_cost_per_token' => 2.5E-6,
+  'cache_read_input_token_cost' => 3.0E-8,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => 2.5E-6,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => true,
+  'supports_audio_output' => false,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_flex' => 2.0E-8,
+  'cache_read_input_token_cost_priority' => 5.0E-8,
+  'input_cost_per_token_batches' => 1.5E-7,
+  'input_cost_per_token_flex' => 1.5E-7,
+  'input_cost_per_token_priority' => 5.4E-7,
+  'output_cost_per_token_batches' => 1.25E-6,
+  'output_cost_per_token_flex' => 1.25E-6,
+  'output_cost_per_token_priority' => 4.5E-6,
+  'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/completions',
+    2 => '/v1/batch',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+    2 => 'audio',
+    3 => 'video',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_url_context' => true,
+  'supports_video_input' => true,
+  'supports_native_streaming' => true,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_low' => 0.014,
+    'search_context_size_medium' => 0.014,
+    'search_context_size_high' => 0.014,
+  ),
+  'web_search_billing_unit' => 'per_query',
 ),
     array (
   'id' => 'vertex_ai/deep-research-pro-preview-12-2025',

@@ -55,16 +55,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -120,16 +120,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -244,7 +244,7 @@ return [
   'id' => 'azure/eu/gpt-4o-mini-realtime-preview-2024-12-17',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -272,7 +272,7 @@ return [
   'id' => 'azure/eu/gpt-4o-realtime-preview-2024-10-01',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -300,7 +300,7 @@ return [
   'id' => 'azure/eu/gpt-4o-realtime-preview-2024-12-17',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -322,12 +322,12 @@ return [
   'supports_web_search' => NULL,
   'cache_read_input_audio_token_cost' => 2.5E-6,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -358,18 +358,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -401,18 +401,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -444,18 +444,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -489,18 +489,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -534,16 +534,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -575,16 +575,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -616,18 +616,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -895,18 +895,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -940,18 +940,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -985,16 +985,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1026,16 +1026,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1485,18 +1485,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 1.0E-6,
   'output_cost_per_token_batches' => 4.0E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1529,18 +1529,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 1.0E-6,
   'output_cost_per_token_batches' => 4.0E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1573,18 +1573,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 2.0E-7,
   'output_cost_per_token_batches' => 8.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1617,18 +1617,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 2.0E-7,
   'output_cost_per_token_batches' => 8.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1661,18 +1661,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 5.0E-8,
   'output_cost_per_token_batches' => 2.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1705,18 +1705,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 5.0E-8,
   'output_cost_per_token_batches' => 2.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1880,16 +1880,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -1922,16 +1922,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -1964,16 +1964,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2006,16 +2006,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2100,16 +2100,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2121,7 +2121,7 @@ return [
   'id' => 'azure/gpt-4o-mini-realtime-preview-2024-12-17',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -2149,7 +2149,7 @@ return [
   'id' => 'azure/gpt-realtime-2025-08-28',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -2172,17 +2172,17 @@ return [
   'cache_creation_input_audio_token_cost' => 4.0E-6,
   'input_cost_per_image' => 5.0E-6,
   'output_cost_per_audio_token' => 6.4E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2193,7 +2193,7 @@ return [
   'id' => 'azure/gpt-realtime-1.5-2026-02-23',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -2216,17 +2216,17 @@ return [
   'cache_creation_input_audio_token_cost' => 4.0E-6,
   'input_cost_per_image' => 5.0E-6,
   'output_cost_per_audio_token' => 6.4E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2237,7 +2237,7 @@ return [
   'id' => 'azure/gpt-realtime-mini-2025-10-06',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 32000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -2260,17 +2260,17 @@ return [
   'cache_creation_input_audio_token_cost' => 3.0E-7,
   'input_cost_per_image' => 8.0E-7,
   'output_cost_per_audio_token' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2301,7 +2301,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -2332,16 +2332,16 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 1.2E-5,
   'output_cost_per_second' => 0.00025,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/speech',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'audio',
   ),
@@ -2350,7 +2350,7 @@ return [
   'id' => 'azure/gpt-4o-realtime-preview-2024-10-01',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -2378,7 +2378,7 @@ return [
   'id' => 'azure/gpt-4o-realtime-preview-2024-12-17',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -2399,12 +2399,12 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2435,7 +2435,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -2464,7 +2464,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -2495,16 +2495,16 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_second' => 0.0002833333333333333,
   'source' => 'https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/gpt-realtime-whisper',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
     1 => '/v1/realtime/transcription_sessions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2536,17 +2536,17 @@ return [
   'cache_read_input_token_cost_priority' => 2.5E-7,
   'input_cost_per_token_priority' => 2.5E-6,
   'output_cost_per_token_priority' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -2554,7 +2554,6 @@ return [
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => true,
 ),
@@ -2585,17 +2584,17 @@ return [
   'cache_read_input_token_cost_priority' => 2.5E-7,
   'input_cost_per_token_priority' => 2.5E-6,
   'output_cost_per_token_priority' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -2632,16 +2631,16 @@ return [
   'cache_read_input_token_cost_priority' => 2.5E-7,
   'input_cost_per_token_priority' => 2.5E-6,
   'output_cost_per_token_priority' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2676,16 +2675,16 @@ return [
   'cache_read_input_token_cost_priority' => 4.5E-8,
   'input_cost_per_token_priority' => 4.5E-7,
   'output_cost_per_token_priority' => 3.6E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2717,18 +2716,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2760,18 +2759,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2804,18 +2803,18 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://azure.microsoft.com/en-us/blog/gpt-5-in-azure-ai-foundry-the-future-of-ai-apps-and-agents-starts-here/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2847,18 +2846,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2890,16 +2889,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2931,18 +2930,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2974,18 +2973,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3017,18 +3016,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3060,18 +3059,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3104,16 +3103,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure?pivots=azure-openai&tabs=global-standard-aoai%2Cstandard-chat-completions%2Cglobal-standard#gpt-5',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3144,18 +3143,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3189,18 +3188,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3234,16 +3233,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3275,16 +3274,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3316,16 +3315,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3357,18 +3356,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3404,18 +3403,18 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3423,7 +3422,6 @@ return [
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
 ),
     array (
   'id' => 'azure/gpt-5.2-chat',
@@ -3452,17 +3450,17 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3497,17 +3495,17 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3539,16 +3537,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3583,24 +3581,23 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
 ),
     array (
   'id' => 'azure/gpt-5.3-codex',
@@ -3626,16 +3623,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3667,17 +3664,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3709,17 +3706,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3760,25 +3757,116 @@ return [
   'output_cost_per_token_above_272k_tokens' => 2.25E-5,
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
+),
+    array (
+  'id' => 'azure/us/gpt-5.4',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.75E-6,
+  'output_cost_per_token' => 1.65E-5,
+  'cache_read_input_token_cost' => 2.8E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => NULL,
+  'cache_read_input_token_cost_priority' => 5.5E-7,
+  'input_cost_per_token_priority' => 5.5E-6,
+  'output_cost_per_token_priority' => 3.3E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.4',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.75E-6,
+  'output_cost_per_token' => 1.65E-5,
+  'cache_read_input_token_cost' => 2.8E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => NULL,
+  'cache_read_input_token_cost_priority' => 5.5E-7,
+  'input_cost_per_token_priority' => 5.5E-6,
+  'output_cost_per_token_priority' => 3.3E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
 ),
     array (
   'id' => 'azure/gpt-5.4-2026-03-05',
@@ -3813,25 +3901,116 @@ return [
   'output_cost_per_token_above_272k_tokens' => 2.25E-5,
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
+),
+    array (
+  'id' => 'azure/us/gpt-5.4-2026-03-05',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.75E-6,
+  'output_cost_per_token' => 1.65E-5,
+  'cache_read_input_token_cost' => 2.8E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => NULL,
+  'cache_read_input_token_cost_priority' => 5.5E-7,
+  'input_cost_per_token_priority' => 5.5E-6,
+  'output_cost_per_token_priority' => 3.3E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.4-2026-03-05',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.75E-6,
+  'output_cost_per_token' => 1.65E-5,
+  'cache_read_input_token_cost' => 2.8E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => NULL,
+  'cache_read_input_token_cost_priority' => 5.5E-7,
+  'input_cost_per_token_priority' => 5.5E-6,
+  'output_cost_per_token_priority' => 3.3E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
 ),
     array (
   'id' => 'azure/gpt-5.4-pro',
@@ -3860,17 +4039,17 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3905,23 +4084,659 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure/gpt-5.6',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.0E-6,
+  'output_cost_per_token' => 3.0E-5,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.0E-6,
+  'cache_read_input_token_cost_priority' => 1.0E-6,
+  'cache_read_input_token_cost_above_272k_tokens_priority' => 2.0E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.0E-5,
+  'input_cost_per_token_priority' => 1.0E-5,
+  'input_cost_per_token_above_272k_tokens_priority' => 2.0E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.5E-5,
+  'output_cost_per_token_priority' => 6.0E-5,
+  'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/gpt-5.6-sol',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.0E-6,
+  'output_cost_per_token' => 3.0E-5,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.0E-6,
+  'cache_read_input_token_cost_priority' => 1.0E-6,
+  'cache_read_input_token_cost_above_272k_tokens_priority' => 2.0E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.0E-5,
+  'input_cost_per_token_priority' => 1.0E-5,
+  'input_cost_per_token_above_272k_tokens_priority' => 2.0E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.5E-5,
+  'output_cost_per_token_priority' => 6.0E-5,
+  'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/gpt-5.6-terra',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.5E-6,
+  'output_cost_per_token' => 1.5E-5,
+  'cache_read_input_token_cost' => 2.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 5.0E-7,
+  'cache_read_input_token_cost_priority' => 5.0E-7,
+  'cache_read_input_token_cost_above_272k_tokens_priority' => 1.0E-6,
+  'input_cost_per_token_above_272k_tokens' => 5.0E-6,
+  'input_cost_per_token_priority' => 5.0E-6,
+  'input_cost_per_token_above_272k_tokens_priority' => 1.0E-5,
+  'output_cost_per_token_above_272k_tokens' => 2.25E-5,
+  'output_cost_per_token_priority' => 3.0E-5,
+  'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/gpt-5.6-luna',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 1.0E-6,
+  'output_cost_per_token' => 6.0E-6,
+  'cache_read_input_token_cost' => 1.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 2.0E-7,
+  'cache_read_input_token_cost_priority' => 2.0E-7,
+  'cache_read_input_token_cost_above_272k_tokens_priority' => 4.0E-7,
+  'input_cost_per_token_above_272k_tokens' => 2.0E-6,
+  'input_cost_per_token_priority' => 2.0E-6,
+  'input_cost_per_token_above_272k_tokens_priority' => 4.0E-6,
+  'output_cost_per_token_above_272k_tokens' => 9.0E-6,
+  'output_cost_per_token_priority' => 1.2E-5,
+  'output_cost_per_token_above_272k_tokens_priority' => 1.8E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/us/gpt-5.6',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.375E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/us/gpt-5.6-sol',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.375E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/us/gpt-5.6-terra',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.75E-6,
+  'output_cost_per_token' => 1.65E-5,
+  'cache_read_input_token_cost' => 2.75E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 5.5E-7,
+  'cache_read_input_token_cost_priority' => 6.875E-7,
+  'input_cost_per_token_above_272k_tokens' => 5.5E-6,
+  'input_cost_per_token_priority' => 6.875E-6,
+  'output_cost_per_token_above_272k_tokens' => 2.475E-5,
+  'output_cost_per_token_priority' => 4.125E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/us/gpt-5.6-luna',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 1.1E-6,
+  'output_cost_per_token' => 6.6E-6,
+  'cache_read_input_token_cost' => 1.1E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 2.2E-7,
+  'cache_read_input_token_cost_priority' => 2.75E-7,
+  'input_cost_per_token_above_272k_tokens' => 2.2E-6,
+  'input_cost_per_token_priority' => 2.75E-6,
+  'output_cost_per_token_above_272k_tokens' => 9.9E-6,
+  'output_cost_per_token_priority' => 1.65E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.6',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.375E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.6-sol',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.375E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.6-terra',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.75E-6,
+  'output_cost_per_token' => 1.65E-5,
+  'cache_read_input_token_cost' => 2.75E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 5.5E-7,
+  'cache_read_input_token_cost_priority' => 6.875E-7,
+  'input_cost_per_token_above_272k_tokens' => 5.5E-6,
+  'input_cost_per_token_priority' => 6.875E-6,
+  'output_cost_per_token_above_272k_tokens' => 2.475E-5,
+  'output_cost_per_token_priority' => 4.125E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.6-luna',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 1.1E-6,
+  'output_cost_per_token' => 6.6E-6,
+  'cache_read_input_token_cost' => 1.1E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 2.2E-7,
+  'cache_read_input_token_cost_priority' => 2.75E-7,
+  'input_cost_per_token_above_272k_tokens' => 2.2E-6,
+  'input_cost_per_token_priority' => 2.75E-6,
+  'output_cost_per_token_above_272k_tokens' => 9.9E-6,
+  'output_cost_per_token_priority' => 1.65E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
 ),
     array (
   'id' => 'azure/gpt-5.5',
@@ -3956,25 +4771,128 @@ return [
   'output_cost_per_token_above_272k_tokens' => 4.5E-5,
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/us/gpt-5.5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.38E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+  'supports_none_reasoning_effort' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_minimal_reasoning_effort' => false,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.38E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => false,
@@ -4012,25 +4930,122 @@ return [
   'output_cost_per_token_above_272k_tokens' => 4.5E-5,
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
+),
+    array (
+  'id' => 'azure/us/gpt-5.5-2026-04-23',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.38E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
+),
+    array (
+  'id' => 'azure/eu/gpt-5.5-2026-04-23',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure',
+  'mode' => 'chat',
+  'max_input_tokens' => 1050000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 3.3E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => true,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => true,
+  'supports_web_search' => true,
+  'cache_read_input_token_cost_above_272k_tokens' => 1.1E-6,
+  'cache_read_input_token_cost_priority' => 1.38E-6,
+  'input_cost_per_token_above_272k_tokens' => 1.1E-5,
+  'input_cost_per_token_priority' => 1.375E-5,
+  'output_cost_per_token_above_272k_tokens' => 4.95E-5,
+  'output_cost_per_token_priority' => 8.25E-5,
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/chat/completions',
+    1 => '/v1/batch',
+    2 => '/v1/responses',
+  ),
+  'supported_modalities' =>
+  array (
+    0 => 'text',
+    1 => 'image',
+  ),
+  'supported_output_modalities' =>
+  array (
+    0 => 'text',
+  ),
+  'supports_native_streaming' => true,
+  'supports_pdf_input' => true,
+  'supports_tool_choice' => true,
 ),
     array (
   'id' => 'azure/gpt-5.5-pro',
@@ -4059,17 +5074,17 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4108,17 +5123,17 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4131,7 +5146,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
   'mode' => 'chat',
-  'max_input_tokens' => 1050000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 7.5E-7,
@@ -4150,25 +5165,24 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => false,
   'supports_xhigh_reasoning_effort' => false,
 ),
@@ -4177,7 +5191,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
   'mode' => 'chat',
-  'max_input_tokens' => 1050000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 7.5E-7,
@@ -4196,25 +5210,24 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => false,
   'supports_xhigh_reasoning_effort' => false,
 ),
@@ -4223,7 +5236,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
   'mode' => 'chat',
-  'max_input_tokens' => 1050000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
@@ -4242,25 +5255,24 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => false,
   'supports_xhigh_reasoning_effort' => false,
 ),
@@ -4269,7 +5281,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
   'mode' => 'chat',
-  'max_input_tokens' => 1050000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
@@ -4288,25 +5300,24 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => false,
   'supports_xhigh_reasoning_effort' => false,
 ),
@@ -4334,10 +5345,9 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'cache_read_input_image_token_cost' => 2.5E-6,
   'input_cost_per_image_token' => 1.0E-5,
   'output_cost_per_image_token' => 4.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -4447,7 +5457,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.59263611E-7,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4478,7 +5488,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.58945719E-7,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4509,7 +5519,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.58945719E-7,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4540,7 +5550,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.0490417E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4571,7 +5581,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.0172526E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4602,7 +5612,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.0172526E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4633,7 +5643,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 4.0054321E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4664,7 +5674,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 4.0054321E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4695,7 +5705,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 4.0054321E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4724,10 +5734,9 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'cache_read_input_image_token_cost' => 2.5E-7,
   'input_cost_per_image_token' => 2.5E-6,
   'output_cost_per_image_token' => 8.0E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -4757,10 +5766,9 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'cache_read_input_image_token_cost' => 2.0E-6,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.2E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -4790,10 +5798,9 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'cache_read_input_image_token_cost' => 2.0E-6,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.2E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -4823,10 +5830,9 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'cache_read_input_image_token_cost' => 2.0E-6,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -4857,10 +5863,9 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'cache_read_input_image_token_cost' => 2.0E-6,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -4893,7 +5898,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 2.0751953125E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4924,7 +5929,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 2.0751953125E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4955,7 +5960,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 2.0345052083E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -4986,7 +5991,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 8.056640625E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5017,7 +6022,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 8.056640625E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5048,7 +6053,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 7.9752604167E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5079,7 +6084,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 3.173828125E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5110,7 +6115,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 3.173828125E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5141,7 +6146,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 3.1575520833E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5373,18 +6378,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5414,18 +6419,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5455,18 +6460,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5551,18 +6556,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.0E-5,
   'output_cost_per_token_batches' => 4.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5594,18 +6599,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.0E-5,
   'output_cost_per_token_batches' => 4.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5635,18 +6640,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5939,7 +6944,7 @@ return [
   'input_cost_per_second' => 0.0002777778,
   'output_cost_per_second' => 0.0,
   'source' => 'https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -6022,18 +7027,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 1.1E-6,
   'output_cost_per_token_batches' => 4.4E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6066,18 +7071,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 2.2E-7,
   'output_cost_per_token_batches' => 8.8E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6110,18 +7115,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 6.0E-8,
   'output_cost_per_token_batches' => 2.2E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6211,7 +7216,7 @@ return [
   'id' => 'azure/us/gpt-4o-mini-realtime-preview-2024-12-17',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -6239,7 +7244,7 @@ return [
   'id' => 'azure/us/gpt-4o-realtime-preview-2024-10-01',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -6267,7 +7272,7 @@ return [
   'id' => 'azure/us/gpt-4o-realtime-preview-2024-12-17',
   'object' => 'model_catalog.entry',
   'provider' => 'azure',
-  'mode' => 'chat',
+  'mode' => 'realtime',
   'max_input_tokens' => 128000,
   'max_output_tokens' => 4096,
   'max_tokens' => 4096,
@@ -6289,12 +7294,12 @@ return [
   'supports_web_search' => NULL,
   'cache_read_input_audio_token_cost' => 2.5E-6,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -6325,18 +7330,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6368,18 +7373,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6411,18 +7416,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6454,18 +7459,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -6499,18 +7504,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -6544,16 +7549,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6585,16 +7590,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6704,18 +7709,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6826,16 +7831,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6867,18 +7872,13 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.1,
   'source' => 'https://azure.microsoft.com/en-us/products/ai-services/video-generation',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
-  ),
-  'supported_resolutions' => 
-  array (
-    0 => '720x1280',
-    1 => '1280x720',
   ),
 ),
     array (
@@ -6907,18 +7907,13 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.3,
   'source' => 'https://azure.microsoft.com/en-us/products/ai-services/video-generation',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
-  ),
-  'supported_resolutions' => 
-  array (
-    0 => '720x1280',
-    1 => '1280x720',
   ),
 ),
     array (
@@ -6947,18 +7942,13 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.5,
   'source' => 'https://azure.microsoft.com/en-us/products/ai-services/video-generation',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
-  ),
-  'supported_resolutions' => 
-  array (
-    0 => '1024x1792',
-    1 => '1792x1024',
   ),
 ),
 ];

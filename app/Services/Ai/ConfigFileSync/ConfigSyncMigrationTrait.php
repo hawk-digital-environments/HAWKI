@@ -58,6 +58,8 @@ trait ConfigSyncMigrationTrait
             ]
         ];
 
+        $isInPhpUnit = defined('PHPUNIT_COMPOSER_INSTALL') || defined('__PHPUNIT_PHAR__');
+
         foreach ($syncers as $syncer) {
             try {
                 $metrics = $syncer['run']();
@@ -66,8 +68,15 @@ trait ConfigSyncMigrationTrait
                     throw new \RuntimeException("Errors during sync: " . implode(", ", $metrics->getErrors()));
                 }
 
+                if ($isInPhpUnit) {
+                    return; // Skip output during PHPUnit tests to avoid cluttering test output
+                }
+
                 $metrics->writeToCli($io);
             } catch (\Throwable $e) {
+                if ($isInPhpUnit) {
+                    return; // Skip output during PHPUnit tests to avoid cluttering test output
+                }
                 $io->warning(sprintf(
                     'Error during sync: %s, please run the command `%s` to sync manually. IMPORTANT: If you are seeing this, but afterwards see output that tells you that the sync was successful, you can ignore this warning.',
                     $e->getMessage(),

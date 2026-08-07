@@ -13,7 +13,7 @@ jobs:
     outputs:
       version: ${{ steps.validate.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.WORKFLOW_TOKEN }}
@@ -22,37 +22,65 @@ jobs:
         uses: hawk-digital-environments/hawk-pipeline-actions/validate-release-branch@v1
 
   test-docker-build:
-    name: Test Docker Build
-    runs-on: ubuntu-latest
+    name: Test Docker Build (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
     needs: validate
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      # Always test both architectures, so an arch-specific breakage is
+      # visible instead of being masked by the other job failing first.
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+            runner: ubuntu-latest
+          - platform: linux/arm64
+            arch: arm64
+            runner: ubuntu-latest
     steps:
       - name: Checkout release branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
+
+      # Required for the registry-backed build cache below
+      - name: Log in to the GitHub Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Test Docker build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
           push: false
+          # Runs the full build, then discards the image. Keeps this a real
+          # build test while populating the cache for the publish pipeline.
+          outputs: type=cacheonly
           target: app_prod
-          platforms: linux/amd64,linux/arm64
-          tags: digitalenvironments/hawki:release-test
-          cache-from: type=gha,scope=${{ needs.validate.outputs.version }}
-          cache-to: type=gha,mode=max,scope=${{ needs.validate.outputs.version }}
+          platforms: ${{ matrix.platform }}
+          # One cache ref per architecture: keeps each export small enough to
+          # avoid the 504s seen when exporting one combined multi-arch cache.
+          cache-from: type=registry,ref=ghcr.io/hawk-digital-environments/hawki:buildcache-${{ matrix.arch }}
+          # ignore-error: a flaky cache export must not fail the release gate
+          cache-to: type=registry,ref=ghcr.io/hawk-digital-environments/hawki:buildcache-${{ matrix.arch }},mode=max,ignore-error=true
 
   release:
     name: Merge and Tag Release
     runs-on: ubuntu-latest
     needs: [ validate, test-docker-build ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.WORKFLOW_TOKEN }}

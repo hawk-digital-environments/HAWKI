@@ -30,13 +30,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'DALL-E 2 via AI/ML API - Reliable text-to-image generation',
   ),
   'output_cost_per_image' => 0.026,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -65,13 +65,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'DALL-E 3 via AI/ML API - High-quality text-to-image generation',
   ),
   'output_cost_per_image' => 0.052,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -100,13 +100,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Flux Dev - Development version optimized for experimentation',
   ),
   'output_cost_per_image' => 0.065,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -136,7 +136,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.052,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -166,7 +166,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.063,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -195,13 +195,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Flux Pro - Professional-grade image generation model',
   ),
   'output_cost_per_image' => 0.046,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -230,13 +230,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Flux Dev - Development version optimized for experimentation',
   ),
   'output_cost_per_image' => 0.033,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -265,13 +265,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Flux Pro v1.1 - Enhanced version with improved capabilities and 6x faster inference speed',
   ),
   'output_cost_per_image' => 0.104,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -300,13 +300,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Flux Pro v1.1 - Enhanced version with improved capabilities and 6x faster inference speed',
   ),
   'output_cost_per_image' => 0.052,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -335,13 +335,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Flux Schnell - Fast generation model optimized for speed',
   ),
   'output_cost_per_image' => 0.004,
   'source' => 'https://docs.aimlapi.com/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -370,13 +370,13 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Imagen 4.0 Ultra Generate API - Photorealistic image generation with precise text rendering',
   ),
   'output_cost_per_image' => 0.078,
   'source' => 'https://docs.aimlapi.com/api-references/image-models/google/imagen-4-ultra-generate',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -405,13 +405,48 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Gemini 3 Pro Image (Nano Banana Pro) - Advanced text-to-image generation with reasoning and 4K resolution support',
   ),
   'output_cost_per_image' => 0.195,
   'source' => 'https://docs.aimlapi.com/api-references/image-models/google/gemini-3-pro-image-preview',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
+  array (
+    0 => '/v1/images/generations',
+  ),
+),
+    array (
+  'id' => 'aiml/openai/gpt-image-2',
+  'object' => 'model_catalog.entry',
+  'provider' => 'aiml',
+  'mode' => 'image_generation',
+  'max_input_tokens' => NULL,
+  'max_output_tokens' => NULL,
+  'max_tokens' => NULL,
+  'input_cost_per_token' => NULL,
+  'output_cost_per_token' => NULL,
+  'cache_read_input_token_cost' => NULL,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => NULL,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => NULL,
+  'supports_reasoning' => NULL,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'metadata' =>
+  array (
+    'notes' => 'OpenAI gpt-image-2 via AI/ML API - flagship multimodal image generation and editing model with reasoning and 2K output. output_cost_per_image is AI/ML\'s published medium-quality rate; like the other aiml image entries it is billed as a flat per-image price',
+  ),
+  'output_cost_per_image' => 0.054,
+  'source' => 'https://docs.aimlapi.com/api-references/image-models/openai/gpt-image-2',
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),

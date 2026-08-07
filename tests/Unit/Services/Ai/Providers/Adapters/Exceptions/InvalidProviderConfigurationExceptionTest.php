@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Tests\Unit\Services\AI\Providers\Adapters\Exceptions;
+namespace Tests\Unit\Services\Ai\Providers\Adapters\Exceptions;
 
 use App\Services\Ai\Exceptions\InvalidProviderConfigurationException;
 use PHPUnit\Framework\Attributes\CoversClass;

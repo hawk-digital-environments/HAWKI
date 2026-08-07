@@ -120,7 +120,6 @@ class AppServiceProvider extends ServiceProvider
     {
         UrlGenerator::macro('getForcedRoot',
             function () {
-                /* @phpstan-ignore-next-line property.protected */
                 return $this->forcedRoot;
             }
         );

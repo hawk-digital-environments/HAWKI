@@ -32,21 +32,16 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.05,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '720x1280',
-  ),
-  'metadata' => 
+  'metadata' =>
   array (
     'comment' => '5 credits per second @ $0.01 per credit = $0.05 per second',
   ),
@@ -77,21 +72,16 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.15,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '720x1280',
-  ),
-  'metadata' => 
+  'metadata' =>
   array (
     'comment' => '15 credits per second @ $0.01 per credit = $0.15 per second',
   ),
@@ -122,21 +112,16 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.05,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '720x1280',
-  ),
-  'metadata' => 
+  'metadata' =>
   array (
     'comment' => '5 credits per second @ $0.01 per credit = $0.05 per second',
   ),
@@ -168,21 +153,16 @@ return [
   'input_cost_per_image' => 0.05,
   'output_cost_per_image' => 0.05,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'image',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '1920x1080',
-  ),
-  'metadata' => 
+  'metadata' =>
   array (
     'comment' => '5 credits per 720p image or 8 credits per 1080p image @ $0.01 per credit. Using 5 credits ($0.05) as base cost',
   ),
@@ -214,21 +194,16 @@ return [
   'input_cost_per_image' => 0.02,
   'output_cost_per_image' => 0.02,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'image',
   ),
-  'supported_resolutions' => 
-  array (
-    0 => '1280x720',
-    1 => '1920x1080',
-  ),
-  'metadata' => 
+  'metadata' =>
   array (
     'comment' => '2 credits per image (any resolution) @ $0.01 per credit = $0.02 per image',
   ),
@@ -259,7 +234,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_character' => 3.0E-7,
   'source' => 'https://docs.dev.runwayml.com/guides/pricing/',
-  'metadata' => 
+  'metadata' =>
   array (
     'comment' => 'Estimated cost based on standard TTS pricing. RunwayML uses ElevenLabs models.',
   ),

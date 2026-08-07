@@ -183,7 +183,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_image' => 0.0001,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => '\'supports_image_input\' is a deprecated field. Use \'supports_embedding_image_input\' instead.',
   ),
@@ -292,7 +292,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
     array (
   'id' => 'rerank-english-v3.0',
@@ -319,7 +318,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
     array (
   'id' => 'rerank-multilingual-v2.0',
@@ -346,7 +344,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
     array (
   'id' => 'rerank-multilingual-v3.0',
@@ -373,7 +370,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
     array (
   'id' => 'rerank-v3.5',
@@ -400,6 +396,5 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
 ];

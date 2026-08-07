@@ -31,7 +31,7 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -63,7 +63,7 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -97,7 +97,7 @@ return [
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 2.8E-8,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -187,7 +187,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_cache_hit' => 2.8E-8,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -272,14 +272,14 @@ return [
   'supports_audio_input' => NULL,
   'supports_audio_output' => NULL,
   'supports_prompt_caching' => true,
-  'supports_reasoning' => NULL,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 2.8E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -307,14 +307,14 @@ return [
   'supports_audio_input' => NULL,
   'supports_audio_output' => NULL,
   'supports_prompt_caching' => true,
-  'supports_reasoning' => NULL,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 3.625E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -342,14 +342,14 @@ return [
   'supports_audio_input' => NULL,
   'supports_audio_output' => NULL,
   'supports_prompt_caching' => true,
-  'supports_reasoning' => NULL,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 2.8E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -377,14 +377,14 @@ return [
   'supports_audio_input' => NULL,
   'supports_audio_output' => NULL,
   'supports_prompt_caching' => true,
-  'supports_reasoning' => NULL,
+  'supports_reasoning' => true,
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 0.0,
   'input_cost_per_token_cache_hit' => 3.625E-9,
   'source' => 'https://api-docs.deepseek.com/quick_start/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),

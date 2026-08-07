@@ -93,6 +93,7 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_streaming' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'vertex_ai/claude-haiku-4-5@20251001',
@@ -125,6 +126,7 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_streaming' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'vertex_ai/claude-3-5-sonnet',
@@ -402,7 +404,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
   'cache_creation_input_token_cost_above_1hr' => 3.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -412,6 +414,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-1',
@@ -501,7 +504,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -512,6 +515,7 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_output_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-5@20251101',
@@ -539,7 +543,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -551,6 +555,7 @@ return [
   'supports_tool_choice' => true,
   'supports_native_streaming' => true,
   'supports_output_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-6',
@@ -576,9 +581,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -590,6 +596,7 @@ return [
   'supports_tool_choice' => true,
   'supports_output_config' => true,
   'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-6@default',
@@ -615,9 +622,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -629,6 +637,7 @@ return [
   'supports_tool_choice' => true,
   'supports_output_config' => true,
   'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-7',
@@ -654,9 +663,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -669,6 +679,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-7@default',
@@ -694,9 +705,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -709,6 +721,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'vertex_ai/claude-fable-5',
@@ -734,9 +747,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -775,9 +789,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -791,6 +806,92 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
+),
+    array (
+  'id' => 'vertex_ai/claude-opus-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-anthropic_models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.0E-6,
+  'output_cost_per_token' => 2.5E-5,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
+  'supports_adaptive_thinking' => true,
+  'cache_creation_input_token_cost' => 6.25E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 512,
+),
+    array (
+  'id' => 'vertex_ai/claude-opus-5@default',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-anthropic_models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.0E-6,
+  'output_cost_per_token' => 2.5E-5,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
+  'supports_adaptive_thinking' => true,
+  'cache_creation_input_token_cost' => 6.25E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 512,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-8',
@@ -816,15 +917,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
-  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -832,6 +934,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4-8@default',
@@ -857,15 +960,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
-  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -873,6 +977,7 @@ return [
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-sonnet-4-5',
@@ -910,6 +1015,50 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'vertex_ai/claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-anthropic_models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.0E-6,
+  'output_cost_per_token' => 1.0E-5,
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 2.5E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-sonnet-4-6',
@@ -935,6 +1084,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
   'supports_assistant_prefill' => true,
@@ -942,13 +1092,14 @@ return [
   'supports_pdf_input' => true,
   'supports_max_reasoning_effort' => true,
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
   'supports_output_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-sonnet-4-5@20250929',
@@ -987,6 +1138,7 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_streaming' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-opus-4@20250514',
@@ -1014,7 +1166,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
   'cache_creation_input_token_cost_above_1hr' => 3.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1024,6 +1176,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-sonnet-4',
@@ -1055,7 +1208,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1065,6 +1218,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-sonnet-4@20250514',
@@ -1096,7 +1250,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1106,6 +1260,50 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'vertex_ai/claude-sonnet-5@default',
+  'object' => 'model_catalog.entry',
+  'provider' => 'vertex_ai-anthropic_models',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.0E-6,
+  'output_cost_per_token' => 1.0E-5,
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 2.5E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'vertex_ai/claude-sonnet-4-6@default',
@@ -1131,6 +1329,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
   'supports_assistant_prefill' => true,
@@ -1138,12 +1337,13 @@ return [
   'supports_pdf_input' => true,
   'supports_max_reasoning_effort' => true,
   'supports_tool_choice' => true,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
   'supports_output_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
 ];

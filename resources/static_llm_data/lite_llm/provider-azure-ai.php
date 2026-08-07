@@ -74,7 +74,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
   'mode' => 'chat',
-  'max_input_tokens' => 200000,
+  'max_input_tokens' => 1000000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 5.0E-6,
@@ -93,7 +93,8 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'search_context_cost_per_query' => 
+  'supports_adaptive_thinking' => true,
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -113,7 +114,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
   'mode' => 'chat',
-  'max_input_tokens' => 200000,
+  'max_input_tokens' => 1000000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 5.0E-6,
@@ -132,7 +133,8 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'search_context_cost_per_query' => 
+  'supports_adaptive_thinking' => true,
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -172,7 +174,8 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'search_context_cost_per_query' => 
+  'supports_mid_conversation_system' => true,
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -190,11 +193,11 @@ return [
   'supports_max_reasoning_effort' => true,
 ),
     array (
-  'id' => 'azure_ai/claude-opus-4-8',
+  'id' => 'azure_ai/claude-opus-5',
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
   'mode' => 'chat',
-  'max_input_tokens' => 200000,
+  'max_input_tokens' => 1000000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 5.0E-6,
@@ -213,7 +216,9 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'search_context_cost_per_query' => 
+  'supports_mid_conversation_system' => true,
+  'supports_adaptive_thinking' => true,
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -221,7 +226,49 @@ return [
   ),
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_max_reasoning_effort' => true,
+  'prompt_cache_min_tokens' => 512,
+),
+    array (
+  'id' => 'azure_ai/claude-opus-4-8',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.0E-6,
+  'output_cost_per_token' => 2.5E-5,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
   'supports_adaptive_thinking' => true,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'cache_creation_input_token_cost' => 6.25E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -293,6 +340,48 @@ return [
   'supports_tool_choice' => true,
 ),
     array (
+  'id' => 'azure_ai/claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'azure_ai',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.0E-6,
+  'output_cost_per_token' => 1.0E-5,
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 2.5E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_max_reasoning_effort' => true,
+),
+    array (
   'id' => 'azure_ai/claude-sonnet-4-6',
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
@@ -316,6 +405,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
   'supports_assistant_prefill' => true,
@@ -386,25 +476,24 @@ return [
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.5',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => false,
@@ -443,25 +532,24 @@ return [
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.5',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => false,
@@ -500,25 +588,24 @@ return [
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => true,
@@ -557,25 +644,24 @@ return [
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => true,
@@ -614,24 +700,23 @@ return [
   'output_cost_per_token_priority' => 0.00036,
   'output_cost_per_token_above_272k_tokens_priority' => 0.00054,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-pro',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => false,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => true,
@@ -670,24 +755,23 @@ return [
   'output_cost_per_token_priority' => 0.00036,
   'output_cost_per_token_above_272k_tokens_priority' => 0.00054,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-pro',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => false,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => true,
@@ -697,7 +781,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
   'mode' => 'chat',
-  'max_input_tokens' => 400000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 7.5E-7,
@@ -716,35 +800,28 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_above_272k_tokens' => 1.5E-7,
   'cache_read_input_token_cost_priority' => 1.5E-7,
-  'cache_read_input_token_cost_above_272k_tokens_priority' => 3.0E-7,
-  'input_cost_per_token_above_272k_tokens' => 1.5E-6,
   'input_cost_per_token_priority' => 1.5E-6,
-  'input_cost_per_token_above_272k_tokens_priority' => 3.0E-6,
-  'output_cost_per_token_above_272k_tokens' => 6.75E-6,
   'output_cost_per_token_priority' => 9.0E-6,
-  'output_cost_per_token_above_272k_tokens_priority' => 1.35E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-mini',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => false,
@@ -754,7 +831,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
   'mode' => 'chat',
-  'max_input_tokens' => 400000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 7.5E-7,
@@ -773,35 +850,28 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_above_272k_tokens' => 1.5E-7,
   'cache_read_input_token_cost_priority' => 1.5E-7,
-  'cache_read_input_token_cost_above_272k_tokens_priority' => 3.0E-7,
-  'input_cost_per_token_above_272k_tokens' => 1.5E-6,
   'input_cost_per_token_priority' => 1.5E-6,
-  'input_cost_per_token_above_272k_tokens_priority' => 3.0E-6,
-  'output_cost_per_token_above_272k_tokens' => 6.75E-6,
   'output_cost_per_token_priority' => 9.0E-6,
-  'output_cost_per_token_above_272k_tokens_priority' => 1.35E-5,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-mini',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => false,
@@ -811,7 +881,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
   'mode' => 'chat',
-  'max_input_tokens' => 400000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
@@ -830,35 +900,28 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_above_272k_tokens' => 4.0E-8,
   'cache_read_input_token_cost_priority' => 4.0E-8,
-  'cache_read_input_token_cost_above_272k_tokens_priority' => 8.0E-8,
-  'input_cost_per_token_above_272k_tokens' => 4.0E-7,
   'input_cost_per_token_priority' => 4.0E-7,
-  'input_cost_per_token_above_272k_tokens_priority' => 8.0E-7,
-  'output_cost_per_token_above_272k_tokens' => 1.875E-6,
   'output_cost_per_token_priority' => 2.5E-6,
-  'output_cost_per_token_above_272k_tokens_priority' => 3.75E-6,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-nano',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => false,
@@ -868,7 +931,7 @@ return [
   'object' => 'model_catalog.entry',
   'provider' => 'azure_ai',
   'mode' => 'chat',
-  'max_input_tokens' => 400000,
+  'max_input_tokens' => 272000,
   'max_output_tokens' => 128000,
   'max_tokens' => 128000,
   'input_cost_per_token' => 2.0E-7,
@@ -887,35 +950,28 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'cache_read_input_token_cost_above_272k_tokens' => 4.0E-8,
   'cache_read_input_token_cost_priority' => 4.0E-8,
-  'cache_read_input_token_cost_above_272k_tokens_priority' => 8.0E-8,
-  'input_cost_per_token_above_272k_tokens' => 4.0E-7,
   'input_cost_per_token_priority' => 4.0E-7,
-  'input_cost_per_token_above_272k_tokens_priority' => 8.0E-7,
-  'output_cost_per_token_above_272k_tokens' => 1.875E-6,
   'output_cost_per_token_priority' => 2.5E-6,
-  'output_cost_per_token_above_272k_tokens_priority' => 3.75E-6,
   'source' => 'https://ai.azure.com/catalog/models/gpt-5.4-nano',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
   'supports_native_streaming' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
-  'supports_service_tier' => true,
   'supports_none_reasoning_effort' => true,
   'supports_xhigh_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => false,
@@ -1029,7 +1085,7 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.04,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/black-forest-labs-flux-1-kontext-pro-and-flux1-1-pro-now-available-in-azure-ai-f/4434659',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -1060,7 +1116,7 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.04,
   'source' => 'https://azuremarketplace.microsoft.com/pt-br/marketplace/apps/cohere.cohere-embed-4-offer?tab=PlansAndPrice',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -1091,7 +1147,7 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_image' => 0.04,
   'source' => 'https://ai.azure.com/explore/models/flux.2-pro/version/1/registry/azureml-blackforestlabs',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -1124,7 +1180,7 @@ return [
   'output_cost_per_image' => 0.05,
   'output_cost_per_image_token' => 4.7E-5,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/new-mai-models-in-microsoft-foundry-across-text-image-voice-and-speech/4524632',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -1158,7 +1214,7 @@ return [
   'output_cost_per_image' => 0.0338,
   'output_cost_per_image_token' => 3.3E-5,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/new-mai-models-in-microsoft-foundry-across-text-image-voice-and-speech/4524632',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -1191,7 +1247,7 @@ return [
   'output_cost_per_image' => 0.02,
   'output_cost_per_image_token' => 1.95E-5,
   'source' => 'https://aka.ms/mai-image-2e-foundryblog',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -1838,7 +1894,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.003,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -1869,7 +1925,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.003,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -1900,7 +1956,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.0015,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -1931,7 +1987,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.01,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -1962,7 +2018,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.01,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -2020,7 +2076,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
     array (
   'id' => 'azure_ai/cohere-rerank-v3-multilingual',
@@ -2047,7 +2102,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
     array (
   'id' => 'azure_ai/cohere-rerank-v3.5',
@@ -2074,7 +2128,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 2048,
 ),
     array (
   'id' => 'azure_ai/cohere-rerank-v4.0-pro',
@@ -2101,7 +2154,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.0025,
-  'max_query_tokens' => 4096,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-cohere-rerank-4-0-in-microsoft-foundry/4477076',
 ),
     array (
@@ -2129,7 +2181,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_query_tokens' => 4096,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-cohere-rerank-4-0-in-microsoft-foundry/4477076',
 ),
     array (
@@ -2376,11 +2427,11 @@ return [
   'supports_web_search' => NULL,
   'output_vector_size' => 3072,
   'source' => 'https://azuremarketplace.microsoft.com/pt-br/marketplace/apps/cohere.cohere-embed-4-offer?tab=PlansAndPrice',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/embeddings',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -2761,12 +2812,12 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/introducing-kimi-k2-6-in-microsoft-foundry/4513125',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),

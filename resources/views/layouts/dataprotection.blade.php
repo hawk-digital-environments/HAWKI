@@ -14,7 +14,7 @@
 <div class="scroll-container">
     <div class="scroll-panel">
         <div class="dataprotection">
-            {{__('_DataProtection')}}
+            {!! __('_DataProtection') !!}
         </div>
     </div>
 </div>

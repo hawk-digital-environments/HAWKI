@@ -439,6 +439,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'anthropic.claude-haiku-4-5@20251001',
@@ -473,6 +475,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_streaming' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'anthropic.claude-3-7-sonnet-20250219-v1:0',
@@ -529,7 +533,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -539,6 +543,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'anthropic.claude-opus-4-20250514-v1:0',
@@ -565,7 +570,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -575,6 +580,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'anthropic.claude-opus-4-5-20251101-v1:0',
@@ -602,7 +608,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -615,6 +621,8 @@ return [
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'high',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'anthropic.claude-opus-4-6-v1',
@@ -640,9 +648,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -656,6 +665,8 @@ return [
   'supports_output_config' => true,
   'supports_max_reasoning_effort' => true,
   'bedrock_output_config_effort_ceiling' => 'max',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'global.anthropic.claude-opus-4-6-v1',
@@ -681,9 +692,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -697,6 +709,8 @@ return [
   'supports_output_config' => true,
   'supports_max_reasoning_effort' => true,
   'bedrock_output_config_effort_ceiling' => 'max',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'us.anthropic.claude-opus-4-6-v1',
@@ -722,9 +736,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -738,6 +753,8 @@ return [
   'supports_output_config' => true,
   'supports_max_reasoning_effort' => true,
   'bedrock_output_config_effort_ceiling' => 'max',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'eu.anthropic.claude-opus-4-6-v1',
@@ -763,9 +780,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -779,6 +797,8 @@ return [
   'supports_output_config' => true,
   'supports_max_reasoning_effort' => true,
   'bedrock_output_config_effort_ceiling' => 'max',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'au.anthropic.claude-opus-4-6-v1',
@@ -804,9 +824,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -820,6 +841,8 @@ return [
   'supports_output_config' => true,
   'supports_max_reasoning_effort' => true,
   'bedrock_output_config_effort_ceiling' => 'max',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'anthropic.claude-opus-4-7',
@@ -845,9 +868,11 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -863,6 +888,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'global.anthropic.claude-opus-4-7',
@@ -888,9 +915,11 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -906,6 +935,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'us.anthropic.claude-opus-4-7',
@@ -931,9 +962,11 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -949,6 +982,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'eu.anthropic.claude-opus-4-7',
@@ -974,9 +1009,11 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -992,6 +1029,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'au.anthropic.claude-opus-4-7',
@@ -1017,9 +1056,11 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1035,6 +1076,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'anthropic.claude-fable-5',
@@ -1062,13 +1105,14 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
   'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1079,6 +1123,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'global.anthropic.claude-fable-5',
@@ -1106,13 +1152,14 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.25E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
   'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1123,6 +1170,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'us.anthropic.claude-fable-5',
@@ -1150,13 +1199,14 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
   'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1167,6 +1217,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'eu.anthropic.claude-fable-5',
@@ -1194,13 +1246,14 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.375E-5,
   'cache_creation_input_token_cost_above_1hr' => 2.2E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
   'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1211,6 +1264,290 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'anthropic.claude-opus-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.0E-6,
+  'output_cost_per_token' => 2.5E-5,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 6.25E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 512,
+),
+    array (
+  'id' => 'global.anthropic.claude-opus-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.0E-6,
+  'output_cost_per_token' => 2.5E-5,
+  'cache_read_input_token_cost' => 5.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 6.25E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 512,
+),
+    array (
+  'id' => 'us.anthropic.claude-opus-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 2.75E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 6.875E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 512,
+),
+    array (
+  'id' => 'eu.anthropic.claude-opus-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 2.75E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 6.875E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 512,
+),
+    array (
+  'id' => 'au.anthropic.claude-opus-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 2.75E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 6.875E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 512,
+),
+    array (
+  'id' => 'jp.anthropic.claude-opus-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 2.75E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 6.875E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 512,
 ),
     array (
   'id' => 'anthropic.claude-opus-4-8',
@@ -1236,15 +1573,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
-  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1255,6 +1594,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'global.anthropic.claude-opus-4-8',
@@ -1280,15 +1621,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
-  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1299,6 +1642,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'us.anthropic.claude-opus-4-8',
@@ -1324,15 +1669,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
-  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1343,6 +1690,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'eu.anthropic.claude-opus-4-8',
@@ -1368,15 +1717,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
-  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1387,6 +1738,8 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'au.anthropic.claude-opus-4-8',
@@ -1412,15 +1765,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
-  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
@@ -1431,6 +1786,56 @@ return [
   'supports_max_reasoning_effort' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'jp.anthropic.claude-opus-4-8',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 5.5E-6,
+  'output_cost_per_token' => 2.75E-5,
+  'cache_read_input_token_cost' => 5.5E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'cache_creation_input_token_cost' => 6.875E-6,
+  'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'jp.anthropic.claude-opus-4-7',
@@ -1456,23 +1861,308 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'bedrock_converse_supports_strict_tools' => false,
   'cache_creation_input_token_cost' => 6.875E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
     'search_context_size_medium' => 0.01,
   ),
+  'supports_adaptive_thinking' => true,
   'supports_assistant_prefill' => false,
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_sampling_params' => false,
   'supports_tool_choice' => true,
   'supports_xhigh_reasoning_effort' => true,
-  'tool_use_system_prompt_tokens' => 346,
   'supports_native_structured_output' => true,
   'supports_max_reasoning_effort' => true,
   'supports_minimal_reasoning_effort' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 2048,
+),
+    array (
+  'id' => 'anthropic.claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.0E-6,
+  'output_cost_per_token' => 1.0E-5,
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 2.5E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'global.anthropic.claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.0E-6,
+  'output_cost_per_token' => 1.0E-5,
+  'cache_read_input_token_cost' => 2.0E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 2.5E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.0E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'us.anthropic.claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.2E-6,
+  'output_cost_per_token' => 1.1E-5,
+  'cache_read_input_token_cost' => 2.2E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 2.75E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'eu.anthropic.claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.2E-6,
+  'output_cost_per_token' => 1.1E-5,
+  'cache_read_input_token_cost' => 2.2E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 2.75E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'au.anthropic.claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.2E-6,
+  'output_cost_per_token' => 1.1E-5,
+  'cache_read_input_token_cost' => 2.2E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 2.75E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
+),
+    array (
+  'id' => 'jp.anthropic.claude-sonnet-5',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock_converse',
+  'mode' => 'chat',
+  'max_input_tokens' => 1000000,
+  'max_output_tokens' => 128000,
+  'max_tokens' => 128000,
+  'input_cost_per_token' => 2.2E-6,
+  'output_cost_per_token' => 1.1E-5,
+  'cache_read_input_token_cost' => 2.2E-7,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => true,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => true,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => true,
+  'supports_reasoning' => true,
+  'supports_response_schema' => true,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'cache_creation_input_token_cost' => 2.75E-6,
+  'cache_creation_input_token_cost_above_1hr' => 4.4E-6,
+  'search_context_cost_per_query' =>
+  array (
+    'search_context_size_high' => 0.01,
+    'search_context_size_low' => 0.01,
+    'search_context_size_medium' => 0.01,
+  ),
+  'supports_adaptive_thinking' => true,
+  'supports_mid_conversation_system' => true,
+  'supports_assistant_prefill' => false,
+  'supports_computer_use' => true,
+  'supports_pdf_input' => true,
+  'supports_sampling_params' => false,
+  'supports_tool_choice' => true,
+  'supports_xhigh_reasoning_effort' => true,
+  'supports_native_structured_output' => true,
+  'supports_max_reasoning_effort' => true,
+  'supports_output_config' => true,
+  'bedrock_output_config_effort_ceiling' => 'xhigh',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'anthropic.claude-sonnet-4-6',
@@ -1498,9 +2188,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1513,6 +2204,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'global.anthropic.claude-sonnet-4-6',
@@ -1538,9 +2231,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 3.75E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.0E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1553,6 +2247,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'us.anthropic.claude-sonnet-4-6',
@@ -1578,9 +2274,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1593,6 +2290,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'eu.anthropic.claude-sonnet-4-6',
@@ -1618,9 +2317,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1633,6 +2333,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'au.anthropic.claude-sonnet-4-6',
@@ -1658,9 +2360,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1673,6 +2376,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'jp.anthropic.claude-sonnet-4-6',
@@ -1698,9 +2403,10 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'cache_creation_input_token_cost' => 4.125E-6,
   'cache_creation_input_token_cost_above_1hr' => 6.6E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1713,6 +2419,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'anthropic.claude-sonnet-4-20250514-v1:0',
@@ -1743,7 +2451,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1753,6 +2461,8 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'bedrock_converse_supports_strict_tools' => false,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'anthropic.claude-sonnet-4-5-20250929-v1:0',
@@ -1785,7 +2495,7 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.2E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1796,6 +2506,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'apac.amazon.nova-lite-v1:0',
@@ -1905,6 +2617,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'apac.anthropic.claude-sonnet-4-20250514-v1:0',
@@ -1935,7 +2649,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1945,6 +2659,8 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'bedrock_converse_supports_strict_tools' => false,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'au.anthropic.claude-sonnet-4-5-20250929-v1:0',
@@ -1977,7 +2693,7 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -1988,6 +2704,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'deepseek.v3-v1:0',
@@ -2153,6 +2871,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'eu.anthropic.claude-opus-4-1-20250805-v1:0',
@@ -2179,7 +2899,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2189,6 +2909,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'eu.anthropic.claude-opus-4-20250514-v1:0',
@@ -2215,7 +2936,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2225,6 +2946,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'eu.anthropic.claude-sonnet-4-20250514-v1:0',
@@ -2255,7 +2977,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2265,6 +2987,8 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'bedrock_converse_supports_strict_tools' => false,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'eu.anthropic.claude-sonnet-4-5-20250929-v1:0',
@@ -2297,7 +3021,7 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2308,6 +3032,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'eu.mistral.pixtral-large-2502-v1:0',
@@ -2441,7 +3167,7 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.2E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2452,6 +3178,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'global.anthropic.claude-sonnet-4-20250514-v1:0',
@@ -2482,7 +3210,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2492,6 +3220,8 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'bedrock_converse_supports_strict_tools' => false,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'global.anthropic.claude-haiku-4-5-20251001-v1:0',
@@ -2525,6 +3255,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'global.amazon.nova-2-lite-v1:0',
@@ -2584,7 +3316,7 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -2595,6 +3327,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'jp.anthropic.claude-haiku-4-5-20251001-v1:0',
@@ -2628,6 +3362,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'meta.llama3-3-70b-instruct-v1:0',
@@ -2681,12 +3417,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.2E-7,
   'output_cost_per_token_batches' => 4.85E-7,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'code',
@@ -2719,12 +3455,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 8.5E-8,
   'output_cost_per_token_batches' => 3.3E-7,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'code',
@@ -3601,6 +4337,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
@@ -3657,7 +4395,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3667,6 +4405,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'us.anthropic.claude-sonnet-4-5-20250929-v1:0',
@@ -3699,7 +4438,7 @@ return [
   'cache_creation_input_token_cost_above_200k_tokens' => 8.25E-6,
   'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.32E-5,
   'cache_read_input_token_cost_above_200k_tokens' => 6.6E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3710,6 +4449,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'us-gov.anthropic.claude-sonnet-4-5-20250929-v1:0',
@@ -3747,6 +4488,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'au.anthropic.claude-haiku-4-5-20251001-v1:0',
@@ -3779,6 +4522,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'us.anthropic.claude-opus-4-20250514-v1:0',
@@ -3805,7 +4550,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 1.875E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3815,6 +4560,7 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'us.anthropic.claude-opus-4-5-20251101-v1:0',
@@ -3842,7 +4588,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.875E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.1E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3855,6 +4601,8 @@ return [
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'high',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'global.anthropic.claude-opus-4-5-20251101-v1:0',
@@ -3882,7 +4630,7 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
   'cache_creation_input_token_cost_above_1hr' => 1.0E-5,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3895,6 +4643,8 @@ return [
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'high',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'eu.anthropic.claude-opus-4-5-20251101-v1:0',
@@ -3921,7 +4671,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.25E-6,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3934,6 +4684,8 @@ return [
   'supports_native_structured_output' => true,
   'supports_output_config' => true,
   'bedrock_output_config_effort_ceiling' => 'high',
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'us.anthropic.claude-sonnet-4-20250514-v1:0',
@@ -3964,7 +4716,7 @@ return [
   'output_cost_per_token_above_200k_tokens' => 2.25E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_high' => 0.01,
     'search_context_size_low' => 0.01,
@@ -3974,6 +4726,8 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'bedrock_converse_supports_strict_tools' => false,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'us.deepseek.r1-v1:0',
@@ -4105,12 +4859,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.2E-7,
   'output_cost_per_token_batches' => 4.85E-7,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'code',
@@ -4143,12 +4897,12 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 8.5E-8,
   'output_cost_per_token_batches' => 3.3E-7,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'code',

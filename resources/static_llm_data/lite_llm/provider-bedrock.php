@@ -373,9 +373,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.001,
-  'max_document_chunks_per_query' => 100,
-  'max_query_tokens' => 32000,
-  'max_tokens_per_document_chunk' => 512,
 ),
     array (
   'id' => 'amazon.titan-embed-image-v1',
@@ -402,7 +399,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_image' => 6.0E-5,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => '\'supports_image_input\' is a deprecated field. Use \'supports_embedding_image_input\' instead.',
   ),
@@ -413,6 +410,32 @@ return [
 ),
     array (
   'id' => 'amazon.titan-embed-text-v1',
+  'object' => 'model_catalog.entry',
+  'provider' => 'bedrock',
+  'mode' => 'embedding',
+  'max_input_tokens' => 8192,
+  'max_output_tokens' => NULL,
+  'max_tokens' => 8192,
+  'input_cost_per_token' => 1.0E-7,
+  'output_cost_per_token' => 0.0,
+  'cache_read_input_token_cost' => NULL,
+  'input_cost_per_audio_token' => NULL,
+  'output_cost_per_reasoning_token' => NULL,
+  'deprecation_date' => NULL,
+  'supports_function_calling' => NULL,
+  'supports_parallel_function_calling' => NULL,
+  'supports_vision' => NULL,
+  'supports_audio_input' => NULL,
+  'supports_audio_output' => NULL,
+  'supports_prompt_caching' => NULL,
+  'supports_reasoning' => NULL,
+  'supports_response_schema' => NULL,
+  'supports_system_messages' => NULL,
+  'supports_web_search' => NULL,
+  'output_vector_size' => 1536,
+),
+    array (
+  'id' => 'amazon.titan-embed-g1-text-02',
   'object' => 'model_catalog.entry',
   'provider' => 'bedrock',
   'mode' => 'embedding',
@@ -462,7 +485,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'output_vector_size' => 1024,
-  'provider_specific_entry' => 
+  'provider_specific_entry' =>
   array (
     'bedrock_invocation_schema' => 'titan_v2',
   ),
@@ -493,9 +516,6 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image' => 0.0,
   'output_cost_per_image' => 0.008,
-  'output_cost_per_image_premium_image' => 0.01,
-  'output_cost_per_image_above_512_and_512_pixels' => 0.01,
-  'output_cost_per_image_above_512_and_512_pixels_and_premium_image' => 0.012,
 ),
     array (
   'id' => 'amazon.titan-image-generator-v2',
@@ -523,9 +543,6 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image' => 0.0,
   'output_cost_per_image' => 0.008,
-  'output_cost_per_image_premium_image' => 0.01,
-  'output_cost_per_image_above_1024_and_1024_pixels' => 0.01,
-  'output_cost_per_image_above_1024_and_1024_pixels_and_premium_image' => 0.012,
 ),
     array (
   'id' => 'amazon.titan-image-generator-v2:0',
@@ -553,9 +570,6 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image' => 0.0,
   'output_cost_per_image' => 0.008,
-  'output_cost_per_image_premium_image' => 0.01,
-  'output_cost_per_image_above_1024_and_1024_pixels' => 0.01,
-  'output_cost_per_image_above_1024_and_1024_pixels_and_premium_image' => 0.012,
 ),
     array (
   'id' => 'twelvelabs.marengo-embed-2-7-v1:0',
@@ -831,6 +845,7 @@ return [
   'supports_assistant_prefill' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'anthropic.claude-3-5-sonnet-20240620-v1:0',
@@ -862,8 +877,6 @@ return [
   'output_cost_per_token_above_200k_tokens' => 3.0E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'cache_creation_input_token_cost_above_1hr' => 7.5E-6,
-  'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.5E-5,
   'cache_creation_input_token_cost' => 3.75E-6,
 ),
     array (
@@ -899,8 +912,6 @@ return [
   'output_cost_per_token_above_200k_tokens' => 3.0E-5,
   'cache_creation_input_token_cost_above_200k_tokens' => 7.5E-6,
   'cache_read_input_token_cost_above_200k_tokens' => 6.0E-7,
-  'cache_creation_input_token_cost_above_1hr' => 7.5E-6,
-  'cache_creation_input_token_cost_above_1hr_above_200k_tokens' => 1.5E-5,
 ),
     array (
   'id' => 'anthropic.claude-3-7-sonnet-20240620-v1:0',
@@ -3100,7 +3111,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Anthropic via Invoke route does not currently support pdf input.',
   ),
@@ -4248,6 +4259,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'bedrock/us-gov-east-1/claude-sonnet-4-5-20250929-v1:0',
@@ -4280,6 +4293,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'bedrock/us-gov-east-1/meta.llama3-70b-instruct-v1:0',
@@ -4603,6 +4618,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'bedrock/us-gov-west-1/claude-sonnet-4-5-20250929-v1:0',
@@ -4635,6 +4652,8 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'bedrock/us-gov-west-1/meta.llama3-70b-instruct-v1:0',
@@ -5247,6 +5266,7 @@ return [
   'supports_assistant_prefill' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'claude-sonnet-4-5-20250929-v1:0',
@@ -5283,6 +5303,8 @@ return [
   'supports_computer_use' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 1024,
 ),
     array (
   'id' => 'cohere.command-light-text-v14',
@@ -5492,9 +5514,6 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_query' => 0.002,
-  'max_document_chunks_per_query' => 100,
-  'max_query_tokens' => 32000,
-  'max_tokens_per_document_chunk' => 512,
 ),
     array (
   'id' => 'eu.anthropic.claude-3-5-haiku-20241022-v1:0',
@@ -5524,6 +5543,7 @@ return [
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
   'cache_creation_input_token_cost' => 3.125E-7,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'eu.anthropic.claude-3-5-sonnet-20240620-v1:0',
@@ -6732,6 +6752,7 @@ return [
   'supports_assistant_prefill' => true,
   'supports_pdf_input' => true,
   'supports_tool_choice' => true,
+  'prompt_cache_min_tokens' => 2048,
 ),
     array (
   'id' => 'us.anthropic.claude-3-5-sonnet-20240620-v1:0',
@@ -7142,6 +7163,8 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_pdf_input' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
     array (
   'id' => 'bedrock/us-gov-west-1/anthropic.claude-haiku-4-5-20251001-v1:0',
@@ -7175,5 +7198,7 @@ return [
   'supports_tool_choice' => true,
   'supports_native_structured_output' => true,
   'supports_pdf_input' => true,
+  'supports_parallel_tool_use_config' => true,
+  'prompt_cache_min_tokens' => 4096,
 ),
 ];
