@@ -591,7 +591,6 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'supports_preset' => true,
 ),
     array (
   'id' => 'perplexity/preset/pro-search',
@@ -617,7 +616,6 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'supports_preset' => true,
 ),
     array (
   'id' => 'perplexity/preset/deep-research',
@@ -643,7 +641,6 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'supports_preset' => true,
 ),
     array (
   'id' => 'perplexity/preset/advanced-deep-research',
@@ -669,7 +666,6 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
-  'supports_preset' => true,
 ),
     array (
   'id' => 'perplexity/openai/gpt-5.2',
@@ -770,6 +766,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
+  'supports_adaptive_thinking' => true,
   'supports_output_config' => true,
 ),
     array (
@@ -796,6 +793,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => true,
+  'supports_adaptive_thinking' => true,
   'supports_output_config' => true,
 ),
     array (

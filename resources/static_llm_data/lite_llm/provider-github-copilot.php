@@ -33,6 +33,7 @@ return [
   'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
+    1 => '/v1/messages',
   ),
 ),
     array (
@@ -62,6 +63,7 @@ return [
   'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
+    1 => '/v1/messages',
   ),
   'supports_output_config' => true,
 ),
@@ -89,6 +91,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
+  'supports_adaptive_thinking' => true,
   'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
@@ -179,6 +182,7 @@ return [
   'supported_endpoints' => 
   array (
     0 => '/v1/chat/completions',
+    1 => '/v1/messages',
   ),
 ),
     array (
