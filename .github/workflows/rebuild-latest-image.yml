@@ -61,8 +61,6 @@ jobs:
           tags: |
             digitalenvironments/hawki:latest
             digitalenvironments/hawki:${{ steps.get_version.outputs.version }}
-          cache-from: type=gha,scope=${{ steps.get_version.outputs.version }}
-          cache-to: type=gha,mode=max,scope=${{ steps.get_version.outputs.version }}
 
       - name: Generate artifact attestation
         uses: actions/attest@v4
