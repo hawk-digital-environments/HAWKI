@@ -30,7 +30,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -61,7 +61,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -92,7 +92,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -122,7 +122,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
@@ -154,16 +154,16 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 6.875E-6,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -195,16 +195,16 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 2.75E-6,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -236,16 +236,16 @@ return [
   'supports_web_search' => NULL,
   'cache_creation_input_token_cost' => 2.75E-7,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -276,16 +276,16 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -316,16 +316,16 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -356,7 +356,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -388,7 +388,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -420,7 +420,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
@@ -452,7 +452,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'use_openai_responses_path' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',

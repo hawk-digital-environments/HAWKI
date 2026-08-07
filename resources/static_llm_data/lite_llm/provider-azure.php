@@ -55,16 +55,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -120,16 +120,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -322,12 +322,12 @@ return [
   'supports_web_search' => NULL,
   'cache_read_input_audio_token_cost' => 2.5E-6,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -358,18 +358,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -401,18 +401,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -444,18 +444,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -489,18 +489,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -534,16 +534,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -575,16 +575,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -616,18 +616,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -895,18 +895,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -940,18 +940,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -985,16 +985,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1026,16 +1026,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1485,18 +1485,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 1.0E-6,
   'output_cost_per_token_batches' => 4.0E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1529,18 +1529,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 1.0E-6,
   'output_cost_per_token_batches' => 4.0E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1573,18 +1573,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 2.0E-7,
   'output_cost_per_token_batches' => 8.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1617,18 +1617,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 2.0E-7,
   'output_cost_per_token_batches' => 8.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1661,18 +1661,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 5.0E-8,
   'output_cost_per_token_batches' => 2.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1705,18 +1705,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 5.0E-8,
   'output_cost_per_token_batches' => 2.0E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -1880,16 +1880,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -1922,16 +1922,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -1964,16 +1964,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2006,16 +2006,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2100,16 +2100,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2172,17 +2172,17 @@ return [
   'cache_creation_input_audio_token_cost' => 4.0E-6,
   'input_cost_per_image' => 5.0E-6,
   'output_cost_per_audio_token' => 6.4E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2216,17 +2216,17 @@ return [
   'cache_creation_input_audio_token_cost' => 4.0E-6,
   'input_cost_per_image' => 5.0E-6,
   'output_cost_per_audio_token' => 6.4E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2260,17 +2260,17 @@ return [
   'cache_creation_input_audio_token_cost' => 3.0E-7,
   'input_cost_per_image' => 8.0E-7,
   'output_cost_per_audio_token' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2301,7 +2301,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -2332,16 +2332,16 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 1.2E-5,
   'output_cost_per_second' => 0.00025,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/speech',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'audio',
   ),
@@ -2399,12 +2399,12 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -2435,7 +2435,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -2464,7 +2464,7 @@ return [
   'supports_response_schema' => NULL,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -2495,16 +2495,16 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_second' => 0.0002833333333333333,
   'source' => 'https://learn.microsoft.com/en-us/azure/ai-foundry/openai/concepts/gpt-realtime-whisper',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/realtime',
     1 => '/v1/realtime/transcription_sessions',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2536,17 +2536,17 @@ return [
   'cache_read_input_token_cost_priority' => 2.5E-7,
   'input_cost_per_token_priority' => 2.5E-6,
   'output_cost_per_token_priority' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -2584,17 +2584,17 @@ return [
   'cache_read_input_token_cost_priority' => 2.5E-7,
   'input_cost_per_token_priority' => 2.5E-6,
   'output_cost_per_token_priority' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -2631,16 +2631,16 @@ return [
   'cache_read_input_token_cost_priority' => 2.5E-7,
   'input_cost_per_token_priority' => 2.5E-6,
   'output_cost_per_token_priority' => 2.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2675,16 +2675,16 @@ return [
   'cache_read_input_token_cost_priority' => 4.5E-8,
   'input_cost_per_token_priority' => 4.5E-7,
   'output_cost_per_token_priority' => 3.6E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2716,18 +2716,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2759,18 +2759,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2803,18 +2803,18 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://azure.microsoft.com/en-us/blog/gpt-5-in-azure-ai-foundry-the-future-of-ai-apps-and-agents-starts-here/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2846,18 +2846,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2889,16 +2889,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2930,18 +2930,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -2973,18 +2973,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3016,18 +3016,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3059,18 +3059,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3103,16 +3103,16 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
   'source' => 'https://learn.microsoft.com/en-us/azure/ai-foundry/foundry-models/concepts/models-sold-directly-by-azure?pivots=azure-openai&tabs=global-standard-aoai%2Cstandard-chat-completions%2Cglobal-standard#gpt-5',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3143,18 +3143,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3188,18 +3188,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3233,16 +3233,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3274,16 +3274,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3315,16 +3315,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3356,18 +3356,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3403,18 +3403,18 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -3450,17 +3450,17 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3495,17 +3495,17 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3537,16 +3537,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3581,17 +3581,17 @@ return [
   'cache_read_input_token_cost_priority' => 3.5E-7,
   'input_cost_per_token_priority' => 3.5E-6,
   'output_cost_per_token_priority' => 2.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3623,16 +3623,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3664,17 +3664,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3706,17 +3706,17 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3757,18 +3757,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 2.25E-5,
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3803,18 +3803,18 @@ return [
   'cache_read_input_token_cost_priority' => 5.5E-7,
   'input_cost_per_token_priority' => 5.5E-6,
   'output_cost_per_token_priority' => 3.3E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3849,18 +3849,18 @@ return [
   'cache_read_input_token_cost_priority' => 5.5E-7,
   'input_cost_per_token_priority' => 5.5E-6,
   'output_cost_per_token_priority' => 3.3E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3901,18 +3901,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 2.25E-5,
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3947,18 +3947,18 @@ return [
   'cache_read_input_token_cost_priority' => 5.5E-7,
   'input_cost_per_token_priority' => 5.5E-6,
   'output_cost_per_token_priority' => 3.3E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -3993,18 +3993,18 @@ return [
   'cache_read_input_token_cost_priority' => 5.5E-7,
   'input_cost_per_token_priority' => 5.5E-6,
   'output_cost_per_token_priority' => 3.3E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4039,17 +4039,17 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4084,17 +4084,17 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4135,18 +4135,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 4.5E-5,
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4190,18 +4190,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 4.5E-5,
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4245,18 +4245,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 2.25E-5,
   'output_cost_per_token_priority' => 3.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 4.5E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4300,18 +4300,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 9.0E-6,
   'output_cost_per_token_priority' => 1.2E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 1.8E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4352,18 +4352,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4404,18 +4404,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4456,18 +4456,18 @@ return [
   'input_cost_per_token_priority' => 6.875E-6,
   'output_cost_per_token_above_272k_tokens' => 2.475E-5,
   'output_cost_per_token_priority' => 4.125E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4508,18 +4508,18 @@ return [
   'input_cost_per_token_priority' => 2.75E-6,
   'output_cost_per_token_above_272k_tokens' => 9.9E-6,
   'output_cost_per_token_priority' => 1.65E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4560,18 +4560,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4612,18 +4612,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4664,18 +4664,18 @@ return [
   'input_cost_per_token_priority' => 6.875E-6,
   'output_cost_per_token_above_272k_tokens' => 2.475E-5,
   'output_cost_per_token_priority' => 4.125E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4716,18 +4716,18 @@ return [
   'input_cost_per_token_priority' => 2.75E-6,
   'output_cost_per_token_above_272k_tokens' => 9.9E-6,
   'output_cost_per_token_priority' => 1.65E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4771,18 +4771,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 4.5E-5,
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4823,18 +4823,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4875,18 +4875,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4930,18 +4930,18 @@ return [
   'output_cost_per_token_above_272k_tokens' => 4.5E-5,
   'output_cost_per_token_priority' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens_priority' => 9.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -4979,18 +4979,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5028,18 +5028,18 @@ return [
   'input_cost_per_token_priority' => 1.375E-5,
   'output_cost_per_token_above_272k_tokens' => 4.95E-5,
   'output_cost_per_token_priority' => 8.25E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5074,17 +5074,17 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5123,17 +5123,17 @@ return [
   'cache_read_input_token_cost_above_272k_tokens' => 6.0E-6,
   'input_cost_per_token_above_272k_tokens' => 6.0E-5,
   'output_cost_per_token_above_272k_tokens' => 0.00027,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/batch',
     1 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5165,18 +5165,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5210,18 +5210,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5255,18 +5255,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5300,18 +5300,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -5347,7 +5347,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image_token' => 1.0E-5,
   'output_cost_per_image_token' => 4.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -5457,7 +5457,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.59263611E-7,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5488,7 +5488,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.58945719E-7,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5519,7 +5519,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.58945719E-7,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5550,7 +5550,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.0490417E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5581,7 +5581,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.0172526E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5612,7 +5612,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 1.0172526E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5643,7 +5643,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 4.0054321E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5674,7 +5674,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 4.0054321E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5705,7 +5705,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 4.0054321E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5736,7 +5736,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image_token' => 2.5E-6,
   'output_cost_per_image_token' => 8.0E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -5768,7 +5768,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.2E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -5800,7 +5800,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.2E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -5832,7 +5832,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -5865,7 +5865,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_image_token' => 8.0E-6,
   'output_cost_per_image_token' => 3.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
     1 => '/v1/images/edits',
@@ -5898,7 +5898,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 2.0751953125E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5929,7 +5929,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 2.0751953125E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5960,7 +5960,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 2.0345052083E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -5991,7 +5991,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 8.056640625E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -6022,7 +6022,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 8.056640625E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -6053,7 +6053,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 7.9752604167E-9,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -6084,7 +6084,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 3.173828125E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -6115,7 +6115,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 3.173828125E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -6146,7 +6146,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_pixel' => 3.1575520833E-8,
   'output_cost_per_pixel' => 0.0,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -6378,18 +6378,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6419,18 +6419,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6460,18 +6460,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => true,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6556,18 +6556,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.0E-5,
   'output_cost_per_token_batches' => 4.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6599,18 +6599,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 1.0E-5,
   'output_cost_per_token_batches' => 4.0E-5,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6640,18 +6640,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -6944,7 +6944,7 @@ return [
   'input_cost_per_second' => 0.0002777778,
   'output_cost_per_second' => 0.0,
   'source' => 'https://azure.microsoft.com/en-us/pricing/details/cognitive-services/speech-services/',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -7027,18 +7027,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 1.1E-6,
   'output_cost_per_token_batches' => 4.4E-6,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7071,18 +7071,18 @@ return [
   'supports_web_search' => false,
   'input_cost_per_token_batches' => 2.2E-7,
   'output_cost_per_token_batches' => 8.8E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7115,18 +7115,18 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_token_batches' => 6.0E-8,
   'output_cost_per_token_batches' => 2.2E-7,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7294,12 +7294,12 @@ return [
   'supports_web_search' => NULL,
   'cache_read_input_audio_token_cost' => 2.5E-6,
   'output_cost_per_audio_token' => 8.0E-5,
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'audio',
@@ -7330,18 +7330,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7373,18 +7373,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7416,18 +7416,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7459,18 +7459,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -7504,18 +7504,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -7549,16 +7549,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7590,16 +7590,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => false,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7709,18 +7709,18 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/batch',
     2 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7831,16 +7831,16 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => true,
   'supports_web_search' => NULL,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/responses',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -7872,11 +7872,11 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.1,
   'source' => 'https://azure.microsoft.com/en-us/products/ai-services/video-generation',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
   ),
@@ -7907,11 +7907,11 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.3,
   'source' => 'https://azure.microsoft.com/en-us/products/ai-services/video-generation',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
   ),
@@ -7942,11 +7942,11 @@ return [
   'supports_web_search' => NULL,
   'output_cost_per_video_per_second' => 0.5,
   'source' => 'https://azure.microsoft.com/en-us/products/ai-services/video-generation',
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'video',
   ),
