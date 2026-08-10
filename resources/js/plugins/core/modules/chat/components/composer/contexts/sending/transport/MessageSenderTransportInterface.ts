@@ -1,6 +1,6 @@
-import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
-import {type ResponseBody, SendMessageResponse} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
-import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+import type {SendMessageStatus} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageStatus.svelte.js';
+import {type ResponseBody, SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
 export type TransportSetResponse = (body: ResponseBody) => void;
 export type TransportSetResponseFailed = (error: string) => void;

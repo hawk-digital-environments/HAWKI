@@ -20,8 +20,8 @@
     import {RenderChildren} from 'markstream-svelte';
     import TextLink from '$lib/components/util/link/TextLink.svelte';
     import UrlPreviewTooltip from '$lib/components/ui/tooltip/UrlPreviewTooltip.svelte';
-    import {CITATION_ANCHOR_PREFIX, citationIdFromAnchorId} from '$lib/components/chat/message/injectCitationsIntoMarkdown.js';
     import CitationReference from '$lib/components/ui/citations/CitationReference.svelte';
+    import {CITATION_ANCHOR_PREFIX, citationIdFromAnchorId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
 
     interface Props {
         /** The parsed markdown link node (href, title, children, text). */
@@ -92,7 +92,7 @@
 {/snippet}
 
 {#if kind === 'citation'}
-    <CitationReference citation={citationIdFromAnchorId(href)} title={title}>
+    <CitationReference citation={citationIdFromAnchorId(href) ?? ''} title={title}>
         {@render linkContent()}
     </CitationReference>
 {:else if kind === 'external'}

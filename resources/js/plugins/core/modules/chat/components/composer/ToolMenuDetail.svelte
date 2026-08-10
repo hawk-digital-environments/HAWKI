@@ -1,12 +1,14 @@
 <script lang="ts">
     import {onMount} from 'svelte';
     import type {ToolMenuEntry} from './ToolMenu.svelte';
-    import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
+    import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import Switch from '$lib/components/ui/switch/Switch.svelte';
-    import StatusDotForTool from '$lib/components/chat/composer/StatusDotForTool.svelte';
-    import {__} from '$lib/utils/translator.js';
-    import ToolMenuConfig from '$lib/components/chat/composer/ToolMenuConfig.svelte';
+    import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
+    import ToolMenuConfig from '$plugins/core/modules/chat/components/composer/ToolMenuConfig.svelte';
     import ArrowLeft01Icon from '$lib/components/ui/icons/iconset/ArrowLeft01Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         entry: ToolMenuEntry;

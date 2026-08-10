@@ -1,8 +1,8 @@
-import type {ToolSlice} from '$lib/components/chat/composer/contexts/slices/ToolSlice.svelte.js';
-import type {AttachmentSlice} from '$lib/components/chat/composer/contexts/slices/AttachmentSlice.svelte.js';
-import type {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
-import type {GuardSlice} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
-import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
+import type {ToolSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ToolSlice.svelte.js';
+import type {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
+import type {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
+import type {GuardSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
+import type {AiToolOrCapabilityWithState} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 import type {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 

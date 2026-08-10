@@ -5,11 +5,13 @@
   Renders nothing when no tools are active.
 -->
 <script lang="ts">
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         /** Called when the overflow "+N" badge is clicked. */

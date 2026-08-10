@@ -1,6 +1,6 @@
 <script lang="ts">
     import type {Snippet} from 'svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
     const composerContext = useComposerContext();
 

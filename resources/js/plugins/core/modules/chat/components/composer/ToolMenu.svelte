@@ -3,8 +3,8 @@
   Shows a check indicator for active tools and labels unsupported tools without blocking selection.
 -->
 <script module lang="ts">
-    import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
-    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
+    import type {AiToolOrCapabilityWithState} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
+    import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';
 
     export interface ToolMenuEntry {
         tool: AiToolOrCapability;
@@ -33,20 +33,22 @@
 </script>
 <script lang="ts">
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import {aiToolStore} from '$lib/stores/AiToolStore.svelte.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import DropdownMenuDetailView from '$lib/components/ui/dropdown-menu/DropdownMenuDetailView.svelte';
-    import ToolMenuList from '$lib/components/chat/composer/ToolMenuList.svelte';
-    import ToolMenuDetail from '$lib/components/chat/composer/ToolMenuDetail.svelte';
+    import ToolMenuList from '$plugins/core/modules/chat/components/composer/ToolMenuList.svelte';
+    import ToolMenuDetail from '$plugins/core/modules/chat/components/composer/ToolMenuDetail.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
-    import {setToolMenuFocusContext} from '$lib/components/chat/composer/contexts/ToolMenuFocusContext.svelte.js';
-    import {__} from '$lib/utils/translator.js';
+    import {setToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
-    import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
     import PlusSignIcon from '$lib/components/ui/icons/iconset/PlusSignIcon.svelte';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const composerContext = useComposerContext();
     const focusContext = setToolMenuFocusContext();
+    const aiToolStore = useStore('ai-tools');
+    const aiModelStore = useStore('ai-models');
+    const {__} = useTranslator();
 
     interface Props {
         /** Whether the tool picker is open. Supports bind:open. */

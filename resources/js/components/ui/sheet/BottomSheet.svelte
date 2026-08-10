@@ -22,8 +22,10 @@
     import {Dialog as DialogPrimitive, type DialogContentProps, mergeProps} from 'bits-ui';
     import type {Snippet} from 'svelte';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
+    const {__} = useTranslator();
+    
     interface Props {
         /** Whether the sheet is open. Supports bind:open. */
         open?: boolean;

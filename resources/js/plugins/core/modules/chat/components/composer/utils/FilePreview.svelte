@@ -3,7 +3,7 @@
     import {getFileIconSvg} from '$lib/utils/fileIconSvg.js';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {RemoteFile} from '$lib/components/chat/composer/utils/RemoteFile.js';
+    import {RemoteFile} from '$plugins/core/modules/chat/components/composer/utils/RemoteFile.js';
 
     type Props = {
         file: File;

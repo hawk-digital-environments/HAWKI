@@ -1,6 +1,6 @@
-import type {ChatModeInterface} from '$lib/components/chat/composer/contexts/modes/contracts/ChatModeInterface.js';
-import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
+import type {ChatModeInterface} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/ChatModeInterface.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import type {DisabledChatFeature} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
 
 /**
  * Base implementation of `ChatModeInterface` with safe no-op defaults.

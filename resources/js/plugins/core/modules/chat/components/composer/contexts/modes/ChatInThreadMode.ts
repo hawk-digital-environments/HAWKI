@@ -1,6 +1,6 @@
-import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import type {ChatDefaultModeState} from '$lib/components/chat/composer/contexts/modes/ChatDefaultMode.js';
-import {AbstractMode} from '$lib/components/chat/composer/contexts/modes/contracts/AbstractMode.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import type {ChatDefaultModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatDefaultMode.js';
+import {AbstractMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/AbstractMode.js';
 
 export interface ChatThreadModeState {
     threadId: string;

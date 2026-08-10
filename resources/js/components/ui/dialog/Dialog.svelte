@@ -10,9 +10,11 @@
     import {Dialog as DialogPrimitive, type DialogContentProps, type DialogDescriptionProps, type DialogOverlayProps, type DialogTitleProps, mergeProps} from 'bits-ui';
     import SnippetOrString from '$lib/components/util/snippetOrString/SnippetOrString.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
-    import {__} from '$lib/utils/translator.js';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
+    const {__} = useTranslator();
+    
     interface Props {
         /** Whether the dialog is open. Supports bind:open for two-way binding. */
         open?: boolean;

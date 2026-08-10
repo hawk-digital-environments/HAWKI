@@ -9,17 +9,19 @@
     import Slider from '$lib/components/ui/slider/Slider.svelte';
     import Txt from '$lib/components/ui/Txt.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import SystemPromptDialog from '$lib/components/chat/composer/SystemPromptDialog.svelte';
-    import {systemPromptStore} from '$lib/stores/SystemPromptStore.svelte.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import SystemPromptDialog from '$plugins/core/modules/chat/components/composer/SystemPromptDialog.svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
-    import {__} from '$lib/utils/translator.js';
     import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
     import Settings01Icon from '$lib/components/ui/icons/iconset/Settings01Icon.svelte';
     import UndoIcon from '$lib/components/ui/icons/iconset/UndoIcon.svelte';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const composerContext = useComposerContext();
+    const systemPromptStore = useStore('system-prompts');
+    const {__} = useTranslator();
 
     let settingsOpen = $state(false);
     let systemPromptOpen = $state(false);
@@ -35,7 +37,6 @@
     const activePreset = $derived<Preset>(
         presets.find(p => composerContext.modelParameters.intersects({temperature: p.temp, top_p: p.topP}))?.key ?? null
     );
-    const model = $derived.by(() => composerContext.model);
     const tabItems: TabItem[] = presets.map(p => ({key: p.key as string, label: p.label}));
     const modifiedParameters = $derived.by(() => composerContext.modelParameters.isModified);
     const defaultSystemPrompt = $derived.by(() => systemPromptStore.getPromptByType('default').prompt ?? '');

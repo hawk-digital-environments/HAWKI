@@ -6,7 +6,7 @@
 <script lang="ts">
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import type {Snippet} from 'svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         /** Visual size of the dot. `sm` = 8 px, `md` = 10 px. Defaults to `'sm'`. */
@@ -26,6 +26,8 @@
         /** Tooltip content for the `'unknown'` status. Defaults to the translated string. */
         tooltipUnknown?: Snippet | string;
     }
+
+    const {__} = useTranslator();
 
     const {
         size = 'sm',

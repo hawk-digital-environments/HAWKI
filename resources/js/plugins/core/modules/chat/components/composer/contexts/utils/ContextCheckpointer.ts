@@ -1,9 +1,9 @@
-import {AttachmentSlice} from '$lib/components/chat/composer/contexts/slices/AttachmentSlice.svelte.js';
-import {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
-import {ModelParameterSlice} from '$lib/components/chat/composer/contexts/slices/ModelParameterSlice.svelte.js';
-import type {ModeSlice} from '$lib/components/chat/composer/contexts/slices/ModeSlice.svelte.js';
-import type {ToolSlice} from '$lib/components/chat/composer/contexts/slices/ToolSlice.svelte.js';
-import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
+import {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
+import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
+import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
+import type {ModeSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModeSlice.svelte.js';
+import type {ToolSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ToolSlice.svelte.js';
+import type {SendMessageStatus} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
 const CREATE_CHECKPOINT_PIPELINE = 'createCheckpoint';

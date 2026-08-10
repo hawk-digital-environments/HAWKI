@@ -1,9 +1,9 @@
 import type {Plugin} from 'vite';
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 
 // Bump this when the generated file template changes to force regeneration.
-const PLUGIN_VERSION = '1';
+const PLUGIN_VERSION = '3';
 
 type IconData = readonly (readonly [string, Record<string, string | number>])[];
 
@@ -43,6 +43,65 @@ async function loadAllIcons(): Promise<Map<string, IconData>> {
     return icons;
 }
 
+// Some @hugeicons/core-free-icons exports differ only in casing (e.g. BarCodeIcon vs
+// BarcodeIcon). Written as separate .svelte files, those collide into a single file on
+// case-insensitive file systems (macOS, Windows), so keep only one per case-insensitive name.
+//
+// The package also re-exports many icons under a second, unrelated name that points at the
+// exact same array object (e.g. `exports.BarCodeIcon = BarCode01Icon`) — a deliberate
+// "shorthand alias" convention used package-wide, not specific to the casing collisions.
+// When a casing collision involves one of these aliases, keep the name that is the *only*
+// reference to its artwork rather than the alias, so we don't discard the one file that
+// actually renders that icon's unique design in favor of a redundant duplicate.
+function dedupeCaseInsensitive(icons: Map<string, IconData>): Map<string, IconData> {
+    const namesByData = new Map<IconData, string[]>();
+    for (const [name, data] of icons) {
+        const names = namesByData.get(data) ?? [];
+        names.push(name);
+        namesByData.set(data, names);
+    }
+    const isRedundantAliasElsewhere = (name: string, data: IconData): boolean =>
+        namesByData.get(data)!.some(other => other !== name);
+
+    const deduped = new Map<string, IconData>();
+    const seenLowerCase = new Map<string, string>();
+    const skipped: string[] = [];
+
+    for (const name of [...icons.keys()].sort()) {
+        const lowerCaseName = name.toLowerCase();
+        const data = icons.get(name)!;
+        const existingName = seenLowerCase.get(lowerCaseName);
+
+        if (existingName === undefined) {
+            seenLowerCase.set(lowerCaseName, name);
+            deduped.set(name, data);
+            continue;
+        }
+
+        const existingData = deduped.get(existingName)!;
+        const existingIsAlias = isRedundantAliasElsewhere(existingName, existingData);
+        const currentIsAlias = isRedundantAliasElsewhere(name, data);
+
+        if (existingIsAlias && !currentIsAlias) {
+            deduped.delete(existingName);
+            deduped.set(name, data);
+            seenLowerCase.set(lowerCaseName, name);
+            skipped.push(`${existingName} (kept ${name})`);
+        } else {
+            skipped.push(`${name} (kept ${existingName})`);
+        }
+    }
+
+    if (skipped.length > 0) {
+        console.warn(
+            `[vite-plugin-hugeicons] Skipped ${skipped.length} icon(s) whose name differs only in ` +
+            `casing from another icon (would collide on case-insensitive file systems): ${skipped.join(', ')}`
+        );
+    }
+
+    return deduped;
+}
+
 function stripReactKey(data: IconData): unknown[][] {
     return data.map(([tag, attrs]) => {
         const {key: _key, ...rest} = attrs as Record<string, unknown>;
@@ -66,7 +125,13 @@ export function vitePluginHugeicons(outputDir: string): Plugin {
         if (!needsRegeneration(outputDir)) return;
 
         mkdirSync(outputDir, {recursive: true});
-        const icons = await loadAllIcons();
+        for (const entry of readdirSync(outputDir)) {
+            if (entry.endsWith('.svelte')) {
+                rmSync(resolve(outputDir, entry));
+            }
+        }
+
+        const icons = dedupeCaseInsensitive(await loadAllIcons());
 
         for (const [name, data] of icons) {
             writeFileSync(resolve(outputDir, `${name}.svelte`), generateSvelteFile(data), 'utf-8');

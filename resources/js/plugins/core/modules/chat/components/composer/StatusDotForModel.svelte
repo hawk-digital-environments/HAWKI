@@ -3,9 +3,11 @@
   Shows a tooltip on hover with the human-readable status label.
 -->
 <script lang="ts">
-    import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
     import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         /** The model whose status to show. */
@@ -15,6 +17,7 @@
         /** If true, the human-readable status label will be shown next to the dot. */
         showLabel?: boolean;
     }
+
     const {model, size, showLabel = false}: Props = $props();
 </script>
 

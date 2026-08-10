@@ -1,6 +1,6 @@
 <script lang="ts">
 
-    import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
+    import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';
     import ToolboxIcon from '$lib/components/ui/icons/iconset/ToolboxIcon.svelte';
 
     interface Props {

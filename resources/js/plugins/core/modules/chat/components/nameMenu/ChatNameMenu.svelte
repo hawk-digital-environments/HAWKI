@@ -7,13 +7,14 @@
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import type {HTMLAttributes} from 'svelte/elements';
     import {mergeProps} from 'bits-ui';
-    import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-    import {__} from '$lib/utils/translator.js';
+    import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
     import ChevronDownIcon from '$lib/components/ui/icons/iconset/ChevronDownIcon.svelte';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
     import PencilEdit01Icon from '$lib/components/ui/icons/iconset/PencilEdit01Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const toastContext = useToastContext();
+    const {__} = useTranslator();
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         name: string;

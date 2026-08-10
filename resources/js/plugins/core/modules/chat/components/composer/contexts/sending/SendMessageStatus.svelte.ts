@@ -1,4 +1,4 @@
-import type {ResponseReader} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
+import type {ResponseReader} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
 
 /**
  * Reactive state machine for a single in-flight send operation.

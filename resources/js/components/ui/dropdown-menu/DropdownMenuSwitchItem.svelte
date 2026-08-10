@@ -6,7 +6,9 @@
     import Switch from '../switch/Switch.svelte';
     import type {HTMLAttributes} from 'svelte/elements';
     import type {Snippet} from 'svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the checkbox is checked. Supports bind:checked. */

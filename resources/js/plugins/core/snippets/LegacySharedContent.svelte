@@ -6,9 +6,6 @@ which uses the shared {@link AppContext} to render the Toaster component.
 With this approach, we can have a single instance of the Toaster that is shared across all snippets on the same page. -->
 <script lang="ts">
     import Toaster from '$lib/components/ui/toast/Toaster.svelte';
-    import {useAppContext} from '$lib/components/app/AppContext.svelte.js';
-
-    useAppContext().legacySharedContentLoaded = true;
 </script>
 
 <Toaster/>

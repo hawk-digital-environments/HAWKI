@@ -1,5 +1,5 @@
-import type {ModelParameterSlice} from '$lib/components/chat/composer/contexts/slices/ModelParameterSlice.svelte.js';
-import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
+import type {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
+import type {CheckpointingInterface} from '$plugins/core/modules/chat/components/composer/contexts/utils/CheckpointingInterface.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte';
 import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 

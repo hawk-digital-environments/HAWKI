@@ -1,12 +1,14 @@
 <script lang="ts">
     import DropdownMenuCheckboxItem from '$lib/components/ui/dropdown-menu/DropdownMenuCheckboxItem.svelte';
-    import type {ToolMenuEntry} from '$lib/components/chat/composer/ToolMenu.svelte';
-    import ToolIcon from '$lib/components/chat/composer/utils/ToolIcon.svelte';
-    import {useToolMenuFocusContext} from '$lib/components/chat/composer/contexts/ToolMenuFocusContext.svelte.js';
-    import StatusDotForTool from '$lib/components/chat/composer/StatusDotForTool.svelte';
-    import {__} from '$lib/utils/translator.js';
+    import type {ToolMenuEntry} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
+    import ToolIcon from '$plugins/core/modules/chat/components/composer/utils/ToolIcon.svelte';
+    import {useToolMenuFocusContext} from '$plugins/core/modules/chat/components/composer/contexts/ToolMenuFocusContext.svelte.js';
+    import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import ArrowRight01Icon from '$lib/components/ui/icons/iconset/ArrowRight01Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         entry: ToolMenuEntry;

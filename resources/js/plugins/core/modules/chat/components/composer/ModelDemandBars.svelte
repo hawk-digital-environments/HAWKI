@@ -5,8 +5,10 @@
 <script lang="ts">
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import Txt from '$lib/components/ui/Txt.svelte';
-    import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
-    import {__} from '$lib/utils/translator.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         /** The model whose status to show. */

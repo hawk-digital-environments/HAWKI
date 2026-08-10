@@ -1,6 +1,6 @@
-import type {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
-import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
-import {type AiToolOrCapabilityWithState, createToolOrCapabilityWithState, createToolOrCapabilityWithStateFromTransferString} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
+import type {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
+import type {CheckpointingInterface} from '$plugins/core/modules/chat/components/composer/contexts/utils/CheckpointingInterface.js';
+import {type AiToolOrCapabilityWithState, createToolOrCapabilityWithState, createToolOrCapabilityWithStateFromTransferString} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
 import {AiToolStore} from '$lib/plugins/core/stores/AiToolStore.svelte';
 import {AiToolOrCapability} from '$lib/plugins/core/stores/aiToolStoreData';
 

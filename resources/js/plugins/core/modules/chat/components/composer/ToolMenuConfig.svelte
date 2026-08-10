@@ -1,17 +1,19 @@
 <script lang="ts">
 
-    import type {ToolMenuEntry} from '$lib/components/chat/composer/ToolMenu.svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+    import type {ToolMenuEntry} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
     import RadioCardGroup from '$lib/components/ui/radio-card/RadioCardGroup.svelte';
     import RadioCard from '$lib/components/ui/radio-card/RadioCard.svelte';
-    import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
-    import StatusDotForTool from '$lib/components/chat/composer/StatusDotForTool.svelte';
+    import StatusDotForTool from '$plugins/core/modules/chat/components/composer/StatusDotForTool.svelte';
     import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
     import InfoPopover from '$lib/components/ui/popover/InfoPopover.svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const composerContext = useComposerContext();
+    const aiModelStore = useStore('ai-models');
+    const {__} = useTranslator();
 
     interface Props {
         entry: ToolMenuEntry;
@@ -70,7 +72,7 @@
             return currentState.toolSelection;
         }
 
-        return currentState.toolSelection.name;
+        return currentState.toolSelection?.name || 'auto';
     });
 
     function handleToolSelectionChange(newValue: string) {

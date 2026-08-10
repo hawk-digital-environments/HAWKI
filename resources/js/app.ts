@@ -1,7 +1,5 @@
 import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.js';
 import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
-import {createToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-import {createAppContext} from '$lib/components/app/AppContext.svelte.js';
 import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
 import {createApp} from '$lib/kernel/HawkiApp.js';
 import {MigrationExtension} from '$lib/kernel/migrations/MigrationExtension.js';
@@ -13,6 +11,8 @@ import {RoutingExtension} from '$lib/kernel/routing/RoutingExtension.js';
 import {createDefaultRouteRenderer} from '$lib/kernel/routing/routeRenderer.js';
 import {provideLegacyGlobals, runLegacyWaitUntilBootstrapQueue, runLegacyWaitUntilReadyQueue, setHawkiApp} from '$lib/legacy/legacy.js';
 import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
+import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
+import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
 
 provideLegacyGlobals();
 
@@ -30,17 +30,15 @@ provideLegacyGlobals();
             new LocalizationExtension(),
             new ModuleExtension(),
             new RoutingExtension(createDefaultRouteRenderer()),
-            new StoreExtension()
+            new StoreExtension(),
+            new SnippetExtension(),
+            new LegacyToastExtension()
         ]
     ));
 
     // @deprecated This is only here to support the "AppContext" through multiple Svelte apps on the same page.
     // It will be removed once we have a single-page app and can use Svelte contexts instead.
     bootstrapper.onLateStage(() => {
-        // @todo move this into the app component once we have a single-page app
-        createAppContext();
-        createToastContext();
-
         // @todo remove this once we have a single-page app, and can use Svelte contexts instead of global variables.
         // Inject the "LegacySharedContent" snippet into the page (as first child of the body)
         const legacySharedContentSnippet = document.createElement('svelte-snippet');
@@ -48,7 +46,6 @@ provideLegacyGlobals();
         document.body.insertBefore(legacySharedContentSnippet, document.body.firstChild);
     });
 
-    // As a last step, we wait until the DOM is fully loaded
     bootstrapper.onFinalizationStage(() => new Promise(resolve => {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {

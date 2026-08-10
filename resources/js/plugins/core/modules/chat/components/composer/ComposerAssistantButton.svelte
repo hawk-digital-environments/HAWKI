@@ -2,7 +2,7 @@
 
     import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ComponentProps} from 'svelte';
     import BotIcon from '$lib/components/ui/icons/iconset/BotIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
@@ -10,7 +10,7 @@
 
     const composerContext = useComposerContext();
     const {__} = useTranslator();
-    const aiHandleStore = useStore('aiHandle');
+    const aiHandleStore = useStore('ai-handle');
 
     let showsBurstOfInterest = $state(false);
 

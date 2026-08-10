@@ -8,7 +8,9 @@
     import type {Snippet} from 'svelte';
     import Dialog from './Dialog.svelte';
     import Button from '../button/Button.svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open for two-way binding. */

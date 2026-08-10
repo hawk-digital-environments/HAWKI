@@ -1,13 +1,13 @@
 <!-- @component This is probably a temporary component, since it mixes concerns between chat and room messages
 However, as we want to merge them both anyway, it's not worth the effort to split out the chat-specific parts into a separate component for now. -->
 <script lang="ts">
-    import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-    import type {HTMLSvelteSnippetElement} from '$lib/svelteSnippetLoader.js';
-    import RoomNameMenu from '$lib/components/chat/nameMenu/RoomNameMenu.svelte';
-    import AiConvNameMenu from '$lib/components/chat/nameMenu/AiConvNameMenu.svelte';
+    import type {ComposerContextType} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
+    import type {HTMLSvelteSnippetElement} from '$lib/legacy/svelteSnippetLoader.js';
     import type {ComponentProps} from 'svelte';
     import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
+    import RoomNameMenu from '$plugins/core/modules/chat/components/nameMenu/RoomNameMenu.svelte';
+    import AiConvNameMenu from '$plugins/core/modules/chat/components/nameMenu/AiConvNameMenu.svelte';
 
     interface Props {
         /** The slug of the conversation this button represents. Clicking the button will open the conversation with this slug. */
@@ -43,8 +43,8 @@ However, as we want to merge them both anyway, it's not worth the effort to spli
     });
 
     const sharedProps: ComponentProps<typeof RoomNameMenu | typeof AiConvNameMenu> = $derived.by(() => ({
-        slug,
-        name,
+        slug: slug ?? '',
+        name: name ?? '',
         context,
         hasUnreadMessages,
         block: true,

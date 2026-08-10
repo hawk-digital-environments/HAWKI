@@ -1,7 +1,7 @@
-import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
-import {AbstractMode} from '$lib/components/chat/composer/contexts/modes/contracts/AbstractMode.js';
-import {RemoteFile} from '$lib/components/chat/composer/utils/RemoteFile.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import type {DisabledChatFeature} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
+import {AbstractMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/AbstractMode.js';
+import {RemoteFile} from '$plugins/core/modules/chat/components/composer/utils/RemoteFile.js';
 import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 
 export interface ChatEditModeState {

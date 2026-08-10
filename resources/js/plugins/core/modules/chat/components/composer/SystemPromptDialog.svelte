@@ -7,8 +7,10 @@
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
     import Button from '$lib/components/ui/button/Button.svelte';
     import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
-    import {__} from '$lib/utils/translator.js';
     import FileEditIcon from '$lib/components/ui/icons/iconset/FileEditIcon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
 
     interface Props {
         /** Whether the dialog is open. Supports bind:open for two-way binding. */

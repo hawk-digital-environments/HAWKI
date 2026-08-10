@@ -2,11 +2,12 @@
 
     import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import {__} from '$lib/utils/translator.js';
-    import ComposerAssistantButton from '$lib/components/chat/composer/ComposerAssistantButton.svelte';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import ComposerAssistantButton from '$plugins/core/modules/chat/components/composer/ComposerAssistantButton.svelte';
 
     const composerContext = useComposerContext();
+    const {__} = useTranslator();
 
     interface Props {
         onSend?: () => void;

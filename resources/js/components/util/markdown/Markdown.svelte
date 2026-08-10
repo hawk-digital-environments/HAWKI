@@ -1,14 +1,16 @@
 <script lang="ts">
     import katexWorkerUrl from 'markstream-svelte/workers/katexRenderer.worker?worker&url';
     import mermaidWorkerUrl from 'markstream-svelte/workers/mermaidParser.worker?worker&url';
-
     import {MarkdownRender, setDefaultI18nMap, setKaTeXWorker, setMermaidWorker} from 'markstream-svelte';
     import ExtendedLinkNode from '$lib/components/util/markdown/extension/ExtendedLinkNode.svelte';
     import 'katex/dist/katex.min.css';
     import 'monaco-editor/min/vs/editor/editor.main.css';
     import 'markstream-svelte/index.css';
-    import {themeStore} from '$lib/stores/ThemeStore.svelte.js';
-    import {getTranslationsFlat} from '$lib/utils/translator.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const themeStore = useStore('theme');
+    const {getTranslationsFlat} = useTranslator();
 
     interface Props {
         message: string;

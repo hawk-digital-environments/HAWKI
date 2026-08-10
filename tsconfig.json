@@ -3,6 +3,7 @@
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
         "target": "es2023",
         "module": "esnext",
+        "moduleResolution": "bundler",
         "types": [
             "svelte",
             "vite/client"
@@ -27,7 +28,8 @@
          */
         "allowJs": true,
         "checkJs": true,
-        "moduleDetection": "force"
+        "moduleDetection": "force",
+        "skipLibCheck": true
     },
     "include": [
         "resources/js/**/*.ts",

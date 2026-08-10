@@ -4,17 +4,18 @@
   Renders nothing when the files array is empty.
 -->
 <script lang="ts">
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import FilePreview from '$lib/components/chat/composer/utils/FilePreview.svelte';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import FilePreview from '$plugins/core/modules/chat/components/composer/utils/FilePreview.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {mergeProps} from 'bits-ui';
     import {cubicIn} from 'svelte/easing';
     import RadialProgress from '$lib/components/ui/radial-progress/RadialProgress.svelte';
-    import {__} from '$lib/utils/translator.js';
     import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
     import Cancel01Icon from '$lib/components/ui/icons/iconset/Cancel01Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const composerContext = useComposerContext();
+    const {__} = useTranslator();
 
     // The issue is either that we can not upload files at all,
     // or if we want to upload an image, that the model does not support vision.

@@ -1,15 +1,17 @@
 <script lang="ts">
 
     import SingleSelect, {type ItemSnippetProps, type SelectItemDefinition} from '$lib/components/ui/select/SingleSelect.svelte';
-    import ModelDemandBars from '$lib/components/chat/composer/ModelDemandBars.svelte';
-    import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
     import {mergeProps} from 'bits-ui';
-    import StatusDotForModel from '$lib/components/chat/composer/StatusDotForModel.svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useComposerContext} from './contexts/ComposerContext.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
+    import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
 
     const composerContext = useComposerContext();
+    const {__} = useTranslator();
+    const aiModelStore = useStore('ai-models');
 
     const selectItems: Array<SelectItemDefinition> = $derived.by(() => {
         return Array.from(aiModelStore.models).map(model => ({

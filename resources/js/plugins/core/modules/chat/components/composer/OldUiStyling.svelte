@@ -1,8 +1,8 @@
 <script lang="ts">
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import type {ChatEditModeState} from '$lib/components/chat/composer/contexts/modes/ChatEditMode.js';
-    import type {ChatRegenModeState} from '$lib/components/chat/composer/contexts/modes/ChatRegenMode.js';
-    import type {ChatThreadModeState} from '$lib/components/chat/composer/contexts/modes/ChatInThreadMode.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import type {ChatEditModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
+    import type {ChatRegenModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
+    import type {ChatThreadModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
 
     const composerContext = useComposerContext();
 

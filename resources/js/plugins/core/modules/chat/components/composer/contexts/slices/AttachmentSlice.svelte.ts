@@ -1,4 +1,4 @@
-import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
+import type {CheckpointingInterface} from '$plugins/core/modules/chat/components/composer/contexts/utils/CheckpointingInterface.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 
 /**

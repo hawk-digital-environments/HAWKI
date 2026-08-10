@@ -4,24 +4,24 @@
     capability mismatches.
 -->
 <script lang="ts">
-    import ModelConflictPicker from '$lib/components/chat/composer/ModelConflictPicker.svelte';
-    import ToolChips from '$lib/components/chat/composer/ToolChips.svelte';
-    import FileChips from '$lib/components/chat/composer/FileChips.svelte';
-    import ModelPicker from '$lib/components/chat/composer/ModelPicker.svelte';
-    import {type ComposerContextType, createComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import FileDragAndDrop from '$lib/components/chat/composer/FileDragAndDrop.svelte';
-    import FilePicker from '$lib/components/chat/composer/FilePicker.svelte';
-    import ToolMenu from '$lib/components/chat/composer/ToolMenu.svelte';
-    import SettingsMenu from '$lib/components/chat/composer/SettingsMenu.svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import ModePanel from '$lib/components/chat/composer/ModePanel.svelte';
-    import OldUiStyling from '$lib/components/chat/composer/OldUiStyling.svelte';
-    import ComposerTextarea from '$lib/components/chat/composer/ComposerTextarea.svelte';
-    import ComposerActionButtons from '$lib/components/chat/composer/ComposerActionButtons.svelte';
-    import ComposerFocusWrap from '$lib/components/chat/composer/utils/ComposerFocusWrap.svelte';
-    import ComposerBorderBeam from '$lib/components/chat/composer/ComposerBorderBeam.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import {type ComposerContextType, createComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import OldUiStyling from '$plugins/core/modules/chat/components/composer/OldUiStyling.svelte';
+    import FileDragAndDrop from '$plugins/core/modules/chat/components/composer/FileDragAndDrop.svelte';
+    import ComposerBorderBeam from '$plugins/core/modules/chat/components/composer/ComposerBorderBeam.svelte';
+    import ComposerFocusWrap from '$plugins/core/modules/chat/components/composer/utils/ComposerFocusWrap.svelte';
+    import ModePanel from '$plugins/core/modules/chat/components/composer/ModePanel.svelte';
+    import ModelPicker from '$plugins/core/modules/chat/components/composer/ModelPicker.svelte';
+    import SettingsMenu from '$plugins/core/modules/chat/components/composer/SettingsMenu.svelte';
+    import ComposerTextarea from '$plugins/core/modules/chat/components/composer/ComposerTextarea.svelte';
+    import ModelConflictPicker from '$plugins/core/modules/chat/components/composer/ModelConflictPicker.svelte';
+    import FileChips from '$plugins/core/modules/chat/components/composer/FileChips.svelte';
+    import FilePicker from '$plugins/core/modules/chat/components/composer/FilePicker.svelte';
+    import ToolMenu from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
+    import ToolChips from '$plugins/core/modules/chat/components/composer/ToolChips.svelte';
+    import ComposerActionButtons from '$plugins/core/modules/chat/components/composer/ComposerActionButtons.svelte';
 
     interface Props {
         context: ComposerContextType;

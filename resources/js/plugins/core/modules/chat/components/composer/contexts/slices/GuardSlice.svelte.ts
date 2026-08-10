@@ -1,4 +1,4 @@
-import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
 const disableableFeatures = ['models', 'settings', 'attachments', 'tools', 'input', 'suggestions'] as const;
 export type DisabledChatFeature = typeof disableableFeatures[number];

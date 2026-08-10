@@ -1,8 +1,10 @@
 <script lang="ts">
 
     import type {Snippet} from 'svelte';
-    import {__} from '$lib/utils/translator.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
+    const {__} = useTranslator();
+    
     interface Props {
         children: Snippet;
     }

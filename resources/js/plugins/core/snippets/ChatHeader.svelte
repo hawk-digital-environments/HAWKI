@@ -1,12 +1,12 @@
 <script lang="ts">
 
-    import ExportMenu from '$lib/components/chat/header/ExportMenu.svelte';
-    import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
+    import type {ComposerContextType} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import type {ComponentProps} from 'svelte';
-    import RoomNameMenu from '$lib/components/chat/nameMenu/RoomNameMenu.svelte';
-    import AiConvNameMenu from '$lib/components/chat/nameMenu/AiConvNameMenu.svelte';
+    import AiConvNameMenu from '$plugins/core/modules/chat/components/nameMenu/AiConvNameMenu.svelte';
+    import RoomNameMenu from '$plugins/core/modules/chat/components/nameMenu/RoomNameMenu.svelte';
+    import ExportMenu from '$plugins/core/modules/chat/components/header/ExportMenu.svelte';
 
     interface Props {
         context: ComposerContextType;

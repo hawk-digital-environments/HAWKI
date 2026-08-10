@@ -34,8 +34,6 @@
 
     const app = useApp();
 
-    app.customTranslate('asdf');
-
     let disabled = $state<boolean>(false);
 
     async function extendedFetchLinkPreviewMetadata(url: string) {

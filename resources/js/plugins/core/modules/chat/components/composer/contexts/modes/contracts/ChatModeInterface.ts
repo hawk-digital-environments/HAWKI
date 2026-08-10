@@ -1,5 +1,5 @@
-import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import type {DisabledChatFeature} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
 
 /**
  * Contract every composer mode must implement.

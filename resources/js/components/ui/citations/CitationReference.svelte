@@ -4,8 +4,8 @@
     import {type CitationContext, useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
     import Link from '$lib/components/util/link/Link.svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {__} from '$lib/utils/translator.js';
-    import {citationAnchorId} from '$lib/components/chat/message/injectCitationsIntoMarkdown.js';
+    import {citationAnchorId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     // svelte-ignore non_reactive_update
     let citationContext: CitationContext | null = null;
@@ -15,6 +15,7 @@
     }
 
     const toastContext = useToastContext();
+    const {__} = useTranslator();
 
     interface Props {
         citation: string | EnrichedUrlCitation;

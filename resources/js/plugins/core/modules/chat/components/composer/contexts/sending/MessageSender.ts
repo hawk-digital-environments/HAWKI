@@ -1,7 +1,7 @@
-import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
-import {createResponseReader, type ResponseBody, type ResponseReader, SendMessageResponse} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
-import type {MessageSenderTransportInterface} from '$lib/components/chat/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
+import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+import {SendMessageStatus} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageStatus.svelte.js';
+import {createResponseReader, type ResponseBody, type ResponseReader, SendMessageResponse} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageResponse.svelte.js';
+import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 
 /**

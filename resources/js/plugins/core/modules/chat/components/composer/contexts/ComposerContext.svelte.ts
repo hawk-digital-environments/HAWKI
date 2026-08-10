@@ -54,21 +54,21 @@
  * the request to the legacy UI layer.
  */
 import {createContext, onDestroy} from 'svelte';
-import {ModelParameterSlice} from '$lib/components/chat/composer/contexts/slices/ModelParameterSlice.svelte.js';
-import {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
-import {AttachmentSlice} from '$lib/components/chat/composer/contexts/slices/AttachmentSlice.svelte.js';
-import {ToolSlice} from '$lib/components/chat/composer/contexts/slices/ToolSlice.svelte.js';
-import {ModelUsageSlice} from '$lib/components/chat/composer/contexts/slices/ModelUsageSlice.svelte.js';
-import {ContextCheckpointer} from '$lib/components/chat/composer/contexts/utils/ContextCheckpointer.js';
-import {ModeSlice} from '$lib/components/chat/composer/contexts/slices/ModeSlice.svelte.js';
+import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
+import {ModelSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelSlice.svelte.js';
+import {AttachmentSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
+import {ToolSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ToolSlice.svelte.js';
+import {ModelUsageSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelUsageSlice.svelte.js';
+import {ContextCheckpointer} from '$plugins/core/modules/chat/components/composer/contexts/utils/ContextCheckpointer.js';
+import {ModeSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModeSlice.svelte.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-import {ChatEditMode} from '$lib/components/chat/composer/contexts/modes/ChatEditMode.js';
-import {ChatInThreadMode} from '$lib/components/chat/composer/contexts/modes/ChatInThreadMode.js';
-import {ChatRegenMode} from '$lib/components/chat/composer/contexts/modes/ChatRegenMode.js';
-import {GuardSlice} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
-import {MessageSender} from '$lib/components/chat/composer/contexts/sending/MessageSender.js';
-import {OldUiBridgeTransport} from '$lib/components/chat/composer/contexts/sending/transport/OldUiBridgeTransport.js';
-import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
+import {ChatEditMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';
+import {ChatInThreadMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatInThreadMode.js';
+import {ChatRegenMode} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatRegenMode.js';
+import {GuardSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/GuardSlice.svelte.js';
+import {MessageSender} from '$plugins/core/modules/chat/components/composer/contexts/sending/MessageSender.js';
+import {OldUiBridgeTransport} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/OldUiBridgeTransport.js';
+import type {SendMessageStatus} from '$plugins/core/modules/chat/components/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';

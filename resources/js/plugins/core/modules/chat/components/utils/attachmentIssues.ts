@@ -1,6 +1,6 @@
 import {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-import type {FileAttachmentIssue} from '$lib/components/chat/composer/contexts/slices/AttachmentSlice.svelte.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {FileAttachmentIssue} from '$plugins/core/modules/chat/components/composer/contexts/slices/AttachmentSlice.svelte.js';
 
 /**
  * Surface attachment issues to the user. Shared by every entry point that stages

@@ -1,9 +1,9 @@
 <script lang="ts">
-    import {reportAttachmentIssues} from '$lib/components/chat/utils/attachmentIssues.js';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
     import type {Snippet} from 'svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';
 
     interface Props {
         children?: (args: {

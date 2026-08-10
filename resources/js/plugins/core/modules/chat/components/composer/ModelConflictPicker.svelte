@@ -4,15 +4,16 @@
   for sorting by recommendation, cost, or capability tier.
 -->
 <script lang="ts">
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import ModelDemandBars from '$lib/components/chat/composer/ModelDemandBars.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
-    import StatusDotForModel from '$lib/components/chat/composer/StatusDotForModel.svelte';
-    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
-    import {__} from '$lib/utils/translator.js';
     import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import type {AiToolOrCapabilityWithState} from '$plugins/core/modules/chat/components/composer/contexts/slices/toolSliceData.js';
+    import StatusDotForModel from '$plugins/core/modules/chat/components/composer/StatusDotForModel.svelte';
+    import ModelDemandBars from '$plugins/core/modules/chat/components/composer/ModelDemandBars.svelte';
 
     const composerContext = useComposerContext();
+    const {__} = useTranslator();
     const currentModel = $derived(composerContext.model.current);
     const usableModels = $derived(composerContext.modelUsage.allUsable);
 

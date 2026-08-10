@@ -1,9 +1,9 @@
 <script lang="ts">
 
-    import type {HTMLSvelteSnippetElement} from '$lib/svelteSnippetLoader.js';
+    import type {HTMLSvelteSnippetElement} from '$lib/legacy/svelteSnippetLoader.js';
     import {onMount} from 'svelte';
     import type {UrlCitation} from '$lib/components/ui/citations/types.js';
-    import MessageBody from '$lib/components/chat/message/MessageBody.svelte';
+    import MessageBody from '$plugins/core/modules/chat/components/message/MessageBody.svelte';
 
     interface Props {
         message: string;
@@ -37,12 +37,12 @@
     }
 
     onMount(() => {
-        root.addEventListener('messageUpdate', handleMessageUpdate);
-        root.addEventListener('doneStreaming', handleDoneStreaming);
+        root.addEventListener('messageUpdate', handleMessageUpdate as EventListener);
+        root.addEventListener('doneStreaming', handleDoneStreaming as EventListener);
 
         return () => {
-            root.removeEventListener('messageUpdate', handleMessageUpdate);
-            root.removeEventListener('doneStreaming', handleDoneStreaming);
+            root.removeEventListener('messageUpdate', handleMessageUpdate as EventListener);
+            root.removeEventListener('doneStreaming', handleDoneStreaming as EventListener);
         };
     });
 </script>

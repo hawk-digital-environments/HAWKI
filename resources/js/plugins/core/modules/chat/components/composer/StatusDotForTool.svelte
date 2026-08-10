@@ -4,12 +4,13 @@
 -->
 <script lang="ts">
     import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import {__} from '$lib/utils/translator.js';
-    import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
-    import type {AiTool} from '$lib/schemas/resources/ai-tools.schema.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import type {AiTool} from '$plugins/core/schemas/resources/ai-tools.schema.js';
+    import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';
 
     const composerContext = useComposerContext();
+    const {__} = useTranslator();
 
     interface Props {
         /** The tool whose status to show. */

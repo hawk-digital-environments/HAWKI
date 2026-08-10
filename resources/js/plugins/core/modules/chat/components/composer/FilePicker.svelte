@@ -4,11 +4,11 @@
 -->
 <script lang="ts">
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
-    import {useComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-    import {reportAttachmentIssues} from '$lib/components/chat/utils/attachmentIssues.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import AttachmentIcon from '$lib/components/ui/icons/iconset/AttachmentIcon.svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';
 
     const composerContext = useComposerContext();
     const toastContext = useToastContext();

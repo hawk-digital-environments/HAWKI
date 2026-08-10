@@ -1,6 +1,6 @@
 import type {OldUiConversation, OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
-import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+import type {ComposerContextType} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
 const LOAD_CONVERSATION_EVENT = 'loadConversation';
 
