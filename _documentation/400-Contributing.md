@@ -169,14 +169,22 @@ There is currently no automated frontend test suite. Frontend testing will be in
 
 > **Planned Svelte rewrite:** The HAWKI frontend is being progressively migrated to a Svelte 5 SPA. **Do not add new code to the legacy vanilla-JS layer** (`public/js/`). All new frontend work must follow the patterns in the [Frontend documentation](600-Frontend/index.md).
 
-| Topic                                       | Document                                                          |
-|---------------------------------------------|-------------------------------------------------------------------|
-| Tech stack, directory structure             | [Svelte Frontend](600-Frontend/100-Svelte-Frontend.md)            |
-| Component authoring conventions             | [Writing Svelte Components](600-Frontend/400-Components/index.md) |
-| CSS tokens, cascade layers, dark mode       | [Styling](600-Frontend/200-Styling.md)                            |
-| Config, API fetch helpers, resource schemas | [Data Layer](600-Frontend/300-Data/index.md)                      |
-| `__()` translation function                 | [Translations](600-Frontend/500-Utilities/100-Translations.md)    |
-| Available UI primitive components           | [UI Primitives](600-Frontend/400-Components/100-UI-Primitives.md) |
+The frontend is a custom kernel + plugin system assembled from extensions. Before adding a new app-wide subsystem or feature module, read the architecture pages so your change lands in the right layer.
+
+| Topic | Document |
+|---|---|
+| Tech stack, directory structure, snippet mounting | [Svelte Frontend](600-Frontend/100-Svelte-Frontend.md) |
+| App assembly, extensions, declaration merging, `app.*` surface | [The App & Kernel](600-Frontend/600-Advanced/110-App-and-Kernel.md) |
+| Boot stages and where each extension registers work | [App Startup](600-Frontend/600-Advanced/100-App-Startup.md) |
+| Adding a new app-wide subsystem (extension) | [Writing an Extension](600-Frontend/600-Advanced/120-Writing-an-Extension.md) |
+| Adding a feature (stores, schemas, snippets, modules) | [Writing a Plugin](600-Frontend/600-Advanced/130-Writing-a-Plugin.md) |
+| Component authoring conventions | [Writing Svelte Components](600-Frontend/400-Components/index.md) |
+| CSS tokens, cascade layers, dark mode | [Styling](600-Frontend/200-Styling.md) |
+| Config, API fetch helpers, resource schemas, hooks | [Data Layer](600-Frontend/300-Data/index.md) |
+| Reactive stores and `useStore()` | [Stores](600-Frontend/300-Data/100-Stores.md) |
+| Translations and `useTranslator()` | [Translations](600-Frontend/500-Utilities/100-Translations.md) |
+| Available UI primitive components | [UI Primitives](600-Frontend/400-Components/100-UI-Primitives.md) |
+| Bridging new Svelte code to the legacy JS layer | [Old UI Integration](600-Frontend/600-Advanced/300-Old-Ui.md) |
 
 ---
 
