@@ -96,6 +96,28 @@ return [
         ],
     ],
     [
+        'active' => env('MODELS_OPENAI_O4_MINI_ACTIVE', true),
+        'id' => 'o4-mini',
+        'label' => 'o4 mini',
+        "input" => [
+            "text",
+            "image"
+        ],
+        "output" => [
+            "text"
+        ],
+        'tools' => [
+            'stream' => true,
+            'tool_calling' => true,
+            'file_upload' => env('MODELS_OPENAI_O4_MINI_TOOLS_FILE_UPLOAD', false),
+            'native_capabilities' => env('MODELS_OPENAI_O4_MINI_TOOLS_NATIVE_CAPABILITIES', true),
+        ],
+        'default_params' => [
+            'temp' => env('MODELS_OPENAI_O4_MINI_PARAMS_TEMP', 1.0),
+            'top_p' => env('MODELS_OPENAI_O4_MINI_PARAMS_TOP_P', 1.0),
+        ],
+    ],
+    [
         'active' => env('MODELS_OPENAI_GPT5_6_LUNA_ACTIVE', true),
         'id' => 'gpt-5.6-luna',
         'label' => 'OpenAI GPT-5.6 Luna',
