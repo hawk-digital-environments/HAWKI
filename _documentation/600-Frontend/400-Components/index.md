@@ -162,7 +162,7 @@ export function useToolMenuFocusContext(): ToolMenuFocusContext {
 }
 ```
 
-Use `setContextXX` when the factory only creates and registers. Use `createContextXX` when setup is heavier — for example subscribing to stores or wiring multiple objects together. See `resources/js/components/chat/composer/contexts/ComposerContext.svelte.ts` for an example of the heavier pattern.
+Use `setContextXX` when the factory only creates and registers. Use `createContextXX` when setup is heavier — for example subscribing to stores or wiring multiple objects together. See `resources/js/plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.ts` for an example of the heavier pattern.
 
 > **Note:** The project does not use the `runed` package for context management. Do not introduce `Context` from `runed` for new code.
 
@@ -226,21 +226,21 @@ Components that need a stable `id` for accessibility (`<label for="...">`, `aria
 
 ## Component Organisation
 
-| Directory        | What belongs here                                                                                                                            |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| `snippets/`      | Top-level entry points, one per embedded page slot. Keep them thin: pull state from stores and delegate rendering to components.             |
-| `components/`    | Reusable building blocks used by multiple snippets. A component should have no knowledge of which snippet uses it.                           |
-| `components/ui/` | Low-level primitive components (buttons, inputs, links, chips, …) with no business logic and no dependency on app state or domain types.     |
-| `stores/`        | All reactive state that crosses component boundaries. Components read from and write to stores; they do not pass callbacks between siblings. |
+| Directory | What belongs here |
+|---|---|
+| `plugins/core/snippets/` | Top-level entry points, one per embedded page slot. Keep them thin: pull state from stores and delegate rendering to components. Registered by the core plugin. |
+| `components/` | Reusable building blocks used by multiple snippets. A component should have no knowledge of which snippet uses it. |
+| `components/ui/` | Low-level primitive components (buttons, inputs, links, chips, …) with no business logic and no dependency on app state or domain types. |
+| `plugins/core/stores/` | All reactive state that crosses component boundaries, registered on `app.stores`. Components read from and write to stores via `useStore()`; they do not pass callbacks between siblings. |
 
 Snippets import from `components/`, not directly from `components/ui/`, unless the usage is trivially simple. A component that gets complex enough to need its own state, context, or sub-components should be extracted from its snippet into `components/`.
 
 ## Accessing Server Data
 
-Use `getConfig()` for runtime configuration values and the `getConnection()` family for auth-state-aware access. Both are available after the `preparation` boot stage. See [Data Layer](../300-Data/index.md) for the full reference.
+Use the hooks in `app/hooks/` to reach server data: `useConfig()` for runtime configuration, `useConnection()` (and its narrowing variants `useAuthenticatedConnection` / `useConnectionWithUserInfo`) for auth-state-aware access, `useStore()` for shared reactive state, and `useRestApi()` for typed fetches. All are available after the `preparation` boot stage. See [Data Layer](../300-Data/index.md) and [Stores](../300-Data/100-Stores.md) for the full reference.
 
-Use `__()` from `$lib/utils/translator.js` for all user-facing strings. See [Translations](../500-Utilities/100-Translations.md).
+Use `useTranslator()`'s `__()` for all user-facing strings. See [Translations](../500-Utilities/100-Translations.md).
 
-Shared reactive state lives in stores under `resources/js/stores/`. See [Stores](../300-Data/100-Stores.md).
+Shared reactive state lives in stores registered on `app.stores` (source: `plugins/core/stores/`). See [Stores](../300-Data/100-Stores.md).
 
 Available UI primitives and utility components are listed under the [Components](/) section.

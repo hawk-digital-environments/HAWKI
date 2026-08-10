@@ -4,92 +4,98 @@
 The current data layer provides synchronous read access to configuration and connection data loaded once during bootstrap. This design will evolve as we introduce a reactive local-first JavaScript backbone in a future version. The API helpers and fetch patterns documented here are stable in the short term, but expect the underlying data synchronisation model to change significantly as that work progresses.
 :::
 
-The data layer sits under `resources/js/data/` and covers everything between a Svelte component and the HAWKI REST API: runtime configuration, connection metadata, typed fetch helpers, resource schema validation, and the encryption keychain. All of these are available after the `preparation` boot stage completes.
+The data layer is the surface between a Svelte component and the HAWKI REST API: runtime configuration, connection metadata, typed fetch helpers, and resource schema validation. All of it is assembled from kernel extensions and reached through the hooks in `app/hooks/`. See [The App & Kernel](../600-Advanced/110-App-and-Kernel.md) for the extension overview.
 
 ## Config vs Connection
 
 Two separate subsystems carry data that components need before they can do anything useful.
 
-**Config** (`data/config/config.ts`) holds the frontend runtime configuration blob. It is fetched from the API once during startup via `loadConfig()` and cached for the lifetime of the page. The blob is divided into namespaces — `'hawki-core'` is the default and contains locale settings, file storage limits, allowed MIME types, WebSocket connection details, AI display settings, and cryptographic salts. Each namespace is parsed lazily on the first `getConfig()` call for that namespace, and the result is cached.
+**Config** (`ConfigurationExtension`, exposed as `app.config`) holds the frontend runtime configuration blob. It is fetched from the API once during the `preparation` boot stage and cached for the lifetime of the page. The blob is divided into namespaces — `'hawki-core'` is the default and contains locale settings, file storage limits, allowed MIME types, WebSocket connection details, AI display settings, and cryptographic salts. Each namespace is parsed against its registered Zod schema lazily on the first read, and the parsed result is cached.
 
-**Connection** (`data/connection/connection.ts`) holds authentication state and route metadata. The raw connection object is fetched once via `loadConnection()`. The connection family of functions narrows the union type down to the connection variant that is relevant in context — guest, registering, or fully authenticated.
+**Connection** (`ClientExtension`, exposed as `app.connection`) holds authentication state and route metadata. The raw connection object is fetched once during the `preparation` stage. The connection family of hooks narrows the union type down to the variant relevant in context.
 
-## `getConfig()`
+## `useConfig()`
 
-```ts
-import { getConfig } from '$lib/data/config/config.js';
+```svelte
+<script lang="ts">
+    import {useConfig} from '$lib/app/hooks/useConfig.svelte.js';
 
-// Default namespace — returns z.infer<ConfigSchemaRegistry['hawki-core']>
-const { locale, storage_files, security } = getConfig();
+    // Default namespace — returns z.infer<HawkiConfigSchemas['hawki-core']>
+    const coreConfig = useConfig();
 
-// Named namespace
-const myFeature = getConfig('my-feature');
+    // Named namespace
+    const myFeature = useConfig('my-feature');
+</script>
+
+<p>Default locale: {coreConfig.locale.default}</p>
 ```
 
-Called without arguments, `getConfig()` returns the `'hawki-core'` slice. The return type is fully inferred from `ConfigSchemaRegistry` — TypeScript knows the shape of every registered namespace at compile time. Calling it with an unregistered namespace key throws at runtime, which is always a programming error rather than a runtime condition.
+Called without arguments, `useConfig()` returns the `'hawki-core'` slice. The return type is fully inferred from `HawkiConfigSchemas` — TypeScript knows the shape of every registered namespace at compile time. The result is wrapped in `$derived.by(...)`, so it tracks as a reactive value. Calling it with an unregistered namespace key throws at runtime, which is always a programming error rather than a runtime condition.
 
-The config data comes from the `configs/public` API endpoint. `getConfig()` is safe to call once the `preparation` boot stage has completed.
+Config is safe to read once the `preparation` boot stage has completed.
 
 ## Connection Family
 
-All four functions read from the same in-memory connection object loaded by `loadConnection()`. They differ only in which connection variant they accept — narrowing to anything other than the expected type throws immediately with a descriptive error.
+All hooks read from the same in-memory connection object loaded during `preparation`. They differ in which connection variant they accept — narrowing hooks return `null` (rather than throwing) when the connection is not in the expected state, so templates can simply check for `null`.
 
-| Function | When to use |
+| Hook | When to use |
 |---|---|
-| `getConnection()` | Any code that only needs the API version or locale, regardless of auth state. Returns the full `Connection` union type. |
-| `getAuthenticatedConnection()` | Code that requires an active session — throws if the connection type is not `internal_authenticated`. Returns `InternalAuthenticatedConnection`, which includes `userinfo`. |
-| `getRegisteringUserConnection()` | Code that runs during the registration flow — throws if the connection type is not `internal_registering_user`. Returns `InternalRegisteringUserConnection`. |
-| `getConnectionWithUserInfo()` | Code that needs user info but must work for both authenticated and registering users. Throws for unauthenticated (guest) connections. |
+| `useConnection()` | Any code that only needs the API version or locale, regardless of auth state. Returns the full `Connection` union type. |
+| `useAuthenticatedConnection()` | Code that requires an active session. Returns the `internal_authenticated` connection (with `userinfo`), or `null` if not authenticated. |
+| `useConnectionWithUserInfo()` | Code that needs user info but must work for both authenticated and registering users. Returns the connection or `null` otherwise. |
 
-Use the narrowest function that fits the context. Using `getConnection()` everywhere suppresses type errors that would otherwise catch a component being rendered in the wrong auth state.
+The `Connection` is a discriminated union on its `type` field: `'internal'` (anonymous), `'internal_authenticated'` (logged in, includes `userinfo`), or `'internal_registering_user'` (mid-registration, includes partial `userinfo`). Narrow on `type` yourself if you need to branch, or use the narrowing hooks above.
+
+Use the narrowest hook that fits the context. Using `useConnection()` everywhere suppresses type errors that would otherwise catch a component being rendered in the wrong auth state.
 
 ## Fetching API Resources
 
-All fetch helpers live in `data/api/api.ts` and communicate with the JSON:API endpoint at `/api/hawki/v1/`. They set the required `Accept` and `Content-Type` headers automatically and parse JSON:API error responses into readable messages before throwing.
+All fetch helpers live on `app.restApi` (`RestApi` in `kernel/api/RestApi.ts`), reached via the `useRestApi()` hook. They communicate with the JSON:API endpoint, set the required `Accept` and `Content-Type` headers automatically, decode the JSON:API envelope, and parse JSON:API error responses into readable messages before throwing.
 
-### `fetchApi`
-
-```ts
-fetchApi<T>(path: string, options: FetchResourceApiOptions): Promise<T>
+```svelte
+<script lang="ts">
+    import {useRestApi} from '$lib/app/hooks/useApi.js';
+    const restApi = useRestApi();
+</script>
 ```
 
-The lowest-level primitive. It sends the request, checks `response.ok`, and returns `response.json()`. All other helpers delegate to this one. Use it directly only when none of the typed helpers fit — for example, when POSTing to a fully custom endpoint that returns neither a JSON:API resource nor a collection.
+### `fetch`
 
-### `getResourceCollectionFromApi`
+The lowest-level primitive. It sends the request, applies optional `beforeSchema`/`schema`/`afterSchema` transforms, and returns the result. All other helpers delegate to it. Use it directly only when none of the typed helpers fit.
+
+### `getResourceCollection`
 
 ```ts
-getResourceCollectionFromApi<R extends keyof ResourceSchemaRegistry>(
+restApi.getResourceCollection<R extends keyof HawkiResourceSchemas>(
     resourceType: R,
-    options?: FetchResourceCollectionOptions
-): Promise<JsonApiCollection<ResourceSchemaRegistry[R]>>
+    options?: GetResourceCollectionOptions
+): Promise<JsonApiCollection<HawkiResourceSchemas[R]>>
 ```
 
 Fetches `GET /{resourceType}`, decodes the JSON:API index response, and validates the result array against the registered Zod schema for that resource type. Pagination and filter parameters can be passed via `options.query`.
 
 ```ts
-import { getResourceCollectionFromApi } from '$lib/data/api/api.js';
-
 // Typed + validated — schema for 'ai-models' must be registered
-const collection = await getResourceCollectionFromApi('ai-models');
+const collection = await restApi.getResourceCollection('ai-models');
 collection.list.forEach(model => console.log(model.label));
 
 // Skip validation for a one-off request with no registered schema
-const raw = await getResourceCollectionFromApi('some-resource', { validateSchema: false });
+const raw = await restApi.getResourceCollection('some-resource', {validateSchema: false});
 ```
 
-Pass a string that is not a key of `ResourceSchemaRegistry` and the return type falls back to `JsonApiCollection<any[]>` with no validation.
+Pass a string that is not a key of `HawkiResourceSchemas` and the return type falls back to `JsonApiCollection<any[]>` with no validation.
 
-### `getResourceFromApi`
+### `getResource`
 
 ```ts
-getResourceFromApi<R extends keyof ResourceSchemaRegistry>(
+restApi.getResource<R extends keyof HawkiResourceSchemas>(
     resourceType: R,
     id: string | number,
-    options?: FetchResourceOptions
-): Promise<ResourceSchemaRegistry[R]>
+    options?: GetResourceOptions
+): Promise<HawkiResourceSchemas[R]>
 ```
 
-Fetches `GET /{resourceType}/{id}`, decodes the single-resource JSON:API response, and validates it. Works identically to `getResourceCollectionFromApi` but returns one object instead of an array.
+Fetches `GET /{resourceType}/{id}`, decodes the single-resource JSON:API response, and validates it. Works identically to `getResourceCollection` but returns one object instead of an array.
 
 ### `getFromResourceAction` / `postToResourceAction`
 
@@ -97,16 +103,16 @@ For RPC-style endpoints that do not follow the standard CRUD pattern — i.e. `/
 
 ```ts
 // GET /{resourceType}/{action}
-getFromResourceAction(resourceType, action, options?: { schema?: ZodTypeAny })
+restApi.getFromResourceAction(resourceType, action, options?: { schema?: ZodTypeAny })
 
 // POST /{resourceType}/{action}
-postToResourceAction(resourceType, action, data, options?: { schema?: ZodTypeAny })
+restApi.postToResourceAction(resourceType, action, data, options?: { schema?: ZodTypeAny })
 ```
 
 Unlike the `getResource*` helpers, these do not apply JSON:API decoding — the raw response is returned as-is. Pass `options.schema` with a Zod schema to validate the response and get a narrowed return type. Omit it for fire-and-forget calls where the response shape does not matter.
 
 ```ts
-const result = await getFromResourceAction('reports', 'generate', {
+const result = await restApi.getFromResourceAction('reports', 'generate', {
     schema: MyReportSchema
 });
 // result is z.infer<typeof MyReportSchema>
@@ -114,16 +120,16 @@ const result = await getFromResourceAction('reports', 'generate', {
 
 ## Resource Schema Registry
 
-`ResourceSchemaRegistry` in `data/resources/resourceRegistry.ts` is an empty interface that grows at compile time via TypeScript declaration merging. Each resource schema file augments it with one entry. The API helpers use the registry to infer return types and to look up the Zod schema for runtime validation — no explicit type assertion or schema lookup is needed at the call site.
+`HawkiResourceSchemas` in `kernel/extendableTypes.ts` is an empty interface that grows at compile time via TypeScript declaration merging. Each resource schema file augments it with one entry. `RestApi` uses the registry to infer return types and to look up the Zod schema for runtime validation — no explicit type assertion or schema lookup is needed at the call site.
 
-`autoRegisterResourceSchemas()` globs all files matching `resources/js/schemas/resources/*.schema.{ts,js}` at startup and populates the internal runtime registry automatically. You do not need to import individual schema files or register them manually.
+The registry itself is `app.resourceSchemas` (`ResourceSchemaExtension`). It eager-globs `resources/js/app/schemas/resources/*.schema.{ts,js}` on init to register the core schemas, and plugins register their own via the `resourceSchemas()` lifecycle hook (the core plugin's live under `plugins/core/schemas/resources/`). You do not need to import individual schema files or register them manually.
 
 ### Adding a new resource schema
 
-Create a file in `resources/js/schemas/resources/` named `{resource-type}.schema.ts`. The filename stem becomes the resource type key.
+Create a file named `{resource-type}.schema.ts` either in `resources/js/app/schemas/resources/` (for app-wide resources) or in your plugin's `schemas/resources/` directory. The filename stem becomes the resource type key.
 
 ```ts
-// resources/js/schemas/resources/my-thing.schema.ts
+// resources/js/app/schemas/resources/my-thing.schema.ts
 import z from 'zod';
 
 const MyThingSchema = z.object({
@@ -136,40 +142,19 @@ export default MyThingSchema;
 
 export type MyThing = z.infer<typeof MyThingSchema>;
 
-declare module '$lib/data/resources/resourceRegistry.js' {
-    interface ResourceSchemaRegistry {
+declare module '$lib/kernel/extendableTypes.js' {
+    interface HawkiResourceSchemas {
         'my-thing': MyThing;
     }
 }
 ```
 
-Once the file exists, `getResourceCollectionFromApi('my-thing')` returns `JsonApiCollection<MyThing>` and the response is validated automatically. No additional wiring is required.
+Once the file exists, `restApi.getResourceCollection('my-thing')` returns `JsonApiCollection<MyThing>` and the response is validated automatically. No additional wiring is required.
 
-The same auto-registration and declaration-merging pattern applies to config namespaces in `resources/js/schemas/config/`, augmenting `ConfigSchemaRegistry` in `data/config/config.ts` instead.
+The same auto-registration and declaration-merging pattern applies to config namespaces in `resources/js/app/schemas/config/` (or a plugin's `schemas/config/`), augmenting `HawkiConfigSchemas` instead.
 
 ## Keychain
 
-`createKeychainHandle()` from `data/keychain/keychainHandle.ts` returns an object that manages the user's encryption keys for end-to-end encryption. All key material is stored on the server in encrypted form (symmetrically encrypted with a key derived from the user's passkey) and decrypted in-browser on load. Contributors should use the keychain handle for all key operations and avoid calling the underlying crypto primitives directly.
+The user's encryption keys are exposed reactively through the `keychain` store (`useStore('keychain')`, see [Stores](100-Stores.md#keychainstore)) — `publicKey`, `privateKey`, `aiConvKey`, `roomKeys`, plus a `waitingToLoad` promise that resolves once the initial load completes. All key material is stored on the server in encrypted form and decrypted in-browser on load.
 
-`KeychainHandle` exposes the following public methods:
-
-| Method | Purpose |
-|---|---|
-| `load()` | Fetches all keychain values from the API and decrypts them into memory. Call this once after the user authenticates. |
-| `onChange(callback)` | Registers a callback that fires whenever the keychain state changes (after a load or update). |
-| `validateKeychainPassword(passkey)` | Checks whether a passkey string is correct by attempting to decrypt the stored validator. Returns `true` or `false`. |
-| `initializeNewKeychain()` | Generates a fresh RSA key pair and an AI conversation key, then stores them in the keychain. Used during initial account setup. |
-| `publicKey()` | Returns the user's RSA public key (`CryptoKey`). |
-| `privateKey()` | Returns the user's RSA private key (`CryptoKey`). |
-| `aiConvKey()` | Returns the symmetric key used for encrypting AI conversations. |
-| `roomKeys()` | Returns a map of all loaded room keys indexed by room slug. Each entry is a `RoomKeys` object containing `roomKey`, `aiKey`, and `aiLegacyKey`. |
-| `roomKeysOf(roomSlug)` | Returns the `RoomKeys` for a single room, or `null` if none are loaded. |
-| `createRoomKeys(roomSlug)` | Generates a new symmetric room key and derives the associated AI keys, then persists them to the keychain. Returns the new `RoomKeys`, or `null` if keys for that room already exist. |
-| `importRoomKey(roomSlug, roomKey)` | Imports an existing room key (received via an invitation) into the keychain, overwriting any existing entry. |
-| `removeRoomKeys(roomSlug)` | Removes all keys for a room from the keychain. |
-| `listKeys(type?)` | Returns all key names in the keychain, optionally filtered to a specific key type. |
-| `doUpdate(updater)` | Runs a `BatchKeychainUpdater` and persists the changes to the API. For internal use and migrations. |
-| `doUpdatesDeferred(runner)` | Collects multiple batch updates into a single API call. For migrations only — intermediate results inside the runner are `null`. |
-| `brokenRoomKeys()` | Returns room keys that are missing their AI counterpart keys. Used in migration tooling. |
-
-For the cryptographic primitives that underpin the keychain (symmetric encryption, asymmetric encryption, key derivation), see **Advanced → Encryption**.
+For the cryptographic primitives that underpin the keychain (symmetric encryption, asymmetric encryption, key derivation), see [Advanced → Encryption](../600-Advanced/400-Encryption.md). The lower-level handle used by the store and migrations lives in `kernel/keychain/keychainHandle.ts`.

@@ -2,11 +2,15 @@
 
 The HAWKI chat UI is being progressively rewritten from vanilla JS to Svelte 5. During this transition, both layers need to coexist: the new Svelte frontend must expose capabilities that legacy JS code can consume, and the two layers need typed communication channels for the parts of the UI they share.
 
-The integration surface consists of three parts:
+The integration lives under `resources/js/legacy/` and consists of three parts:
 
 1. **Boot coordination** — the legacy layer must wait until the Svelte app has finished booting before it can safely access anything the new frontend provides.
-2. **Window globals** — a set of functions and objects the new frontend exposes directly on `window` for use by legacy JS and inline Blade scripts.
+2. **Window globals** — a set of functions and objects the new frontend exposes directly on `window` for use by legacy JS and inline Blade scripts (published by `provideLegacyGlobals()` in `legacy/legacy.ts`).
 3. **Typed event bridges** (`OldUiBridge`, `OldUiMessageHistory`) — the main communication channel for the chat UI specifically.
+
+:::warning[Transitional]
+Everything in `legacy/` is `@deprecated` on purpose. It exists only for as long as the old Blade + vanilla-JS UI ships alongside the new Svelte app, and is meant to be deleted, not extended. New Svelte code must never read from `window.*` — import the real modules directly and use the `useApp()`/`useConfig()`/`useStore()` hooks instead.
+:::
 
 ---
 
@@ -14,11 +18,11 @@ The integration surface consists of three parts:
 
 The Svelte app boots asynchronously. Legacy JS and inline Blade scripts that need to access new-frontend APIs must wait for the relevant boot milestone before proceeding. Two global functions handle this.
 
-These functions are declared by the `EarlyFrontendBridge` Laravel component (`app/Services/Frontend/View/EarlyFrontendBridge.php`), which injects a small inline `<script>` into the page **before** the Svelte bundle loads. This guarantees the functions exist on `window` from the very first moment of page execution. The queued callbacks are then drained inside `app.ts` once the respective milestone is reached.
+These functions are declared by the `EarlyFrontendBridge` Blade component (`app/Services/Frontend/View/EarlyFrontendBridge.php`), which injects a small inline `<script>` into the page **before** the Svelte bundle loads. This guarantees the functions exist on `window` from the very first moment of page execution. The queued callbacks are then drained inside `app.ts` once the respective milestone is reached.
 
 ### `window.waitUntilBootstrap(callback)`
 
-Calls `callback(bootstrapper)` as soon as the `Bootstrapper` instance is ready — i.e., the moment `app.ts` has registered all boot handlers but before any stage has run. Use this when legacy code needs to register additional boot handlers itself.
+Calls `callback(bootstrapper)` as soon as the `Bootstrapper` instance is ready — i.e., the moment `app.ts` has assembled the `HawkiApp` but before `bootstrapper.run()` has started. Use this when legacy code needs to register additional boot handlers itself.
 
 ```js
 window.waitUntilBootstrap(function(bootstrapper) {
@@ -29,6 +33,10 @@ window.waitUntilBootstrap(function(bootstrapper) {
 ```
 
 If called after the bootstrapper is already available, the callback fires immediately with a console warning.
+
+:::warning[No `window.hawkiBootstrap`]
+Unlike earlier versions, the bootstrapper instance is **no longer exposed as `window.hawkiBootstrap`**. Use `waitUntilBootstrap()` to receive it — that is the only supported legacy accessor.
+:::
 
 ### `window.waitUntilReady(callback)`
 
@@ -48,27 +56,29 @@ Both functions are used throughout the legacy UI JavaScript (`public/js/`) and i
 
 ## Window Globals
 
-`app.ts` exposes a set of functions and objects directly on `window` so legacy code can access them without ES module imports. These are **legacy compatibility bridges only** — new Svelte code must never read from `window.*`; it should import directly from the module instead.
+`provideLegacyGlobals()` (called at the very top of `app.ts`, before the app is created) copies a hand-picked set of kernel functions, bridges, and stores onto `window` so legacy code can access them without ES module imports. Every app-dependent global is a closure or getter that resolves `getHawkiApp()` lazily, so it is safe to install them before the app exists.
 
 | Global | Type | Description |
 |---|---|---|
-| `window.hawkiBootstrap` | `Bootstrapper` | The bootstrapper instance. Available after `waitUntilBootstrap`. |
 | `window.hawkiIsReady` | `boolean` | `true` once boot completes. Prefer `waitUntilReady` over polling this. |
 | `window.oldUiBridge` | `OldUiBridge` | The primary typed event bus between the two layers. See [OldUiBridge](#olduibridge) below. |
 | `window.oldUiMessageHistory` | `OldUiMessageHistory` | The reactive conversation state object. See [OldUiMessageHistory](#olduimessagehistory) below. |
-| `window.getConfig()` | `function` | Returns the `hawki-core` config slice. Same as `getConfig()` from the data layer. |
-| `window.getAuthenticatedConnection()` | `function` | Throws if the connection is not authenticated. Returns `InternalAuthenticatedConnection`. |
+| `window.getConfig()` | `function` | Returns the `hawki-core` config slice. Same as `useConfig()` / `app.config.get()`. |
+| `window.getAuthenticatedConnection()` | `function` | Throws if the connection is not authenticated. Returns the authenticated connection. |
 | `window.getConnectionWithUserInfo()` | `function` | Returns connection with user info for both authenticated and registering users. |
-| `window.__` | `function` | The translation function. Same as `__()` from the translator. |
+| `window.getConnection()` | `function` | Returns the full `Connection` union. |
+| `window.__` | `function` | The translation function. Same as `useTranslator().__`. |
 | `window.applyMigrations(runType)` | `function` | Runs frontend migrations for the given run type. |
-| `window.userKeychain` | `KeychainStore` | The keychain store instance. Provides access to the user's encryption keys after passkey entry. |
-| `window.hawkiDependencyLoader` | `function` | The lazy dependency loader. Same as `dependencyLoader()` from `dependencies.js`. |
-| `window.getAiModels()` | `function` | Returns the current `aiModelStore.models` array. |
+| `window.userKeychain` | `KeychainStore` | The keychain store instance (a getter, always resolves to the live store). Provides access to the user's encryption keys after passkey entry. |
+| `window.hawkiDependencyLoader` | `function` | The lazy dependency loader. See [App Startup → Lazy Dependencies](100-App-Startup.md#lazy-dependencies). |
+| `window.buildStorageFileUrl(id)` | `function` | Builds the proxied URL for a stored file. |
+| `window.getFileIconSvg(ext)` | `function` | Returns an inline SVG file-type icon for an extension. |
+| `window.getAiModels()` | `function` | Returns the current `ai-models` store's `models` array. |
 | `window.getAiModel(id)` | `function` | Returns the model matching `id`, or `null`. Accepts numeric ID or `model_id` string. |
 | `window.getSystemModel(modelType)` | `function` | Returns the model assigned to a system role (e.g. `'default'`), or `null`. |
 | `window.getSystemPrompt(promptType)` | `function` | Returns the `prompt` string for a well-known system prompt type, or `null`. |
 
-> **Do not use these globals from new Svelte code.** Import the relevant module directly. The globals exist to keep the legacy JS layer functional during the transition.
+> **Do not use these globals from new Svelte code.** Import the relevant module or use the matching hook directly. The globals exist to keep the legacy JS layer functional during the transition.
 
 ---
 
@@ -77,7 +87,7 @@ Both functions are used throughout the legacy UI JavaScript (`public/js/`) and i
 The primary typed event bus for the chat UI. Import the singleton — do not instantiate the class:
 
 ```ts
-import { oldUiBridge } from '$lib/oldUi/OldUiBridge.svelte.js';
+import { oldUiBridge } from '$lib/legacy/OldUiBridge.svelte.js';
 ```
 
 ### The Rule
@@ -267,7 +277,7 @@ Holds the user's decrypted passkey for the current session. Starts as `null`, po
 A companion singleton that holds the read-state of the active conversation. Import it:
 
 ```ts
-import { oldUiMessageHistory } from '$lib/oldUi/OldUiMessageHistory.svelte.js';
+import { oldUiMessageHistory } from '$lib/legacy/OldUiMessageHistory.svelte.js';
 ```
 
 ### Reactive Properties
