@@ -93,6 +93,12 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
     /** The currently mounted Svelte app instance, or null when unmounted. */
     private _app: object | null = null;
 
+    private _hasActiveDestruction: boolean = false;
+    private _mountAfterDestruction: boolean = false;
+
+    private _oldType: string | null = null;
+    private _oldProps: string | null = null;
+
     /**
      * Monotonically-increasing counter used to cancel in-flight async mounts.
      * Incremented on every destroy so that a pending import whose component
@@ -101,14 +107,27 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
     private _mountId: number = 0;
 
     connectedCallback(): void {
+        if (this._hasActiveDestruction) {
+            this._mountAfterDestruction = true;
+            return;
+        }
         this._mountComponent();
     }
 
     disconnectedCallback(): void {
+        this._mountAfterDestruction = false;
         this._destroyComponent();
     }
 
     attributeChangedCallback(): void {
+        const newType = this.getAttribute('type');
+        const newProps = this.getAttribute('props');
+        if (newType === this._oldType && newProps === this._oldProps) {
+            return; // No change in relevant attributes, skip remounting
+        }
+        this._oldType = newType;
+        this._oldProps = newProps;
+        this._mountAfterDestruction = true;
         this._destroyComponent();
         this._mountComponent();
     }
@@ -144,9 +163,7 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
         return {...props, root: this}; // Always include the root element as a prop for convenience
     }
 
-    private async _mountComponent(): Promise<void> {
-        const mountId = ++this._mountId;
-
+    private _mountComponent(): void {
         const type = this.getAttribute('type');
         if (!type) {
             console.error('<svelte-snippet>: The required "type" attribute is missing.');
@@ -163,32 +180,24 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
             return;
         }
 
-        // Guard against the element being disconnected or the type being
-        // changed while the async import was in flight.
-        if (mountId !== this._mountId) {
-            return;
-        }
-
+        this.innerHTML = ''; // Clear any leftover content from the previous mount
         this._app = mount(component, {
             target: this,
             props: this._getProps()
         });
     }
 
-    private _destroyComponent(): void {
-        // Invalidate any pending async mount for this element.
-        this._mountId++;
+    private async _destroyComponent(): Promise<void> {
+        if (!this._hasActiveDestruction) {
+            if (this._app) {
+                await unmount(this._app);
+                this._app = null;
+            }
+        }
 
-        if (this._app) {
-            unmount(this._app);
-            this._app = null;
+        if (this._mountAfterDestruction) {
+            this._mountAfterDestruction = false;
+            this._mountComponent();
         }
     }
-}
-
-/**
- * @deprecated Will be removed as soon as all the old js has been refactored
- */
-export function registerSvelteSnippetLoader(): void {
-    customElements.define('svelte-snippet', HTMLSvelteSnippetElement);
 }

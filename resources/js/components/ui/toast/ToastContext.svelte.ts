@@ -103,10 +103,15 @@ const [get, set] = createContext<ToastContext>();
  * @throws Error If no toast context is found.
  */
 export function useToastContext(): ToastContext {
-    const context = get();
-    if (context) {
-        return context;
+    try {
+        const context = get();
+        if (context) {
+            return context;
+        }
+    } catch (e) {
+
     }
+
 
     // @todo remove this once we have a real single page app, and can use svelte contexts.
     try {

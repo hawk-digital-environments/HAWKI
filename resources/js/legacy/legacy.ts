@@ -18,7 +18,6 @@ import type {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 // WARNING: This is only here for legacy support! Do not use global variables in new code!
 declare global {
     interface Window {
-        hawkiIsBooting: boolean;
         hawkiEarlyWaitUntilBootstrapQueue: Array<(bootstrapper: Bootstrapper) => Promise<void>>;
         hawkiEarlyWaitUntilReadyQueue: Array<() => Promise<void>>;
         hawkiIsReady: boolean;
@@ -47,11 +46,6 @@ declare global {
  * @deprecated Will be removed as soon as all the old js has been refactored
  */
 export function provideLegacyGlobals() {
-    if (window.hawkiIsBooting) {
-        throw new Error('Hawki is already booting. This may indicate that the bootstrap script has been included multiple times.');
-    }
-    window.hawkiIsBooting = true;
-
     function getAiModelStore() {
         return getHawkiApp().stores.get('ai-models');
     }
@@ -80,7 +74,6 @@ export function provideLegacyGlobals() {
     // Assign userKeychain property using a getter to ensure it always returns the latest instance of KeychainStore
     Object.defineProperty(window, 'userKeychain', {
         get: () => {
-            console.warn(getHawkiApp().stores, 'Äapp');
             return getHawkiApp().stores.get('keychain');
         }
     });

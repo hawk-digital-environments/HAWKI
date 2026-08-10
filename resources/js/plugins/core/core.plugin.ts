@@ -1,4 +1,4 @@
-import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
+import type {HawkiCorePlugin, HawkiPluginContextWithConfig} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
@@ -20,7 +20,7 @@ declare module '$lib/kernel/extendableTypes.js' {
 export default class CorePlugin implements HawkiCorePlugin {
     readonly name = 'core';
 
-    public boot(app: HawkiApp): void | Promise<void> {
+    public boot(app: HawkiApp, ctx: HawkiPluginContextWithConfig): void | Promise<void> {
         const glob = import.meta.glob('$lib/plugins/core/snippets/**/*.svelte', {eager: true});
         for (const [path, module] of Object.entries(glob)) {
             const snippetName = path.split('/').pop()?.replace('.svelte', '');
@@ -30,10 +30,10 @@ export default class CorePlugin implements HawkiCorePlugin {
             }
             app.snippets.register(snippetName, (module as { default: Component }).default);
         }
-    }
 
-    public ready(): void | Promise<void> {
-        customElements.define('svelte-snippet', HTMLSvelteSnippetElement);
+        ctx.bootstrapper.onStagePassed('finalization', () => {
+            customElements.define('svelte-snippet', HTMLSvelteSnippetElement);
+        });
     }
 
     public migrations(registrar: MigrationRegistrar): void | Promise<void> {

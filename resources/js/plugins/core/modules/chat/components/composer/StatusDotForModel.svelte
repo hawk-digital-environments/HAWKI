@@ -4,7 +4,7 @@
 -->
 <script lang="ts">
     import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';
-    import {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema';
+    import type {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();

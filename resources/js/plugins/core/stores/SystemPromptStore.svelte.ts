@@ -45,7 +45,7 @@ export class SystemPromptStore implements DataStore {
      */
     public getPromptByType(type: WellKnownSystemPromptType): SystemPrompt;
     public getPromptByType(type: WellKnownSystemPromptType | string): SystemPrompt | null {
-        return this.prompts.find(p => p.prompt_type === type) ?? null;
+        return this.promptsByType.get(type) ?? null;
     }
 
     public async loadData(app: HawkiApp) {
@@ -55,15 +55,18 @@ export class SystemPromptStore implements DataStore {
             return;
         }
 
-        $effect.root(() => {
-            $effect(() => {
-                app.restApi.getResourceCollection(
-                    'system-prompts',
-                    {
-                        locale: app.localization.locale
-                    }
-                ).then(prompts => {
-                    this.prompts = prompts;
+        return new Promise<void>(resolve => {
+            $effect.root(() => {
+                $effect(() => {
+                    (async () => {
+                        this.prompts = await app.restApi.getResourceCollection(
+                            'system-prompts',
+                            {
+                                locale: app.localization.locale
+                            }
+                        );
+                        resolve();
+                    })();
                 });
             });
         });

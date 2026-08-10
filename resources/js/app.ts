@@ -14,6 +14,17 @@ import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
 import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
 import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
 
+declare global {
+    interface Window {
+        hawkiIsBooting: boolean;
+    }
+}
+
+if (window.hawkiIsBooting) {
+    throw new Error('Hawki is already booting. This may indicate that the bootstrap script has been included multiple times.');
+}
+window.hawkiIsBooting = true;
+
 provideLegacyGlobals();
 
 (async () => {
