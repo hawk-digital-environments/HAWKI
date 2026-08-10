@@ -97,7 +97,7 @@
             <Tabs
                 items={tabItems}
                 value={activePreset}
-                onChange={handlePresetChange}
+                onChange={model.current.flags?.includes("feature-sampling-parameters") ? handlePresetChange : undefined}
                 aria-label={__('chat.composer.settings.settingsHeading')}
             />
         </div>
@@ -118,6 +118,7 @@
                     min={0}
                     max={2}
                     step={0.1}
+                    disabled={!model.current.flags?.includes("feature-sampling-parameters")}
                 />
             </div>
 
@@ -136,6 +137,7 @@
                     min={0}
                     max={1}
                     step={0.05}
+                    disabled={!model.current.flags?.includes("feature-sampling-parameters")}
                 />
             </div>
         </div>
