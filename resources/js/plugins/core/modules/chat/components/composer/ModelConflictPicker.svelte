@@ -1,7 +1,25 @@
 <!--
-  @component Warning panel shown when the selected model lacks capabilities required
-  by active tools or file attachments. Lists compatible replacement models with tabs
-  for sorting by recommendation, cost, or capability tier.
+  @component Warning panel shown when the selected model can't fulfil the currently
+  active tools/attachments — driven entirely by `composerContext.modelUsage`
+  (`isValid` / `issues`, computed by `ModelUsageSlice` from `tools.active` and
+  `attachments.list`). Shows why the model is unsupported (a specific missing-tool name
+  when there's exactly one issue of that kind, a generic message otherwise) and lists
+  `composerContext.modelUsage.allUsable` as horizontally-scrollable replacement cards;
+  clicking one calls `composerContext.model.set(m.id)`.
+
+  Renders nothing when the current model is valid, or when
+  `composerContext.guard.showsAiUiElements` is false. Takes no props — it reads
+  everything it needs from `ComposerContext`. The model cards are listed in
+  `composerContext.modelUsage.allUsable` order (the `AiModelStore`'s own order) —
+  there is currently no in-panel sort/tab control.
+
+  ## Usage
+  Rendered once by `ChatComposer.svelte`, directly below the textarea so the warning
+  appears right where the user is typing:
+  ```svelte
+  <ComposerTextarea bind:ref={textareaEl} onSend={handleSend}/>
+  <ModelConflictPicker/>
+  ```
 -->
 <script lang="ts">
     import {growTransition} from '$lib/utils/transitions/growTransition';

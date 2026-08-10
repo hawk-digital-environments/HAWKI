@@ -1,7 +1,19 @@
 <!--
-  @component Row of removable file chips. Files incompatible with the current
-  model are shown with a warning icon and a rose-tinted background.
-  Renders nothing when the files array is empty.
+  @component Row of removable file chips for every file staged in
+  `ComposerContext.attachments`. Files incompatible with the current model
+  (no upload support / no vision) are shown with a warning icon and a
+  rose-tinted background; a per-file upload error or in-progress upload
+  (from `sendStatus.getFileIssue` / `getFileProgress`) is reflected the same
+  way. Clicking a chip removes that attachment. Renders nothing when there
+  are no staged files. No props — reads `ComposerContext` directly.
+
+  @example
+  ```svelte
+  shown between the textarea and the attach/tool row
+  <div class="chat-chips">
+      <FileChips/>
+  </div>
+  ```
 -->
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';

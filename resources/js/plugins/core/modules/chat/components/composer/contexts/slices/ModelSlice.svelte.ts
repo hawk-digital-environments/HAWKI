@@ -7,6 +7,25 @@ interface ModelSliceCheckpoint {
     currentModelId: string;
 }
 
+interface ModelSliceCheckpoint {
+    currentModelId: string;
+}
+
+/**
+ * Composer slice that owns the currently selected AI model.
+ *
+ * Holds the single source of truth for "which model will receive the next message"
+ * (`current`) and exposes derived shorthands for the model's capability flags
+ * (`allowsFileUpload`, `allowsToolCalling`, `hasVision`) so UI elements like the
+ * attachment button or tool menu can hide themselves without each re-reading the
+ * model settings. `set()` is the write surface — it resolves the value through
+ * `AiModelStore.getModelByIdOrFallback`, notifies the context via the
+ * `onUpdateCurrentModel` callback, and resets sampling parameters on the
+ * {@link ModelParameterSlice} when the user hadn't customised them.
+ *
+ * Implements {@link CheckpointingInterface} so a mode (e.g. edit/regen) can
+ * snapshot the selected model and restore it on exit.
+ */
 export class ModelSlice implements CheckpointingInterface<ModelSliceCheckpoint> {
     constructor(
         private modelStore: AiModelStore,

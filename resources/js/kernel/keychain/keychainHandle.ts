@@ -1,3 +1,23 @@
+/**
+ * Factory for a {@link KeychainHandle} — the imperative, app-aware front to the user's
+ * end-to-end encryption keychain stored on the server.
+ *
+ * The keychain holds the user's asymmetric keypair, the AI conversation key, and a set
+ * of per-room symmetric keys (plus their derived AI keys). All values are stored on the
+ * server encrypted-at-rest under a key derived from the user's passkey, so the server
+ * never sees plaintext keys. This module loads, decrypts, caches, and mutates that
+ * keychain and exposes a small getter/mutator API to the rest of the app.
+ *
+ * A handle is created via {@link createKeychainHandle} (passing the app and a passkey
+ * provider callback) and is the single object stores/components interact with — see
+ * `KeychainStore` for the reactive Svelte wrapper. Changes are applied through
+ * {@link BatchKeychainUpdater} callbacks (collected into one server round-trip by
+ * `runBatchUpdate` / `collectDeferredBatchUpdates` in `batchUpdater.ts`) and the
+ * handle re-loads its in-memory cache from the server response when an update lands.
+ *
+ * @see `kernel/encryption/` for the underlying symmetric/asymmetric primitives.
+ * @see `plugins/core/stores/KeychainStore.svelte.ts` for the reactive front used by UI.
+ */
 import {deriveKey, loadCryptoKey} from '$lib/kernel/encryption/utils.js';
 import {decryptSymmetric, generateSymmetricKey, loadSymmetricCryptoValue} from '$lib/kernel/encryption/symmetric.js';
 import {generateAsymmetricKeyPair, loadPrivateKey, loadPublicKey} from '$lib/kernel/encryption/asymmetric.js';

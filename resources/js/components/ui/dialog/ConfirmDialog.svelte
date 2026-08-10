@@ -3,6 +3,17 @@
 
   Non-closable — Escape and outside clicks are suppressed so the user must
   explicitly confirm or cancel. The confirm button receives autofocus.
+
+  Usage — pair `bind:open` with a trigger elsewhere (e.g. a "Delete" menu
+  item) and destroy on confirm:
+    <ConfirmDialog
+        bind:open={deleteConfirmOpen}
+        title={__('chat.nameMenu.deleteConfirmTitle', {name})}
+        onConfirm={() => slug && oldUiBridge.triggerDeleteChat(slug)}
+    />
+    <DropdownMenuItem variant="destructive" onclick={() => deleteConfirmOpen = true}>
+        Delete
+    </DropdownMenuItem>
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';

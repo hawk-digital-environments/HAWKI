@@ -1,3 +1,31 @@
+<!--
+  @component Listens for OS-level file drags anywhere in the window
+  (`svelte:window` drag events) and, on drop, adds the dropped files to
+  `ComposerContext.attachments` (reporting any rejected files as toasts via
+  `reportAttachmentIssues`, same as `FilePicker`). Does not render a visual
+  drop target itself — it exposes `isDragging` and a `dragOverlay` snippet
+  through its render-prop `children`, so the parent decides where/how to show
+  the "drop files here" affordance (typically absolutely positioned over the
+  composer card).
+
+  Drag state uses a depth counter (`dragDepth`) rather than a boolean so that
+  dragging over nested child elements (which fires `dragleave`/`dragenter`
+  pairs) doesn't flicker `isDragging` off between children.
+
+  @example
+  ```svelte
+  <FileDragAndDrop>
+      {#snippet children({isDragging, dragOverlay})}
+          <div class="chat-composer-card">
+              {@render dragOverlay()}
+              <div class:chat-composer-body--hidden={isDragging}>
+                  // normal composer content
+              </div>
+          </div>
+      {/snippet}
+  </FileDragAndDrop>
+  ```
+-->
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -6,8 +34,18 @@
     import {reportAttachmentIssues} from '$plugins/core/modules/chat/components/utils/attachmentIssues.js';
 
     interface Props {
+        /**
+         * Render-prop snippet receiving the current drag state and a `dragOverlay`
+         * snippet to render wherever the "drop files here" hint should appear.
+         * See the component example above.
+         */
         children?: (args: {
+            /** `true` while a file drag is over the window; drives showing `dragOverlay`
+             *  and (typically) hiding/dimming the composer's normal content. */
             isDragging: boolean;
+            /** Snippet rendering the animated drop-hint overlay. Only paints anything
+             *  while `isDragging` is `true`; call it unconditionally where you want the
+             *  overlay positioned. */
             dragOverlay: Snippet;
         }) => any;
     }

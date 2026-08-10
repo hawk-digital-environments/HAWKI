@@ -1,3 +1,22 @@
+<!--
+  @component Chat name menu specialised for multi-user rooms.
+
+  Wraps `ChatNameMenu` and adds room-only actions to its dropdown: "Manage
+  room" (admin only, opens the room control panel), "Mark as read" (disabled
+  when there are no unread messages), "Leave room", and — for admins —
+  "Delete room". The destructive actions each gate behind a `ConfirmDialog`
+  before dispatching to the legacy UI (`oldUiBridge.triggerLeaveRoom` /
+  `triggerDeleteChat`). Forwards the rename surface (`name`, `slug`,
+  `isRenaming`, …) straight through to `ChatNameMenu`.
+
+  @example
+  <RoomNameMenu
+      bind:name={room.name}
+      bind:isRenaming={renaming}
+      slug={room.slug}
+      hasUnreadMessages={room.hasUnread}
+  />
+-->
 <script lang="ts">
     import type {ComponentProps} from 'svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';

@@ -43,6 +43,10 @@ export async function loadPublicKey(keyString: string | ArrayBuffer, extractable
     );
 }
 
+/**
+ * Serialises a public key to a base64 SPKI string, e.g. to send it to the server or
+ * another user so they can {@link loadPublicKey} it and encrypt data for this user.
+ */
 export async function exportPublicKeyToString(publicKey: CryptoKey): Promise<string> {
     return exportCryptoKeyToString(publicKey, 'spki');
 }
@@ -69,14 +73,22 @@ export async function loadPrivateKey(keyString: string | ArrayBuffer, extractabl
     );
 }
 
+/**
+ * Serialises a private key to a base64 PKCS#8 string. Only ever store this encrypted
+ * (see `batchUpdater.ts`, which symmetrically encrypts it with the keychain password
+ * before it is sent to the server) — never persist or transmit it in plaintext.
+ */
 export async function exportPrivateKeyToString(privateKey: CryptoKey): Promise<string> {
     return exportCryptoKeyToString(privateKey, 'pkcs8');
 }
 
 /**
- * The same as encryptAsymmetric, but explicitly encrypts a CryptoKey instead of a string
- * @param keyToEncrypt
- * @param publicKey
+ * The same as {@link encryptAsymmetric}, but explicitly encrypts a CryptoKey instead of a string.
+ * Used by `hybrid.ts` to wrap a freshly-generated AES key with a recipient's RSA public
+ * key, so that only that recipient's private key can unwrap it.
+ * @param keyToEncrypt - The symmetric (or other) key to wrap, exported to raw bytes first.
+ * @param publicKey - The recipient's RSA-OAEP public key.
+ * @returns The wrapped key, base64-encoded.
  */
 export async function encryptKeyAsymmetric(keyToEncrypt: CryptoKey, publicKey: CryptoKey) {
     try {
@@ -119,7 +131,13 @@ async function encryptArrayBufferAsymmetric(data: ArrayBuffer, publicKey: Crypto
 }
 
 /**
- * The same as decryptAsymmetric, but explicitly decrypts a CryptoKey instead of a string
+ * The same as {@link decryptAsymmetric}, but explicitly decrypts a CryptoKey instead of a string.
+ * Counterpart to {@link encryptKeyAsymmetric} — used to unwrap an AES key that was
+ * RSA-encrypted for this private key's owner (see `hybrid.ts`).
+ *
+ * NOTE: the unwrapped key is always re-imported as `AES-GCM`, since in this codebase
+ * asymmetric encryption is only ever used to wrap symmetric AES keys (never other key
+ * types). Do not reuse this for unwrapping non-AES keys.
  * @param ciphertext - The ciphertext to decrypt, base64-encoded.
  * @param privateKey - The private key to use for decryption
  * @return The decrypted symmetric key as a CryptoKey.
@@ -174,7 +192,10 @@ function decryptArrayBufferAsymmetric(ciphertext: ArrayBuffer, privateKey: Crypt
 }
 
 /**
- * Generates a new asymmetric key pair (RSA-OAEP 2048-bit)
+ * Generates a new asymmetric key pair (RSA-OAEP 4096-bit, SHA-256, public exponent 65537).
+ * Used once per user, typically on first login / keychain initialization
+ * (see `keychainHandle.ts` `initializeNewKeychain`), to create the `publicKey`/`privateKey`
+ * pair stored in the keychain.
  * @returns The generated key pair with public and private keys
  */
 export async function generateAsymmetricKeyPair(): Promise<CryptoKeyPair> {

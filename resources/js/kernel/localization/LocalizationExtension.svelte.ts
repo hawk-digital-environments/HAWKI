@@ -5,6 +5,11 @@ import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
 import {createTranslator} from '$lib/kernel/localization/translator.js';
 
+/**
+ * Declaration merging that exposes this extension on the app object as
+ * `app.localization` and the ready-to-use {@link Translator} as `app.translator`
+ * (see {@link HawkiAppExtension} / `createApp()` in `kernel/HawkiApp.ts`).
+ */
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
         localization: WithoutAppExtensionInternals<LocalizationExtension>;
@@ -12,6 +17,22 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 }
 
+/**
+ * App extension that loads and exposes the active UI locale and its translation
+ * labels.
+ *
+ * On the bootstrapper's `preparation` stage it reads the available/default
+ * locales from the server config and the connection's chosen locale; on the
+ * `main` stage it loads the labels for the active locale (falling back to the
+ * default locale when the requested labels fail to load). Locales are
+ * `.svelte.ts` runes (`$state`), so consumers that read `app.localization.labels`
+ * or `app.translator.translate(...)` re-render automatically when
+ * {@link setLocale} swaps locales. Loaded label sets are memoised per locale
+ * so switching back is instant.
+ *
+ * `app.translator` is the single entry point most code should reach for — it
+ * reads off this extension internally so callers don't need to.
+ */
 export class LocalizationExtension implements HawkiAppExtension {
     private _restApi: RestApi | null = null;
     private _labels = $state(null as TranslationLabels | null);

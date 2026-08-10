@@ -2,7 +2,30 @@
   @component Floating content panel anchored to a trigger element. Renders
   inside a Portal so it escapes overflow:hidden containers. Supports
   hover-open and mutual exclusion within a named group — only one popover per
-  group can be open at a time.
+  group can be open at a time (opening one closes the others via a
+  `window`-level `popover-open` CustomEvent).
+
+  Low-level primitive: for a ready-made "info" trigger use `InfoPopover`
+  instead of wiring this up directly.
+
+  Usage — string trigger and string content:
+    <Popover>
+        Click me
+        {#snippet popover()}
+            Some help text.
+        {/snippet}
+    </Popover>
+
+  Usage — snippet trigger (the `props` arg MUST be spread onto the root
+  element), hover-to-open, and mutual exclusion via `group`:
+    <Popover group="settings-popovers" openOnHover side="bottom" bind:open>
+        {#snippet children({props})}
+            <button {...props}>Options</button>
+        {/snippet}
+        {#snippet popover()}
+            <MyMenuContent/>
+        {/snippet}
+    </Popover>
 -->
 <script lang="ts">
     import {mergeProps, Popover as PopoverPrimitive, type PopoverContentProps} from 'bits-ui';

@@ -11,6 +11,24 @@ interface ModelParameterSliceCheckpoint {
     parameters: Record<AiModelParameterKeyType, unknown>;
 }
 
+interface ModelParameterSliceCheckpoint {
+    parameters: Record<AiModelParameterKeyType, unknown>;
+}
+
+/**
+ * Composer slice that owns the AI sampling parameters (e.g. `temperature`, `top_p`)
+ * sent with the next request.
+ *
+ * Values flow through three layers of defaults: the global fallbacks declared
+ * above (`temperature=0.7`, `top_p=0.9`), then the current model's own
+ * `parameters` (`modelDefaults`), then the user's overrides (`list`). `get()`
+ * resolves a single parameter through that chain; `isModified` reports whether
+ * the user has strayed from the model's defaults, which {@link ModelSlice.set}
+ * checks to decide whether to reset parameters on a model switch.
+ *
+ * Implements {@link CheckpointingInterface} so a mode can snapshot and restore
+ * the user's parameter choices.
+ */
 export class ModelParameterSlice implements CheckpointingInterface<ModelParameterSliceCheckpoint> {
     constructor(
         private model: ModelSlice

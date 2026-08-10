@@ -2,6 +2,23 @@ import type z from 'zod';
 import {globModuleLoader} from '$lib/utils/globModuleLoader.js';
 import type {HawkiResourceSchemas} from '$lib/kernel/extendableTypes.js';
 
+/**
+ * Registrar builder for the {@link ResourceSchemaExtension}.
+ *
+ * Follows the kernel's extension+registrar pattern: the extension owns the
+ * schema `Map` and hands this registrar into plugin `resourceSchemas()` hooks
+ * so plugins can register their own Zod schemas under the JSON:API resource
+ * type string (e.g. `'ai-models'`, `'user-keychain-values'`). Each schema
+ * validates one resource's response shape, and the augmented
+ * {@link HawkiResourceSchemas} interface (populated by declaration merging on
+ * each schema file) makes the `RestApi` typed-resource accessors type-safe.
+ *
+ * `add` throws on duplicate names — a plugin re-registering a resource type is
+ * almost always a bug. `addFromModules` is the glob-powered helper: it loads a
+ * `Record<path, unknown>`, derives the resource name from the filename
+ * (`<name>.schema.ts`), reads the `default` / `schema` export, and validates
+ * each module exposes a Zod `parse` function before registering it.
+ */
 export function createResourceSchemaRegistrar(
     registry: Map<string, z.ZodTypeAny>
 ) {

@@ -3,6 +3,11 @@ import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensio
 import type {Migration} from '$lib/app/schemas/resources/migrations.schema.js';
 import {createMigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 
+/**
+ * Declaration merging that exposes this extension on the app object as
+ * `app.migration` (see {@link HawkiAppExtension} / `createApp()` in
+ * `kernel/HawkiApp.ts`).
+ */
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
         readonly migration: WithoutAppExtensionInternals<MigrationExtension>;
@@ -11,6 +16,14 @@ declare module '$lib/kernel/extendableTypes.js' {
 
 export type MigrationRunType = string | ('after_login' | 'after_passkey');
 
+/**
+ * Argument passed to every {@link Migrator}. The migration name and run type
+ * come from the server's `migrations` resource (see {@link MigrationExtension.apply});
+ * `app` is the fully-built {@link HawkiApp} so migrators can reach stores, the
+ * keychain, the REST API, etc. `data` is the optional server-provided payload
+ * from the migration's JSON:API record, if the migration needs extra context
+ * the server computed.
+ */
 export interface MigrationContext {
     runType: MigrationRunType;
     name: string;
@@ -18,14 +31,46 @@ export interface MigrationContext {
     data?: any;
 }
 
+/**
+ * A single migration's body. Receives a {@link MigrationContext} and performs
+ * whatever client-side data transformation it owns (e.g. upgrading the stored
+ * keychain format after a passkey change). The contract is: the migrator either
+ * resolves on success or throws — `MigrationExtension.apply` surfaces the error
+ * to the user and aborts the run, so a failed migration is never silently
+ * skipped or marked as applied.
+ */
 export type Migrator = (ctx: MigrationContext) => Promise<void>;
 
+/**
+ * Registration record for a migration. `migrationLoader` is a lazy loader (a
+ * `() => Promise<Migrator>`) so the migration body is only imported when the
+ * server actually asks for it — keeping one-shot migration code out of the main
+ * bundle until it's needed.
+ */
 export interface MigrationDefinition {
     name: string;
     runType: MigrationRunType;
     migrationLoader: () => Promise<Migrator>;
 }
 
+/**
+ * App extension that owns the registry of client-side migrations and drives
+ * their application against the server's pending-migration list.
+ *
+ * HAWKI migrations are paired client/server records: the server tracks which
+ * migrations a user still needs (`migrations_to_apply` on the connection) and
+ * lists them via the `migrations` JSON:API resource; the client owns the matching
+ * migrator code (registered through the {@link MigrationRegistrar}). The
+ * extension pulls the pending list, finds each migration by name, and runs it
+ * in order, marking each applied on the server before moving on. Migrations are
+ * partitioned by {@link MigrationRunType} (`'after_login'` / `'after_passkey'`)
+ * so the caller can run only the slice that matches the current trigger.
+ *
+ * Plugins register migrations during the bootstrapper's `migrations` stage
+ * (driven by `PluginBootstrapper`); the `core` plugin lazy-globs
+ * the `plugins/core/migrations/` directory, inferring name and run type from the
+ * file path (see `migrationRegistrar.ts`).
+ */
 export class MigrationExtension implements HawkiAppExtension {
     private appliedMigrationCount = 0;
     private migrations = new Map<string, MigrationDefinition>();

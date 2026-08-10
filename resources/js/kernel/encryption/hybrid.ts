@@ -16,6 +16,13 @@
  *
  * const loaded = loadHybridCryptoValue(stored);
  * const recovered = await decryptHybrid(loaded, myPrivateKey);
+ *
+ * WHY the double base64-wrapping in `.toString()`: `value.toString()` (the symmetric
+ * part) already contains its own `|`-separated `iv|tag|ciphertext` string. If it were
+ * joined with `passphrase` using `|` directly, splitting the outer string on `|` would
+ * yield more than the expected two parts. Wrapping each part in `btoa()` before joining
+ * hides the inner `|` characters from the outer split, so `loadHybridCryptoValue` can
+ * reliably `split('|')` into exactly two segments and `atob()` each one back out.
  */
 
 import {
@@ -28,8 +35,16 @@ import {
 import {decryptKeyAsymmetric, encryptKeyAsymmetric} from './asymmetric.js';
 
 export interface HybridCryptoValue {
+    /**
+     * The one-time AES key (from {@link generateSymmetricKey}), RSA-OAEP-encrypted with
+     * the recipient's public key and base64-encoded. Despite the name, this is NOT a
+     * user-chosen passphrase — it is the wrapped symmetric key needed to decrypt `value`.
+     * Only the holder of the matching private key can recover it (see {@link decryptKeyAsymmetric}).
+     */
     passphrase: string;
+    /** The actual payload, AES-256-GCM encrypted with the (unwrapped) key above. */
     value: SymmetricCryptoValue,
+    /** Serialises to `base64(passphrase)|base64(value.toString())`, safe for storage/transmission. */
     toString: () => string;
 }
 

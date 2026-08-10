@@ -1,3 +1,19 @@
+<!--
+  @component Chat name menu specialised for AI conversations.
+
+  Wraps `ChatNameMenu` and adds a single destructive "Delete" action gated
+  behind a `ConfirmDialog`; on confirm it forwards to
+  `oldUiBridge.triggerDeleteChat`. Forwards the rename surface (`name`,
+  `slug`, `isRenaming`, …) straight through to `ChatNameMenu`. Use this for
+  AI conversations that don't have the multi-user room actions.
+
+  @example
+  <AiConvNameMenu
+      bind:name={conv.name}
+      bind:isRenaming={renaming}
+      slug={conv.slug}
+  />
+-->
 <script lang="ts">
     import type {ComponentProps} from 'svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';

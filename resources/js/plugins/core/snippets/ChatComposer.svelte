@@ -1,7 +1,16 @@
 <!--
-  @component Primary chat input panel. Combines message textarea, model selector,
-  tool/file controls, system-prompt editing, and a conflict resolver for
-    capability mismatches.
+@component Primary chat input panel — a `<svelte-snippet>` entry point registered by
+`core.plugin.ts`. Combines the message textarea, model selector, tool/file controls,
+system-prompt editing, and a conflict resolver for capability mismatches. It is a thin shell:
+all send/attachment/tool state lives in the `ComposerContext` it creates internally
+(`createComposerContext`), keyed by the `context` prop.
+
+Rendered once per page for either an AI conversation or a group room chat (see
+`resources/views/modules/chat.blade.php` and `resources/views/modules/groupchat.blade.php`):
+```blade
+<x-svelte type="ChatComposer" :props="['context' => 'aiConv']" />
+<x-svelte type="ChatComposer" :props="['context' => 'room']" />
+```
 -->
 <script lang="ts">
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
@@ -24,6 +33,7 @@
     import ComposerActionButtons from '$plugins/core/modules/chat/components/composer/ComposerActionButtons.svelte';
 
     interface Props {
+        /** Which kind of chat this composer sends into ('aiConv' for a 1:1 AI conversation, 'room' for a group room); determines context-specific behavior (e.g. write-access checks, name menu variant). */
         context: ComposerContextType;
     }
 

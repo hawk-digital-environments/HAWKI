@@ -1,5 +1,38 @@
 <!--
-  @component A menu item with a switch indicator. Use bind:checked for two-way state.
+  @component A menu item with a switch (toggle) indicator inside a
+  `DropdownMenu`. Use `bind:checked` for two-way state, or `checked` +
+  `onCheckedChange` for externally-controlled state. Visually and behind the
+  scenes it is a `DropdownMenuCheckboxItem` styled as a switch.
+
+  By default, like `DropdownMenuCheckboxItem`, clicking anywhere on the row
+  toggles it. Set `toggleOnIndicatorOnly` when the row itself also needs its
+  own click action (e.g. it opens something else) — in that case only the
+  switch indicator toggles the checked state, and the indicator becomes a
+  focusable `role="switch"` button in its own right, so provide `switchLabel`
+  for accessibility. Pair with `rowClickable` to show a pointer cursor on the
+  row in that mode.
+
+  Simple case, the whole row toggles:
+  ```svelte
+  <DropdownMenu trigger="Settings">
+      <DropdownMenuSwitchItem bind:checked={notificationsEnabled}>
+          {__('settings.notifications')}
+      </DropdownMenuSwitchItem>
+  </DropdownMenu>
+  ```
+
+  Row has its own click action; only the switch indicator toggles:
+  ```svelte
+  <DropdownMenuSwitchItem
+      checked={entry.active}
+      onCheckedChange={entry.onToggle}
+      toggleOnIndicatorOnly
+      rowClickable
+      switchLabel={__('menu.toggleTool', {name: entry.tool.displayName})}
+      onclick={() => openDetail(entry)}>
+      {entry.tool.displayName}
+  </DropdownMenuSwitchItem>
+  ```
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
@@ -11,7 +44,7 @@
     const {__} = useTranslator();
 
     interface Props extends HTMLAttributes<HTMLDivElement> {
-        /** Whether the checkbox is checked. Supports bind:checked. */
+        /** Whether the switch is checked. Supports bind:checked. */
         checked?: boolean;
         /** Called when the checked state changes. */
         onCheckedChange?: (checked: boolean) => void;
@@ -22,11 +55,16 @@
         /** Set to false to keep the menu open after selecting this item. Defaults to true. */
         closeOnSelect?: boolean;
 
-        /** When true, only the switch indicator toggles the checked state. */
+        /**
+         * When true, only the switch indicator toggles the checked state —
+         * clicks/keyboard activation on the rest of the row are passed through
+         * instead (e.g. to `onclick`). Use this when the row itself opens a
+         * detail view or performs another action independent of the toggle.
+         */
         toggleOnIndicatorOnly?: boolean;
-        /** Accessible label for the switch when `toggleOnIndicatorOnly` is enabled. */
+        /** Accessible label for the switch when `toggleOnIndicatorOnly` is enabled, e.g. `__('menu.toggleTool', {name: tool.displayName})`. */
         switchLabel?: string;
-        /** Shows the pointer cursor on the full row when the row itself has a click action. */
+        /** Shows the pointer cursor on the full row when the row itself has a click action (typically set alongside `toggleOnIndicatorOnly`). */
         rowClickable?: boolean;
     }
 

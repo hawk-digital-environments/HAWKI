@@ -1,3 +1,28 @@
+<!--
+  @component Inline rename + actions dropdown for a chat's name.
+
+  Shows the chat name as a `<span>` (or a click-to-rename button when
+  `nameClickRenames` is set) next to a `DropdownMenu` trigger. When renaming is
+  active (`isRenaming` bindable), the name is swapped for an auto-focused text
+  input that commits on Enter / blur and cancels on Escape; Enter on an empty
+  name shows an error toast and stays in edit mode. The default dropdown ships
+  only a "Rename" item, but parent components extend it by passing `children`
+  (e.g. `RoomNameMenu` adds manage/mark-read/leave/delete actions).
+
+  Rename dispatches through `onNameChange(slug, newName)`; the default
+  implementation forwards to `oldUiBridge.triggerRenameChat` so the legacy UI
+  persists the change until the SPA owns this surface.
+
+  @example
+  <ChatNameMenu
+      bind:name={chatName}
+      bind:isRenaming={renaming}
+      slug={chat.slug}
+      triggerIcon={ChevronDownIcon}
+  >
+      <DropdownMenuItem onclick={...}>Extra action</DropdownMenuItem>
+  </ChatNameMenu>
+-->
 <script lang="ts">
 
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';

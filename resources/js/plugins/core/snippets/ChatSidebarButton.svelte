@@ -1,5 +1,28 @@
-<!-- @component This is probably a temporary component, since it mixes concerns between chat and room messages
-However, as we want to merge them both anyway, it's not worth the effort to split out the chat-specific parts into a separate component for now. -->
+<!--
+@component Renders one entry in the chat sidebar list (either an AI conversation or a group room),
+as a `<svelte-snippet>` entry point registered by `core.plugin.ts`. Clicking it opens the
+conversation via `oldUiBridge.triggerOpenChat`; it also shows an inline rename menu
+(`RoomNameMenu`/`AiConvNameMenu` depending on `context`) and an unread-message indicator for rooms.
+
+This is probably a temporary component, since it mixes concerns between chat and room messages.
+However, as we want to merge them both anyway, it's not worth the effort to split out the
+chat-specific parts into a separate component for now.
+
+Usage (created dynamically by the legacy sidebar JS — see `public/js/ai_chat_functions.js`):
+```js
+const snippet = document.createElement('svelte-snippet');
+snippet.setAttribute('type', 'ChatSidebarButton');
+snippet.setProps({slug: conv.slug, name: conv.conv_name, context: 'aiConv'});
+snippet.setAttribute('data-room-slug', conv.slug); // used to look the button up again later
+document.getElementById('chats-list').appendChild(snippet);
+```
+
+Later, the name can be updated from outside without remounting:
+```js
+document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${slug}"]`)
+    .setProps({name: newName});
+```
+-->
 <script lang="ts">
     import type {ComposerContextType} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';

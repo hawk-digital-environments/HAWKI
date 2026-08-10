@@ -3,6 +3,22 @@ import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
 import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 
+/**
+ * Per-plugin registrar factory for the {@link ModuleExtension}.
+ *
+ * `createModuleRegistrar` is bound to a single plugin and exposes only `add`;
+ * `createModuleRegistrarFactory` produces those per-plugin registrars so the
+ * `ModuleExtension.init` hook can hand each plugin its own without leaking the
+ * shared `modules` Map. Each module is keyed under `${plugin.name}:${module.name}`
+ * so collisions throw.
+ *
+ * The registrar also wraps the module's optional `routes()` callback: the
+ * original callback is replaced with one that opens a `registrar.group` under
+ * the module's route prefix (computed by {@link getModuleRoutePrefix} —
+ * `/[plugins/<plugin>]/<module>`). That means modules only declare their own
+ * relative paths and never see the prefix; the routing extension receives them
+ * already namespaced.
+ */
 export function createModuleRegistrar(
     modules: Map<string, HawkiModuleWithPlugin>,
     plugin: HawkiPluginWithMetadata

@@ -1,3 +1,20 @@
+<!--
+  @component Renders the tool picker's list panel: capabilities (ungrouped), then HAWKI
+  function tools under one shared header, then one group per MCP server — each group
+  separated by a `DropdownMenuSeparator` when both neighbouring sections are non-empty.
+  This is the `children` (default/list) panel of `ToolMenu`'s `DropdownMenuDetailView`;
+  clicking a row's info icon swaps to `ToolMenuDetail` instead of navigating within this list.
+
+  ## Usage
+  Rendered by `ToolMenu` with the entries it derived from the `ai-tools` store and
+  `composerContext.tools`/`composerContext.model`:
+  ```svelte
+  <DropdownMenuDetailView open={!!detailEntry}>
+      {#snippet details()}...{/snippet}
+      <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+  </DropdownMenuDetailView>
+  ```
+-->
 <script lang="ts">
 
     import type {ToolMenuEntry, ToolMenuGroupedEntries} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
@@ -10,7 +27,10 @@
     const {__} = useTranslator();
 
     interface Props {
+        /** Tool entries pre-grouped by `ToolMenu` into capabilities / function tools / MCP-server groups. */
         entries: ToolMenuGroupedEntries;
+        /** Forwarded to every `ToolMenuListItem`; called when a row's info icon (or ArrowRight)
+         *  requests the detail view for that entry. */
         onOpenDetail?: (entry: ToolMenuEntry) => void;
     }
 

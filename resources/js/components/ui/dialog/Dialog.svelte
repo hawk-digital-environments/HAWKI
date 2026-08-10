@@ -3,6 +3,27 @@
   structured header / body / footer layout and an optional close button.
   Use ConfirmDialog or InfoDialog for pre-built variants; use this directly
   for dialogs that need custom body content or a non-standard layout.
+
+  Usage — custom body content with a title, description and footer:
+    <Dialog bind:open title="Edit prompt" description="Changes apply immediately.">
+        {#snippet children()}
+            <Textarea bind:value={draft}/>
+        {/snippet}
+        {#snippet footer()}
+            <Button variant="ghost" onclick={() => open = false}>Cancel</Button>
+            <Button variant="fill" onclick={handleSave}>Save</Button>
+        {/snippet}
+    </Dialog>
+
+  Usage — with an inline trigger (snippet receives `props` that MUST be
+  spread onto the trigger's root element):
+    <Dialog>
+        {#snippet trigger({props})}
+            <button {...props}>Open settings</button>
+        {/snippet}
+        {#snippet title()}Settings{/snippet}
+        {#snippet children()}...{/snippet}
+    </Dialog>
 -->
 <script lang="ts">
 

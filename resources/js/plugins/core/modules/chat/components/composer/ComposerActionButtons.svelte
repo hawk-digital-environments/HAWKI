@@ -1,3 +1,27 @@
+<!--
+  @component The composer's right-hand action cluster: an "improve message"
+  button (AI-only, sends the draft through `oldUiBridge.triggerImproveMessage`),
+  a cancel/abort button, and the primary send button. Which buttons are shown
+  and what they say depends entirely on `ComposerContext` state:
+
+  - Improve button only shows when `guard.showsAiUiElements` is true.
+  - Cancel button shows either while a non-default mode (edit/regen/thread) is
+    active but not yet sending, or while an abortable send is in progress —
+    its label/action/tooltip adapt to which case applies.
+  - Send button's icon/label switch to a checkmark + "Save"/"Regenerate" in
+    edit/regen mode, and it hides while an abortable send is active (the
+    cancel button takes its place).
+
+  Renders nothing itself beyond these buttons — layout (flex row, gaps) is the
+  parent's responsibility.
+
+  @example
+  ```svelte
+  <div class="chat-bottom-right">
+      <ComposerActionButtons onSend={handleSend} bind:buttonRef={sendButtonEl}/>
+  </div>
+  ```
+-->
 <script lang="ts">
 
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
@@ -17,7 +41,13 @@
     const {__} = useTranslator();
 
     interface Props {
+        /** Called when the send button is clicked. Does not itself check `guard.canSend` —
+         *  the button is `disabled` when sending isn't allowed, so this only fires when a
+         *  send is actually possible. Typically wired to `ComposerContext.send()` plus
+         *  response handling in the parent (see `ChatComposer.svelte`'s `handleSend`). */
         onSend?: () => void;
+        /** Bindable reference to the send `<button>` element, e.g. so `ComposerFocusWrap`
+         *  can focus it as a fallback when the textarea is disabled. */
         buttonRef?: HTMLButtonElement | null;
     }
 

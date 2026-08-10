@@ -1,6 +1,28 @@
 <!--
-  @component Colored dot indicating a model's online status.
-  Shows a tooltip on hover with the human-readable status label.
+  @component Thin wrapper around the `components/ui/status-dot` primitive
+  for AI tools/capabilities. Like `StatusDotForModel`, it fills in
+  tool-specific translated labels/tooltips for `online`/`offline`/`unknown`.
+  Additionally understands the "tool exists but isn't supported by the
+  currently selected model" case via `supported={false}` — in that case the
+  dot is forced to the `unknown` visual regardless of the tool's own status,
+  and the label/tooltip explain that it's a model incompatibility rather than
+  the tool being down. Used e.g. in `ToolMenuListItem`'s per-tool info button.
+
+  @example
+  ```svelte
+  // plain tool status
+  <StatusDotForTool tool={someTool}/>
+  ```
+
+  @example
+  ```svelte
+  // tool exists but the active model doesn't support it
+  <StatusDotForTool
+      tool={entry.tool}
+      supported={entry.available}
+      tooltipSuffix={__('chat.composer.toolMenu.clickForInfo')}
+  />
+  ```
 -->
 <script lang="ts">
     import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';

@@ -1,3 +1,21 @@
+<!--
+  @component The composer's main message input. Renders the assistant toggle
+  button (`ComposerAssistantButton`) inline at its start, an auto-growing
+  `Textarea` bound to `ComposerContext.message`, and handles the
+  Enter-to-send / Shift+Enter-newline / Escape-to-exit-mode keyboard
+  shortcuts. Hides itself entirely when the current mode disables the
+  `'input'` feature (e.g. while a non-abortable send is in flight).
+
+  Reads/writes `ComposerContext` directly — there is no props-based way to
+  set the message text; bind to `composerContext.message` from a parent if
+  you need to observe or set it externally.
+
+  @example
+  ```svelte
+      // inside a component nested under createComposerContext()
+  <ComposerTextarea bind:ref={textareaEl} onSend={handleSend}/>
+  ```
+-->
 <script lang="ts">
 
     import Textarea from '$lib/components/ui/textarea/Textarea.svelte';
@@ -10,7 +28,12 @@
     const {__} = useTranslator();
 
     interface Props {
+        /** Called when the user presses Enter (without Shift) to submit the message.
+         *  The textarea itself does not clear or send anything — the parent (typically
+         *  `ChatComposer`) owns the actual send flow via `ComposerContext.send()`. */
         onSend?: () => void;
+        /** Bindable reference to the underlying `<textarea>` element, e.g. so a parent
+         *  can pass it to `ComposerFocusWrap` for click-to-focus behaviour. */
         ref?: HTMLTextAreaElement | null;
     }
 

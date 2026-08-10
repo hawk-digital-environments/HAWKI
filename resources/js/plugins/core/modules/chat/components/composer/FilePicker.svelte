@@ -1,6 +1,17 @@
 <!--
   @component Paperclip button that opens a hidden file-input for attaching
-  multiple files to a chat message.
+  multiple files to a chat message. On selection, adds the files to
+  `ComposerContext.attachments` and reports any rejected files (unsupported
+  type / too large) as toasts via `reportAttachmentIssues` — the same
+  reporting path used by `FileDragAndDrop`. Disabled when the current mode
+  disables the `'attachments'` feature (see `GuardSlice.disablesFeature`).
+  No props — reads `ComposerContext` directly.
+
+  @example
+  ```svelte
+    // placed in the composer's bottom-left action row
+  <FilePicker/>
+  ```
 -->
 <script lang="ts">
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';

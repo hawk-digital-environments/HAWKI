@@ -19,6 +19,13 @@
  *
  * const loaded = loadSymmetricCryptoValue(stored);
  * const plaintext = await decryptSymmetric(loaded, key); // 'hello'
+ *
+ * WHY ciphertext and tag are split/rejoined: the WebCrypto AES-GCM implementation
+ * returns `ciphertext || authTag` concatenated as a single buffer from `encrypt()`, and
+ * expects the same concatenated form back into `decrypt()`. This module stores/transmits
+ * the tag separately from the ciphertext (see `SymmetricCryptoValue`) to match the format
+ * used by the PHP side (`\App\Services\Crypto\Value\SymmetricCryptoValue`), so the two
+ * are sliced apart after encryption and recombined before decryption.
  */
 
 import {

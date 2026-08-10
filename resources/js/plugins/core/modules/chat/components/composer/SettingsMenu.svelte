@@ -1,6 +1,26 @@
 <!--
-  @component Popover for adjusting model generation parameters (temperature, Top P).
-  Includes preset buttons for quick configuration.
+  @component Composer settings control: a popover (desktop) / bottom sheet (mobile,
+  via `Breakpoint`) for adjusting model generation parameters (temperature, Top P) and
+  the per-session system prompt.
+
+  Reads/writes `composerContext.modelParameters` for temperature/top_p (with three
+  quick presets — creative/balanced/precise — highlighted via
+  `modelParameters.intersects()`, and a reset button gated on `modelParameters.isModified`),
+  and `composerContext.systemPrompt` for the prompt text (compared against the `default`
+  prompt from the `system-prompts` store to decide whether the reset button is enabled).
+  Clicking the system-prompt preview opens `SystemPromptDialog` for full editing.
+
+  Disabled (trigger button) whenever `composerContext.guard.disablesFeature('settings')`.
+  Takes no props — it is a self-contained composer feature component.
+
+  ## Usage
+  Rendered once by `ChatComposer.svelte` in the top-right of the composer card, next to
+  `ModelPicker`:
+  ```svelte
+  <div class="chat-composer-right">
+      <SettingsMenu/>
+  </div>
+  ```
 -->
 <script lang="ts">
     import Popover from '$lib/components/ui/popover/Popover.svelte';

@@ -1,3 +1,22 @@
+<!--
+  @component Banner shown above the composer's model/settings row whenever the composer
+  is in a non-default mode (`composerContext.mode.isEdit` / `isRegen` / `isThread`).
+  Shows a mode-specific icon, title, and a truncated preview of the message being edited
+  or regenerated (`mode.getState('edit'|'regen').originalMessage`; empty for `thread`),
+  plus a cancel button that calls `composerContext.mode.exit()` — restoring the
+  checkpoint taken when the mode was entered, effectively undoing everything the mode did.
+
+  Renders nothing while `composerContext.mode.isDefault` is true. Takes no props — it
+  reads everything from `ComposerContext.mode`.
+
+  ## Usage
+  Rendered once by `ChatComposer.svelte`, above the model/settings row, so the banner
+  can push the rest of the composer down when a mode is entered:
+  ```svelte
+  <ModePanel/>
+  <div class="chat-composer-top-row">...</div>
+  ```
+-->
 <script lang="ts">
     import Button from '$lib/components/ui/button/Button.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';

@@ -1,5 +1,24 @@
 <!--
   @component Visual switch indicator. Use bindable parent state to control checked.
+
+  By default it is a standalone toggle: clicking/tapping it (or focusing +
+  Space) flips `checked` itself, since it renders `role="checkbox"` with its
+  own click handler. Set `presentational` when the switch is nested inside a
+  larger interactive element (e.g. a menu item) that already owns focus/click
+  handling — this strips the role, tabindex, and click handler so behavior
+  isn't duplicated on two elements.
+
+  @example Standalone toggle:
+  ```svelte
+  <Switch bind:checked={notificationsEnabled}/>
+  ```
+
+  @example Presentational, driven by a parent menu item's own click handler:
+  ```svelte
+  <button onclick={toggleFromIndicator}>
+      <Switch checked={isChecked} presentational/>
+  </button>
+  ```
 -->
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';

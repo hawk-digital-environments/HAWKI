@@ -3,12 +3,33 @@ import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/
 import type {HawkiResourceSchemas} from '$lib/kernel/extendableTypes.js';
 import {createResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 
+/**
+ * Declaration merging that exposes this extension on the app object as
+ * `app.resourceSchemas` (see {@link HawkiAppExtension} / `createApp()` in
+ * `kernel/HawkiApp.ts`). The `registrar` member is omitted from the public
+ * surface — registration only happens during bootstrap, never at runtime.
+ */
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
         readonly resourceSchemas: Omit<WithoutAppExtensionInternals<ResourceSchemaExtension>, 'registrar'>;
     }
 }
 
+/**
+ * App extension that owns the registry of Zod schemas for the JSON:API
+ * resources the app talks to.
+ *
+ * The `RestApi` validates every resource response against a schema looked up
+ * here by name (the resource type string, e.g. `'ai-models'`, `'migrations'`).
+ * Plugins register their own resource schemas during the bootstrapper's
+ * `resourceSchemas` stage (driven by `PluginBootstrapper`), augmenting the
+ * {@link HawkiResourceSchemas} interface via declaration merging so
+ * `app.restApi.getResourceCollection('ai-models')` returns a typed
+ * `AiModel[]`. The extension itself eager-globs `$lib/app/schemas/resources/*.schema.{ts,js}`
+ * on `init` to register the core schemas; `has`/`get` are the lookup helpers
+ * the `RestApi` uses (overloaded to preserve the typed surface when the caller
+ * passes a `keyof HawkiResourceSchemas`).
+ */
 export class ResourceSchemaExtension implements HawkiAppExtension {
     private readonly registry = new Map<string, z.ZodTypeAny>();
     public readonly registrar = createResourceSchemaRegistrar(this.registry);

@@ -1,3 +1,25 @@
+/**
+ * The `core` plugin — HAWKI's first-party feature bundle.
+ *
+ * This is the only plugin shipped with HAWKI by default and it wires together the
+ * foundational, always-on features of the frontend:
+ *   - **Stores**: registers the core reactive stores ({@link KeychainStore},
+ *     {@link AiHandleStore}, {@link AiModelStore}, {@link AiToolStore},
+ *     {@link SystemPromptStore}, {@link ThemeStore}) with the kernel's
+ *     `StoreExtension` so their `loadData` runs on the bootstrapper's main stage.
+ *   - **Snippets**: eager-globs the `plugins/core/snippets/` directory and
+ *     registers each `.svelte` file as a named snippet with
+ *     `app.snippets.register(name, Component)` so they can be mounted from the
+ *     legacy UI via the `<svelte-snippet>` custom element (defined on the
+ *     bootstrapper's `finalization` stage, after the DOM is ready).
+ *   - **Migrations**: lazy-globs the `plugins/core/migrations/` directory and
+ *     hands the loaders to the `MigrationExtension` for the keychain/encryption
+ *     format upgrades.
+ *
+ * Augments `HawkiPlugins` via declaration merging so `app.plugins.core` is typed as a
+ * `CorePlugin`. Auto-discovered by the kernel via `import.meta.glob` for
+ * `*.plugin.ts` files.
+ */
 import type {HawkiCorePlugin, HawkiPluginContextWithConfig} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';

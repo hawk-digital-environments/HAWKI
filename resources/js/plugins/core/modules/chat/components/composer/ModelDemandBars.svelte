@@ -1,6 +1,24 @@
 <!--
-  @component Three-bar load indicator showing the current demand on a model.
-  More filled bars = higher load. Shows a tooltip on hover.
+  @component Three-bar load indicator for a single `AiModel`'s `demand` field (`'low'` |
+  `'medium'` | `'high'`, defaulting to `'low'` for any other value). More filled bars =
+  lower load (low demand fills all 3 bars, high demand fills only 1). Shows a translated
+  tooltip on hover; pass `showLabel` to also spell out the demand level next to the bars.
+
+  Purely presentational — takes an `AiModel` object, no store/context access of its own.
+
+  ## Usage
+  Used wherever a model is listed for selection, so the user can see load before picking:
+  in `ModelPicker`'s per-option snippet (compact, no label) and in `ModelConflictPicker`'s
+  replacement-model cards:
+  ```svelte
+  {#if m.status !== 'offline'}
+      <ModelDemandBars model={m}/>
+  {/if}
+  ```
+  With the label spelled out:
+  ```svelte
+  <ModelDemandBars model={m} showLabel/>
+  ```
 -->
 <script lang="ts">
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
@@ -11,9 +29,9 @@
     const {__} = useTranslator();
 
     interface Props {
-        /** The model whose status to show. */
+        /** The model whose demand/load level to show, e.g. `aiModelStore.models[0]`. */
         model: AiModel;
-        /** If true, the human-readable demand label will be shown next to the bars. */
+        /** If true, the human-readable demand label (e.g. "Low demand") is shown next to the bars. */
         showLabel?: boolean;
     }
 

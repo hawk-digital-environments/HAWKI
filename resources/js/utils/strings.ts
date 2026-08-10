@@ -37,11 +37,32 @@ export function strtr(str: string, pairs: Record<string, string>) {
     return result;
 }
 
+/**
+ * Returns the last path segment of `path` (mirrors PHP's `basename()`).
+ * Splits on both `/` and `\` so it works for POSIX and Windows-style paths.
+ *
+ * @example
+ * basename('/uploads/reports/q1.pdf'); // 'q1.pdf'
+ * basename('C:\\Users\\me\\file.txt'); // 'file.txt'
+ */
 export function basename(path: string): string {
     const parts = path.split(/[\\/]/);
     return parts[parts.length - 1];
 }
 
+/**
+ * Converts an arbitrary string into a URL-safe slug: lowercased, German
+ * umlauts/ß transliterated (ä→ae, ö→oe, ü→ue, ß→ss), remaining diacritics
+ * stripped, and any run of non `a-z0-9` characters collapsed to a single `-`
+ * (leading/trailing dashes trimmed).
+ *
+ * Used to derive stable route segments from plugin/module display names —
+ * see `kernel/routing/routeInflection.ts`.
+ *
+ * @example
+ * valueToSlug('Prüfungsübersicht'); // 'pruefungsuebersicht'
+ * valueToSlug('My Plugin Name');    // 'my-plugin-name'
+ */
 export function valueToSlug(value: string): string {
     let slug = value.toLowerCase();
     slug = slug.normalize('NFD').replace(/[\u0300-\u036f]/g, '');

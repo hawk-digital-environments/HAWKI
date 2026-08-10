@@ -1,3 +1,27 @@
+<!--
+  @component Purely-imperative bridge between the new composer's mode system
+  and the legacy chat log DOM (see `$lib/legacy/OldUiBridge`). The message
+  log itself (the scrolling list of `.message` elements) still belongs to the
+  old UI and hasn't been ported to Svelte yet; when the composer enters
+  `edit`/`regen`/`thread` mode, this component reaches into that legacy DOM
+  via `document.querySelector`/`getElementById` to highlight the message
+  being edited/regenerated (or the thread being replied in), dim its
+  controls, hide unrelated siblings, and scroll it into view — then reverts
+  all of that when the mode exits.
+
+  Renders no markup of its own (only a `<style>` block with the
+  `old-ui-mode-*` global classes it toggles) — mount it once near the top of
+  the composer tree purely for its `$effect`. No props; it derives everything
+  from `ComposerContext.mode`.
+
+  @example
+  ```svelte
+  <div class="chat-composer-wrapper">
+      <OldUiStyling/>
+      // rest of the composer
+  </div>
+  ```
+-->
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import type {ChatEditModeState} from '$plugins/core/modules/chat/components/composer/contexts/modes/ChatEditMode.js';

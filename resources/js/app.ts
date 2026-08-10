@@ -1,3 +1,35 @@
+/**
+ * Frontend application entry point.
+ *
+ * This is the single script loaded by the page (see the bundler entry config)
+ * that boots the whole HAWKI SPA/legacy-hybrid frontend. It has two jobs:
+ *
+ * 1. Assemble the {@link HawkiApp} by calling `createApp()` with the ordered
+ *    list of {@link HawkiAppExtension}s that make up the application. Each
+ *    extension's `provideProperties()` merges its own surface onto the app
+ *    instance (see `HawkiApp.ts`), and each extension augments
+ *    `HawkiAppExtensions` via TypeScript declaration merging so the merged
+ *    surface stays fully typed (e.g. `app.config`, `app.stores`,
+ *    `app.restApi`, ...). The order of the array matters: extensions run
+ *    their `init()` hook in this order, and later extensions can rely on
+ *    properties provided by earlier ones (via `app.getOrFail(...)`).
+ * 2. Kick off the {@link Bootstrapper}, which runs app startup in six ordered
+ *    stages (preparation → migration → early → main → late → finalization).
+ *    `bootstrapper.run()` is awaited so that any code relying on
+ *    `window.hawkiIsBooting` or the legacy wait-queues behaves correctly.
+ *
+ * This file also guards against being executed twice (e.g. if the bootstrap
+ * `<script>` tag is accidentally included more than once on the same page)
+ * via the `window.hawkiIsBooting` flag, and wires up legacy-bridge concerns
+ * (`provideLegacyGlobals`, `setHawkiApp`, the legacy wait-until queues) that
+ * exist only to support old, non-extension code during the ongoing
+ * refactor to a single-page Svelte app.
+ *
+ * You should not normally need to change this file when adding a feature —
+ * add a new {@link HawkiAppExtension} (or a plugin, see `PluginExtension`)
+ * instead. Only touch this file when you need to add a fundamentally new,
+ * app-wide extension, or change the relative ordering of existing ones.
+ */
 import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.js';
 import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
@@ -14,6 +46,7 @@ import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
 import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
 import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
 
+/** Guard flag so a second inclusion of this bootstrap script fails loudly instead of double-booting the app. */
 declare global {
     interface Window {
         hawkiIsBooting: boolean;

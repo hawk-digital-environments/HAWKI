@@ -52,6 +52,28 @@
  * the status once the transport signals a response is arriving.
  * The only concrete transport today is `OldUiBridgeTransport`, which forwards
  * the request to the legacy UI layer.
+ *
+ * ## Ownership & lifetime
+ *
+ * Exactly one context exists per mounted composer. `ChatComposer.svelte`
+ * (a `<svelte-snippet>` entry point) calls {@link createComposerContext} in its
+ * `<script>` body; every descendant component calls {@link useComposerContext}.
+ * The context lives as long as that component subtree — `createComposerContext`
+ * registers an `onDestroy` hook that detaches all `OldUiBridge` listeners.
+ *
+ * ## Reading the state machine (quick map)
+ *
+ * ```text
+ *  user types            -> context.message
+ *  guard says ok         -> context.guard.canSend
+ *  user hits send        -> context.send()
+ *                             -> MessageSender.send(context)
+ *                                  -> transport.sendMessage({context, status, ...})
+ *                                  -> SendMessageStatus: sending -> responding -> received
+ *  mode wants to close   -> context.mode.exit()
+ *                             -> ContextCheckpointer.restoreCheckpoint()
+ *                                  -> every slice restores its own snapshot
+ * ```
  */
 import {createContext, onDestroy} from 'svelte';
 import {ModelParameterSlice} from '$plugins/core/modules/chat/components/composer/contexts/slices/ModelParameterSlice.svelte.js';
@@ -74,11 +96,22 @@ import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
 
+/** The kinds of chat a composer can be mounted into. Validated at runtime by {@link createComposerContext}. */
 const allowedContextTypes = ['aiConv', 'room'] as const;
+
+/**
+ * Which kind of chat this composer writes into:
+ * - `'aiConv'` — a private 1:1 AI conversation. AI controls (model picker, tool
+ *   menu, settings) are always visible.
+ * - `'room'` — a shared group room. AI controls only appear once the message
+ *   addresses the assistant via an `@handle` (see `GuardSlice.showsAiUiElements`).
+ */
 export type ComposerContextType = typeof allowedContextTypes[number];
 
+/** {@link SyncPipeline} channel name used by {@link ComposerContext.focusInput}. */
 const FOCUS_INPUT_PIPELINE = 'focusInput';
 
+/** Channel-to-payload map for the context-internal {@link SyncPipeline}. `void` = no payload. */
 interface FlowList {
     [FOCUS_INPUT_PIPELINE]: void;
 }
@@ -90,27 +123,72 @@ interface FlowList {
  *
  * Obtain the instance for the current component tree via
  * {@link useComposerContext}. Create a new one via {@link createComposerContext}.
+ *
+ * Never construct this class directly — {@link createComposerContext} performs
+ * the (order-sensitive) wiring of all slices, the checkpointer and the sender,
+ * and hooks the result up to the legacy UI bridge.
+ *
+ * @example Consuming it from any descendant component
+ * const composerContext = useComposerContext();
+ *
+ * // reactive reads work because every exposed field is $state / $derived
+ * const disabled = $derived(!composerContext.guard.canSend);
+ *
+ * function onSend() {
+ *     const status = composerContext.send();
+ *     if (status === null) return; // guard rejected the send
+ * }
  */
 export class ComposerContext {
 
     public constructor(
         /** Whether this composer is embedded in a dedicated AI conversation (`'aiConv'`) or a room chat (`'room'`). Affects which AI UI elements are shown. */
         public readonly type: ComposerContextType,
+        /** Active mode + its enter/exit lifecycle. See `ModeSlice`. */
         public readonly mode: ModeSlice,
+        /** Selected AI model. See `ModelSlice`. */
         public readonly model: ModelSlice,
+        /** Sampling parameters (`temperature`, `top_p`) for the next request. See `ModelParameterSlice`. */
         public readonly modelParameters: ModelParameterSlice,
+        /** Files staged for the next message. See `AttachmentSlice`. */
         public readonly attachments: AttachmentSlice,
+        /** Tools/capabilities enabled for the next message. See `ToolSlice`. */
         public readonly tools: ToolSlice,
+        /** Derived compatibility view (model vs. active tools/attachments). See `ModelUsageSlice`. */
         public readonly modelUsage: ModelUsageSlice,
+        /** Derived permission view (`canSend`, `canChangeMode`, `disablesFeature`). See `GuardSlice`. */
         public readonly guard: GuardSlice,
+        /**
+         * Snapshot coordinator used by mode transitions. Private because callers should
+         * go through `mode.enter()` / `mode.exit()` (or {@link reset} with `withCheckpoint`)
+         * instead of driving checkpoints by hand.
+         */
         private readonly checkpointer: ContextCheckpointer,
+        /** Send pipeline. Invoked exclusively through {@link send}. */
         private readonly sender: MessageSender,
+        /**
+         * System prompt this conversation starts with (the `'default'` entry of the
+         * `system-prompts` store). {@link reset} returns {@link systemPrompt} to this value.
+         */
         private readonly initialSystemPrompt: string,
+        /**
+         * Called whenever {@link systemPrompt} is assigned, so the legacy UI can persist it.
+         * Suppressed while the legacy UI itself is pushing a prompt into the context, to
+         * avoid an echo loop (see `blockSystemPromptPropagation` in {@link createComposerContext}).
+         */
         private readonly onSetSystemPrompt: (prompt: string) => void,
+        /**
+         * Extracts agent handles from a text. Backed by the `ai-handle` store; injected
+         * so the context stays independent from the store layer.
+         * @example getHandlesInText('@hawki hi there') yields '@hawki'
+         */
         private readonly getHandlesInText: (text: string) => Generator<string>
     ) {
         this._systemPrompt = $state(initialSystemPrompt);
 
+        // The context is the single participant in the checkpoint protocol: it collects the
+        // snapshot of its own fields *plus* one sub-checkpoint per stateful slice, so a mode
+        // transition only ever produces/consumes one checkpoint object.
         this.checkpointer.onCreateCheckpoint((check) => {
             check({
                 status: this._sendStatus,
@@ -140,8 +218,11 @@ export class ComposerContext {
         });
     }
 
+    /** Internal event bus for imperative, fire-and-forget signals (currently only "focus the input"). */
     private sync = new SyncPipeline<FlowList>();
+    /** Backing field for {@link systemPrompt}; declared as `$state` in the constructor. */
     private _systemPrompt: string;
+    /** Backing field for {@link sendStatus}. `null` while idle. */
     private _sendStatus = $state(null as SendMessageStatus | null);
 
     /** Forces the composer into the active/sending state, disabling the send button and other
@@ -180,6 +261,12 @@ export class ComposerContext {
         return this._systemPrompt;
     }
 
+    /**
+     * Assigning a value also notifies the legacy UI through `onSetSystemPrompt`
+     * so it can persist the prompt on the active conversation. Note that
+     * {@link reset} deliberately writes the backing field directly and therefore
+     * does *not* trigger that notification.
+     */
     public set systemPrompt(value: string) {
         this._systemPrompt = value;
         this.onSetSystemPrompt(value);
@@ -200,6 +287,19 @@ export class ComposerContext {
     /** Starts a send operation. Returns `null` without doing anything when `guard.canSend`
      *  is false. The returned `SendMessageStatus` is also stored on `sendStatus` and cleared
      *  once the response body has fully arrived. */
+    /**
+     * Caller contract: this method only *starts* the flow. Reacting to the outcome —
+     * surfacing `status.sendIssues` / `status.fileIssues` as toasts, calling {@link clear},
+     * and honouring `mode.exitAfterSend` — is the caller's job. `ChatComposer.svelte`
+     * (`handleSend`) is the reference implementation of that sequence.
+     *
+     * @example
+     * const status = composerContext.send();
+     * if (status === null) return;              // guard rejected it
+     * const response = await status.response;   // transport accepted the message
+     * if (status.failed) { ... }                // validation / upload problems
+     * await response.body;                      // full (possibly streamed) answer received
+     */
     public send(): SendMessageStatus | null {
         if (!this.guard.canSend) {
             return null;
@@ -231,6 +331,10 @@ export class ComposerContext {
      * Used after a message has been sent (keeps most of the settings intact, just clears the message, attachments, and sending state).
      * Use {@link reset} to reset everything back to the initial state (e.g. when loading a new conversation or exiting a thread).
      */
+    // TODO(docs): The summary above says `clear()` also clears the "sending state", but the
+    // implementation only resets `message` and `attachments` — `_sendStatus` is cleared
+    // separately inside `send()` once the response body resolves. Is the doc wording just
+    // stale, or is clearing `_sendStatus` here intended as well?
     public clear(): void {
         // When the previous message was sent to the ai, we want to keep the handles in the message,
         // so you can keep chatting with the same ai without having to re-tag it in every message.
@@ -245,6 +349,9 @@ export class ComposerContext {
      * To just clear the input and attachments after sending a message, use {@link clear} instead.
      * @param withCheckpoint
      */
+    // Note: the model itself is intentionally NOT reset here — only when `withCheckpoint`
+    // restores a snapshot does the model revert. Modes such as `ChatRegenMode` rely on this:
+    // they call `reset()` first and then set their own model/parameters on the clean slate.
     public reset(withCheckpoint?: boolean): void {
         if (withCheckpoint) {
             this.checkpointer.restoreCheckpoint();
@@ -258,6 +365,15 @@ export class ComposerContext {
     }
 }
 
+/**
+ * Svelte context accessor pair for the composer.
+ *
+ * `createContext()` (Svelte >= 5.40) returns a typed `[get, set]` tuple bound to
+ * an internal key, which removes the string/symbol key bookkeeping that plain
+ * `getContext`/`setContext` require. `get` is re-exported below as
+ * {@link useComposerContext} with an extra guard so a missing provider produces
+ * an actionable message instead of Svelte's generic one.
+ */
 const [get, set] = createContext<ComposerContext>();
 
 /** Returns the `ComposerContext` published by the nearest `createComposerContext` ancestor. */
@@ -274,6 +390,36 @@ export function useComposerContext(): ComposerContext {
  * context tree, and subscribes to the relevant `OldUiBridge` events.
  * Call once per composer root component; clean-up is handled automatically
  * via `onDestroy`.
+ *
+ * ## What it wires (in order — the order matters)
+ *
+ * 1. Pulls the stores it needs off the app (`ai-models`, `ai-tools`,
+ *    `system-prompts`, `ai-handle`).
+ * 2. Builds `ModelSlice` and `ModelParameterSlice`. These two reference each
+ *    other, so the model slice receives a *factory* (`parameterContextFactory`)
+ *    that is only resolved after both objects exist.
+ * 3. Builds the `ContextCheckpointer` and the `ModeSlice`. `ModeSlice` gets a
+ *    `modeFactory` closure that maps a mode key to a fresh mode instance —
+ *    `'default'` is not part of it because `ModeSlice` seeds itself with
+ *    `ChatDefaultMode`.
+ * 4. Builds the remaining slices. `GuardSlice` and `ModeSlice` receive a
+ *    `() => context` resolver for the same circular-dependency reason as above.
+ * 5. Builds the `MessageSender` on top of `OldUiBridgeTransport`.
+ * 6. Subscribes to the legacy bridge (see the `unbinders` array) and finally
+ *    calls `oldUiBridge.triggerContextReady()` to tell the old UI it may start
+ *    pushing state (initial model, system prompt, mode changes) into the context.
+ *
+ * Because the mode/guard slices resolve the context lazily, nothing may call
+ * `guard.*` or `mode.*` before this function returns.
+ *
+ * @param app The running `HawkiApp`; used for stores, config, translator and localization.
+ * @param type Whether this composer belongs to an AI conversation or a room. Throws for other values.
+ * @param toastContext Toast surface used for mode-transition errors and bridge-forwarded messages.
+ *
+ * @example Root component (see `plugins/core/snippets/ChatComposer.svelte`)
+ * const app = useApp();
+ * const toastContext = useToastContext();
+ * const chatContext = createComposerContext(app, 'aiConv', toastContext);
  */
 export function createComposerContext(
     app: HawkiApp,
@@ -284,6 +430,9 @@ export function createComposerContext(
         throw new Error(`Invalid composer context type: ${type}. Allowed types are: ${allowedContextTypes.join(', ')}`);
     }
 
+    // `ModelSlice` needs the parameter slice to decide whether to reset sampling values on a
+    // model switch, while `ModelParameterSlice` needs the model slice to read its defaults.
+    // The late-bound factory breaks that construction cycle.
     let parameterContext: ModelParameterSlice | null = null;
     const parameterContextFactory = () => parameterContext!;
 
@@ -305,6 +454,9 @@ export function createComposerContext(
         app.translator,
         checkpointer,
         toastContext,
+        // modeFactory: maps a mode key to a fresh strategy instance. `'default'` is absent on
+        // purpose — `ModeSlice` seeds itself with `ChatDefaultMode` and only ever returns to it
+        // by restoring a checkpoint, so asking the factory for it is a programming error.
         (mode) => {
             switch (mode) {
                 case 'edit':
@@ -317,7 +469,10 @@ export function createComposerContext(
                     throw new Error(`Unsupported mode ${mode}`);
             }
         },
+        // Late-bound context resolver: `context` is assigned further down, after all slices exist.
         (): ComposerContext => context,
+        // Notifies the legacy UI that a mode was left, handing it the state the mode had
+        // *before* the checkpoint was restored (e.g. the edited `messageId`).
         (oldState) => oldUiBridge.triggerExitMode(oldState)
     );
     const attachment = new AttachmentSlice(app.config);
@@ -333,6 +488,8 @@ export function createComposerContext(
 
     const initialSystemPrompt = systemPromptStore.getPromptByType('default').prompt ?? '';
 
+    // Guard against an echo loop: when the legacy UI pushes a prompt in via
+    // `onLoadSystemPrompt`, the setter would immediately push the same value back out.
     let blockSystemPromptPropagation = false;
     const onSetSystemPrompt = (prompt: string) => {
         if (blockSystemPromptPropagation) {

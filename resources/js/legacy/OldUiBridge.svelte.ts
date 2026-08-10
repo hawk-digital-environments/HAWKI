@@ -141,15 +141,68 @@ interface ASYNC_PIPELINE_LIST {
 }
 
 /**
- * This is a bridge to share state and events between the new Svelte-based UI and the old spaghetti UI.
+ * # OldUiBridge — event/state bridge between the old vanilla-JS UI and the new Svelte UI
+ *
+ * WHAT: a bidirectional messenger. It exposes two internal pipelines — a
+ * {@link SyncPipeline} for fire-and-forget events and an {@link AsyncPipeline}
+ * for events whose handler(s) must be awaited (e.g. sending a message) — plus
+ * one piece of shared reactive state ({@link passkey}). Every public method
+ * comes in a `trigger*`/`on*` pair: `trigger*` fires the event, `on*`
+ * registers a handler and returns an unsubscribe function.
+ *
+ * WHY this exists: HAWKI is being migrated from the old plain-JS UI
+ * (`public/js/*.js`, e.g. `ai_chat_functions.js`, `groupchat_functions.js`,
+ * `chatlog_functions.js`) to the new Svelte 5 app. Both UIs are live on the
+ * page at the same time during the migration and need to talk to each other
+ * without either side importing the other's module graph (the old UI has no
+ * module system — it only sees `window` globals). `OldUiBridge` is the single
+ * narrow channel through which that cross-talk happens; it is registered on
+ * `window.oldUiBridge` by {@link provideLegacyGlobals} in `legacy.ts`.
+ *
+ * HOW new Svelte code uses it — call the `trigger*` methods to ask the old
+ * UI to do something, and the `on*` methods to react to something the old UI
+ * did:
+ * ```ts
+ * import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
+ *
+ * // Ask the old UI to open a chat.
+ * oldUiBridge.triggerOpenChat(slug);
+ *
+ * // React to the old UI renaming a chat.
+ * const unsubscribe = oldUiBridge.onRenameChat((slug, newName) => { ... });
+ * ```
+ *
+ * HOW the old UI (plain JS, see `public/js/*.js`) uses it — through the
+ * global, in the mirror-image direction (it triggers what it owns and
+ * listens to what the new UI triggers):
+ * ```js
+ * window.oldUiBridge.onOpenChat((slug) => { /* old UI switches its view * / });
+ * window.oldUiBridge.triggerRenameChat(slug, newName);
+ * ```
+ *
+ * DO NOT use this bridge for new-code-to-new-code communication — it only
+ * exists to interoperate with the legacy UI. Once a feature no longer has an
+ * old-UI counterpart, its pipeline entry (and the `trigger*`/`on*` pair)
+ * should be deleted rather than reused for something else.
  */
 export class OldUiBridge {
+    /** Fire-and-forget event pipeline; see the class doc for the trigger/on pairing convention. */
     private sync = new SyncPipeline<SyncFlowList>();
+    /** Event pipeline whose handlers may be async and are awaited by {@link triggerSendMessage}/{@link triggerImproveMessage}. */
     private async = new AsyncPipeline<ASYNC_PIPELINE_LIST>();
+    /** Set for the duration of {@link triggerSendMessage}; several `trigger*` methods no-op while a message is in flight to avoid racing the old UI's send. */
     private isSendingMessage = false;
+    /** Flips to `true` the first time {@link triggerContextReady} is called; makes {@link onContextReady} fire immediately for late subscribers. */
     private isContextReady = false;
 
-    /** The user's decrypted passkey for the current session. `null` until the user unlocks. */
+    /**
+     * The user's decrypted passkey for the current session, `null` until the
+     * user unlocks. This is `$state`, so new Svelte code can read it
+     * reactively (e.g. `$derived(() => oldUiBridge.passkey)`). The **old** UI
+     * is the writer — see `public/js/encryption.js`, which sets
+     * `window.oldUiBridge.passkey = passKey` once the user unlocks/logs in.
+     * New code should only ever read this value, never assign to it.
+     */
     public passkey = $state<string | null>(null);
 
     /**
@@ -164,26 +217,32 @@ export class OldUiBridge {
         return this.sync.on(UPDATE_SYSTEM_PROMPT_PIPELINE, handler);
     }
 
+    /** Registers a handler called when the old UI asks the new UI to clear/reset the active conversation view. */
     public onClearActiveConversation(handler: () => void): () => void {
         return this.sync.on(CLEAR_ACTIVE_CONVERSATION_PIPELINE, handler);
     }
 
+    /** Asks the new UI to clear/reset the active conversation view (e.g. after the old UI navigates away). */
     public triggerClearActiveConversation(): void {
         this.sync.trigger(CLEAR_ACTIVE_CONVERSATION_PIPELINE);
     }
 
+    /** Tells the new UI which AI model was active on initial page load, so it can seed the model picker. Called once by the old UI during startup (see `public/js/inputfield_functions.js`). */
     public triggerLoadInitialModel(model: AiModel): void {
         this.sync.trigger(LOAD_INITIAL_MODEL_PIPELINE, model);
     }
 
+    /** Registers a handler called once with the initial AI model reported by the old UI. */
     public onLoadInitialModel(handler: (model: AiModel) => void): () => void {
         return this.sync.on(LOAD_INITIAL_MODEL_PIPELINE, handler);
     }
 
+    /** Registers a handler called whenever the old UI reports the system prompt of the active conversation. */
     public onLoadSystemPrompt(handler: (systemPrompt: string) => void): () => void {
         return this.sync.on(LOAD_SYSTEM_PROMPT_PIPELINE, handler);
     }
 
+    /** Reports the system prompt of the active conversation to the new UI (e.g. after loading or switching a chat). Called by the old UI, see `public/js/ai_chat_functions.js` / `groupchat_functions.js`. */
     public triggerLoadSystemPrompt(systemPrompt: string): void {
         this.sync.trigger(LOAD_SYSTEM_PROMPT_PIPELINE, systemPrompt);
     }

@@ -1,10 +1,28 @@
 <!--
-  @component A single source tile for a chat message citation, shown in a grid
-  below the message. Displays the source number, favicon, domain and title and
-  links to the source in a new tab. The tile carries the DOM id the inline
-  citation chips (see `injectCitationsIntoMarkdown`) scroll to; when targeted,
-  the `citation-flash` class (added by `ExtendedLinkNode`) plays a short
-  highlight animation.
+  @component A single source tile for a chat message citation, shown inside a
+  `CitationList` grid below the message. Displays the source number, favicon,
+  domain and title, and links to the source in a new tab.
+
+  Must be rendered inside a `CitationRoot` — it calls `useCitationContext()`
+  directly (no try/catch), so it throws if no ancestor `CitationRoot` created
+  one. On mount it registers a listener on that shared context for its own
+  `citation.identifier`: when a matching `CitationReference` chip (rendered
+  inline in the message markdown) is clicked, this tile scrolls itself into
+  view and toggles the `citation-flash` class to play a short highlight
+  animation.
+
+  Usage (see `MessageBody.svelte`):
+
+  ```svelte
+  <CitationRoot>
+      <Markdown message={messageWithInlineMarkers} />
+      <CitationList>
+          {#each citations as citation, index (citation.identifier)}
+              <Citation citation={citation} number={index + 1} />
+          {/each}
+      </CitationList>
+  </CitationRoot>
+  ```
 -->
 <script lang="ts">
     import type {EnrichedUrlCitation} from '$lib/components/ui/citations/types.js';

@@ -1,6 +1,18 @@
 <!--
   @component Circular radial progress indicator. Renders an SVG ring that fills
   clockwise from 0 to 100 percent. Used to show per-file upload progress.
+
+  Renders nothing (no DOM at all, not even an empty wrapper) while `value` is
+  `undefined` — pass `undefined` to hide it entirely (e.g. before an upload
+  starts) rather than `0`, which draws an empty ring. Uses `currentColor` for
+  the indicator stroke, so it inherits the surrounding text/icon color.
+
+  @example
+  ```svelte
+  {#if progress !== null}
+      <RadialProgress value={progress}/>
+  {/if}
+  ```
 -->
 <script lang="ts">
     import type {SVGAttributes} from 'svelte/elements';

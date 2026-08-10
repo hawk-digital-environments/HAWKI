@@ -1,3 +1,29 @@
+<!--
+  @component Capability-variant picker rendered inline inside `ToolMenuDetail`.
+
+  Only renders anything for **capability** entries that have more than one way to be
+  fulfilled (e.g. "web search" backed by two different MCP tools, or a capability the
+  model can also do natively). It shows a `RadioCardGroup` with an "auto" option, an
+  optional "native" option (when `entry.tool.hasNativeCapabilityFor` is true for some
+  model), and one radio card per concrete tool that can fulfill the capability — each
+  annotated with a `StatusDotForTool` reflecting whether it works with the currently
+  selected `composerContext.model.current`.
+
+  Selecting an option calls `composerContext.tools.set(tool, selection, settings)`,
+  which becomes the new `toolSelection` read back via `composerContext.tools.get(tool, true)`.
+
+  Renders nothing (no wrapper element at all) for plain tools or single-option
+  capabilities — `ToolMenuDetail` includes it unconditionally, relying on this
+  component's own `{#if show}` guard.
+
+  ## Usage
+  Always used together with `ToolMenuDetail`, one level below the tool's toggle/description:
+  ```svelte
+  <ToolMenuDetail entry={detailEntry} onCloseDetail={closeToolDetail}>
+  // inside ToolMenuDetail:
+  <ToolMenuConfig entry={entry}/>
+  ```
+-->
 <script lang="ts">
 
     import type {ToolMenuEntry} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
@@ -16,6 +42,8 @@
     const {__} = useTranslator();
 
     interface Props {
+        /** The tool-menu entry to configure. Must be the live entry from `ToolMenu`'s
+         *  `filteredEntries`/`detailEntry` so `active`/`available` stay in sync while open. */
         entry: ToolMenuEntry;
     }
 

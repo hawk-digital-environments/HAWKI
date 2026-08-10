@@ -1,3 +1,16 @@
+<!--
+@component Burger-menu dropdown attached to a message attachment (preview/download/delete), as a
+`<svelte-snippet>` entry point registered by `core.plugin.ts`. Preview is only offered for
+images/Word docs/PDFs; delete is only offered for private attachments or ones the current user
+authored, and always asks for confirmation first. All actions are dispatched through
+`oldUiBridge`, since attachment rendering itself is still owned by the legacy chat JS.
+
+Usage (embedded in the legacy attachment template — see
+`resources/views/partials/home/templates/attachment-template.blade.php`):
+```blade
+<x-svelte type="AttachmentDropdown" :props="['fileData' => $fileDataAsArray]" />
+```
+-->
 <script lang="ts">
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
@@ -12,6 +25,7 @@
     import {__} from '$lib/kernel/localization/helpers.js';
 
     interface Props {
+        /** The attachment this menu operates on, e.g. `{category: 'private', mime: 'image/png', name: 'photo.png', type: 'image', url: '...', uuid: '...'}`. Comes from the legacy `OldUiFileData` shape used throughout the old chat JS. */
         fileData: OldUiFileData;
     }
 

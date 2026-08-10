@@ -1,3 +1,31 @@
+<!--
+  @component Detail panel for a single tool, shown in place of the tool list inside
+  `ToolMenu`'s `DropdownMenuDetailView` when the user clicks a row's info icon.
+
+  Shows the tool's icon/name, a toggle (mirrors the checkbox in `ToolMenuListItem`,
+  wired to the same `entry.onToggle`), a `StatusDotForTool` with its label spelled out,
+  the tool's description, and — for multi-option capabilities — the `ToolMenuConfig`
+  variant picker.
+
+  Owns its own keyboard handling (`onDetailKeydown`): because this panel lives inside a
+  bits-ui dropdown menu whose roving-tabindex model doesn't fit a sub-panel, Escape/ArrowLeft
+  close the detail (via `onCloseDetail`), and ArrowUp/ArrowDown/Tab move focus between this
+  panel's own focusable children instead of bubbling to the menu.
+
+  ## Usage
+  Rendered by `ToolMenu` inside the `details` snippet of `DropdownMenuDetailView`, driven by
+  which tool's info icon was last clicked (`detailToolName`):
+  ```svelte
+  <DropdownMenuDetailView open={!!detailEntry}>
+      {#snippet details()}
+          {#if detailEntry}
+              <ToolMenuDetail entry={detailEntry} onCloseDetail={closeToolDetail}/>
+          {/if}
+      {/snippet}
+      <ToolMenuList entries={groupedEntries} onOpenDetail={openToolDetail}/>
+  </DropdownMenuDetailView>
+  ```
+-->
 <script lang="ts">
     import {onMount} from 'svelte';
     import type {ToolMenuEntry} from './ToolMenu.svelte';
@@ -11,7 +39,11 @@
     const {__} = useTranslator();
 
     interface Props {
+        /** The tool to show details for. Passed as a fresh copy (`{...entry}`) by `ToolMenu`
+         *  so `active`/`available` re-render while the detail view is open. */
         entry: ToolMenuEntry;
+        /** Called when the user backs out of the detail view (Back button, Escape, or ArrowLeft).
+         *  `ToolMenu` clears `detailToolName` and returns focus to the row that opened it. */
         onCloseDetail: () => void;
     }
 

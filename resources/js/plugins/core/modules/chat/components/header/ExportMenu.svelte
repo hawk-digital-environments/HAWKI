@@ -1,3 +1,15 @@
+<!--
+  @component Dropdown for exporting the current conversation in various formats.
+
+  Renders a `ButtonWithTooltip` trigger (label hidden on small screens via
+  `Breakpoint`) inside a `DropdownMenu`, with one item per supported export
+  format (print, pdf, word, csv, json). Selecting an item forwards the format
+  to the legacy UI via `oldUiBridge.triggerExport` — the actual export work
+  still lives in the old UI; this component is just the new-Svelte entry point.
+
+  @example
+  <ExportMenu />
+-->
 <script lang="ts">
 
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';

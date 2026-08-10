@@ -16,17 +16,26 @@
  * called immediately and a console warning is emitted — late registration is
  * never silently dropped.
  *
- * The exported `bootstrapper` singleton is the app-wide instance. Call
- * `bootstrapper.run()` once at the entry point to start the sequence.
+ * A single `Bootstrapper` instance is created once at the entry point
+ * (`resources/js/app.ts`) and threaded through the app: it is passed to every
+ * `HawkiAppExtension.init()`/`ready()` call and, via `HawkiPluginContext`, to
+ * every plugin lifecycle hook. There is no global singleton — always obtain
+ * the instance from whichever `bootstrapper` parameter your hook already
+ * receives; do not construct a second `Bootstrapper`.
  *
  * @example
- * import {bootstrapper} from '$lib/utils/Bootstrapper.js';
+ * export class MyExtension implements HawkiAppExtension {
+ *     public init(app: UnfinishedHawkiApp, bootstrapper: Bootstrapper) {
+ *         bootstrapper.onMainStage(async () => {
+ *             await loadUserSession();
+ *         });
+ *     }
+ * }
  *
- * bootstrapper.onMainStage(async () => {
- *     await loadUserSession();
- * });
- *
- * bootstrapper.run();
+ * // Entry point (resources/js/app.ts):
+ * const bootstrapper = new Bootstrapper();
+ * await createApp(bootstrapper, [...]);
+ * await bootstrapper.run();
  */
 import {ParallelAsyncWorkflow} from '$lib/utils/flows/ParallelAsyncWorkflow.js';
 import {AsyncPipeline} from '$lib/utils/flows/AsyncPipeline.js';
@@ -70,6 +79,7 @@ export class Bootstrapper {
     private _currentStateTiming: BootTiming = TIMING_NOT_STARTED;
     private _runPromise: Promise<void> | null = null;
 
+    /** The stage the bootstrapper is currently executing (or the last one reached, before `run()` is called). */
     public get currentStage(): BootStage {
         return this._currentStage;
     }

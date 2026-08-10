@@ -1,6 +1,14 @@
 import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
 
 /**
+ * Shared types for the `BorderBeam` component and its CSS generator
+ * (`styles.ts`). WHY: the CSS is generated per-instance at runtime (see
+ * `generateBeamCSS` in `./styles.ts`), so `BorderBeam.svelte`, `styles.ts`,
+ * and the preset tables all need to agree on the same size/theme vocabulary —
+ * these types are the single source of truth for that vocabulary.
+ */
+
+/**
  * Size/type preset for the border beam effect
  *
  * Rotate family (traveling/spinning beam):
@@ -11,12 +19,16 @@ import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
 export type BorderBeamSize = 'sm' | 'md' | 'line';
 
 /**
- * Theme mode for adapting beam colors to background
+ * Theme mode for adapting beam colors to background. `'auto'` is
+ * `BorderBeam`-only — it resolves to the live app theme (`AppTheme`) via the
+ * theme store; the CSS generator only ever receives the resolved `AppTheme`.
  */
 export type BorderBeamTheme = AppTheme | 'auto';
 
 /**
- * Configuration for a size preset
+ * Geometry preset for a `BorderBeamSize`. Consumed by `sizePresets` in
+ * `./styles.ts` as the default border radius/width, and (for `'sm'`) the
+ * reference dimensions the compact glow was authored for.
  */
 export interface SizeConfig {
     borderRadius: number;
@@ -26,7 +38,10 @@ export interface SizeConfig {
 }
 
 /**
- * Theme color configuration
+ * Per-theme (`dark`/`light`) opacity/color tuning for a `BorderBeamSize`.
+ * Consumed by `sizeThemePresets` in `./styles.ts`; `BorderBeam.svelte` reads
+ * the entry matching the resolved theme and passes its fields into
+ * `generateBeamCSS`.
  */
 export interface ThemeColors {
     strokeOpacity: number;

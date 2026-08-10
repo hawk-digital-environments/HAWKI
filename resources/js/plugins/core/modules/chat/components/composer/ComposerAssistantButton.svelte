@@ -1,3 +1,22 @@
+<!--
+  @component Room-chat-only toggle that adds/removes the `@hawki` handle from
+  the composer message, i.e. it decides whether the message is addressed to
+  the AI assistant or is a plain human-to-human room message. Renders nothing
+  in `aiConv` context (there, every message already goes to the AI).
+
+  Wraps its button in a `BorderBeam` that periodically pulses ("burst of
+  interest") every 30-60s to draw attention to the assistant when it's not
+  active, and glows steadily while active. No props — reads/writes
+  `ComposerContext` directly (toggles the `@hawki` handle via
+  `composerContext.addHandleToMessage` / `messageWithoutHandles`).
+
+  @example
+  ```svelte
+  // placed at the start of the textarea row
+  <ComposerAssistantButton/>
+  <Textarea bind:value={composerContext.message} .../>
+  ```
+-->
 <script lang="ts">
 
     import BorderBeam from '$lib/components/ui/border-beam/BorderBeam.svelte';

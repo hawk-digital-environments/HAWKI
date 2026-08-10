@@ -2,6 +2,21 @@
   @component Colored status indicator dot with an optional inline label and
   hover tooltip. Three statuses map to semantic color tokens: `online` →
   success green, `offline` → error red, `unknown` → warning yellow.
+
+  The tooltip always shows (falls back to a translated default per status);
+  the inline text label only shows when the matching `label*` prop for the
+  current `status` is given. Used e.g. to show whether a model/tool is
+  available for the current chat context.
+
+  @example Dot + tooltip only:
+  ```svelte
+  <StatusDot status={isAvailable ? 'online' : 'offline'}/>
+  ```
+
+  @example Dot + inline label, shown only for the 'online' status:
+  ```svelte
+  <StatusDot status="online" labelOnline="Native support" size="md"/>
+  ```
 -->
 <script lang="ts">
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';

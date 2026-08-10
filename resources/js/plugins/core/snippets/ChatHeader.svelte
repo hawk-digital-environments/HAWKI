@@ -1,3 +1,17 @@
+<!--
+@component Sticky header above the active chat, showing the conversation/room name (with an
+inline rename menu) and the export menu — a `<svelte-snippet>` entry point registered by
+`core.plugin.ts`. Only renders once a conversation is actually open (`oldUiMessageHistory.isInConversation`);
+name/slug are read reactively from `oldUiMessageHistory`, since that legacy store still owns
+"which conversation is currently open" state.
+
+Rendered once per page for either an AI conversation or a group room chat (see
+`resources/views/modules/chat.blade.php` and `resources/views/modules/groupchat.blade.php`):
+```blade
+<x-svelte type="ChatHeader" :props="['context' => 'aiConv']" />
+<x-svelte type="ChatHeader" :props="['context' => 'room']" />
+```
+-->
 <script lang="ts">
 
     import type {ComposerContextType} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
@@ -9,6 +23,7 @@
     import ExportMenu from '$plugins/core/modules/chat/components/header/ExportMenu.svelte';
 
     interface Props {
+        /** Which kind of chat this header belongs to ('aiConv' for a 1:1 AI conversation, 'room' for a group room); selects between `AiConvNameMenu` and `RoomNameMenu`. */
         context: ComposerContextType;
     }
 

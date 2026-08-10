@@ -6,6 +6,34 @@ import {loadPrivateKey, loadPublicKey} from '$lib/kernel/encryption/asymmetric.j
 import type {MigrationContext} from '$lib/kernel/migrations/MigrationExtension.js';
 import type {UserKeychainValueType} from '$plugins/core/schemas/resources/user-keychain-values.schema.js';
 
+/**
+ * `after_passkey` migration: converts the legacy single-blob keychain into the
+ * per-key `user-keychain-values` resource.
+ *
+ * The legacy keychain was one symmetrically-encrypted blob stored under a
+ * server record and decrypted with a passkey-derived password; the new format
+ * stores each key as its own `user-keychain-values` record (see
+ * {@link KeychainHandle}). This migration runs once after a passkey login when
+ * the server reports the user still has a legacy blob to convert.
+ *
+ * Contract (from {@link MigrationContext}):
+ *   - `data.blob` — the server-provided legacy blob (encrypted with the
+ *     passkey-derived `keychain_encryptor` key + `userdata` salt). When absent
+ *     the user is new and already on the new system; the migration is a no-op.
+ *   - `app.config.get().salts.userdata` — the salt used to re-derive the
+ *     legacy keychain password.
+ *   - `oldUiBridge.passkey` — the user's passkey, used both to derive the old
+ *     password and as the provider for the new `KeychainHandle`.
+ *
+ * WHAT it converts: for every key in the decrypted legacy blob (except the
+ * `username` / `time-signature` metadata entries) it re-imports the key —
+ * public/private keys via `loadPublicKey`/`loadPrivateKey`, symmetric keys via
+ * `crypto.subtle.importKey('jwk', …)` because the legacy format exported them
+ * as JWK while the new format stores raw base64 — and writes it into the new
+ * per-key store under the matching {@link UserKeychainValueType}
+ * (`public_key`, `private_key`, `ai_conv`, or `room_key`). The `clear()` first
+ * wipes any partial new keychain so the conversion is idempotent.
+ */
 export async function migrate({name, data, app}: MigrationContext) {
     // No data means the user is probably new and is already on the new keychain system, so we can skip the migration.
     if (!data || !data.blob) {

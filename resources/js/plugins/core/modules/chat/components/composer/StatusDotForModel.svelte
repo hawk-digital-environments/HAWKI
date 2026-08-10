@@ -1,6 +1,16 @@
 <!--
-  @component Colored dot indicating a model's online status.
-  Shows a tooltip on hover with the human-readable status label.
+  @component Thin wrapper around the `components/ui/status-dot` primitive
+  that fills in model-specific translated labels/tooltips for the `online` /
+  `offline` / `unknown` states from `AiModel.status`. Use this (rather than
+  `StatusDot` directly) anywhere a model's availability needs to be shown —
+  it keeps the wording consistent (e.g. in `ModelPicker`'s dropdown list).
+
+  @example
+  ```svelte
+  {#each models as m}
+      <StatusDotForModel model={m}/>
+  {/each}
+  ```
 -->
 <script lang="ts">
     import StatusDot from '$lib/components/ui/status-dot/StatusDot.svelte';

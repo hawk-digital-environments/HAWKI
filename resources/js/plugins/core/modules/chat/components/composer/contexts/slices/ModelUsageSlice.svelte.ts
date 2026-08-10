@@ -14,6 +14,21 @@ export interface ModelUsageIssue {
     missingTools?: AiToolOrCapabilityWithState[];
 }
 
+/**
+ * Read-only composer slice that derives whether the currently selected model is
+ * compatible with the active tools and attachments.
+ *
+ * Holds no state of its own — every property is `$derived` from the
+ * {@link ModelSlice}, {@link ToolSlice}, {@link AttachmentSlice}, and
+ * {@link GuardSlice}. It centralises the "can the user send right now?" check:
+ * {@link isValid} reports whether the current model appears in {@link allUsable},
+ * and {@link issues} lists the concrete reasons it can't (e.g. the model lacks
+ * tool calling while tools are active, or lacks vision input while images are
+ * attached). The UI uses these to disable the send button and show actionable
+ * guidance. When the active {@link GuardSlice} hides AI UI elements or disables
+ * model selection (e.g. inside certain modes), checks are short-circuited and
+ * no issues are reported.
+ */
 export class ModelUsageSlice {
     constructor(
         private modelStore: AiModelStore,

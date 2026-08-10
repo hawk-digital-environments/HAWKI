@@ -1,3 +1,24 @@
+<!--
+  @component AI model selector for the composer. Wraps `SingleSelect` with a list built
+  from the `ai-models` store (grouped by `model.provider.name`, offline models disabled),
+  and renders each option with its `ModelDemandBars` load indicator and `StatusDotForModel`.
+
+  Reads the current selection from `composerContext.model.current.model_id` and writes
+  changes through `composerContext.model.set(newModelId)`, which resets sampling parameters
+  to the new model's defaults unless the user had already customised them (see
+  `ModelSlice.set`). Disabled whenever `composerContext.guard.disablesFeature('models')`
+  is true (e.g. during edit/regen mode or while a message is sending).
+
+  Takes no props — it is a self-contained composer feature component, not a reusable primitive.
+
+  ## Usage
+  Rendered once by `ChatComposer.svelte` in the top-left of the composer card:
+  ```svelte
+  <div class="chat-composer-left">
+      <ModelPicker/>
+  </div>
+  ```
+-->
 <script lang="ts">
 
     import SingleSelect, {type ItemSnippetProps, type SelectItemDefinition} from '$lib/components/ui/select/SingleSelect.svelte';

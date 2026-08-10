@@ -1,3 +1,17 @@
+/**
+ * Low-level HTTP transport contract for the {@link RestApi}.
+ *
+ * An `ApiTransport` is a `fetch`-shaped function `(path, options) => Promise<any>`
+ * that performs the actual network call and returns the parsed JSON body.
+ * `RestApi` depends on this abstraction instead of calling `fetch` directly so
+ * tests (or non-browser environments like a web worker) can swap the transport
+ * without touching the request-building / schema-validation logic.
+ *
+ * {@link createDefaultTransport} returns the browser implementation: it calls
+ * `fetch`, throws an `Error` (with the first JSON:API error's `detail`/`title`
+ * appended when the body is a JSON:API error response) on a non-2xx response,
+ * and otherwise returns the parsed JSON.
+ */
 export type ApiTransport = (path: string, options: RequestInit) => Promise<any>;
 
 export function createDefaultTransport(): ApiTransport {

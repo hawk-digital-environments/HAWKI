@@ -1,3 +1,16 @@
+<!--
+  @component Inline icon for an AI tool or capability.
+
+  Renders the tool's own icon when the tool is a capability carrying an
+  `icon_path` — either an inline base64 SVG (decoded and injected as
+  `@html` so it inherits `currentColor`) or a plain image URL. For tools
+  without a custom icon (i.e. concrete tools that aren't capabilities), falls
+  back to the `ToolboxIcon` glyph. The wrapper span is sized with `style`
+  inline so callers can request any pixel size.
+
+  @example
+  <ToolIcon tool={selectedTool} size={16} />
+-->
 <script lang="ts">
 
     import type {AiToolOrCapability} from '$plugins/core/stores/aiToolStoreData.js';

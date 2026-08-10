@@ -2,7 +2,16 @@
   @component Informational dialog with a single OK action.
 
   Closable via the X button, Escape, or clicking outside. Use for notifications
-  where the user only needs to acknowledge the information.
+  where the user only needs to acknowledge the information (as opposed to
+  `ConfirmDialog`, which requires an explicit Cancel/OK decision).
+
+  Usage:
+    <InfoDialog
+        bind:open={showWelcome}
+        title="What's new"
+        description="We've added dark mode."
+        onOk={() => markWelcomeSeen()}
+    />
 -->
 <script lang="ts">
     import type {Snippet} from 'svelte';

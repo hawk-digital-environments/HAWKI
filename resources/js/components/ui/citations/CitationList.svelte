@@ -1,11 +1,35 @@
+<!--
+  @component Renders the "Sources" section below an AI message: a heading
+  followed by a responsive grid of source tiles. Must be rendered inside a
+  `CitationRoot` (a `Citation` tile placed inside `children` looks up the
+  shared `CitationContext` on mount and throws otherwise), and only when
+  there is at least one citation to show — this component renders its
+  heading unconditionally, it does not hide itself when `children` is empty.
+
+  Usage (see `MessageBody.svelte`):
+
+  ```svelte
+  <CitationRoot>
+      <Markdown message={message} />
+      {#if citations.length > 0}
+          <CitationList>
+              {#each citations as citation, index (citation.identifier)}
+                  <Citation citation={citation} number={index + 1} />
+              {/each}
+          </CitationList>
+      {/if}
+  </CitationRoot>
+  ```
+-->
 <script lang="ts">
 
     import type {Snippet} from 'svelte';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     const {__} = useTranslator();
-    
+
     interface Props {
+        /** One or more `Citation` tiles to lay out in the grid. */
         children: Snippet;
     }
 

@@ -9,6 +9,22 @@ export interface ToolSliceCheckpoint {
     disabled: string[];
 }
 
+/**
+ * Composer slice that owns the set of AI tools/capabilities enabled or disabled
+ * for the next message.
+ *
+ * Maintains two registries: `_active` (tools the user turned on, included in the
+ * request) and `_disabled` (tools temporarily turned off by a mode — e.g. regen
+ * mode disabling attachments — that should return to active when the mode exits).
+ * `disable()`/`enable()` move tools between the two without losing their
+ * selection/settings; `set()`/`remove()` add or drop a tool outright. Tools are
+ * keyed by name and wrapped in {@link AiToolOrCapabilityWithState} via the
+ * helpers in `toolSliceData.ts`.
+ *
+ * Checkpoints store tools as transfer strings (so they survive across the
+ * snapshot boundary without holding live `AiToolOrCapability` references) and
+ * re-resolve them through the {@link AiToolStore} on restore.
+ */
 export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
     constructor(
         private model: ModelSlice,

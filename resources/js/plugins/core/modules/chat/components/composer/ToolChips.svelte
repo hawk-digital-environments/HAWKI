@@ -1,8 +1,21 @@
 <!--
-  @component Row of removable chips showing the currently active AI tools.
-  Only the chips that fit on a single row are shown; the rest collapse into a
-  "+N" badge that opens the tool picker when clicked.
-  Renders nothing when no tools are active.
+  @component Row of removable chips showing the currently active AI tools
+  (`composerContext.tools.active`). Clicking a chip's remove icon disables that tool via
+  `composerContext.tools.disable`; chips for tools no longer compatible with the selected
+  model (`!tool.isAvailableFor(composerContext.model.current)`) are styled as `incompatible`.
+
+  Only the chips that fit on a single row (measured against an offscreen mirror row on
+  resize/tool-list change) are shown; the rest collapse into a "+N" badge. Renders nothing
+  when no tools are active or `composerContext.guard.showsAiUiElements` is false.
+
+  ## Usage
+  Rendered by `ChatComposer.svelte` in the bottom-left control row, sharing `toolPickerOpen`
+  with `ToolMenu` so the overflow badge opens the same picker:
+  ```svelte
+  let toolPickerOpen = $state(false);
+  <ToolMenu bind:open={toolPickerOpen}/>
+  <ToolChips onShowMore={() => (toolPickerOpen = true)}/>
+  ```
 -->
 <script lang="ts">
     import {useComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
@@ -14,7 +27,8 @@
     const {__} = useTranslator();
 
     interface Props {
-        /** Called when the overflow "+N" badge is clicked. */
+        /** Called when the overflow "+N" badge is clicked. `ChatComposer` uses this to
+         *  open `ToolMenu`'s popover so the user can see/manage the hidden tools. */
         onShowMore?: () => void;
     }
 

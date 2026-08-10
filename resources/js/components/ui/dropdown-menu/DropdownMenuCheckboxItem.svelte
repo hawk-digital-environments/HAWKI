@@ -1,5 +1,19 @@
 <!--
-  @component A menu item with a checkbox indicator. Use bind:checked for two-way state.
+  @component A menu item with a checkbox indicator inside a `DropdownMenu`.
+  Use `bind:checked` for two-way state, or `checked` + `onCheckedChange` for
+  externally-controlled state (e.g. `entry.active` / `entry.onToggle` in
+  `ToolMenuListItem.svelte`). Clicking anywhere on the row toggles it, unlike
+  `DropdownMenuSwitchItem`, which can restrict toggling to its indicator.
+
+  ```svelte
+  <DropdownMenu trigger="Tools">
+      <DropdownMenuCheckboxItem checked={entry.active} onCheckedChange={entry.onToggle}>
+          {#snippet children(checked)}
+              <span>{entry.tool.displayName}</span>
+          {/snippet}
+      </DropdownMenuCheckboxItem>
+  </DropdownMenu>
+  ```
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';
@@ -14,7 +28,7 @@
         onCheckedChange?: (checked: boolean) => void;
         /** When true, the item cannot be interacted with. */
         disabled?: boolean;
-        /** Item label content. Receives the current checked state. */
+        /** Item label content. Receives the current checked state, e.g. `{#snippet children(checked)}`. */
         children?: Snippet<[boolean]>;
         /** Set to false to keep the menu open after selecting this item. Defaults to true. */
         closeOnSelect?: boolean;

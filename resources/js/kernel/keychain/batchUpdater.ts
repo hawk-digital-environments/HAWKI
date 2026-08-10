@@ -1,3 +1,14 @@
+/**
+ * Batching layer for keychain writes.
+ *
+ * Keychain mutations (set/remove/clear) go to the server in a single
+ * `actions/batch-update` round-trip. This module turns the imperative
+ * {@link BatchKeychainUpdater} callback API exposed by the keychain handle into a
+ * deduplicated payload: it exports every `CryptoKey` to a transport string, encrypts it
+ * with the passkey-derived keychain password, and posts the combined set/remove/clear
+ * payload together. {@link collectDeferredBatchUpdates} lets migrations stack many
+ * `runBatchUpdate` calls into one final flush.
+ */
 import {exportPrivateKeyToString, exportPublicKeyToString} from '$lib/kernel/encryption/asymmetric.js';
 import {exportCryptoKeyToString} from '$lib/kernel/encryption/utils.js';
 import {encryptSymmetric} from '$lib/kernel/encryption/symmetric.js';

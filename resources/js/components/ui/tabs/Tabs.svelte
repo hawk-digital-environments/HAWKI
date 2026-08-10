@@ -6,6 +6,16 @@
   navigation via the roving-tabindex pattern (←/→/↑/↓, Home, End).
 
   Bind `value` to the active tab's `key`; `onChange` fires on selection.
+
+  @example
+  ```svelte
+  <Tabs
+      items={[{key: 'balanced', label: 'Balanced'}, {key: 'creative', label: 'Creative'}]}
+      value={activePreset}
+      onChange={(key) => handlePresetChange(key)}
+      aria-label="Response style"
+  />
+  ```
 -->
 <script module lang="ts">
     export interface TabItem {

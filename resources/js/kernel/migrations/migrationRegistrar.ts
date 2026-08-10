@@ -1,6 +1,20 @@
 import type {MigrationDefinition, MigrationRunType, Migrator} from '$lib/kernel/migrations/MigrationExtension.js';
 import {globModuleLoader} from '$lib/utils/globModuleLoader.js';
 
+/**
+ * Registrar builder for the {@link MigrationExtension}.
+ *
+ * Migrations are registered under their file-derived name and run-type. The
+ * name is the filename stem (e.g. `2026_06_10_190815_after_passkey_upgrade_room_key_format.ts`
+ * → that whole stem); the run type is inferred from the **parent directory**
+ * name — files directly under `migrations/` default to `'after_login'`, files
+ * under a subdirectory like `migrations/after_passkey/` get that directory name
+ * as their run type. `add` throws on duplicate names so accidental collisions
+ * surface loudly. `addFromModules` is the glob-powered entry: it lazy-loads a
+ * `Record<path, () => Promise<unknown>>` (the `import.meta.glob` non-eager form),
+ * validates each module exports a function under the `migrate` key, and
+ * registers each as a {@link MigrationDefinition} with its loader.
+ */
 export function createMigrationRegistrar(
     migrations: Map<string, MigrationDefinition>
 ) {

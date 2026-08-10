@@ -1,3 +1,23 @@
+<!--
+  @component A single toggleable tool row inside `ToolMenuList`'s `DropdownMenuCheckboxItem`
+  list. The whole row toggles the tool (checkbox semantics, wired to `entry.onToggle`); a
+  separate info button on the right — tinted by status (available/warning/error) — opens
+  `ToolMenuDetail` for that tool instead, stopping propagation so it never also toggles.
+
+  Registers itself with `ToolMenuFocusContext` under `entry.tool.name` so `ToolMenuGroupHeader`
+  info triggers interspersed in the list can be reached via ArrowUp/ArrowDown/Tab (bits-ui's
+  built-in roving tabindex only knows about menu items, not those popover triggers).
+  ArrowRight opens the detail view directly, mirroring the info button.
+
+  ## Usage
+  Rendered by `ToolMenuList`, once per entry in each of the three sections (capabilities,
+  function tools, per-MCP-server groups):
+  ```svelte
+  {#each entries.functionTools as entry (entry.tool.name)}
+      <ToolMenuListItem entry={entry} onOpenDetail={onOpenDetail}/>
+  {/each}
+  ```
+-->
 <script lang="ts">
     import DropdownMenuCheckboxItem from '$lib/components/ui/dropdown-menu/DropdownMenuCheckboxItem.svelte';
     import type {ToolMenuEntry} from '$plugins/core/modules/chat/components/composer/ToolMenu.svelte';
@@ -11,7 +31,10 @@
     const {__} = useTranslator();
 
     interface Props {
+        /** The tool row to render, including its toggle callback and active/available/disabled flags. */
         entry: ToolMenuEntry;
+        /** Called with `entry` when the user clicks the info button or presses ArrowRight.
+         *  `ToolMenu` uses this to open `ToolMenuDetail` for that tool. */
         onOpenDetail?: (entry: ToolMenuEntry) => void;
     }
 
