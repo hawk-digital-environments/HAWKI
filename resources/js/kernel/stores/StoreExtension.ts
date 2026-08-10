@@ -1,16 +1,16 @@
-import type {HawkiApp, HawkiAppAspect, UnfinishedHawkiApp, WithoutAppAspectInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {HawkiDataStores} from '$lib/kernel/extendableTypes.js';
 import {createStoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
-        stores: WithoutAppAspectInternals<StoreAspect>;
+    interface HawkiAppExtensions {
+        stores: WithoutAppExtensionInternals<StoreExtension>;
     }
 }
 
-export class StoreAspect implements HawkiAppAspect {
+export class StoreExtension implements HawkiAppExtension {
     private readonly stores = new Map<string, DataStore>();
 
     public get names(): string[] {
@@ -52,10 +52,10 @@ export class StoreAspect implements HawkiAppAspect {
     }
 
     public provideProperties(): Record<string, any> {
-        const aspect = this;
+        const extension = this;
         return {
             get stores() {
-                return aspect;
+                return extension;
             }
         };
     }

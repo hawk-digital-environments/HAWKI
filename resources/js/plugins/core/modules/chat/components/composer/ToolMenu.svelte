@@ -4,7 +4,7 @@
 -->
 <script module lang="ts">
     import type {AiToolOrCapability} from '$lib/stores/aiToolStoreData.js';
-    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
 
     export interface ToolMenuEntry {
         tool: AiToolOrCapability;

@@ -2,26 +2,26 @@
  * # Composer Context — Architecture Overview
  *
  * `ComposerContext` is the single object all composer components talk to.
- * It aggregates per-domain "aspects", a pluggable mode system, and the
+ * It aggregates per-domain "slices", a pluggable mode system, and the
  * message-send pipeline. Components access the context via
  * {@link useComposerContext}; a new instance is wired up by
  * {@link createComposerContext} and published into the Svelte context tree.
  *
- * ## Aspects
+ * ## Slices
  *
- * State is split into focused aspect classes, each owning one concern:
+ * State is split into focused slice classes, each owning one concern:
  *
- * | Property                  | Class                  | Owns                                                              |
- * |---------------------------|------------------------|-------------------------------------------------------------------|
- * | `context.model`           | `ModelAspect`          | selected AI model                                                 |
- * | `context.modelParameters` | `ModelParameterAspect` | temperature / top_p (resets on model switch unless user-modified) |
- * | `context.tools`           | `ToolAspect`           | user-enabled tools for the request                                |
- * | `context.attachments`     | `AttachmentAspect`     | staged file attachments                                           |
- * | `context.modelUsage`      | `ModelUsageAspect`     | derived: is the current model compatible with active tools/files? |
- * | `context.guard`           | `GuardAspect`          | derived: canSend, canChangeMode, disablesFeature()                |
- * | `context.mode`            | `ModeAspect`           | active mode + transition lifecycle                                |
+ * | Property                  | Class                 | Owns                                                              |
+ * |---------------------------|-----------------------|-------------------------------------------------------------------|
+ * | `context.model`           | `ModelSlice`          | selected AI model                                                 |
+ * | `context.modelParameters` | `ModelParameterSlice` | temperature / top_p (resets on model switch unless user-modified) |
+ * | `context.tools`           | `ToolSlice`           | user-enabled tools for the request                                |
+ * | `context.attachments`     | `AttachmentSlice`     | staged file attachments                                           |
+ * | `context.modelUsage`      | `ModelUsageSlice`     | derived: is the current model compatible with active tools/files? |
+ * | `context.guard`           | `GuardSlice`          | derived: canSend, canChangeMode, disablesFeature()                |
+ * | `context.mode`            | `ModeSlice`           | active mode + transition lifecycle                                |
  *
- * `ModelUsageAspect` and `GuardAspect` hold no mutable state — they are
+ * `ModelUsageSlice` and `GuardSlice` hold no mutable state — they are
  * pure derived views and are never checkpointed.
  *
  * ## Modes
@@ -39,8 +39,8 @@
  *
  * ## Checkpointing
  *
- * Every stateful aspect implements `CheckpointingInterface`. `ContextCheckpointer`
- * coordinates snapshotting and restoring all of them at once. `ModeAspect` calls
+ * Every stateful slice implements `CheckpointingInterface`. `ContextCheckpointer`
+ * coordinates snapshotting and restoring all of them at once. `ModeSlice` calls
  * the checkpointer on `enter()` / `exit()` so every mode transition is
  * reversible without each mode knowing what to save or restore.
  *
@@ -54,18 +54,18 @@
  * the request to the legacy UI layer.
  */
 import {createContext, onDestroy} from 'svelte';
-import {ModelParameterAspect} from '$lib/components/chat/composer/contexts/aspects/ModelParameterAspect.svelte.js';
-import {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
-import {AttachmentAspect} from '$lib/components/chat/composer/contexts/aspects/AttachmentAspect.svelte.js';
-import {ToolAspect} from '$lib/components/chat/composer/contexts/aspects/ToolAspect.svelte.js';
-import {ModelUsageAspect} from '$lib/components/chat/composer/contexts/aspects/ModelUsageAspect.svelte.js';
+import {ModelParameterSlice} from '$lib/components/chat/composer/contexts/slices/ModelParameterSlice.svelte.js';
+import {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
+import {AttachmentSlice} from '$lib/components/chat/composer/contexts/slices/AttachmentSlice.svelte.js';
+import {ToolSlice} from '$lib/components/chat/composer/contexts/slices/ToolSlice.svelte.js';
+import {ModelUsageSlice} from '$lib/components/chat/composer/contexts/slices/ModelUsageSlice.svelte.js';
 import {ContextCheckpointer} from '$lib/components/chat/composer/contexts/utils/ContextCheckpointer.js';
-import {ModeAspect} from '$lib/components/chat/composer/contexts/aspects/ModeAspect.svelte.js';
+import {ModeSlice} from '$lib/components/chat/composer/contexts/slices/ModeSlice.svelte.js';
 import type {ToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import {ChatEditMode} from '$lib/components/chat/composer/contexts/modes/ChatEditMode.js';
 import {ChatInThreadMode} from '$lib/components/chat/composer/contexts/modes/ChatInThreadMode.js';
 import {ChatRegenMode} from '$lib/components/chat/composer/contexts/modes/ChatRegenMode.js';
-import {GuardAspect} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
+import {GuardSlice} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
 import {MessageSender} from '$lib/components/chat/composer/contexts/sending/MessageSender.js';
 import {OldUiBridgeTransport} from '$lib/components/chat/composer/contexts/sending/transport/OldUiBridgeTransport.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
@@ -85,7 +85,7 @@ interface FlowList {
 
 /**
  * Central state container for one composer instance. See the module-level
- * architecture overview for how this relates to aspects, modes, and the
+ * architecture overview for how this relates to slices, modes, and the
  * send pipeline.
  *
  * Obtain the instance for the current component tree via
@@ -96,13 +96,13 @@ export class ComposerContext {
     public constructor(
         /** Whether this composer is embedded in a dedicated AI conversation (`'aiConv'`) or a room chat (`'room'`). Affects which AI UI elements are shown. */
         public readonly type: ComposerContextType,
-        public readonly mode: ModeAspect,
-        public readonly model: ModelAspect,
-        public readonly modelParameters: ModelParameterAspect,
-        public readonly attachments: AttachmentAspect,
-        public readonly tools: ToolAspect,
-        public readonly modelUsage: ModelUsageAspect,
-        public readonly guard: GuardAspect,
+        public readonly mode: ModeSlice,
+        public readonly model: ModelSlice,
+        public readonly modelParameters: ModelParameterSlice,
+        public readonly attachments: AttachmentSlice,
+        public readonly tools: ToolSlice,
+        public readonly modelUsage: ModelUsageSlice,
+        public readonly guard: GuardSlice,
         private readonly checkpointer: ContextCheckpointer,
         private readonly sender: MessageSender,
         private readonly initialSystemPrompt: string,
@@ -156,7 +156,7 @@ export class ComposerContext {
     public message = $state('');
 
     /** The message text with all `@handle` tokens stripped and whitespace normalised.
-     *  Used by `GuardAspect.canSend` to check whether there is actual content to send. */
+     *  Used by `GuardSlice.canSend` to check whether there is actual content to send. */
     public readonly messageWithoutHandles = $derived.by(() => {
         let text = this.message;
         for (const handle of this.handlesInMessage) {
@@ -284,7 +284,7 @@ export function createComposerContext(
         throw new Error(`Invalid composer context type: ${type}. Allowed types are: ${allowedContextTypes.join(', ')}`);
     }
 
-    let parameterContext: ModelParameterAspect | null = null;
+    let parameterContext: ModelParameterSlice | null = null;
     const parameterContextFactory = () => parameterContext!;
 
     const aiModelStore = app.stores.get('ai-models');
@@ -292,16 +292,16 @@ export function createComposerContext(
     const systemPromptStore = app.stores.get('system-prompts');
     const aiHandleStore = app.stores.get('ai-handle');
 
-    const modelContext = new ModelAspect(
+    const modelContext = new ModelSlice(
         aiModelStore,
         parameterContextFactory,
         (model) => oldUiBridge.updateCurrentChatModelId(model.model_id)
     );
 
-    parameterContext = new ModelParameterAspect(modelContext);
+    parameterContext = new ModelParameterSlice(modelContext);
 
     const checkpointer = new ContextCheckpointer();
-    const mode = new ModeAspect(
+    const mode = new ModeSlice(
         app.translator,
         checkpointer,
         toastContext,
@@ -320,10 +320,10 @@ export function createComposerContext(
         (): ComposerContext => context,
         (oldState) => oldUiBridge.triggerExitMode(oldState)
     );
-    const attachment = new AttachmentAspect(app.config);
-    const tool = new ToolAspect(modelContext, aiToolStore);
-    const guard = new GuardAspect((): ComposerContext => context);
-    const modelUsage = new ModelUsageAspect(
+    const attachment = new AttachmentSlice(app.config);
+    const tool = new ToolSlice(modelContext, aiToolStore);
+    const guard = new GuardSlice((): ComposerContext => context);
+    const modelUsage = new ModelUsageSlice(
         aiModelStore,
         modelContext,
         tool,

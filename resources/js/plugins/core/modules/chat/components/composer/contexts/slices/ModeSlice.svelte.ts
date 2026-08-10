@@ -39,7 +39,7 @@ type ComposerModeData<T extends keyof ComposerModeRegistry = any> = ComposerMode
 
 export type ComposerMode = keyof ComposerModeRegistry;
 
-interface ModeAspectCheckpoint {
+interface ModeSliceCheckpoint {
     mode: ChatModeInterface;
     state: ComposerModeWithIs;
 }
@@ -53,12 +53,12 @@ export type ModeInstanceFactory = (mode: Exclude<ComposerMode, 'default'>) => Ch
  * context is snapped via `ContextCheckpointer`, the mode instance is asked to
  * mutate the context for its purpose (pre-fill message, load attachments, etc.),
  * and the new mode becomes active. On `exit()`, the checkpoint is restored,
- * which causes every aspect to reset back to its pre-mode state.
+ * which causes every slice to reset back to its pre-mode state.
  *
  * Modes are instantiated lazily via the `modeFactory` injected at construction,
- * so `ModeAspect` itself stays decoupled from concrete mode classes.
+ * so `ModeSlice` itself stays decoupled from concrete mode classes.
  */
-export class ModeAspect implements CheckpointingInterface<ModeAspectCheckpoint> {
+export class ModeSlice implements CheckpointingInterface<ModeSliceCheckpoint> {
     constructor(
         private translator: Translator,
         private checkpointer: ContextCheckpointer,
@@ -154,14 +154,14 @@ export class ModeAspect implements CheckpointingInterface<ModeAspectCheckpoint> 
         this.checkpointer.restoreCheckpoint();
     }
 
-    public createCheckpoint(): ModeAspectCheckpoint {
+    public createCheckpoint(): ModeSliceCheckpoint {
         return {
             state: {...this._state},
             mode: this._instance
         };
     }
 
-    public restoreCheckpoint(checkpoint: ModeAspectCheckpoint): void {
+    public restoreCheckpoint(checkpoint: ModeSliceCheckpoint): void {
         const oldState = {...this._state};
         this._instance.exit(this.contextResolver(), this._state);
         this._state = {...checkpoint.state};

@@ -1,11 +1,11 @@
 import type {ComposerContext} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
+import type {DisabledChatFeature} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
 
 /**
  * Contract every composer mode must implement.
  *
- * `ModeAspect` drives the lifecycle: `canEnter` → `enter` → (user interacts)
- * → `exit`. All other methods are queried reactively by `GuardAspect` and the
+ * `ModeSlice` drives the lifecycle: `canEnter` → `enter` → (user interacts)
+ * → `exit`. All other methods are queried reactively by `GuardSlice` and the
  * UI to adapt their behaviour while the mode is active.
  *
  * `TData` is the input the caller passes to `enter()` (e.g. the message to

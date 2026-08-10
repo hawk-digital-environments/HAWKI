@@ -1,4 +1,4 @@
-import type {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
+import type {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
 import {type AiModel, AiModelParameterKeyType} from '$plugins/core/schemas/resources/ai-models.schema';
 
@@ -7,13 +7,13 @@ const defaultParameters: Record<AiModelParameterKeyType, any> = {
     top_p: 0.9
 };
 
-interface ModelParameterAspectCheckpoint {
+interface ModelParameterSliceCheckpoint {
     parameters: Record<AiModelParameterKeyType, unknown>;
 }
 
-export class ModelParameterAspect implements CheckpointingInterface<ModelParameterAspectCheckpoint> {
+export class ModelParameterSlice implements CheckpointingInterface<ModelParameterSliceCheckpoint> {
     constructor(
-        private model: ModelAspect
+        private model: ModelSlice
     ) {
         this.reset();
     }
@@ -38,7 +38,7 @@ export class ModelParameterAspect implements CheckpointingInterface<ModelParamet
     });
 
     /** `true` when the current values differ from `modelDefaults` in any key or value.
-     *  `ModelAspect.set()` checks this before resetting parameters on a model switch. */
+     *  `ModelSlice.set()` checks this before resetting parameters on a model switch. */
     public isModified = $derived.by(() => {
         const currentKeys = new Set(Object.keys(this.list));
         const defaultKeys = new Set(Object.keys(this.modelDefaults));
@@ -86,13 +86,13 @@ export class ModelParameterAspect implements CheckpointingInterface<ModelParamet
         this._list = this.defaults;
     }
 
-    public createCheckpoint(): ModelParameterAspectCheckpoint {
+    public createCheckpoint(): ModelParameterSliceCheckpoint {
         return {
             parameters: {...this._list}
         };
     }
 
-    public restoreCheckpoint(checkpoint: ModelParameterAspectCheckpoint): void {
+    public restoreCheckpoint(checkpoint: ModelParameterSliceCheckpoint): void {
         this._list = {...checkpoint.parameters};
     }
 

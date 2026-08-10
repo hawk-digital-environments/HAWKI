@@ -1,17 +1,17 @@
-import type {HawkiApp, HawkiAppAspect, UnfinishedHawkiApp, WithoutAppAspectInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {HawkiPlugin, HawkiPluginContext, HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import {PluginBootstrapper} from '$lib/kernel/plugins/PluginBootstrapper.js';
 import type {HawkiPlugins} from '$lib/kernel/extendableTypes.js';
-import {ResourceSchemaAspect} from '$lib/kernel/resources/ResourceSchemaAspect.js';
+import {ResourceSchemaExtension} from '$lib/kernel/resources/ResourceSchemaExtension.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
-        plugins: WithoutAppAspectInternals<PluginAspect>;
+    interface HawkiAppExtensions {
+        plugins: WithoutAppExtensionInternals<PluginExtension>;
     }
 }
 
-export class PluginAspect implements HawkiAppAspect {
+export class PluginExtension implements HawkiAppExtension {
     private readonly pluginNames = new Set<string>();
     private readonly plugins = new Set<HawkiPluginWithMetadata>();
     private _bootstrapper: PluginBootstrapper | null = null;
@@ -26,7 +26,7 @@ export class PluginAspect implements HawkiAppAspect {
 
     public get bootstrapper(): PluginBootstrapper {
         if (!this._bootstrapper) {
-            throw new Error('PluginAspect bootstrapper is not initialized yet. Call init() first.');
+            throw new Error('PluginExtension bootstrapper is not initialized yet. Call init() first.');
         }
         return this._bootstrapper;
     }
@@ -85,8 +85,8 @@ export class PluginAspect implements HawkiAppAspect {
 
         this._bootstrapper = new PluginBootstrapper(Array.from(this.plugins.values()), context);
         await this.bootstrapper.runInit();
-        await this.bootstrapper.runAspects(app);
-        await this.bootstrapper.runResourceSchemas((app.getOrFail('resourceSchemas') as ResourceSchemaAspect).registrar);
+        await this.bootstrapper.runExtensions(app);
+        await this.bootstrapper.runResourceSchemas((app.getOrFail('resourceSchemas') as ResourceSchemaExtension).registrar);
     }
 
     public async ready(app: HawkiApp, bootstrapper: Bootstrapper): Promise<void> {
@@ -95,10 +95,10 @@ export class PluginAspect implements HawkiAppAspect {
     }
 
     public provideProperties(): Record<string, any> {
-        const aspect = this;
+        const extension = this;
         return {
             get plugins() {
-                return aspect;
+                return extension;
             }
         };
     }

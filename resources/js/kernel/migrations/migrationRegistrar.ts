@@ -1,4 +1,4 @@
-import type {MigrationDefinition, MigrationRunType, Migrator} from '$lib/kernel/migrations/MigrationAspect.js';
+import type {MigrationDefinition, MigrationRunType, Migrator} from '$lib/kernel/migrations/MigrationExtension.js';
 import {globModuleLoader} from '$lib/utils/globModuleLoader.js';
 
 export function createMigrationRegistrar(

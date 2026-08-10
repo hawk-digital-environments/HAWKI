@@ -6,17 +6,17 @@ export type DisabledChatFeature = typeof disableableFeatures[number];
 /**
  * Pure derived view of whether the composer allows certain actions right now.
  *
- * `GuardAspect` holds no mutable state of its own — all properties are
+ * `GuardSlice` holds no mutable state of its own — all properties are
  * `$derived` from the rest of the context. It centralises the send-permission
  * and mode-change-permission logic so individual components don't need to
  * replicate those checks.
  *
  * Receives a `contextResolver` factory instead of the context directly to
  * break the circular construction dependency: `ComposerContext` owns
- * `GuardAspect`, but `GuardAspect` needs to read `ComposerContext`. The
+ * `GuardSlice`, but `GuardSlice` needs to read `ComposerContext`. The
  * factory is only called after construction, once the context is fully built.
  */
-export class GuardAspect {
+export class GuardSlice {
     constructor(
         private contextResolver: () => ComposerContext
     ) {

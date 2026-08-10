@@ -1,4 +1,4 @@
-import type {HawkiCorePlugin, HawkiPluginContext} from '$lib/kernel/plugins/types.js';
+import type {HawkiCorePlugin} from '$lib/kernel/plugins/types.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
 import {AiHandleStore} from '$plugins/core/stores/AiHandleStore.svelte.js';
@@ -7,6 +7,9 @@ import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 import {SystemPromptStore} from '$plugins/core/stores/SystemPromptStore.svelte.js';
 import {ThemeStore} from '$plugins/core/stores/ThemeStore.svelte.js';
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+import type {Component} from 'svelte';
+import {HTMLSvelteSnippetElement} from '$lib/legacy/svelteSnippetLoader.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
@@ -17,8 +20,20 @@ declare module '$lib/kernel/extendableTypes.js' {
 export default class CorePlugin implements HawkiCorePlugin {
     readonly name = 'core';
 
-    async init(ctx: HawkiPluginContext) {
-        console.log('core plugin initialized', ctx);
+    public boot(app: HawkiApp): void | Promise<void> {
+        const glob = import.meta.glob('$lib/plugins/core/snippets/**/*.svelte', {eager: true});
+        for (const [path, module] of Object.entries(glob)) {
+            const snippetName = path.split('/').pop()?.replace('.svelte', '');
+            if (!snippetName) {
+                console.warn(`Failed to register snippet from path '${path}': Could not determine snippet name.`);
+                continue;
+            }
+            app.snippets.register(snippetName, (module as { default: Component }).default);
+        }
+    }
+
+    public ready(): void | Promise<void> {
+        customElements.define('svelte-snippet', HTMLSvelteSnippetElement);
     }
 
     public migrations(registrar: MigrationRegistrar): void | Promise<void> {

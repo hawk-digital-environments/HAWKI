@@ -8,7 +8,7 @@
     import ModelDemandBars from '$lib/components/chat/composer/ModelDemandBars.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import StatusDotForModel from '$lib/components/chat/composer/StatusDotForModel.svelte';
-    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+    import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
     import {__} from '$lib/utils/translator.js';
     import Alert02Icon from '$lib/components/ui/icons/iconset/Alert02Icon.svelte';
 

@@ -49,7 +49,7 @@ export interface HawkiResourceSchemas {
 export interface HawkiPlugins {
 }
 
-export interface HawkiAppAspects {
+export interface HawkiAppExtensions {
 }
 
 export interface HawkiDataStores {

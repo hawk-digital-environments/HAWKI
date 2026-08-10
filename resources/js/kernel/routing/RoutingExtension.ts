@@ -1,14 +1,14 @@
-import type {HawkiAppAspect, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
+import type {HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
 import UniversalRouter from 'universal-router';
 import {RouteRegistrar, type RouteRenderer} from '$lib/kernel/routing/RouteRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface AppAspects {
+    interface AppExtensions {
         router: UniversalRouter;
     }
 }
 
-export class RoutingAspect implements HawkiAppAspect {
+export class RoutingExtension implements HawkiAppExtension {
     public readonly registrar = new RouteRegistrar();
     private _router: UniversalRouter | null = null;
 

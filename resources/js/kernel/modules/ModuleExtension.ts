@@ -1,14 +1,14 @@
-import type {HawkiAppAspect, UnfinishedHawkiApp, WithoutAppAspectInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {HawkiModule, HawkiModuleWithPlugin} from '$lib/kernel/modules/types.js';
 import {createModuleRegistrarFactory} from '$lib/kernel/modules/moduleRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
-        modules: WithoutAppAspectInternals<ModuleAspect>;
+    interface HawkiAppExtensions {
+        modules: WithoutAppExtensionInternals<ModuleExtension>;
     }
 }
 
-export class ModuleAspect implements HawkiAppAspect {
+export class ModuleExtension implements HawkiAppExtension {
     private readonly modules = new Map<string, HawkiModuleWithPlugin>();
 
     public get names(): string[] {

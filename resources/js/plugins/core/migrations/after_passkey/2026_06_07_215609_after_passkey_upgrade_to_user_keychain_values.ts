@@ -3,7 +3,7 @@ import {decryptSymmetric, loadSymmetricCryptoValue} from '$lib/kernel/encryption
 import {deriveKey} from '$lib/kernel/encryption/utils.js';
 import {createKeychainHandle} from '$lib/kernel/keychain/keychainHandle.js';
 import {loadPrivateKey, loadPublicKey} from '$lib/kernel/encryption/asymmetric.js';
-import type {MigrationContext} from '$lib/kernel/migrations/MigrationAspect.js';
+import type {MigrationContext} from '$lib/kernel/migrations/MigrationExtension.js';
 import type {UserKeychainValueType} from '$plugins/core/schemas/resources/user-keychain-values.schema.js';
 
 export async function migrate({name, data, app}: MigrationContext) {

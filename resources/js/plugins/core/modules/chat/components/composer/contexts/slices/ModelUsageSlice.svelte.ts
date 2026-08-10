@@ -1,8 +1,8 @@
-import type {ToolAspect} from '$lib/components/chat/composer/contexts/aspects/ToolAspect.svelte.js';
-import type {AttachmentAspect} from '$lib/components/chat/composer/contexts/aspects/AttachmentAspect.svelte.js';
-import type {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
-import type {GuardAspect} from '$lib/components/chat/composer/contexts/aspects/GuardAspect.svelte.js';
-import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+import type {ToolSlice} from '$lib/components/chat/composer/contexts/slices/ToolSlice.svelte.js';
+import type {AttachmentSlice} from '$lib/components/chat/composer/contexts/slices/AttachmentSlice.svelte.js';
+import type {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
+import type {GuardSlice} from '$lib/components/chat/composer/contexts/slices/GuardSlice.svelte.js';
+import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
 import type {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte.js';
 import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 
@@ -14,13 +14,13 @@ export interface ModelUsageIssue {
     missingTools?: AiToolOrCapabilityWithState[];
 }
 
-export class ModelUsageAspect {
+export class ModelUsageSlice {
     constructor(
         private modelStore: AiModelStore,
-        private model: ModelAspect,
-        private tools: ToolAspect,
-        private attachments: AttachmentAspect,
-        private guard: GuardAspect
+        private model: ModelSlice,
+        private tools: ToolSlice,
+        private attachments: AttachmentSlice,
+        private guard: GuardSlice
     ) {
     }
 

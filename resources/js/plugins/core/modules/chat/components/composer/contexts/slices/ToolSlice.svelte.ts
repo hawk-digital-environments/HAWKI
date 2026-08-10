@@ -1,17 +1,17 @@
-import type {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
+import type {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
-import {type AiToolOrCapabilityWithState, createToolOrCapabilityWithState, createToolOrCapabilityWithStateFromTransferString} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+import {type AiToolOrCapabilityWithState, createToolOrCapabilityWithState, createToolOrCapabilityWithStateFromTransferString} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
 import {AiToolStore} from '$lib/plugins/core/stores/AiToolStore.svelte';
 import {AiToolOrCapability} from '$lib/plugins/core/stores/aiToolStoreData';
 
-export interface ToolAspectCheckpoint {
+export interface ToolSliceCheckpoint {
     active: string[];
     disabled: string[];
 }
 
-export class ToolAspect implements CheckpointingInterface<ToolAspectCheckpoint> {
+export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
     constructor(
-        private model: ModelAspect,
+        private model: ModelSlice,
         private toolStore: AiToolStore
     ) {
     }
@@ -90,14 +90,14 @@ export class ToolAspect implements CheckpointingInterface<ToolAspectCheckpoint> 
         this._disabled = {};
     }
 
-    public createCheckpoint(): ToolAspectCheckpoint {
+    public createCheckpoint(): ToolSliceCheckpoint {
         return {
             active: this.active.map(t => t.toTransferString()),
             disabled: Object.values(this._disabled).map(t => t.toTransferString())
         };
     }
 
-    public restoreCheckpoint(checkpoint: ToolAspectCheckpoint): void {
+    public restoreCheckpoint(checkpoint: ToolSliceCheckpoint): void {
         const newActive: Record<string, AiToolOrCapabilityWithState> = {};
         for (const name of checkpoint.active) {
             const tool = createToolOrCapabilityWithStateFromTransferString(name, this.toolStore);

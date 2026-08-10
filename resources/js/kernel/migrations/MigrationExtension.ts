@@ -1,11 +1,11 @@
 import type {JsonApiCollection} from '$lib/kernel/api/jsonApiEncoding.js';
-import type {HawkiApp, HawkiAppAspect, UnfinishedHawkiApp, WithoutAppAspectInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiApp, HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {Migration} from '$lib/app/schemas/resources/migrations.schema.js';
 import {createMigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
-        readonly migration: WithoutAppAspectInternals<MigrationAspect>;
+    interface HawkiAppExtensions {
+        readonly migration: WithoutAppExtensionInternals<MigrationExtension>;
     }
 }
 
@@ -26,7 +26,7 @@ export interface MigrationDefinition {
     migrationLoader: () => Promise<Migrator>;
 }
 
-export class MigrationAspect implements HawkiAppAspect {
+export class MigrationExtension implements HawkiAppExtension {
     private appliedMigrationCount = 0;
     private migrations = new Map<string, MigrationDefinition>();
     private _app: HawkiApp | null = null;

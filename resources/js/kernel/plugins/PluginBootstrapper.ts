@@ -1,6 +1,6 @@
-import type {AppAspectRegistrar, HawkiCorePlugin, HawkiPluginContext, HawkiPluginContextWithConfig, HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
+import type {AppExtensionRegistrar, HawkiCorePlugin, HawkiPluginContext, HawkiPluginContextWithConfig, HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {HawkiApp, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
-import type {HawkiAppAspects} from '$lib/kernel/extendableTypes.js';
+import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
 import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
@@ -25,7 +25,7 @@ export class PluginBootstrapper {
         return this._contextWithConfig;
     }
 
-    public setConfig(config: HawkiAppAspects['config']) {
+    public setConfig(config: HawkiAppExtensions['config']) {
         this._contextWithConfig = {
             ...this.context,
             config
@@ -36,12 +36,12 @@ export class PluginBootstrapper {
         return this.runForEach(plugin => plugin.init?.(this.context));
     }
 
-    public runAspects(app: UnfinishedHawkiApp) {
-        const registrar: AppAspectRegistrar = {
-            addAspect: app.addAspect.bind(app)
+    public runExtensions(app: UnfinishedHawkiApp) {
+        const registrar: AppExtensionRegistrar = {
+            addExtension: app.addExtension.bind(app)
         };
 
-        return this.runForEach(plugin => plugin.aspects?.(registrar, this.context));
+        return this.runForEach(plugin => plugin.extensions?.(registrar, this.context));
     }
 
     public runConfigSchemas(registrar: ConfigSchemaRegistrar) {

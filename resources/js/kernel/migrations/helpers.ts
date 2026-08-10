@@ -1,4 +1,4 @@
-import type {MigrationRunType} from '$lib/kernel/migrations/MigrationAspect.js';
+import type {MigrationRunType} from '$lib/kernel/migrations/MigrationExtension.js';
 import {getHawkiApp} from '$lib/legacy/legacy.js';
 
 /**

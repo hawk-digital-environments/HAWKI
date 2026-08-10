@@ -10,12 +10,12 @@ export interface FileAttachmentIssue {
     maxSize?: number;
 }
 
-interface AttachmentAspectCheckpoint {
+interface AttachmentSliceCheckpoint {
     list: File[];
     uuids: Array<[File, string]>;
 }
 
-export class AttachmentAspect implements CheckpointingInterface<AttachmentAspectCheckpoint> {
+export class AttachmentSlice implements CheckpointingInterface<AttachmentSliceCheckpoint> {
     constructor(
         private readonly config: HawkiApp['config']
     ) {
@@ -93,14 +93,14 @@ export class AttachmentAspect implements CheckpointingInterface<AttachmentAspect
         return this._assignedUuids.find(([f]) => f === file)?.[1] ?? null;
     }
 
-    public createCheckpoint(): AttachmentAspectCheckpoint {
+    public createCheckpoint(): AttachmentSliceCheckpoint {
         return {
             list: [...this._list],
             uuids: [...this._assignedUuids]
         };
     }
 
-    public restoreCheckpoint(checkpoint: AttachmentAspectCheckpoint): void {
+    public restoreCheckpoint(checkpoint: AttachmentSliceCheckpoint): void {
         this._list = [...checkpoint.list];
     }
 }

@@ -1,5 +1,5 @@
 import {createKeychainHandle} from '$lib/kernel/keychain/keychainHandle.js';
-import {MigrationContext} from '$lib/kernel/migrations/MigrationAspect';
+import {MigrationContext} from '$lib/kernel/migrations/MigrationExtension';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
 
 export async function migrate({name, app}: MigrationContext) {

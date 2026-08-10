@@ -1,19 +1,18 @@
-import {ConfigurationAspect} from '$lib/kernel/config/ConfigurationAspect.js';
+import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.js';
 import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import {createToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
 import {createAppContext} from '$lib/components/app/AppContext.svelte.js';
-import {ModuleAspect} from '$lib/kernel/modules/ModuleAspect.js';
+import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
 import {createApp} from '$lib/kernel/HawkiApp.js';
-import {MigrationAspect} from '$lib/kernel/migrations/MigrationAspect.js';
-import {ClientAspect} from '$lib/kernel/client/ClientAspect.js';
-import {ResourceSchemaAspect} from '$lib/kernel/resources/ResourceSchemaAspect.js';
-import {PluginAspect} from '$lib/kernel/plugins/PluginAspect.js';
-import {LocalizationAspect} from '$lib/kernel/localization/LocalizationAspect.svelte.js';
-import {RoutingAspect} from '$lib/kernel/routing/RoutingAspect.js';
+import {MigrationExtension} from '$lib/kernel/migrations/MigrationExtension.js';
+import {ClientExtension} from '$lib/kernel/client/ClientExtension.js';
+import {ResourceSchemaExtension} from '$lib/kernel/resources/ResourceSchemaExtension.js';
+import {PluginExtension} from '$lib/kernel/plugins/PluginExtension.js';
+import {LocalizationExtension} from '$lib/kernel/localization/LocalizationExtension.svelte.js';
+import {RoutingExtension} from '$lib/kernel/routing/RoutingExtension.js';
 import {createDefaultRouteRenderer} from '$lib/kernel/routing/routeRenderer.js';
-import {registerSvelteSnippetLoader} from '$lib/legacy/svelteSnippetLoader.js';
 import {provideLegacyGlobals, runLegacyWaitUntilBootstrapQueue, runLegacyWaitUntilReadyQueue, setHawkiApp} from '$lib/legacy/legacy.js';
-import {StoreAspect} from '$lib/kernel/stores/StoreAspect.js';
+import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
 
 provideLegacyGlobals();
 
@@ -23,15 +22,15 @@ provideLegacyGlobals();
     setHawkiApp(await createApp(
         bootstrapper,
         [
-            new ResourceSchemaAspect(),
-            new ClientAspect(),
-            new PluginAspect(),
-            new ConfigurationAspect(),
-            new MigrationAspect(),
-            new LocalizationAspect(),
-            new ModuleAspect(),
-            new RoutingAspect(createDefaultRouteRenderer()),
-            new StoreAspect()
+            new ResourceSchemaExtension(),
+            new ClientExtension(),
+            new PluginExtension(),
+            new ConfigurationExtension(),
+            new MigrationExtension(),
+            new LocalizationExtension(),
+            new ModuleExtension(),
+            new RoutingExtension(createDefaultRouteRenderer()),
+            new StoreExtension()
         ]
     ));
 
@@ -59,7 +58,6 @@ provideLegacyGlobals();
             resolve();
         }
     }));
-    bootstrapper.onFinalizationStage(registerSvelteSnippetLoader);
 
     await runLegacyWaitUntilBootstrapQueue(bootstrapper);
     await bootstrapper.run();

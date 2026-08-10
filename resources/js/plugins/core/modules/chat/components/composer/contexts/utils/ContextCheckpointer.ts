@@ -1,8 +1,8 @@
-import {AttachmentAspect} from '$lib/components/chat/composer/contexts/aspects/AttachmentAspect.svelte.js';
-import {ModelAspect} from '$lib/components/chat/composer/contexts/aspects/ModelApsect.svelte.js';
-import {ModelParameterAspect} from '$lib/components/chat/composer/contexts/aspects/ModelParameterAspect.svelte.js';
-import type {ModeAspect} from '$lib/components/chat/composer/contexts/aspects/ModeAspect.svelte.js';
-import type {ToolAspect} from '$lib/components/chat/composer/contexts/aspects/ToolAspect.svelte.js';
+import {AttachmentSlice} from '$lib/components/chat/composer/contexts/slices/AttachmentSlice.svelte.js';
+import {ModelSlice} from '$lib/components/chat/composer/contexts/slices/ModelSlice.svelte.js';
+import {ModelParameterSlice} from '$lib/components/chat/composer/contexts/slices/ModelParameterSlice.svelte.js';
+import type {ModeSlice} from '$lib/components/chat/composer/contexts/slices/ModeSlice.svelte.js';
+import type {ToolSlice} from '$lib/components/chat/composer/contexts/slices/ToolSlice.svelte.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 
@@ -18,11 +18,11 @@ interface ComposerContextCheckpoint {
     status: SendMessageStatus | null;
     message: string;
     systemPrompt: string;
-    tools: ReturnType<ToolAspect['createCheckpoint']>;
-    attachments: ReturnType<AttachmentAspect['createCheckpoint']>;
-    model: ReturnType<ModelAspect['createCheckpoint']>;
-    parameters: ReturnType<ModelParameterAspect['createCheckpoint']>;
-    mode: ReturnType<ModeAspect['createCheckpoint']>;
+    tools: ReturnType<ToolSlice['createCheckpoint']>;
+    attachments: ReturnType<AttachmentSlice['createCheckpoint']>;
+    model: ReturnType<ModelSlice['createCheckpoint']>;
+    parameters: ReturnType<ModelParameterSlice['createCheckpoint']>;
+    mode: ReturnType<ModeSlice['createCheckpoint']>;
 }
 
 interface ComposerContextCheckpointWithMeta {
@@ -32,10 +32,10 @@ interface ComposerContextCheckpointWithMeta {
 
 /**
  * Coordinates snapshot and restore of the entire composer state across all
- * aspects at once.
+ * slices at once.
  *
- * Each aspect (and `ComposerContext` itself) registers its own
- * `onCreateCheckpoint` / `onRestoreCheckpoint` handler. When `ModeAspect`
+ * Each slice (and `ComposerContext` itself) registers its own
+ * `onCreateCheckpoint` / `onRestoreCheckpoint` handler. When `ModeSlice`
  * calls {@link createCheckpoint} on entering a mode, every registered handler
  * fires and pushes its slice of state into a single checkpoint object.
  * {@link restoreCheckpoint} pops the stack and broadcasts the saved slices

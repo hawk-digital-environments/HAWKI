@@ -1,15 +1,15 @@
 import {RestApi} from '$lib/kernel/api/RestApi.js';
 import {createDefaultTransport} from '$lib/kernel/api/transport.js';
 import {type Bootstrapper} from '$lib/kernel/Bootstrapper.js';
-import type {HawkiAppAspect, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
+import type {HawkiAppExtension, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {HawkiClient} from '$lib/kernel/client/dummyClient.js';
 import {UriBuilder} from '$lib/kernel/api/UriBuilder.js';
 import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
-import type {HawkiAppAspects} from '$lib/kernel/extendableTypes.js';
+import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
 import type {Connection, InternalAuthenticatedConnection, InternalRegisteringUserConnection} from '$lib/app/schemas/resources/connections.schema.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
+    interface HawkiAppExtensions {
         readonly client: HawkiClient;
         readonly restApi: RestApi;
         readonly linkPreviewApi: LinkPreviewApi;
@@ -40,11 +40,11 @@ declare module '$lib/kernel/extendableTypes.js' {
     }
 }
 
-// @todo this aspect is not really settled and WILL be refactored/changed in the future. Don't rely on it yet.
+// @todo this extension is not really settled and WILL be refactored/changed in the future. Don't rely on it yet.
 
-export class ClientAspect implements HawkiAppAspect {
+export class ClientExtension implements HawkiAppExtension {
     private currentConnection: Connection | null = null;
-    private resourceSchemas: HawkiAppAspects['resourceSchemas'] | null = null;
+    private resourceSchemas: HawkiAppExtensions['resourceSchemas'] | null = null;
 
     public readonly uriBuilder: UriBuilder = new UriBuilder(window.location.origin);
     public readonly client: HawkiClient;
@@ -85,29 +85,29 @@ export class ClientAspect implements HawkiAppAspect {
     }
 
     public provideProperties(): Record<string, any> {
-        const aspect = this;
+        const extension = this;
         return {
             get client(): HawkiClient {
-                return aspect.client;
+                return extension.client;
             },
             get restApi(): RestApi {
-                return aspect.client.restApi;
+                return extension.client.restApi;
             },
             get uriBuilder(): UriBuilder {
-                return aspect.uriBuilder;
+                return extension.uriBuilder;
             },
             get connection(): Connection {
-                return aspect.getConnection();
+                return extension.getConnection();
             },
             get authenticatedConnection(): InternalAuthenticatedConnection {
-                const connection = aspect.getConnection();
+                const connection = extension.getConnection();
                 if (connection.type !== 'internal_authenticated') {
                     throw new Error('Current connection is not authenticated');
                 }
                 return connection;
             },
             get connectionWithUserInfo(): InternalAuthenticatedConnection | InternalRegisteringUserConnection {
-                const connection = aspect.getConnection();
+                const connection = extension.getConnection();
                 if (connection.type === 'internal_authenticated' || connection.type === 'internal_registering_user') {
                     return connection;
                 }

@@ -1,15 +1,15 @@
 import z from 'zod';
-import type {HawkiAppAspect, WithoutAppAspectInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiAppExtension, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {HawkiResourceSchemas} from '$lib/kernel/extendableTypes.js';
 import {createResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
-        readonly resourceSchemas: Omit<WithoutAppAspectInternals<ResourceSchemaAspect>, 'registrar'>;
+    interface HawkiAppExtensions {
+        readonly resourceSchemas: Omit<WithoutAppExtensionInternals<ResourceSchemaExtension>, 'registrar'>;
     }
 }
 
-export class ResourceSchemaAspect implements HawkiAppAspect {
+export class ResourceSchemaExtension implements HawkiAppExtension {
     private readonly registry = new Map<string, z.ZodTypeAny>();
     public readonly registrar = createResourceSchemaRegistrar(this.registry);
 
@@ -34,10 +34,10 @@ export class ResourceSchemaAspect implements HawkiAppAspect {
     }
 
     public provideProperties(): Record<string, any> {
-        const aspect = this;
+        const extension = this;
         return {
             get resourceSchemas() {
-                return aspect;
+                return extension;
             }
         };
     }

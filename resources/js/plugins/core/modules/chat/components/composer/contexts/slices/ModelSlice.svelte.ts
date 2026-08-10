@@ -1,16 +1,16 @@
-import type {ModelParameterAspect} from '$lib/components/chat/composer/contexts/aspects/ModelParameterAspect.svelte.js';
+import type {ModelParameterSlice} from '$lib/components/chat/composer/contexts/slices/ModelParameterSlice.svelte.js';
 import type {CheckpointingInterface} from '$lib/components/chat/composer/contexts/utils/CheckpointingInterface.js';
 import {AiModelStore} from '$plugins/core/stores/AiModelStore.svelte';
 import type {AiModel} from '$plugins/core/schemas/resources/ai-models.schema.js';
 
-interface ModelAspectCheckpoint {
+interface ModelSliceCheckpoint {
     currentModelId: string;
 }
 
-export class ModelAspect implements CheckpointingInterface<ModelAspectCheckpoint> {
+export class ModelSlice implements CheckpointingInterface<ModelSliceCheckpoint> {
     constructor(
         private modelStore: AiModelStore,
-        private parameterAspectProvider: () => ModelParameterAspect,
+        private parameterSliceProvider: () => ModelParameterSlice,
         private onUpdateCurrentModel: (model: AiModel) => void
     ) {
         this._current = $state(modelStore.getSystemModelByType('default')!);
@@ -24,8 +24,8 @@ export class ModelAspect implements CheckpointingInterface<ModelAspectCheckpoint
     /** Shorthand for `model.settings.tool_calling`. Use to show/hide the tool menu. */
     public allowsToolCalling = $derived.by(() => this.current?.settings?.tool_calling as boolean | undefined ?? false);
 
-    private get parameterContext(): ModelParameterAspect {
-        return this.parameterAspectProvider();
+    private get parameterContext(): ModelParameterSlice {
+        return this.parameterSliceProvider();
     }
 
     /** The currently selected AI model. */
@@ -61,7 +61,7 @@ export class ModelAspect implements CheckpointingInterface<ModelAspectCheckpoint
     }
 
     /** `true` when the model accepts file uploads AND lists `'image'` as a supported input type.
-     *  Used by `ModelUsageAspect` to detect when image attachments would be incompatible. */
+     *  Used by `ModelUsageSlice` to detect when image attachments would be incompatible. */
     public hasVision = $derived.by(() => {
         if (!this.current) {
             return false;
@@ -69,13 +69,13 @@ export class ModelAspect implements CheckpointingInterface<ModelAspectCheckpoint
         return this.current.input.includes('image') && this.current.settings?.file_upload;
     });
 
-    public createCheckpoint(): ModelAspectCheckpoint {
+    public createCheckpoint(): ModelSliceCheckpoint {
         return {
             currentModelId: this.current.model_id
         };
     }
 
-    public restoreCheckpoint(checkpoint: ModelAspectCheckpoint): void {
+    public restoreCheckpoint(checkpoint: ModelSliceCheckpoint): void {
         this.set(checkpoint.currentModelId);
     }
 }

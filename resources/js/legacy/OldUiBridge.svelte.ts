@@ -1,11 +1,11 @@
 import type {ComposerContextType} from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
-import type {ComposerMode, ComposerModeRegistry, ComposerModeWithIs} from '$lib/components/chat/composer/contexts/aspects/ModeAspect.svelte.js';
+import type {ComposerMode, ComposerModeRegistry, ComposerModeWithIs} from '$lib/components/chat/composer/contexts/slices/ModeSlice.svelte.js';
 import type {ChatModeInterface} from '$lib/components/chat/composer/contexts/modes/contracts/ChatModeInterface.js';
 import type {SendMessageStatus} from '$lib/components/chat/composer/contexts/sending/SendMessageStatus.svelte.js';
 import type {ResponseBody, SendMessageResponse} from '$lib/components/chat/composer/contexts/sending/SendMessageResponse.svelte.js';
 import {AsyncPipeline} from '$lib/utils/flows/AsyncPipeline.js';
 import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
-import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/aspects/toolAspectData.js';
+import type {AiToolOrCapabilityWithState} from '$lib/components/chat/composer/contexts/slices/toolSliceData.js';
 import {AiModel} from '$lib/plugins/core/schemas/resources/ai-models.schema';
 
 export interface OldUiConversationMessage {

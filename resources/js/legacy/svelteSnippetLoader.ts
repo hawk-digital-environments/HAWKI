@@ -72,8 +72,8 @@
  * - Element removed from DOM → component is destroyed and cleaned up.
  */
 
-import type {Component} from 'svelte';
 import {mount, unmount} from 'svelte';
+import {getHawkiApp} from '$lib/legacy/legacy.js';
 
 /**
  * Pre-registers all snippet modules via Vite's glob import.
@@ -153,22 +153,13 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
             return;
         }
 
-        const moduleKey = `../snippets/${type}.svelte`;
-        const loader = snippetModules[moduleKey];
+        const app = getHawkiApp();
+        const component = app.snippets.get(type);
 
-        if (!loader) {
+        if (!component) {
             console.error(
-                `<svelte-snippet>: No snippet found for type "${type}". ` +
-                `Make sure a file exists at resources/js/snippets/${type}.svelte.`
+                `<svelte-snippet>: No snippet found for type "${type}".`
             );
-            return;
-        }
-
-        let module: { default: Component };
-        try {
-            module = await loader() as { default: Component };
-        } catch (e) {
-            console.error(`<svelte-snippet>: Failed to load snippet "${type}":`, e);
             return;
         }
 
@@ -178,7 +169,7 @@ export class HTMLSvelteSnippetElement extends HTMLElement {
             return;
         }
 
-        this._app = mount(module.default, {
+        this._app = mount(component, {
             target: this,
             props: this._getProps()
         });

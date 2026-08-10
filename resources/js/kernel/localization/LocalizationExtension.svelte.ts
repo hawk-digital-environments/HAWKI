@@ -1,4 +1,4 @@
-import type {HawkiAppAspect, UnfinishedHawkiApp, WithoutAppAspectInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {TranslationLabels} from '$lib/app/schemas/resources/translation-labels.schema.js';
 import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
@@ -6,13 +6,13 @@ import type {RestApi} from '$lib/kernel/api/RestApi.js';
 import {createTranslator} from '$lib/kernel/localization/translator.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
-        localization: WithoutAppAspectInternals<LocalizationAspect>;
-        translator: LocalizationAspect['translator'];
+    interface HawkiAppExtensions {
+        localization: WithoutAppExtensionInternals<LocalizationExtension>;
+        translator: LocalizationExtension['translator'];
     }
 }
 
-export class LocalizationAspect implements HawkiAppAspect {
+export class LocalizationExtension implements HawkiAppExtension {
     private _restApi: RestApi | null = null;
     private _labels = $state(null as TranslationLabels | null);
     private _locale = $state(null as Locale | null);
@@ -113,13 +113,13 @@ export class LocalizationAspect implements HawkiAppAspect {
     }
 
     public provideProperties(): Record<string, any> {
-        const aspect = this;
+        const extension = this;
         return {
             get translator() {
-                return aspect.translator;
+                return extension.translator;
             },
             get localization() {
-                return aspect;
+                return extension;
             }
         };
     }

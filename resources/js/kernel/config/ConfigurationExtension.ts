@@ -1,18 +1,18 @@
 import type {z} from 'zod';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
-import type {HawkiAppAspect, UnfinishedHawkiApp, WithoutAppAspectInternals} from '$lib/kernel/HawkiApp.js';
+import type {HawkiAppExtension, UnfinishedHawkiApp, WithoutAppExtensionInternals} from '$lib/kernel/HawkiApp.js';
 import type {HawkiConfigSchemas} from '$lib/kernel/extendableTypes.js';
 import {createConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    interface HawkiAppAspects {
-        readonly config: WithoutAppAspectInternals<ConfigurationAspect>;
+    interface HawkiAppExtensions {
+        readonly config: WithoutAppExtensionInternals<ConfigurationExtension>;
     }
 }
 
-// @todo I am not 100% sure if this will be migrated to become part of the client itself. However the config aspect will remain; may loose some methods, tho!
+// @todo I am not 100% sure if this will be migrated to become part of the client itself. However the config extension will remain; may loose some methods, tho!
 
-export class ConfigurationAspect implements HawkiAppAspect {
+export class ConfigurationExtension implements HawkiAppExtension {
     private schemaRegistry = new Map<string, z.ZodTypeAny>();
     private currentConfig: Record<string, Record<string, any>> | null = null;
     private parsedCache: Partial<Record<keyof HawkiConfigSchemas, any>> = {};
