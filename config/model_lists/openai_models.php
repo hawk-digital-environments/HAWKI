@@ -98,7 +98,7 @@ return [
     [
         'active' => env('MODELS_OPENAI_O4_MINI_ACTIVE', true),
         'id' => 'o4-mini',
-        'label' => 'o4 mini',
+        'label' => 'OpenAI o4 mini',
         "input" => [
             "text",
             "image"
@@ -113,6 +113,7 @@ return [
             'native_capabilities' => env('MODELS_OPENAI_O4_MINI_TOOLS_NATIVE_CAPABILITIES', true),
         ],
         'default_params' => [
+            // Reasoning model (o-series); temperature is not tunable in the traditional sense — API defaults used
             'temp' => env('MODELS_OPENAI_O4_MINI_PARAMS_TEMP', 1.0),
             'top_p' => env('MODELS_OPENAI_O4_MINI_PARAMS_TOP_P', 1.0),
         ],

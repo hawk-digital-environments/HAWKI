@@ -99,6 +99,7 @@
                 value={activePreset}
                 onChange={model.current.flags?.includes("feature-sampling-parameters") ? handlePresetChange : undefined}
                 aria-label={__('chat.composer.settings.settingsHeading')}
+                disabled={!model.current.flags?.includes("feature-sampling-parameters")}
             />
         </div>
 
