@@ -38,9 +38,11 @@
         onChange?: (key: string) => void;
         /** Accessible label for the tablist. */
         'aria-label'?: string;
+        /** Disable the Control */
+        disabled?: boolean;
     }
 
-    let {items, value = $bindable(null), onChange, 'aria-label': ariaLabel}: Props = $props();
+    let {items, value = $bindable(null), onChange, 'aria-label': ariaLabel, disabled = false}: Props = $props();
 
     let tabEls = $state<HTMLButtonElement[]>([]);
     const indicator = new Spring({x: 0, w: 0}, {stiffness: 0.55, damping: 0.9});
@@ -109,6 +111,7 @@
             class="tab"
             aria-selected={value === item.key}
             data-active={value === item.key}
+            disabled={disabled}
             tabindex={value === item.key || (value === null && i === 0) ? 0 : -1}
             onclick={() => select(item)}
             onkeydown={(e) => handleKeydown(e, i)}
@@ -175,5 +178,9 @@
 
     .tab[data-active='true']:focus-visible {
         outline-offset: 2px;
+    }
+
+    .tab[disabled] {
+        cursor: not-allowed;
     }
 </style>

@@ -75,6 +75,7 @@
                 "noSystemPrompt": "Kein Systemprompt gesetzt",
                 "settingsHeading": "Einstellungen",
                 "resetModelSettings": "Auf Model-Standard zurücksetzen",
+                "samplingDisabled": "Diese Optionen werden vom gewählten Modell nicht unterstützt.",
                 "temperature": "Temperatur",
                 "temperatureInfo": "Steuert die Kreativität der Antworten der KI. Höhere Werte (z. B. 0,8) führen zu vielfältigeren und einfallsreicheren Ergebnissen; niedrigere Werte (z. B. 0,2) machen die Antworten fokussierter und vorhersehbarer.",
                 "temperatureAriaLabel": "Temperature einstellen",

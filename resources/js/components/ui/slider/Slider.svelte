@@ -157,4 +157,17 @@
         white-space: nowrap;
         pointer-events: none;
     }
+
+    :global(*[data-disabled]) {
+        .slider-track {
+            cursor: not-allowed;
+            background-color: var(--color-disabled-bg);
+        }
+        :global(.slider-range) {
+            background-color: var(--color-text-disabled);
+        }
+        :global(.slider-thumb) {
+            cursor: not-allowed;
+        }
+    }
 </style>

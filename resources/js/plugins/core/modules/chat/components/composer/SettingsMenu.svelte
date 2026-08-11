@@ -1,26 +1,6 @@
 <!--
-  @component Composer settings control: a popover (desktop) / bottom sheet (mobile,
-  via `Breakpoint`) for adjusting model generation parameters (temperature, Top P) and
-  the per-session system prompt.
-
-  Reads/writes `composerContext.modelParameters` for temperature/top_p (with three
-  quick presets — creative/balanced/precise — highlighted via
-  `modelParameters.intersects()`, and a reset button gated on `modelParameters.isModified`),
-  and `composerContext.systemPrompt` for the prompt text (compared against the `default`
-  prompt from the `system-prompts` store to decide whether the reset button is enabled).
-  Clicking the system-prompt preview opens `SystemPromptDialog` for full editing.
-
-  Disabled (trigger button) whenever `composerContext.guard.disablesFeature('settings')`.
-  Takes no props — it is a self-contained composer feature component.
-
-  ## Usage
-  Rendered once by `ChatComposer.svelte` in the top-right of the composer card, next to
-  `ModelPicker`:
-  ```svelte
-  <div class="chat-composer-right">
-      <SettingsMenu/>
-  </div>
-  ```
+  @component Popover for adjusting model generation parameters (temperature, Top P).
+  Includes preset buttons for quick configuration.
 -->
 <script lang="ts">
     import Popover from '$lib/components/ui/popover/Popover.svelte';
@@ -38,6 +18,8 @@
     import UndoIcon from '$lib/components/ui/icons/iconset/UndoIcon.svelte';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import Alert from '$lib/components/ui/alert/Alert.svelte';
+    import Alert01Icon from '$lib/components/ui/icons/iconset/Alert01Icon.svelte';
 
     const composerContext = useComposerContext();
     const systemPromptStore = useStore('system-prompts');
@@ -57,6 +39,7 @@
     const activePreset = $derived<Preset>(
         presets.find(p => composerContext.modelParameters.intersects({temperature: p.temp, top_p: p.topP}))?.key ?? null
     );
+    const model = $derived.by(() => composerContext.model);
     const tabItems: TabItem[] = presets.map(p => ({key: p.key as string, label: p.label}));
     const modifiedParameters = $derived.by(() => composerContext.modelParameters.isModified);
     const defaultSystemPrompt = $derived.by(() => systemPromptStore.getPromptByType('default').prompt ?? '');
@@ -77,6 +60,8 @@
     function handleSystemPromptReset() {
         composerContext.systemPrompt = defaultSystemPrompt;
     }
+
+    const samplingDisabled = $derived.by(() => !model.current.flags?.includes("feature-sampling-parameters"));
 </script>
 
 {#snippet settingsBody()}
@@ -102,7 +87,7 @@
             </button>
         </div>
 
-        <div>
+        <div class="settings-parameters-wrapper">
             <div class="settings-parameters-header">
                 <h4 class="settings-heading">{__('chat.composer.settings.settingsHeading')}</h4>
                 <ButtonWithTooltip
@@ -115,11 +100,15 @@
                     class="model-settings-reset-button"
                 ></ButtonWithTooltip>
             </div>
+            {#if samplingDisabled}
+                <Alert description={__("chat.composer.settings.samplingDisabled")} icon={Alert01Icon} size="small" />
+            {/if}
             <Tabs
                 items={tabItems}
                 value={activePreset}
                 onChange={handlePresetChange}
                 aria-label={__('chat.composer.settings.settingsHeading')}
+                disabled={samplingDisabled}
             />
         </div>
 
@@ -128,7 +117,7 @@
                 <div class="slider-header">
                     <Txt size="xs">
                         {__('chat.composer.settings.temperature')}
-                        <InfoPopover info={__('chat.composer.settings.temperatureInfo')}/>
+                        <InfoPopover info={__('chat.composer.settings.temperatureInfo')} disabled={samplingDisabled} />
                     </Txt>
                     <Txt size="xs">{composerContext.modelParameters.get('temperature').toFixed(1)}</Txt>
                 </div>
@@ -139,6 +128,7 @@
                     min={0}
                     max={2}
                     step={0.1}
+                    disabled={samplingDisabled}
                 />
             </div>
 
@@ -146,7 +136,7 @@
                 <div class="slider-header">
                     <Txt size="xs">
                         {__('chat.composer.settings.topP')}
-                        <InfoPopover info={__('chat.composer.settings.topPInfo')}/>
+                        <InfoPopover info={__('chat.composer.settings.topPInfo')} disabled={samplingDisabled} />
                     </Txt>
                     <Txt size="xs">{composerContext.modelParameters.get('top_p').toFixed(2)}</Txt>
                 </div>
@@ -157,6 +147,7 @@
                     min={0}
                     max={1}
                     step={0.05}
+                    disabled={samplingDisabled}
                 />
             </div>
         </div>
@@ -237,11 +228,16 @@
         align-items: center;
         justify-content: space-between;
         gap: var(--space-2, calc(0.25rem * 2));
-        margin-bottom: var(--space-3, calc(0.25rem * 3));
 
         .settings-heading {
             margin-bottom: 0;
         }
+    }
+
+    .settings-parameters-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, calc(0.25rem * 3));
     }
 
     :global(.system-prompt-reset-button),

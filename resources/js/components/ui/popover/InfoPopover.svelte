@@ -45,6 +45,8 @@
         triggerProps?: Record<string, unknown>;
         /** Bindable reference to the rendered trigger button. */
         triggerEl?: HTMLButtonElement | null;
+        /** Disable the Popover */
+        disabled?: boolean;
     }
 
     let {
@@ -55,30 +57,39 @@
         popoverContentProps,
         ariaLabel,
         triggerProps,
-        triggerEl = $bindable(null)
+        triggerEl = $bindable(null),
+        disabled = false,
     }: Props = $props();
 </script>
 
-<Popover side={popoverSide}
-         group="info-popovers"
-         align={popoverAlign}
-         sideOffset={4}
-         openOnHover={true}
-         contentProps={mergeProps(popoverContentProps, {class: 'info-button-popover'})}
-         popover={info}>
-    {#snippet children(a)}
-        <button
-            bind:this={triggerEl}
-            {...mergeProps(
-                a?.props ?? {},
-                triggerProps ?? {},
-                ariaLabel ? {'aria-label': ariaLabel} : {}
-            ) as Record<string, unknown>}
-            class="info-button">
-            <Icon size="15"/>
-        </button>
-    {/snippet}
-</Popover>
+{#if disabled}
+    {@render popoverButton({ props: { "data-disabled": "" } })}
+{:else}
+    <Popover side={popoverSide}
+             group="info-popovers"
+             align={popoverAlign}
+             sideOffset={4}
+             openOnHover={true}
+             contentProps={mergeProps(popoverContentProps, {class: 'info-button-popover'})}
+             popover={info}>
+        {#snippet children(a)}
+            {@render popoverButton(a)}
+        {/snippet}
+    </Popover>
+{/if}
+
+{#snippet popoverButton(a: Record<string, any>)}
+    <button
+        bind:this={triggerEl}
+        {...mergeProps(
+            a?.props ?? {},
+            triggerProps ?? {},
+            ariaLabel ? {'aria-label': ariaLabel} : {}
+        ) as Record<string, unknown>}
+        class="info-button">
+        <Icon size="15"/>
+    </button>
+{/snippet}
 
 <style>
     .info-button {
@@ -95,6 +106,11 @@
             :global(svg) {
                 stroke-width: 3;
             }
+        }
+
+        &[data-disabled] {
+            cursor: not-allowed;
+            color: var(--color-text-disabled)
         }
     }
 
