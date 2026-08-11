@@ -26,11 +26,17 @@
         "default": ["xl", "base"],
         "large": ["2xl", "xl"],
     } as const;
+
+    const iconSizeMapping = {
+        "small": 24,
+        "default": 32,
+        "large": 48,
+    } as const;
 </script>
 
 <div class="alert-card variant-{variant}" style="--bg-color: var(--color-{surface})">
     {#if Icon}
-        <Icon />
+        <Icon size={iconSizeMapping[size]} />
     {/if}
     <div>
         <Txt size={sizeMapping[size][0]} weight="medium">{title}</Txt>
