@@ -99,6 +99,7 @@
                 value={activePreset}
                 onChange={handlePresetChange}
                 aria-label={__('chat.composer.settings.settingsHeading')}
+                disabled={!model.current.flags?.includes("feature-sampling-parameters")}
             />
         </div>
 
@@ -118,6 +119,7 @@
                     min={0}
                     max={2}
                     step={0.1}
+                    disabled={!model.current.flags?.includes("feature-sampling-parameters")}
                 />
             </div>
 
@@ -136,6 +138,7 @@
                     min={0}
                     max={1}
                     step={0.05}
+                    disabled={!model.current.flags?.includes("feature-sampling-parameters")}
                 />
             </div>
         </div>

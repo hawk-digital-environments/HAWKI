@@ -2,7 +2,7 @@
 
 ### What's New
 
-[//]: # (- The main new features and changes in this version.)
+- Update `openai_models.php` to include GPT-5.6 Luna, Terra and Sol.
 
 ### Quality of Life
 
@@ -10,7 +10,7 @@
 
 ### Bugfix
 
-[//]: # (- List of bugs that have been fixed in this version.)
+- Temperature und Top-P sliders are disabled, if the model doesn't support them.
 
 ### Internals
 
