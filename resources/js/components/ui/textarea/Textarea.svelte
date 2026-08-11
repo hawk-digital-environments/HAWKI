@@ -1,6 +1,11 @@
 <!--
   @component Resizable multi-line text input. Forwards all native `<textarea>`
   attributes and supports two-way binding via `bind:value`.
+
+  @example
+  ```svelte
+  <Textarea bind:value={draft} placeholder="Write a message..." rows={3}/>
+  ```
 -->
 <script lang="ts">
     import type {HTMLTextareaAttributes} from 'svelte/elements';

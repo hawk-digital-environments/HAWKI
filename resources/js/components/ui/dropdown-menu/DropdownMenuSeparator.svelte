@@ -1,5 +1,15 @@
 <!--
-  @component A thin horizontal rule that visually separates groups of menu items.
+  @component A thin horizontal rule that visually separates groups of menu
+  items inside a `DropdownMenu`. Purely presentational — takes no props of
+  its own beyond standard HTML attributes.
+
+  ```svelte
+  <DropdownMenu trigger="Actions">
+      <DropdownMenuItem onSelect={rename}>{__('menu.rename')}</DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem variant="destructive" onSelect={remove}>{__('menu.delete')}</DropdownMenuItem>
+  </DropdownMenu>
+  ```
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';

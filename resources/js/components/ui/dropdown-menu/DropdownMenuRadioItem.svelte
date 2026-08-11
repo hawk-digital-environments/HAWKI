@@ -1,5 +1,16 @@
 <!--
-  @component A radio item inside a DropdownMenuRadioGroup. Selecting it deselects all siblings.
+  @component A single radio option inside a `DropdownMenuRadioGroup`.
+  Selecting it deselects all sibling `DropdownMenuRadioItem`s in the same
+  group. Must be a descendant of a `DropdownMenuRadioGroup` — it renders the
+  bits-ui `RadioItem` primitive, which reads the group's shared value from
+  context.
+
+  ```svelte
+  <DropdownMenuRadioGroup bind:value={sortOrder}>
+      <DropdownMenuRadioItem value="name">{__('menu.sortByName')}</DropdownMenuRadioItem>
+      <DropdownMenuRadioItem value="date">{__('menu.sortByDate')}</DropdownMenuRadioItem>
+  </DropdownMenuRadioGroup>
+  ```
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, mergeProps} from 'bits-ui';

@@ -1,52 +1,56 @@
-import {getAuthenticatedConnection, getConnection, getConnectionWithUserInfo, loadConnection} from '$lib/data/connection/connection.js';
-import {autoRegisterConfigSchemas, getConfig, loadConfig} from '$lib/data/config/config.js';
-import {autoRegisterResourceSchemas} from '$lib/data/resources/resourceRegistry.js';
-import {__, loadTranslationLabels} from '$lib/utils/translator.js';
-import {oldUiBridge} from '$lib/oldUi/OldUiBridge.svelte.js';
-import {applyMigrations, autoRegisterMigrations} from '$lib/data/migrations/migrator.js';
-import {aiModelStore, loadAiModels} from '$lib/stores/AiModelStore.svelte.js';
-import {registerSvelteSnippetLoader} from '$lib/svelteSnippetLoader.js';
-import {loadSystemPrompts, systemPromptStore} from '$lib/stores/SystemPromptStore.svelte.js';
-import {keychainStore, KeychainStore} from '$lib/stores/KeychainStore.svelte.js';
-import {loadAiToolsAndCapabilities} from '$lib/stores/AiToolStore.svelte.js';
-import type {WellKnownSystemModelType} from '$lib/schemas/resources/system-models.schema.js';
-import type {AiModel} from '$lib/schemas/resources/ai-models.schema.js';
-import type {WellKnownSystemPromptType} from '$lib/schemas/resources/system-prompts.schema.js';
-import {getFileIconSvg} from '$lib/utils/fileIconSvg.js';
-import {oldUiMessageHistory} from '$lib/oldUi/OldUiMessageHistory.svelte.js';
-import {bootstrapper, Bootstrapper} from '$lib/utils/Bootstrapper.js';
-import {dependencyLoader} from '$lib/dependencies.js';
-import {createToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-import {createAppContext} from '$lib/components/app/AppContext.svelte.js';
-import {buildStorageFileUrl} from '$lib/utils/storageFileProxy.js';
+/**
+ * Frontend application entry point.
+ *
+ * This is the single script loaded by the page (see the bundler entry config)
+ * that boots the whole HAWKI SPA/legacy-hybrid frontend. It has two jobs:
+ *
+ * 1. Assemble the {@link HawkiApp} by calling `createApp()` with the ordered
+ *    list of {@link HawkiAppExtension}s that make up the application. Each
+ *    extension's `provideProperties()` merges its own surface onto the app
+ *    instance (see `HawkiApp.ts`), and each extension augments
+ *    `HawkiAppExtensions` via TypeScript declaration merging so the merged
+ *    surface stays fully typed (e.g. `app.config`, `app.stores`,
+ *    `app.restApi`, ...). The order of the array matters: extensions run
+ *    their `init()` hook in this order, and later extensions can rely on
+ *    properties provided by earlier ones (via `app.getOrFail(...)`).
+ * 2. Kick off the {@link Bootstrapper}, which runs app startup in six ordered
+ *    stages (preparation → migration → early → main → late → finalization).
+ *    `bootstrapper.run()` is awaited so that any code relying on
+ *    `window.hawkiIsBooting` or the legacy wait-queues behaves correctly.
+ *
+ * This file also guards against being executed twice (e.g. if the bootstrap
+ * `<script>` tag is accidentally included more than once on the same page)
+ * via the `window.hawkiIsBooting` flag, and wires up legacy-bridge concerns
+ * (`provideLegacyGlobals`, `setHawkiApp`, the legacy wait-until queues) that
+ * exist only to support old, non-extension code during the ongoing
+ * refactor to a single-page Svelte app.
+ *
+ * You should not normally need to change this file when adding a feature —
+ * add a new {@link HawkiAppExtension} (or a plugin, see `PluginExtension`)
+ * instead. Only touch this file when you need to add a fundamentally new,
+ * app-wide extension, or change the relative ordering of existing ones.
+ */
+import {ConfigurationExtension} from '$lib/kernel/config/ConfigurationExtension.js';
+import {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
+import {ModuleExtension} from '$lib/kernel/modules/ModuleExtension.js';
+import {createApp} from '$lib/kernel/HawkiApp.js';
+import {MigrationExtension} from '$lib/kernel/migrations/MigrationExtension.js';
+import {ClientExtension} from '$lib/kernel/client/ClientExtension.js';
+import {ResourceSchemaExtension} from '$lib/kernel/resources/ResourceSchemaExtension.js';
+import {PluginExtension} from '$lib/kernel/plugins/PluginExtension.js';
+import {LocalizationExtension} from '$lib/kernel/localization/LocalizationExtension.svelte.js';
+import {RoutingExtension} from '$lib/kernel/routing/RoutingExtension.js';
+import {createDefaultRouteRenderer} from '$lib/kernel/routing/routeRenderer.js';
+import {provideLegacyGlobals, runLegacyWaitUntilBootstrapQueue, runLegacyWaitUntilReadyQueue, setHawkiApp} from '$lib/legacy/legacy.js';
+import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
+import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
+import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
+import {ShellExtension} from '$lib/kernel/shell/ShellExtension.svelte.js';
 
-// Augment the global Window interface to include our globals, so that they can be accessed without TypeScript errors.
-// WARNING: This is only here for legacy support! Do not use global variables in new code!
 declare global {
     interface Window {
+        /** Guard flag so a second inclusion of this bootstrap script fails loudly instead of double-booting the app. */
         hawkiIsBooting: boolean;
-        hawkiEarlyWaitUntilBootstrapQueue: Array<(bootstrapper: Bootstrapper) => Promise<void>>;
-        hawkiEarlyWaitUntilReadyQueue: Array<() => Promise<void>>;
-        hawkiBootstrap: Bootstrapper;
-        hawkiIsReady: boolean;
-        hawkiDependencyLoader: typeof dependencyLoader;
-        waitUntilBootstrap: (cb: (bootstrapper: Bootstrapper) => Promise<void> | void) => void;
-        waitUntilReady: (cb: () => Promise<void> | void) => void;
-        oldUiBridge: typeof oldUiBridge;
-        oldUiMessageHistory: typeof oldUiMessageHistory;
-        getConnection: typeof getConnection;
-        getAuthenticatedConnection: typeof getAuthenticatedConnection;
-        getConnectionWithUserInfo: typeof getConnectionWithUserInfo;
-        getConfig: typeof getConfig;
-        applyMigrations: typeof applyMigrations;
-        __: typeof __;
-        buildStorageFileUrl: typeof buildStorageFileUrl;
-        userKeychain: KeychainStore;
-        getAiModels: () => AiModel[];
-        getAiModel: (id: string | number) => AiModel | null;
-        getSystemModel: (modelType: WellKnownSystemModelType | string) => AiModel | null;
-        getSystemPrompt: (promptName: WellKnownSystemPromptType) => string | null;
-        getFileIconSvg: typeof getFileIconSvg;
     }
 }
 
@@ -55,83 +59,30 @@ if (window.hawkiIsBooting) {
 }
 window.hawkiIsBooting = true;
 
-autoRegisterResourceSchemas();
-autoRegisterConfigSchemas();
-autoRegisterMigrations();
-
-// Propagate some important functions and objects to the global scope, so the legacy code can access them.
-window.getConnection = getConnection;
-window.getAuthenticatedConnection = getAuthenticatedConnection;
-window.getConnectionWithUserInfo = getConnectionWithUserInfo;
-window.getConfig = getConfig;
-window.__ = __;
-window.applyMigrations = applyMigrations;
-window.userKeychain = keychainStore;
-window.oldUiBridge = oldUiBridge;
-window.oldUiMessageHistory = oldUiMessageHistory;
-window.buildStorageFileUrl = buildStorageFileUrl;
-window.hawkiDependencyLoader = dependencyLoader;
-window.getAiModels = () => aiModelStore.models;
-window.getAiModel = (id: string | number) => aiModelStore.getOneById(id);
-window.getSystemModel = (modelType: WellKnownSystemModelType | string) => {
-    return aiModelStore.getSystemModelByType(modelType);
-};
-window.getSystemPrompt = (promptType: WellKnownSystemPromptType) => {
-    return systemPromptStore.getPromptByType(promptType)?.prompt ?? null;
-};
-window.getFileIconSvg = getFileIconSvg;
-
-// Before the bootstrap, we must load the connection and config, since everything else depends on them.
-// They are loaded simultaneously, but before the rest of the bootstrap steps, to minimize the time spent waiting for them.
-bootstrapper.onPreparationStage(loadConnection);
-bootstrapper.onPreparationStage(loadConfig);
-
-// Main bootstrap, these can be run in parallel, but they must be run after the connection and config are loaded.
-bootstrapper.onMainStage(loadTranslationLabels);
-bootstrapper.onMainStage(loadAiModels);
-bootstrapper.onMainStage(loadAiToolsAndCapabilities);
-bootstrapper.onMainStage(loadSystemPrompts);
-
-// @deprecated This is only here to support the "AppContext" through multiple Svelte apps on the same page.
-// It will be removed once we have a single-page app and can use Svelte contexts instead.
-bootstrapper.onLateStage(() => {
-    // @todo move this into the app component once we have a single-page app
-    createAppContext();
-    createToastContext();
-
-    // @todo remove this once we have a single-page app, and can use Svelte contexts instead of global variables.
-    // Inject the "LegacySharedContent" snippet into the page (as first child of the body)
-    const legacySharedContentSnippet = document.createElement('svelte-snippet');
-    legacySharedContentSnippet.setAttribute('type', 'LegacySharedContent');
-    document.body.insertBefore(legacySharedContentSnippet, document.body.firstChild);
-});
-
-// As a last step, we wait until the DOM is fully loaded
-bootstrapper.onFinalizationStage(() => new Promise(resolve => {
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            resolve();
-        });
-    } else {
-        resolve();
-    }
-}));
-bootstrapper.onFinalizationStage(registerSvelteSnippetLoader);
+provideLegacyGlobals();
 
 (async () => {
-    window.hawkiBootstrap = bootstrapper;
-    if (Array.isArray(window.hawkiEarlyWaitUntilBootstrapQueue)) {
-        for (const cb of window.hawkiEarlyWaitUntilBootstrapQueue) {
-            await cb(bootstrapper);
-        }
-    }
+    const bootstrapper = new Bootstrapper();
 
+    setHawkiApp(await createApp(
+        bootstrapper,
+        [
+            new ResourceSchemaExtension(),
+            new ClientExtension(),
+            new PluginExtension(),
+            new ConfigurationExtension(),
+            new MigrationExtension(),
+            new LocalizationExtension(),
+            new ModuleExtension(),
+            new RoutingExtension(createDefaultRouteRenderer()),
+            new StoreExtension(),
+            new ShellExtension(),
+            new SnippetExtension(),
+            new LegacyToastExtension()
+        ]
+    ));
+
+    await runLegacyWaitUntilBootstrapQueue(bootstrapper);
     await bootstrapper.run();
-
-    window.hawkiIsReady = true;
-    if (Array.isArray(window.hawkiEarlyWaitUntilReadyQueue)) {
-        for (const cb of window.hawkiEarlyWaitUntilReadyQueue) {
-            await cb();
-        }
-    }
+    await runLegacyWaitUntilReadyQueue();
 })();

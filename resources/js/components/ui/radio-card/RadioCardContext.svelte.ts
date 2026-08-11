@@ -1,5 +1,22 @@
 import {getContext, setContext} from 'svelte';
 
+/**
+ * Parent-child context wiring for `RadioCardGroup` (parent) and `RadioCard`
+ * (child) — a lightweight alternative to `runed`'s `Context` built directly
+ * on Svelte's `getContext`/`setContext`.
+ *
+ * WHY: `RadioCard` needs to read/set the group's current value, know whether
+ * the whole group is disabled, and share the group's `name` for its hidden
+ * radio input — without `RadioCardGroup` passing callbacks down through
+ * props/slots. All accessors are backed by getter/setter functions (not
+ * plain values) so a `RadioCard` re-derives from the group's live `$state`
+ * on every read instead of capturing a stale snapshot.
+ *
+ * HOW TO USE: `RadioCardGroup` calls `createRadioCardContext(...)` once in
+ * its `<script>` to publish its state; each `RadioCard` calls
+ * `getRadioCardContext()` to read it. Don't construct `RadioCardContext`
+ * directly — go through `createRadioCardContext`.
+ */
 export class RadioCardContext {
     constructor(
         private valueGetter: () => string,
@@ -32,6 +49,11 @@ export class RadioCardContext {
 
 const radioCardContextKey = Symbol('radio-card');
 
+/**
+ * Reads the nearest ancestor `RadioCardContext`. Call from a `RadioCard`'s
+ * `<script>`. Throws if no `RadioCardGroup` is found above it in the tree —
+ * `RadioCard` is not usable standalone.
+ */
 export function getRadioCardContext(): RadioCardContext {
     const context = getContext<RadioCardContext>(radioCardContextKey);
     if (!context) {
@@ -40,6 +62,11 @@ export function getRadioCardContext(): RadioCardContext {
     return context;
 }
 
+/**
+ * Creates and publishes a `RadioCardContext` for descendant `RadioCard`s.
+ * Call once from `RadioCardGroup`'s `<script>`, passing getters/setters
+ * backed by its own `$state` (or bindable props) so children stay reactive.
+ */
 export function createRadioCardContext(
     valueGetter: () => string,
     valueSetter: (newValue: string) => void,

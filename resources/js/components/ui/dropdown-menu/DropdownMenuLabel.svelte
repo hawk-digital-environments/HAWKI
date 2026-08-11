@@ -1,6 +1,17 @@
 <!--
-  @component A non-interactive label displayed above a group of related menu items.
-  Set inset=true to align with indented items (e.g. those with a leading icon or indicator).
+  @component A non-interactive label displayed above a group of related menu
+  items inside a `DropdownMenu` or `DropdownMenuGroup`. Set `inset` to align
+  with indented items (e.g. those with a leading icon, like `DropdownMenuItem`
+  with an `icon`, or a radio/checkbox indicator).
+
+  ```svelte
+  <DropdownMenu trigger="Tools">
+      <DropdownMenuLabel>{__('chat.composer.toolMenu.capabilitiesLabel')}</DropdownMenuLabel>
+      {#each capabilities as tool}
+          <DropdownMenuCheckboxItem checked={tool.active}>{tool.name}</DropdownMenuCheckboxItem>
+      {/each}
+  </DropdownMenu>
+  ```
 -->
 <script lang="ts">
     import {mergeProps} from 'bits-ui';

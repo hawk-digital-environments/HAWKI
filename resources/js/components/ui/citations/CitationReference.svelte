@@ -1,11 +1,32 @@
+<!--
+  @component The small inline chip a citation renders as inside the message
+  text (e.g. "[1]"). Rendered by `ExtendedLinkNode` for links whose href
+  starts with the citation anchor prefix — normal consumers don't place this
+  directly, it comes from `injectCitationsIntoMarkdown` markers inside the
+  markdown body:
+
+  ```svelte
+  <CitationReference citation={citationIdFromAnchorId(href) ?? ''} title={title}>
+      {@render linkContent()}
+  </CitationReference>
+  ```
+
+  Clicking the chip asks the shared `CitationContext` (provided by an
+  ancestor `CitationRoot`) to scroll to and flash the matching `Citation`
+  tile in the `CitationList`, using the `identifier` both share. If no
+  `CitationRoot` is present in the tree — e.g. the message is rendered
+  without a citations root — the click shows an error toast instead of
+  throwing, since this component may be reused in a context where citations
+  aren't wired up.
+-->
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import type {EnrichedUrlCitation} from '$lib/components/ui/citations/types.js';
     import {type CitationContext, useCitationContext} from '$lib/components/ui/citations/CitationContext.js';
     import Link from '$lib/components/util/link/Link.svelte';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
-    import {__} from '$lib/utils/translator.js';
-    import {citationAnchorId} from '$lib/components/chat/message/injectCitationsIntoMarkdown.js';
+    import {citationAnchorId} from '$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     // svelte-ignore non_reactive_update
     let citationContext: CitationContext | null = null;
@@ -15,10 +36,14 @@
     }
 
     const toastContext = useToastContext();
+    const {__} = useTranslator();
 
     interface Props {
+        /** The cited identifier, or the full `EnrichedUrlCitation` (only `.identifier` is used) — whichever the caller has on hand. */
         citation: string | EnrichedUrlCitation;
+        /** Native `title` attribute shown on hover, typically the source URL. */
         title?: string;
+        /** The chip's visible content, e.g. the citation number "1". */
         children: Snippet;
     }
 

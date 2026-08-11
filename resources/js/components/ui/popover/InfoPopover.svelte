@@ -1,7 +1,22 @@
 <!--
   @component Inline info button that reveals a hoverable Popover. Renders a
-  small icon (default: Info from Lucide) that opens the `info` content on
-  hover or click. Useful for contextual help next to form labels or settings.
+  small icon-only button that opens the `info` content on hover or click.
+  Useful for contextual help next to form labels or settings — a thin,
+  pre-configured wrapper around `Popover` (icon trigger, `group="info-popovers"`
+  so only one info popover is open at a time, `openOnHover`).
+
+  Usage — plain text info, placed right after a label:
+    <Txt size="xs">
+        {__('chat.composer.settings.temperature')}
+        <InfoPopover info={__('chat.composer.settings.temperatureInfo')}/>
+    </Txt>
+
+  Usage — rich content via a snippet, custom icon and side:
+    <InfoPopover popoverSide="right" icon={Settings01Icon}>
+        {#snippet info()}
+            <strong>Top P</strong> controls nucleus sampling.
+        {/snippet}
+    </InfoPopover>
 -->
 <script lang="ts">
 

@@ -1,9 +1,32 @@
 <!--
-  @component Full dropdown menu with trigger and content panel.
-  Wraps bits-ui DropdownMenu and hides the low-level Root/Trigger/Portal/Content primitives.
-  Place DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel,
-  DropdownMenuSeparator, DropdownMenuCheckboxItem and DropdownMenuRadioGroup
-  inside the `children` snippet.
+  @component Root of the `dropdown-menu` component family: a trigger plus an
+  animated content panel. Wraps bits-ui's `DropdownMenu` and hides its
+  low-level `Root`/`Trigger`/`Portal`/`Content` primitives behind a single
+  component. Below the `--bp-mode-mobile` breakpoint the content panel
+  automatically renders as a `BottomSheet` instead of a floating popover —
+  item components don't need to know which one is active.
+
+  Compose it with the other family members as `children`:
+  `DropdownMenuItem`, `DropdownMenuGroup`, `DropdownMenuLabel`,
+  `DropdownMenuSeparator`, `DropdownMenuCheckboxItem`, `DropdownMenuSwitchItem`,
+  `DropdownMenuRadioGroup` + `DropdownMenuRadioItem`, and
+  `DropdownMenuDetailView` for a nested two-panel picker.
+
+  ```svelte
+  <DropdownMenu bind:open title={__('chat.export.title')} align="end">
+      {#snippet trigger({props})}
+          <ButtonWithTooltip iconLeft={FileExportIcon} highlight={props['data-state']} {...props} />
+      {/snippet}
+
+      <DropdownMenuItem onclick={() => handleExport('pdf')}>
+          {__('chat.export.pdf')}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem variant="destructive" onclick={handleDelete}>
+          {__('chat.export.delete')}
+      </DropdownMenuItem>
+  </DropdownMenu>
+  ```
 -->
 <script lang="ts">
     import {DropdownMenu as DropdownMenuPrimitive, type DropdownMenuContentProps, mergeProps} from 'bits-ui';

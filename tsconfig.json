@@ -3,6 +3,7 @@
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
         "target": "es2023",
         "module": "esnext",
+        "moduleResolution": "bundler",
         "types": [
             "svelte",
             "vite/client"
@@ -13,6 +14,9 @@
             ],
             "$lib/*": [
                 "./resources/js/*"
+            ],
+            "$plugins/*": [
+                "./resources/js/plugins/*"
             ]
         },
         "noEmit": true,
@@ -24,12 +28,16 @@
          */
         "allowJs": true,
         "checkJs": true,
-        "moduleDetection": "force"
+        "moduleDetection": "force",
+        "skipLibCheck": true
     },
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.js",
-        "resources/js/**/*.svelte",
-        "public/js/encryption.js"
+        "resources/js/**/*.svelte"
+    ],
+    "exclude": [
+        "node_modules",
+        "vendor"
     ]
 }

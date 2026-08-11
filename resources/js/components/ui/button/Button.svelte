@@ -1,12 +1,25 @@
 <!--
   @component General-purpose button primitive.
 
-  Supports five `variant` styles — `fill`, `stroke`, `ghost`, `iconGhost`, `delete` —
-  and five `size` options — `xs`, `sm`, `md`, `lg`, `icon`. Renders a native
-  `<button>` element and forwards all HTML button attributes via rest-props.
+  Supports six `variant` styles — `fill`, `accent`, `stroke`, `ghost`, `iconGhost`,
+  `delete` — and three `size` options — `xs`, `sm`, `md`. Renders a native
+  `<button>` element and forwards all `HTMLButtonAttributes` via rest-props.
 
-  The `md` size expects optional `.icon` and `.label` child elements for the
-  two-column icon + label layout; other sizes leave layout to the caller.
+  If `iconLeft` and/or `iconRight` are given without `children`, the button
+  automatically switches to a compact icon-only square (internal `iconOnly`
+  size) — no separate prop needed for that case.
+
+  @example
+  ```svelte
+  <Button
+      iconRight={Cancel01Icon}
+      disabled={sending}
+      onclick={() => mode.exit()}
+      title="Cancel"
+      variant="ghost"
+      size="xs"
+  />
+  ```
 -->
 <script module lang="ts">
     import {cva, type VariantProps} from 'class-variance-authority';

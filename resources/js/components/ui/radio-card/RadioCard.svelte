@@ -4,6 +4,18 @@
   Renders its `children` alongside a radio indicator and reflects the group's
   current selection. Clicking selects it; can be disabled per-card or via the
   group. Reachable via keyboard with Space/Enter.
+
+  Must be used inside a `RadioCardGroup` — it reads shared state (current
+  value, group `disabled`, `name`) via `getRadioCardContext()` and throws if
+  no group is found in the component tree above it.
+
+  @example
+  ```svelte
+  <RadioCardGroup value={selection} onChange={handleChange}>
+      <RadioCard value="auto">Auto</RadioCard>
+      <RadioCard value="native" disabled={!hasNativeSupport}>Native</RadioCard>
+  </RadioCardGroup>
+  ```
 -->
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';
