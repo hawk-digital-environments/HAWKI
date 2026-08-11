@@ -28,19 +28,25 @@
     } as const;
 
     const iconSizeMapping = {
-        "small": 24,
-        "default": 32,
+        "small": 14,
+        "default": 24,
         "large": 48,
     } as const;
 </script>
 
 <div class="alert-card variant-{variant}" style="--bg-color: var(--color-{surface})">
     {#if Icon}
-        <Icon size={iconSizeMapping[size]} />
+        <div>
+            <Icon size={iconSizeMapping[size]} />
+        </div>
     {/if}
-    <div>
-        <Txt size={sizeMapping[size][0]} weight="medium">{title}</Txt>
-        <Txt size={sizeMapping[size][1]}>{description}</Txt>
+    <div class="alert-content">
+        {#if title}
+            <Txt size={sizeMapping[size][0]} weight="medium">{title}</Txt>
+        {/if}
+        {#if description}
+            <Txt size={sizeMapping[size][1]}>{description}</Txt>
+        {/if}
     </div>
 </div>
 
@@ -52,6 +58,10 @@
         display: flex;
         padding: var(--space-2);
         background-color: var(--bg-color);
+    }
+
+    .alert-content {
+        display: flex;
     }
 
     .variant-destructive {

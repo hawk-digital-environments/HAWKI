@@ -75,10 +75,7 @@
                 "noSystemPrompt": "No system prompt set",
                 "settingsHeading": "Settings",
                 "resetModelSettings": "Reset to model defaults",
-                "disabled": {
-                    "title": "Settings not available",
-                    "info": "These settings are not supported by the model."
-                },
+                "samplingDisabled": "These settings are not supported by the model.",
                 "temperature": "Temperature",
                 "temperatureInfo": "Controls the creativity of the AI's responses. Higher values (e.g. 0.8) lead to more diverse and imaginative results; lower values (e.g. 0.2) make responses more focused and predictable.",
                 "temperatureAriaLabel": "Adjust temperature",

@@ -99,7 +99,7 @@
                 ></ButtonWithTooltip>
             </div>
             {#if samplingDisabled}
-                <Alert title={__("chat.composer.settings.disabled.title")} description={__("chat.composer.settings.disabled.info")} icon={Alert01Icon} size="small" />
+                <Alert description={__("chat.composer.settings.samplingDisabled")} icon={Alert01Icon} size="small" />
             {/if}
             <Tabs
                 items={tabItems}
