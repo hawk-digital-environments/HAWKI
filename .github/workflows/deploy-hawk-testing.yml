@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Log in to the Container registry
         uses: docker/login-action@v4
@@ -59,15 +59,14 @@ jobs:
 
   remove-old-images:
     permissions:
-      contents: write
       packages: write
     runs-on: ubuntu-latest
     steps:
-      - uses: snok/container-retention-policy@v3.0.0
+      - uses: snok/container-retention-policy@v3.1.0
         with:
-          account: user
+          account: ${{github.repository_owner}}
           token: ${{secrets.GITHUB_TOKEN}}
-          image-names: "${{github.event.repository.name}}"
+          image-names: "hawki"
           image-tags: "testing-* !testing-latest"
           keep-n-most-recent: 5
           cut-off: 1h

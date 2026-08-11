@@ -37,20 +37,20 @@ return [
   'output_cost_per_token_above_200k_tokens' => 1.8E-5,
   'output_cost_per_token_batches' => 6.0E-6,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -64,7 +64,7 @@ return [
   'output_cost_per_token_above_200k_tokens_priority' => 3.24E-5,
   'cache_read_input_token_cost_priority' => 3.6E-7,
   'cache_read_input_token_cost_above_200k_tokens_priority' => 7.2E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -97,20 +97,20 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => true,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -122,7 +122,7 @@ return [
   'input_cost_per_audio_token_priority' => 1.8E-6,
   'output_cost_per_token_priority' => 5.4E-6,
   'cache_read_input_token_cost_priority' => 9.0E-8,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -155,20 +155,20 @@ return [
   'supports_system_messages' => true,
   'supports_web_search' => true,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -181,7 +181,7 @@ return [
   'input_cost_per_audio_token_priority' => 1.8E-6,
   'output_cost_per_token_priority' => 1.62E-5,
   'cache_read_input_token_cost_priority' => 2.7E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -219,20 +219,20 @@ return [
   'output_cost_per_token_batches' => 3.75E-6,
   'output_cost_per_token_flex' => 3.75E-6,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -244,7 +244,7 @@ return [
   'input_cost_per_token_priority' => 2.7E-6,
   'output_cost_per_token_priority' => 1.35E-5,
   'cache_read_input_token_cost_priority' => 2.7E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -284,20 +284,20 @@ return [
   'output_cost_per_token_batches' => 6.0E-6,
   'output_cost_per_image' => 0.00012,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -312,7 +312,7 @@ return [
   'output_cost_per_token_above_200k_tokens_priority' => 3.24E-5,
   'cache_read_input_token_cost_priority' => 3.6E-7,
   'cache_read_input_token_cost_above_200k_tokens_priority' => 7.2E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -352,20 +352,20 @@ return [
   'output_cost_per_token_batches' => 6.0E-6,
   'output_cost_per_image' => 0.00012,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/pricing#gemini-models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/chat/completions',
     1 => '/v1/completions',
     2 => '/v1/batch',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
     2 => 'audio',
     3 => 'video',
   ),
-  'supported_output_modalities' => 
+  'supported_output_modalities' =>
   array (
     0 => 'text',
   ),
@@ -380,7 +380,7 @@ return [
   'output_cost_per_token_above_200k_tokens_priority' => 3.24E-5,
   'cache_read_input_token_cost_priority' => 3.6E-7,
   'cache_read_input_token_cost_above_200k_tokens_priority' => 7.2E-7,
-  'search_context_cost_per_query' => 
+  'search_context_cost_per_query' =>
   array (
     'search_context_size_low' => 0.014,
     'search_context_size_medium' => 0.014,
@@ -478,7 +478,7 @@ return [
   'supports_web_search' => NULL,
   'input_cost_per_character' => 3.0E-5,
   'source' => 'https://cloud.google.com/text-to-speech/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/speech',
   ),
@@ -508,13 +508,13 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_second' => 0.00026667,
-  'metadata' => 
+  'metadata' =>
   array (
     'calculation' => '$0.016/60 seconds = $0.00026667 per second',
     'original_pricing_per_minute' => 0.016,
   ),
   'source' => 'https://cloud.google.com/speech-to-text/pricing',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/audio/transcriptions',
   ),
@@ -544,7 +544,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.0005,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -576,7 +576,7 @@ return [
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.0003,
   'source' => 'https://cloud.google.com/vertex-ai/pricing',
-  'supported_regions' => 
+  'supported_regions' =>
   array (
     0 => 'us-central1',
   ),

@@ -59,23 +59,23 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 5.0E-8,
       'output_cost_per_token' => 4.0E-7,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 2.5E-7,
       'output_cost_per_token' => 2.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -109,23 +109,23 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 5.0E-8,
       'output_cost_per_token' => 4.0E-7,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 2.5E-7,
       'output_cost_per_token' => 2.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -294,25 +294,25 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -346,25 +346,25 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -398,25 +398,25 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_reasoning_token' => 4.0E-6,
       'output_cost_per_token' => 1.2E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_reasoning_token' => 1.2E-5,
       'output_cost_per_token' => 3.6E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -585,47 +585,47 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'cache_read_input_token_cost' => 8.0E-8,
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 1.5E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'cache_read_input_token_cost' => 1.2E-7,
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 2.5E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'cache_read_input_token_cost' => 2.0E-7,
       'input_cost_per_token' => 8.0E-7,
       'output_cost_per_token' => 4.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 => 
+    3 =>
     array (
       'cache_read_input_token_cost' => 4.0E-7,
       'input_cost_per_token' => 1.6E-6,
       'output_cost_per_token' => 9.6E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -659,43 +659,43 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 1.5E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 2.5E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'input_cost_per_token' => 8.0E-7,
       'output_cost_per_token' => 4.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 => 
+    3 =>
     array (
       'input_cost_per_token' => 1.6E-6,
       'output_cost_per_token' => 9.6E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -729,47 +729,47 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'cache_read_input_token_cost' => 1.0E-7,
       'input_cost_per_token' => 1.0E-6,
       'output_cost_per_token' => 5.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'cache_read_input_token_cost' => 1.8E-7,
       'input_cost_per_token' => 1.8E-6,
       'output_cost_per_token' => 9.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'cache_read_input_token_cost' => 3.0E-7,
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 => 
+    3 =>
     array (
       'cache_read_input_token_cost' => 6.0E-7,
       'input_cost_per_token' => 6.0E-6,
       'output_cost_per_token' => 6.0E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -803,43 +803,43 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 1.0E-6,
       'output_cost_per_token' => 5.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 1.8E-6,
       'output_cost_per_token' => 9.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 256000.0,
       ),
     ),
-    3 => 
+    3 =>
     array (
       'input_cost_per_token' => 6.0E-6,
       'output_cost_per_token' => 6.0E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -873,33 +873,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -933,33 +933,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -993,33 +993,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 6.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 2.4E-6,
       'output_cost_per_token' => 1.2E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'input_cost_per_token' => 3.0E-6,
       'output_cost_per_token' => 1.5E-5,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 252000.0,
@@ -1215,33 +1215,33 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 2.0E-7,
       'output_cost_per_token' => 1.6E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 32000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 3.0E-7,
       'output_cost_per_token' => 2.4E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 32000.0,
         1 => 128000.0,
       ),
     ),
-    2 => 
+    2 =>
     array (
       'input_cost_per_token' => 6.0E-7,
       'output_cost_per_token' => 4.8E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 128000.0,
         1 => 256000.0,
@@ -1275,23 +1275,23 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_token' => 2.4E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'input_cost_per_token' => 5.0E-7,
       'output_cost_per_token' => 3.0E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -1352,25 +1352,25 @@ return [
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
   'supports_tool_choice' => true,
-  'tiered_pricing' => 
+  'tiered_pricing' =>
   array (
-    0 => 
+    0 =>
     array (
       'cache_read_input_token_cost' => 8.0E-8,
       'input_cost_per_token' => 4.0E-7,
       'output_cost_per_token' => 1.6E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 0,
         1 => 256000.0,
       ),
     ),
-    1 => 
+    1 =>
     array (
       'cache_read_input_token_cost' => 2.4E-7,
       'input_cost_per_token' => 1.2E-6,
       'output_cost_per_token' => 4.8E-6,
-      'range' => 
+      'range' =>
       array (
         0 => 256000.0,
         1 => 1000000.0,
@@ -1430,7 +1430,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
@@ -1460,7 +1460,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'source' => 'https://www.alibabacloud.com/help/en/model-studio/models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/images/generations',
   ),
