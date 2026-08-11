@@ -22,6 +22,34 @@
   renders as a BottomSheet; on desktop as a floating dropdown. Supports plain
   lists and grouped items (via `groupLabel` on each item), a custom trigger
   snippet, and a custom item rendering snippet via `itemSnippet`.
+
+  Built on `bits-ui`'s `Select.Root`; `type` is hardcoded to `'single'`, so
+  most `SelectPrimitive.RootProps` (`open`, `value`, `disabled`, `name`, ...)
+  are forwarded as-is via rest-props/`Omit<..., 'type' | 'items'>`.
+
+  @example Plain list, default trigger showing the selected label:
+  ```svelte
+  <SingleSelect
+      bind:value={selectedId}
+      items={[{value: '1', label: 'GPT-4'}, {value: '2', label: 'Claude'}]}
+      placeholder="Choose a model"
+  />
+  ```
+
+  @example Custom trigger (wraps another component) + custom item rendering:
+  ```svelte
+  <SingleSelect
+      bind:value={
+          () => model.current.model_id,
+          (newValue) => handleModelChange(newValue)
+      }
+      items={selectItems}
+      itemSnippet={itemSnippet}
+      triggerValue={triggerValue}
+      placeholder="Choose a model"
+      onValueChange={handleModelChange}
+  />
+  ```
 -->
 <script lang="ts">
     import {mergeProps, Select as SelectPrimitive, type WithoutChildren} from 'bits-ui';

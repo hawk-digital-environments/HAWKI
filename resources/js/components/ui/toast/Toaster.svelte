@@ -1,8 +1,18 @@
 <!--
   @component Fixed-position pile of toast notifications driven by
-  {@link toastStore}. Mount once (e.g. near the chat input); toasts pushed from
-  anywhere stack bottom-centre Sonner-style — newest in front, older ones
-  peeking behind with a slight scale/offset — and auto-dismiss.
+  {@link useToastContext}. Mount exactly once per page (see
+  `plugins/core/snippets/LegacySharedContent.svelte`); toasts pushed from
+  anywhere via `useToastContext().error/success/info(...)` stack top-centre
+  Sonner-style — newest in front, older ones peeking behind with a slight
+  scale/offset — and auto-dismiss. Hovering or focusing the pile expands it
+  and pauses auto-dismissal for every toast; leaving resumes the countdowns.
+
+  Usage — mount once near the root of the page:
+    <Toaster/>
+
+  Elsewhere, push a toast:
+    const toastContext = useToastContext();
+    toastContext.error('Upload failed.');
 -->
 <script lang="ts">
     import {backOut, cubicIn} from 'svelte/easing';

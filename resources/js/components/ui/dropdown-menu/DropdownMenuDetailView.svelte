@@ -1,9 +1,32 @@
 <!--
-  @component Two-panel animated container for dropdown menus with an optional
-  detail view. When `open` is false the default `children` panel is visible;
-  setting `open` to true slides in the `details` panel. Height is
-  spring-animated so the transition between panels (which typically differ in
-  height) eases instead of snapping.
+  @component Two-panel animated container for a `DropdownMenu` (or the
+  `BottomSheet` it renders as on mobile) that needs a drill-down "detail"
+  view — e.g. selecting a row shows configuration for that row. When `open`
+  is false the default `children` panel (typically a list of
+  `DropdownMenuItem`/`DropdownMenuCheckboxItem` rows) is visible; setting
+  `open` to true slides in the `details` panel instead. Height is
+  spring-animated so the transition between panels (which typically differ
+  in height) eases instead of snapping.
+
+  This is placed *inside* a `DropdownMenu`'s `children`, replacing the plain
+  list of items — it owns both panels itself rather than being combined with
+  individual item components at the same level. See `ToolMenu.svelte` for
+  the real usage: the list panel renders `ToolMenuList` (built from
+  `DropdownMenuLabel` + `DropdownMenuSeparator` + `DropdownMenuCheckboxItem`
+  rows), and the detail panel renders per-tool configuration.
+
+  ```svelte
+  <DropdownMenu bind:open trigger={triggerSnippet}>
+      <DropdownMenuDetailView open={!!selectedEntry}>
+          {#snippet details()}
+              {#if selectedEntry}
+                  <ToolMenuDetail entry={selectedEntry} onCloseDetail={closeDetail} />
+              {/if}
+          {/snippet}
+          <ToolMenuList entries={groupedEntries} onOpenDetail={openDetail} />
+      </DropdownMenuDetailView>
+  </DropdownMenu>
+  ```
 -->
 <script lang="ts">
 
@@ -16,9 +39,9 @@
     interface Props extends HTMLAttributes<HTMLDivElement> {
         /** Whether the detail panel is visible. False shows `children`; true shows `details`. */
         open: boolean;
-        /** Default list/summary panel. */
+        /** Default list/summary panel, e.g. a `ToolMenuList` of menu items. */
         children: Snippet;
-        /** Detail panel revealed when `open` is true. */
+        /** Detail panel revealed when `open` is true, e.g. per-item configuration. */
         details: Snippet;
     }
 

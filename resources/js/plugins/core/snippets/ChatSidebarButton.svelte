@@ -1,0 +1,145 @@
+<!--
+@component Renders one entry in the chat sidebar list (either an AI conversation or a group room),
+as a `<svelte-snippet>` entry point registered by `core.plugin.ts`. Clicking it opens the
+conversation via `oldUiBridge.triggerOpenChat`; it also shows an inline rename menu
+(`RoomNameMenu`/`AiConvNameMenu` depending on `context`) and an unread-message indicator for rooms.
+
+This is probably a temporary component, since it mixes concerns between chat and room messages.
+However, as we want to merge them both anyway, it's not worth the effort to split out the
+chat-specific parts into a separate component for now.
+
+Usage (created dynamically by the legacy sidebar JS — see `public/js/ai_chat_functions.js`):
+```js
+const snippet = document.createElement('svelte-snippet');
+snippet.setAttribute('type', 'ChatSidebarButton');
+snippet.setProps({slug: conv.slug, name: conv.conv_name, context: 'aiConv'});
+snippet.setAttribute('data-room-slug', conv.slug); // used to look the button up again later
+document.getElementById('chats-list').appendChild(snippet);
+```
+
+Later, the name can be updated from outside without remounting:
+```js
+document.querySelector(`svelte-snippet[type="ChatSidebarButton"][data-room-slug="${slug}"]`)
+    .setProps({name: newName});
+```
+-->
+<script lang="ts">
+    import type {ComposerContextType} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
+    import type {HTMLSvelteSnippetElement} from '$lib/legacy/svelteSnippetLoader.js';
+    import type {ComponentProps} from 'svelte';
+    import EllipsisIcon from '$lib/components/ui/icons/iconset/EllipsisIcon.svelte';
+    import RoomNameMenu from '$plugins/core/modules/chat/components/nameMenu/RoomNameMenu.svelte';
+    import AiConvNameMenu from '$plugins/core/modules/chat/components/nameMenu/AiConvNameMenu.svelte';
+
+    interface Props {
+        /** The slug of the conversation this button represents. Clicking the button will open the conversation with this slug. */
+        slug?: string;
+        /** The name of the conversation to display. If not provided, the conversation name from oldUiMessageHistory will be used (if its slug matches the provided slug). */
+        name?: string;
+        /** The context in which the button is rendered, which can be used to determine whether certain features (like renaming) should be enabled. */
+        context: ComposerContextType;
+        /** The snippet root element, which can be used to set props on the component from outside (e.g. setting the room name from oldUiMessageHistory). */
+        root: HTMLSvelteSnippetElement;
+        /** Whether the conversation has unread messages. Shows a visual indicator if true. */
+        hasUnreadMessages?: boolean;
+    }
+
+    const {
+        slug,
+        name,
+        context,
+        root,
+        hasUnreadMessages = false
+    }: Props = $props();
+
+    // Binding renaming allows us to prevent the click event from propagating and opening
+    // the conversation when the user is trying to rename it. (This includes hitting the space or enter key to confirm the rename, which would otherwise also trigger the conversation to open.)
+    let isRenaming = $state(false);
+
+    $effect(() => {
+        return oldUiBridge.onRenameChat((renamedSlug, newName) => {
+            if (slug && renamedSlug === slug) {
+                root.setProps({name: newName});
+            }
+        });
+    });
+
+    const sharedProps: ComponentProps<typeof RoomNameMenu | typeof AiConvNameMenu> = $derived.by(() => ({
+        slug: slug ?? '',
+        name: name ?? '',
+        context,
+        hasUnreadMessages,
+        block: true,
+        triggerIcon: EllipsisIcon,
+        buttonProps: {class: 'chat-name-menu-button'}
+    }));
+</script>
+
+<button
+    class="sidebar-button btn-md selection-item"
+    onclick={() => !isRenaming && slug && oldUiBridge.triggerOpenChat(slug)}>
+
+    {#if context === 'room'}
+        <div class="dot-lg" id="unread-msg-flag" style={'display: ' + (hasUnreadMessages ? 'block' : 'none')}></div>
+    {/if}
+    {#if context === 'room'}
+        <RoomNameMenu
+            bind:isRenaming={isRenaming}
+            {...sharedProps}
+        />
+    {:else}
+        <AiConvNameMenu
+            bind:isRenaming={isRenaming}
+            {...sharedProps}
+        />
+    {/if}
+</button>
+
+<style>
+    :global(.chat-name-menu-button) {
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }
+
+    .sidebar-button {
+        display: flex;
+        flex-direction: row;
+        column-gap: .5rem;
+        align-items: center;
+        padding-left: 1rem;
+        padding-right: .5rem;
+        height: 2.5rem;
+        border-radius: 5px;
+        background-color: transparent;
+        transition: background-color var(--transition-fast);
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        outline-offset: -2px;
+
+        &:hover {
+            :global(.chat-name-menu-button) {
+                opacity: 1;
+            }
+        }
+
+        :global(#unread-msg-flag) {
+            display: none;
+        }
+
+        &:global(:not(.selected):hover) {
+            background-color: var(--panel-main);
+            /* border: var(--border-stroke-thin); */
+        }
+
+        &:global(.selected) {
+            background-color: var(--panel-main);
+            border: var(--border-stroke-thin);
+        }
+    }
+
+    :global(.active) .sidebar-button {
+        background-color: var(--highlight-color);
+    }
+</style>

@@ -127,11 +127,11 @@ return [
   'input_cost_per_video_per_second_above_8s_interval' => 0.001,
   'output_vector_size' => 768,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/embeddings',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',
@@ -169,11 +169,11 @@ return [
   'input_cost_per_video_per_second_above_8s_interval' => 0.001,
   'output_vector_size' => 768,
   'source' => 'https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models',
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/embeddings',
   ),
-  'supported_modalities' => 
+  'supported_modalities' =>
   array (
     0 => 'text',
     1 => 'image',

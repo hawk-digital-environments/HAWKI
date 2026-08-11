@@ -1,5 +1,30 @@
 import type { SizeConfig, ThemeColors, BorderBeamSize } from './types';
 
+/**
+ * CSS generator for the `BorderBeam` animated border effect.
+ *
+ * WHAT: builds a complete, self-contained CSS stylesheet (as a string) for one
+ * `BorderBeam` instance — `@property` registrations, keyframes, and
+ * `[data-beam="<id>"]` rules for the `::before`/`::after`/bloom layers.
+ *
+ * WHY this exists as generated CSS rather than static `<style>` rules: the
+ * beam's colors, gradient positions, and durations are per-instance and
+ * driven by JS-computed values (size/theme/brightness/hue-range/measured
+ * element dimensions), and several gradients must be dynamically sized to the
+ * wrapped element (`--beam-fit-w/-h`, `--beam-fill`). CSS custom properties
+ * alone can't express the conditional mask/gradient composition needed per
+ * size variant, so each instance gets its own scoped stylesheet keyed by a
+ * unique id (see `BorderBeam.svelte`, which injects the result via `{@html}`).
+ *
+ * HOW TO USE: call `generateBeamCSS()` with a fully-resolved options object
+ * (see `GenerateStylesOptions`) and inject the returned string into a
+ * `<style>` tag. `sizePresets` and `sizeThemePresets` supply the default
+ * geometry/opacity values that `BorderBeam.svelte` merges with prop overrides
+ * before calling `generateBeamCSS`. Everything else in this file (blob
+ * tables, gradient builders, `generateBorderlikeCSS`/`generateLineVariantCSS`)
+ * is an internal implementation detail — not exported.
+ */
+
 // ── CSS template helpers ─────────────────────────────────────────────────────
 // Emit a paired `-webkit-mask`/`mask` block. The webkit and standard composite
 // values are NOT derivable from one another — they differ per call site — so
@@ -19,7 +44,9 @@ function fadeKeyframes(id: string): string {
 }
 
 /**
- * Size presets for border radius and dimensions
+ * Size presets for border radius and dimensions, keyed by `BorderBeamSize`.
+ * `BorderBeam.svelte` uses these as the default border radius/width when no
+ * explicit `borderRadius` prop (and no auto-detected child radius) is given.
  */
 export const sizePresets: Record<BorderBeamSize, SizeConfig> = {
   sm: {
@@ -39,7 +66,10 @@ export const sizePresets: Record<BorderBeamSize, SizeConfig> = {
 };
 
 /**
- * Per-size theme presets matching the tuned v5 control panel defaults
+ * Per-size, per-theme (`dark`/`light`) opacity/saturation/brightness presets
+ * matching the tuned v5 control panel defaults. `BorderBeam.svelte` looks up
+ * `sizeThemePresets[size][resolvedTheme]` and lets individual props
+ * (`saturation`, `brightness`, …) override specific fields.
  */
 export const sizeThemePresets: Record<BorderBeamSize, Record<'dark' | 'light', ThemeColors>> = {
   sm: {

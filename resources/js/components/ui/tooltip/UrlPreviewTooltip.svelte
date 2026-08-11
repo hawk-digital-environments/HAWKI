@@ -14,8 +14,9 @@
 <script lang="ts">
     import type {Snippet} from 'svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
-    import {fetchLinkPreviewMetadata} from '$lib/data/api/linkPreview.js';
-    import {__} from '$lib/utils/translator.js';
+    import {useLinkPreviewApi} from '$lib/app/hooks/useApi.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
 
     interface Props {
         /** The URL to fetch and display the preview for. */
@@ -28,12 +29,16 @@
     }
 
     const {url, children: trigger}: Props = $props();
+    const api = useLinkPreviewApi();
+    const {__} = useTranslator();
+
+    const app = useApp();
 
     let disabled = $state<boolean>(false);
 
     async function extendedFetchLinkPreviewMetadata(url: string) {
         try {
-            return await fetchLinkPreviewMetadata(url);
+            return await api.getLinkPreviewMetadata(url);
         } catch (error) {
             // Don't let the tooltip open again if the fetch failed, to avoid repeated failed requests.
             disabled = true;

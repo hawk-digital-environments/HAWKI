@@ -3,6 +3,18 @@
 
   Bind `value` to the selected card's value; `onChange` fires on selection.
   Disabling the group disables (and dims) every card it contains.
+
+  Publishes a `RadioCardContext` (see `RadioCardContext.svelte.ts`) that its
+  `RadioCard` children read via `getRadioCardContext()` — always wrap
+  `RadioCard`s in this group, never render them standalone.
+
+  @example
+  ```svelte
+  <RadioCardGroup value={variant} onChange={(v) => (variant = v)} name="tool-variant">
+      <RadioCard value="auto">Auto</RadioCard>
+      <RadioCard value="native">Native</RadioCard>
+  </RadioCardGroup>
+  ```
 -->
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';

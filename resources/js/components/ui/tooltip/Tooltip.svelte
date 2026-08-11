@@ -3,6 +3,26 @@
   a 300 ms long-press opens the tooltip (and the context menu is suppressed so
   the two don't clash). The trigger is provided via the `children` snippet;
   tooltip content via the `tooltip` prop (string or snippet).
+
+  Low-level primitive: for a button that needs a tooltip, prefer
+  `ButtonWithTooltip` which wires this up for you.
+
+  Usage — string trigger and tooltip:
+    <Tooltip tooltip="Copy to clipboard">Copy</Tooltip>
+
+  Usage — snippet trigger (the `props` arg MUST be spread onto the trigger's
+  root element so bits-ui can attach its hover/focus listeners) and a snippet
+  for rich tooltip content:
+    <Tooltip side="bottom" delayDuration={300}>
+        {#snippet children({props})}
+            <button {...props} aria-label="Info">
+                <InfoIcon size={14}/>
+            </button>
+        {/snippet}
+        {#snippet tooltip()}
+            <strong>Heads up:</strong> this action can't be undone.
+        {/snippet}
+    </Tooltip>
 -->
 <script lang="ts">
     import {mergeProps, Tooltip as TooltipPrimitive, type TooltipContentProps} from 'bits-ui';

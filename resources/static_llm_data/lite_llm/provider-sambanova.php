@@ -136,7 +136,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'For vision models, images are converted to 6432 input tokens and are billed at that amount',
   ),
@@ -167,7 +167,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'For vision models, images are converted to 6432 input tokens and are billed at that amount',
   ),

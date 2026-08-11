@@ -1,61 +1,59 @@
 # Stores
 
-Reactive state that needs to be shared across components lives in `resources/js/stores/`. Each store is a TypeScript class using Svelte 5 Runes (`$state`, `$derived`) exported as a module-level singleton. Because JavaScript modules are singletons within a page load, every component that imports the same store reads from and writes to the same reactive instance — no prop-drilling or context setup required. Store files use the `.svelte.ts` extension so the Svelte compiler processes the runes.
+Reactive state that needs to be shared across components lives in stores. Each store is a TypeScript class using Svelte 5 Runes (`$state`, `$derived`) that `implements DataStore`, with a `name` property and an optional `loadData(app)` method. Stores are registered by a plugin (the core plugin registers all of them today) into the kernel's `StoreExtension`, which drives `loadData` on the bootstrapper's `main` stage.
 
-Each store file exports both the class and a pre-constructed singleton:
+Source: `resources/js/plugins/core/stores/*.svelte.ts`. Registry: `app.stores` (see [The App & Kernel](../600-Advanced/110-App-and-Kernel.md)).
 
-```ts
-// resources/js/stores/MyStore.svelte.ts
-export class MyStore {
-    public count = $state(0);
-    public doubled = $derived(this.count * 2);
-}
+## Accessing a store
 
-export const myStore = new MyStore();
-```
-
-Import the singleton in any component or utility:
+In a Svelte component, use the `useStore()` hook — it returns the typed store instance from `app.stores.get(name)`:
 
 ```svelte
 <script lang="ts">
-    import {myStore} from '$lib/stores/MyStore.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+
+    const aiModelStore = useStore('ai-models');
 </script>
 
-<p>Count: {myStore.count}</p>
+<p>{aiModelStore.models.length} models available</p>
 ```
 
-> Note the `.js` extension in imports — Vite resolves `.svelte.ts` files when a `.js` extension is used, which is the standard TypeScript ESM convention.
-
-All stores are populated during the bootstrap sequence and are safe to read after the `main` stage completes. The `keychainStore` is the exception — it loads asynchronously once the user's passkey becomes available (see [Keychain Store](#keychainstore) below).
+In non-component code, reach the registry through the app:
 
 ```ts
-import { aiModelStore } from '$lib/stores/AiModelStore.svelte.js';
+import {getHawkiApp} from '$lib/legacy/legacy.js';
 
-// Inside a component or $derived — reactive, updates automatically
-const models = $derived(aiModelStore.models);
+const themeStore = getHawkiApp().stores.get('theme');
 ```
+
+The string key you pass is typed against `HawkiDataStores` (augmented next to each store class), so `useStore('theme')` returns a `ThemeStore`, not a generic `DataStore`. Passing an unknown name is a compile error.
+
+All stores that implement `loadData(app)` have it invoked once, concurrently, during the `main` boot stage — so they are safe to read after `main` completes. The `keychain` store is the exception: it loads asynchronously once the user's passkey becomes available (see [Keychain Store](#keychainstore)).
 
 ---
 
 ## Store Overview
 
-| Store | Import | What it holds |
+| Key | Class | What it holds |
 |---|---|---|
-| `aiModelStore` | `$lib/stores/AiModelStore.svelte.js` | All available AI models and system-role assignments |
-| `aiToolStore` | `$lib/stores/AiToolStore.svelte.js` | AI tools and capability definitions |
-| `systemPromptStore` | `$lib/stores/SystemPromptStore.svelte.js` | Server-configured system prompts |
-| `keychainStore` | `$lib/stores/KeychainStore.svelte.js` | User's encryption keys (async load) |
-| `themeStore` | `$lib/stores/ThemeStore.svelte.js` | Active UI theme (`'dark'` / `'light'`) |
-| `aiHandleStore` | `$lib/stores/AiHandleStore.svelte.js` | Configured `@handle` string for mention parsing |
+| `'ai-models'` | `AiModelStore` | All available AI models and system-role assignments |
+| `'ai-tools'` | `AiToolStore` | AI tools and capability definitions |
+| `'system-prompts'` | `SystemPromptStore` | Server-configured system prompts |
+| `'keychain'` | `KeychainStore` | User's encryption keys (async load) |
+| `'theme'` | `ThemeStore` | Active UI theme (`'dark'` / `'light'`) |
+| `'ai-handle'` | `AiHandleStore` | Configured `@handle` string for mention parsing |
 
 ---
 
 ## `AiModelStore`
 
-Holds all AI models returned by the API. The most commonly used store — it is the source of truth for which models are available, which one is active, and which system-role assignments are configured.
+Holds all AI models returned by the API. The source of truth for which models are available, which one is active, and which system-role assignments are configured.
 
-```ts
-import { aiModelStore } from '$lib/stores/AiModelStore.svelte.js';
+```svelte
+<script lang="ts">
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    const aiModelStore = useStore('ai-models');
+</script>
 ```
 
 ### Key properties
@@ -67,13 +65,13 @@ import { aiModelStore } from '$lib/stores/AiModelStore.svelte.js';
 
 ### `AiModel` shape
 
-Notable fields on the `AiModel` type (from `$lib/schemas/resources/ai-models.schema.js`):
+Notable fields on the `AiModel` type (from `$lib/plugins/core/schemas/resources/ai-models.schema.js`):
 
 | Field | Type | Notes |
 |---|---|---|
 | `active` | `boolean` | Whether the model is enabled in the admin panel. |
 | `model_type` | `'chat' \| 'image_generation' \| 'video_generation' \| null` | Discriminates the union — use to narrow to `ChatAiModel`. |
-| `native_capabilities` | `string[]` \| `null` | Capability IDs the model supports natively (e.g. `'web_search'`). Replaces the old `capabilities` record. |
+| `native_capabilities` | `string[]` \| `null` | Capability IDs the model supports natively (e.g. `'web_search'`). |
 | `flags` | `string[]` \| `null` | Badge-style flags (e.g. `'eco-friendly'`, `'feature-streaming'`). Full list in `ai-model-flags.ts`. |
 | `limits` | `{ max_input_tokens, max_output_tokens }` \| `null` | Token limits. Present only on `model_type === 'chat'` models. |
 | `pricing` | `{ is_free } \| { ranges, priority_ranges }` \| `null` | Pricing info. Present only on `model_type === 'chat'` models. |
@@ -87,10 +85,7 @@ Notable fields on the `AiModel` type (from `$lib/schemas/resources/ai-models.sch
 **`getSystemModelByType(type)`** — Returns the model assigned to a system role, or `null`.
 
 ```ts
-// Get the model currently selected (with safe fallback)
 const model = aiModelStore.getModelByIdOrFallback(selectedModelId);
-
-// Get the system default
 const defaultModel = aiModelStore.getSystemModelByType('default');
 ```
 
@@ -98,13 +93,16 @@ const defaultModel = aiModelStore.getSystemModelByType('default');
 
 ## `AiToolStore`
 
-Holds all registered AI tools and capabilities as a single merged list. Import the singleton:
+Holds all registered AI tools and capabilities as a single merged list.
 
-```ts
-import { aiToolStore } from '$lib/stores/AiToolStore.svelte.js';
+```svelte
+<script lang="ts">
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    const aiToolStore = useStore('ai-tools');
+</script>
 ```
 
-### Key properties
+### Key property
 
 | Property | Type | Description |
 |---|---|---|
@@ -112,18 +110,16 @@ import { aiToolStore } from '$lib/stores/AiToolStore.svelte.js';
 
 ### `AiToolOrCapability`
 
-Each entry in `tools` is either an `AiToolWrapper` (a plain tool) or an `AiToolCapabilityWrapper` (a capability that groups related tools). Discriminate with `is_capability`:
+Each entry is either an `AiToolWrapper` (a plain tool) or an `AiToolCapabilityWrapper` (a capability that groups related tools). Discriminate with `is_capability`:
 
 ```ts
-import type { AiToolOrCapability } from '$lib/stores/aiToolStoreData.js';
+import type {AiToolOrCapability} from '$lib/plugins/core/stores/aiToolStoreData.js';
 
 for (const item of aiToolStore.tools) {
     if (item.is_capability) {
-        // AiToolCapabilityWrapper
         const toolsForModel = item.getToolsFor(currentModel);
         const isNative = item.hasNativeCapabilityFor(currentModel);
     } else {
-        // AiToolWrapper (plain tool)
         const available = item.isAvailableFor(currentModel);
     }
 }
@@ -131,19 +127,13 @@ for (const item of aiToolStore.tools) {
 
 Both types share these members:
 
-| Member | Type | Notes |
-|---|---|---|
-| `is_capability` | `boolean` | `false` for plain tools, `true` for capability wrappers. |
-| `displayName` | `string` (getter) | Localized display name. |
-| `isAvailableFor(model, withOffline?)` | method | `true` when the model supports this item. For capabilities: `true` when the model has a native capability for it or has at least one matching non-offline tool. Pass `withOffline: true` to count offline tools. |
-
-`AiToolCapabilityWrapper` additionally exposes:
-
 | Member | Notes |
 |---|---|
-| `hasNativeCapabilityFor(model)` | `true` when `model.native_capabilities` includes this capability's id. |
-| `getTools()` | All tools grouped under this capability. |
-| `getToolsFor(model)` | Tools for this capability that the model supports. |
+| `is_capability` | `false` for plain tools, `true` for capability wrappers. |
+| `displayName` | Localized display name (getter). |
+| `isAvailableFor(model, withOffline?)` | `true` when the model supports this item. |
+
+`AiToolCapabilityWrapper` additionally exposes `hasNativeCapabilityFor(model)`, `getTools()`, and `getToolsFor(model)`.
 
 ---
 
@@ -151,8 +141,11 @@ Both types share these members:
 
 Holds the server-configured system prompts. Populated during bootstrap.
 
-```ts
-import { systemPromptStore } from '$lib/stores/SystemPromptStore.svelte.js';
+```svelte
+<script lang="ts">
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    const systemPromptStore = useStore('system-prompts');
+</script>
 ```
 
 **`getPromptByType(type)`** — Looks up a prompt by `prompt_type`. When called with a `WellKnownSystemPromptType` constant the return type is non-nullable, eliminating a null-check at the call site.
@@ -168,8 +161,11 @@ const chatPrompt = systemPromptStore.getPromptByType('chat');
 
 Exposes the user's end-to-end encryption keys as reactive `$state` properties. Loading is deferred until the user's passkey becomes available on the legacy bridge — `waitingToLoad` resolves when the initial load is complete.
 
-```ts
-import { keychainStore } from '$lib/stores/KeychainStore.svelte.js';
+```svelte
+<script lang="ts">
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    const keychainStore = useStore('keychain');
+</script>
 ```
 
 | Property | Type | Description |
@@ -180,7 +176,7 @@ import { keychainStore } from '$lib/stores/KeychainStore.svelte.js';
 | `roomKeys` | `Record<string, RoomKeys>` | Per-room keys keyed by slug. Empty until loaded. |
 | `waitingToLoad` | `Promise<void>` | Resolves once the initial key load completes. |
 
-For cryptographic operations involving these keys, see the **Encryption** section in Advanced.
+It also exposes `validateKeychainPassword(passkey)`, `initializeNewKeychain()`, `createNewRoomKey(slug)`, and `importRoomKey(slug, key)` — the operations a feature surface (e.g. room-key management) needs. For the full crypto handle and its lower-level operations, see `kernel/keychain/keychainHandle.ts` and [Encryption](../600-Advanced/400-Encryption.md).
 
 ---
 
@@ -188,14 +184,15 @@ For cryptographic operations involving these keys, see the **Encryption** sectio
 
 Tracks and controls the active UI theme. Reading `theme` inside a `$derived` or component template is reactive — the component re-renders when the theme changes.
 
-```ts
-import { themeStore } from '$lib/stores/ThemeStore.svelte.js';
+```svelte
+<script lang="ts">
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    const themeStore = useStore('theme');
 
-// Read
-const isDark = $derived(themeStore.theme === 'dark');
+    const isDark = $derived(themeStore.theme === 'dark');
+</script>
 
-// Write (updates <html> class list + reactive value in one step)
-themeStore.theme = 'light';
+<button onclick={() => themeStore.theme = 'light'}>Light</button>
 ```
 
 The store observes the `<html>` class list via a `MutationObserver`, so it stays in sync even when the theme is toggled by legacy code outside the Svelte layer.
@@ -207,15 +204,51 @@ The store observes the `<html>` class list via a `MutationObserver`, so it stays
 Provides the configured `@handle` string and a parser for detecting handle mentions in chat messages.
 
 ```ts
-import { aiHandleStore } from '$lib/stores/AiHandleStore.svelte.js';
+const aiHandleStore = useStore('ai-handle');
 
-// The configured handle string (e.g. '@hawki')
-const handle = aiHandleStore.hawkiHandle;
+const handle = aiHandleStore.hawkiHandle;          // e.g. '@hawki'
 
-// Detect mentions in a message
 for (const found of aiHandleStore.getHandlesIn(messageText)) {
     // found === '@hawki' (only currently known handle)
 }
 ```
 
-`getHandlesIn(message)` is a generator. It yields each recognized handle found in the string. Currently only the single configured HAWKI handle is matched, but the method is structured to support additional handles once assistant personas are introduced.
+`getHandlesIn(message)` is a generator that yields each recognized handle found in the string. Currently only the single configured HAWKI handle is matched, but the method is structured to support additional handles once assistant personas are introduced.
+
+---
+
+## Writing a store
+
+1. Create a `.svelte.ts` class under your plugin's `stores/` directory that `implements DataStore` with a readonly `name`:
+
+```ts
+// resources/js/plugins/myPlugin/stores/MyStore.svelte.ts
+import type {DataStore} from '$lib/kernel/stores/types.js';
+import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+
+declare module '$lib/kernel/extendableTypes.js' {
+    interface HawkiDataStores {
+        'my-thing': MyStore;
+    }
+}
+
+export class MyStore implements DataStore {
+    public readonly name = 'my-thing';
+    public count = $state(0);
+
+    public async loadData(app: HawkiApp) {
+        // Fetch/hydrate from the API. Runs once on the 'main' boot stage.
+        // Omit this method entirely if the store has no server data to load.
+    }
+}
+```
+
+2. Register it from your plugin's `stores()` hook (see [Writing a Plugin](../600-Advanced/130-Writing-a-Plugin.md)):
+
+```ts
+public stores({add}: StoreRegistrar): void | Promise<void> {
+    add(new MyStore());
+}
+```
+
+That's the whole wiring — the `name` becomes the `useStore('my-thing')` key, and `loadData` is called automatically on the `main` stage if present.

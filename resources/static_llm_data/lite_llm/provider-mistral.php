@@ -450,7 +450,7 @@ return [
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.004,
   'annotation_cost_per_page' => 0.005,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -482,7 +482,7 @@ return [
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.004,
   'annotation_cost_per_page' => 0.005,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -514,7 +514,7 @@ return [
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.001,
   'annotation_cost_per_page' => 0.003,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),
@@ -546,7 +546,7 @@ return [
   'supports_web_search' => NULL,
   'ocr_cost_per_page' => 0.002,
   'annotation_cost_per_page' => 0.003,
-  'supported_endpoints' => 
+  'supported_endpoints' =>
   array (
     0 => '/v1/ocr',
   ),

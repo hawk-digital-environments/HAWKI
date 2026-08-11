@@ -17,7 +17,14 @@
     export {badgeVariants};
 </script>
 <!--
-  @component Small status/label chip. Supports default, secondary, destructive, and outline variants.
+  @component Small status/label chip. Supports `default`, `secondary`,
+  `destructive`, and `outline` variants. Renders a `<div>` with `children` as
+  its content — use for compact counts, tags, or state labels next to other UI.
+
+  @example
+  ```svelte
+  <Badge variant="destructive">3 errors</Badge>
+  ```
 -->
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';

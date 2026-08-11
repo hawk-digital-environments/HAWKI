@@ -2,27 +2,27 @@
 
 The composer is the chat input area — the region where the user types a message, picks a model, attaches files, enables tools, and finally sends. All of that state lives in a single object called `ComposerContext`.
 
-Source directory: `resources/js/components/chat/composer/`
+Source directory: `resources/js/plugins/core/modules/chat/components/composer/`
 
 ---
 
 ## Architecture Overview
 
-`ComposerContext` is the single state container that every composer Svelte component reads from and writes to. Rather than one monolithic class, state is divided into focused _aspect_ classes, each owning exactly one concern. Two additional derived-view aspects (no mutable state of their own) provide computed properties consumed by the UI. A pluggable _mode_ system layers temporary overlays on top of that state, and a dedicated _send pipeline_ handles the HTTP/transport lifecycle.
+`ComposerContext` is the single state container that every composer Svelte component reads from and writes to. Rather than one monolithic class, state is divided into focused _slice_ classes, each owning exactly one concern. Two additional derived-view slices (no mutable state of their own) provide computed properties consumed by the UI. A pluggable _mode_ system layers temporary overlays on top of that state, and a dedicated _send pipeline_ handles the HTTP/transport lifecycle.
 
-### Aspects
+### Slices
 
 | Property | Class | Owns |
 |---|---|---|
-| `context.model` | `ModelAspect` | selected AI model |
-| `context.modelParameters` | `ModelParameterAspect` | temperature / top_p (resets on model switch unless user-modified) |
-| `context.tools` | `ToolAspect` | user-enabled tools for the request |
-| `context.attachments` | `AttachmentAspect` | staged file attachments |
-| `context.modelUsage` | `ModelUsageAspect` | derived: is the current model compatible with active tools/files? |
-| `context.guard` | `GuardAspect` | derived: canSend, canChangeMode, disablesFeature() |
-| `context.mode` | `ModeAspect` | active mode + transition lifecycle |
+| `context.model` | `ModelSlice` | selected AI model |
+| `context.modelParameters` | `ModelParameterSlice` | temperature / top_p (resets on model switch unless user-modified) |
+| `context.tools` | `ToolSlice` | user-enabled tools for the request |
+| `context.attachments` | `AttachmentSlice` | staged file attachments |
+| `context.modelUsage` | `ModelUsageSlice` | derived: is the current model compatible with active tools/files? |
+| `context.guard` | `GuardSlice` | derived: canSend, canChangeMode, disablesFeature() |
+| `context.mode` | `ModeSlice` | active mode + transition lifecycle |
 
-`ModelUsageAspect` and `GuardAspect` hold no mutable state — they are pure derived views and are never checkpointed.
+`ModelUsageSlice` and `GuardSlice` hold no mutable state — they are pure derived views and are never checkpointed.
 
 ---
 
@@ -33,19 +33,19 @@ Source directory: `resources/js/components/chat/composer/`
 Call in any child composer component to retrieve the nearest `ComposerContext` from the Svelte context tree. Throws a descriptive error if no context is found, so missing wiring fails loudly during development.
 
 ```ts
-import { useComposerContext } from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+import { useComposerContext } from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
 const context = useComposerContext();
 ```
 
-### `createComposerContext(type, toastContext)`
+### `createComposerContext(app, type, toastContext)`
 
-Call once, in the composer root component. Constructs all aspects, wires them together, subscribes to `OldUiBridge` events (model load, system prompt changes, mode enter/exit, write-access updates), and registers the context in the Svelte tree with `setContext`. Cleanup is handled automatically via `onDestroy`.
+Call once, in the composer root component. Constructs all slices, wires them together, subscribes to `OldUiBridge` events (model load, system prompt changes, mode enter/exit, write-access updates), and registers the context in the Svelte tree with `setContext`. Cleanup is handled automatically via `onDestroy`. The stores it needs (models, tools, system prompts, handle) are pulled from `app.stores`, so the fully-assembled `HawkiApp` must be passed in.
 
 ```ts
-import { createComposerContext } from '$lib/components/chat/composer/contexts/ComposerContext.svelte.js';
+import { createComposerContext } from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
-const context = createComposerContext('aiConv', toastContext);
+const context = createComposerContext(app, 'aiConv', toastContext);
 ```
 
 `type` is either `'aiConv'` (a dedicated AI conversation view) or `'room'` (a room chat where AI elements only appear when the message contains an `@handle` or regen mode is active).
@@ -54,9 +54,9 @@ This follows the standard HAWKI context pattern described in Basics → Svelte C
 
 ---
 
-## Aspects
+## Slices
 
-### ModelAspect
+### ModelSlice
 
 `context.model`
 
@@ -71,7 +71,7 @@ Tracks the currently selected AI model and exposes derived capability flags the 
 
 **`set(model)`** — selects a new model. Accepts an `AiModel` object, a `model_id` string, a numeric model `id`, or `null` (falls back to the "default" system model). On switch, sampling parameters reset to the new model's defaults unless the user had already modified them (`modelParameters.isModified`).
 
-### ModelParameterAspect
+### ModelParameterSlice
 
 `context.modelParameters`
 
@@ -82,7 +82,7 @@ Manages sampling parameters (`temperature`, `top_p`) for the next request.
 | `list` | `Record<string, unknown>` | Current parameter values. |
 | `defaults` | `Record<string, unknown>` (derived) | Global fallbacks (`temperature=0.7`, `top_p=0.9`) merged with model-specific defaults. |
 | `modelDefaults` | `Record<string, unknown>` (derived) | Parameters declared by the current model definition from the server. |
-| `isModified` | `boolean` (derived) | `true` when `list` differs from `modelDefaults` in any key or value. Checked by `ModelAspect.set()` before resetting on a model switch. |
+| `isModified` | `boolean` (derived) | `true` when `list` differs from `modelDefaults` in any key or value. Checked by `ModelSlice.set()` before resetting on a model switch. |
 
 **`get(key)`** — returns the current value for a parameter, falling back to model defaults then global defaults.
 
@@ -92,7 +92,7 @@ Manages sampling parameters (`temperature`, `top_p`) for the next request.
 
 **`intersects(other)`** — returns `true` when every key/value pair in `other` matches the current values. Useful for checking whether a preset is already active.
 
-### AttachmentAspect
+### AttachmentSlice
 
 `context.attachments`
 
@@ -126,7 +126,7 @@ if (result !== true) {
 
 **`getAssignedUuid(file)`** — returns the assigned UUID, or `null` if the file has not been uploaded yet.
 
-### ToolAspect
+### ToolSlice
 
 `context.tools`
 
@@ -146,7 +146,7 @@ Manages which tools the user has enabled for the next request.
 
 **`canUse(tool)`** — returns `true` when the current model supports tool calling and the given tool is in the model's available tool list.
 
-### ModelUsageAspect
+### ModelUsageSlice
 
 `context.modelUsage`
 
@@ -160,7 +160,7 @@ Derived-only view — no mutable state, never checkpointed. Computes whether the
 
 Issues are suppressed (returns an empty array) when the mode disables model selection (`guard.disablesFeature('models')`) or when AI UI elements are not shown (`guard.showsAiUiElements === false`), since in those cases the user didn't choose the model and cannot change it.
 
-### GuardAspect
+### GuardSlice
 
 `context.guard`
 
@@ -188,7 +188,7 @@ Pass `disableWhileActive: false` for features that should stay interactive durin
 
 Disableable features: `'models'`, `'settings'`, `'attachments'`, `'tools'`, `'input'`, `'suggestions'`.
 
-### ModeAspect
+### ModeSlice
 
 `context.mode`
 
@@ -236,7 +236,7 @@ enter(mode, data)
 exit()
   ├── guard.canChangeMode?          → silent abort if blocked
   └── checkpointer.restoreCheckpoint()
-        → all aspects + context reset to pre-enter state
+        → all slices + context reset to pre-enter state
         → mode.exit() called on the outgoing instance
 ```
 
@@ -259,15 +259,15 @@ exit()
 
 **`ChatInThreadMode`** — takes a `threadId` string as data. Resets the composer on enter and focuses the input. Stored state: `{ threadId }`. Because `allowsNestedModes()` is `true`, the user can enter edit or regen mode for messages within the thread without losing the thread context.
 
-**`ChatRegenMode`** — takes an `OldUiConversationMessage` (must be an assistant message) as data. On enter, pre-fills the model and sampling parameters from `data.model` and `data.metadata.params`, and restores tools from `data.metadata.tools`. Sets a placeholder message so `canSend` in `GuardAspect` passes the non-empty check. Disables `'attachments'`, `'input'`, `'suggestions'`. Exits after send.
+**`ChatRegenMode`** — takes an `OldUiConversationMessage` (must be an assistant message) as data. On enter, pre-fills the model and sampling parameters from `data.model` and `data.metadata.params`, and restores tools from `data.metadata.tools`. Sets a placeholder message so `canSend` in `GuardSlice` passes the non-empty check. Disables `'attachments'`, `'input'`, `'suggestions'`. Exits after send.
 
 ### Writing a New Mode
 
 Implement `ChatModeInterface` or extend `AbstractMode` (preferred — provides safe no-op defaults for all optional methods):
 
 ```ts
-import { AbstractMode } from '.../modes/contracts/AbstractMode.js';
-import type { ComposerContext } from '.../ComposerContext.svelte.js';
+import { AbstractMode } from '$plugins/core/modules/chat/components/composer/contexts/modes/contracts/AbstractMode.js';
+import type { ComposerContext } from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
 
 interface MyModeData { /* passed to enter() */ }
 interface MyModeState { /* returned by enter(), persisted as context.mode.state */ }
@@ -289,7 +289,7 @@ export class ChatMyMode extends AbstractMode<MyModeData, MyModeState> {
 Then register it in the factory switch inside `createComposerContext()` in `ComposerContext.svelte.ts`:
 
 ```ts
-const mode = new ModeAspect(
+const mode = new ModeSlice(
     checkpointer,
     toastContext,
     (mode) => {
@@ -305,13 +305,13 @@ const mode = new ModeAspect(
 );
 ```
 
-Also add the new key to `ComposerModeRegistry` in `ModeAspect.svelte.ts` so `enter()` and `getState()` are properly typed.
+Also add the new key to `ComposerModeRegistry` in `ModeSlice.svelte.ts` so `enter()` and `getState()` are properly typed.
 
 ---
 
 ## Checkpointing
 
-Every stateful aspect implements `CheckpointingInterface`:
+Every stateful slice implements `CheckpointingInterface`:
 
 ```ts
 interface CheckpointingInterface<T = unknown> {
@@ -320,11 +320,11 @@ interface CheckpointingInterface<T = unknown> {
 }
 ```
 
-`ContextCheckpointer` coordinates snapshotting all aspects simultaneously. `ComposerContext` itself also registers handlers with the checkpointer (for `message`, `systemPrompt`, and `sendStatus`). When `ModeAspect.enter()` fires, `ContextCheckpointer.createCheckpoint()` fans out to every registered handler, collecting a full-state snapshot. When `ModeAspect.exit()` fires, `restoreCheckpoint()` broadcasts the saved slices back to all handlers in order.
+`ContextCheckpointer` coordinates snapshotting all slices simultaneously. `ComposerContext` itself also registers handlers with the checkpointer (for `message`, `systemPrompt`, and `sendStatus`). When `ModeSlice.enter()` fires, `ContextCheckpointer.createCheckpoint()` fans out to every registered handler, collecting a full-state snapshot. When `ModeSlice.exit()` fires, `restoreCheckpoint()` broadcasts the saved slices back to all handlers in order.
 
 The checkpointer maintains a stack. The `allowsNested` flag on `createCheckpoint(allowsNested?)` controls whether a second call is permitted while a checkpoint is already on the stack. `ChatInThreadMode` passes `true`, which allows edit or regen to stack a second checkpoint on top of the thread's checkpoint without discarding it. All other modes pass `false` (the default), so subsequent `enter()` calls while a checkpoint exists are ignored.
 
-Components and modes never need to know what each aspect saves — the coordinator handles everything automatically.
+Components and modes never need to know what each slice saves — the coordinator handles everything automatically.
 
 ---
 

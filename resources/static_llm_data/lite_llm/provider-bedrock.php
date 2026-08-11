@@ -399,7 +399,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'input_cost_per_image' => 6.0E-5,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => '\'supports_image_input\' is a deprecated field. Use \'supports_embedding_image_input\' instead.',
   ),
@@ -485,7 +485,7 @@ return [
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
   'output_vector_size' => 1024,
-  'provider_specific_entry' => 
+  'provider_specific_entry' =>
   array (
     'bedrock_invocation_schema' => 'titan_v2',
   ),
@@ -3111,7 +3111,7 @@ return [
   'supports_response_schema' => true,
   'supports_system_messages' => NULL,
   'supports_web_search' => NULL,
-  'metadata' => 
+  'metadata' =>
   array (
     'notes' => 'Anthropic via Invoke route does not currently support pdf input.',
   ),

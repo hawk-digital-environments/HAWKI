@@ -1,5 +1,23 @@
 <!--
   @component Range slider primitive for numeric input within a min/max range.
+  Wraps `bits-ui`'s `Slider.Root`/`Range`/`Thumb` (single-thumb only — `type`
+  is hardcoded to `'single'`) and adds a floating tooltip that follows the
+  pointer while hovering, previewing the stepped value under the cursor before
+  the user commits to it by dragging/clicking.
+
+  Not bindable — pass `value` down and react to changes via `onValueChange`.
+
+  @example
+  ```svelte
+  <Slider
+      aria-label="Temperature"
+      value={temperature}
+      onValueChange={(v) => setTemperature(v)}
+      min={0}
+      max={2}
+      step={0.1}
+  />
+  ```
 -->
 <script lang="ts">
     import {mergeProps, Slider as SliderPrimitive, type SliderRootProps} from 'bits-ui';
@@ -138,5 +156,18 @@
         line-height: 1;
         white-space: nowrap;
         pointer-events: none;
+    }
+
+    :global(*[data-disabled]) {
+        .slider-track {
+            cursor: not-allowed;
+            background-color: var(--color-disabled-bg);
+        }
+        :global(.slider-range) {
+            background-color: var(--color-text-disabled);
+        }
+        :global(.slider-thumb) {
+            cursor: not-allowed;
+        }
     }
 </style>

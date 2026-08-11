@@ -14,6 +14,11 @@ export default defineConfig({
                 replacement: path.resolve('./resources/js')
             },
             {
+                find: '$plugins',
+                replacement: path.resolve('./resources/js/plugins')
+            },
+            // @todo is this the reason why we get so many errors in the frontend when rendering markdown?
+            {
                 find: /^@antv\/infographic$/,
                 replacement: path.resolve('./node_modules/@antv/infographic/dist/infographic.min.js')
             }

@@ -20,7 +20,10 @@
     import {untrack} from 'svelte';
     import type {BorderBeamSize, BorderBeamTheme} from './types';
     import {generateBeamCSS, sizePresets, sizeThemePresets} from './styles';
-    import {type AppTheme, themeStore} from '$lib/stores/ThemeStore.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+    import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
+
+    const themeStore = useStore('theme');
 
     interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
         /** Content to wrap with the border beam effect. */
@@ -268,7 +271,7 @@
             theme: resolvedTheme,
             hairlineOpacity: themeConfig.hairlineOpacity,
             manualProgress
-        }),
+        })
     );
 
     function handleAnimationEnd(e: Parameters<NonNullable<Props['onanimationend']>>[0]) {

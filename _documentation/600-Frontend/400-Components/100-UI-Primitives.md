@@ -30,7 +30,7 @@ Low-level primitive components with no business logic and no dependency on app s
 
 ## Toasts
 
-The toast system consists of two parts: the `Toaster` component (rendered once by `LegacySharedContent.svelte`) and `ToastContext`, which any component uses to push notifications.
+The toast system consists of two parts: the `Toaster` component (rendered once by the `LegacySharedContent` snippet — a core-plugin snippet auto-injected on every page) and `ToastContext`, which any component uses to push notifications.
 
 ```svelte
 <script lang="ts">
@@ -43,7 +43,7 @@ The toast system consists of two parts: the `Toaster` component (rendered once b
 <button onclick={() => toast.info('Processing…')}>Info</button>
 ```
 
-`ToastContext` is set up by the `LegacySharedContent` snippet which is auto-injected on every page. Do not instantiate `Toaster` yourself.
+`ToastContext` is set up by the `LegacySharedContent` snippet (registered by the core plugin and auto-injected on every page). Do not instantiate `Toaster` yourself.
 
 ---
 
@@ -100,7 +100,7 @@ Four components work together:
 | `Citation` | A single source tile — displays favicon, domain, and source number; scrolls and flashes when its chip is clicked. |
 | `CitationReference` | An inline chip (used inside rendered markdown) that scrolls to the matching `Citation` tile when clicked. |
 
-`injectCitationsIntoMarkdown` (in `$lib/components/chat/message/injectCitationsIntoMarkdown.ts`) pre-processes a markdown string and rewrites citation ranges into anchor links that `ExtendedLinkNode` turns into `CitationReference` chips.
+`injectCitationsIntoMarkdown` (in `$plugins/core/modules/chat/components/message/injectCitationsIntoMarkdown.ts`) pre-processes a markdown string and rewrites citation ranges into anchor links that `ExtendedLinkNode` turns into `CitationReference` chips.
 
 Typical assembly:
 

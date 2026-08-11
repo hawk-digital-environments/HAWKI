@@ -1,15 +1,33 @@
 # Translations
 
-Translation labels are loaded from the server during bootstrap and accessed through three functions exported from `$lib/utils/translator.js`. Labels match the user's current locale automatically — no locale argument is needed at the call site.
+Translation labels are loaded from the server during bootstrap and accessed through the `useTranslator()` hook, which returns the app's translator object (provided by `LocalizationExtension` as `app.translator`). Labels match the user's current locale automatically — no locale argument is needed at the call site.
+
+Source: `resources/js/kernel/localization/translator.ts`. Hook: `resources/js/app/hooks/useTranslator.svelte.ts`.
+
+---
+
+## Getting the translator
+
+```svelte
+<script lang="ts">
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+
+    const {__} = useTranslator();
+</script>
+
+<textarea placeholder={__('chat.composer.textareaPlaceholder', {model: modelLabel})}></textarea>
+```
+
+The returned object is a plain object (not a class instance), so it is safe to destructure (`const {__} = useTranslator()`) without losing `this` binding. In non-component code, reach the same translator via `getHawkiApp().translator`.
 
 ---
 
 ## `__(label, replacements?, ignoreMissing?)`
 
-The primary translation function. Looks up `label` in the loaded label set and returns the localised string.
+The primary translation function. Looks up `label` in the loaded label set and returns the localised string. `translate(...)` is an alias for the same function.
 
 ```ts
-import { __ } from '$lib/utils/translator.js';
+const {__} = useTranslator();
 
 __('conversation.title')           // → 'Conversation'
 __('errors.not_found')             // → 'The requested item was not found.'
@@ -57,14 +75,14 @@ __('terms_notice', {
 
 ---
 
-## `hasTranslation(label)`
+## `hasLabel(label)`
 
 Returns `true` when a label key exists in the loaded label set. Use this to conditionally render optional UI elements without relying on an empty-string check:
 
 ```ts
-import { hasTranslation } from '$lib/utils/translator.js';
+const {hasLabel} = useTranslator();
 
-if (hasTranslation('feature.beta_badge')) {
+if (hasLabel('feature.beta_badge')) {
     // render badge
 }
 ```
@@ -76,7 +94,7 @@ if (hasTranslation('feature.beta_badge')) {
 Like `__()` but allows returning non-string values. When the resolved label is an object (a nested section of the label tree), it is returned as-is. Replacement substitution only applies when the result is a string.
 
 ```ts
-import { getTranslations } from '$lib/utils/translator.js';
+const {getTranslations} = useTranslator();
 
 // Returns the entire 'errors' sub-object if that key maps to a nested section
 const allErrors = getTranslations('errors');
@@ -91,7 +109,7 @@ Prefer `__()` for string labels. Use `getTranslations()` only when you specifica
 Like `getTranslations()`, but flattens a nested label sub-tree into a single-level `Record<string, string>` with dot-notated keys. Requires `path` to resolve to an object — throws if it points to a string or any non-object value.
 
 ```ts
-import { getTranslationsFlat } from '$lib/utils/translator.js';
+const {getTranslationsFlat} = useTranslator();
 
 // Given labels: { markdown: { markstream: { copy: 'Copy', copied: 'Copied!' } } }
 getTranslationsFlat('markdown.markstream');
@@ -102,8 +120,8 @@ Returns `{}` with a console warning when labels are not yet loaded or the path i
 
 ---
 
-## Label Files
+## Label Loading
 
-Translation labels are served by the `translation-labels` API resource and loaded automatically during the `main` boot stage. The active locale comes from the connection object; if it fails to load, the system falls back to the configured default locale, and then to an empty label set. No manual setup is required — `__()` is available in any component or utility after bootstrap.
+Translation labels are served by the `translation-labels` API resource and loaded automatically during the `main` boot stage by `LocalizationExtension`. The active locale comes from the connection object; if the requested labels fail to load, the system falls back to the configured default locale, and then to an empty label set. No manual setup is required — `useTranslator()` is available in any component after bootstrap.
 
 Labels live on the server side under `resources/lang/`. To add a new label, add the key to the appropriate language file there.

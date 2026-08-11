@@ -1,6 +1,15 @@
 <!--
   @component Visual divider between content sections.
   Horizontal by default; set orientation="vertical" for a column divider.
+
+  @example
+  ```svelte
+  <div class="toolbar">
+      <Button size="xs">Copy</Button>
+      <Separator orientation="vertical"/>
+      <Button size="xs">Delete</Button>
+  </div>
+  ```
 -->
 <script lang="ts">
     import type {HTMLAttributes} from 'svelte/elements';
