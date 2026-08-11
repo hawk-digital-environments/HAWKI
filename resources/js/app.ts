@@ -45,10 +45,11 @@ import {provideLegacyGlobals, runLegacyWaitUntilBootstrapQueue, runLegacyWaitUnt
 import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
 import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
 import {LegacyToastExtension} from '$lib/legacy/LegacyToastExtension.js';
+import {ShellExtension} from '$lib/kernel/shell/ShellExtension.svelte.js';
 
-/** Guard flag so a second inclusion of this bootstrap script fails loudly instead of double-booting the app. */
 declare global {
     interface Window {
+        /** Guard flag so a second inclusion of this bootstrap script fails loudly instead of double-booting the app. */
         hawkiIsBooting: boolean;
     }
 }
@@ -75,30 +76,11 @@ provideLegacyGlobals();
             new ModuleExtension(),
             new RoutingExtension(createDefaultRouteRenderer()),
             new StoreExtension(),
+            new ShellExtension(),
             new SnippetExtension(),
             new LegacyToastExtension()
         ]
     ));
-
-    // @deprecated This is only here to support the "AppContext" through multiple Svelte apps on the same page.
-    // It will be removed once we have a single-page app and can use Svelte contexts instead.
-    bootstrapper.onLateStage(() => {
-        // @todo remove this once we have a single-page app, and can use Svelte contexts instead of global variables.
-        // Inject the "LegacySharedContent" snippet into the page (as first child of the body)
-        const legacySharedContentSnippet = document.createElement('svelte-snippet');
-        legacySharedContentSnippet.setAttribute('type', 'LegacySharedContent');
-        document.body.insertBefore(legacySharedContentSnippet, document.body.firstChild);
-    });
-
-    bootstrapper.onFinalizationStage(() => new Promise(resolve => {
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                resolve();
-            });
-        } else {
-            resolve();
-        }
-    }));
 
     await runLegacyWaitUntilBootstrapQueue(bootstrapper);
     await bootstrapper.run();

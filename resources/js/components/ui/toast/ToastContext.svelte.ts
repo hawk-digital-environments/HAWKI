@@ -147,7 +147,6 @@ export function useToastContext(): ToastContext {
 
     }
 
-
     // @todo remove this once we have a real single page app, and can use svelte contexts.
     try {
         return useApp().toast.context;

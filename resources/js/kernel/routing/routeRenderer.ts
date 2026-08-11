@@ -1,4 +1,11 @@
-import type {RouteRenderer} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {RouteComponentLoader, RouteRenderer} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {Component} from 'svelte';
+
+function isLazyRouteLoader(obj: any): obj is RouteComponentLoader {
+    return typeof obj === 'function' && (obj as any).type === 'lazy_route';
+}
+
+export type DefaultRendererRouteResult = { component: Component, props: Record<string, any> }
 
 /**
  * Creates the default {@link RouteRenderer} — the function that every compiled
@@ -26,9 +33,20 @@ import type {RouteRenderer} from '$lib/kernel/routing/RouteRegistrar.js';
  * component mounts? And is the renderer also responsible for the lazy import,
  * or should the router only return the loader?
  */
-export function createDefaultRouteRenderer(): RouteRenderer {
-    return (componentOrLoader, context, params) => {
-        console.log('Rendering route with component or loader:', componentOrLoader, 'context:', context, 'params:', params);
-        return null; // @todo: Implement actual rendering logic here.
+export function createDefaultRouteRenderer(): RouteRenderer<DefaultRendererRouteResult> {
+    return async (componentOrLoader, context, params) => {
+        let component = null;
+        if (isLazyRouteLoader(componentOrLoader)) {
+            component = await componentOrLoader();
+        } else {
+            component = componentOrLoader;
+        }
+        return {
+            component,
+            props: {
+                context,
+                params
+            }
+        };
     };
 }

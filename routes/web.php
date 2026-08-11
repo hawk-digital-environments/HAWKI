@@ -23,6 +23,9 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
 
     Route::get('/', [LoginController::class, 'index']);
 
+    Route::get('/new', fn() => view('index'));
+    Route::get('/new/{slug}', fn() => view('index'));
+
     Route::get('/login', [LoginController::class, 'index'])
         ->name('login');
 

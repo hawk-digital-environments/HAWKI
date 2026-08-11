@@ -22,14 +22,36 @@ import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js
 export interface HawkiModule {
     readonly name: string;
 
+    /**
+     * The visible title of the module, for example in the sidebar.
+     * If not provided, the title will be inferred from the module's name (e.g. `core:chat` → `Chat`).
+     */
     title?(translate: Translator['translate'], locale: Locale): string;
 
+    /**
+     * The visible description of the module, for example in the sidebar.
+     */
     description?(translate: Translator['translate'], locale: Locale): string;
 
+    /**
+     * The icon of the module, for example in the sidebar.
+     * If not provided, a default icon will be used.
+     * Can be either a component or a base64-encoded Image URL (e.g. `data:image/svg+xml;base64,...`).
+     */
     icon?(locale: Locale): string | IconComponent | Component;
 
+    /**
+     * Register the module's routes with the given {@link RouteRegistrar}.
+     * The registrar is already scoped under the module's group, so declare paths
+     * relative to the module, not the plugin.
+     */
     routes?(registrar: RouteRegistrar): void | Promise<void>;
 
+    /**
+     * Each module can optionally provide a sidebar component that will be rendered in the app's sidebar.
+     * The component will be rendered when the module is active (i.e. when the user navigates to a route that belongs to the module).
+     * @param locale
+     */
     sidebar?(locale: Locale): Component;
 }
 

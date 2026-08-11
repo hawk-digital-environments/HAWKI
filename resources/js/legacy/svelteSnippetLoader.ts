@@ -76,13 +76,6 @@ import {mount, unmount} from 'svelte';
 import {getHawkiApp} from '$lib/legacy/legacy.js';
 
 /**
- * Pre-registers all snippet modules via Vite's glob import.
- * This allows Vite to split each snippet into its own chunk while still
- * allowing us to look them up by a runtime-determined "type" name.
- */
-const snippetModules = import.meta.glob('../snippets/*.svelte');
-
-/**
  * @deprecated Will be removed as soon as all the old js has been refactored
  */
 export class HTMLSvelteSnippetElement extends HTMLElement {

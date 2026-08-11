@@ -3,13 +3,7 @@ import UniversalRouter from 'universal-router';
 import {RouteRegistrar, type RouteRenderer} from '$lib/kernel/routing/RouteRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
-    // TODO(docs): This augments an `AppExtensions` interface, but the kernel's
-    // declaration-merging surface in `$lib/kernel/extendableTypes.js` is named
-    // `HawkiAppExtensions` (see `StoreExtension`/`PluginExtension`), and no
-    // `AppExtensions` interface is exported there — so `app.router` is currently
-    // not typed on `HawkiApp`. Is this a leftover of the aspects→extensions
-    // rename, or intentional?
-    interface AppExtensions {
+    interface HawkiAppExtensions {
         router: UniversalRouter;
     }
 }
@@ -110,8 +104,11 @@ export class RoutingExtension implements HawkiAppExtension {
      * `provideProperties()` right after `init()` has completed.
      */
     public provideProperties(): Record<string, any> {
+        const extension = this;
         return {
-            router: this.router
+            get router() {
+                return extension.router;
+            }
         };
     }
 }
