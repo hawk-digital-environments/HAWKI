@@ -7,11 +7,13 @@ import {UriBuilder} from '$lib/kernel/api/UriBuilder.js';
 import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
 import type {Connection, InternalAuthenticatedConnection, InternalRegisteringUserConnection} from '$lib/app/schemas/resources/connections.schema.js';
+import {AiApi} from '$lib/kernel/ai/AiApi.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
         readonly client: HawkiClient;
         readonly restApi: RestApi;
+        readonly aiApi: AiApi;
         readonly linkPreviewApi: LinkPreviewApi;
         readonly uriBuilder: UriBuilder;
 
@@ -63,6 +65,7 @@ export class ClientExtension implements HawkiAppExtension {
                     return this.resourceSchemas.get(resourceType);
                 }
             ),
+            aiApi: new AiApi(),
             get connection() {
                 return getConnection();
             }
@@ -92,6 +95,9 @@ export class ClientExtension implements HawkiAppExtension {
             },
             get restApi(): RestApi {
                 return extension.client.restApi;
+            },
+            get aiApi(): AiApi {
+                return extension.client.aiApi;
             },
             get uriBuilder(): UriBuilder {
                 return extension.uriBuilder;

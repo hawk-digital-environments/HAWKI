@@ -1,0 +1,22 @@
+{
+    "replaceable": {
+        "chat": "Chat",
+        "groupchat": "Gruppenchat",
+        "profile": "Profil"
+    },
+
+    "assistants": {
+        "assistant": "Assistent",
+        "assistants": "Assistenten",
+
+        "sidebar": {
+            "home": "Startseite",
+            "store": "Store",
+            "drafts": "Entwürfe",
+            "favourites": "Favoriten",
+            "shared": "Freigegeben",
+            "create": "Erstellen",
+            "back": "Zurück"
+        }
+    }
+}

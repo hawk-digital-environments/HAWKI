@@ -28,7 +28,6 @@
     import ButtonWithTooltip from '$lib/components/ui/button/ButtonWithTooltip.svelte';
     import Breakpoint from '$lib/components/util/breakpoints/Breakpoint.svelte';
     import {growTransition} from '$lib/utils/transitions/growTransition';
-    import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import Tick02Icon from '$lib/components/ui/icons/iconset/Tick02Icon.svelte';
     import SentIcon from '$lib/components/ui/icons/iconset/SentIcon.svelte';
@@ -132,7 +131,7 @@
 
         composerContext.forcedActive = true;
         try {
-            composerContext.message = await oldUiBridge.triggerImproveMessage(
+            composerContext.message = await composerContext.improveMessage(
                 composerContext.message,
                 composerContext.systemPrompt
             );
