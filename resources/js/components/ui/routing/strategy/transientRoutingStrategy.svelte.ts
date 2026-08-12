@@ -10,8 +10,10 @@ export function createTransientRoutingStrategy(): RoutingStrategy {
         get() {
             return currentPath;
         },
-        clear() {
-            currentPath = '';
+        bind(): () => void {
+            return () => {
+                currentPath = '';
+            };
         }
     };
 }

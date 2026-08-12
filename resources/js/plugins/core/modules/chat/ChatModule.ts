@@ -1,5 +1,5 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 /**
  * The "chat" feature module of the `core` plugin.
@@ -46,6 +46,11 @@ export class ChatModule implements HawkiModule {
      *   imported ones.
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
-        registrar.lazyRoute('/', async () => (await import('./pages/ChatIndex.svelte')).default);
+        registrar
+            .lazyRoute('/', async () => import('./pages/ChatIndex.svelte'), {name: 'chat.index'})
+            .lazyRoute('/test', async () => {
+                throw new Error('failed!');
+            })
+            .lazyRoute('/room/:id', async () => import('./pages/ChatConversation.svelte'), 'chat.conversation');
     }
 }

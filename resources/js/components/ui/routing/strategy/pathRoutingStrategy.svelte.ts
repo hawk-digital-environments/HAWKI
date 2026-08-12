@@ -1,42 +1,38 @@
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
 
-export interface PathBasedRoutingStrategyOptions {
-    basePath?: string;
-}
-
-export function createPathRoutingStrategy(options?: PathBasedRoutingStrategyOptions): RoutingStrategy {
-    const basePath = options?.basePath ?? '';
+export function createPathRoutingStrategy(): RoutingStrategy {
     let currentPath = $state(loadPath());
 
     function loadPath() {
-        const currentPath = window.location.pathname;
-        if (currentPath.startsWith(basePath)) {
-            return currentPath.slice(basePath.length);
-        }
-        return currentPath;
+        return window.location.pathname;
     }
-
-    function onPathChange() {
-        currentPath = loadPath();
-    }
-
-    document.addEventListener('popstate', onPathChange);
 
     return {
         set(path: string) {
-            const newPath = basePath + path;
-            if (window.location.pathname !== newPath) {
-                window.history.pushState({}, '', newPath);
+            if (window.location.pathname !== path) {
+                window.history.pushState({}, '', path);
             }
+            currentPath = path;
         },
         get() {
             return currentPath;
         },
-        clear() {
-            if (window.location.pathname !== basePath) {
-                window.history.pushState({}, '', basePath);
+        bind(_: string, basePath: string): () => void {
+            const initialPath = loadPath();
+
+            function onPathChange() {
+                currentPath = loadPath();
             }
-            document.removeEventListener('popstate', onPathChange);
+
+            window.addEventListener('popstate', onPathChange);
+
+            return () => {
+                window.removeEventListener('popstate', onPathChange);
+
+                if (window.location.pathname !== basePath) {
+                    window.history.pushState({}, '', initialPath);
+                }
+            };
         }
     };
 }
