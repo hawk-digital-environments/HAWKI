@@ -47,7 +47,7 @@ export type JsonApiCollection<T> = Array<JsonApiResource<T>> & {
     /**
      * Any additional links returned by the API, e.g. for pagination or related resources
      */
-    _links?: Record<string, string>,
+    _links?: Record<string, JsonApiResourceLink>,
     /**
      * The pagination info for this collection, if the API response included it
      */
@@ -66,6 +66,14 @@ export function decodeJsonApiIndexResponse<T>(response: any) {
     throw new Error('Invalid API response format: missing data field');
 }
 
+type JsonApiResourceLink = string | {
+    href: string,
+    meta?: {
+        message?: 'ALLOWED' | 'DENIED' | string,
+        method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | string
+    }
+};
+
 export type JsonApiResource<T> = T & {
     /**
      * Any additional metadata returned by the API for this resource
@@ -78,7 +86,7 @@ export type JsonApiResource<T> = T & {
     /**
      * Any additional links returned by the API for this resource, e.g. for related resources
      */
-    _links?: Record<string, string>,
+    _links?: Record<string, JsonApiResourceLink>,
 }
 
 /**
@@ -129,7 +137,19 @@ export function extendResourceSchema<T extends ZodType>(schema: T) {
         z.object({
             _meta: z.record(z.string(), z.any()).optional(),
             _globalMeta: z.record(z.string(), z.any()).optional(),
-            _links: z.record(z.string(), z.string()).optional()
+            _links: z.record(
+                z.string(),
+                z.union([
+                    z.string(),
+                    z.object({
+                        href: z.string(),
+                        meta: z.looseObject({
+                            message: z.string().optional(),
+                            method: z.string().optional()
+                        }).optional()
+                    })
+                ])
+            ).optional()
         })
     );
 }
