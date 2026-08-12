@@ -1,38 +1,294 @@
-<!--
-  @component Page component rendered for the chat module's `/` route (see
-  `ChatModule.ts`). This is currently a placeholder stub — the real chat UI
-  (message list + `ChatComposer` snippet) still lives in the legacy,
-  non-Svelte-routed part of the app during the ongoing routing migration.
-
-  Usage: never imported directly — it is resolved lazily by
-  `ChatModule.routes()` via `registrar.lazyRoute('/', ...)` and rendered by
-  the kernel's route renderer when the chat route is navigated to.
--->
 <script lang="ts">
-    // TODO(docs): This page currently just renders a placeholder heading. Once the
-    // real chat view (message history + ChatComposer) is migrated into the
-    // Svelte routing tree, its props/behaviour should be documented here —
-    // please confirm what this page is expected to render before that migration
-    // lands, so the doc block above doesn't become stale.
-
-    import Link from '$lib/components/util/link/Link.svelte';
+    import type {RouteParams} from 'universal-router';
+    import ChatComposer from '$plugins/core/snippets/ChatComposer.svelte';
+    import ChatHeader from '$plugins/core/modules/chat/components/ChatHeader.svelte';
+    import ChatMessage from '$plugins/core/modules/chat/components/ChatMessage.svelte';
+    import ConfirmDialog from '$lib/components/ui/dialog/ConfirmDialog.svelte';
+    import Button from '$lib/components/ui/button/Button.svelte';
+    import ArrowReloadHorizontalIcon from '$lib/components/ui/icons/iconset/ArrowReloadHorizontalIcon.svelte';
+    import AiChat01Icon from '$lib/components/ui/icons/iconset/AiChat01Icon.svelte';
+    import {useApp} from '$lib/app/hooks/useApp.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
     import {useRouter} from '$lib/components/ui/routing/hooks/useRouter.svelte.js';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
+    import {ChatTransport} from '$plugins/core/modules/chat/transport/ChatTransport.js';
+    import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
+    import type {OldUiExportType} from '$lib/legacy/OldUiBridge.svelte.js';
 
-    /**
-     * The kernel's route renderer instantiates page components without passing
-     * any props, so this interface is intentionally empty. Add route-derived
-     * props here (and document them individually) once the real chat view lands.
-     */
-    interface Props {
+    interface Props { params?: RouteParams; }
+    const {params = {}}: Props = $props();
+    const app = useApp();
+    const store = useStore('chat');
+    const router = useRouter();
+    const toast = useToastContext();
+    const {__} = useTranslator();
+    const slug = $derived(typeof params.slug === 'string' ? params.slug : null);
+    const defaultPrompt = app.stores.get('system-prompts').getPromptByType('default').prompt;
+    const transport = new ChatTransport(app, store, {
+        // Do not pull the user back if they switched chats while the title was generated.
+        onConversationCreated: createdSlug => {
+            if (router.isActive('/chat')) void router.goTo(router.p(`/chat/${createdSlug}`));
+        }
+    });
+
+    let composer = $state<ComposerContext | null>(null);
+    let messageToDelete = $state<ChatMessageType | null>(null);
+    let endMarker = $state<HTMLDivElement | null>(null);
+    let previousMessageCount = 0;
+
+    $effect(() => {
+        const requestedSlug = slug;
+        if (!requestedSlug) {
+            store.startNew();
+            return;
+        }
+        if (store.active?.slug !== requestedSlug) {
+            store.load(requestedSlug).catch(error => toast.error(error instanceof Error ? error.message : String(error)));
+        }
+    });
+
+    $effect(() => {
+        const count = store.active?.messages.length ?? 0;
+        if (count > previousMessageCount) {
+            requestAnimationFrame(() => endMarker?.scrollIntoView({behavior: previousMessageCount ? 'smooth' : 'auto'}));
+        }
+        previousMessageCount = count;
+    });
+
+    async function removeConversation() {
+        if (!store.active) return;
+        try {
+            await store.remove(store.active.slug);
+            void router.goTo(router.p('/chat'));
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : String(error));
+        }
     }
 
-    const {}: Props = $props();
+    async function removeMessage() {
+        if (!messageToDelete) return;
+        try {
+            await store.removeMessage(messageToDelete.message_id);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : String(error));
+        } finally {
+            messageToDelete = null;
+        }
+    }
 
-    const {p, isActive} = useRouter();
+    async function removeAttachment(message: ChatMessageType, fileId: string) {
+        try {
+            await store.removeAttachment(message.message_id, fileId);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    function exportConversation(format: OldUiExportType) {
+        const conversation = store.active;
+        if (!conversation) return;
+        if (format === 'print' || format === 'pdf') {
+            window.print();
+            return;
+        }
+
+        const rows = conversation.messages.map(message => ({
+            role: message.message_role,
+            author: message.author.name,
+            model: message.model,
+            message: message.content.text,
+            created_at: message.created_at
+        }));
+        if (format === 'json') {
+            download(`${conversation.name}.json`, JSON.stringify({
+                name: conversation.name,
+                system_prompt: conversation.system_prompt,
+                messages: rows
+            }, null, 2), 'application/json');
+        } else if (format === 'csv') {
+            const quote = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+            download(`${conversation.name}.csv`, [
+                ['role', 'author', 'model', 'message', 'created_at'].map(quote).join(','),
+                ...rows.map(row => Object.values(row).map(quote).join(','))
+            ].join('\n'), 'text/csv');
+        } else {
+            const body = rows.map(row => `<h2>${escapeHtml(row.author)}</h2><p>${escapeHtml(row.message).replaceAll('\n', '<br>')}</p>`).join('');
+            download(`${conversation.name}.doc`, `<html><body><h1>${escapeHtml(conversation.name)}</h1>${body}</body></html>`, 'application/msword');
+        }
+    }
+
+    function download(filename: string, content: string, type: string) {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([content], {type}));
+        link.download = filename.replace(/[\\/:*?"<>|]/g, '-');
+        link.click();
+        URL.revokeObjectURL(link.href);
+    }
+
+    function escapeHtml(value: string): string {
+        const element = document.createElement('div');
+        element.textContent = value;
+        return element.innerHTML;
+    }
 </script>
-<h1>Chat index!</h1>
-<Link href={p('chat.conversation', {id: '123'})}>Go to conversation 123</Link>
-<hr/>
-<Link href={{name: 'chat.conversation', params: {id: '456'}}}>Go to conversation 456</Link>
-<hr/>
-<Link href={p('/')}>Go to home</Link>
+
+<section class="chat-page">
+    {#if store.active}
+        <ChatHeader
+            conversation={store.active}
+            generating={store.isGenerating(store.active.slug)}
+            onRename={name => store.rename(store.active!.slug, name)}
+            onDelete={removeConversation}
+            onExport={exportConversation}
+        />
+    {:else}
+        <header class="new-header"><span>{__('chat.page.newChat')}</span></header>
+    {/if}
+
+    <div class="scroll-region">
+        {#if store.loading}
+            <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
+        {:else if store.error}
+            <div class="state error">
+                <p>{store.error}</p>
+                {#if slug}
+                    <Button variant="stroke" size="sm" iconLeft={ArrowReloadHorizontalIcon} onclick={() => store.load(slug)}>
+                        {__('chat.page.retry')}
+                    </Button>
+                {/if}
+            </div>
+        {:else if !store.active || store.active.messages.length === 0}
+            <div class="welcome">
+                <span class="welcome-icon"><AiChat01Icon size={28} /></span>
+                <h1>{__('chat.page.welcomeTitle')}</h1>
+                <p>{__('chat.page.welcomeDescription')}</p>
+            </div>
+        {:else}
+            <div class="messages">
+                {#each store.active.messages as message (message.message_id)}
+                    <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
+                {/each}
+                <div bind:this={endMarker} aria-hidden="true"></div>
+            </div>
+        {/if}
+    </div>
+
+    {#if !store.loading && !store.error}
+        <div class="composer-dock">
+            {#key slug ?? 'new'}
+                <ChatComposer
+                    context="aiConv"
+                    {transport}
+                    backgroundActive={store.isGenerating(store.active?.slug)}
+                    initialSystemPrompt={store.active?.system_prompt ?? defaultPrompt}
+                    onSystemPromptChange={prompt => store.active && store.updateSystemPrompt(store.active.slug, prompt)}
+                    onImproveMessage={(message, systemPrompt) => transport.improveMessage(message, systemPrompt)}
+                    onReady={value => composer = value}
+                />
+            {/key}
+            <p class="disclaimer">{__('chat.page.disclaimer')}</p>
+        </div>
+    {/if}
+</section>
+
+<ConfirmDialog
+    open={messageToDelete !== null}
+    onOpenChange={open => !open && (messageToDelete = null)}
+    title={__('chat.actions.deleteConfirmTitle')}
+    description={__('chat.actions.deleteConfirmDescription')}
+    onConfirm={removeMessage}
+/>
+
+<style>
+    .chat-page {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        height: 100%;
+        min-height: 0;
+        background: var(--color-surface-raised);
+    }
+
+    .new-header {
+        display: flex;
+        min-height: 3.75rem;
+        align-items: center;
+        padding: var(--space-2) var(--space-5);
+        border-bottom: var(--divider);
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-semibold);
+    }
+
+    .scroll-region { min-height: 0; overflow-y: auto; }
+
+    .messages {
+        display: flex;
+        width: min(100%, 52rem);
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-5) var(--space-5);
+        flex-direction: column;
+        gap: var(--space-7);
+    }
+
+    .welcome,
+    .state {
+        display: flex;
+        height: 100%;
+        min-height: 18rem;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-6);
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .welcome-icon {
+        display: grid;
+        width: 3.25rem;
+        height: 3.25rem;
+        margin-bottom: var(--space-4);
+        place-items: center;
+        border-radius: var(--corner-lg);
+        background: var(--color-active-surface);
+        color: var(--color-active-text);
+    }
+
+    h1 { margin: 0 0 var(--space-2); font-size: var(--font-size-xl); }
+    .welcome p, .state p { max-width: 34rem; margin: 0; color: var(--color-text-muted); }
+    .state { gap: var(--space-3); }
+    .error p { color: var(--color-error); }
+
+    .spinner {
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 2px solid var(--color-border);
+        border-top-color: var(--color-interactive);
+        border-radius: 50%;
+        animation: spin 700ms linear infinite;
+    }
+
+    .composer-dock {
+        padding: var(--space-2) var(--space-5) var(--space-3);
+        background: linear-gradient(to top, var(--color-surface-raised) 72%, transparent);
+    }
+
+    .disclaimer {
+        margin: var(--space-2) 0 0;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-xxs);
+        text-align: center;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 640px) {
+        .new-header, .messages, .composer-dock { padding-inline: var(--space-3); }
+        .messages { padding-top: var(--space-5); }
+    }
+
+    @media print {
+        :global(.app-sidebar), .composer-dock, .new-header, :global(.chat-page > header) { display: none !important; }
+        .chat-page, .scroll-region { display: block; height: auto; overflow: visible; }
+    }
+</style>

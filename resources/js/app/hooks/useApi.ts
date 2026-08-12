@@ -1,6 +1,7 @@
 import type {RestApi} from '$lib/kernel/api/RestApi.js';
 import {useApp} from '$lib/app/hooks/useApp.svelte.js';
 import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
+import type {AiApi} from '$lib/kernel/ai/AiApi.js';
 
 /**
  * Hook that gives components access to the app's low-level typed JSON:API
@@ -31,6 +32,11 @@ import type {LinkPreviewApi} from '$lib/kernel/api/LinkPreviewApi.js';
 export function useRestApi(): RestApi {
     const app = useApp();
     return app.restApi;
+}
+
+/** Returns the internal streaming AI client (`app.aiApi`). */
+export function useAiApi(): AiApi {
+    return useApp().aiApi;
 }
 
 /**

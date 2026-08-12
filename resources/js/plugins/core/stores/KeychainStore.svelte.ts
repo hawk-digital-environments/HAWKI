@@ -2,6 +2,8 @@ import {createKeychainHandle, type KeychainHandle, type RoomKeys} from '$lib/ker
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte.js';
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
+import {decryptSymmetric, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
+import {deriveKey} from '$lib/kernel/encryption/utils.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiDataStores {
@@ -17,12 +19,11 @@ declare module '$lib/kernel/extendableTypes.js' {
  * (`roomKeys`). All values start as `null` / empty and are populated
  * asynchronously once a passkey becomes available on the legacy bridge.
  *
- * Loading is deferred: the store subscribes to the legacy bridge's passkey
- * via a reactive `$effect` inside the constructor and only calls
- * `handle.load()` once both the passkey and an authenticated connection are
- * present. The `waitingToLoad` promise resolves when that initial load
- * completes, allowing callers to await readiness before performing
- * cryptographic operations.
+ * On the SPA shell the store restores the session passkey from the same local
+ * encrypted value used by the legacy UI. It then loads the keychain once an
+ * authenticated connection is present. The `waitingToLoad` promise resolves
+ * when that initial attempt completes, allowing routed features to decide
+ * whether to continue or send the user to the handshake screen.
  *
  * Use `keychainStore` (the exported singleton) rather than constructing
  * this class directly.
@@ -107,26 +108,33 @@ export class KeychainStore implements DataStore {
             this.aiConvKey = handle.aiConvKey();
         });
 
-        let resolveLoad: () => void;
-        this._waitingToLoad = new Promise(res => resolveLoad = res);
+        this._waitingToLoad = (async () => {
+            try {
+                const connection = app.authenticatedConnection;
 
-        // Since we must wait for the passkey to be available on the old bridge before we can create the handle,
-        // we also have to wait to load the keychain values until the handle is ready.
-        // The $effect.root is used to allow this constructor to listen on reactive changes to the old bridge's passkey without causing issues with the store's own reactivity.
-        $effect.root(() => {
-            $effect(() => {
                 if (!oldUiBridge.passkey) {
-                    return;
+                    const storedPasskey = localStorage.getItem(`${connection.userinfo.username}PK`);
+                    const passkeySalt = app.config.get().salts?.passkey;
+                    if (!storedPasskey || !passkeySalt) {
+                        return;
+                    }
+
+                    const wrappingKey = await deriveKey(
+                        connection.userinfo.email,
+                        connection.userinfo.username,
+                        passkeySalt
+                    );
+                    const encryptedPasskey = loadSymmetricCryptoValueFromObject(JSON.parse(storedPasskey));
+                    oldUiBridge.passkey = await decryptSymmetric(encryptedPasskey, wrappingKey);
                 }
 
-                try {
-                    app.authenticatedConnection;
-                } catch {
-                    return;
-                }
+                await handle.load();
+            } catch (error) {
+                oldUiBridge.passkey = null;
+                console.warn('Could not restore the local HAWKI keychain session.', error);
+            }
+        })();
 
-                handle.load().then(resolveLoad);
-            });
-        });
+        await this._waitingToLoad;
     }
 }

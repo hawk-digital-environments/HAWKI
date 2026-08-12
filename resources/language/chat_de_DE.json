@@ -1,5 +1,36 @@
 {
     "chat": {
+        "module": {
+            "title": "Chat"
+        },
+        "sidebar": {
+            "newChat": "Neuer Chat",
+            "history": "Chatverlauf",
+            "loading": "Chats werden geladen…",
+            "generating": "Antwort wird generiert",
+            "empty": "Deine Unterhaltungen erscheinen hier."
+        },
+        "page": {
+            "newChat": "Neuer Chat",
+            "loading": "Unterhaltung wird geladen…",
+            "retry": "Erneut versuchen",
+            "thinking": "Denkt nach…",
+            "generating": "Antwort wird generiert…",
+            "welcomeTitle": "Wie kann ich helfen?",
+            "welcomeDescription": "Starte eine private, verschlüsselte Unterhaltung mit HAWKI.",
+            "disclaimer": "KI kann Fehler machen. Prüfe wichtige Informationen."
+        },
+        "actions": {
+            "copy": "Nachricht kopieren",
+            "speak": "Nachricht vorlesen",
+            "edit": "Nachricht bearbeiten",
+            "regenerate": "Antwort neu generieren",
+            "thread": "Im Thread antworten",
+            "delete": "Nachricht löschen",
+            "deleteAttachment": "Anhang löschen",
+            "deleteConfirmTitle": "Nachricht löschen?",
+            "deleteConfirmDescription": "Diese Nachricht wird dauerhaft entfernt."
+        },
         "nameMenu": {
             "emptyNameError": "Der Chatname darf nicht leer sein",
             "leaveAction": "Chat verlassen",

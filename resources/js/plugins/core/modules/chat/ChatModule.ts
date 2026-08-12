@@ -1,5 +1,11 @@
 import type {HawkiModule} from '$lib/kernel/modules/types.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import type {Translator} from '$lib/kernel/localization/translator.js';
+import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
+import type {IconComponent} from '$lib/components/ui/icons/index.js';
+import type {Component} from 'svelte';
+import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
+import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
 
 /**
  * The "chat" feature module of the `core` plugin.
@@ -12,16 +18,9 @@ import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteReg
  * automatically namespaces any routes the module declares under the plugin's
  * route prefix.
  *
- * This module only declares a single route, `/`, lazily loading `ChatIndex.svelte`
- * as the page component. `registrar.lazyRoute` (as opposed to `registrar.route`)
- * defers importing the page until the route is actually navigated to, keeping it
- * out of the initial bundle.
- *
- * Note that the bulk of the chat feature is *not* reachable through this module
- * yet: the live composer UI under `components/composer/` is mounted by the legacy
- * UI through the `ChatComposer` `<svelte-snippet>` (registered in `core.plugin.ts`),
- * not by this route. This module is the future home of that UI once the routing
- * migration completes.
+ * `/` resolves the module index at `/chat`, while `/:slug` opens a concrete
+ * conversation. Both routes lazy-load the same routed chat page and pass the
+ * optional slug through the router props.
  *
  * @example Registration happens in the owning plugin, not here:
  * // plugins/core/core.plugin.ts
@@ -47,10 +46,19 @@ export class ChatModule implements HawkiModule {
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar
-            .lazyRoute('/', async () => import('./pages/ChatIndex.svelte'), {name: 'chat.index'})
-            .lazyRoute('/test', async () => {
-                throw new Error('failed!');
-            })
-            .lazyRoute('/room/:id', async () => import('./pages/ChatConversation.svelte'), 'chat.conversation');
+            .lazyRoute('/', async () => import('./pages/ChatIndex.svelte'), 'chat.index')
+            .lazyRoute('/:slug', async () => import('./pages/ChatIndex.svelte'), 'chat.conversation');
+    }
+
+    public title(translate: Translator['translate'], _locale: Locale): string {
+        return translate('chat.module.title');
+    }
+
+    public icon(_locale: Locale): string | IconComponent | Component {
+        return Chat01Icon;
+    }
+
+    public sidebar(_locale: Locale): Component {
+        return ChatSidebar;
     }
 }

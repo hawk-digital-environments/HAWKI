@@ -22,8 +22,14 @@
 
     const {__} = useTranslator();
     
+    interface Props {
+        onExport?: (format: OldUiExportType) => void;
+    }
+
+    const {onExport = (format) => oldUiBridge.triggerExport(format)}: Props = $props();
+
     function handleExport(format: OldUiExportType) {
-        oldUiBridge.triggerExport(format);
+        onExport(format);
     }
 
 </script>
