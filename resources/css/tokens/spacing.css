@@ -17,5 +17,18 @@
         --space-10: 2.50rem; /* 40px */
         --space-12: 3.00rem; /* 48px */
         --space-16: 4.00rem; /* 64px */
+
+        /* Shared row height for the sidebar's vertical rhythm — nav rows, the
+           footer's profile row, the section switcher and the switcher's menu.
+           Lives at :root rather than on the layout because the menu is portalled
+           out of it and would not inherit a layout-scoped value. */
+        --nav-row-h: 2.25rem;
+    }
+
+    /* Roomier rows for touch. */
+    @media (--bp-mode-mobile) {
+        :root {
+            --nav-row-h: 2.5rem;
+        }
     }
 }

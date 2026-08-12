@@ -16,7 +16,8 @@ Rendered once per page for either an AI conversation or a group room chat (see
     import {useToastContext} from '$lib/components/ui/toast/ToastContext.svelte.js';
     import {growTransition} from '$lib/utils/transitions/growTransition';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
-    import {type ComposerContextType, createComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import {type ComposerContext, type ComposerContextType, createComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
+    import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
     import OldUiStyling from '$plugins/core/modules/chat/components/composer/OldUiStyling.svelte';
     import FileDragAndDrop from '$plugins/core/modules/chat/components/composer/FileDragAndDrop.svelte';
     import ComposerBorderBeam from '$plugins/core/modules/chat/components/composer/ComposerBorderBeam.svelte';
@@ -35,14 +36,46 @@ Rendered once per page for either an AI conversation or a group room chat (see
     interface Props {
         /** Which kind of chat this composer sends into ('aiConv' for a 1:1 AI conversation, 'room' for a group room); determines context-specific behavior (e.g. write-access checks, name menu variant). */
         context: ComposerContextType;
+        /** Optional native transport used by routed plugin pages. */
+        transport?: MessageSenderTransportInterface;
+        /** Prompt of the currently opened conversation. */
+        initialSystemPrompt?: string;
+        /** Called when the user changes the system prompt. */
+        onSystemPromptChange?: (prompt: string) => void;
+        /** Native draft-improvement callback. */
+        onImproveMessage?: (message: string, systemPrompt: string) => Promise<string>;
+        /** True when this conversation has a request running in another composer instance. */
+        backgroundActive?: boolean;
+        /** Gives the parent access to edit/regen mode controls. */
+        onReady?: (context: ComposerContext) => void;
     }
 
-    const {context: contextType = 'aiConv'}: Props = $props();
+    const {
+        context: contextType = 'aiConv',
+        transport,
+        initialSystemPrompt,
+        onSystemPromptChange,
+        onImproveMessage,
+        backgroundActive = false,
+        onReady
+    }: Props = $props();
 
     const app = useApp();
     const toastContext = useToastContext();
     // This is a bit of a hack to work around the "state_referenced_locally" warning thrown by svelte.
-    const chatContext = createComposerContext(app, (() => contextType)(), toastContext);
+    const initialOptions = (() => ({
+        transport,
+        initialSystemPrompt,
+        onSetSystemPrompt: onSystemPromptChange,
+        onImproveMessage,
+        useLegacyBridge: !transport
+    }))();
+    const chatContext = createComposerContext(app, (() => contextType)(), toastContext, initialOptions);
+    (() => onReady)()?.(chatContext);
+
+    $effect(() => {
+        chatContext.backgroundActive = backgroundActive;
+    });
 
     let textareaEl = $state(null as HTMLTextAreaElement | null);
     let buttonEl = $state(null as HTMLButtonElement | null);

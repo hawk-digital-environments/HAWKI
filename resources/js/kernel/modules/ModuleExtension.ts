@@ -35,7 +35,7 @@ export class ModuleExtension implements HawkiAppExtension {
         return Array.from(this.modules.keys());
     }
 
-    public get all(): HawkiModule[] {
+    public get all(): HawkiModuleWithPlugin[] {
         return Array.from(this.modules.values());
     }
 
@@ -43,7 +43,7 @@ export class ModuleExtension implements HawkiAppExtension {
         return this.modules.has(name);
     }
 
-    public get(name: string): HawkiModule {
+    public get(name: string): HawkiModuleWithPlugin {
         const module = this.modules.get(name);
         if (!module) {
             throw new Error(`Module with name "${name}" is not registered.`);

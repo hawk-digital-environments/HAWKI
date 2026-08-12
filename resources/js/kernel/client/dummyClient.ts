@@ -1,5 +1,6 @@
 import {RestApi} from '$lib/kernel/api/RestApi.js';
 import type {Connection} from '$lib/app/schemas/resources/connections.schema.js';
+import type {AiApi} from '$lib/kernel/ai/AiApi.js';
 
 /* ============================
  * DUMMY IMPLEMENTATION
@@ -21,5 +22,6 @@ import type {Connection} from '$lib/app/schemas/resources/connections.schema.js'
  */
 export interface HawkiClient {
     restApi: RestApi;
+    aiApi: AiApi;
     connection: Connection;
 }
