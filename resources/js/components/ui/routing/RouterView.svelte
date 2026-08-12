@@ -1,98 +1,88 @@
 <script lang="ts">
-
-    import type UniversalRouter from 'universal-router';
-    import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
-    import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
-    import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
-    import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.js';
-    import type {Component} from 'svelte';
+    import {type Component, setContext} from 'svelte';
     import RouteNotFound from '$lib/components/ui/routing/RouteNotFound.svelte';
+    import RouteError from '$lib/components/ui/routing/RouteError.svelte';
+    import Loader from '$lib/components/ui/loader/Loader.svelte';
+    import {type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
 
     interface Props {
-        router: UniversalRouter;
-        routeResolution?: 'transient' | 'path' | 'hash' | RoutingStrategy;
+        router: Router;
         notFoundComponent?: Component;
+        errorComponent?: Component<{ error: unknown; reset: () => void }>;
     }
 
     const {
         router,
-        routeResolution = 'transient',
-        notFoundComponent = RouteNotFound
+        notFoundComponent = RouteNotFound,
+        errorComponent = RouteError
     }: Props = $props();
 
-    const NotFoundComponent = notFoundComponent;
+    const NotFoundComponent = $derived(notFoundComponent);
+    const ErrorComponent = $derived(errorComponent);
 
-    const strategy = $derived.by(() => {
-        if (routeResolution === 'transient') {
-            return createTransientRoutingStrategy();
-        } else if (routeResolution === 'path') {
-            return createPathRoutingStrategy();
-        } else if (routeResolution === 'hash') {
-            return createHashRoutingStrategy();
-        } else {
-            return routeResolution;
-        }
-    });
+    const routerState = $derived(router.state);
+    const hasRoutingError = $derived(routerState === 'error');
+    const isLoading = $derived(routerState === 'loading');
+    const isNotFound = $derived(routerState === 'notFound');
+    const RouteComponent = $derived(router.component);
+    const routeProps = $derived(router.componentProps);
+    const layouts = $derived(router.layouts);
 
-    const currentPath = $derived.by(() => {
-        const path = strategy.get();
-        if (path === null || path === '') {
-            return '/';
-        } else {
-            return path;
-        }
-    });
+    // svelte-ignore state_referenced_locally
+    setContext<RouterHandle>(router.contextName, router.handle);
 
-    let RouteComponent = $state<Component | null>(null);
-    let routeProps = $state({});
-    let notFound = $state(false);
+    // svelte-ignore state_referenced_locally
+    router.bind();
 
-    $effect(() => {
-        let isInvalid = false;
-        (async () => {
-            try {
-                const result = await router.resolve(currentPath);
-                if (isInvalid) {
-                    return;
-                }
-
-                if (typeof result === 'function') {
-                    RouteComponent = result;
-                    routeProps = {};
-                    return;
-                }
-
-                if (typeof result === 'object' && result !== null) {
-                    if ('props' in result && typeof result.props === 'object') {
-                        routeProps = result.props;
-                    } else {
-                        routeProps = {};
-                    }
-                    if ('component' in result && typeof result.component === 'function') {
-                        RouteComponent = result.component;
-                        return;
-                    } else {
-                        throw new Error('Resolved route does not contain a valid component');
-                    }
-                }
-
-                throw new Error('Resolved route is not a valid component or object with component and props');
-            } catch (error) {
-                console.error('ROUTER ERROR', error, 'for current path', currentPath);
-                notFound = true;
-            }
-        })();
-
-        return () => {
-            isInvalid = true;
-        };
-    });
-
-    $inspect(currentPath, RouteComponent, router, notFound);
+    function handleError(error: unknown) {
+        console.error('Error while rendering route component', error);
+    }
 </script>
 
-{#if notFound}
-    <NotFoundComponent/>
-{:else if RouteComponent !== null}
-    <RouteComponent {...routeProps}/>
-{/if}
+<!--
+  Nests the layout stack (outermost first) around the page. Recursing over an
+  index instead of shrinking the array keeps each level's component expression
+  pointing at the same reference across navigations, so a layout shared by two
+  routes stays mounted while only the page inside it swaps out.
+-->
+{#snippet layoutStack(index: number)}
+    {#if index < layouts.length}
+        {@const Layout = layouts[index]}
+        <Layout>
+            {@render layoutStack(index + 1)}
+        </Layout>
+    {:else}
+        {@render page()}
+    {/if}
+{/snippet}
+
+<!--
+  The two ways a route can fail need different recoveries but present the same
+  contract to `ErrorComponent`:
+  - resolution failed — nothing rendered, so retrying means resolving again.
+    Stays inside the layout stack, like the 404 does.
+  - the route rendered and crashed — caught by the boundary below, which has
+    already torn the subtree (layouts included) down; `reset` re-renders it.
+-->
+{#snippet errorPage(error: unknown, reset: () => void)}
+    <ErrorComponent {error} {reset}/>
+{/snippet}
+
+{#snippet page()}
+    {#if hasRoutingError}
+        {@render errorPage(router.error, () => void router.handle.reload())}
+    {:else if isNotFound}
+        <NotFoundComponent/>
+    {:else if RouteComponent && routeProps}
+        <RouteComponent {...routeProps}/>
+    {/if}
+{/snippet}
+
+<svelte:boundary onerror={handleError}>
+    <Loader active={isLoading}>
+        {@render layoutStack(0)}
+    </Loader>
+    {#snippet failed(error, reset)}
+        {@render errorPage(error, reset)}
+    {/snippet}
+</svelte:boundary>

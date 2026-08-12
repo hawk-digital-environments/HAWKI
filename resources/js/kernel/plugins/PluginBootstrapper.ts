@@ -1,12 +1,12 @@
 import type {AppExtensionRegistrar, HawkiCorePlugin, HawkiPluginContext, HawkiPluginContextWithConfig, HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {HawkiApp, UnfinishedHawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 /**
  * Dispatches each `HawkiPlugin` lifecycle hook (see `$lib/kernel/plugins/types.js`)
@@ -35,7 +35,6 @@ import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
  */
 export class PluginBootstrapper {
     private _contextWithConfig: HawkiPluginContextWithConfig | null = null;
-    private _resourceSchemaRegistrar: ResourceSchemaRegistrar | null = null;
 
     constructor(
         private readonly plugins: HawkiPluginWithMetadata[],

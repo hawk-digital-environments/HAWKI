@@ -11,10 +11,12 @@ export function createHashRoutingStrategy(): RoutingStrategy {
         get() {
             return window.location.hash.slice(1);
         },
-        clear() {
-            if (window.location.hash !== '') {
-                window.location.hash = '';
-            }
+        bind(): () => void {
+            return () => {
+                if (window.location.hash !== '') {
+                    window.location.hash = '';
+                }
+            };
         }
     };
 }

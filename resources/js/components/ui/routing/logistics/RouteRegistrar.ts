@@ -1,13 +1,20 @@
 import {type Route, type RouteContext, type RouteParams, type RouteResult} from 'universal-router';
-import {buildMiddlewareStack} from '$lib/kernel/routing/buildMiddlewareStack.js';
-import type {Component} from 'svelte';
+import {buildMiddlewareStack} from '$lib/components/ui/routing/logistics/buildMiddlewareStack.js';
+import {type ComponentLoader, type ComponentOrLoader, isLazyComponentLoader, lazyComponent, resolveComponent} from '$lib/components/ui/routing/logistics/lazyComponent.js';
+import type {Component, Snippet} from 'svelte';
 
 /** Signature of a callback that receives a {@link RouteRegistrar} to register routes on — used for plugin/module `routes()` hooks and for `registrar.group()` children. */
-export type RouteRegistrationCallback = (registrar: RouteRegistrar) => void | Promise<void>;
+export type RouteRegistrationCallback = (registrar: RouteRegistrar) => void;
+
+export interface RouteComponentProps {
+    context: RouteContext;
+    params: any;
+}
+
 /** A Svelte component used as the "page" of a route. */
-export type RouteComponent = Component;
+export type RouteComponent = Component<RouteComponentProps>;
 /** Lazily imports a route's page component, e.g. `async () => (await import('./pages/ChatIndex.svelte')).default`. */
-export type RouteComponentLoader = (() => Promise<RouteComponent>);
+export type RouteComponentLoader = ComponentLoader<RouteComponent>;
 /**
  * Either an eagerly imported page component or a loader for one.
  *
@@ -17,7 +24,47 @@ export type RouteComponentLoader = (() => Promise<RouteComponent>);
  * {@link RouteRenderer} can check to decide whether it has to `await` the
  * component first.
  */
-export type RouteComponentOrLoader = RouteComponent | (RouteComponentLoader & { type: 'lazy_route' });
+export type RouteComponentOrLoader = ComponentOrLoader<RouteComponent>;
+
+/**
+ * A component that wraps a route's page (and any layout below it) in its
+ * `children` snippet — the router's equivalent of a nested layout.
+ *
+ * Layouts receive no props: everything they need comes from the router context
+ * (`useRouter()`, `useRouteMeta()`), which is what lets a layout stay mounted
+ * while the page inside it changes.
+ */
+export type RouteLayout = Component<{ children: Snippet }>;
+/** Lazily imports a layout component, e.g. `async () => (await import('./AdminLayout.svelte')).default`. */
+export type RouteLayoutLoader = ComponentLoader<RouteLayout>;
+/**
+ * Either an eagerly imported layout or a loader for one. Loaders must be
+ * wrapped in `lazyComponent()` so they can be told apart from a component.
+ */
+export type RouteLayoutOrLoader = ComponentOrLoader<RouteLayout>;
+
+/**
+ * Arbitrary data a route carries for the components that render it — page
+ * title, icon, permission hints, whatever the owning plugin needs.
+ *
+ * Meta belongs to the *route*, not to the layouts around it: it is read once
+ * when the route resolves and is then visible to the page and every layout
+ * wrapping it, via `useRouteMeta()`. Router-internal settings (such as
+ * {@link RouteOptions.layout}) deliberately live outside of it, so they can
+ * never collide with — or leak into — a plugin's own meta.
+ */
+export type RouteMeta = Record<string, unknown>;
+
+/**
+ * The `universal-router` {@link Route} plus the extra fields this router
+ * stores on it. `universal-router` passes route objects through untouched, so
+ * the matched route (and its whole `parent` chain) still carries them at
+ * resolve time.
+ */
+export interface HawkiRoute<R = any> extends Route<R> {
+    meta?: RouteMeta;
+    layout?: RouteLayoutOrLoader;
+}
 /**
  * Turns a matched route into whatever the app renders. Installed as the
  * `action` of every compiled route, so it receives the `universal-router`
@@ -43,12 +90,45 @@ export type RouteRenderer<TResult = any> = (component: RouteComponentOrLoader, c
  */
 export type RouteMiddleware = (context: RouteContext) => Promise<Component | undefined | null>;
 
+export interface ResolvedRouteRenderable {
+    component: RouteComponent;
+    context: RouteContext;
+    params: RouteParams;
+}
+
 /** Optional extras for a single route registration. */
-export interface RouteOptions {
+export interface RouteOptions<TMeta extends RouteMeta = RouteMeta> {
     /** Unique route name, forwarded to `universal-router` so the route can be looked up / have its URL generated. Not validated for uniqueness by the registrar. */
     name?: string;
     /** Middlewares wrapping this route; the first entry becomes the outermost guard. */
     middlewares?: RouteMiddleware[];
+    /**
+     * Layout wrapping this route's page, rendered *inside* the layouts of the
+     * groups the route sits in. Use `lazyComponent()` for a loader.
+     */
+    layout?: RouteLayoutOrLoader;
+    /**
+     * Data handed to the page and all its layouts through `useRouteMeta()`.
+     * Type it by passing the schema's inferred type as `TMeta`, e.g.
+     * `registrar.lazyRoute<ChatMeta>('/', loader, {meta: {title: 'Chat'}})`.
+     */
+    meta?: TMeta;
+    /**
+     * Makes the route match its path *and everything below it* — a `/files`
+     * catch-all also answers `/files/a/b/c`. Matching stays segment-aware, so
+     * `/filesX` is still a miss.
+     *
+     * Catch-alls are always emitted last by {@link build}, no matter where they
+     * were registered, because a catch-all shadows every route after it.
+     * Register one with path `/` inside a {@link group} to catch that group's
+     * subtree only.
+     *
+     * The matched remainder is *not* exposed as a param — use a wildcard in the
+     * path instead if you need it (`'/files/*rest'` yields
+     * `params.rest === ['a', 'b', 'c']`), keeping in mind that a wildcard needs
+     * at least one segment and therefore does not match the bare `/files`.
+     */
+    catchAll?: boolean;
 }
 
 /** A route registration as stored in the registrar: the user-supplied {@link RouteOptions} plus the path and component it was registered with. */
@@ -59,14 +139,32 @@ export interface RegisteredRouteOptions extends RouteOptions {
 
 /** Optional extras for a route group registration. */
 export interface RouteGroupOptions {
+    /**
+     * Name of the group, which lets `RouterHandle.isRouteActive()` light up a
+     * whole section while any route inside it is rendered.
+     *
+     * Not meant for linking: a group has no `action`, so navigating to it
+     * directly falls through to its children and 404s unless one of them
+     * matches the empty remainder.
+     */
+    name?: string;
     /** Middlewares wrapping the whole group; they run before any child route of the group. */
     middlewares?: RouteMiddleware[];
+    /**
+     * Layout wrapping every route inside this group. Stays mounted while
+     * navigating between the group's routes, so it can hold sidebar state,
+     * scroll position or transitions. Use `lazyComponent()` for a loader.
+     *
+     * Groups carry no `meta`: meta is the matched route's, and a group layout
+     * simply sees the meta of whichever route is currently open inside it.
+     */
+    layout?: RouteLayoutOrLoader;
 }
 
 /** A group registration as stored in the registrar: the user-supplied {@link RouteGroupOptions} plus the group's path prefix and its children callback. */
 export interface RegisteredRouteGroupOptions extends RouteGroupOptions {
     path: string | undefined;
-    children: (registrar: RouteRegistrar) => void | Promise<void>;
+    children: (registrar: RouteRegistrar) => void;
 }
 
 /**
@@ -110,7 +208,7 @@ export class RouteRegistrar {
      * Prefer {@link lazyRoute} for page components so they stay out of the
      * initial bundle.
      */
-    public route(path: string, component: RouteComponent, options?: RouteOptions) {
+    public route<TMeta extends RouteMeta = RouteMeta>(path: string, component: RouteComponent, options?: RouteOptions<TMeta>) {
         if (this.routes.has(path)) {
             throw new Error(`Route with path "${path}" is already registered.`);
         }
@@ -130,12 +228,14 @@ export class RouteRegistrar {
      * @example
      * registrar.lazyRoute('/', async () => (await import('./pages/ChatIndex.svelte')).default);
      */
-    public lazyRoute(path: string, loader: RouteComponentLoader, options?: RouteOptions) {
+    public lazyRoute<TMeta extends RouteMeta = RouteMeta>(path: string, loader: RouteComponentLoader, optionsOrName?: RouteOptions<TMeta> | string) {
         if (this.routes.has(path)) {
             throw new Error(`Route with path "${path}" is already registered.`);
         }
-        const lazyLoader = Object.assign(loader, {type: 'lazy_route'} as const);
-        this.routes.set(path, {path, component: lazyLoader, ...options});
+        if (typeof optionsOrName === 'string') {
+            optionsOrName = {name: optionsOrName} as RouteOptions<TMeta>;
+        }
+        this.routes.set(path, {path, component: lazyComponent(loader), ...optionsOrName});
         return this;
     }
 
@@ -148,12 +248,6 @@ export class RouteRegistrar {
      * chained instead, which lets several plugins/modules contribute routes to
      * the same prefix.
      *
-     * TODO(docs): On such a merge only the callbacks are combined — the
-     * `options` (i.e. `middlewares`) of the second `group()` call are silently
-     * dropped, and the first call's middlewares keep applying to the routes
-     * added by the second one. Intentional, or should the middleware lists be
-     * merged / an error be thrown?
-     *
      * @example
      * registrar.group('/admin', (admin) => {
      *     admin.route('/users', UserListPage);
@@ -162,9 +256,9 @@ export class RouteRegistrar {
     public group(path: string, callback: RouteRegistrationCallback, options?: RouteGroupOptions) {
         if (this.groups.has(path)) {
             const existingGroup = this.groups.get(path)!;
-            existingGroup.children = async (registrar) => {
-                await existingGroup.children(registrar);
-                await callback(registrar);
+            existingGroup.children = (registrar) => {
+                existingGroup.children(registrar);
+                callback(registrar);
             };
             return this;
         }
@@ -212,32 +306,65 @@ export class RouteRegistrar {
      * Compiles everything registered so far into the `Route[]` that
      * {@link RoutingExtension} feeds to `UniversalRouter`: first all plain
      * routes (in registration order), then all groups (in registration order),
-     * each already wrapped in its middleware stack.
+     * and finally all {@link RouteOptions.catchAll} routes — each already
+     * wrapped in its middleware stack.
+     *
+     * Catch-alls are pulled to the back regardless of when they were
+     * registered: they match a whole subtree, so anywhere else in the list they
+     * would shadow every route behind them — including *all* groups, which
+     * already sort after plain routes. Their order relative to each other is
+     * preserved.
      *
      * Called once per registrar — the root one by `RoutingExtension.init()`,
      * nested ones by {@link buildRouteGroupFromOptions}. The same `renderer` is
      * passed down into every group.
      */
-    public async build(renderer: RouteRenderer) {
-        const builtRoutes: Route[] = [];
+    public build() {
+        const builtRoutes: Route<ResolvedRouteRenderable>[] = [];
+        const builtCatchAllRoutes: Route<ResolvedRouteRenderable>[] = [];
         this.routes.forEach((routeOptions) => {
-            builtRoutes.push(this.buildRouteFromOptions(routeOptions, renderer));
+            const builtRoute = this.buildRouteFromOptions(routeOptions);
+            (routeOptions.catchAll ? builtCatchAllRoutes : builtRoutes).push(builtRoute);
         });
 
         for (const [_, groupOptions] of this.groups.entries()) {
-            const builtGroup = await this.buildRouteGroupFromOptions(groupOptions, renderer);
+            const builtGroup = this.buildRouteGroupFromOptions(groupOptions);
             builtRoutes.push(builtGroup);
         }
 
-        return builtRoutes;
+        return [...builtRoutes, ...builtCatchAllRoutes];
     }
 
-    /** Builds a leaf `Route` whose `action` delegates to the {@link RouteRenderer}, then wraps it in this route's middlewares. */
-    private buildRouteFromOptions(options: RegisteredRouteOptions, renderer: RouteRenderer): Route {
-        const innerRoute: Route = {
+    private isLazyRouteLoader(obj: any): obj is RouteComponentLoader {
+        return isLazyComponentLoader(obj);
+    }
+
+    private buildRouteFromOptions(options: RegisteredRouteOptions): Route {
+        const renderableRouteResolver = (context: RouteContext, params: RouteParams): RouteResult<ResolvedRouteRenderable> => {
+            if (!this.isLazyRouteLoader(options.component)) {
+                return {component: options.component as RouteComponent, context, params};
+            }
+
+            return resolveComponent(options.component, `route "${options.path}"`)
+                .then((component) => ({component, context, params}));
+        };
+
+        // `meta` and `layout` sit on the inner route on purpose: middleware
+        // wrappers must stay transparent, and the layout chain is collected by
+        // walking up from whichever route actually matched.
+        const innerRoute: HawkiRoute = {
             name: options.name,
-            path: options.path,
-            action: (ctx, params) => renderer(options.component, ctx, params)
+            path: options.path.replace(/\/$/, ''), // Strip trailing slash for consistency,
+            action: (ctx, params) =>
+                renderableRouteResolver(ctx, params),
+            meta: options.meta,
+            layout: options.layout,
+            // An *empty* children list is what turns this into a catch-all:
+            // `universal-router` derives `end: !route.children` for its path
+            // matcher, so having children (even none) switches the route to
+            // prefix matching — and with nothing to descend into, its own
+            // action answers the whole subtree.
+            children: options.catchAll ? [] : undefined
         };
 
         return buildMiddlewareStack(innerRoute, options);
@@ -249,25 +376,19 @@ export class RouteRegistrar {
      * parent's `children`, and wraps the result in the group's middlewares.
      * The group route has no `action`, so `universal-router` falls through to
      * the children.
-     *
-     * TODO(docs): `options.children(...)` is invoked without `await`, although
-     * {@link RegisteredRouteGroupOptions.children} may return a Promise (the
-     * module wrapper in `kernel/modules/moduleRegistrar.ts` creates an `async`
-     * callback). Async child registrations would therefore land after
-     * `innerRegistrar.build()` has already run and be lost — is the callback
-     * meant to be synchronous, or is the missing `await` a bug?
      */
-    private async buildRouteGroupFromOptions(options: RegisteredRouteGroupOptions, renderer: RouteRenderer): Promise<Route> {
+    private buildRouteGroupFromOptions(options: RegisteredRouteGroupOptions) {
         const innerRegistrar = new RouteRegistrar();
         options.children(innerRegistrar);
+        const innerRoutes = innerRegistrar.build();
 
-        const innerRoutes = await innerRegistrar.build(renderer);
-
-        const innerRoute: Route = {
+        const groupRoute: HawkiRoute = {
+            name: options.name,
             path: options.path,
-            children: innerRoutes
+            children: innerRoutes,
+            layout: options.layout
         };
 
-        return buildMiddlewareStack(innerRoute, options);
+        return buildMiddlewareStack(groupRoute, options);
     }
 }

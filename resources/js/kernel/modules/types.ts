@@ -2,8 +2,8 @@ import type {HawkiPlugin} from '$lib/kernel/plugins/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
 import type {Component} from 'svelte';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
 import type {Locale} from '$lib/app/schemas/resources/compound/locales.schema.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 /**
  * A HAWKI feature module — the unit registered with the {@link ModuleExtension}.

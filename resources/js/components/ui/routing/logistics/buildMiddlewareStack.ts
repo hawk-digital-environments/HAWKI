@@ -13,7 +13,7 @@
  * from {@link RouteGroupOptions}).
  */
 import {type Route} from 'universal-router';
-import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 /** A group registration reduced to the parts relevant for the middleware stack (its `children` callback has already been compiled by then). */
 type GroupMiddlewareStackOptions = Omit<RegisteredRouteGroupOptions, 'children'>;
@@ -22,6 +22,8 @@ type GroupMiddlewareStackOptions = Omit<RegisteredRouteGroupOptions, 'children'>
 // it here is a no-op. Leftover from an earlier shape of the options object?
 /** A route registration reduced to the parts relevant for the middleware stack (the component is already baked into the inner route's action). */
 type RouteMiddlewareStackOptions = Omit<RegisteredRouteOptions, 'component' | 'isLazy'>;
+
+type MiddlewareRoute = Route & { isMiddleware: true };
 
 /**
  * Wraps `children` in a path-less parent route that runs `middleware` first.
@@ -34,11 +36,12 @@ type RouteMiddlewareStackOptions = Omit<RegisteredRouteOptions, 'component' | 'i
 function createMiddlewareRoute(
     middleware: RouteMiddleware,
     children: Route[]
-): Route {
+): MiddlewareRoute {
     return {
         path: '',
         action: (context) => middleware(context),
-        children
+        children,
+        isMiddleware: true
     };
 }
 

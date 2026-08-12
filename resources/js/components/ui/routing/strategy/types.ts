@@ -3,6 +3,5 @@ export interface RoutingStrategy {
 
     get(): string;
 
-    // Triggered when the routing view is removed from the DOM (should reset the routing state to the default state)
-    clear(): void;
+    bind?(name: string, basePath: string): () => void;
 }

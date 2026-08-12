@@ -3,12 +3,12 @@ import type {PluginExtension} from '$lib/kernel/plugins/PluginExtension.js';
 import type {HawkiClient} from '$lib/kernel/client/dummyClient.js';
 import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 import type {HawkiAppExtensions} from '$lib/kernel/extendableTypes.js';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
 import type {ConfigSchemaRegistrar} from '$lib/kernel/config/configSchemaRegistrar.js';
 import type {ResourceSchemaRegistrar} from '$lib/kernel/resources/resourceSchemaRegistrar.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import type {MigrationRegistrar} from '$lib/kernel/migrations/migrationRegistrar.js';
 import type {StoreRegistrar} from '$lib/kernel/stores/storeRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 // @todo if configuration extension changes, it could become part of HawkiPluginContext (as it is basically a part of the client).
 

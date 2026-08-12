@@ -26,7 +26,7 @@ import {ThemeStore} from '$plugins/core/stores/ThemeStore.svelte.js';
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import {ChatModule} from '$plugins/core/modules/chat/ChatModule.js';
-import type {RouteRegistrar} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {RouteRegistrar} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiPlugins {
@@ -46,7 +46,7 @@ export default class CorePlugin implements HawkiCorePlugin {
     }
 
     public routes(registrar: RouteRegistrar): void | Promise<void> {
-        registrar.lazyRoute('/', async () => (await import('$plugins/core/pages/Index.svelte')).default);
+        registrar.lazyRoute('/', async () => import('$plugins/core/pages/Index.svelte'));
     }
 
     public stores({add}: StoreRegistrar): void | Promise<void> {
