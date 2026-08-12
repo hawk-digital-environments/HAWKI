@@ -27,6 +27,7 @@ import {AiToolStore} from '$plugins/core/stores/AiToolStore.svelte.js';
 import {SystemPromptStore} from '$plugins/core/stores/SystemPromptStore.svelte.js';
 import {ThemeStore} from '$plugins/core/stores/ThemeStore.svelte.js';
 import {KeychainStore} from '$plugins/core/stores/KeychainStore.svelte.js';
+import {ChatStore} from '$plugins/core/stores/ChatStore.svelte.js';
 import type {ModuleRegistrar} from '$lib/kernel/modules/moduleRegistrar.js';
 import {ChatModule} from '$plugins/core/modules/chat/ChatModule.js';
 import type {RouteRegistrar} from '$lib/components/ui/routing/index.js';
@@ -59,5 +60,6 @@ export default class CorePlugin implements HawkiCorePlugin {
         add(new AiToolStore());
         add(new SystemPromptStore());
         add(new ThemeStore());
+        add(new ChatStore());
     }
 }

@@ -1,5 +1,36 @@
 {
     "chat": {
+        "module": {
+            "title": "Chat"
+        },
+        "sidebar": {
+            "newChat": "New chat",
+            "history": "Chat history",
+            "loading": "Loading chats…",
+            "generating": "Generating response",
+            "empty": "Your conversations will appear here."
+        },
+        "page": {
+            "newChat": "New chat",
+            "loading": "Loading conversation…",
+            "retry": "Try again",
+            "thinking": "Thinking…",
+            "generating": "Generating response…",
+            "welcomeTitle": "How can I help?",
+            "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
+            "disclaimer": "AI can make mistakes. Check important information."
+        },
+        "actions": {
+            "copy": "Copy message",
+            "speak": "Read message aloud",
+            "edit": "Edit message",
+            "regenerate": "Regenerate response",
+            "thread": "Reply in thread",
+            "delete": "Delete message",
+            "deleteAttachment": "Delete attachment",
+            "deleteConfirmTitle": "Delete message?",
+            "deleteConfirmDescription": "This message will be permanently removed."
+        },
         "nameMenu": {
             "emptyNameError": "The chat name must not be empty",
             "leaveAction": "Leave chat",

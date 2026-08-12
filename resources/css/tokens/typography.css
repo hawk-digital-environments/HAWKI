@@ -12,6 +12,7 @@
         /* Matches legacy: xxs=×0.7, xs=×0.85, sm=1rem, md=×1.1, lg=×1.25, xl=×1.8, xxl=×2.5 */
         --font-size-xxs: 0.70rem; /* --font-xxs  ≈ 11.2px */
         --font-size-xs: 0.85rem; /* --font-xs   ≈ 13.6px */
+        --font-size-nav: 0.90rem; /* sidebar/profile rows ≈ 14.4px */
         --font-size-sm: 1rem; /* --font-sm   = 16px   */
         --font-size-base: 1.10rem; /* --font-md   ≈ 17.6px */
         --font-size-lg: 1.25rem; /* --font-lg   = 20px   */

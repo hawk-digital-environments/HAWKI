@@ -40,6 +40,12 @@
         side?: 'top' | 'right' | 'bottom' | 'left';
         /** Offset in pixels from the trigger. */
         sideOffset?: number;
+        /**
+         * Element to position the tooltip against instead of the trigger, e.g.
+         * an icon inside a full-width row so the tooltip opens next to the icon
+         * rather than the row's edge. Hover/focus still belong to the trigger.
+         */
+        customAnchor?: string | HTMLElement | null;
         /** Can be used to force the tooltip to be open or closed. If not provided, the tooltip will open on hover/focus and close on blur/mouse leave. */
         open?: boolean;
         /** If true, the tooltip will not open on hover/focus. */

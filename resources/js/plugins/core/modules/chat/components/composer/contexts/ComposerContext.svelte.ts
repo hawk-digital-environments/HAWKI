@@ -95,6 +95,7 @@ import {SyncPipeline} from '$lib/utils/flows/SyncPipeline.js';
 import {oldUiMessageHistory} from '$lib/legacy/OldUiMessageHistory.svelte.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import {oldUiBridge} from '$lib/legacy/OldUiBridge.svelte';
+import type {MessageSenderTransportInterface} from '$plugins/core/modules/chat/components/composer/contexts/sending/transport/MessageSenderTransportInterface.js';
 
 /** The kinds of chat a composer can be mounted into. Validated at runtime by {@link createComposerContext}. */
 const allowedContextTypes = ['aiConv', 'room'] as const;
@@ -107,6 +108,19 @@ const allowedContextTypes = ['aiConv', 'room'] as const;
  *   addresses the assistant via an `@handle` (see `GuardSlice.showsAiUiElements`).
  */
 export type ComposerContextType = typeof allowedContextTypes[number];
+
+export interface CreateComposerContextOptions {
+    /** Native routed pages inject their own transport; legacy snippets omit it. */
+    transport?: MessageSenderTransportInterface;
+    /** Initial prompt for an already loaded conversation. */
+    initialSystemPrompt?: string;
+    /** Persists prompt edits in the owning routed feature. */
+    onSetSystemPrompt?: (prompt: string) => void;
+    /** Native implementation of the AI prompt-improvement action. */
+    onImproveMessage?: (message: string, systemPrompt: string) => Promise<string>;
+    /** Keeps the old DOM bridge subscriptions enabled. Defaults to true. */
+    useLegacyBridge?: boolean;
+}
 
 /** {@link SyncPipeline} channel name used by {@link ComposerContext.focusInput}. */
 const FOCUS_INPUT_PIPELINE = 'focusInput';
@@ -177,6 +191,8 @@ export class ComposerContext {
          * avoid an echo loop (see `blockSystemPromptPropagation` in {@link createComposerContext}).
          */
         private readonly onSetSystemPrompt: (prompt: string) => void,
+        /** Improves a draft through the configured AI transport. */
+        public readonly improveMessage: (message: string, systemPrompt: string) => Promise<string>,
         /**
          * Extracts agent handles from a text. Backed by the `ai-handle` store; injected
          * so the context stays independent from the store layer.
@@ -228,6 +244,9 @@ export class ComposerContext {
     /** Forces the composer into the active/sending state, disabling the send button and other
      *  interactions. Set to `true` when an external process is occupying the composer. */
     public forcedActive = $state(false);
+
+    /** A send owned by this conversation is continuing outside this composer instance. */
+    public backgroundActive = $state(false);
 
     /** Whether the current conversation allows sending messages. `false` for read-only
      *  conversations (e.g. shared/archived); updated via the `OldUiMessageHistory` bridge. */
@@ -423,7 +442,8 @@ export function useComposerContext(): ComposerContext {
 export function createComposerContext(
     app: HawkiApp,
     type: ComposerContextType,
-    toastContext: ToastContext
+    toastContext: ToastContext,
+    options: CreateComposerContextOptions = {}
 ): ComposerContext {
     if (!allowedContextTypes.includes(type)) {
         throw new Error(`Invalid composer context type: ${type}. Allowed types are: ${allowedContextTypes.join(', ')}`);
@@ -443,7 +463,9 @@ export function createComposerContext(
     const modelContext = new ModelSlice(
         aiModelStore,
         parameterContextFactory,
-        (model) => oldUiBridge.updateCurrentChatModelId(model.model_id)
+        (model) => {
+            if (options.useLegacyBridge !== false) oldUiBridge.updateCurrentChatModelId(model.model_id);
+        }
     );
 
     parameterContext = new ModelParameterSlice(modelContext);
@@ -472,7 +494,9 @@ export function createComposerContext(
         (): ComposerContext => context,
         // Notifies the legacy UI that a mode was left, handing it the state the mode had
         // *before* the checkpoint was restored (e.g. the edited `messageId`).
-        (oldState) => oldUiBridge.triggerExitMode(oldState)
+        (oldState) => {
+            if (options.useLegacyBridge !== false) oldUiBridge.triggerExitMode(oldState);
+        }
     );
     const attachment = new AttachmentSlice(app.config);
     const tool = new ToolSlice(modelContext, aiToolStore);
@@ -485,7 +509,7 @@ export function createComposerContext(
         guard
     );
 
-    const initialSystemPrompt = systemPromptStore.getPromptByType('default').prompt ?? '';
+    const initialSystemPrompt = options.initialSystemPrompt ?? systemPromptStore.getPromptByType('default').prompt ?? '';
 
     // Guard against an echo loop: when the legacy UI pushes a prompt in via
     // `onLoadSystemPrompt`, the setter would immediately push the same value back out.
@@ -494,10 +518,14 @@ export function createComposerContext(
         if (blockSystemPromptPropagation) {
             return;
         }
-        oldUiBridge.updateActiveConversationSystemPrompt(prompt);
+        if (options.onSetSystemPrompt) {
+            options.onSetSystemPrompt(prompt);
+        } else if (options.useLegacyBridge !== false) {
+            oldUiBridge.updateActiveConversationSystemPrompt(prompt);
+        }
     };
 
-    const sender = new MessageSender(new OldUiBridgeTransport(oldUiBridge), app.localization.translator);
+    const sender = new MessageSender(options.transport ?? new OldUiBridgeTransport(oldUiBridge), app.localization.translator);
 
     const context = new ComposerContext(
         type,
@@ -512,10 +540,11 @@ export function createComposerContext(
         sender,
         initialSystemPrompt,
         onSetSystemPrompt,
+        options.onImproveMessage ?? ((message, systemPrompt) => oldUiBridge.triggerImproveMessage(message, systemPrompt)),
         (message) => aiHandleStore.getHandlesIn(message)
     );
 
-    const unbinders = [
+    const unbinders = options.useLegacyBridge === false ? [] : [
         oldUiBridge.onClearActiveConversation(() => {
             context.reset(true);
         }),
@@ -554,7 +583,7 @@ export function createComposerContext(
 
     onDestroy(() => unbinders.forEach(unbind => unbind()));
 
-    oldUiBridge.triggerContextReady();
+    if (options.useLegacyBridge !== false) oldUiBridge.triggerContextReady();
     set(context);
 
     return context;

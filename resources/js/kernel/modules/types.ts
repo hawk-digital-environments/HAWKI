@@ -1,4 +1,4 @@
-import type {HawkiPlugin} from '$lib/kernel/plugins/types.js';
+import type {HawkiPluginWithMetadata} from '$lib/kernel/plugins/types.js';
 import type {Translator} from '$lib/kernel/localization/translator.js';
 import type {IconComponent} from '$lib/components/ui/icons/index.js';
 import type {Component} from 'svelte';
@@ -57,5 +57,5 @@ export interface HawkiModule {
 /** A {@link HawkiModule} paired with the {@link HawkiPlugin} that registered it,
  *  as stored by the {@link ModuleExtension}. */
 export interface HawkiModuleWithPlugin extends HawkiModule {
-    readonly plugin: HawkiPlugin;
+    readonly plugin: HawkiPluginWithMetadata;
 }
