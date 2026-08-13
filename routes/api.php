@@ -167,7 +167,14 @@ JsonApiRoute::server('v1')
             ->readOnly();
 
         $server->resource('ai-convs', AiConvController::class)
-            ->only('index', 'show');
+            ->only('index', 'show', 'store', 'update', 'destroy')
+            ->actions(function (ActionRegistrar $actions) {
+                $actions->post('actions/attachments', 'storeAttachment');
+                $actions->delete('actions/attachments/{uuid}', 'deleteAttachment');
+                $actions->withId()->post('actions/messages', 'storeMessage');
+                $actions->withId()->patch('actions/messages/{messageId}', 'updateMessage');
+                $actions->withId()->delete('actions/messages/{messageId}', 'deleteMessage');
+            });
 
         $server->resource('room-messages', RoomMessageController::class)
             ->readOnly();

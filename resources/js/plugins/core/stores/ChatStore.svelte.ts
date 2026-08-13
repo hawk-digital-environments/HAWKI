@@ -1,8 +1,8 @@
 import type {DataStore} from '$lib/kernel/stores/types.js';
 import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
-import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
-import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
-import {chatJson, chatRequest} from '$plugins/core/modules/chat/api.js';
+import {decryptSymmetric, encryptSymmetric, loadSymmetricCryptoValue, loadSymmetricCryptoValueFromObject} from '$lib/kernel/encryption/symmetric.js';
+import {decodeJsonApiResourceResponse} from '$lib/kernel/api/jsonApiEncoding.js';
+import AiConvMessageSchema, {type AiConvMessage} from '$plugins/core/schemas/resources/ai-conv-messages.schema.js';
 import type {ChatConversation, ChatMessage, ChatSummary, EncryptedText} from '$plugins/core/modules/chat/types.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
@@ -10,9 +10,6 @@ declare module '$lib/kernel/extendableTypes.js' {
         chat: ChatStore;
     }
 }
-
-type ConversationResponse = {success: boolean; data: any};
-type MessageResponse = {success: boolean; messageData: OldUiConversationMessage; legacyResource?: OldUiConversationMessage};
 
 function decodeLegacyHtml(value: string): string {
     if (!value.includes('&')) return value;
@@ -53,7 +50,6 @@ export class ChatStore implements DataStore {
         try {
             const conversations = await this.app.restApi.getResourceCollection('ai-convs');
             this.conversations = conversations.map(conversation => ({
-                id: Number(conversation.id),
                 name: conversation.name,
                 slug: conversation.slug,
                 created_at: conversation.created_at,
@@ -86,14 +82,14 @@ export class ChatStore implements DataStore {
         this.error = null;
         try {
             const key = await this.conversationKey();
-            const response = await chatRequest<ConversationResponse>(`/req/conv/${encodeURIComponent(slug)}`);
-            const source = response.data;
+            const source = await this.app!.restApi.getResource('ai-convs', slug, {
+                query: {include: 'messages'}
+            });
             const conversation: ChatConversation = {
-                id: source.id,
                 name: source.name,
                 slug: source.slug,
-                system_prompt: await this.decryptText(source.system_prompt, key),
-                messages: await Promise.all((source.messages ?? []).map((message: OldUiConversationMessage) => this.decryptMessage(message, key)))
+                system_prompt: source.system_prompt ? await this.decryptText(source.system_prompt, key) : '',
+                messages: await Promise.all((source.messages ?? []).map(message => this.decryptMessage(message, key)))
             };
             if (requestId === this.activeLoad) {
                 // A generation may have started while this request was loading. Its
@@ -115,14 +111,13 @@ export class ChatStore implements DataStore {
 
     public async create(name: string, systemPrompt: string, activate = true): Promise<ChatConversation> {
         const encryptedPrompt = await this.encryptText(systemPrompt);
-        const response = await chatRequest<{success: boolean; conv: any}>('/req/conv/createChat', chatJson('POST', {
-            conv_name: name,
-            system_prompt: JSON.stringify(encryptedPrompt)
-        }));
-        const conversation: ChatConversation = {
-            id: response.conv.id,
+        const resource = await this.app!.restApi.createResource('ai-convs', {
             name,
-            slug: response.conv.slug,
+            system_prompt: JSON.stringify(encryptedPrompt)
+        });
+        const conversation: ChatConversation = {
+            name,
+            slug: resource.slug,
             system_prompt: systemPrompt,
             messages: []
         };
@@ -137,7 +132,7 @@ export class ChatStore implements DataStore {
     }
 
     public async rename(slug: string, name: string): Promise<void> {
-        await chatRequest(`/req/conv/updateInfo/${encodeURIComponent(slug)}`, chatJson('POST', {conv_name: name}));
+        await this.app!.restApi.updateResource('ai-convs', slug, {name});
         const conversation = this.getConversation(slug);
         if (conversation) conversation.name = name;
         const summary = this.conversations.find(item => item.slug === slug);
@@ -152,14 +147,14 @@ export class ChatStore implements DataStore {
 
     public async updateSystemPrompt(slug: string, prompt: string): Promise<void> {
         const encrypted = await this.encryptText(prompt);
-        await chatRequest(`/req/conv/updateInfo/${encodeURIComponent(slug)}`, chatJson('POST', {
+        await this.app!.restApi.updateResource('ai-convs', slug, {
             system_prompt: JSON.stringify(encrypted)
-        }));
+        });
         if (this.active?.slug === slug) this.active.system_prompt = prompt;
     }
 
     public async remove(slug: string): Promise<void> {
-        await chatRequest(`/req/conv/removeConv/${encodeURIComponent(slug)}`, chatJson('DELETE'));
+        await this.app!.restApi.deleteResource('ai-convs', slug);
         this.conversations = this.conversations.filter(item => item.slug !== slug);
         this.conversationCache.delete(slug);
         if (this.active?.slug === slug) this.active = null;
@@ -168,16 +163,20 @@ export class ChatStore implements DataStore {
     public async removeMessage(messageId: string): Promise<void> {
         if (!this.active) return;
         const slug = this.active.slug;
-        await chatRequest(`/req/conv/message/delete/${encodeURIComponent(slug)}`, chatJson('DELETE', {
-            message_id: messageId
-        }));
+        await this.app!.restApi.deleteFromResourceAction(
+            'ai-convs',
+            `${encodeURIComponent(slug)}/actions/messages/${encodeURIComponent(messageId)}`
+        );
         this.removeCachedMessage(slug, messageId);
     }
 
     public async removeAttachment(messageId: string, fileId: string): Promise<void> {
         const slug = this.active?.slug;
         if (!slug) return;
-        await chatRequest('/req/conv/attachment/delete', chatJson('DELETE', {fileId}));
+        await this.app!.restApi.deleteFromResourceAction(
+            'ai-convs',
+            `actions/attachments/${encodeURIComponent(fileId)}`
+        );
         const conversation = this.getConversation(slug);
         if (!conversation) return;
         conversation.messages = conversation.messages.map(message => message.message_id !== messageId ? message : ({
@@ -224,13 +223,19 @@ export class ChatStore implements DataStore {
 
     public async persistMessage(slug: string, payload: Record<string, unknown>, update = false): Promise<ChatMessage> {
         if (!this.getConversation(slug)) throw new Error('The target conversation is unavailable.');
-        const action = update ? 'updateMessage' : 'sendMessage';
-        const {__plainText, __citations, ...requestPayload} = payload;
-        const response = await chatRequest<MessageResponse>(
-            `/req/conv/${action}/${encodeURIComponent(slug)}`,
-            chatJson('POST', requestPayload)
-        );
-        const resource = response.legacyResource ?? response.messageData;
+        const {__plainText, __citations, message_id, ...requestPayload} = payload;
+        const response = update
+            ? await this.app!.restApi.patchToResourceAction(
+                'ai-convs',
+                `${encodeURIComponent(slug)}/actions/messages/${encodeURIComponent(String(message_id))}`,
+                requestPayload
+            )
+            : await this.app!.restApi.postToResourceAction(
+                'ai-convs',
+                `${encodeURIComponent(slug)}/actions/messages`,
+                requestPayload
+            );
+        const resource = AiConvMessageSchema.parse(decodeJsonApiResourceResponse(response));
         return this.normalisePlainMessage(resource, __plainText as string | undefined, __citations as any[] | undefined);
     }
 
@@ -257,11 +262,7 @@ export class ChatStore implements DataStore {
     public async upload(file: File, signal?: AbortSignal): Promise<string> {
         const form = new FormData();
         form.append('file', file);
-        const response = await chatRequest<{success: boolean; uuid: string}>('/req/conv/attachment/upload', {
-            method: 'POST',
-            body: form,
-            signal
-        });
+        const response = await this.app!.restApi.postToResourceAction('ai-convs', 'actions/attachments', form, {signal});
         return response.uuid;
     }
 
@@ -278,9 +279,8 @@ export class ChatStore implements DataStore {
         return decryptSymmetric(loadSymmetricCryptoValueFromObject(encrypted), key);
     }
 
-    private async decryptMessage(source: OldUiConversationMessage, key: CryptoKey): Promise<ChatMessage> {
-        const encrypted = source.content.text as unknown as EncryptedText;
-        const raw = await decryptSymmetric(loadSymmetricCryptoValueFromObject(encrypted), key);
+    private async decryptMessage(source: AiConvMessage, key: CryptoKey): Promise<ChatMessage> {
+        const raw = await decryptSymmetric(loadSymmetricCryptoValue(source.content), key);
         let text = raw;
         let citations: any[] = [];
         try {
@@ -292,17 +292,43 @@ export class ChatStore implements DataStore {
         } catch {
             // User messages in the legacy format are plain encrypted strings.
         }
-        return {
-            ...source,
-            content: {...source.content, text: decodeLegacyHtml(text)},
-            citations
-        };
+        return this.toChatMessage(source, decodeLegacyHtml(text), citations);
     }
 
-    private normalisePlainMessage(source: OldUiConversationMessage, text?: string, citations: any[] = []): ChatMessage {
+    private normalisePlainMessage(source: AiConvMessage, text?: string, citations: any[] = []): ChatMessage {
+        return this.toChatMessage(source, text ?? '', citations);
+    }
+
+    private toChatMessage(source: AiConvMessage, text: string, citations: any[]): ChatMessage {
         return {
-            ...source,
-            content: {...source.content, text: text ?? ''},
+            author: {
+                username: source.author.username,
+                name: source.author.name,
+                avatar_url: source.author.avatar_url ?? ''
+            },
+            completion: source.completion ? 1 : 0,
+            content: {
+                text,
+                attachments: source.attachments.map(attachment => ({
+                    fileData: {
+                        uuid: attachment.uuid,
+                        name: attachment.name,
+                        mime: attachment.mime,
+                        type: attachment.type,
+                        category: attachment.category,
+                        url: this.app!.uriBuilder.storageFileUri(attachment.identifier) ?? ''
+                    }
+                }))
+            },
+            created_at: source.created_at ?? '',
+            message_id: source.message_id,
+            message_role: source.message_role,
+            metadata: {
+                tools: (source.metadata?.tools ?? null) as Record<string, unknown> | null,
+                params: (source.metadata?.params ?? null) as Record<string, unknown> | null
+            },
+            model: source.model,
+            updated_at: source.updated_at ?? '',
             citations
         };
     }
@@ -310,7 +336,6 @@ export class ChatStore implements DataStore {
     private upsertSummary(conversation: ChatConversation): void {
         const current = this.conversations.filter(item => item.slug !== conversation.slug);
         this.conversations = [{
-            id: conversation.id,
             name: conversation.name,
             slug: conversation.slug,
             created_at: new Date().toISOString(),

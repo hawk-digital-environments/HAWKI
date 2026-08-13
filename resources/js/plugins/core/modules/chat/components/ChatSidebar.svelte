@@ -1,7 +1,7 @@
 <script lang="ts">
     import SidebarItems from '$lib/components/ui/sidebar/SidebarItems.svelte';
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
-    import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import SidebarButton from '$lib/components/ui/sidebar/SidebarButton.svelte';
     import Add01Icon from '$lib/components/ui/icons/iconset/Add01Icon.svelte';
     import Message01Icon from '$lib/components/ui/icons/iconset/Message01Icon.svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
@@ -17,9 +17,6 @@
     const sidebar = useSidebar();
     const {__} = useTranslator();
     const expanded = $derived(sidebar.navOpen);
-    const newChatLabel = $derived(__('chat.sidebar.newChat'));
-
-    let newChatIcon = $state<HTMLElement | null>(null);
 
     function newChat() {
         store.startNew();
@@ -28,30 +25,11 @@
 </script>
 
 <div class="chat-sidebar">
-    <Tooltip
-        tooltip={newChatLabel}
-        side="right"
-        sideOffset={24}
-        delayDuration={300}
-        customAnchor={newChatIcon}
-        disabled={expanded}
-    >
-        {#snippet children({props})}
-            <button
-                type="button"
-                {...props}
-                class="new-chat"
-                class:collapsed={!expanded}
-                aria-label={newChatLabel}
-                onclick={newChat}
-            >
-                <span class="new-chat-icon" bind:this={newChatIcon}>
-                    <Add01Icon size={18} strokeWidth={2.25} aria-hidden="true" />
-                </span>
-                <span class="new-chat-label">{newChatLabel}</span>
-            </button>
-        {/snippet}
-    </Tooltip>
+    <SidebarButton
+        icon={Add01Icon}
+        label={__('chat.sidebar.newChat')}
+        onclick={newChat}
+    />
 
     {#if expanded}
         <div class="history" aria-label={__('chat.sidebar.history')}>
@@ -94,61 +72,6 @@
         flex: 1;
         flex-direction: column;
         gap: var(--space-3);
-    }
-
-    .new-chat {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2_5);
-        width: 100%;
-        min-height: var(--nav-row-h);
-        padding: 0 var(--space-2_5) 0 var(--nav-item-pad-x);
-        overflow: hidden;
-        flex-shrink: 0;
-        border: 0;
-        border-radius: var(--corner-sm);
-        background: var(--gradient-brand);
-        color: var(--color-on-accent-fill);
-        font: inherit;
-        font-size: var(--font-size-nav);
-        font-weight: var(--font-weight-semibold);
-        text-align: left;
-        white-space: nowrap;
-        cursor: pointer;
-        transition:
-            background var(--duration-fast),
-            box-shadow var(--duration-fast);
-    }
-
-    .new-chat:hover {
-        background: var(--gradient-brand-hover);
-        box-shadow: var(--elevation-1);
-    }
-
-    .new-chat:focus-visible {
-        outline: 2px solid var(--color-focus-ring, var(--color-interactive));
-        outline-offset: 2px;
-    }
-
-    .new-chat-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: var(--nav-icon-size);
-        height: var(--nav-icon-size);
-        flex-shrink: 0;
-    }
-
-    .new-chat-label {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        transition: opacity 160ms ease 100ms;
-    }
-
-    .new-chat.collapsed .new-chat-label {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 100ms ease;
     }
 
     .history {

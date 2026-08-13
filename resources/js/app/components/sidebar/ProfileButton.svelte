@@ -1,19 +1,18 @@
 <!--
-  @component Sidebar profile control. Opens the account dropdown, owns the
-  light/dark theme switcher, and launches the routed settings dialog.
+  @component Sidebar profile control. Opens the account dropdown with the
+  settings dialog, a light/dark theme toggle and the logout action.
 -->
 <script lang="ts">
     import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import Avatar from '$lib/components/ui/avatar/Avatar.svelte';
     import DropdownMenu from '$lib/components/ui/dropdown-menu/DropdownMenu.svelte';
     import DropdownMenuItem from '$lib/components/ui/dropdown-menu/DropdownMenuItem.svelte';
-    import DropdownMenuLabel from '$lib/components/ui/dropdown-menu/DropdownMenuLabel.svelte';
-    import DropdownMenuRadioGroup from '$lib/components/ui/dropdown-menu/DropdownMenuRadioGroup.svelte';
-    import DropdownMenuRadioItem from '$lib/components/ui/dropdown-menu/DropdownMenuRadioItem.svelte';
     import DropdownMenuSeparator from '$lib/components/ui/dropdown-menu/DropdownMenuSeparator.svelte';
     import SettingsDialog from '$lib/app/components/settings/SettingsDialog.svelte';
     import Settings05Icon from '$lib/components/ui/icons/iconset/Settings05Icon.svelte';
-    import type {AppTheme} from '$plugins/core/stores/ThemeStore.svelte.js';
+    import SunIcon from '$lib/components/ui/icons/iconset/SunIcon.svelte';
+    import MoonIcon from '$lib/components/ui/icons/iconset/MoonIcon.svelte';
+    import Logout02Icon from '$lib/components/ui/icons/iconset/Logout02Icon.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {useConnectionWithUserInfo} from '$lib/app/hooks/useConnection.svelte.js';
     import {useStore} from '$lib/app/hooks/useStore.svelte.js';
@@ -34,13 +33,19 @@
     let menuOpen = $state(false);
     let settingsOpen = $state(false);
 
-    function setTheme(value: string): void {
-        themeStore.theme = value as AppTheme;
+    const isDark = $derived(themeStore.theme === 'dark');
+
+    function toggleTheme(): void {
+        themeStore.theme = isDark ? 'light' : 'dark';
     }
 
     function openSettings(): void {
         menuOpen = false;
         settingsOpen = true;
+    }
+
+    function logout(): void {
+        window.location.href = app.uriBuilder.logoutUri();
     }
 </script>
 
@@ -71,14 +76,15 @@
     </div>
 
     <DropdownMenuSeparator/>
-    <DropdownMenuLabel>{__('ui.profile.appearanceLabel')}</DropdownMenuLabel>
-    <DropdownMenuRadioGroup value={themeStore.theme} onValueChange={setTheme}>
-        <DropdownMenuRadioItem value="light">{__('ui.profile.lightMode')}</DropdownMenuRadioItem>
-        <DropdownMenuRadioItem value="dark">{__('ui.profile.darkMode')}</DropdownMenuRadioItem>
-    </DropdownMenuRadioGroup>
-    <DropdownMenuSeparator/>
     <DropdownMenuItem icon={Settings05Icon} onclick={openSettings}>
         {__('ui.profile.settings')}
+    </DropdownMenuItem>
+    <DropdownMenuItem icon={isDark ? SunIcon : MoonIcon} closeOnSelect={false} onclick={toggleTheme}>
+        {isDark ? __('ui.profile.lightMode') : __('ui.profile.darkMode')}
+    </DropdownMenuItem>
+    <DropdownMenuSeparator/>
+    <DropdownMenuItem icon={Logout02Icon} onclick={logout}>
+        {__('ui.profile.logout')}
     </DropdownMenuItem>
 </DropdownMenu>
 
