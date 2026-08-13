@@ -163,6 +163,7 @@
         <ButtonWithTooltip
             iconRight={SquareIcon}
             tooltip={cancelTooltip}
+            aria-label={__('chat.composer.actions.cancelLabel')}
             size="xs"
             variant="stroke"
             onclick={cancelAction}
@@ -181,6 +182,7 @@
         <ButtonWithTooltip
             bind:ref={buttonRef}
             tooltip={sendTooltip}
+            aria-label={sendLabel}
             disabled={!composerContext.guard.canSend}
             variant="accent"
             iconRight={SendIcon}

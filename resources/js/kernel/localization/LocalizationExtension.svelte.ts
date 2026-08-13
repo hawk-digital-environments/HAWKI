@@ -70,6 +70,9 @@ export class LocalizationExtension implements HawkiAppExtension {
         } else {
             this._locale = lang;
         }
+        if (typeof document !== 'undefined') {
+            document.documentElement.lang = this._locale.lang.replaceAll('_', '-');
+        }
         await this.loadLabels(this._locale);
     }
 

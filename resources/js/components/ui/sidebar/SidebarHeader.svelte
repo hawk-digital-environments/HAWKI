@@ -10,6 +10,7 @@
     import PanelLeftIcon from '$lib/components/ui/icons/iconset/PanelLeftIcon.svelte';
     import Search01Icon from '$lib/components/ui/icons/iconset/Search01Icon.svelte';
     import Tooltip from '$lib/components/ui/tooltip/Tooltip.svelte';
+    import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
 
     interface Props {
         /** Brand/logo content, shown only while the nav is open. */
@@ -22,6 +23,7 @@
     const {children, onSearch}: Props = $props();
 
     const sidebar = useSidebar();
+    const {__} = useTranslator();
 
     // The header actions are full row-height squares, so a tooltip anchored to
     // the button would open wider of the icon than the nav rows' tooltips do.
@@ -29,6 +31,14 @@
     let searchIconEl = $state<HTMLElement | null>(null);
     let collapseIconEl = $state<HTMLElement | null>(null);
     const open = $derived(sidebar.navOpen);
+
+    function toggleNavigation() {
+        const returnFocus = sidebar.mobile.current && sidebar.navOpen;
+        sidebar.toggleNav();
+        if (returnFocus) {
+            setTimeout(() => document.getElementById('mobile-navigation-trigger')?.focus());
+        }
+    }
 </script>
 
 <div class="sidebar-header" class:open>
@@ -37,7 +47,7 @@
     {/if}
     {#if onSearch}
         <Tooltip
-            tooltip="Suchen"
+            tooltip={__('ui.navigation.search')}
             side="right"
             sideOffset={open ? 12 : 24}
             delayDuration={300}
@@ -48,7 +58,7 @@
                     type="button"
                     {...props}
                     class="header-action search"
-                    aria-label="Suchen"
+                    aria-label={__('ui.navigation.search')}
                     onclick={onSearch}
                 >
                     <span class="icon-wrap" bind:this={searchIconEl}>
@@ -59,7 +69,7 @@
         </Tooltip>
     {/if}
     <Tooltip
-        tooltip={open ? 'Einklappen' : 'Ausklappen'}
+        tooltip={open ? __('ui.navigation.collapse') : __('ui.navigation.expand')}
         side="right"
         sideOffset={open ? 12 : 24}
         delayDuration={300}
@@ -69,10 +79,16 @@
             <button
                 type="button"
                 {...props}
+                id="app-navigation-toggle"
                 class="header-action collapse"
-                aria-label={open ? 'Seitenleiste einklappen' : 'Seitenleiste ausklappen'}
+                aria-label={sidebar.mobile.current
+                    ? __('ui.navigation.close')
+                    : open
+                        ? __('ui.navigation.collapse')
+                        : __('ui.navigation.expand')}
                 aria-expanded={open}
-                onclick={() => sidebar.toggleNav()}
+                aria-controls="app-navigation"
+                onclick={toggleNavigation}
             >
                 <span class="icon-wrap" bind:this={collapseIconEl}>
                     <PanelLeftIcon size={18} strokeWidth={2} aria-hidden="true" />

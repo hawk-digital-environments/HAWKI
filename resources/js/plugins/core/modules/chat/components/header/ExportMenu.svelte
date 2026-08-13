@@ -40,6 +40,7 @@
             size="xs"
             iconLeft={FileExportIcon}
             tooltip={__('chat.export.tooltip')}
+            aria-label={__('chat.export.title')}
             highlight={props['data-state']}
             {...props}>
             <Breakpoint>

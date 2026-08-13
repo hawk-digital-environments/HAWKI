@@ -172,7 +172,7 @@
     }
 
     .tab:focus-visible {
-        outline: 1px solid var(--color-focus-ring, var(--color-interactive));
+        outline: 2px solid var(--color-focus-ring, var(--color-interactive));
         outline-offset: -1px;
     }
 

@@ -239,6 +239,11 @@ Rendered once per page for either an AI conversation or a group room chat (see
         border-color: color-mix(in oklch, var(--color-error) 50%, transparent);
     }
 
+    :global(.chat-composer-card:focus-within) {
+        border-color: var(--color-focus-ring);
+        box-shadow: 0 0 0 2px var(--color-focus-ring);
+    }
+
     /* Keep the body in flow so the card preserves its height, but hide it
            behind the drop hint. */
     .chat-composer-body--hidden {

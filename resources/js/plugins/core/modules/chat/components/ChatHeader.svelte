@@ -26,6 +26,7 @@
 </script>
 
 <header>
+    <h1 class="u-sr-only">{conversation.name}</h1>
     <div class="name">
         <ChatNameMenu
             bind:name
@@ -102,7 +103,10 @@
         }
     }
 
-    @media (max-width: 640px) {
-        header { padding-inline: var(--space-3); }
+    @media (--bp-md-and-smaller) {
+        header {
+            padding-right: var(--space-3);
+            padding-left: calc(var(--space-3) + 2.75rem);
+        }
     }
 </style>

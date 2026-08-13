@@ -111,11 +111,11 @@
     restProps
 )}>
     {#if IconLeft}
-        <IconLeft class="btnIcon"/>
+        <IconLeft class="btnIcon" aria-hidden="true"/>
     {/if}
     {@render children?.()}
     {#if IconRight}
-        <IconRight class="btnIcon"/>
+        <IconRight class="btnIcon" aria-hidden="true"/>
     {/if}
 </button>
 
@@ -144,8 +144,8 @@
             opacity: 0.5;
         }
 
-        &:focus {
-            outline: 1px solid var(--color-focus-ring, var(--color-interactive));
+        &:focus-visible {
+            outline: 2px solid var(--color-focus-ring, var(--color-interactive));
             outline-offset: 2px;
         }
     }

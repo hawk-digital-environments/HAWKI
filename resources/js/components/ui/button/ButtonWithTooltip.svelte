@@ -46,6 +46,14 @@
         tooltipSideOffset,
         ...buttonProps
     }: Props = $props();
+
+    const labelledButtonProps = $derived.by(() => {
+        const hasAccessibleName = buttonProps['aria-label'] || buttonProps['aria-labelledby'];
+        if (!buttonProps.children && !hasAccessibleName && typeof tooltip === 'string') {
+            return {...buttonProps, 'aria-label': tooltip};
+        }
+        return buttonProps;
+    });
 </script>
 
 <Tooltip
@@ -55,6 +63,6 @@
     sideOffset={tooltipSideOffset}
 >
     {#snippet children(a)}
-        <Button bind:ref={ref} {...mergeProps(buttonProps, a.props)}/>
+        <Button bind:ref={ref} {...mergeProps(labelledButtonProps, a.props)}/>
     {/snippet}
 </Tooltip>
