@@ -16,6 +16,8 @@
             "retry": "Try again",
             "thinking": "Thinking…",
             "generating": "Generating response…",
+            "responseReady": "The response is complete.",
+            "messageHistory": "Message history",
             "welcomeTitle": "How can I help?",
             "welcomeDescription": "Start a private, encrypted conversation with HAWKI.",
             "disclaimer": "AI can make mistakes. Check important information."
@@ -72,6 +74,8 @@
             "json": "JSON"
         },
         "composer": {
+            "textareaLabel": "Message to HAWKI",
+            "textareaLabelRoom": "Group message",
             "textareaPlaceholder": "Enter your message here…",
             "textareaPlaceholderRoom": "Write a group message or use the AI with @hawki...",
             "attachFileTooltip": "Attach file",

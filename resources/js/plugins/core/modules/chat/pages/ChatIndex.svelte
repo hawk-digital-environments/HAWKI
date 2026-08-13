@@ -40,6 +40,9 @@
     let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
     let keepScrolledToBottom = false;
+    let liveAnnouncement = $state('');
+    let announcementConversationSlug: string | null = null;
+    let wasGenerating = false;
 
     $effect(() => {
         const requestedSlug = slug;
@@ -96,6 +99,25 @@
         });
         observer.observe(messages);
         return () => observer.disconnect();
+    });
+
+    $effect(() => {
+        const conversationSlug = store.active?.slug ?? null;
+        const generating = conversationSlug ? store.isGenerating(conversationSlug) : false;
+
+        if (conversationSlug !== announcementConversationSlug) {
+            announcementConversationSlug = conversationSlug;
+            wasGenerating = generating;
+            liveAnnouncement = '';
+            return;
+        }
+
+        if (wasGenerating && !generating) {
+            liveAnnouncement = __('chat.page.responseReady');
+        } else if (generating) {
+            liveAnnouncement = '';
+        }
+        wasGenerating = generating;
     });
 
     function updateBottomPin() {
@@ -182,6 +204,9 @@
 </script>
 
 <section class="chat-page">
+    <div class="u-sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {liveAnnouncement}
+    </div>
     {#if store.active}
         <ChatHeader
             conversation={store.active}
@@ -208,12 +233,19 @@
             </div>
         {:else if !store.active || store.active.messages.length === 0}
             <div class="welcome">
-                <span class="welcome-icon"><AiChat01Icon size={28} /></span>
+                <span class="welcome-icon" aria-hidden="true"><AiChat01Icon size={28} /></span>
                 <h1>{__('chat.page.welcomeTitle')}</h1>
                 <p>{__('chat.page.welcomeDescription')}</p>
             </div>
         {:else}
-            <div class="messages" bind:this={messagesElement}>
+            <div
+                class="messages"
+                bind:this={messagesElement}
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions"
+                aria-label={__('chat.page.messageHistory')}
+            >
                 {#each store.active.messages as message (message.message_id)}
                     <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
                 {/each}
@@ -328,8 +360,16 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    @media (--bp-md-and-smaller) {
+        .new-header {
+            padding-right: var(--space-3);
+            padding-left: calc(var(--space-3) + 2.75rem);
+        }
+    }
+
     @media (max-width: 640px) {
         .new-header, .messages, .composer-dock { padding-inline: var(--space-3); }
+        .new-header { padding-left: calc(var(--space-3) + 2.75rem); }
         .messages { padding-top: var(--space-5); }
     }
 
