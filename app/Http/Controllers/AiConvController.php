@@ -49,15 +49,8 @@ class AiConvController extends Controller
 
 
     /// RETURNS CONVERSATION DATA WHICH WILL BE DYNAMICALLY LOADED ON THE PAGE
-    public function load(?string $slug = null): JsonResponse
+    public function load($slug): JsonResponse
     {
-        if ($slug === null) {
-            return response()->json([
-                'success' => true,
-                'data' => $this->aiConvService->listForCurrentUser(),
-            ]);
-        }
-
         $convData = $this->aiConvService->load($slug);
         return response()->json([
             'success' => true,

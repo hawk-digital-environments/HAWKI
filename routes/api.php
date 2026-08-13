@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AiCapabilityController;
+use App\Http\Controllers\Api\V1\AiConvController;
 use App\Http\Controllers\Api\V1\AiModelController;
 use App\Http\Controllers\Api\V1\AiModelDescriptionController;
 use App\Http\Controllers\Api\V1\AiModelFlagController;
@@ -164,6 +165,9 @@ JsonApiRoute::server('v1')
 
         $server->resource('rooms', \App\Http\Controllers\Api\V1\RoomController::class)
             ->readOnly();
+
+        $server->resource('ai-convs', AiConvController::class)
+            ->only('index', 'show');
 
         $server->resource('room-messages', RoomMessageController::class)
             ->readOnly();
