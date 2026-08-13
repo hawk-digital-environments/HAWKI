@@ -102,11 +102,12 @@ export class AttachmentSlice implements CheckpointingInterface<AttachmentSliceCh
         };
     }
 
-    // TODO(docs): `createCheckpoint()` captures `_assignedUuids`, but this only restores
-    // `_list` — `_assignedUuids` is left untouched. Is this intentional (uuids naturally
-    // stay valid across the restore because affected files keep the same reference) or a
-    // gap where the checkpoint's `uuids` field is silently discarded?
     public restoreCheckpoint(checkpoint: AttachmentSliceCheckpoint): void {
         this._list = [...checkpoint.list];
+        // `remove()` deletes a file's uuid entry alongside the file, so any
+        // file removed between checkpoint and restore would lose its uuid
+        // permanently if we only restored `_list` — `getAssignedUuid` would
+        // return null for a file the server already has, breaking edit/regen.
+        this._assignedUuids = [...checkpoint.uuids];
     }
 }

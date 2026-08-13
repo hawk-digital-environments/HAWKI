@@ -5,7 +5,7 @@ import type {Bootstrapper} from '$lib/kernel/Bootstrapper.js';
 
 declare module '$lib/kernel/extendableTypes.js' {
     interface HawkiAppExtensions {
-        router: Router;
+        router: RouterHandle;
     }
 }
 
