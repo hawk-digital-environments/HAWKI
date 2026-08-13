@@ -12,6 +12,7 @@
     import type {ChatMessage as ChatMessageType} from '$plugins/core/modules/chat/types.js';
     import type {ComposerContext} from '$plugins/core/modules/chat/components/composer/contexts/ComposerContext.svelte.js';
     import {useTranslator} from '$lib/app/hooks/useTranslator.svelte.js';
+    import {useStore} from '$lib/app/hooks/useStore.svelte.js';
 
     interface Props {
         message: ChatMessageType;
@@ -22,7 +23,28 @@
 
     const {message, composer = null, onDelete, onDeleteAttachment}: Props = $props();
     const {__} = useTranslator();
+    const aiModelStore = useStore('ai-models');
     const isAssistant = $derived(message.message_role === 'assistant');
+    const authorName = $derived(
+        isAssistant
+            ? aiModelStore.getOneById(message.model ?? '')?.label ?? message.model ?? 'HAWKI'
+            : message.author.name
+    );
+
+    function formatTimestamp(value: string): string {
+        const timestamp = new Date(value);
+        if (Number.isNaN(timestamp.getTime())) return value;
+
+        const now = new Date();
+        const isToday = timestamp.getFullYear() === now.getFullYear()
+            && timestamp.getMonth() === now.getMonth()
+            && timestamp.getDate() === now.getDate();
+
+        return new Intl.DateTimeFormat(undefined, isToday
+            ? {hour: '2-digit', minute: '2-digit'}
+            : {dateStyle: 'short', timeStyle: 'short'}
+        ).format(timestamp);
+    }
 
     function copyMessage() {
         navigator.clipboard.writeText(message.content.text);
@@ -44,9 +66,9 @@
     </div>
     <div class="message-column">
         <div class="meta">
-            <span class="author">{isAssistant ? (message.model ?? 'HAWKI') : message.author.name}</span>
+            <span class="author">{authorName}</span>
             {#if message.created_at}
-                <time>{message.created_at.replace('+', ' · ')}</time>
+                <time datetime={message.created_at}>{formatTimestamp(message.created_at)}</time>
             {/if}
         </div>
 

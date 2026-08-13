@@ -509,7 +509,7 @@ export function createComposerContext(
         guard
     );
 
-    const initialSystemPrompt = options.initialSystemPrompt ?? systemPromptStore.getPromptByType('default').prompt ?? '';
+    const initialSystemPrompt = options.initialSystemPrompt ?? systemPromptStore.getPromptByType('default')?.prompt ?? '';
 
     // Guard against an echo loop: when the legacy UI pushes a prompt in via
     // `onLoadSystemPrompt`, the setter would immediately push the same value back out.

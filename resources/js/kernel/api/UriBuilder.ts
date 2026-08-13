@@ -48,6 +48,11 @@ export class UriBuilder {
         return this.joinUri(this.baseUri, [this.STORAGE_PROXY_BASE_PATH, encodeURIComponent(fileIdentifier)]);
     }
 
+    /** URL of the backend web route that terminates the session and redirects to the login page. */
+    public logoutUri(): string {
+        return this.joinUri(this.baseUri, '/logout');
+    }
+
     public linkPreviewMetadataUri(url: string): string {
         return this.jsonApiUri('/proxy/link-preview/metadata', {url});
     }
