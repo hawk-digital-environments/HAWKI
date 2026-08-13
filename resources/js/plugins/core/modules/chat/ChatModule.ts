@@ -7,6 +7,10 @@ import type {Component} from 'svelte';
 import Chat01Icon from '$lib/components/ui/icons/iconset/Chat01Icon.svelte';
 import ChatSidebar from '$plugins/core/modules/chat/components/ChatSidebar.svelte';
 
+// Both chat routes render the same page. Sharing one loader also shares the
+// resolved-component cache between the empty chat and conversation URLs.
+const loadChatPage = async () => import('./pages/ChatIndex.svelte');
+
 /**
  * The "chat" feature module of the `core` plugin.
  *
@@ -46,8 +50,8 @@ export class ChatModule implements HawkiModule {
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar
-            .lazyRoute('/', async () => import('./pages/ChatIndex.svelte'), 'chat.index')
-            .lazyRoute('/:slug', async () => import('./pages/ChatIndex.svelte'), 'chat.conversation');
+            .lazyRoute('/', loadChatPage, {name: 'chat.index'})
+            .lazyRoute('/:slug', loadChatPage, {name: 'chat.conversation'});
     }
 
     public title(translate: Translator['translate'], _locale: Locale): string {
