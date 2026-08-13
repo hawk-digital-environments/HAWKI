@@ -184,6 +184,15 @@
         }
 
         if (!hrefIsRoute) {
+            // A literal path that the router owns must be run through
+            // `getPath` so the router's `basePath` is applied — otherwise a
+            // href like `/settings` under a `/new` base is rendered and
+            // navigated outside the SPA, producing a 404. Non-routable local
+            // hrefs (`#anchor`, `?q=1`, relative URLs) are returned verbatim
+            // so the browser handles them natively.
+            if (router && typeof givenHref === 'string' && router.canHandlePath(givenHref)) {
+                return router.getPath(givenHref);
+            }
             return givenHref as string;
         }
 
@@ -211,9 +220,10 @@
         if (!router || disabled || activeMatch === 'never') {
             return false;
         }
-        // Local-but-not-path hrefs ('#anchor', '?query', 'javascript:void(0)')
-        // never describe a route, so they can never be the active one.
-        if (!href.startsWith('/')) {
+        // Hash anchors, query-only links, relative URLs and similar local
+        // but non-routable hrefs never describe a route, so they can never be
+        // the active one — see `RoutingStrategy.canHandlePath`.
+        if (!router.canHandlePath(href)) {
             return false;
         }
         return router.isActive(href, {startsWith: activeMatch === 'prefix'});
@@ -250,7 +260,7 @@
                 event.preventDefault();
             };
         }
-        if (router) {
+        if (router && router.canHandlePath(href)) {
             return (event: MouseEvent) => {
                 onclickRaw?.(event as any);
                 if (event.defaultPrevented) {

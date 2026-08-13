@@ -81,6 +81,15 @@ export interface RouterHandle {
     /** Resolves `routeName`/`params` via {@link getPath} and navigates to the result. */
     goToRoute: (routeName: string, params?: UrlParams) => Promise<void>;
     /**
+     * Whether `path` is one the active {@link RoutingStrategy} would route
+     * through itself (see {@link RoutingStrategy.canHandlePath}). Use this to
+     * decide whether an anchor click should be intercepted or left to the
+     * browser — hash anchors, query-only links and relative URLs return
+     * `false` so the browser handles them natively. Falls back to
+     * `path.startsWith('/')` when the strategy does not override the hook.
+     */
+    canHandlePath: (path: string) => boolean;
+    /**
      * Whether the given route name or path points at the page currently shown.
      * Compares concrete paths, so two links to the same route with different
      * params stay distinguishable — use {@link isRouteActive} when you want the
@@ -401,6 +410,7 @@ export function createRouterFromRegistrar(
         p: getPath,
         goTo,
         goToRoute,
+        canHandlePath: (path: string) => strategy.canHandlePath?.(path) ?? path.startsWith('/'),
         isActive,
         isRouteActive: (routeName: string) => isRouteActive(currentContext, routeName)
     };

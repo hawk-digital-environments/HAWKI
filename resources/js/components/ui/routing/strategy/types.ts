@@ -19,4 +19,26 @@ export interface RoutingStrategy {
      * router re-bind. Strategies with nothing to listen to may omit this.
      */
     bind?(name: string, basePath: string): () => void;
+
+    /**
+     * Whether the strategy treats `path` as one of its own routes — i.e. a
+     * click on an anchor with this `href` should be intercepted and routed
+     * through {@link set} rather than left to the browser.
+     *
+     * This is the single place that distinguishes "a route" from a "local but
+     * non-routable href" (hash anchors like `#top`, query-only links like
+     * `?q=1`, relative URLs like `foo/bar`). The browser handles those
+     * natively and correctly; intercepting them would break anchors and
+     * mis-route relative links.
+     *
+     * Optional escape hatch: the default (when omitted) is "any path starting
+     * with `/`", which is correct for the three built-in strategies since they
+     * all speak the same `/foo` API form regardless of how they store it
+     * (`location.pathname`, `location.hash`, in-memory). A strategy that
+     * diverges from this convention — e.g. a future hash strategy that accepts
+     * `#/foo` hrefs directly, or one that uses a prefix to share the hash with
+     * other routers — overrides this so neither the router nor `Link` has to
+     * learn its syntax.
+     */
+    canHandlePath?(path: string): boolean;
 }
