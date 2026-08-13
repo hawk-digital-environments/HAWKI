@@ -225,7 +225,7 @@
     /* Bump the chrome up a notch for easier tapping on small screens. The box
        needs no override — `--nav-row-h` grows on mobile and takes the actions
        (and the brand's max-width, which reads the same var) with it. */
-    @media (--bp-mode-mobile) {
+    @media (--bp-md-and-smaller) {
         .header-action :global(svg) {
             width: 20px;
             height: 20px;

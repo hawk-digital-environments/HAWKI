@@ -55,10 +55,3 @@
    ========================================================================== */
 @custom-media --bp-smaller-than-xl  (max-width: 1200px);
 @custom-media --bp-xl               (min-width: 1200px);
-
-/* Mode switch (≤ 850px)
-   Threshold at which the app layout swaps to its mobile arrangement:
-   off-canvas nav and full-width aside overlay. Kept in sync with the
-   MOBILE_QUERY in AppLayoutContext.svelte.ts.
-   ========================================================================== */
-@custom-media --bp-mode-mobile      (max-width: 850px);

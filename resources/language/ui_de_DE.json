@@ -18,6 +18,55 @@
             "switchItem": {
                 "toggleLabel": "Element umschalten"
             }
+        },
+        "profile": {
+            "fallbackName": "Profil",
+            "mockName": "Alex Morgan",
+            "menuTitle": "Kontomenü",
+            "appearanceLabel": "Darstellung",
+            "lightMode": "Heller Modus",
+            "darkMode": "Dunkler Modus",
+            "settings": "Einstellungen",
+            "settingsTitle": "Einstellungen",
+            "settingsDescription": "Verwalte dein Konto und deine Präferenzen.",
+            "settingsNavigationLabel": "Einstellungsbereiche",
+            "saveChanges": "Änderungen speichern",
+            "mockNotice": "Mock-Einstellungen – Änderungen gelten nur für diese Sitzung.",
+            "mockSaved": "Für diese Sitzung gespeichert.",
+            "settingsNav": {
+                "profile": "Profil",
+                "preferences": "Präferenzen",
+                "privacy": "Datenschutz"
+            },
+            "profileSettings": {
+                "title": "Profil",
+                "description": "Bearbeite die Angaben, die andere bei der Zusammenarbeit sehen.",
+                "avatarHint": "Avatar-Uploads werden später ergänzt.",
+                "changeAvatar": "Ändern",
+                "nameLabel": "Anzeigename",
+                "usernameLabel": "Benutzername",
+                "emailLabel": "E-Mail-Adresse"
+            },
+            "preferenceSettings": {
+                "title": "Präferenzen",
+                "description": "Lege fest, wie HAWKI mit dir kommuniziert.",
+                "languageLabel": "Sprache",
+                "languageAuto": "Browsersprache verwenden",
+                "emailNotifications": "E-Mail-Benachrichtigungen",
+                "emailNotificationsHint": "Erhalte wichtige Konto- und Workspace-Updates.",
+                "productUpdates": "Produktneuigkeiten",
+                "productUpdatesHint": "Erfahre von neuen Funktionen und Verbesserungen."
+            },
+            "privacySettings": {
+                "title": "Datenschutz",
+                "description": "Steuere, wie deine Aktivität in HAWKI verwendet wird.",
+                "saveHistory": "Chatverlauf speichern",
+                "saveHistoryHint": "Halte Unterhaltungen sitzungsübergreifend verfügbar.",
+                "personalizedSuggestions": "Personalisierte Vorschläge",
+                "personalizedSuggestionsHint": "Nutze letzte Aktivitäten für passendere Vorschläge.",
+                "localOnlyTitle": "Nur Mock-Einstellungen",
+                "localOnlyHint": "Diese Optionen ändern noch keine Serverdaten."
+            }
         }
     }
 }

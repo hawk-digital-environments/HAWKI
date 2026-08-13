@@ -26,7 +26,7 @@
     }
 
     /* Roomier rows for touch. */
-    @media (--bp-mode-mobile) {
+    @media (--bp-md-and-smaller) {
         :root {
             --nav-row-h: 2.5rem;
         }
