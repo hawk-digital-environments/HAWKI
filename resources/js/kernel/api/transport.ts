@@ -8,15 +8,39 @@
  * without touching the request-building / schema-validation logic.
  *
  * {@link createDefaultTransport} returns the browser implementation: it calls
- * `fetch`, throws an `Error` (with the first JSON:API error's `detail`/`title`
- * appended when the body is a JSON:API error response) on a non-2xx response,
- * and otherwise returns the parsed JSON.
+ * `fetch` (adding the CSRF token on mutating requests, because the API is
+ * session-authenticated), throws an `Error` (with the first JSON:API error's
+ * `detail`/`title` appended when the body is a JSON:API error response) on a
+ * non-2xx response, and otherwise returns the parsed JSON (or `null` for
+ * responses without a body, e.g. `204 No Content`).
  */
 export type ApiTransport = (path: string, options: RequestInit) => Promise<any>;
 
+function readCsrfHeaders(method: string): Record<string, string> {
+    if (method === 'GET' || method === 'HEAD') {
+        return {};
+    }
+    const cookieToken = globalThis.document?.cookie
+        .split('; ')
+        .find(entry => entry.startsWith('XSRF-TOKEN='))
+        ?.slice('XSRF-TOKEN='.length);
+    if (cookieToken) {
+        return {'X-XSRF-TOKEN': decodeURIComponent(cookieToken)};
+    }
+    const metaToken = globalThis.document?.querySelector<HTMLMetaElement>('meta[name="csrf-token"]')?.content;
+    return metaToken ? {'X-CSRF-TOKEN': metaToken} : {};
+}
+
 export function createDefaultTransport(): ApiTransport {
     return async (path, options) => {
-        const response = await fetch(path, options);
+        const headers = new Headers(options.headers);
+        for (const [name, value] of Object.entries(readCsrfHeaders((options.method ?? 'GET').toUpperCase()))) {
+            if (!headers.has(name)) {
+                headers.set(name, value);
+            }
+        }
+
+        const response = await fetch(path, {...options, headers});
         if (!response.ok) {
             // Attempt to parse error from JSON:API error response
             let errorMessage = `API request failed with status ${response.status}`;
@@ -30,6 +54,8 @@ export function createDefaultTransport(): ApiTransport {
             }
             throw new Error(errorMessage);
         }
-        return response.json();
+
+        const body = await response.text();
+        return body ? JSON.parse(body) : null;
     };
 }

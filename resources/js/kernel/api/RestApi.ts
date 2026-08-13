@@ -99,7 +99,9 @@ export class RestApi {
         const fetchOptions: RequestInit = {
             ...(options || {}),
             headers: {
-                'Content-Type': 'application/json',
+                // Multipart bodies must not get a manual Content-Type; the
+                // browser sets it together with the form boundary.
+                ...(options?.body instanceof FormData ? {} : {'Content-Type': 'application/json'}),
                 'Accept': 'application/vnd.api+json,application/json',
                 'X-App-Locale': this.getLocaleString(options || {}),
                 ...(options?.headers || {})
@@ -139,7 +141,7 @@ export class RestApi {
         id: string | number,
         options?: GetResourceOptions
     ): Promise<any> {
-        const url = this.uriBuilder.jsonApiUri(resourceType, id.toString());
+        const url = this.uriBuilder.jsonApiUri(resourceType, id.toString()) + buildQueryString(options?.query);
         const fetchOptions: FetchOptions = {
             ...options,
             beforeSchema: decodeJsonApiResourceResponse
@@ -189,6 +191,78 @@ export class RestApi {
             if (schema) fetchOptions.schema = z.array(extendResourceSchema(schema));
         }
         return await this.fetch(url, {method: 'GET', ...fetchOptions});
+    }
+
+    /**
+     * Creates a resource via a JSON:API `POST /{resourceType}` request and
+     * returns the decoded created resource (`{ id, ...attributes }`).
+     *
+     * @example
+     * const conversation = await createResource('ai-convs', {name: 'New chat'});
+     */
+    public async createResource(
+        resourceType: string,
+        attributes: Record<string, unknown>,
+        options?: CommonGetResourceOptions
+    ): Promise<any> {
+        return this.writeResource('POST', this.uriBuilder.jsonApiUri(resourceType), resourceType, {
+            data: {type: resourceType, attributes}
+        }, options);
+    }
+
+    /**
+     * Updates a resource via a JSON:API `PATCH /{resourceType}/{id}` request and
+     * returns the decoded updated resource (`{ id, ...attributes }`).
+     *
+     * @example
+     * await updateResource('ai-convs', slug, {name: 'Renamed chat'});
+     */
+    public async updateResource(
+        resourceType: string,
+        id: string | number,
+        attributes: Record<string, unknown>,
+        options?: CommonGetResourceOptions
+    ): Promise<any> {
+        return this.writeResource('PATCH', this.uriBuilder.jsonApiUri(resourceType, id.toString()), resourceType, {
+            data: {type: resourceType, id: id.toString(), attributes}
+        }, options);
+    }
+
+    /**
+     * Deletes a resource via a JSON:API `DELETE /{resourceType}/{id}` request.
+     */
+    public async deleteResource(resourceType: string, id: string | number, options?: RequestInit): Promise<void> {
+        await this.fetch(this.uriBuilder.jsonApiUri(resourceType, id.toString()), {
+            method: 'DELETE',
+            ...options
+        });
+    }
+
+    private async writeResource(
+        method: 'POST' | 'PATCH',
+        url: string,
+        resourceType: string,
+        document: Record<string, unknown>,
+        options?: CommonGetResourceOptions
+    ): Promise<any> {
+        const fetchOptions: FetchOptions = {
+            ...options,
+            beforeSchema: decodeJsonApiResourceResponse
+        };
+        if (options?.validateSchema !== false) {
+            const schema = this.getResourceSchema(resourceType);
+            if (schema) fetchOptions.schema = extendResourceSchema(schema);
+        }
+        return this.fetch(url, {
+            method,
+            body: JSON.stringify(document),
+            ...fetchOptions,
+            headers: {
+                // The backend rejects JSON:API write requests with any other content type.
+                'Content-Type': 'application/vnd.api+json',
+                ...(options?.headers as Record<string, string> | undefined ?? {})
+            }
+        });
     }
 
     /**
@@ -261,9 +335,52 @@ export class RestApi {
         const url = this.uriBuilder.jsonApiUri(resourceType, action);
         return await this.fetch(url, {
             method: 'POST',
-            body: JSON.stringify(data),
+            body: data instanceof FormData ? data : JSON.stringify(data),
             ...options
         });
+    }
+
+    /**
+     * Same as {@link postToResourceAction} but issues a `PATCH` request, for
+     * RPC-style actions that update an existing entity.
+     */
+    public async patchToResourceAction<S extends z.ZodTypeAny>(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        data: any,
+        options: PostToResourceActionOptions & { schema: S }
+    ): Promise<z.infer<S>>;
+    public async patchToResourceAction(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        data: any,
+        options?: PostToResourceActionOptions
+    ): Promise<any>;
+    public async patchToResourceAction(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        data: any,
+        options?: PostToResourceActionOptions
+    ): Promise<any> {
+        const url = this.uriBuilder.jsonApiUri(resourceType, action);
+        return await this.fetch(url, {
+            method: 'PATCH',
+            body: data instanceof FormData ? data : JSON.stringify(data),
+            ...options
+        });
+    }
+
+    /**
+     * Same as {@link postToResourceAction} but issues a `DELETE` request, for
+     * RPC-style actions that remove an entity addressed by the action path.
+     */
+    public async deleteFromResourceAction(
+        resourceType: keyof HawkiResourceSchemas,
+        action: string,
+        options?: PostToResourceActionOptions
+    ): Promise<any> {
+        const url = this.uriBuilder.jsonApiUri(resourceType, action);
+        return await this.fetch(url, {method: 'DELETE', ...options});
     }
 
     /**

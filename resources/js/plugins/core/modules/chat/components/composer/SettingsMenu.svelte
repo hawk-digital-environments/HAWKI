@@ -42,7 +42,7 @@
     const model = $derived.by(() => composerContext.model);
     const tabItems: TabItem[] = presets.map(p => ({key: p.key as string, label: p.label}));
     const modifiedParameters = $derived.by(() => composerContext.modelParameters.isModified);
-    const defaultSystemPrompt = $derived.by(() => systemPromptStore.getPromptByType('default').prompt ?? '');
+    const defaultSystemPrompt = $derived.by(() => systemPromptStore.getPromptByType('default')?.prompt ?? '');
     const hasCustomSystemPrompt = $derived.by(() => composerContext.systemPrompt !== defaultSystemPrompt);
 
     function handlePresetChange(key: string) {

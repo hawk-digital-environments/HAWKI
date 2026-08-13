@@ -13,12 +13,12 @@ declare module '$lib/kernel/extendableTypes.js' {
  *
  * Populated by {@link loadSystemPrompts} during bootstrap (authenticated connections only).
  * Use {@link getPromptByType} to retrieve a prompt by its well-known type string instead of
- * filtering `prompts` manually — the overload with `WellKnownSystemPromptType` is non-nullable,
- * so TypeScript won't require a null-check when using a known type constant.
+ * filtering `prompts` manually. Even well-known types can be absent (the server syncs them
+ * from its config via `ai:config:sync`), so callers must handle `null`.
  *
  * @example
  * import {systemPromptStore} from '$lib/stores/SystemPromptStore.svelte.js';
- * const chatPrompt = systemPromptStore.getPromptByType('chat');
+ * const chatPrompt = systemPromptStore.getPromptByType('chat')?.prompt ?? '';
  */
 export class SystemPromptStore implements DataStore {
     public readonly name = 'system-prompts';
@@ -37,13 +37,12 @@ export class SystemPromptStore implements DataStore {
     /**
      * Looks up a system prompt by its `prompt_type` string.
      *
-     * The overload that accepts a `WellKnownSystemPromptType` returns `SystemPrompt`
-     * (non-nullable); the string overload returns `SystemPrompt | null`. Prefer the
-     * typed overload when using a known constant so callers skip the null-check.
+     * Returns `null` when no prompt of that type exists — this can happen even
+     * for well-known types when the server has not synced its prompt config
+     * yet, so callers must provide a fallback.
      *
      * @todo this might break when the locale changes.
      */
-    public getPromptByType(type: WellKnownSystemPromptType): SystemPrompt;
     public getPromptByType(type: WellKnownSystemPromptType | string): SystemPrompt | null {
         return this.promptsByType.get(type) ?? null;
     }

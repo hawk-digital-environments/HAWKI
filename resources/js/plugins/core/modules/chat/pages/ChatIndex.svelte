@@ -25,7 +25,7 @@
     const toast = useToastContext();
     const {__} = useTranslator();
     const slug = $derived(typeof params.slug === 'string' ? params.slug : null);
-    const defaultPrompt = app.stores.get('system-prompts').getPromptByType('default').prompt;
+    const defaultPrompt = app.stores.get('system-prompts').getPromptByType('default')?.prompt ?? '';
     const transport = new ChatTransport(app, store, {
         // Do not pull the user back if they switched chats while the title was generated.
         onConversationCreated: createdSlug => {
@@ -35,9 +35,11 @@
 
     let composer = $state<ComposerContext | null>(null);
     let messageToDelete = $state<ChatMessageType | null>(null);
-    let endMarker = $state<HTMLDivElement | null>(null);
+    let scrollRegion = $state<HTMLDivElement | null>(null);
+    let messagesElement = $state<HTMLDivElement | null>(null);
     let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
+    let keepScrolledToBottom = false;
 
     $effect(() => {
         const requestedSlug = slug;
@@ -53,14 +55,29 @@
     $effect(() => {
         const conversationSlug = store.active?.slug ?? null;
         const count = store.active?.messages.length ?? 0;
-        const conversationOpened = conversationSlug !== null && conversationSlug !== previousConversationSlug;
-        const messageAdded = conversationSlug !== null && !conversationOpened && count > previousMessageCount;
+        const region = scrollRegion;
+        const messages = messagesElement;
+
+        if (!conversationSlug) {
+            previousConversationSlug = null;
+            previousMessageCount = 0;
+            keepScrolledToBottom = false;
+            return;
+        }
+        if (store.loading || !region || !messages) return;
+
+        const conversationOpened = conversationSlug !== previousConversationSlug;
+        const messageAdded = !conversationOpened && count > previousMessageCount;
 
         if (conversationOpened || messageAdded) {
-            const behavior = conversationOpened ? 'auto' : 'smooth';
+            keepScrolledToBottom = true;
             requestAnimationFrame(() => {
-                if (store.active?.slug === conversationSlug) {
-                    endMarker?.scrollIntoView({behavior});
+                if (store.active?.slug === conversationSlug && scrollRegion === region) {
+                    if (conversationOpened) {
+                        region.scrollTop = region.scrollHeight;
+                    } else {
+                        region.scrollTo({top: region.scrollHeight, behavior: 'smooth'});
+                    }
                 }
             });
         }
@@ -68,6 +85,24 @@
         previousConversationSlug = conversationSlug;
         previousMessageCount = count;
     });
+
+    $effect(() => {
+        const region = scrollRegion;
+        const messages = messagesElement;
+        if (!region || !messages || typeof ResizeObserver === 'undefined') return;
+
+        const observer = new ResizeObserver(() => {
+            if (keepScrolledToBottom) region.scrollTop = region.scrollHeight;
+        });
+        observer.observe(messages);
+        return () => observer.disconnect();
+    });
+
+    function updateBottomPin() {
+        if (!scrollRegion) return;
+        const remaining = scrollRegion.scrollHeight - scrollRegion.clientHeight - scrollRegion.scrollTop;
+        keepScrolledToBottom = remaining <= 2;
+    }
 
     async function removeConversation() {
         if (!store.active) return;
@@ -159,7 +194,7 @@
         <header class="new-header"><span>{__('chat.page.newChat')}</span></header>
     {/if}
 
-    <div class="scroll-region">
+    <div class="scroll-region" bind:this={scrollRegion} onscroll={updateBottomPin}>
         {#if store.loading}
             <div class="state"><span class="spinner"></span><p>{__('chat.page.loading')}</p></div>
         {:else if store.error}
@@ -178,11 +213,10 @@
                 <p>{__('chat.page.welcomeDescription')}</p>
             </div>
         {:else}
-            <div class="messages">
+            <div class="messages" bind:this={messagesElement}>
                 {#each store.active.messages as message (message.message_id)}
                     <ChatMessage {message} {composer} onDelete={item => messageToDelete = item} onDeleteAttachment={removeAttachment} />
                 {/each}
-                <div bind:this={endMarker} aria-hidden="true"></div>
             </div>
         {/if}
     </div>

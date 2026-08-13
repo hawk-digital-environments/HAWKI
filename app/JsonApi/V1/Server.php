@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\JsonApi\V1;
 
+use App\JsonApi\V1\AiConvMessages\AiConvMessageSchema;
 use App\JsonApi\V1\AiConvs\AiConvSchema;
 use App\JsonApi\V1\AiModelDescriptions\AiModelDescriptionSchema;
 use App\JsonApi\V1\AiModelFlags\AiModelFlagSchema;
@@ -47,6 +48,7 @@ class Server extends BaseServer
     protected function allSchemas(): array
     {
         return [
+            AiConvMessageSchema::class,
             AiConvSchema::class,
             AiModelDescriptionSchema::class,
             AiModelFlagSchema::class,
