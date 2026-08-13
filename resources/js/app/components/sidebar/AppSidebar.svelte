@@ -7,11 +7,10 @@
 <script lang="ts">
     import Sidebar from '$lib/components/ui/sidebar/Sidebar.svelte';
     import SidebarHeader from '$lib/components/ui/sidebar/SidebarHeader.svelte';
-    import SidebarItem from '$lib/components/ui/sidebar/SidebarItem.svelte';
     import SidebarFooter from '$lib/components/ui/sidebar/SidebarFooter.svelte';
     import HawkLogo from '$lib/components/ui/logo/HawkLogo.svelte';
-    import UserIcon from '$lib/components/ui/icons/iconset/UserIcon.svelte';
     import ModuleSelector from '$lib/app/components/sidebar/ModuleSelector.svelte';
+    import ProfileButton from '$lib/app/components/sidebar/ProfileButton.svelte';
     import {useApp} from '$lib/app/hooks/useApp.svelte.js';
     import {getModuleRoutePrefix} from '$lib/kernel/routing/routeInflection.js';
 
@@ -38,7 +37,7 @@
         {/if}
     </div>
     <SidebarFooter>
-        <SidebarItem icon={UserIcon} label="Profil" />
+        <ProfileButton/>
     </SidebarFooter>
 </Sidebar>
 

@@ -1,12 +1,13 @@
 import { createContext } from 'svelte';
 import { MediaQuery } from 'svelte/reactivity';
+import { breakpointsQueries } from '$lib/components/util/breakpoints/breakpoints.js';
 
 /**
  * Viewport at or below which the layout switches to its mobile arrangement
- * (off-canvas nav). Mirrors the `--bp-mode-mobile` custom-media token used
+ * (off-canvas nav). Mirrors the `--bp-md-and-smaller` custom-media token used
  * by the CSS.
  */
-const MOBILE_QUERY = '(max-width: 850px)';
+const MOBILE_QUERY = breakpointsQueries.bpMdAndSmaller;
 
 /**
  * Reactive source of truth for the sidebar layout's open/closed panels.

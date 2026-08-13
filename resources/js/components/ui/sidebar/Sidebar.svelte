@@ -39,7 +39,7 @@
         border-right: var(--divider);
     }
 
-    @media (--bp-mode-mobile) {
+    @media (--bp-md-and-smaller) {
         .app-sidebar {
             position: absolute;
             top: 0;
