@@ -24,7 +24,6 @@ trait UserAwareScopeTrait
         $this->uast_isRunningInConsole = $environment->runningInConsole();
         $this->uast_currentUserResolver = static fn(Factory $auth) => $auth->guard()->user();
         $this->uast_onNoUser = static function () {
-            tracee();
             abort(403, sprintf("No authenticated user found for applying scope: '%s'.", class_basename(static::class)));
         };
     }

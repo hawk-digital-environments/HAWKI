@@ -11,6 +11,7 @@
 ### Bugfix
 
 - Temperature und Top-P sliders are disabled, if the model doesn't support them.
+- Removed a leftover debug trace call that fired whenever a user-scoped query was rejected due to a missing authenticated user.
 
 ### Internals
 
@@ -24,6 +25,7 @@
 - Added `universal-router` as a new frontend dependency and a `$plugins` path alias (Vite + `tsconfig.json`); `tsconfig.json` now uses `moduleResolution: "bundler"` and `skipLibCheck: true`; the `check` npm script now runs `svelte-check` with an explicit config and a larger Node heap (`--max-old-space-size=8192`) to avoid out-of-memory crashes during type checking, and a standalone `tsc` script was added.
 - Expanded JSDoc usage examples and rationale comments across the UI primitive component library (`Badge`, `Button`, `Dialog`, `DropdownMenu*`, `Citation*`, `ToastContext`, and others). `Button` also gained an `accent` variant and automatic icon-only sizing when only `iconLeft`/`iconRight` are given without children; the `lg` and standalone `icon` size options were removed.
 - Added new architecture documentation: "The App & Kernel", "Writing an Extension", "Writing a Plugin", and "Routing" (marked not-yet-fully-active), plus updates to the Contributing, Stores, Translations, and Old UI Integration docs.
+- `UserContext` now injects the Laravel auth `Factory` and gained `getAuthenticatedUser()` (returns the resolved `User` model or `null`) and `getUser()` (returns whichever identity shape currently applies: `RegisteringUser`, `User`, or `null`), complementing the existing `getRegisteringUser()`.
 
 ### Deprecation
 
