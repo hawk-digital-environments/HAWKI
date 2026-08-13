@@ -18,6 +18,55 @@
             "switchItem": {
                 "toggleLabel": "Toggle item"
             }
+        },
+        "profile": {
+            "fallbackName": "Profile",
+            "mockName": "Alex Morgan",
+            "menuTitle": "Account menu",
+            "appearanceLabel": "Appearance",
+            "lightMode": "Light mode",
+            "darkMode": "Dark mode",
+            "settings": "Settings",
+            "settingsTitle": "Settings",
+            "settingsDescription": "Manage your account and preferences.",
+            "settingsNavigationLabel": "Settings sections",
+            "saveChanges": "Save changes",
+            "mockNotice": "Mock settings — changes stay in this session.",
+            "mockSaved": "Saved for this session.",
+            "settingsNav": {
+                "profile": "Profile",
+                "preferences": "Preferences",
+                "privacy": "Privacy"
+            },
+            "profileSettings": {
+                "title": "Profile",
+                "description": "Update the details people see when you collaborate.",
+                "avatarHint": "Avatar uploads will be added later.",
+                "changeAvatar": "Change",
+                "nameLabel": "Display name",
+                "usernameLabel": "Username",
+                "emailLabel": "Email address"
+            },
+            "preferenceSettings": {
+                "title": "Preferences",
+                "description": "Choose how HAWKI communicates with you.",
+                "languageLabel": "Language",
+                "languageAuto": "Use browser language",
+                "emailNotifications": "Email notifications",
+                "emailNotificationsHint": "Receive important account and workspace updates.",
+                "productUpdates": "Product updates",
+                "productUpdatesHint": "Hear about new features and improvements."
+            },
+            "privacySettings": {
+                "title": "Privacy",
+                "description": "Control how your activity is used in HAWKI.",
+                "saveHistory": "Save chat history",
+                "saveHistoryHint": "Keep conversations available across sessions.",
+                "personalizedSuggestions": "Personalized suggestions",
+                "personalizedSuggestionsHint": "Use recent activity to tailor suggestions.",
+                "localOnlyTitle": "Mock settings only",
+                "localOnlyHint": "These controls do not update server data yet."
+            }
         }
     }
 }
