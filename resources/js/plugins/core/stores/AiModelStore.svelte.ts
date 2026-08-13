@@ -12,12 +12,13 @@ declare module '$lib/kernel/extendableTypes.js' {
 /**
  * Reactive store for all available AI models and their system-role assignments.
  *
- * Populated by {@link loadAiModels} during bootstrap (authenticated connections only).
- * Access via the `aiModelStore` singleton — no prop-drilling needed.
+ * Populated by {@link AiModelStore.loadData} during bootstrap (authenticated connections only).
+ * Access via `useStore('ai-models')` — no prop-drilling needed.
  *
  * @example
  * // List all models in a picker
- * import {aiModelStore} from '$lib/stores/AiModelStore.svelte.js';
+ * import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+ * const aiModelStore = useStore('ai-models');
  * const models = $derived(aiModelStore.models);
  *
  * @example
@@ -105,4 +106,7 @@ export class AiModelStore implements DataStore {
     }
 }
 
+// @deprecated Unused standalone instance, disconnected from the registered store
+// (`core.plugin.ts` constructs its own `AiModelStore` for `app.stores`). Use
+// `useStore('ai-models')` instead — do not import this.
 export const aiModelStore = new AiModelStore();

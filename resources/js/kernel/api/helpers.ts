@@ -7,10 +7,10 @@ import {getHawkiApp} from '$lib/legacy/legacy.js';
 /**
  * Low-level fetch wrapper used by all higher-level API helpers.
  *
- * Sets the required JSON:API `Accept` header, checks for HTTP errors, and
- * attempts to extract a human-readable message from the JSON:API `errors`
- * array before throwing — so callers get "400: Validation failed" rather than
- * a generic status code.
+ * Sets the required JSON:API `Accept`/`Content-Type`/locale headers, then
+ * delegates the actual network call to the app's `ApiTransport` — it, not this
+ * function, checks the HTTP status and throws an `ApiTransportError` with a
+ * human-readable message extracted from the JSON:API `errors` array.
  * @deprecated I suggest going through the `getRestApiContext()` function and using the `restApi` object directly, rather than calling this function.
  */
 export async function fetchApi<S extends z.ZodTypeAny>(

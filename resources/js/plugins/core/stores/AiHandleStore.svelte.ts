@@ -15,7 +15,7 @@ declare module '$lib/kernel/extendableTypes.js' {
  * once the assistant system is implemented — `getHandlesIn` will be the place
  * where additional lookups are added.
  *
- * Use the exported `aiHandleStore` singleton.
+ * Access via `useStore('ai-handle')`.
  */
 export class AiHandleStore implements DataStore {
     public readonly name = 'ai-handle';

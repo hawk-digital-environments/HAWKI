@@ -8,21 +8,18 @@
  * slugified with {@link valueToSlug}, so a display name like `My Plugin` yields
  * `my-plugin`.
  *
- * Currently only used by `createModuleRegistrar()`
- * (`$lib/kernel/modules/moduleRegistrar.ts`), which wraps every module's
- * `routes()` hook in a `registrar.group(getModuleRoutePrefix(...))`.
+ * Used by `createModuleRegistrar()` (`$lib/kernel/modules/moduleRegistrar.ts`),
+ * which wraps every module's `routes()` hook in a
+ * `registrar.group(getModuleRoutePrefix(...))`, and by
+ * `PluginBootstrapper.runRoutes()` (`$lib/kernel/plugins/PluginBootstrapper.ts`),
+ * which does the same for a plugin's own `routes()` hook via
+ * `getPluginRoutePrefix(...)` directly.
  */
 import {valueToSlug} from '$lib/utils/strings.js';
 
 /**
  * Returns the route prefix of a plugin: an empty string for core plugins (their
  * routes live at the root), `/plugins/<plugin-slug>` for everything else.
- *
- * TODO(docs): This is exported but currently only consumed by
- * {@link getModuleRoutePrefix} — plugin-level `routes()` hooks are handed the
- * *root* registrar by `RoutingExtension.init()`, so routes a plugin registers
- * outside of a module are not prefixed at all. Should plugin routes be wrapped
- * in this prefix as well, or is the unprefixed root access intentional?
  *
  * @example
  * getPluginRoutePrefix('core', true);        // ''

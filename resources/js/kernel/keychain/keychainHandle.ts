@@ -224,7 +224,6 @@ export function createKeychainHandle(
      * There could be unwanted side effects and errors if you are not careful with this!
      *
      * @internal Designed for migrations and other special cases where you want to run multiple batch updates together.
-     * @param runner
      */
     const doUpdatesDeferred = async (runner: () => Promise<void>) => {
         return collectDeferredBatchUpdates(app, await getKeychainPassword(), runner);
@@ -270,9 +269,8 @@ export function createKeychainHandle(
     const aiConvKey = () => getKeyOrFail('aiConvKey', 'ai_conv');
 
     /**
-     * Returns a map of all room keys in the keychain, mapped by room slug.
-     * If the AI key or legacy AI key for a room is missing, new keys will be derived and stored.
-     * This ensures that all rooms have the necessary keys for encryption and AI operations.
+     * Returns a map of all room keys in the keychain, mapped by room slug. Rooms whose AI
+     * or legacy-AI key is missing are excluded here — see {@link brokenRoomKeys}.
      */
     const roomKeys = () => loadedRoomKeys;
 
@@ -282,18 +280,12 @@ export function createKeychainHandle(
      */
     const brokenRoomKeys = () => incompleteRoomKeys;
 
-    /**
-     * The same as "roomKeys", but for a specific room.
-     * If the room does not have keys, null is returned.
-     * @param room
-     */
+    /** Like {@link roomKeys}, but for a single room; `null` if the room has no (complete) keys. */
     const roomKeysOf = (room: string) => loadedRoomKeys[room] || null;
 
     /**
-     * Imports a room key (from an invitation) into the keychain.
-     * If the room key already exists, it will be overwritten.
-     * @param roomSlug
-     * @param roomKey
+     * Imports a room key (e.g. from an invitation) into the keychain, deriving and storing
+     * its AI/legacy-AI keys alongside it. Overwrites an existing key for the same room.
      */
     const importRoomKey = async (roomSlug: string, roomKey: CryptoKey) => {
         return doUpdate(async (update) => {
@@ -342,6 +334,12 @@ export function createKeychainHandle(
     };
 }
 
+/**
+ * Derives the key used to encrypt/decrypt this user's keychain entries from their passkey.
+ * Uses the fixed label `'keychain_encryptor'` — must stay in sync with the same literal in
+ * the `after_passkey` legacy-keychain migration, which re-derives the old password the
+ * same way to decrypt the pre-migration blob.
+ */
 export function deriveKeychainPassword(
     app: HawkiApp,
     passkey: string

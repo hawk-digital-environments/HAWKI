@@ -53,6 +53,12 @@ function getRootTool(tool: AiToolOrCapability | AiToolOrCapabilityWithState): Ai
     return tool;
 }
 
+/**
+ * Wraps a plain `AiToolOrCapability` (tool or capability) into an
+ * `AiToolOrCapabilityWithState`, attaching the user's selection/settings and a
+ * `toTransferString()` serializer. Idempotent — if `tool` is already wrapped,
+ * unwraps to the root tool first so state is never double-nested.
+ */
 export function createToolOrCapabilityWithState(
     tool: AiToolOrCapability,
     toolSelection?: AiToolOrCapabilityWithState['toolSelection'],
@@ -173,6 +179,12 @@ function findCapabilityByName(
     return null;
 }
 
+/**
+ * Reverses {@link AiToolOrCapabilityWithState.toTransferString} — looks up the tool
+ * or capability by name in `toolStore` and rebuilds a wrapped state object.
+ * Returns `null` when the tool/capability no longer exists or the settings
+ * segment fails to parse as JSON.
+ */
 export function createToolOrCapabilityWithStateFromTransferString(
     transferString: string,
     toolStore: AiToolStore

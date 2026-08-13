@@ -131,21 +131,15 @@ declare global {
 const dependencyPromises = new Map<DependencyName, Promise<any>>();
 
 /**
- * This function loads a dependency by name and returns a promise that resolves to the loaded module.
- * It caches the promise for each dependency, so subsequent calls with the same name will return the same promise.
- * This is used to avoid loading all dependencies in the main chunk, even if the legacy code doesn't use them.
- * Instead, dependencies are loaded on demand when the legacy code calls this function.
+ * Resolves `name` to its cached loader promise (see the module doc above for
+ * why loading is deferred and cached per-dependency). A *failed* load is
+ * cached too — a later retry rejects immediately with the same error rather
+ * than attempting the import again.
  *
  * Published to the legacy scripts as `window.hawkiDependencyLoader` by
  * {@link provideLegacyGlobals}. New Svelte/TS code should use a plain
  * `import` instead — see the module doc-block.
  *
- * Note that a *failed* load is cached as well: the rejected promise stays in
- * the cache, so a later retry will reject immediately with the same error
- * rather than attempting the import again.
- *
- * @param name Key of an entry in the `dependencies` registry above, e.g. `'jsPdf'`.
- * @returns The module/value produced by that entry's loader.
  * @throws Error synchronously when `name` is not a registered dependency.
  *
  * @example

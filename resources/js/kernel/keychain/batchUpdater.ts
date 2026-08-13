@@ -116,6 +116,13 @@ export type BatchKeychainUpdater = (args: BatchKeychainUpdaterArgs) => Promise<v
 
 let deferredUpdaters: BatchKeychainUpdater[] | null = null;
 
+/**
+ * Runs `updater` and sends the resulting set/remove/clear calls to the server in one
+ * request. If called while {@link collectDeferredBatchUpdates} is active, `updater` is
+ * queued instead of executed immediately and this returns `null` — the actual send
+ * happens once as part of the outer `collectDeferredBatchUpdates` call. Multiple `set`
+ * calls for the same `key`+`type` within one `updater` collapse to the last one.
+ */
 export async function runBatchUpdate(
     app: HawkiApp,
     keychainPassword: CryptoKey,

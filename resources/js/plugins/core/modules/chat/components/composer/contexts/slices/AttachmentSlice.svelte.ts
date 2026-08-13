@@ -15,6 +15,8 @@ interface AttachmentSliceCheckpoint {
     uuids: Array<[File, string]>;
 }
 
+/** Owns the files staged for the next message, plus the server-assigned UUIDs
+ *  that correlate an already-uploaded file with its attachment record. */
 export class AttachmentSlice implements CheckpointingInterface<AttachmentSliceCheckpoint> {
     constructor(
         private readonly config: HawkiApp['config']
@@ -102,5 +104,10 @@ export class AttachmentSlice implements CheckpointingInterface<AttachmentSliceCh
 
     public restoreCheckpoint(checkpoint: AttachmentSliceCheckpoint): void {
         this._list = [...checkpoint.list];
+        // `remove()` deletes a file's uuid entry alongside the file, so any
+        // file removed between checkpoint and restore would lose its uuid
+        // permanently if we only restored `_list` — `getAssignedUuid` would
+        // return null for a file the server already has, breaking edit/regen.
+        this._assignedUuids = [...checkpoint.uuids];
     }
 }

@@ -22,8 +22,7 @@
 import {arrayBufferToBase64, base64ToArrayBuffer, exportCryptoKeyToArrayBuffer, exportCryptoKeyToString} from './utils.js';
 
 /**
- * Loads a public key from a base64-encoded string or ArrayBuffer.
- * @param keyString
+ * Loads an SPKI-encoded public key from a base64-encoded string or raw ArrayBuffer.
  * @param extractable Whether the loaded key should be extractable (i.e. can be exported again). Defaults to false for security.
  */
 export async function loadPublicKey(keyString: string | ArrayBuffer, extractable: boolean = false): Promise<CryptoKey> {
@@ -52,8 +51,7 @@ export async function exportPublicKeyToString(publicKey: CryptoKey): Promise<str
 }
 
 /**
- * Loads a private key from a base64-encoded string or ArrayBuffer.
- * @param keyString
+ * Loads a PKCS#8-encoded private key from a base64-encoded string or raw ArrayBuffer.
  * @param extractable Whether the loaded key should be extractable (i.e. can be exported again). Defaults to false for security reasons.
  */
 export async function loadPrivateKey(keyString: string | ArrayBuffer, extractable: boolean = false): Promise<CryptoKey> {
@@ -99,10 +97,7 @@ export async function encryptKeyAsymmetric(keyToEncrypt: CryptoKey, publicKey: C
 }
 
 /**
- * Encrypts data using the provided public key.
- * This method uses the RSA public key to encrypt the data.
- * @param plaintext - The data to encrypt.
- * @param publicKey - he public key to use for encryption.
+ * Encrypts `plaintext` with the given RSA-OAEP public key.
  * @returns The ciphertext, base64-encoded.
  */
 export async function encryptAsymmetric(plaintext: string, publicKey: CryptoKey): Promise<string> {
@@ -114,12 +109,7 @@ export async function encryptAsymmetric(plaintext: string, publicKey: CryptoKey)
     }
 }
 
-/**
- * Internal function to encrypt an ArrayBuffer using a public key with RSA-OAEP
- * @internal
- * @param data
- * @param publicKey
- */
+/** @internal Encrypts raw bytes with RSA-OAEP; shared by {@link encryptAsymmetric} and {@link encryptKeyAsymmetric}. */
 async function encryptArrayBufferAsymmetric(data: ArrayBuffer, publicKey: CryptoKey): Promise<string> {
     return arrayBufferToBase64(await window.crypto.subtle.encrypt(
         {
@@ -159,11 +149,8 @@ export async function decryptKeyAsymmetric(ciphertext: string, privateKey: Crypt
 }
 
 /**
- * Decrypts data using the provided private key.
- * This method uses the RSA private key to decrypt the data.
- * @param ciphertext - The ciphertext to decrypt, base64-encoded.
- * @param privateKey - The private key to use for decryption
- * @return The decrypted plaintext.
+ * Decrypts a base64-encoded ciphertext with the given RSA-OAEP private key.
+ * Counterpart to {@link encryptAsymmetric}.
  */
 export async function decryptAsymmetric(ciphertext: string, privateKey: CryptoKey): Promise<string> {
     try {
@@ -175,12 +162,7 @@ export async function decryptAsymmetric(ciphertext: string, privateKey: CryptoKe
     }
 }
 
-/**
- * Decrypts an ArrayBuffer using a private key with RSA-OAEP
- * @internal
- * @param ciphertext
- * @param privateKey
- */
+/** @internal Decrypts raw bytes with RSA-OAEP; shared by {@link decryptAsymmetric} and {@link decryptKeyAsymmetric}. */
 function decryptArrayBufferAsymmetric(ciphertext: ArrayBuffer, privateKey: CryptoKey): Promise<ArrayBuffer> {
     return window.crypto.subtle.decrypt(
         {

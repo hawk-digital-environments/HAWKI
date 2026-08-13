@@ -40,7 +40,6 @@ import {ResourceSchemaExtension} from '$lib/kernel/resources/ResourceSchemaExten
 import {PluginExtension} from '$lib/kernel/plugins/PluginExtension.js';
 import {LocalizationExtension} from '$lib/kernel/localization/LocalizationExtension.svelte.js';
 import {RoutingExtension} from '$lib/kernel/routing/RoutingExtension.js';
-import {createDefaultRouteRenderer} from '$lib/kernel/routing/routeRenderer.js';
 import {provideLegacyGlobals, runLegacyWaitUntilBootstrapQueue, runLegacyWaitUntilReadyQueue, setHawkiApp} from '$lib/legacy/legacy.js';
 import {StoreExtension} from '$lib/kernel/stores/StoreExtension.js';
 import {SnippetExtension} from '$lib/legacy/SnippetExtension.js';
@@ -74,7 +73,7 @@ provideLegacyGlobals();
             new MigrationExtension(),
             new LocalizationExtension(),
             new ModuleExtension(),
-            new RoutingExtension(createDefaultRouteRenderer()),
+            new RoutingExtension(),
             new StoreExtension(),
             new ShellExtension(),
             new SnippetExtension(),

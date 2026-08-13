@@ -2,14 +2,18 @@ import type {EnrichedUrlCitation} from '$lib/components/ui/citations/types.js';
 
 /**
  * Hrefs of injected inline citation links start with this prefix, followed by
- * the citation's `identifier`. The citation tile rendered by
- * `MessageCitation.svelte` carries the matching id (without the `#`), so the
- * inline marker scrolls to its tile.
+ * the citation's `identifier`. `ExtendedLinkNode.svelte` recognizes this
+ * prefix and renders a `CitationReference` chip in its place; clicking the
+ * chip calls `CitationContext.focusCitation(identifier)` to scroll/flash the
+ * matching `Citation` tile — there is no real DOM anchor being navigated to.
  */
 export const CITATION_ANCHOR_PREFIX = '#citation-';
 
 /**
- * Returns the DOM id of the citation tile the inline markers link to.
+ * Href for a `CitationReference` chip's own link element. Distinct from the
+ * markers `injectCitationsIntoMarkdown` writes into the markdown body (which
+ * use `CITATION_ANCHOR_PREFIX` directly) — this one is never parsed back via
+ * `citationIdFromAnchorId`, only ever clicked and intercepted.
  */
 export function citationAnchorId(identifier: string): string {
     return CITATION_ANCHOR_PREFIX.slice(1) + identifier;
@@ -18,7 +22,6 @@ export function citationAnchorId(identifier: string): string {
 /**
  * Returns the citation identifier from an inline marker's href, or null if the
  * href does not start with the expected prefix.
- * @param anchorId
  */
 export function citationIdFromAnchorId(anchorId: string): string | null {
     if (!anchorId.startsWith(CITATION_ANCHOR_PREFIX.slice(0))) {
