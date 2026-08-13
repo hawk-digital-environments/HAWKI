@@ -36,6 +36,7 @@
     let composer = $state<ComposerContext | null>(null);
     let messageToDelete = $state<ChatMessageType | null>(null);
     let endMarker = $state<HTMLDivElement | null>(null);
+    let previousConversationSlug: string | null = null;
     let previousMessageCount = 0;
 
     $effect(() => {
@@ -50,10 +51,21 @@
     });
 
     $effect(() => {
+        const conversationSlug = store.active?.slug ?? null;
         const count = store.active?.messages.length ?? 0;
-        if (count > previousMessageCount) {
-            requestAnimationFrame(() => endMarker?.scrollIntoView({behavior: previousMessageCount ? 'smooth' : 'auto'}));
+        const conversationOpened = conversationSlug !== null && conversationSlug !== previousConversationSlug;
+        const messageAdded = conversationSlug !== null && !conversationOpened && count > previousMessageCount;
+
+        if (conversationOpened || messageAdded) {
+            const behavior = conversationOpened ? 'auto' : 'smooth';
+            requestAnimationFrame(() => {
+                if (store.active?.slug === conversationSlug) {
+                    endMarker?.scrollIntoView({behavior});
+                }
+            });
         }
+
+        previousConversationSlug = conversationSlug;
         previousMessageCount = count;
     });
 
