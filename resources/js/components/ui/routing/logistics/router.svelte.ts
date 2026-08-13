@@ -46,7 +46,7 @@
  * layout from.
  */
 import UniversalRouter, {type Route, type RouteContext, type RouteError, type RouteParams} from 'universal-router';
-import {type HawkiRoute, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, type RouteResultBody, RouteRegistrar, type RouteRegistrationCallback} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {type HawkiRoute, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback, type RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {collectRouteLayouts, resolveRouteLayouts} from '$lib/components/ui/routing/logistics/layouts.js';
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
 import {z} from 'zod';

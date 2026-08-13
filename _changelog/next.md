@@ -2,7 +2,7 @@
 
 ### What's New
 
-- Update `openai_models.php` to include GPT-5.6 Luna, Terra and Sol.
+[//]: # (- The main new features and changes in this version.)
 
 ### Quality of Life
 
@@ -10,9 +10,7 @@
 
 ### Bugfix
 
-- Temperature und Top-P sliders are disabled, if the model doesn't support them.
-- Fixed hash-based routing not reacting to browser back/forward or manual URL-bar hash changes; navigation via `goTo()` and external hash changes now both update the view correctly.
-- Fixed the message composer losing track of already-uploaded attachment IDs when restoring a checkpoint (e.g. after editing/regenerating a message), which could cause files to be re-uploaded or mismatched.
+[//]: # (- List of bugs that have been fixed in this version.)
 
 ### Internals
 
