@@ -5,6 +5,8 @@
 -->
 <script lang="ts">
     import Dialog from '$lib/components/ui/dialog/Dialog.svelte';
+    import List from '$lib/components/ui/list/List.svelte';
+    import ListItem from '$lib/components/ui/list/ListItem.svelte';
     import RouterView from '$lib/components/ui/routing/RouterView.svelte';
     import {createRouter} from '$lib/components/ui/routing/logistics/router.svelte.js';
     import type {IconComponent} from '$lib/components/ui/icons/index.js';
@@ -84,18 +86,26 @@
 
     <div class="settings-layout">
         <nav class="settings-nav" aria-label={__('ui.profile.settingsNavigationLabel')}>
-            {#each navItems as item (item.path)}
-                {@const Icon = item.icon}
-                <button
-                    type="button"
-                    class:active={settingsRouter.handle.isActive(item.path) || (item.path === '/profile' && settingsRouter.handle.path === '/')}
-                    aria-current={settingsRouter.handle.isActive(item.path) ? 'page' : undefined}
-                    onclick={() => settingsRouter.handle.goTo(item.path)}
-                >
-                    <Icon size={16}/>
-                    <span>{item.label}</span>
-                </button>
-            {/each}
+            <List>
+                {#each navItems as item (item.path)}
+                    {@const Icon = item.icon}
+                    {@const active = settingsRouter.handle.isActive(item.path) || (item.path === '/profile' && settingsRouter.handle.path === '/')}
+                    <ListItem {active}>
+                        {#snippet children({attach})}
+                            <button
+                                type="button"
+                                {@attach attach}
+                                class:active
+                                aria-current={active ? 'page' : undefined}
+                                onclick={() => settingsRouter.handle.goTo(item.path)}
+                            >
+                                <Icon size={16}/>
+                                <span>{item.label}</span>
+                            </button>
+                        {/snippet}
+                    </ListItem>
+                {/each}
+            </List>
         </nav>
 
         <main class="settings-panel">
@@ -129,13 +139,14 @@
     .settings-nav {
         display: flex;
         flex-direction: column;
-        gap: var(--space-1);
         padding: var(--space-4);
         border-right: var(--divider);
         background: color-mix(in oklch, var(--color-surface) 55%, transparent);
     }
 
     .settings-nav button {
+        position: relative;
+        z-index: 1;
         display: flex;
         align-items: center;
         gap: var(--space-2);
@@ -149,16 +160,14 @@
         font-size: var(--font-size-xs);
         text-align: left;
         cursor: pointer;
-        transition: background-color var(--duration-fast), color var(--duration-fast);
+        transition: color var(--duration-fast);
     }
 
     .settings-nav button:hover {
-        background: var(--color-hover);
         color: var(--color-text);
     }
 
     .settings-nav button.active {
-        background: var(--color-active-surface);
         color: var(--color-active-text);
     }
 
@@ -181,16 +190,9 @@
         }
 
         .settings-nav {
-            flex-direction: row;
-            overflow-x: auto;
             border-right: 0;
             border-bottom: var(--divider);
             padding: var(--space-2);
-        }
-
-        .settings-nav button {
-            flex: 1 0 auto;
-            justify-content: center;
         }
 
         .settings-panel {
