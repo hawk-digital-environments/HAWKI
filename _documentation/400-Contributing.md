@@ -83,11 +83,11 @@ The full architecture documentation lives in the **[Backend section](500-Backend
 
 | I want to understand…                                            | Read                                                                                        |
 |------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| Domain structure, layer responsibilities, naming conventions, DI | [Architecture Overview](500-Backend/100-Architecture/index.md)                              |
-| `@api` stability contract, `DecoratorTrait`, extension points    | [API Stability & Extension Points](500-Backend/100-Architecture/100-API-Stability.md)       |
-| ServiceLocatorTrait, contextual scopes, custom translator        | [Custom Infrastructure Patterns](500-Backend/100-Architecture/250-Custom-Infrastructure.md) |
-| Known coding-standard violations in the codebase                 | [Technical Debt Register](500-Backend/100-Architecture/300-Technical-Debt.md)               |
-| How a request flows through every layer                          | [Life of a Request](500-Backend/150-Life-of-a-Request.md)                                   |
+| Domain structure, layer responsibilities, naming conventions, DI | [Concepts](500-Backend/200-Concepts/index.md)                                               |
+| `@api` stability contract, `DecoratorTrait`, extension points    | [API Stability & Extension Points](500-Backend/200-Concepts/210-API-Stability.md)           |
+| ServiceLocatorTrait, contextual scopes, custom translator        | [ServiceLocator](500-Backend/200-Concepts/190-ServiceLocator.md)                            |
+| Known coding-standard violations in the codebase                 | [Technical Debt Register](500-Backend/900-Technical-Debt.md)                                |
+| How a request flows through every layer                          | [Life of a Request](500-Backend/100-Tutorials/100-Life-of-a-Request.md)                     |
 
 > The old `3-architecture/` directory contains pre-refactor documentation and does not reflect current patterns. Do not use it as a reference.
 
@@ -285,6 +285,6 @@ When in doubt about architecture, open a Draft PR early rather than building som
 
 ---
 
-> **A note of honest self-deprecation:** We are aware that the current codebase does not fully reflect the goals described in this guide — some naming conventions are mid-migration and a few pre-refactor rough edges remain. They are catalogued in the [Technical Debt Register](500-Backend/100-Architecture/300-Technical-Debt.md). Please do as we say, not as we did. :)
+> **A note of honest self-deprecation:** We are aware that the current codebase does not fully reflect the goals described in this guide — some naming conventions are mid-migration and a few pre-refactor rough edges remain. They are catalogued in the [Technical Debt Register](500-Backend/900-Technical-Debt.md). Please do as we say, not as we did. :)
 
 Thank you for contributing to HAWKI! 🧡

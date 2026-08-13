@@ -1,6 +1,6 @@
 # HAWKI API Documentation
 
-> **This document describes legacy API functionality.** The primary API surface since v2 is the JSON:API v1 server at `/api/hawki/v1`. The `POST /api/ai-req` endpoint described below is a deprecated legacy endpoint maintained for backwards compatibility only — do not use it in new integrations. External application integration now uses the OAuth-like ext-app flow documented in [Backend → External Apps](../500-Backend/800-Encryption-and-Security/200-External-Apps.md).
+> **This document describes legacy API functionality.** The primary API surface since v2 is the JSON:API v1 server at `/api/hawki/v1`. The `POST /api/ai-req` endpoint described below is a deprecated legacy endpoint maintained for backwards compatibility only — do not use it in new integrations. External application integration now uses the OAuth-like ext-app flow documented in [Backend → External Apps](../500-Backend/400-Domains/400-Encryption/440-External-Apps.md).
 >
 > Personal access tokens (`app:token` command, `ALLOW_USER_TOKEN_CREATION`) still exist as a distinct mechanism and the documentation for those remains valid.
 
@@ -29,7 +29,7 @@ Authorization: Bearer YOUR_TOKEN_HERE
 
 ### Token Management via CLI
 
-For CLI-based token creation and revocation see [Backend → Artisan Commands](../500-Backend/1000-Infrastructure/200-Artisan-Commands.md) (Personal Access Token Commands section).
+For CLI-based token creation and revocation see [Backend → Artisan Commands](../500-Backend/500-Reference/100-Artisan-Commands.md) (Personal Access Token Commands section).
 
 ## Configuration
 
@@ -45,7 +45,7 @@ ALLOW_USER_TOKEN_CREATION=true
 
 ## Legacy Endpoint — `POST /api/ai-req`
 
-> **Deprecated.** Do not use in new integrations. See [Backend → JSON API](../500-Backend/300-JSON-API.md) for the current API.
+> **Deprecated.** Do not use in new integrations. See [Backend → JSON API](../500-Backend/300-HTTP-API/100-JSON-API-Conventions.md) for the current API.
 
 This endpoint accepted a `payload.model` + `payload.messages` array and returned a synchronous AI response. It is retained for backwards compatibility only and may be removed in a future release.
 

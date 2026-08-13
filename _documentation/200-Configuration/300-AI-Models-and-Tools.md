@@ -1,4 +1,4 @@
-> **Partially outdated.** The conceptual architecture (config → sync → DB), deployment steps, command reference, and MCP tool sections are still accurate. The following sections reference class names from the pre-v2.5 codebase that **no longer exist**: "Database Registry" (old Eloquent class names), "Value Object vs Eloquent Model", "Model Sync" (old service class), the function-calling tool creation example, and "Service Providers". For current implementation details see [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) and [Backend → Provider Adapters](../500-Backend/500-AI-Service-Layer/100-Provider-Adapters.md).
+> **Partially outdated.** The conceptual architecture (config → sync → DB), deployment steps, command reference, and MCP tool sections are still accurate. The following sections reference class names from the pre-v2.5 codebase that **no longer exist**: "Database Registry" (old Eloquent class names), "Value Object vs Eloquent Model", "Model Sync" (old service class), the function-calling tool creation example, and "Service Providers". For current implementation details see [Backend → AI Domain](../500-Backend/400-Domains/100-AI/index.md) and [Backend → Providers & Adapters](../500-Backend/400-Domains/100-AI/110-Providers-and-Adapters.md).
 
 # AI Models & Tools
 
@@ -283,7 +283,7 @@ php hawki models check-status
 
 ## Tool System
 
-> **This section has been superseded.** The tool system architecture, ToolInterface, function-calling tools, MCP integration, and deployment how-tos are now documented in [Backend → AI Tools & MCP](../500-Backend/500-AI-Service-Layer/300-Tools-and-MCP.md).
+> **This section has been superseded.** The tool system architecture, ToolInterface, function-calling tools, MCP integration, and deployment how-tos are now documented in [Backend → Tools](../500-Backend/400-Domains/100-AI/130-Tools.md) and [Backend → MCP](../500-Backend/400-Domains/100-AI/140-MCP.md).
 
 
 ---
@@ -380,7 +380,7 @@ ai_model_tools  (pivot)
 
 ### Add a new AI provider
 
-> The implementation details for adding a new provider have changed significantly in v2.5. See [Backend → Provider Adapters](../500-Backend/500-AI-Service-Layer/100-Provider-Adapters.md) for the current `ProviderAdapterInterface` approach.
+> The implementation details for adding a new provider have changed significantly in v2.5. See [Backend → Providers & Adapters](../500-Backend/400-Domains/100-AI/110-Providers-and-Adapters.md) for the current `ProviderAdapterInterface` approach.
 
 1. Create `config/model_lists/myprovider_models.php` following the structure of the existing list files.
 2. Add the provider entry to `config/model_providers.php`.
@@ -398,14 +398,14 @@ php hawki clear-cache
 php hawki models sync --force
 ```
 
-> Tool management how-tos (adding function tools, MCP servers, disabling/re-enabling tools, rotating APP_KEY) are now documented in [Backend → AI Tools & MCP](../500-Backend/500-AI-Service-Layer/300-Tools-and-MCP.md).
+> Tool management how-tos (adding function tools, MCP servers, disabling/re-enabling tools, rotating APP_KEY) are now documented in [Backend → Tools](../500-Backend/400-Domains/100-AI/130-Tools.md) and [Backend → MCP](../500-Backend/400-Domains/100-AI/140-MCP.md).
 
 ---
 
 For further details on individual components see:
 
-- [Backend → AI Service Layer](../500-Backend/500-AI-Service-Layer/index.md) — current provider adapter implementation
-- [Backend → Provider Adapters](../500-Backend/500-AI-Service-Layer/100-Provider-Adapters.md) — `ProviderAdapterInterface` and `ProviderAdapterRegistry`
+- [Backend → AI Domain](../500-Backend/400-Domains/100-AI/index.md) — current provider adapter implementation
+- [Backend → Providers & Adapters](../500-Backend/400-Domains/100-AI/110-Providers-and-Adapters.md) — `ProviderAdapterInterface` and `ProviderAdapterRegistry`
 - [Model Configuration Variables](200-Model-Configuration-Variables.md) — environment variable reference for fine-grained model control
 - [dot Env](100-Dot-Env.md) — complete `.env` reference
 - [HAWKI CLI](700-HAWKI-CLI.md) — full CLI command reference
