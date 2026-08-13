@@ -23,7 +23,7 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const model = models.getSystemModelByType('prompt_improvement') ?? models.getSystemModelByType('default') ?? models.models[0];
         if (!model) throw new Error('No model is available to improve the message.');
 
-        const systemPrompt = `${prompts.getPromptByType('prompt_improvement').prompt}\n\n` +
+        const systemPrompt = `${prompts.getPromptByType('prompt_improvement')?.prompt ?? ''}\n\n` +
             'You are currently in a one-on-one chat. Improve the user message for an AI assistant.\n' +
             `You MUST answer in the language with code: ${this.app.localization.locale.lang}.\n` +
             'Return only the improved message. If it cannot be improved, start the response with [NOT_IMPROVED].';
@@ -260,8 +260,8 @@ export class ChatTransport implements MessageSenderTransportInterface {
         const modelStore = this.app.stores.get('ai-models');
         const promptStore = this.app.stores.get('system-prompts');
         const model = modelStore.getSystemModelByType('title_generation') ?? modelStore.getSystemModelByType('default') ?? modelStore.models[0];
-        const prompt = promptStore.getPromptByType('title_generation').prompt;
-        if (!model) return this.fallbackTitle(firstMessage);
+        const prompt = promptStore.getPromptByType('title_generation')?.prompt;
+        if (!model || !prompt) return this.fallbackTitle(firstMessage);
 
         try {
             const generatedTitle = await this.app.aiApi.text({

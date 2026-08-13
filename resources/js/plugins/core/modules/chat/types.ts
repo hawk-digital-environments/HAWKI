@@ -2,7 +2,6 @@ import type {UrlCitation} from '$lib/components/ui/citations/types.js';
 import type {OldUiConversationMessage} from '$lib/legacy/OldUiBridge.svelte.js';
 
 export interface ChatSummary {
-    id: number;
     name: string;
     slug: string;
     created_at: string | null;
@@ -16,7 +15,6 @@ export interface ChatMessage extends OldUiConversationMessage {
 }
 
 export interface ChatConversation {
-    id: number;
     name: string;
     slug: string;
     system_prompt: string;

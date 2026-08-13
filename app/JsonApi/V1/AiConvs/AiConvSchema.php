@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use LaravelJsonApi\Eloquent\Fields\DateTime;
 use LaravelJsonApi\Eloquent\Fields\ID;
+use LaravelJsonApi\Eloquent\Fields\Relations\HasMany;
 use LaravelJsonApi\Eloquent\Fields\Str;
 use LaravelJsonApi\Eloquent\Pagination\PagePagination;
 use LaravelJsonApi\Eloquent\Schema;
@@ -23,18 +24,25 @@ class AiConvSchema extends Schema
     /**
      * Get the resource fields.
      *
-     * Only the conversation metadata is exposed here; the encrypted message
-     * bodies stay behind the single-conversation endpoint so listings never
-     * download chat histories they do not display.
+     * The slug doubles as the resource id because the frontend routes address
+     * conversations by slug, never by their numeric database id.
+     *
+     * Only the conversation metadata is exposed by default; the encrypted
+     * message bodies are only serialized when a single conversation is
+     * requested with `?include=messages`, so listings never download chat
+     * histories they do not display.
      */
     public function fields(): array
     {
         return [
-            ID::make(),
+            ID::make('slug')->matchAs('[a-zA-Z0-9-]+'),
             Str::make('name', 'conv_name'),
-            Str::make('slug'),
+            Str::make('slug')->readOnly(),
+            Str::make('system_prompt'),
             DateTime::make('created_at')->readOnly(),
             DateTime::make('updated_at')->readOnly(),
+
+            HasMany::make('messages')->type('ai-conv-messages')->readOnly(),
         ];
     }
 
