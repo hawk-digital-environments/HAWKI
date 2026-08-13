@@ -2,15 +2,15 @@
 
 ### What's New
 
-- Update `openai_models.php` to include GPT-5.6 Luna, Terra and Sol.
+[//]: # (- The main new features and changes in this version.)
 
 ### Quality of Life
 
-[//]: # (- Improvements and enhancements that improve the user experience.)
+- API responses now carry richer error information (status code, server-provided error title/details) so failures surface more useful feedback instead of a generic error.
 
 ### Bugfix
 
-- Temperature und Top-P sliders are disabled, if the model doesn't support them.
+[//]: # (- List of bugs that have been fixed in this version.)
 
 ### Internals
 
@@ -24,6 +24,10 @@
 - Added `universal-router` as a new frontend dependency and a `$plugins` path alias (Vite + `tsconfig.json`); `tsconfig.json` now uses `moduleResolution: "bundler"` and `skipLibCheck: true`; the `check` npm script now runs `svelte-check` with an explicit config and a larger Node heap (`--max-old-space-size=8192`) to avoid out-of-memory crashes during type checking, and a standalone `tsc` script was added.
 - Expanded JSDoc usage examples and rationale comments across the UI primitive component library (`Badge`, `Button`, `Dialog`, `DropdownMenu*`, `Citation*`, `ToastContext`, and others). `Button` also gained an `accent` variant and automatic icon-only sizing when only `iconLeft`/`iconRight` are given without children; the `lg` and standalone `icon` size options were removed.
 - Added new architecture documentation: "The App & Kernel", "Writing an Extension", "Writing a Plugin", and "Routing" (marked not-yet-fully-active), plus updates to the Contributing, Stores, Translations, and Old UI Integration docs.
+- Reworked the route middleware contract to a PHP-style pattern: a middleware now receives a `next()` callback and either returns a `RouteResultBody` to take over rendering, calls `await next()` to pass through, or returns nothing to deny access (`RouteMiddleware` in `RouteRegistrar.ts`, `buildMiddlewareStack.ts`). `ResolvedRouteRenderable` was renamed to `RouteResultBody` to match.
+- Plugin routes are now automatically namespaced under `/plugins/<slug>` (core plugin routes remain unprefixed at the root), matching the existing module route namespacing (`getPluginRoutePrefix` in `routeInflection.ts`).
+- Added a `canHandlePath()` hook to the `RoutingStrategy` interface (default: paths starting with `/`) so strategies can distinguish routable paths from local hrefs such as hash anchors or query-only links; `RouterHandle` and `Link.svelte` use it to decide whether to intercept a click or let the browser handle it.
+- `RoutingExtension`'s public `app.router` is now typed as `RouterHandle` instead of the raw `universal-router` instance, removing an internal-only escape hatch from the public API. An `app.__router` field (marked `@internal`) still exposes the full router for `Shell.svelte`'s bootstrap.
 
 ### Deprecation
 

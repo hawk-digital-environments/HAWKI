@@ -51,6 +51,9 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
         return !!this._active[tool.name];
     }
 
+    /** Resolves a tool from its transfer-string encoding (as produced by
+     *  `toTransferString()`) and activates it. `onError` fires instead of activating
+     *  when the tool no longer exists or isn't available for the current model. */
     public setFromTransferString(
         transferString: string,
         onError?: (reason: 'tool_not_found' | 'tool_not_available', toolName: string) => void
@@ -83,6 +86,8 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
         delete this._disabled[tool.name];
     }
 
+    /** Moves an active tool into the disabled registry, preserving its selection/settings
+     *  so {@link enable} can restore it later. No-op if the tool isn't active. */
     public disable(tool: AiToolOrCapability): void {
         const currentState = this._active[tool.name];
         if (currentState) {
@@ -91,6 +96,8 @@ export class ToolSlice implements CheckpointingInterface<ToolSliceCheckpoint> {
         delete this._active[tool.name];
     }
 
+    /** Reactivates a previously {@link disable}d tool, restoring its saved selection/settings.
+     *  If the tool was never disabled, activates it fresh via {@link set}. */
     public enable(tool: AiToolOrCapability): void {
         const currentState = this._disabled[tool.name];
         if (currentState) {

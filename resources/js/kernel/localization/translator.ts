@@ -58,8 +58,6 @@ export interface Translator {
      * Works similar to {@link getTranslations}, but instead of returning a nested object of translation labels,
      * it flattens the result into a single-level object with dot-notated keys.
      * Additionally, it ALWAYS expects your path to point to a nested object, and will throw an error if it points to a string or a non-object value.
-     *
-     * @param path
      */
     getTranslationsFlat(path: string): Record<string, string>;
 }

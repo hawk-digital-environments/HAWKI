@@ -250,6 +250,12 @@ export class OldUiMessageHistory {
             }));
     }
 
+    /**
+     * Legacy quirk: some backend paths serialize extra fields (e.g. attachments)
+     * into `content.text` as a JSON string instead of populating `content`
+     * directly. Detects that shape (`text` starting with `{`) and merges the
+     * parsed object into `content`, leaving normal plain-text messages untouched.
+     */
     private legacyFixMessageContent(message: OldUiConversationMessage): OldUiConversationMessage {
         if (!message.content || typeof message.content.text !== 'string') {
             console.warn('Message content is missing or malformed, applying legacy fix', message);

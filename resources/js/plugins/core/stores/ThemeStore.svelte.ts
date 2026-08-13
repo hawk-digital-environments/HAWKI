@@ -23,7 +23,8 @@ declare module '$lib/kernel/extendableTypes.js' {
  * and by any component that needs to branch on the current colour scheme.
  *
  * @example
- * import {themeStore} from '$lib/stores/ThemeStore.svelte.js';
+ * import {useStore} from '$lib/app/hooks/useStore.svelte.js';
+ * const themeStore = useStore('theme');
  * // Read
  * const isDark = $derived(themeStore.theme === 'dark');
  * // Write

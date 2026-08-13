@@ -1,3 +1,8 @@
+<!--
+  @component Inline banner for a titled message with an optional leading icon, e.g. a validation
+  summary or a destructive-action warning. Purely presentational — renders nothing when both
+  `title` and `description` are omitted except the icon.
+-->
 <script lang="ts">
     import type { IconComponent } from '$lib/components/ui/icons';
     import Txt from '$lib/components/ui/Txt.svelte';

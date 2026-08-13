@@ -1,42 +1,54 @@
+/**
+ * Tracks the route in `location.pathname` via the History API — the strategy
+ * a real SPA deployment uses. Requires the server (or a rewrite rule) to
+ * serve the app shell for every path under `basePath`, since a hard
+ * reload/deep link hits the server directly rather than the client router.
+ */
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
 
-export interface PathBasedRoutingStrategyOptions {
-    basePath?: string;
-}
-
-export function createPathRoutingStrategy(options?: PathBasedRoutingStrategyOptions): RoutingStrategy {
-    const basePath = options?.basePath ?? '';
+export function createPathRoutingStrategy(): RoutingStrategy {
     let currentPath = $state(loadPath());
 
     function loadPath() {
-        const currentPath = window.location.pathname;
-        if (currentPath.startsWith(basePath)) {
-            return currentPath.slice(basePath.length);
-        }
-        return currentPath;
+        return window.location.pathname;
     }
-
-    function onPathChange() {
-        currentPath = loadPath();
-    }
-
-    document.addEventListener('popstate', onPathChange);
 
     return {
         set(path: string) {
-            const newPath = basePath + path;
-            if (window.location.pathname !== newPath) {
-                window.history.pushState({}, '', newPath);
+            if (window.location.pathname !== path) {
+                window.history.pushState({}, '', path);
             }
+            currentPath = path;
         },
         get() {
             return currentPath;
         },
-        clear() {
-            if (window.location.pathname !== basePath) {
-                window.history.pushState({}, '', basePath);
+        /**
+         * Listens for `popstate` (back/forward navigation) to keep
+         * `currentPath` in sync with browser-driven changes — `set()` alone
+         * only covers navigation initiated through the router.
+         *
+         * On teardown, pushes back the path that was current when `bind()`
+         * was called, unless the browser is currently sitting exactly on
+         * `basePath` (the router's own root) — in that case the location is
+         * left untouched.
+         */
+        bind(_: string, basePath: string): () => void {
+            const initialPath = loadPath();
+
+            function onPathChange() {
+                currentPath = loadPath();
             }
-            document.removeEventListener('popstate', onPathChange);
+
+            window.addEventListener('popstate', onPathChange);
+
+            return () => {
+                window.removeEventListener('popstate', onPathChange);
+
+                if (window.location.pathname !== basePath) {
+                    window.history.pushState({}, '', initialPath);
+                }
+            };
         }
     };
 }

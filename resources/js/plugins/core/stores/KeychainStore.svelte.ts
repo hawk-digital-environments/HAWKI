@@ -24,8 +24,7 @@ declare module '$lib/kernel/extendableTypes.js' {
  * completes, allowing callers to await readiness before performing
  * cryptographic operations.
  *
- * Use `keychainStore` (the exported singleton) rather than constructing
- * this class directly.
+ * Access via `useStore('keychain')` rather than constructing this class directly.
  */
 export class KeychainStore implements DataStore {
     public readonly name = 'keychain';

@@ -23,8 +23,10 @@ Route::middleware(['prevent_back', ExtAppUserOrTokenForbiddenMiddleware::class])
 
     Route::get('/', [LoginController::class, 'index']);
 
-    Route::get('/new', fn() => view('index'));
-    Route::get('/new/{slug}', fn() => view('index'));
+    Route::group(['prefix' => '/new'], static function () {
+        Route::fallback(static fn() => view('index'))->name('new.fallback');
+    });
+    Route::get('/new', static fn() => view('index'))->name('new.index');
 
     Route::get('/login', [LoginController::class, 'index'])
         ->name('login');

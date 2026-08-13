@@ -5,40 +5,60 @@
  * a matched route *before* descending into its children, and only stops when
  * an action returns something other than `null`/`undefined`. This module
  * exploits that: every middleware becomes an extra parent route with an empty
- * path (so it matches without consuming any part of the URL) whose `action` is
- * the middleware itself, and the guarded route becomes its child.
+ * path (so it matches without consuming any part of the URL) whose `action`
+ * calls the middleware with a wrapped `next`, and the guarded route becomes
+ * its child. The wrapper translates HAWKI's PHP-style middleware contract
+ * (return {@link RouteResultBody} | `next()` | nothing) into
+ * `universal-router`'s `null`/`undefined` action semantics — see
+ * {@link createMiddlewareRoute} for the case-by-case mapping.
  *
  * Used by {@link RouteRegistrar} when compiling both single routes
  * (`middlewares` from {@link RouteOptions}) and route groups (`middlewares`
  * from {@link RouteGroupOptions}).
  */
 import {type Route} from 'universal-router';
-import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware} from '$lib/kernel/routing/RouteRegistrar.js';
+import type {RegisteredRouteGroupOptions, RegisteredRouteOptions, RouteMiddleware, RouteResultBody} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 
 /** A group registration reduced to the parts relevant for the middleware stack (its `children` callback has already been compiled by then). */
 type GroupMiddlewareStackOptions = Omit<RegisteredRouteGroupOptions, 'children'>;
-// TODO(docs): `isLazy` is not a member of `RegisteredRouteOptions` (lazy routes are
-// flagged via the `type: 'lazy_route'` marker on the loader instead), so omitting
-// it here is a no-op. Leftover from an earlier shape of the options object?
 /** A route registration reduced to the parts relevant for the middleware stack (the component is already baked into the inner route's action). */
-type RouteMiddlewareStackOptions = Omit<RegisteredRouteOptions, 'component' | 'isLazy'>;
+type RouteMiddlewareStackOptions = Omit<RegisteredRouteOptions, 'component' | 'path'>;
+
+type MiddlewareRoute = Route & { isMiddleware: true };
 
 /**
  * Wraps `children` in a path-less parent route that runs `middleware` first.
  *
  * Because `path: ''` matches anything without consuming URL segments, the
- * child paths stay unchanged. If the middleware returns a `Component` the
- * router stops there and uses it as the resolve result; if it returns
- * `undefined` resolution continues into `children`.
+ * child paths stay unchanged. The action translates HAWKI's middleware
+ * contract (return {@link RouteResultBody} | `next()` | nothing) into
+ * `universal-router`'s action semantics:
+ *
+ * - `RouteResultBody` → returned as the resolve result; resolution stops.
+ * - `undefined` from `next()` → also handed back, but `universal-router`
+ *   treats `undefined` as "continue matching children", which for a wrapping
+ *   middleware with a single guarded child means the child gets a chance.
+ * - Any other nullish return (middleware returned nothing) → normalised to
+ *   `null`, which makes `universal-router` skip the subtree entirely. With no
+ *   siblings at this level, the guarded route 404s — the permission-deny path.
+ *
+ * The `next` handed to the middleware is wrapped so the `resume` footgun of
+ * `universal-router`'s `context.next(true)` ("iterate all remaining routes",
+ * which would escape the middleware chain and start matching siblings) is
+ * unreachable from a HAWKI middleware.
  */
 function createMiddlewareRoute(
     middleware: RouteMiddleware,
     children: Route[]
-): Route {
+): MiddlewareRoute {
     return {
         path: '',
-        action: (context) => middleware(context),
-        children
+        action: async (context) => {
+            const next = () => context.next() as Promise<RouteResultBody | undefined>;
+            return (await middleware(context, next)) ?? null;
+        },
+        children,
+        isMiddleware: true
     };
 }
 
@@ -73,13 +93,6 @@ function createNestedMiddlewareRoutes(
  * (outermost = first middleware), or `route` itself if `options.middlewares` is
  * empty/undefined. Throws if `middlewares` is set but not an array — a runtime
  * guard for registrations coming from untyped/JS callers.
- *
- * TODO(docs): {@link RouteMiddleware} may resolve to `null` *or* `undefined`,
- * but `universal-router` treats them differently for an action: `undefined`
- * continues into the wrapped children, while `null` marks the whole subtree as
- * skipped, so the guarded route is never reached and the router falls through
- * to the next sibling (or 404s). Is `null` intended as the "block this branch"
- * signal, and `undefined` as "pass through"?
  */
 export function buildMiddlewareStack(
     route: Route,

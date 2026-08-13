@@ -22,6 +22,13 @@ type AiToolWrapper = AiTool & {
 
 export type AiToolOrCapability = AiToolWrapper | AiToolCapabilityWrapper;
 
+/**
+ * Merges raw tools and capabilities into one flat list for display, wrapping each in
+ * `isAvailableFor`/`displayName`/`description` helpers. A tool whose `capability_key` matches a
+ * known capability is folded into that capability's `getTools()`/`getToolsFor()` instead of
+ * appearing as its own top-level entry — the returned list only contains standalone tools plus
+ * one wrapper per capability.
+ */
 export function combineToolsAndCapabilities(
     translator: Translator,
     tools: AiTool[],
