@@ -46,7 +46,7 @@
  * layout from.
  */
 import UniversalRouter, {type Route, type RouteContext, type RouteError, type RouteParams} from 'universal-router';
-import {type HawkiRoute, type ResolvedRouteRenderable, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {type HawkiRoute, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, type RouteResultBody, RouteRegistrar, type RouteRegistrationCallback} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {collectRouteLayouts, resolveRouteLayouts} from '$lib/components/ui/routing/logistics/layouts.js';
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
 import {z} from 'zod';
@@ -63,9 +63,9 @@ export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {
 }
 
 export interface RouterHandle {
-    readonly route: Route<ResolvedRouteRenderable> | null;
+    readonly route: Route<RouteResultBody> | null;
     readonly params: RouteParams | null;
-    readonly context: RouteContext<ResolvedRouteRenderable> | null;
+    readonly context: RouteContext<RouteResultBody> | null;
     readonly path: string;
     /**
      * Resolves a named route (via `universal-router`'s URL generator) or a
@@ -210,7 +210,7 @@ export function createRouterFromRegistrar(
     let currentError: Error | RouteError | null = $state.raw(null);
     let resolvePath: string | null = $state(null);
     let currentPath: string | null = $state(null);
-    let currentContext: RouteContext<ResolvedRouteRenderable> | null = $state.raw(null);
+    let currentContext: RouteContext<RouteResultBody> | null = $state.raw(null);
     let currentComponent: RouteComponent | null = $state(null);
     let currentComponentProps: RouteComponentProps | null = $state(null);
     let currentLayouts: RouteLayout[] = $state.raw([]);
@@ -309,7 +309,7 @@ export function createRouterFromRegistrar(
                 throw new Error(`Invalid route result for path "${path}"`, {cause: parsedRenderable.error});
             }
 
-            const {component, context, params} = parsedRenderable.data as any as ResolvedRouteRenderable;
+            const {component, context, params} = parsedRenderable.data as any as RouteResultBody;
 
             // Loaded before anything is published so a lazy layout
             // keeps the router in `loading` instead of flashing an

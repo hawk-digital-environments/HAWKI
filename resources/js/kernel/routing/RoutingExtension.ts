@@ -20,7 +20,11 @@ declare module '$lib/kernel/extendableTypes.js' {
  *
  * 1. Every plugin's `routes(registrar, context)` hook, dispatched through
  *    `PluginBootstrapper.runRoutes()` (see `$lib/kernel/plugins/types.js`).
- *    These are registered on the *root* registrar, i.e. without any prefix.
+ *    `runRoutes` already wrapped each hook in a `registrar.group(...)` carrying
+ *    the plugin's route prefix (see `getPluginRoutePrefix` in
+ *    `routeInflection.js`) — empty for core plugins, `/plugins/<slug>`
+ *    otherwise — so plugin-level routes are namespaced the same way module
+ *    routes are.
  * 2. Every registered module's `routes(registrar)` hook (see
  *    `$lib/kernel/modules/types.js`). Modules are collected earlier by
  *    `ModuleExtension`, which is why `RoutingExtension` must be listed *after*
@@ -33,11 +37,6 @@ declare module '$lib/kernel/extendableTypes.js' {
  * extension's concern: the {@link RouteRenderer} is injected through the
  * constructor (`new RoutingExtension(createDefaultRouteRenderer())` in
  * `resources/js/app.ts`) and is invoked as the `action` of every compiled route.
- *
- * TODO(docs): Nothing in `resources/js/` currently calls `app.router.resolve()`
- * or listens to history/`popstate` events. Which layer is meant to own
- * navigation and mount the resolved result — a future root Svelte component,
- * or the {@link RouteRenderer} itself?
  */
 export class RoutingExtension implements HawkiAppExtension {
     /**

@@ -38,7 +38,11 @@ export function createModuleRegistrar(
             const innerRoutes = module.routes;
             module = Object.assign({}, module, {
                 routes: async (registrar: RouteRegistrar) => {
-                    registrar.group(getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin), innerRoutes);
+                    registrar.group(
+                        getModuleRoutePrefix(plugin.name, module.name, plugin.isCorePlugin),
+                        innerRoutes,
+                        {name: `pluginModule.${plugin.name}.${module.name}`}
+                    );
                 }
             });
         }
