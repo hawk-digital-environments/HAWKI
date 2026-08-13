@@ -24,6 +24,7 @@ const config = {
     onBrokenLinks: 'throw',
 
     markdown: {
+        mermaid: true,
         hooks: {
             onBrokenMarkdownImages: 'warn',
             onBrokenMarkdownLinks: 'throw'
@@ -90,6 +91,8 @@ const config = {
             })
         ]
     ],
+
+    themes: ['@docusaurus/theme-mermaid'],
 
     themeConfig: /** @type {import('@docusaurus/preset-classic').ThemeConfig} */ ({
         image: 'img/HAWKI_Icon.jpg',
