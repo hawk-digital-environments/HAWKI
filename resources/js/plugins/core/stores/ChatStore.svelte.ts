@@ -48,10 +48,17 @@ export class ChatStore implements DataStore {
     }
 
     public async refresh(): Promise<void> {
+        if (!this.app) throw new Error('The chat store has not been initialised.');
         this.listLoading = true;
         try {
-            const response = await chatRequest<{success: boolean; data: ChatSummary[]}>('/req/conv');
-            this.conversations = response.data;
+            const conversations = await this.app.restApi.getResourceCollection('ai-convs');
+            this.conversations = conversations.map(conversation => ({
+                id: Number(conversation.id),
+                name: conversation.name,
+                slug: conversation.slug,
+                created_at: conversation.created_at,
+                updated_at: conversation.updated_at
+            }));
         } finally {
             this.listLoading = false;
         }

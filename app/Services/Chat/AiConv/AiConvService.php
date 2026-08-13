@@ -35,27 +35,6 @@ class AiConvService
         ]);
     }
 
-    /**
-     * Return the current user's private conversations for the SPA history.
-     * Message bodies remain behind the single-conversation endpoint so the
-     * sidebar never downloads encrypted chat histories it does not display.
-     */
-    public function listForCurrentUser(): array
-    {
-        return Auth::user()
-            ->conversations()
-            ->latest('updated_at')
-            ->get(['id', 'conv_name', 'slug', 'created_at', 'updated_at'])
-            ->map(static fn(AiConv $conversation) => [
-                'id' => $conversation->id,
-                'name' => $conversation->conv_name,
-                'slug' => $conversation->slug,
-                'created_at' => $conversation->created_at?->toISOString(),
-                'updated_at' => $conversation->updated_at?->toISOString(),
-            ])
-            ->all();
-    }
-
     public function load(string $slug): array
     {
         $user = Auth::user();
