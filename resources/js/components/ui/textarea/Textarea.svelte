@@ -57,7 +57,7 @@
         &:focus-visible {
             outline: none;
             --textarea-border: var(--color-focus-ring);
-            box-shadow: 0 0 0 1px var(--color-focus-ring);
+            box-shadow: 0 0 0 2px var(--color-focus-ring);
         }
 
         &:disabled {

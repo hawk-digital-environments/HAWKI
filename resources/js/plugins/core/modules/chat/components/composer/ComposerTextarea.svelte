@@ -50,6 +50,12 @@
         }
     });
 
+    const textareaLabel = $derived(
+        composerContext.type === 'aiConv'
+            ? __('chat.composer.textareaLabel')
+            : __('chat.composer.textareaLabelRoom')
+    );
+
     function handleKeyDown(e: KeyboardEvent) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -82,6 +88,7 @@
             onkeydown={handleKeyDown}
             class="chat-textarea"
             rows={1}
+            aria-label={textareaLabel}
             placeholder={textareaPlaceholder}
         />
     </div>

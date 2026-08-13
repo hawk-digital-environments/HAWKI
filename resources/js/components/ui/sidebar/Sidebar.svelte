@@ -4,7 +4,7 @@
   overlay driven by the shared sidebar context.
 -->
 <script lang="ts">
-    import type {Snippet} from 'svelte';
+    import {tick, type Snippet} from 'svelte';
     import {useSidebar} from '$lib/components/ui/sidebar/SidebarState.svelte.js';
 
     interface Props {
@@ -15,9 +15,24 @@
     const {children}: Props = $props();
 
     const sidebar = useSidebar();
+
+    async function handleKeyDown(event: KeyboardEvent) {
+        if (event.key !== 'Escape' || !sidebar.mobile.current || !sidebar.navOpen) return;
+        event.preventDefault();
+        sidebar.toggleNav();
+        await tick();
+        document.getElementById('mobile-navigation-trigger')?.focus();
+    }
 </script>
 
-<nav class="app-sidebar" class:open={sidebar.navOpen} aria-label="Navigation">
+<svelte:window onkeydown={handleKeyDown} />
+
+<nav
+    id="app-navigation"
+    class="app-sidebar"
+    class:open={sidebar.navOpen}
+    aria-label="Navigation"
+>
     <div class="inner">
         {@render children()}
     </div>
@@ -52,12 +67,13 @@
             visibility: hidden;
             transition:
                 transform 280ms var(--easing-spring),
-                visibility 280ms;
+                visibility 0s linear 280ms;
         }
 
         .app-sidebar.open {
             transform: translateX(0);
             visibility: visible;
+            transition-delay: 0s;
         }
 
         .inner {

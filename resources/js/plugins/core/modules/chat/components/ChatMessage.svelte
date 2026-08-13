@@ -59,7 +59,7 @@
 <article class="message" class:user={!isAssistant} class:assistant={isAssistant}>
     <div class="avatar-wrap">
         {#if isAssistant}
-            <span class="assistant-avatar"><BotIcon size={18} /></span>
+            <span class="assistant-avatar" aria-hidden="true"><BotIcon size={18} /></span>
         {:else}
             <Avatar src={message.author.avatar_url} name={message.author.name} size={32} />
         {/if}

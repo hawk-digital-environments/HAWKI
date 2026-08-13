@@ -125,8 +125,8 @@
     }
 
     .radio-card:focus-visible {
-        outline: 1px solid var(--color-focus-ring, var(--color-interactive));
-        outline-offset: 1px;
+        outline: 2px solid var(--color-focus-ring, var(--color-interactive));
+        outline-offset: 2px;
     }
 
     .radio-card[data-disabled] {
