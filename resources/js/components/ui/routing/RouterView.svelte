@@ -41,6 +41,10 @@
     const RouteComponent = $derived(router.component);
     const routeProps = $derived(router.componentProps);
     const layouts = $derived(router.layouts);
+    // Replacing Loader's children destroys the complete routed Svelte tree.
+    // Only do that before the first route exists; later navigations keep the
+    // current page mounted until the next component/props are ready.
+    const isInitialLoading = $derived(isLoading && (!RouteComponent || !routeProps));
 
     // svelte-ignore state_referenced_locally
     setContext<RouterHandle>(router.contextName, router.handle);
@@ -93,7 +97,7 @@
 {/snippet}
 
 <svelte:boundary onerror={handleError}>
-    <Loader active={isLoading}>
+    <Loader active={isInitialLoading}>
         {@render layoutStack(0)}
     </Loader>
     {#snippet failed(error, reset)}

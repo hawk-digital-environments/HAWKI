@@ -19,6 +19,14 @@ export type LazyComponentLoader<TComponent extends Component<any>> = ComponentLo
 export type ComponentOrLoader<TComponent extends Component<any>> = TComponent | LazyComponentLoader<TComponent>;
 
 /**
+ * Resolved lazy components are application code, not request data. Keep the
+ * promise for the lifetime of the loader so subsequent route resolutions do
+ * not execute the dynamic import again. Rejected loads are evicted, allowing
+ * a later navigation/reload to retry after a transient chunk-loading error.
+ */
+const resolvedComponentCache = new WeakMap<LazyComponentLoader<any>, Promise<Component<any>>>();
+
+/**
  * Tags a loader so {@link resolveComponent} knows it has to `await` it.
  *
  * The marker is applied in place, so the very same function reference is
@@ -57,16 +65,24 @@ export async function resolveComponent<TComponent extends Component<any>>(
         return componentOrLoader as TComponent;
     }
 
-    const loaded = await componentOrLoader();
-    if (!loaded) {
-        throw new Error(`Lazy loader for ${describe} did not return a component.`);
-    }
-    if ('default' in loaded && typeof loaded.default === 'function') {
-        return loaded.default as TComponent;
-    }
-    if (typeof loaded === 'function') {
-        return loaded as TComponent;
+    let pending = resolvedComponentCache.get(componentOrLoader) as Promise<TComponent> | undefined;
+    if (!pending) {
+        pending = componentOrLoader().then((loaded) => {
+            if (!loaded) {
+                throw new Error(`Lazy loader for ${describe} did not return a component.`);
+            }
+            if ('default' in loaded && typeof loaded.default === 'function') {
+                return loaded.default as TComponent;
+            }
+            if (typeof loaded === 'function') {
+                return loaded as TComponent;
+            }
+
+            throw new Error(`Lazy loader for ${describe} returned an invalid component.`);
+        });
+        resolvedComponentCache.set(componentOrLoader, pending);
+        pending.catch(() => resolvedComponentCache.delete(componentOrLoader));
     }
 
-    throw new Error(`Lazy loader for ${describe} returned an invalid component.`);
+    return pending;
 }

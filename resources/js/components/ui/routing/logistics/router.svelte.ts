@@ -335,6 +335,12 @@ export function createRouterFromRegistrar(
                 console.warn('Route resolution for path', path, 'was invalidated before error handling could complete.');
                 return;
             }
+            // Do not retain a stale successful page behind an error/404. This
+            // also lets RouterView distinguish an initial/recovery load from a
+            // navigation whose current component can safely stay mounted.
+            currentContext = null;
+            currentComponent = null;
+            currentComponentProps = null;
             currentMeta = null;
             currentLayouts = await rootLayoutPromise;
             const originalError = error instanceof RouteResolutionError ? error.originalError : error;
