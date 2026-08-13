@@ -170,7 +170,7 @@
         transition: opacity 100ms ease;
     }
 
-    @media (--bp-mode-mobile) {
+    @media (--bp-md-and-smaller) {
         .section-trigger {
             font-size: var(--font-size-sm);
         }

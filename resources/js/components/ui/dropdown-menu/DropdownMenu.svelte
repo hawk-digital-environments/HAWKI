@@ -2,7 +2,7 @@
   @component Root of the `dropdown-menu` component family: a trigger plus an
   animated content panel. Wraps bits-ui's `DropdownMenu` and hides its
   low-level `Root`/`Trigger`/`Portal`/`Content` primitives behind a single
-  component. Below the `--bp-mode-mobile` breakpoint the content panel
+  component. Below the `--bp-md-and-smaller` breakpoint the content panel
   automatically renders as a `BottomSheet` instead of a floating popover —
   item components don't need to know which one is active.
 

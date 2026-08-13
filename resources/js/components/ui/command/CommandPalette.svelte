@@ -448,7 +448,7 @@
     }
 
     /* Roomier rows on touch. */
-    @media (--bp-mode-mobile) {
+    @media (--bp-md-and-smaller) {
         :global(.command-palette .command-item) {
             min-height: 2.75rem;
             font-size: var(--font-size-sm);

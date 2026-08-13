@@ -24,7 +24,6 @@ export const breakpointsQueries = {
     bpBiggerThanLg: '(min-width: 1199px)',
     bpSmallerThanXl: '(max-width: 1200px)',
     bpXl: '(min-width: 1200px)',
-    bpModeMobile: '(max-width: 850px)',
 } as const;
 
 export type Breakpoint = keyof typeof breakpointsQueries;
@@ -55,7 +54,6 @@ export interface BreakpointRangeProps {
     bpLgAndBigger?: Snippet;
     bpBiggerThanLg?: Snippet;
     bpSmallerThanXl?: Snippet;
-    bpModeMobile?: Snippet;
 }
 
 export interface BreakpointSnippetProps extends BreakpointExactProps, BreakpointRangeProps {

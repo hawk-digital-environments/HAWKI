@@ -291,7 +291,7 @@
     }
 
     /* Bump rows up a notch for easier tapping on small screens. */
-    @media (--bp-mode-mobile) {
+    @media (--bp-md-and-smaller) {
         .sidebar-item {
             font-size: var(--font-size-sm);
         }

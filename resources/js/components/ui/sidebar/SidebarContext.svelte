@@ -134,7 +134,7 @@
     }
 
     /* mobile: the nav also leaves the grid and becomes an off-canvas overlay. */
-    @media (--bp-mode-mobile) {
+    @media (--bp-md-and-smaller) {
         .sidebar-layout {
             grid-template-columns: minmax(0, 1fr);
             grid-template-areas: 'main';
