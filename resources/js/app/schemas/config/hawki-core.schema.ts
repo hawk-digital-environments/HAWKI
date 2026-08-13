@@ -53,7 +53,17 @@ const HawkiCoreSchema = z.object({
         hawkiUserUsername: z.string(),
         hawkiUserAvatar: z.string()
     }).optional(),
-    // TODO(docs): what are these `salts` used for on the frontend specifically (e.g. client-side crypto/keychain derivation)? Please confirm so a precise doc-block can be added instead of a generic one.
+    /**
+     * Per-purpose salts for the frontend's client-side key derivation
+     * (`deriveKey()` in `kernel/keychain/keychainHandle.ts` and the legacy
+     * `public/js/encryption.js`/`handshake_functions.js`), so a key derived for
+     * one purpose can't be reused for another: `userdata` derives the keychain
+     * encryptor key from the user's passkey, `ai` derives a room's AI
+     * conversation key, `invitation` derives keys for room-invitation flows,
+     * `passkey` derives the passkey-based encryption key itself, and `backup`
+     * derives the passkey backup/recovery key. `ai`/`invitation` are optional —
+     * absent when the corresponding feature isn't configured server-side.
+     */
     salts: z.object({
         userdata: z.string(),
         invitation: z.string().optional(),

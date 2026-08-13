@@ -17,7 +17,7 @@ export interface ChatThreadModeState {
  */
 export class ChatInThreadMode extends AbstractMode<string, ChatThreadModeState> {
     public allowsNestedModes(): boolean {
-        // When in tread mode, we allow creating nested checkpoints
+        // When in thread mode, we allow creating nested checkpoints
         // meaning we can enter edit or regen mode for messages in the thread without losing the thread context.
         return true;
     }

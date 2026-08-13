@@ -9,10 +9,10 @@
  *
  * {@link createDefaultTransport} returns the browser implementation: it calls
  * `fetch` (adding the CSRF token on mutating requests, because the API is
- * session-authenticated), throws an `Error` (with the first JSON:API error's
- * `detail`/`title` appended when the body is a JSON:API error response) on a
- * non-2xx response, and otherwise returns the parsed JSON (or `null` for
- * responses without a body, e.g. `204 No Content`).
+ * session-authenticated), throws an {@link ApiTransportError} (with the first
+ * JSON:API error's `detail`/`title` appended when available) on a non-2xx
+ * response, and otherwise returns the parsed JSON (or `null` for responses
+ * without a body, e.g. `204 No Content`).
  */
 export type ApiTransport = (path: string, options: RequestInit) => Promise<any>;
 
@@ -44,18 +44,25 @@ export function createDefaultTransport(): ApiTransport {
         if (!response.ok) {
             // Attempt to parse error from JSON:API error response
             let errorMessage = `API request failed with status ${response.status}`;
+            const serverErrorMessages: ApiTransportServerErrorMessage[] = [];
+            let body: unknown;
             try {
-                const errorResponse = await response.json();
+                const errorResponse = body = await response.json();
                 if (errorResponse.errors && Array.isArray(errorResponse.errors) && errorResponse.errors.length > 0) {
                     errorMessage += `: ${errorResponse.errors[0].detail || errorResponse.errors[0].title || 'Unknown error'}`;
+                    serverErrorMessages.push(...errorResponse.errors.map((err: any) => ({
+                        title: err.title || 'Unknown error',
+                        detail: err.detail || 'No detail provided'
+                    })));
                 }
             } catch (e) {
                 // Ignore JSON parsing errors and use the default message
             }
-            throw new Error(errorMessage);
+            throw new ApiTransportError(response.status, serverErrorMessages, body, errorMessage);
         }
 
         const body = await response.text();
         return body ? JSON.parse(body) : null;
     };
 }
+import {ApiTransportError, type ApiTransportServerErrorMessage} from '$lib/kernel/api/errors.js';

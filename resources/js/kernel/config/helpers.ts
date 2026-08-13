@@ -8,8 +8,9 @@ import {getHawkiApp} from '$lib/legacy/legacy.js';
  * The result is cached after the first call, so repeated access is cheap.
  * Throws if the namespace has no registered schema — this is always a programming error, not a runtime condition.
  *
- * {@link createConfiguration} must have been called before this is used; otherwise
- * `currentConfig` is `null` and all fields will fall back to their Zod defaults.
+ * The app's `preparation` boot stage must have completed before this is used;
+ * otherwise the raw config is still `null` and every field falls back to its
+ * Zod default.
  *
  * Calling without arguments returns the `'hawki-core'` config.
  *

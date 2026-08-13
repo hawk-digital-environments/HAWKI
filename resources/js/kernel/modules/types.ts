@@ -50,7 +50,6 @@ export interface HawkiModule {
     /**
      * Each module can optionally provide a sidebar component that will be rendered in the app's sidebar.
      * The component will be rendered when the module is active (i.e. when the user navigates to a route that belongs to the module).
-     * @param locale
      */
     sidebar?(locale: Locale): Component;
 }

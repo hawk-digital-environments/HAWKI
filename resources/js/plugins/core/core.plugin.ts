@@ -10,6 +10,9 @@
  *   - **Migrations**: lazy-globs the `plugins/core/migrations/` directory and
  *     hands the loaders to the `MigrationExtension` for the keychain/encryption
  *     format upgrades.
+ *   - **Modules**: registers {@link ChatModule}, the chat feature's own bundle of
+ *     routes/stores/etc.
+ *   - **Routes**: declares the root `/` route, lazily loading `pages/Index.svelte`.
  *
  * Augments `HawkiPlugins` via declaration merging so `app.plugins.core` is typed as a
  * `CorePlugin`. Auto-discovered by the kernel via `import.meta.glob` for

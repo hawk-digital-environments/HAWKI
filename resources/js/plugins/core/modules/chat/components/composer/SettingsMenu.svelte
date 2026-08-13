@@ -1,6 +1,22 @@
 <!--
-  @component Popover for adjusting model generation parameters (temperature, Top P).
-  Includes preset buttons for quick configuration.
+  @component Trigger + panel for the system prompt preview and model generation
+  parameters (temperature, Top P). Shown as a `Popover` on `bpMd`-and-bigger
+  viewports, a `BottomSheet` below that (via `Breakpoint`) — the same
+  `settingsBody` snippet is rendered into both.
+
+  - Temperature/Top P are editable via sliders or one of three presets
+    (`creative`/`balanced`/`precise`); the active tab is derived by matching
+    the current values against each preset (`modelParameters.intersects`).
+    Sliders/tabs are disabled, with an explanatory `Alert`, when the current
+    model lacks the `'feature-sampling-parameters'` flag.
+  - Clicking the system-prompt preview opens `SystemPromptDialog` for full
+    editing; a reset button (enabled only when changed) restores
+    `composerContext.systemPrompt` to the `system-prompts` store's `'default'`
+    entry. Same reset pattern for the sampling parameters via `modelParameters.reset()`.
+
+  Disabled as a whole when `composerContext.guard.disablesFeature('settings')`
+  is true (e.g. during edit/regen mode). Takes no props — reads/writes
+  `ComposerContext` directly.
 -->
 <script lang="ts">
     import Popover from '$lib/components/ui/popover/Popover.svelte';

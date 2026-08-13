@@ -10,7 +10,7 @@
  * to prevent offline dictionary attacks.
  *
  * @example
- * import {deriveKey, loadServerSalt} from '$lib/encryption/utils.js';
+ * import {deriveKey, loadServerSalt} from '$lib/kernel/encryption/utils.js';
  * const salt = loadServerSalt(getConnection().crypto_salt);
  * const aesKey = await deriveKey(userPasskey, 'keychain', salt);
  */
@@ -51,16 +51,20 @@ export async function loadCryptoKeyFromArrayBuffer(buffer: ArrayBuffer): Promise
     }
 }
 
+/**
+ * Converts the server-provided salt string into bytes for {@link deriveKey}. Maps each
+ * character to its char code directly — this is *not* base64 decoding, it expects the
+ * raw latin1 salt string as sent by the server (`crypto_salt` on the connection).
+ */
 export function loadServerSalt(raw: string): ServerSalt {
     return Uint8Array.from(raw, c => c.charCodeAt(0));
 }
 
 /**
- * Derives a key from a key using PBKDF2
- * @param key - Secret key to derive from
- * @param label - Purpose label for the derived key
- * @param serverSalt - Salt from server for security
- * @returns The derived key
+ * Derives an AES-256-GCM key from a passphrase (or another key) using PBKDF2, 100k
+ * iterations. `label` is mixed into the salt alongside `serverSalt` so the same
+ * passphrase yields a different key per purpose (e.g. `'keychain'` vs a room key) —
+ * pass a distinct, stable label per use case.
  */
 export async function deriveKey(
     key: string | CryptoKey,
@@ -112,21 +116,13 @@ export async function deriveKey(
     }
 }
 
-/**
- * Converts an ArrayBuffer to a Base64 string
- * @param buffer - Binary data to convert
- * @returns Base64-encoded string
- */
+/** Converts an ArrayBuffer to a Base64 string. */
 export function arrayBufferToBase64(buffer: ArrayBuffer) {
     const binary = String.fromCharCode.apply(null, [...new Uint8Array(buffer)]);
     return btoa(binary);
 }
 
-/**
- * Converts a Base64 string to an ArrayBuffer
- * @param {string} base64 - Base64-encoded string
- * @returns {ArrayBuffer} Decoded binary data
- */
+/** Converts a Base64 string to an ArrayBuffer. */
 export function base64ToArrayBuffer(base64: string): ArrayBuffer {
     const binary = atob(base64);
     const len = binary.length;

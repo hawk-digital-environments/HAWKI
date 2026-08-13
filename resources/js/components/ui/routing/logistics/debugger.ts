@@ -1,3 +1,8 @@
+/**
+ * Console dump of a router's current state and full compiled route tree.
+ * Dev-only tool, reached through `RouterHandle.debug()`, which imports this
+ * module dynamically so it never lands in the production bundle.
+ */
 import type {Router} from '$lib/components/ui/routing/logistics/router.svelte.js';
 import type {default as UniversalRouter, Route} from 'universal-router';
 import type {Path} from 'universal-router/path-to-regexp';
@@ -16,6 +21,7 @@ export interface RouterDump {
     innerRouter: UniversalRouter;
 }
 
+/** Logs `dump`'s state, current path, meta, layout stack, and the full route tree (with middleware/catch-all markers) to the console. */
 export function dumpRouterToConsole(dump: RouterDump) {
     // Empty is the neutral base (see `normalizeBasePath`); shown as '/' for readability.
     const baseUrl = dump.innerRouter.baseUrl;

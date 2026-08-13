@@ -1,4 +1,4 @@
-import {type Route, type RouteContext, type RouteParams, type RouteResult} from 'universal-router';
+import {type Route, type RouteContext, type RouteParams, type RouteResult as URRouteResult} from 'universal-router';
 import {buildMiddlewareStack} from '$lib/components/ui/routing/logistics/buildMiddlewareStack.js';
 import {type ComponentLoader, type ComponentOrLoader, isLazyComponentLoader, lazyComponent, resolveComponent} from '$lib/components/ui/routing/logistics/lazyComponent.js';
 import type {Component, Snippet} from 'svelte';
@@ -79,22 +79,51 @@ export interface HawkiRoute<R = any> extends Route<R> {
  * The concrete implementation is injected into {@link RoutingExtension}; see
  * `createDefaultRouteRenderer()` in `routeRenderer.js`.
  */
-export type RouteRenderer<TResult = any> = (component: RouteComponentOrLoader, context: RouteContext, params: RouteParams) => RouteResult<TResult>;
+export type RouteRenderer<TResult = any> = (component: RouteComponentOrLoader, context: RouteContext, params: RouteParams) => URRouteResult<TResult>;
 /**
  * Guard that runs *before* the route (or route group) it is attached to.
  *
- * Return a `Component` to take over rendering and stop resolution (e.g. a
- * login or error page), or a nullish value to let the router continue into the
- * guarded route. See {@link buildMiddlewareStack} for how middlewares are
- * turned into wrapping routes, including the `null` vs. `undefined` nuance.
+ * Modeled on a classic PHP-style middleware stack: the callable receives the
+ * route context and a `next` callback that resumes the guarded route. Only
+ * the three return shapes below are meaningful — HAWKI does not expose
+ * `universal-router`'s raw `null` vs. `undefined` action distinction to
+ * middleware authors; the wrapper in {@link buildMiddlewareStack} normalises
+ * them so callers never have to learn that nuance.
+ *
+ * - **Return a {@link RouteResultBody}** to take over rendering and stop
+ *   resolution. The body carries `component`, `context` and `params`, so a
+ *   middleware can both replace the page *and* rewrite the params the page
+ *   will receive — e.g. inject a derived value, normalise a slug — before the
+ *   router picks them up.
+ * - **`return await next()`** to pass through to the guarded route. Whatever
+ *   the guarded route resolves to is handed back unchanged.
+ * - **Return nothing (or throw)** to mark the guarded route as unreachable:
+ *   `universal-router` skips the route's subtree, falls through to the next
+ *   sibling, and 404s if nothing else matches — the permission-deny signal.
  */
-export type RouteMiddleware = (context: RouteContext) => Promise<Component | undefined | null>;
+export type RouteMiddleware = (
+    context: RouteContext,
+    next: () => Promise<RouteResultBody | undefined>
+) => Promise<RouteResultBody | undefined>;
 
-export interface ResolvedRouteRenderable {
+/**
+ * The concrete payload a resolved route produces — what `universal-router`
+ * actions return and what the router renders. Exposed to middlewares via
+ * {@link RouteMiddleware} so they can inspect or rewrite it before passing
+ * through (`next()`), or construct one to take over rendering.
+ */
+export interface RouteResultBody {
     component: RouteComponent;
     context: RouteContext;
     params: RouteParams;
 }
+
+/**
+ * HAWKI's fixed {@link RouteResultBody} instantiation of `universal-router`'s
+ * `RouteResult<T>` — every compiled route's action resolves to this shape,
+ * and `UniversalRouter<RouteResultBody>` is parameterised with it.
+ */
+export type RouteResult = URRouteResult<RouteResultBody>;
 
 /** Optional extras for a single route registration. */
 export interface RouteOptions<TMeta extends RouteMeta = RouteMeta> {
@@ -320,8 +349,8 @@ export class RouteRegistrar {
      * passed down into every group.
      */
     public build() {
-        const builtRoutes: Route<ResolvedRouteRenderable>[] = [];
-        const builtCatchAllRoutes: Route<ResolvedRouteRenderable>[] = [];
+        const builtRoutes: Route<RouteResultBody>[] = [];
+        const builtCatchAllRoutes: Route<RouteResultBody>[] = [];
         this.routes.forEach((routeOptions) => {
             const builtRoute = this.buildRouteFromOptions(routeOptions);
             (routeOptions.catchAll ? builtCatchAllRoutes : builtRoutes).push(builtRoute);
@@ -340,7 +369,7 @@ export class RouteRegistrar {
     }
 
     private buildRouteFromOptions(options: RegisteredRouteOptions): Route {
-        const renderableRouteResolver = (context: RouteContext, params: RouteParams): RouteResult<ResolvedRouteRenderable> => {
+        const renderableRouteResolver = (context: RouteContext, params: RouteParams): RouteResult => {
             if (!this.isLazyRouteLoader(options.component)) {
                 return {component: options.component as RouteComponent, context, params};
             }

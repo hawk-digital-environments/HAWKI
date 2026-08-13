@@ -1,11 +1,58 @@
+/**
+ * # Router — Architecture Overview
+ *
+ * A `Router` is a reactive wrapper around a `universal-router` instance: it
+ * resolves the current path into a page component + layout stack, tracks the
+ * result as Svelte `$state`, and exposes both through a `RouterHandle` that
+ * components read via `useRouter()`. `RouterView.svelte` is the only
+ * consumer that renders a `Router`'s state; this module has no rendering
+ * concerns of its own.
+ *
+ * ## Construction
+ *
+ * {@link createRouter} (config callback) and {@link createRouterFromRegistrar}
+ * (pre-built `RouteRegistrar`) both end up calling `registrar.build()` once
+ * to get the `Route[]` tree, then wrap it in `UniversalRouter`. `RoutingExtension`
+ * uses the latter to create `app.router` from the routes collected across all
+ * plugins/modules.
+ *
+ * ## Path source: routing strategies
+ *
+ * A `Router` never reads `window.location` directly — it delegates to a
+ * pluggable {@link RoutingStrategy} (`'path'` | `'hash'` | `'transient'`, see
+ * `strategy/`), so the same resolution/state logic works whether the app
+ * owns the browser URL, uses a hash fragment, or runs fully in-memory.
+ * `Router.bind()` wires the strategy's changes into `runResolve()`.
+ *
+ * ## Resolution & state
+ *
+ * `runResolve()` is the single place that writes router state — `state`,
+ * `component`, `componentProps`, `layouts`, `meta`, `error` are all set there,
+ * so a page, a 404 and an error page all leave the router in one consistent
+ * shape. Concurrent resolutions are guarded with a monotonic `loadId`: a
+ * `runResolve()` call that finishes after a newer one has already started is
+ * discarded, so a slow navigation can never clobber a faster, later one.
+ *
+ * `universal-router`'s own 404 handling is repurposed: its `errorHandler`
+ * always throws (wrapped in {@link RouteResolutionError}), and `runResolve()`
+ * distinguishes a 404 (`status === 404`) from a genuine failure to decide
+ * between `state: 'notFound'` and `state: 'error'`.
+ *
+ * ## Layouts
+ *
+ * Every resolution rebuilds the layout stack from the matched route's parent
+ * chain (see `layouts.ts`) plus the router-wide `rootLayout`, which also
+ * covers the 404/error states since those have no matched route to inherit a
+ * layout from.
+ */
 import UniversalRouter, {type Route, type RouteContext, type RouteError, type RouteParams} from 'universal-router';
-import {type HawkiRoute, type ResolvedRouteRenderable, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, RouteRegistrar, type RouteRegistrationCallback} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
+import {type HawkiRoute, type RouteComponent, type RouteComponentProps, type RouteLayout, type RouteLayoutOrLoader, type RouteMeta, type RouteResultBody, RouteRegistrar, type RouteRegistrationCallback} from '$lib/components/ui/routing/logistics/RouteRegistrar.js';
 import {collectRouteLayouts, resolveRouteLayouts} from '$lib/components/ui/routing/logistics/layouts.js';
 import type {RoutingStrategy} from '$lib/components/ui/routing/strategy/types.js';
 import {z} from 'zod';
 import {createTransientRoutingStrategy} from '$lib/components/ui/routing/strategy/transientRoutingStrategy.svelte.js';
 import {createPathRoutingStrategy} from '$lib/components/ui/routing/strategy/pathRoutingStrategy.svelte.js';
-import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.svelte.js';
+import {createHashRoutingStrategy} from '$lib/components/ui/routing/strategy/hashRoutingStrategy.js';
 import {mergePaths, normalizeBasePath, normalizePath} from '$lib/components/ui/routing/logistics/normalizePath.js';
 import {isPathActive, type IsPathActiveOptions, isRouteActive} from '$lib/components/ui/routing/logistics/isActive.js';
 import generateUrls, {type UrlParams} from 'universal-router/generateUrls';
@@ -16,14 +63,32 @@ export interface IsActiveOptions extends Omit<IsPathActiveOptions, 'rootPath'> {
 }
 
 export interface RouterHandle {
-    readonly route: Route<ResolvedRouteRenderable> | null;
+    readonly route: Route<RouteResultBody> | null;
     readonly params: RouteParams | null;
-    readonly context: RouteContext<ResolvedRouteRenderable> | null;
+    readonly context: RouteContext<RouteResultBody> | null;
     readonly path: string;
+    /**
+     * Resolves a named route (via `universal-router`'s URL generator) or a
+     * literal path (passed through, prefixed with the router's `basePath` if
+     * it isn't already) into the path string to use as an `href`. A leading
+     * `/` on `routeNameOrPath` is what selects the "literal path" branch.
+     */
     getPath: (routeNameOrPath: string, params?: UrlParams) => string;
+    /** Short alias for {@link getPath}, for terse usage in templates. */
     p: (routeNameOrPath: string, params?: UrlParams) => string;
+    /** Navigates to a literal path through the active {@link RoutingStrategy}. */
     goTo: (path: string) => Promise<void>;
+    /** Resolves `routeName`/`params` via {@link getPath} and navigates to the result. */
     goToRoute: (routeName: string, params?: UrlParams) => Promise<void>;
+    /**
+     * Whether `path` is one the active {@link RoutingStrategy} would route
+     * through itself (see {@link RoutingStrategy.canHandlePath}). Use this to
+     * decide whether an anchor click should be intercepted or left to the
+     * browser — hash anchors, query-only links and relative URLs return
+     * `false` so the browser handles them natively. Falls back to
+     * `path.startsWith('/')` when the strategy does not override the hook.
+     */
+    canHandlePath: (path: string) => boolean;
     /**
      * Whether the given route name or path points at the page currently shown.
      * Compares concrete paths, so two links to the same route with different
@@ -60,6 +125,11 @@ export interface RouterHandle {
      * depend on (a login, a permission change) happened.
      */
     reload: () => Promise<void>;
+    /**
+     * Dev helper: dumps the router's current state and full route tree to the
+     * console (see `debugger.ts`). Imported dynamically so the dump code
+     * never ends up in the production bundle just for being referenced here.
+     */
     debug: () => Promise<void>;
 }
 
@@ -83,7 +153,9 @@ export interface Router {
 }
 
 export interface CreateRouterOptions {
+    /** URL prefix every route is resolved under, e.g. `/new`. Defaults to none (routes resolve from `/`). */
     basePath?: string;
+    /** Which {@link RoutingStrategy} owns "the current path", or a custom implementation. Defaults to `'transient'` (in-memory, no URL sync) — see `strategy/` for the trade-offs of each. */
     strategy?: 'transient' | 'path' | 'hash' | RoutingStrategy;
     /**
      * Layout wrapping *everything* this router renders — including the 404 and
@@ -102,6 +174,14 @@ const routeResultSchema = z.object({
     params: z.object({}).loose()
 });
 
+/**
+ * Creates a `Router` from a route-registration callback — convenience
+ * wrapper that builds a fresh {@link RouteRegistrar}, runs `config` against
+ * it, and hands the result to {@link createRouterFromRegistrar}. Prefer this
+ * for a standalone router; use {@link createRouterFromRegistrar} directly
+ * when a registrar is already assembled (e.g. from plugin/module `routes()`
+ * hooks, as `RoutingExtension` does).
+ */
 export function createRouter(
     name: string,
     config: RouteRegistrationCallback,
@@ -112,6 +192,15 @@ export function createRouter(
     return createRouterFromRegistrar(name, registrar, options);
 }
 
+/**
+ * Builds a `Router` from an already-populated {@link RouteRegistrar}:
+ * compiles it into a `universal-router` instance, sets up the reactive state
+ * described in the module overview above, and returns the `Router` (state +
+ * `bind()`) alongside its `RouterHandle` (navigation API for components).
+ *
+ * `name` must be unique among routers mounted at once — it is what
+ * `useRouter(name)` and `RouterView`'s context key are looked up by.
+ */
 export function createRouterFromRegistrar(
     name: string,
     registrar: RouteRegistrar,
@@ -121,7 +210,7 @@ export function createRouterFromRegistrar(
     let currentError: Error | RouteError | null = $state.raw(null);
     let resolvePath: string | null = $state(null);
     let currentPath: string | null = $state(null);
-    let currentContext: RouteContext<ResolvedRouteRenderable> | null = $state.raw(null);
+    let currentContext: RouteContext<RouteResultBody> | null = $state.raw(null);
     let currentComponent: RouteComponent | null = $state(null);
     let currentComponentProps: RouteComponentProps | null = $state(null);
     let currentLayouts: RouteLayout[] = $state.raw([]);
@@ -220,7 +309,7 @@ export function createRouterFromRegistrar(
                 throw new Error(`Invalid route result for path "${path}"`, {cause: parsedRenderable.error});
             }
 
-            const {component, context, params} = parsedRenderable.data as any as ResolvedRouteRenderable;
+            const {component, context, params} = parsedRenderable.data as any as RouteResultBody;
 
             // Loaded before anything is published so a lazy layout
             // keeps the router in `loading` instead of flashing an
@@ -321,6 +410,7 @@ export function createRouterFromRegistrar(
         p: getPath,
         goTo,
         goToRoute,
+        canHandlePath: (path: string) => strategy.canHandlePath?.(path) ?? path.startsWith('/'),
         isActive,
         isRouteActive: (routeName: string) => isRouteActive(currentContext, routeName)
     };
@@ -385,6 +475,13 @@ function createStrategy(strategy: CreateRouterOptions['strategy']): RoutingStrat
     }
 }
 
+/**
+ * Wraps whatever `universal-router`'s `errorHandler` receives, tagging it
+ * with `'notFound'` vs `'error'` so `runResolve()`'s `catch` block can pick
+ * the right router state without re-inspecting the original error. Never
+ * escapes this module — `runResolve()` unwraps `originalError` before
+ * publishing it as {@link RouterHandle.error}.
+ */
 class RouteResolutionError extends Error {
     constructor(
         public readonly originalError: Error | RouteError,

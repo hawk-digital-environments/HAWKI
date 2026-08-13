@@ -3,6 +3,18 @@ import type {HawkiApp} from '$lib/kernel/HawkiApp.js';
 import type {Component} from 'svelte';
 
 /**
+ * Bootstraps the `<svelte-snippet>` system for pages that are still plain
+ * Blade + vanilla-JS (no `#hawki-app` mount point). Called once by
+ * {@link ShellExtension.ready} (`kernel/shell/ShellExtension.svelte.ts`) as
+ * the fallback path when no SPA shell was mounted.
+ *
+ * Globs every `.svelte` file under `plugins/core/snippets/`, lazily imports
+ * and registers each one into `app.snippets` under its file base name, then
+ * (once the DOM is ready) defines the `svelte-snippet` custom element and
+ * injects a `LegacySharedContent` snippet as the first child of `<body>` —
+ * the one-per-page host for shared UI like the `Toaster`, see
+ * `LegacySharedContent.svelte`.
+ *
  * @deprecated This is part of the snippet system that is being phased out.
  */
 export async function legacyInitializeSnippetApps(
@@ -30,7 +42,6 @@ export async function legacyInitializeSnippetApps(
             legacySharedContentSnippet.setAttribute('type', 'LegacySharedContent');
             document.body.insertBefore(legacySharedContentSnippet, document.body.firstChild);
 
-            // This promise ensures that the
             resolve();
         });
     });

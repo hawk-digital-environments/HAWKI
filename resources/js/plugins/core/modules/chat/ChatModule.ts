@@ -46,8 +46,8 @@ export class ChatModule implements HawkiModule {
      */
     public routes(registrar: RouteRegistrar): void | Promise<void> {
         registrar
-            .lazyRoute('/', async () => import('./pages/ChatIndex.svelte'), 'chat.index')
-            .lazyRoute('/:slug', async () => import('./pages/ChatIndex.svelte'), 'chat.conversation');
+            .lazyRoute('/', async () => import('./pages/ChatIndex.svelte'), {name: 'chat.index'})
+            .lazyRoute('/:slug', async () => import('./pages/ChatIndex.svelte'), {name: 'chat.conversation'});
     }
 
     public title(translate: Translator['translate'], _locale: Locale): string {

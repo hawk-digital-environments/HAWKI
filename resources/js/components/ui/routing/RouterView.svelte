@@ -1,3 +1,14 @@
+<!--
+  @component Renders whatever a `Router` (see `logistics/router.svelte.ts`)
+  currently resolves to: a loading state, the matched page nested in its
+  layout stack, the 404 fallback, or an error fallback. Publishes the
+  router's `RouterHandle` into Svelte context under `router.contextName`, so
+  `useRouter()` calls anywhere below it resolve without an explicit name.
+
+  One `RouterView` is expected per `Router` instance — it calls
+  `router.bind()` on init, which wires the router up to its routing strategy
+  (path/hash/transient) for the lifetime of this component.
+-->
 <script lang="ts">
     import {type Component, setContext} from 'svelte';
     import RouteNotFound from '$lib/components/ui/routing/RouteNotFound.svelte';
@@ -6,8 +17,11 @@
     import {type Router, type RouterHandle} from '$lib/components/ui/routing/logistics/router.svelte.js';
 
     interface Props {
+        /** The router instance to render (from `createRouter`/`createRouterFromRegistrar`, or `app.router`). */
         router: Router;
+        /** Rendered when no route matches the current path. Defaults to `RouteNotFound`. */
         notFoundComponent?: Component;
+        /** Rendered when resolution fails or a rendered route crashes. Defaults to `RouteError`. See `RouteError.svelte` for the `error`/`reset` contract. */
         errorComponent?: Component<{ error: unknown; reset: () => void }>;
     }
 

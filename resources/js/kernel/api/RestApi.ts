@@ -79,10 +79,12 @@ export class RestApi {
     /**
      * Low-level fetch wrapper used by all higher-level API helpers.
      *
-     * Sets the required JSON:API `Accept` header, checks for HTTP errors, and
-     * attempts to extract a human-readable message from the JSON:API `errors`
-     * array before throwing — so callers get "400: Validation failed" rather than
-     * a generic status code.
+     * Sets the required JSON:API `Accept`/`Content-Type`/locale headers, then
+     * delegates the actual network call to the injected {@link ApiTransport} —
+     * it, not this method, checks the HTTP status and throws an `ApiTransportError`
+     * with a human-readable message extracted from the JSON:API `errors` array.
+     * Once the transport resolves, the response runs through `beforeSchema` →
+     * `schema.parse` → `afterSchema` in that order.
      */
     public async fetch<S extends z.ZodTypeAny>(
         path: string,
@@ -120,11 +122,11 @@ export class RestApi {
     /**
      * Fetches a single resource by ID from the API.
      *
-     * Works the same as {@link getResourceCollectionFromApi} but hits `/{resourceType}/{id}`
+     * Works the same as {@link getResourceCollection} but hits `/{resourceType}/{id}`
      * and returns a single object rather than an array.
      *
      * @example
-     * const connection = await getResourceFromApi('connections', 42);
+     * const connection = await restApi.getResource('connections', 42);
      */
     async getResource<R extends keyof HawkiResourceSchemas>(
         resourceType: R,
@@ -385,7 +387,9 @@ export class RestApi {
 
     /**
      * Returns the locale string to use for API requests, based on the provided options or the default connection locale.
-     * @param options
+     *
+     * Swallows the "connection not loaded yet" error and returns `''` — happens
+     * during early bootstrap, before `ClientExtension` has fetched the connection.
      */
     private getLocaleString(options: FetchOptions): string {
         let locale = options?.locale;

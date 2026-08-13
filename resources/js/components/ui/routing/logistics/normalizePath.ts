@@ -15,6 +15,12 @@ export function normalizeBasePath(basePath: string | null | undefined): string {
     return normalized === '/' ? '' : normalized;
 }
 
+/**
+ * Canonicalizes a path for comparison and storage: trims whitespace, adds a
+ * leading slash if missing, and strips a trailing slash unless the path is
+ * just `/`. Nullish or blank input normalizes to `/` (the root) — unlike
+ * {@link normalizeBasePath}, for which "no base" means `''`, not `/`.
+ */
 export function normalizePath(path: string | null | undefined): string {
 
     if (!path || typeof path === 'string' && path.trim() === '') {
@@ -36,6 +42,7 @@ export function normalizePath(path: string | null | undefined): string {
     return path;
 }
 
+/** Joins `basePath` and `relativePath` with exactly one `/` between them, e.g. `mergePaths('/admin', '/users')` and `mergePaths('/admin', 'users')` both yield `/admin/users`. An empty `relativePath` yields `basePath` with its trailing slash removed. */
 export function mergePaths(basePath: string, relativePath: string): string {
     if (!basePath.endsWith('/')) {
         basePath += '/';

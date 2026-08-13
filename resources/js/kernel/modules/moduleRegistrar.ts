@@ -54,7 +54,11 @@ export function createModuleRegistrar(
             const innerRoutes = module.routes.bind(instance);
             module = extendModule(module, {
                 routes: async (registrar: RouteRegistrar) => {
-                    registrar.group(getModuleRoutePrefix(plugin.name, instance.name, plugin.isCorePlugin), innerRoutes);
+                    registrar.group(
+                        getModuleRoutePrefix(plugin.name, instance.name, plugin.isCorePlugin),
+                        innerRoutes,
+                        {name: `pluginModule.${plugin.name}.${instance.name}`}
+                    );
                 }
             });
         }
